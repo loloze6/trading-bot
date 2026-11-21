@@ -1,0 +1,113 @@
+{
+  "run_id": "20261119T152400Z_dd5b37b4",
+  "created_utc": "2026-11-19T15:24:00.679548+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "hour",
+          "class": "strategies.strategy_components.HourOfDayComponent",
+          "params": {}
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "hour",
+                "op": "between",
+                "low": 10.5,
+                "high": 13.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "ret3d",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 72
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 72,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "dd5b37b4a4cb49c5295b8f8e773ea901e30c55da6bfb5774e5b3969fcb10b43a",
+  "data": {
+    "symbols": [
+      "LTCUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2017-12-31 00:00:00",
+    "end": "2018-08-31 23:00:00",
+    "bar_count": 5800,
+    "data_sha256": "cf88eff91ffd1693aaec02e1312626a3864f515b7205a926b3585e2e888bd720"
+  },
+  "git_sha": "bd786f2e660611be01976394ae704758a42eaeb7-dirty",
+  "engine": {
+    "lookback": 73,
+    "warmup": 73
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

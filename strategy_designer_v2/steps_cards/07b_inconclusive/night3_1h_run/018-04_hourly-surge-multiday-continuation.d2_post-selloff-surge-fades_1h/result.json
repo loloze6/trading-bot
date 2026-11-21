@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4017276000000001,
+  "findings": {
+    "F1": "The tested shortfall is on the side the idea predicts but too small to show at 5 days: the mean is +0.32 % per case (t 0.74, 559 cases, strength 0.033). On the same cases it is +0.53 % over 24 hours (t 2.51, 572 cases), +0.60 % over 72 hours (t 1.60), and nearly gone at 240 hours (+0.06 %, t 0.08). The fade happens in the first day, and the plan's 5-day horizon dilutes it with four days of noise.",
+    "F2": "Over 24 hours the shortfall is graded the way the idea says. Among surges after a 7-day fall (458 events), the deeper the vol-scaled fall, the lower the next 24-hour return (corr 0.17, t 3.74), and the larger the surge, the lower that return (corr 0.15, t 3.31). In the deepest third of falls the 24-hour shortfall is 1.35 % (t 3.45); in the other two thirds it is about zero (-0.31 % and -0.08 %).",
+    "F3": "At 5 days the effect is mixed across coins and years, which is why the t stays low. The shortfall is +1.84 % on ETH (t 2.15) and +1.13 % on XRP, but -1.40 % on ZEC. By year it runs from +1.57 % in 2025 (t 1.65) to -2.66 % in 2024 (t -2.42, the price rose more than usual).",
+    "F4": "Surges that follow a 7-day rise behave the other way: they continue by +2.2 % above drift over 120 hours (t 2.74, 328 events) and +4.4 % over 240 hours (t 3.47). This gain is not graded by the surge's size (smallest third +3.9 %, largest +1.4 % at 120 hours). It is concentrated in XRP (+8.6 %) and in 2020 and 2024, so it does not support an idea of its own.",
+    "F5": "On size, the 5-day test's total move is -0.33 % per case against a 0.19 % round trip, because the coins' normal rise works against a short. The 24-hour shortfall of 0.53 % is about 2.8 times that cost, and the deepest third's 1.35 % is about 7 times it."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D",
+      "name": "post-selloff surge fades, more coins",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ],
+      "idea": "When a coin's 24-hour return, read at an hourly close, first reaches several times its 30-day average absolute daily return on the upside after its 7-day return before that day was a fall, the price rises less than the coin's usual 5-day return over the next 5 days; the deeper that 7-day fall, the larger the shortfall.",
+      "consequence": "A trader would treat a sharp up day after a week of heavy selling as a relief bounce to fade or ignore, not a breakout to hold for days.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, first reaches several times its 30-day average absolute daily return on the upside after its 7-day return before that day was a fall, the price rises less than the coin's usual 1-day return over the next 24 hours; the deeper that 7-day fall, the larger the shortfall.",
+      "consequence": "A trader would fade a sharp up day after a week of heavy selling for one day only, most strongly after the deepest falls, rather than hold the fade for a week.",
+      "name": "post-selloff surge fades within a day",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades.b1_post-selloff-surge-fades-more-coins",
+    "018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades.b2_post-selloff-surge-fades-within-a-day"
+  ],
+  "no_ideas": null
+}

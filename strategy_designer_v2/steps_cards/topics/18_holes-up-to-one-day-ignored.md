@@ -9,7 +9,7 @@ How long a hole in the data may a backtest window carry before the window is not
 
 ## Seen
 - Before: a window with a hole of more than 3 bars was not run: 3 days on daily bars, but 3 hours on hourly bars,
-  which blocked many hourly windows (`orchestration/duration/8_finer_bars_measure.md`).
+  which blocked many hourly windows (`topics/33_review/duration/8_finer_bars_measure.md`).
 - Built: `default_gap_policy(interval)` ignores holes of up to one day, whatever the bar: 1 bar on daily bars, 6 on 4h,
   24 on 1h.
 

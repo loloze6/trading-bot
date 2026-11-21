@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean 240-bar excess return (return minus normal 240-bar drift) after forecast rises of >= 2 points",
+    "value": 0.005755890959900236,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.1524223482196672
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and positive slope; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of excess return on forecast at signal bar",
+    "value": 0.0008907032675203547,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1148
+  },
+  "decided_by": "t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "The situation is a positive 720-bar close-to-close return (recomputed from prices, the recorded regime used only on the first 720 bars of a window) with a positive raw surge value and a positive forecast; a case is the first bet (forecast rise >= 2 points from its lowest positive level since the last bet, from 0 after a flat) in each 240-bar grid cell counted from each window's first row, and the normal drift is the coin's mean non-overlapping 240-bar return over all its windows."
+}

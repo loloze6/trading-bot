@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 020-03_resistance-breakout-continues-up_1d
+idea tested: 020-03_resistance-breakout-continues-up
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3862 USD
+---
+## Findings
+- **F1:** The book's deepest fall is 50.0 %, and its Calmar of 0.49 fails the 0.75 bar. The fall runs 276 days from w1 to w4, with the book's daily returns summing to -0.63 while the coins' sum to -0.71, so the book rode the coins' shared decline almost in full.
+- **F2:** Every window has a deep fall of its own, from 6 % to 35 % (w22 -35 %, w18 -34 %, w3 -30 %), and every coin's worst fall is 47 % to 73 %. The falls are spread across the record, not confined to one period.
+- **F3:** A break's fate shows on the next day. Among the 895 entries with 10 days of room, the 775 whose next close stays above the broken level gain +1.79 % over 5 days (t 4.25). The 120 that close back below it lose -4.55 % (t -4.79). Measured from the second day's close, breaks still above the level after two days rise +1.38 % over the next 8 days (t 2.40, 680 cases), while those that fell back gain -0.06 % (t -0.07, 215 cases).
+- **F4:** Breaks that fell back by day 2 still gain +0.43 % from day 2 to day 5 (t 0.75), about the same as the breaks that held (+0.36 %, t 1.08). The fall-back's loss lies in the fall-back itself, not in a continued decline after it.
+- **F5:** Breaks made above the coin's 50-day average gain +1.61 % over 5 days (t 2.52, 359 cases), against +0.75 % (t 1.26, 288 cases) for breaks made below it.
+- **F6:** The position's gain per bar grows with the coin's 30-day return, from 0.016 % in the lowest quintile to 0.207 % in the highest. Five-day returns after entries reach +2.29 % in the top 30-day-return quintile, but with the widest spread (sd 15.5 %).
+- **F7:** All entries average +0.73 % over 5 days (t 1.96, 974 entries), but they pass on average through a low of -4.0 % on the way, and 53 % of them end below their entry. The touch-count-times-margin value does not grade the result: its quintiles give +1.1 %, +0.3 %, +1.0 %, -0.5 % and +1.7 %.
+- **F8:** The idea's size covers its cost: the unusual move of +0.31 % per case is 1.6 times the 0.19 % round trip, and the total move of +0.90 % is 4.7 times it. The book fails on its falls, not on its cost.
+
+## Ideas
+- `020-03_resistance-breakout-continues-up.d1_held-breakout-keeps-rising` (from F3, F4, F7, F1): When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 8 days, only once its closes over the following 2 days stay above that level, and the further above the level those closes stay, the larger the rise.
+- `020-03_resistance-breakout-continues-up.d2_breakout-above-rising-trend` (from F5, F6, F1, F2): When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its close is above its 50-day average, and the further above that average it is, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -9,11 +9,14 @@ Step 7 is a set of analysis lines, each with its own objective and its own card:
 | 7.c | `../07c_rejected/` | step 5: rejected | why the idea was rejected, and what other idea could be confirmed |
 | 7.d | `../07d_not_profitable/` | step 6: not profitable enough | why the book does not pay, and what idea would make it pay |
 | 7.e | `../07e_profitable_unproven/` | step 6: profitable enough, step 5: not confirmed | what the book really earns from |
-| 7.f | `../07f_real_and_profitable/` | step 5: confirmed, step 6: profitable enough | what could break the idea and its book |
 | 7.g | `../07g_patterns/` | none | what patterns the bars and the book show |
 
 ## Input (every line)
-One backtest record (its bars, its trades, its book day by day), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book.
+One backtest record (its bars, its trades, its book day by day), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book, **the idea's size and what one
+trade cost the backtest** (operator, 2026-11-20): step 5's `size.json` ("not measured" when the verdict has none), and
+the cost of a trade the backtest applied, read from its record (`../common/measures.md`, "The cost of a trade"). Why:
+of 103 confirmed ideas that did not pay, 53 had a move per case smaller than the cost of a trade, and none of those
+paid (`../runs/RETRO_DIAGNOSIS_RUN.md`); a line that does not see it proposes more ideas of the same small kind.
 
 ## Output (every line)
 One analysis per backtest: findings, then ideas, each idea in step 2's format, or "no ideas" with the reason.
@@ -101,9 +104,17 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 ## Who judges the output
 The workflow: a line is relevant when one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to the line (each line's card says which). The operator reads the findings ("are they true and important?"). Code checks the shape.
 
+## Done when
+Each line's own card says when the line is done. The parts every line shares (the call, the explorations, the
+checks in code, the files) are done when, on two exercises, the lines' analyses meet the quality criteria above.
+Status: **met** for the shared parts and lines 7.a, 7.b, 7.d, 7.g (`validation/reading.md`); 7.c and 7.e in their own
+folders' validation.
+
 ## To observe in the tests
 - **Durations in ideas.** Settled (operator, 2026-11-15): an idea states its time in real time (its horizon, and the past period of its situation), never in bars; levels and thresholds stay out (`../common/idea_definition.md`). Before: Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`validation/reading.md`).
 - **How many looks at the data** a line takes before its ideas.
+- **Ideas after a move too small for its cost** (since 2026-11-20): do they make the move larger (a longer horizon, a
+  stronger situation), and do those ideas pay when tested? First read: `../runs/STEP7_SIZE_AB_RUN.md`.
 
 ## What the lines do not do
 They do not test an idea, write a test plan, change a backtest or a rule, or decide what is done with their ideas.

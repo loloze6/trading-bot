@@ -1,0 +1,6 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: profitable enough [Sharpe 3.467; Sharpe minus holding's Sharpe 0.1314; Calmar 19.25]
+006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: not profitable enough [Sharpe 3.111; Sharpe minus holding's Sharpe -0.6399; Calmar 8.403]
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: not profitable enough [Sharpe 2.687; Sharpe minus holding's Sharpe -1.027; Calmar 5.594]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1d: not profitable enough [Sharpe 3.185; Sharpe minus holding's Sharpe -0.5662; Calmar 11]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: not profitable enough [Sharpe 3.16; Sharpe minus holding's Sharpe -0.02981; Calmar 11.81]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d: not profitable enough [Sharpe 3.421; Sharpe minus holding's Sharpe -0.3305; Calmar 9.899]

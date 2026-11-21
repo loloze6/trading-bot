@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5310216999999999,
+  "findings": {
+    "F1": "The tested signal is real but the book loses on fees: the bars stamped 15:00 and 16:00 gain +3.49 bp and +2.21 bp per held bar (15,205 and 16,018 bars), yet gross gain summed per coin-window is 0.061 against 0.134 in fees, because the position is opened and closed every day (Sharpe -1.98).",
+    "F2": "After a large 1-hour move a coin reverses, and more so when volatility is high: the slope of the next hour's return on the volatility-normalised 1-hour return rises steadily in size across 24-hour-volatility quintiles, from +0.17 bp (t 0.9) in the lowest to -7.46 bp (t -11.8) in the highest; on a non-overlapping 2-hour grid the highest tercile gives -9.41 bp (t -11.9, 68,851 cases).",
+    "F3": "That high-volatility reversal holds coin by coin and year by year: it is negative in all six coins (t from -1.87 for ETH to -6.60 for LTC) and in all eight years, significant in seven of them (2022 t -0.83).",
+    "F4": "Around midday UTC the 3-day trend reverses rather than continues: for the bar stamped 12:00 the slope of the 2-hour excess return on the 3-day standardised return is -5.89 bp (t -5.3, 16,829 cases); it is negative in all six coins (t from -0.68 to -4.46) and in seven of eight years, with five years at t \u2264 -2.4; the neighbouring hours 11:00 (t -4.3) and 13:00 (t -3.4) agree.",
+    "F5": "Late in the UTC evening the 3-day trend continues: for the bar stamped 22:00 the slope is +5.61 bp (t 5.5, 16,778 cases), with 21:00 at t 3.1 and 23:00 at t 3.0; it is positive in all six coins (t from 1.6 to 2.9) and in seven of eight years.",
+    "F6": "The bars stamped 21:00 and 22:00 UTC rise on average by +5.5 bp (t 6.9) and +4.4 bp (t 5.8), positive in all six coins (t from 3.0 to 4.6) and in seven of eight years (2022: -2.2 bp, t -1.5)."
+  },
+  "ideas": [
+    {
+      "idea": "Over the next 2 hours, a coin moves against its last hour's return, and the move back is larger the larger that 1-hour return is relative to the coin's own 1-day volatility, most of all when that 1-day volatility is high.",
+      "consequence": "In volatile hours, fade a sharp 1-hour spike in proportion to its size instead of chasing it.",
+      "name": "high-volatility hourly spike reversal",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "Over the 2 hours from 13:00 UTC, a coin moves against its own 3-day return, and the larger that 3-day return, the larger the move against it.",
+      "consequence": "Lean against the 3-day trend in the early UTC afternoon rather than with it.",
+      "name": "midday 3-day trend reversal",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    },
+    {
+      "idea": "Over the 2 hours from 23:00 UTC, a coin moves in the direction of its own 3-day return, and the larger that 3-day return, the larger the move with it.",
+      "consequence": "Add with the 3-day trend late in the UTC evening, where the continuation is as strong as at the 16:00 settlement.",
+      "name": "late-evening trend continuation",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g1_high-volatility-hourly-spike-reversal",
+    "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g2_midday-3-day-trend-reversal",
+    "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g3_late-evening-trend-continuation"
+  ],
+  "no_ideas": null
+}

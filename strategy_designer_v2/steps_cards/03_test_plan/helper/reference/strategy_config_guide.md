@@ -28,6 +28,13 @@ On every completed candle, for one symbol, the engine does this:
    outside the strategy config: it rejects a rebalance whose
    size `abs(target - actual allocation)` is below `min_allocation_change` (default 0.2, that is 2 forecast points).
    There is no upper limit. The key `strategies.min_allocation_change` overrides the minimum for this strategy.
+6. **The holding period.** The key `strategies.min_holding_bars` (an integer >= 1), the idea's horizon in bars: each
+   bet is held for that many bars. A bet is a rise of the forecast on its own side of at least `min_allocation_change`
+   (2 forecast points by default), from its lowest level since its last bet; its size is that rise's share of the
+   bar's sized target. A long position does not go below the sum of its long bets still within their bars (at most the
+   position); a short one, symmetrically. The sizing alone (volatility) makes no bet. Rises and new positions are bought
+   at once. Forced flats (the risk gate, a large data gap) and a window's end are never held. Absent: the bot trades
+   whenever the risk layer allows (`common/forecast.md`, 7; code: `trading-bot/core/holding_period.py`).
 
 The forecast is 0.0 until the strategy is ready (see "The forecast for each regime").
 
@@ -91,6 +98,7 @@ Keys of `strategies`:
 |---|---|---|
 | `regimes` | yes | regime name to forecast config, or `null` (flat). A regime that is absent behaves like `null`; list all four for clarity |
 | `min_allocation_change` | no | non-negative number; overrides the risk layer's minimum rebalance size for this strategy (default 0.2) |
+| `min_holding_bars` | no | integer >= 1, the idea's horizon in bars: each bet (a rise of the forecast of at least the band) is held that many bars (validator V20) |
 | `warmup` | no | accepted and IGNORED: the strategy computes its own `required_bars`. Do not set it |
 
 **Unknown keys are silently ignored** at every level: an extra top-level key, an extra key in a component spec,
@@ -459,9 +467,10 @@ is a regime, not a component (see "The design principle").
 
 The config describes a forecast per bar. It has no key for:
 
-- **Exits, stops, take-profit, trailing stops, time-based holds.** Position management is not configurable: the bot
-  simply moves the allocation toward `forecast / 10` whenever the risk layer allows.
-- **Position state.** A strategy cannot see its position, entry price, PnL or bars held. Only a few components keep
+- **Exits, stops, take-profit, trailing stops.** Position management is not configurable beyond the holding period
+  (`min_holding_bars`): the bot moves the allocation toward `forecast / 10` whenever the risk layer allows and no
+  holding period runs.
+- **Position state.** A strategy's forecast cannot see its position, entry price, PnL or bars held. Only a few components keep
   their own internal state (`EfficiencyRatioRegimeComponent` and `VolatilityPercentileRegimeComponent` keep a
   smoothing history; `MacdHistogramCrossoverComponent` and `GatedSmaTrendLongOnlyComponent` remember prior bars);
   nothing else does.

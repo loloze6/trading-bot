@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses_1h
+idea tested: 017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3551 USD
+---
+## Findings
+- **F1:** The book's gain is too small for its costs: over all bars the position earned 0.16 bps per bar before costs and paid 0.35 bps per bar in fees, and its 32,700 trades lost 0.28 to 0.47 % each before fees, 0.38 to 0.57 % after. The book lost money in 15 of 24 windows (Sharpe -0.70, mean daily return -5.0 bps).
+- **F2:** Across all cases, the move in the forecast's direction is 9.6 bps over 8 hours (t 4.05, 20,203 cases). The cost of a round trip is 19 bps, so the average case pays only half its trade, as the idea's size of 0.6 times the cost also shows.
+- **F3:** The move back is concentrated in the largest pre-settlement moves. The top decile by size of the 2-hour move (a mean move of 486 bps) is followed by 48.8 bps over 8 hours and 78.8 bps over 24 hours, and deciles 7 to 8 (169 to 242 bps) by 12.7 to 19.3 bps over 8 hours. The bottom seven deciles (moves of 7 to 125 bps) give -5.3 to +7.2 bps over 8 hours and mostly negative values over 16 and 24 hours.
+- **F4:** The same holds by forecast size: forecast deciles 0 to 4 give -4.3 to +9.9 bps over 8 hours and -25 to -2 bps over 24 hours. Deciles 6 to 9 give 15 to 32 bps over 8 hours and 20 to 58 bps over 24 hours (top decile 57.9 bps).
+- **F5:** Volatility carries the effect only at its top. The quintile whose 24-hour volatility is 2.4 times its 30-day average gives 22.3 bps over 8 hours and 35.9 bps over 24 hours. The quintiles at 1.0 to 1.3 times give 0.7 to 7.5 bps over 8 hours and -13 to 0 bps over 24 hours, so the "at or above average" regime admits mostly cases that do not pay.
+- **F6:** In the largest cases the move back lasts beyond 8 hours. The top decile gives 48.8 bps at 8 hours and 78.8 bps at 24 hours, and the top forecast decile 31.6 then 57.9 bps. Over all cases, though, 16 hours (-1.6 bps, t -0.50) and 48 hours (t 1.18) show no move.
+- **F7:** BTC shows no reversal: -0.8 bps over 8 hours and -4.3 bps over 24 hours, on pre-moves averaging 90 bps. The other coins give 6.8 to 16.5 bps over 8 hours on pre-moves of 117 to 169 bps, so the coins with larger settlement moves reverse more.
+- **F8:** Only trades held 4 to 8 hours earn before fees (+0.28 % gross, 12,288 trades). Trades held over 8 hours lose 0.75 to 2.07 % gross (10,201 trades), and trades closed within 4 hours lose 0.17 to 0.21 % (10,231 trades).
+
+## Ideas
+- `017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses.d1_large-settlement-moves-reverse-daylong` (from F2, F3, F4, F5, F6): The return over the 24 hours after each funding settlement runs opposite to the return over the 2 hours before it, only while the coin's 24-hour volatility is high against its 30-day average. The move back grows faster than the pre-settlement move itself, so the largest 2-hour moves into settlement, in the most volatile markets, are followed by moves back of several tenths of a percent.
+- `017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses.d2_raw-settlement-move-size-reverses` (from F3, F6, F7): The return over the 24 hours after each funding settlement runs opposite to the return over the 2 hours before it, and the move back is larger the larger that 2-hour move is in percentage terms, whatever the coin's usual size of move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

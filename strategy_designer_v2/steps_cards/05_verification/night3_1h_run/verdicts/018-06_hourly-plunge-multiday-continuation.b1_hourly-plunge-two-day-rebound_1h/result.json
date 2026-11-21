@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 48-bar excess return over coin drift at forecast-rise cases",
+    "value": 0.0018357020010426215,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.9754014175772856
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast at case, 48-bar excess return) > 0",
+    "value": 0.02743416962667323,
+    "passed": true
+  },
+  "counts": {
+    "cases": 5958
+  },
+  "decided_by": "The t of the mean excess return lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is a bet bar (forecast rising >= 2 points above its lowest positive level since the last bet, reset to 0 after a flat bar), the first in each 48-bar grid cell counted from the window's first row, kept only when 48 bars remain in the window; the drift is the coin's mean over grid 48-bar returns of all its windows."
+}

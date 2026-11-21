@@ -8,7 +8,7 @@ Opened: 2026-11-18 (finer bars)
 Where does a backtest on finer bars spend its time, and what can be removed without changing a result?
 
 ## Seen
-- Measured first (`orchestration/duration/8_finer_bars_measure.md`), then three fixes, each proven by four backtests
+- Measured first (`topics/33_review/duration/8_finer_bars_measure.md`), then three fixes, each proven by four backtests
   with identical files (192 + 24 + 4 + 1,036):
   1. the history table built from typed columns;
   2. the warm-up checked once, on a copy of the real strategy;
@@ -35,4 +35,4 @@ Recommended: as done.
 Closed. Lives in the engine.
 
 ## Links
-Commits f24796af, 3a8c95e1, ee2701d2; `orchestration/duration/9_data_and_table_proof.md`.
+Commits f24796af, 3a8c95e1, ee2701d2; `topics/33_review/duration/9_data_and_table_proof.md`.

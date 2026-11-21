@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of demeaned 3-bar forward return on volratio, trending grid bars",
+    "value": 0.009921069767618326,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 1.4736509736335344
+    },
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; at least 100 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "trending-regime grid cases": 644
+  },
+  "decided_by": "The slope's t = 1.47 lies between -2 and +2 (inconclusive rule).",
+  "reading": "The situation is a 30-bar close-to-close return above 0 recomputed inside each window (active bars in a window's first 30 bars, where it cannot be computed, are left out unless no other active bar exists, then the recorded regime is used), the expected side is long; the main sample is bars with recorded regime 'trending' on each window's 0,3,6,... grid, and the coin's mean 3-bar return is taken over the same grid on all bars of all its windows."
+}

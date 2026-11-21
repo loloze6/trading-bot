@@ -1,0 +1,28 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of -(forecast/10) x drift-adjusted 10-bar return on short grid bars",
+    "value": -0.011778630934082376,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -2.2984531200433316
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "drift-adjusted 10-bar fall, larger minus smaller |forecast| half (Welch t 1.312)",
+    "value": 0.010884426445305816,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with forecast below 0": 1164,
+    "larger-forecast half": 582,
+    "smaller-forecast half": 582
+  },
+  "decided_by": "The main mean is < 0 with t <= -2: the coin rises beyond its drift after these closes.",
+  "reading": "The grid is positions 0,10,20,... of each window with the 10-bar return kept inside it, the drift is each coin's mean 10-bar return on that grid over all its windows, the larger half is |forecast| strictly above the median (ties go to the smaller half), and the plan's 100-case minimum is applied as 'not observable'."
+}

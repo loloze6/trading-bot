@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall_1d
+idea tested: 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3795 USD
+---
+## Findings
+- **F1:** The book's loss is almost entirely the market's own rise working against its shorts, with no timing. Its mean daily return is -0.000103, of which -0.000104 is the market part and +0.0000008 is timing. The idea's size confirms it: the unusual move is +0.70 % per case (strength -0.004, 112 cases), while the coin's normal drift against the short is -4.15 %, for a total move of -3.45 %, which is -17.9 times the 0.19 % cost of a trade.
+- **F2:** The 138 bars where the book opens a short are followed by a coin rise. The mean 26-day return is +3.4 % (t 1.66, 138 independent entries), the median is +0.1 % and only 49 % of shorts win, so the downward cloud break predicts no fall on these coins.
+- **F3:** The deeper 26-day fall that the idea sizes on does not help. The Spearman correlation of the 26-day forward return with the forecast is -0.07 and with the 26-day return is +0.06; the deepest 26-day-fall quartile is followed by +0.07 % and the shallowest by +4.0 %. The verdict's own slope is negative (-0.0029).
+- **F4:** The book loses where the coin rises. Across coin-windows, the quartile where the coin rose most (summed daily return +0.86) has a book of -0.035, and the quartile where the coin fell most (-0.43) has a book of +0.030.
+- **F5:** The loss is concentrated in large adverse moves. 14 % of the 295 trades lose more than 20 % before fees, and trades lasting 15 to 25 days average -18.0 % net. Trades held past 27 days, closed late in an established slide, average +5.7 %.
+- **F6:** Shorts opened while the coin was still falling over the last 10 days fare better than shorts opened after a rebound. In the two lowest 10-day-return quartiles, 61 % and 63 % of shorts win and the coin's 26-day return is +1.3 % and -1.5 % (about 31 and 30 cases each). In the two highest quartiles only 40 % and 33 % win and the coin rises 6.2 % and 8.1 % (Spearman 0.12).
+- **F7:** Shorts opened near the 60-day high lose most. In the quartile closest to that high, the coin rises 4.9 % over 26 days and only 31 % of shorts win. In the quartile deepest below it, 57 % of shorts win.
+- **F8:** On the true cloud crosses I recomputed, the 60-day return strongly predicts the next 26 days in its own direction, in both directions of cross, but the samples are small.
+
+## Ideas
+- `021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.d1_cloud-breakdown-in-fresh-slide` (from F2, F3, F6, F7): After a daily close that crosses down from above a coin's Ichimoku cloud to below it, the coin falls over the next 26 days, only while its 10-day return is still a fall, and the deeper that 10-day fall at the cross, the larger the fall that follows.
+- `021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.d2_cloud-cross-follows-60-day-trend` (from F1, F4, F8): After a daily close that crosses a coin's Ichimoku cloud in either direction, the coin moves over the next 26 days in the direction of its 60-day return, and the larger that 60-day return at the cross, the larger the move that follows in its direction.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

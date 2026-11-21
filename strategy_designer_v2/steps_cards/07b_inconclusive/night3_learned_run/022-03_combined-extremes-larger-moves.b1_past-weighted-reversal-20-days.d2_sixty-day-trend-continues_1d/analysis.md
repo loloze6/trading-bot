@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues_1d
+idea tested: 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3873 USD
+---
+## Findings
+- **F1:** The 60-day trend's effect is on the side the idea predicts but weakens past 10 days. On each horizon's non-overlapping grid, the forecast-weighted unusual move has t 2.14 over 5 days (6,627 cases) and t 2.46 over 10 days (3,280 cases), against t 1.13 over 20 days (1,606 cases, the test's own measure), t 0.64 over 40 days and t 0.90 over 60 days. Strength is 0.048 over 10 days against 0.033 over 20 days.
+- **F2:** Over the tested 20 days the idea has almost no grading. The Spearman correlation between the forecast and the coin's unusual 20-day move is -0.010. Across the abs(forecast) quartiles the mean unusual move runs 0.47 %, 2.02 %, 1.71 %, 0.70 %, so the largest quartile is no better than the smallest; this is why the supporting check fails (-0.036 %). Over 10 days the largest abs(forecast) quartile carries the most: 1.41 %, t 2.15, strength 0.079, against 0.17 % to 1.10 % in the other three.
+- **F3:** The 20-day effect is absent when the coin is calm and shows only when it is volatile. In the lowest tercile of each coin's own 30-day volatility, the unusual move is +0.27 % (t 0.24, strength 0.018, 439 cases). In the middle tercile it is +3.07 % (t 2.18, strength 0.107), and in the highest +3.50 % (t 1.58, strength 0.087). Over 10 days the highest tercile carries the strongest effect: +2.00 %, t 2.53, strength 0.102, Spearman 0.061, about twice the lower terciles' 0.056 to 0.058.
+- **F4:** The effect is mixed across years, which drowns the pooled 20-day t. The unusual move is +5.4 % in 2019 (t 3.35), +2.7 % in 2022 (t 1.99) and +3.8 % in 2025 (t 1.73). It is -4.2 % in 2020 (t -1.96) and -2.7 % in 2023 (t -1.95).
+- **F5:** The effect is also mixed across coins. Over 20 days, 11 of 15 coins show a positive unusual move, but no coin reaches t 1.3. AAVE (-3.6 %), UNI (-2.4 %) and XRP (-1.2 %) go the other way.
+- **F6:** The size is large enough to pay if the effect were firm. Over 20 days the total move is +0.93 % per case, 4.2 times the 0.22 % cost of a buy and a sell. Over 10 days it is +0.86 %, about 3.9 times. Little more data is available: the test already used all 15 coins and all four folds, and the remaining coins have only fold D.
+
+## Ideas
+- `022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues.b1_sixty-day-trend-ten-days` (from F1, F2, F6): The larger a coin's 60-day return, the more the coin moves in that same direction over the next 10 days.
+- `022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues.b2_volatile-sixty-day-trend-continues` (from F1, F3, F6): The larger a coin's 60-day return, the more the coin moves in that same direction over the next 10 days, only while the coin's 30-day volatility is high against its own past.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

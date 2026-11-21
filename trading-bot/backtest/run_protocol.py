@@ -1547,6 +1547,11 @@ def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict |
     bars, 7.9% active, 139 episodes -> the full bootstrap path): 15.2s per
     symbol. Against the 3.5-52 MINUTES E-039 S1 measured for the backtest that
     must already have run before this code is reached, that is noise.
+
+    ONLY THE METHOD IS COMPUTED (topic 33, 2026-11-20). Of this result, only its method label is ever read or
+    written (protocol_summary's episode_blocked_significance_by_symbol, read by the campaign's pre-registration
+    check); its numbers were computed and dropped, and unseeded. Measured on an hourly book over 24 windows: 87 s of
+    a 307 s call. So the call asks for the method alone (method_only): the same label, decided before any number.
     """
     if runs_root is None or not rows:
         return None
@@ -1590,6 +1595,7 @@ def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict |
         block_size=bars_per_day(timeframe),
         n_resamples=es_cfg.get('n_resamples', _es._DEFAULT_N_RESAMPLES),
         expected_step=episode_expected_step,
+        method_only=True,
     )
 
 

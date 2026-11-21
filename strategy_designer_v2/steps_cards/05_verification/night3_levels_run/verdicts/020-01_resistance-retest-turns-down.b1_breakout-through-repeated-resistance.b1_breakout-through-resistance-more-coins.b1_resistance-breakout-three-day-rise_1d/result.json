@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar return over cases (return minus coin's 3-bar drift), pooled",
+    "value": 0.0018962252634365903,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.329554171217481
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 3-bar return on post_pipeline_value at case bar",
+    "value": 0.0003434027358748771,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4748,
+    "active bars": 6651
+  },
+  "decided_by": "The t of the mean excess 3-bar return lies between -2 and 2.",
+  "reading": "Cases are long-side forecast rises of at least 2 points (from the lowest long level since the last bet, 0 after flat), the first per 3-bar grid cell of each window, dropped when the 3-bar return leaves the window; drift is the coin's mean non-overlapping 3-bar return over all its windows."
+}

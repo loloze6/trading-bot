@@ -11,6 +11,7 @@ Evidence:
 - Counts: in-zone non-overlapping blocks: 376, non-overlapping blocks: 724
 - Decided by: Slope t lies between -2 and 2: inconclusive.
 - Reading: The window's mean 24-bar return is taken as the mean of that window's non-overlapping grid-block returns (blocks at positions 0, 24, 48, ... with a full 24 bars ahead in the window), the slope t is the OLS slope over its standard error, and the supporting check passes when the share is above 50%.
+- Size: unusual move +0.02 % per case over 24 bars, 0.006 of the coin's usual move (2.89 %); normal drift in its direction -0.04 %, total -0.02 %; 148 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/002-06_short-below-long-sma-drift-down_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/002-06_short-below-long-sma-drift-down_1h`
 Measure: `measure.py`

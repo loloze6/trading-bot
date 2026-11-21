@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases: 2664, active bars: 2711
 - Decided by: Mean position-weighted excess return is positive with t >= 2 and the regression slope is above 0.
 - Reading: Cases are all bars whose coming bar is Monday with forecast > 0 and close[t+2] in the same window (one per coin per week by construction), the coin mean daily return is pooled over all its windows, the slope is an OLS of the unweighted excess 2-bar return on forecast, and the plan's 'fewer than 100 cases' rule is reported as not observable.
+- Size: unusual move +0.36 % per case over 2 bars, 0.054 of the coin's usual move (7.48 %); normal drift in its direction +0.31 %, total +0.68 %; 2253 cases
 Plan: `steps_cards/03_test_plan/night_run/plans/011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday_1d.md`
 Record: `steps_cards/04_backtest/night_run/backtests/011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday_1d`
 Measure: `measure.py`

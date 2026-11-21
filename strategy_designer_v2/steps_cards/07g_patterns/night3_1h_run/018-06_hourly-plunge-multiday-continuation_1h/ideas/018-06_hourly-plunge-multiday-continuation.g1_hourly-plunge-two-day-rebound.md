@@ -1,0 +1,17 @@
+---
+brief: 018_daily-condition-caught-on-the-hour
+source-idea: 018-06_hourly-plunge-multiday-continuation
+line: 7.g patterns
+backtest: 018-06_hourly-plunge-multiday-continuation_1h
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC
+bar: 1h
+period: folds A, B, C, D
+---
+Idea: When a coin's 24-hour return, read at an hourly close, is a drop of several times its 30-day average absolute daily return, the price rises over the next 2 days by more than the coin's normal 2-day drift. The larger the 24-hour drop in those multiples, the larger the rebound.
+Consequence: A trader buys a coin's sharpest 24-hour falls for a two-day rebound, rather than shorting them for a continuation.
+Why:
+- F1: Large 24-hour drops are followed by a rebound, not by a further fall. When the 24-hour return reaches -3 or more multiples of its 30-day average absolute daily return, the next 24 hours rise by 201 bps in total and 187 bps unusual (strength 0.38, t 4.6, 376 independent cases). The next 48 hours rise by 277 bps in total and 250 bps unusual (strength 0.39, t 4.1, 183 cases).
+- F2: The rebound is graded by the size of the drop. On down days, the Spearman correlation between the drop in multiples and the next move's strength is positive at every horizon: 0.073 over 12 hours (16079 cases), 0.094 over 24 hours (8040), 0.074 over 48 hours (3988) and 0.087 over 72 hours (2647). The 24-hour unusual move climbs from -28 bps for drops of 0 to 0.5 multiples, to +32 to +47 bps for 1 to 2 multiples, to +187 bps beyond 3.
+- F3: The rebound is broad. For 24-hour drops beyond 1 multiple, all 6 coins rise over the next 24 hours by strength 0.09 to 0.16 (t 1.8 to 3.3, about 500 cases each). All 8 years are positive (strength 0.03 to 0.26). 71 % of the 144 coin-windows have a positive mean.
+- F4: The rebound is short. In the deepest decile of 24-hour drops, the next 120 hours have a strength of -0.01 (t -0.2, 314 cases), against +0.15 (t 4.8, 1641 cases) over the next 24 hours. The tested 5-day short therefore sat through the bounce and then earned nothing (strength 0.001, t 0.04).
+- F7: The rebound's size is large against the cost of a trade. Beyond 3 multiples it is about 10 times the 19 bps round trip over 24 hours, and 14 times over 48 hours. Between 1 and 2 multiples, the unusual move of 32 to 47 bps is still about 2 times the cost.

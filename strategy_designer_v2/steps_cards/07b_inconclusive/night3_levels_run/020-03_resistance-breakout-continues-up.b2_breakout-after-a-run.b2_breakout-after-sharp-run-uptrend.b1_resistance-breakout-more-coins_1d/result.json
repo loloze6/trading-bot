@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5854398,
+  "findings": {
+    "F1": "The tested effect is on the predicted side but small and skewed. The 5-day excess return is +0.43 % per case with t 1.42 over 2511 cases, a strength of only 0.031 against F10's usual 0.05. The median case is -1.17 % and only 43 % of cases end above the coin's normal drift, so the mean rests on a minority of large rises.",
+    "F2": "The effect sits in the strongest forecasts only, and the test's unweighted mean dilutes it. By forecast quartile the 5-day excess is -0.27 % (t -0.58), -0.52 % (t -1.10), +0.64 % (t 0.83) and +1.82 % (t 2.90, 637 cases). The top quartile has a strength of 0.149, about 3 times the usual 0.05. The rank correlation of forecast with outcome over all cases is only 0.026.",
+    "F3": "Of the forecast's two parts, the break reading (touch count \u00d7 margin above the level) separates most sharply. Its top quartile gains +2.14 % over 5 days (t 2.44, 645 cases); the three lower quartiles gain -0.36 %, -0.09 % and +0.03 %, all with |t| < 0.8. The 10-day run grades less cleanly: its quartiles give -0.54 %, -0.19 %, +1.44 % and +0.96 %, and the top is no better than the third.",
+    "F4": "The effect is mixed across periods even with the 60-day return positive. Over all cases, 2018 gives -4.3 % (t -2.48, 69 cases) and 2022 gives -3.8 % (t -4.12, 219 cases). Against that, 2019 gives +2.1 % (t 2.07), 2020 +1.2 % (t 1.88) and 2024 +1.9 % (t 2.77). In the top forecast quartile 2018 and 2022 are still negative (-14.6 % on 8 cases, -3.6 % on 66 cases), so the bear years drown the rest.",
+    "F5": "The effect is spread thinly across coins rather than carried by a few. Only ZEC is significant on its own (+2.6 %, t 2.07), TAO is significantly negative (-4.3 %, t -2.34 on 23 cases), and 68 % of coins have a positive top-quartile mean.",
+    "F6": "A longer horizon does not clear the bar. At 20 days, on non-overlapping cases, the excess is +1.61 % with t 1.50 over 998 cases (strength 0.057). The top forecast quartile at 20 days gives +3.66 % (t 1.96), short of its 5-day t of 2.90.",
+    "F7": "Size covers the cost. The total move per case (+1.17 %) is 5.2 times the 0.22 % round trip and the unusual move 1.9 times. In the strongest breaks the unusual move is about +1.8 to +2.1 %, roughly 8 to 10 times the cost. The test already used all 19 coins on all four folds, so no more daily data is available."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its 60-day return is positive, and the more times that level turned the price down and the farther the close sits above it, the larger the rise, the move showing mainly in the breaks that clear the most-defended levels by the widest margin.",
+      "consequence": "A trader would buy only the clearest breaks of the most-defended levels in a rising quarter, and refuse the marginal breaks that make up most of the signals.",
+      "name": "strongest resistance breaks continue",
+      "from": "F1, F2, F3, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its 60-day return is positive and its 365-day return is positive, and the larger its 10-day return before the break, the larger the rise.",
+      "consequence": "A trader would buy breaks of defended levels inside a rising year and refuse them in a bear year, where a positive quarter is only a rebound.",
+      "name": "breakouts inside rising years",
+      "from": "F4, F1, F7",
+      "refs": [
+        "F4",
+        "F1",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins.b1_strongest-resistance-breaks-continue",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins.b2_breakouts-inside-rising-years"
+  ],
+  "no_ideas": null
+}

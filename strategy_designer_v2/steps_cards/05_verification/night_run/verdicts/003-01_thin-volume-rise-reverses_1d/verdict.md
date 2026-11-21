@@ -11,6 +11,7 @@ Evidence:
 - Counts: active grid cases: 999, top 20% cases: 200
 - Decided by: The main measure's t is strictly between -2 and 2.
 - Reading: The coin's mean 5-bar return is the mean over all its non-overlapping grid bars (positions 0,5,10,... with a full 5-bar return inside the window) in all windows, the top 20% is the ceiling of 0.2 x the active grid cases ranked by most negative forecast, and the plan's 'fewer than 100 active grid cases' is applied as the minimum count giving 'not observable'.
+- Size: unusual move +0.52 % per case over 5 bars, 0.044 of the coin's usual move (10.60 %); normal drift in its direction -0.58 %, total -0.06 %; 2427 cases
 Plan: `steps_cards/03_test_plan/night_run/plans/003-01_thin-volume-rise-reverses_1d.md`
 Record: `steps_cards/04_backtest/night_run/backtests/003-01_thin-volume-rise-reverses_1d`
 Measure: `measure.py`

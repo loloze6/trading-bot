@@ -1,0 +1,56 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "rev_weighted",
+            "class": "strategies.strategy_components.PastPredictivePowerWeightedCompositeComponent",
+            "params": {
+              "reversal_period": 1,
+              "z_window": 365,
+              "corr_lookback": 365,
+              "horizon": 5,
+              "weighting": "single",
+              "signal": "reversal"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 455,
+                  "min_periods": 114
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 20
+  }
+}

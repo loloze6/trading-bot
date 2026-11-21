@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 26-bar excess return over the coin's mean",
+    "value": 0.09431074377835844,
+    "statistic": {
+      "name": "t of the mean of forecast-weighted excess returns",
+      "value": 1.7472742945797053
+    },
+    "threshold": "t >= 2 (confirm, with positive mean) or t <= -2 (reject, with negative mean), at least 50 independent cases"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation forecast vs excess return > 0",
+    "value": -0.026672930196972613,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 277
+  },
+  "decided_by": "t between -2 and 2 (or not computable), which the plan calls inconclusive.",
+  "reading": "Situation checked on active bars where the cloud top (recomputed from the window's prices, 9/26/52 spans displaced 26) and the 26-day slope (recorded cloud_slope raw value, else recomputed from the cloud midpoint) are both computable; cases are grid bars 0,26,52,... of each window with forecast > 0 and a 26-bar forward return inside the window; the coin's mean is the mean of its non-overlapping 26-bar grid returns over all its windows; the t-statistic is the ordinary t of the mean of the per-case forecast x excess-return products."
+}

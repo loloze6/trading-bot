@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 26-bar unusual move (return minus drift, short direction), before costs",
+    "value": 0.015115956414044968,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6892438527493053
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "slow-fall half minus fast-fall half excess return (26-bar return minus drift)",
+    "value": -0.11621430250825314,
+    "passed": true,
+    "welch_t": -2.702872894300212
+  },
+  "counts": {
+    "cases over all coins and windows": 156,
+    "slow-fall half": 78,
+    "fast-fall half": 78
+  },
+  "decided_by": "Inconclusive: the main t lies between -2 and 2 and no reject rule is met.",
+  "reading": "Cases are grid bars (positions 0, 26, 52, ... of each window with a close 26 bars later in the same window) with regime 'trending' and forecast < 0, drift is each coin's mean non-overlapping 26-bar return over all its windows, the slow-fall half is slow_fall raw value strictly above the cases' median (ties go to the fast half), and the plan's 'fewer than 30 cases' is applied as the minimum count."
+}

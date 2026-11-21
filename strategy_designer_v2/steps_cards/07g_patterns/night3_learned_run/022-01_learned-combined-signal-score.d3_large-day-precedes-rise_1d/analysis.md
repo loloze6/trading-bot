@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 022-01_learned-combined-signal-score.d3_large-day-precedes-rise_1d
+idea tested: 022-01_learned-combined-signal-score.d3_large-day-precedes-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3865 USD
+---
+## Findings
+- **F1:** On daily bars a coin's 1-day return, scaled by its usual daily move, is followed by a reversal the next day. The top third of scaled returns is followed by -0.13 % excess and the bottom third by +0.29 %: top minus bottom -0.42 %, Welch t -4.11, on 14356 non-overlapping cases. The Spearman rho is -0.082, and it is negative in both halves of the windows (w1-12: -0.110 on 7174 cases; w13-24: -0.059 on 7182).
+- **F2:** The next-day reversal is graded inside down days only. Among down days, the largest third of falls is followed by +0.53 % excess next day against -0.05 % for the smallest third (difference +0.59 %, Welch t 4.13, rho 0.078, 7056 cases). Among up days the largest third against the smallest differs by only +0.11 % (t 0.84, 7286 cases). The largest falls' fifth is followed by +0.50 %, about 2.6 times the 0.19 % this backtest charged for a round trip.
+- **F3:** The tested idea's 5-day lean after large days is carried by large up days, not large down days. The top fifth of signed scaled 1-day returns is followed by +1.43 % excess over 5 days (t 2.78, 540 cases), the bottom fifth by +0.18 % (t 0.46, 540). Within up days, the largest third against the smallest differs by +1.31 % (t 1.68, 1316 cases); within down days by +0.17 % (t 0.28, 1381).
+- **F4:** The 5-day rise after large up days is not the next day's move. From the close one day after the signal to day 5, the top fifth still earns +1.30 % excess against +1.51 % from the signal's close. Signed top-minus-bottom fifths differ by similar amounts in both halves of the windows: +1.48 % (t 2.00, 1344 cases) and +1.58 % (t 1.55, 1355).
+- **F5:** The 5-day continuation after large up days is concentrated in the more volatile coins. Signed top-minus-bottom fifths over 5 days are +3.51 % on XRP (t 1.87) and +3.52 % on ZEC (t 1.54), against +0.27 % on BTC, +0.40 % on ETH and +0.52 % on LTC (|t| < 0.7, about 450 cases each).
+- **F6:** The book earned less than simply holding on every coin, and it moved closely with the coin. Its mean daily return is 0.020 % to 0.082 % per coin against 0.067 % to 0.155 % for the coins themselves, with a book-to-coin daily correlation of 0.87. Most of its gain is the market's own rise, not timing.
+- **F7:** Other angles did not stand out from chance against the roughly fifty comparisons made: 20-day momentum, nearness to 60-day highs, the ratio of short to long volatility, the day's range and the 3-day return. Their 5-day tercile spreads had t between 1.2 and 1.9. Weekday means did differ (Friday +0.31 %, t 3.76; Wednesday -0.30 %, t -2.70; 2479 to 2490 days each), but a weekday is a condition with no grading.
+
+## Ideas
+- `022-01_learned-combined-signal-score.d3_large-day-precedes-rise.g1_large-daily-fall-rebounds-next-day` (from F1, F2): The larger a coin's fall over its last day, measured against its usual daily move over the past 60 days, the higher its return over the next day.
+- `022-01_learned-combined-signal-score.d3_large-day-precedes-rise.g2_large-up-day-continues` (from F3, F4, F5): The larger a coin's rise over its last day, measured against its usual daily move over the past 60 days, the higher its return over the next 5 days, beyond the following day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

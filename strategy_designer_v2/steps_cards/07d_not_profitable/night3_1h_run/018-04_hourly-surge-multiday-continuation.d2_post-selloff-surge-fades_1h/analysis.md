@@ -1,0 +1,22 @@
+---
+line: 7.d not profitable
+backtest: 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h
+idea tested: 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3633 USD
+---
+## Findings
+- **F1:** The book loses on every measure that failed: Sharpe -0.28, mean daily return -1.3 bps, Calmar -0.14. Its trades lose before fees on all six coins, from -1.4 % (ETH) to -6.4 % (ZEC) per trade, against a cost of 0.19 % per round trip. So fees are not the cause; the direction of the bets is.
+- **F2:** Over the full 5 days, the idea's cases move the wrong way for a short. In the 578 recomputed cases the coin rises +0.33 % over the next 120 hours, while its usual rise is about +0.65 %. The shortfall is only +0.33 % (t 0.74). A short therefore pays the coins' upward drift of 7 to 15 bps a day. In the book, the market's own rise accounts for -3.2 of a summed gross of -1.6; timing earned the other +1.6.
+- **F3:** The fade is graded by the depth of the prior 7-day fall. In the deepest quarter of falls the shortfall is +1.77 % at 24 hours (t 4.29), +1.23 % at 48 hours (t 2.36) and +1.32 % at 120 hours (t 1.46). In the shallowest quarter the coin instead rises 0.98 % more than usual over 120 hours. The slope on depth has t 2.09 (n 578).
+- **F4:** The fade also needs a large surge. Deep falls followed by an above-median surge (n 161) show shortfalls of +1.53 % at 24 hours (t 3.42), +1.90 % at 48 hours (t 3.44) and +2.14 % at 120 hours (t 2.30), with total moves of +1.38 %, +1.62 % and +1.48 %. That is 7 to 10 times the 0.19 % cost. Deep falls with a below-median surge show -0.77 % at 120 hours. Shallow falls with a big surge show -1.05 %.
+- **F5:** Most of the fade is made in the first 1 to 2 days. On the strongest quarter of depth and surge combined (n 145), the shortfall is +1.72 % at 24 hours (t 3.65) and +1.93 % at 48 hours (t 3.29), but adds nothing more by 120 hours (+1.92 %, t 1.96). Holding the last 3 days adds noise and drift exposure without adding move.
+- **F6:** The 5-day result swings by year: 2021 shows a +3.17 % shortfall (t 1.94), while 2024 shows -3.65 % (t -3.45). The 24-hour and 48-hour shortfalls are steadier across years. This explains why the Sharpe with one window left out falls to -0.58.
+
+## Ideas
+- `018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades.d1_deep-selloff-surge-fades-fast` (from F2, F3, F4, F5, F6): When a coin's 24-hour return, read at an hourly close, first reaches several times its 30-day average absolute daily return on the upside after its 7-day return before that day was a fall, the price rises less than the coin's usual 2-day return over the next 2 days. The deeper that 7-day fall and the larger that 24-hour surge in units of the coin's average daily move, the larger the shortfall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

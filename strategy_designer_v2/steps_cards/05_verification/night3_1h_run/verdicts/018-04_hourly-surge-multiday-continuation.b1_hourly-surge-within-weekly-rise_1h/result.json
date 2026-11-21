@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 120-bar move of the bets (return minus the coin's normal 120-bar drift)",
+    "value": 0.0011617250769882803,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.518562213205914
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "above-median minus below-median 168-bar-return half, in unusual move (Welch t)",
+    "value": 0.004203203733605641,
+    "passed": true,
+    "welch_t": 0.9131004128006993
+  },
+  "counts": {
+    "cases": 2455,
+    "above-median half": 1124,
+    "below-median half": 1124
+  },
+  "decided_by": "Inconclusive rule: the main t is between -2 and 2.",
+  "reading": "Situation bars are those with a positive 168-bar return recomputed from closes (the recorded regime where fewer than 168 past closes exist in the window) and a positive 24-bar surge, on the long side; cases are the first bet of each 120-bar grid cell per window, pooled over all coins with each coin's own drift; the halves are cases with 168-bar return strictly above the median versus at or below it; the plan's minimum counts (30 cases, 15 per half) not reached give 'not observable' as the workflow requires."
+}

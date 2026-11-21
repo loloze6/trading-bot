@@ -1,0 +1,26 @@
+---
+line: 7.d not profitable
+backtest: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound_1h
+idea tested: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4063 USD
+---
+## Findings
+- **F1:** The book's deepest fall is 52.3 % over 318 days, from window w13 to w16; across that stretch the book's daily returns sum to -0.578 against -0.412 for holding the coins, so the book fell more than the coins it bought. This is the fall behind the Calmar of 0.25.
+- **F2:** The rebound depends on how turbulent the coin's past week was. The measure is its 7-day mean absolute 24-hour return over its 30-day mean absolute 24-hour return.
+- **F3:** The same split holds in the book's own bars. Its calm-week bars lose -0.56 before fees and -1.41 after 0.85 of fees. Its turbulent-week bars earn +13.34 before 1.72 of fees, which is 85 % of the book's whole gain (15.70 gross, 5.15 fees).
+- **F4:** The effect is graded by the drop multiplied by the week's turbulence:
+- **F5:** Most cases are too weak to pay. 4477 of 8426 cases are drops of 1 to 1.5 multiples, with +0.08 % excess (t 1.1), below the 0.19 % cost. Drops of 3 to 5 multiples give +1.56 % (t 4.3, 332 cases), so the pooled unusual move of +0.11 % is 0.6 times the cost.
+- **F6:** In the falling windows w13 to w16 the turbulent-week rebound almost vanishes: +0.10 % (t 0.2, 388 cases), against +1.16 % (t 8.3, 1737 cases) in the other windows. Calm-week cases there fall -1.39 % (t -4.0, 312 cases).
+- **F7:** In those falling windows the book still held 0.12 to 0.35 of the book and lost in calm and in middle weeks (-0.51 and -0.76 before fees). So the losses that drive the Calmar come from drops bought in calm weeks.
+- **F8:** The rebound is also larger after a strong 7-day rise. Drops in the top quarter of 7-day returns give +0.68 % (t 6.2, 2146 cases) and +1.12 % over 3 days (t 5.1). The two middle quarters give -0.16 % and -0.17 % (t -1.7 and -2.1).
+
+## Ideas
+- `018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.d1_turbulent-week-plunge-rebound` (from F2, F3, F4, F5, F7): When a coin's 24-hour return, read at an hourly close, is a drop of several times its 30-day average absolute daily return, the price rises over the next 1 day by more than the coin's normal 1-day drift, only while its past 7 days have been turbulent (its 7-day average absolute daily return large against its 30-day average); the larger the drop multiplied by that turbulence, the larger the rise.
+- `018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.d2_calm-week-plunge-continues-falling` (from F2, F4, F6, F7): When a coin's 24-hour return, read at an hourly close, is a drop of several times its 30-day average absolute daily return while its past 7 days have been calm (its 7-day average absolute daily return small against its 30-day average), the price keeps falling over the next 1 day below the coin's normal 1-day drift; the calmer the week before the drop, the larger the further fall.
+- `018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.d3_dip-inside-weekly-surge` (from F5, F8): When a coin's 24-hour return, read at an hourly close, is a drop of several times its 30-day average absolute daily return, the price rises over the next 1 to 3 days by more than the coin's normal drift, only while its 7-day return is a large rise; the larger the 7-day rise and the deeper the drop, the larger the rebound.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 48-bar move on cases, pooled over coins",
+    "value": 0.005640817874782027,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.328240670769721
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and positive slope; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast at signal bar",
+    "value": 0.0010000047511596743,
+    "passed": true
+  },
+  "counts": {
+    "cases": 6055
+  },
+  "decided_by": "Mean unusual move positive with t >= 2 over at least 30 cases, and the slope on the forecast is positive.",
+  "reading": "A case is the first long bet (forecast rise >= 2 from its lowest level since the last bet, reset to 0 when flat) in each cell of the window's 48-bar grid counted from its first row, with its 48-bar return inside the window; the drift is the coin's mean 48-bar return on that grid over all its windows; the situation is any negative 24-bar return on the long side."
+}

@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9932932469935245,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x excess 2-bar forward return on settlement bars",
+    "value": 0.00043424863437867446,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 5.0984061880575124
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Welch t of forecast-signed excess 2-bar return, top third minus bottom third by |forecast|",
+    "value": 3.3517082564050513,
+    "passed": true
+  },
+  "counts": {
+    "settlement bars": 51746,
+    "top third": 17248,
+    "middle third": 17250,
+    "bottom third": 17248
+  },
+  "decided_by": "The main mean is positive with t >= 2 and the top-minus-bottom third Welch t is >= 2.",
+  "reading": "The coin's mean 2-bar return is taken on the non-overlapping grid (positions 0, 2, 4, ...) of each window pooled over its windows, settlement bars without a full 2-bar forward return in their window are left out, and the thirds are the pooled cases sorted by |forecast| split into floor(n/3) bottom and top with the remainder in the middle, all three needing 300."
+}

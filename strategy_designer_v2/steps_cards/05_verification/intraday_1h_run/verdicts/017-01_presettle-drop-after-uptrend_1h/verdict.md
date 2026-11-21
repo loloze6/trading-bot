@@ -11,6 +11,7 @@ Evidence:
 - Counts: episodes with forecast < 0: 26436
 - Decided by: The main-measure t lies between -2 and 2.
 - Reading: The situation is a pre-settlement clock bar (hour mod 8 in {5,6} or in {6,7}, the better of the two stamp conventions), a positive raw 72-bar rise and a negative forecast; cases are the bars stamped 21:00/05:00/13:00 with forecast < 0 whose t+2 close lies in the same window, the coin mean is over its non-overlapping 2-bar grid across all windows, and the thirds are the n//3 largest and n//3 smallest |forecast| cases.
+- Size: unusual move -0.01 % per case over 2 bars, -0.011 of the coin's usual move (1.47 %); normal drift in its direction -0.01 %, total -0.03 %; 27586 cases
 Plan: `steps_cards/03_test_plan/intraday_1h_run/plans/017-01_presettle-drop-after-uptrend_1h.md`
 Record: `steps_cards/04_backtest/intraday_1h_run/backtests/017-01_presettle-drop-after-uptrend_1h`
 Measure: `measure.py`

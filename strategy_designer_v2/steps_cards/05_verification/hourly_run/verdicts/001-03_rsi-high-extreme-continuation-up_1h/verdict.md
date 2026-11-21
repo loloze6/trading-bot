@@ -11,6 +11,7 @@ Evidence:
 - Counts: top_decile_cases: 782, neutral_cases: 1998, coins: 2
 - Decided by: The t-statistic lies strictly between -2 and 2, so the plan rules the test inconclusive.
 - Reading: Top decile is forecast >= the 90th percentile of all forecast values pooled over coins and windows (and > 0), cases and the unconditional mean use the non-overlapping 6-bar grid from each window's first row, neutral is raw value in [-2, 2] inclusive, and with only 2 coins in the record the '2 of 3 coins' rule requires both coins positive.
+- Size: unusual move +0.00 % per case over 6 bars, 0.002 of the coin's usual move (1.61 %); normal drift in its direction +0.00 %, total +0.01 %; 2538 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/001-03_rsi-high-extreme-continuation-up_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/001-03_rsi-high-extreme-continuation-up_1h`
 Measure: `measure.py`

@@ -1,0 +1,7 @@
+017-01_pre-funding-dip-after-uptrend: The stronger the 7-day rise, the larger the spot fall in the 2 hours before each 00/08/16 UTC funding settlement. [bar: 1h]
+017-02_pre-funding-pop-after-downtrend: The stronger the 7-day fall, the larger the spot rise in the 2 hours before each 00/08/16 UTC funding settlement. [bar: 1h]
+017-03_post-funding-rebound-after-uptrend: The stronger the 7-day rise, the larger the spot rise in the 2 hours after each 00/08/16 UTC funding settlement. [bar: 1h]
+017-04_post-funding-giveback-after-downtrend: The stronger the 7-day fall, the larger the spot fall in the 2 hours after each 00/08/16 UTC funding settlement. [bar: 1h]
+017-05_pre-funding-drop-reverses-after: A larger spot fall in the 2 hours before a 00/08/16 UTC funding settlement is followed by a larger rise in the 2 hours after. [bar: 1h]
+017-06_pre-funding-rise-reverses-after: A larger spot rise in the 2 hours before a 00/08/16 UTC funding settlement is followed by a larger fall in the 2 hours after. [bar: 1h]
+017-07_funding-time-volume-with-crowding: The larger the absolute 7-day return, the higher spot volume in the 2 hours around each 00/08/16 UTC funding settlement. [bar: 1h]

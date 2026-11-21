@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping extreme episodes BTCUSD: 193, non-overlapping extreme episodes ETHUSD: 200, non-overlapping extreme episodes pooled: 393, coins: 2, coins with negative difference: 1, coins with positive difference: 1
 - Decided by: |t| < 2 or the coins split in sign, which the plan calls inconclusive.
 - Reading: The most-short decile is the 10% most negative forecasts among all negative-forecast bars pooled over coins and windows, neutral bars are forecast == 0, the Newey-West t is the HAC t of the extreme-dummy slope with lags kept within each coin-window, 'at least 2 of the 3 coins' and 'matching strength' are both applied as at least 2 coins of those present having the difference's sign, and the episode minimums apply to each coin present.
+- Size: unusual move -0.00 % per case over 24 bars, -0.002 of the coin's usual move (3.25 %); normal drift in its direction -0.02 %, total -0.02 %; 1206 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/001-04_rsi-low-extreme-continuation-down_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/001-04_rsi-low-extreme-continuation-down_1h`
 Measure: `measure.py`

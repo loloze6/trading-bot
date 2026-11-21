@@ -1,0 +1,18 @@
+{
+  "line": "7.a",
+  "backtest": "022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.15822450000000002,
+  "findings": {
+    "F1": "The test could not be run because the windows are too short for the plan's comparison: every window holds 119 to 123 daily bars, 0 of 137 coin-windows reach 370 bars, and the best-single score as the plan rebuilds it needs a 365-bar history inside one window. The comparison therefore had 0 grid cases against the plan's minimum of 100.",
+    "F2": "The idea's situation itself is common, so rarity is not the reason: 7,890 of 16,676 bars (47 %) are in a 90-day decline. That gives 1,619 non-overlapping 5-day decline grid cases, from 233 (XMR) to 313 (LTC) per coin.",
+    "F3": "The decline cases occur in every year, from 124 cases in 2021 to 347 in 2022, so no coin or year is missing from the situation.",
+    "F4": "The combined score itself is recorded on all 7,890 decline bars, so only the best-single side of the comparison is missing. On its own, the combined score's move is negligible and on the wrong side: the unusual move is -0.11 % per case over 5 days, or -0.006 of the coin's usual 10.60 % move, across 1,423 cases. The total move of -0.09 % is -0.5 times the 0.19 % round-trip cost.",
+    "F5": "The book did not pay. Its Sharpe was -0.35 against holding's +0.55, its mean daily return was -0.00019, and its Calmar was -0.16."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The plan needs at least 100 decline grid cases on which both scores exist. The available data can give 0, because the folds split every coin into windows of about 122 days, while the best-single score needs 365 days of history inside one window. This holds on any bar size, since the idea's times are real days. More coins cannot help either, because every coin uses the same windows."
+}

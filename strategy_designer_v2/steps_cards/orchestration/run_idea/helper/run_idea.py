@@ -14,7 +14,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import header_fields, write_atomic, utc_now  # noqa: E402  (shared helpers, common/lib.py)
+from lib import header_fields, write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402  (shared helpers, common/lib.py)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 sys.path.insert(0, str(STEPS / "04_backtest" / "helper"))
@@ -75,8 +75,8 @@ def call(cmd):
     out = p.stdout + p.stderr
     calls = model_calls(out)
     if calls:
-        return out, sum(c["usd"] or 0.0 for c in calls)
-    return out, sum(float(c) for c in COST.findall(out))
+        return out, sum(c["usd"] or 0.0 for c in calls), p.returncode
+    return out, sum(float(c) for c in COST.findall(out)), p.returncode
 
 
 class Journal:
@@ -87,13 +87,19 @@ class Journal:
         self.dir, self.run, self.rid, self.use = table_dir, run, rid, {}
         (table_dir / "logs" / rid).mkdir(parents=True, exist_ok=True)
 
-    def step(self, name, cmd, outputs, done=None, said=None):
+    def step(self, name, cmd, outputs, done=None, said=None, required=False):
         """Call a step unless `done` says its output exists; record what happened either way. `said`, if given, reads
-        what the step said of itself after the call (a line's "not run: entry condition not met")."""
-        t0, out, cost = time.time(), "", 0.0
+        what the step said of itself after the call (a line's "not run: entry condition not met").
+        A called step whose helper fails (2026-11-21, night 3): if the model service refused a call (exit
+        SERVICE_REFUSED), the run of the idea stops with that code, whatever the step, for the loop to retry later; if
+        the step is `required` (its output is read by the next step: steps 3 to 6), the run of the idea fails: an
+        output already on disk from an earlier call is not read as this call's answer."""
+        t0, out, cost, code = time.time(), "", 0.0, 0
         action = "skipped: its output exists" if done else "called"
         if not done:
-            out, cost = call(cmd)
+            out, cost, code = call(cmd)
+            if code:
+                action += f": its helper failed (exit {code})"
             (self.dir / "logs" / self.rid / f"{name}.txt").write_text(out)
         secs = round(time.time() - t0, 1)
         calls = model_calls(out)
@@ -114,6 +120,12 @@ class Journal:
                  "log": str((self.dir / "logs" / self.rid / f"{name}.txt").relative_to(STEPS)) if not done else None}
         with open(self.dir / "journal.jsonl", "a") as fh:
             fh.write(json.dumps(entry) + "\n")
+        if code == SERVICE_REFUSED:
+            print(out.strip().splitlines()[-1] if out.strip() else "", file=sys.stderr)
+            print(f"{self.rid}: {name}: the model service refused a call; the run of this idea stops here, to be retried", file=sys.stderr)
+            sys.exit(SERVICE_REFUSED)
+        if code and required:
+            sys.exit(f"{self.rid}: {name}: its helper failed (exit {code}): {(out.strip().splitlines() or [''])[-1][:300]}")
         return out, cost
 
 
@@ -215,7 +227,7 @@ def main():
     plan = f["plans"] / f"{rid}.md"
     done = plan.exists() and not wishes.unblocked(plan)
     out, c = j.step("step3_plan", [STEPS / "03_test_plan/helper/make_test_plan.py", idea_file, "--briefs-dir", f["briefs"],
-                                   "--plans-dir", f["plans"]] + model, [plan, plan.with_name(plan.stem + "_config.json")], done=done)
+                                   "--plans-dir", f["plans"]] + model, [plan, plan.with_name(plan.stem + "_config.json")], done=done, required=True)
     row["cost"] += c
     if not plan.exists():
         sys.exit(f"step 3 wrote no plan for {rid}:\n{out[-800:]}")
@@ -229,7 +241,7 @@ def main():
     # Step 4: the backtest (it skips a record it already holds)
     record = f["backtests"] / rid
     out, _ = j.step("step4_backtest", [STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python,
-                                       "--out-root", f["backtests"]], [record / "run.md"], done=(record / "run.md").exists())
+                                       "--out-root", f["backtests"]], [record / "run.md"], done=(record / "run.md").exists(), required=True)
     if not (record / "run.md").exists():
         sys.exit(f"step 4 wrote no record for {rid}:\n{out[-800:]}")
 
@@ -237,13 +249,13 @@ def main():
     v = f["verdicts"] / rid / "result.json"
     _, c = j.step("step5_verdict", [STEPS / "05_verification/helper/make_verdict.py", plan, "--python", args.python,
                                     "--records-root", f["backtests"], "--verdicts-dir", f["verdicts"]] + model,
-                  [v.with_name("verdict.md")], done=v.exists())
+                  [v.with_name("verdict.md")], done=v.exists(), required=True)
     row["cost"] += c
     row["step5"] = verdict_label(result(v))
 
     # Step 6: the check (code only)
     j.step("step6_check", [STEPS / "06_profitability/helper/check_profitability.py", record, "--checks-dir", f["checks"]],
-           [f["checks"] / rid / "check.md"])
+           [f["checks"] / rid / "check.md"], required=True)
     rc = result(f["checks"] / rid / "result.json")
     # The chart files (the run viewer's data), for every backtest (code only): committed names for a backtest worth a
     # chart (confirmed or profitable enough), local names, which git ignores, for any other

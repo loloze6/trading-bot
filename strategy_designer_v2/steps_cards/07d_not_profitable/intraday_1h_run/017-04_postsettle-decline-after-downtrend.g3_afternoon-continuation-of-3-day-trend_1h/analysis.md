@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h
+idea tested: 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3353 USD
+---
+## Findings
+- **F1:** The book loses because each 2-hour slot pays more in fees than it earns: the mean gross gain is 0.000504 per slot (t 8.08, 17452 slots), the mean fee is 0.001017 (about 0.00107 per unit of turnover, paid on both entry and exit), so the net is -0.000513 per slot and the book's mean daily return is -0.000605, while holding the coin returned 0.001190 a day.
+- **F2:** The losses come from a full round trip every day. Almost all turnover sits on the 15:00-stamped bar (0.474 per bar) and the 17:00-stamped bar (0.479 per bar), against at most 0.0018 on every other hour. Fees exceed the gross gain in every coin, from ZEC (net -0.000122) to XMR (net -0.000878).
+- **F3:** The gain grows with the 3-day trend's strength but never covers its fee. By third of |forecast|, the gross per slot is 0.000020, 0.000308 and 0.001185, against fees of 0.000314, 0.000952 and 0.001785. Even the strongest third nets -0.000600.
+- **F4:** The signed move after the slot grows with the coin's recent hourly volatility while staying a constant share of it. The 2-hour return signed by the 3-day trend is 0.000331, 0.000571 and 0.001159 in the low, mid and high volatility thirds, which is 0.072, 0.073 and 0.078 of each third's hourly volatility. The volatility-targeted sizing therefore shrinks the position exactly where the move per round trip is largest against a fixed fee.
+- **F5:** The trend continuation is confined to the late afternoon and stops at about 18:00 UTC. The 2-hour return signed by the 3-day trend is positive for the bars stamped 14:00, 15:00 and 16:00 (0.000479 t 3.64, 0.000687 t 5.72, 0.000368 t 3.28). It turns negative at 18:00 (-0.000284 t -2.47) and during the midday hours 11:00 and 12:00 (t -3.10 and -3.00). From the 16:00 slot, the signed move is 0.000697 over 4 hours and -0.000215 over 24 hours.
+- **F6:** The effect has weakened over time. The signed 2-hour slot return was 0.002166 in 2018 and 0.001117 in 2019, but only 0.000085 to 0.000435 in each year from 2021 to 2025, now well below one round-trip fee.
+
+## Ideas
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.d1_volatile-afternoon-trend-continuation` (from F1, F3, F4): The return over the 2 hours from 16:00 UTC follows the coin's 3-day move, and the stronger the 3-day rise, the larger the rise over those 2 hours, only while the coin's hourly volatility over the past 3 days is high, and the higher that volatility the larger the 2-hour move in the 3-day direction.
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.d2_wider-afternoon-trend-window` (from F1, F2, F5): The return over the 3 hours from 15:00 UTC follows the coin's 3-day move, and the stronger the 3-day rise relative to the coin's 3-day hourly volatility, the larger the rise over those 3 hours.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

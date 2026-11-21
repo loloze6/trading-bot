@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends_1d
+idea tested: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3628 USD
+---
+## Findings
+- **F1:** The book lost on its shorts and earned on its longs. The 2191 SHORT trades lost 6.52 % each on average before fees (6.62 % after), and the 1579 LONG trades earned 3.20 % (3.10 % after), both held about 10.5 days. Since the forecast is zero outside rising months, almost every short was taken against a coin whose 28-day return was up.
+- **F2:** Inside the rising-month bars, the combined score is not graded the way the idea says. Across its quintiles (333 cases each), the unusual 5-day move was +0.52 %, +1.56 %, +0.44 %, -1.36 % and +0.24 % from most negative to most positive score. The pooled slope per standard deviation was -0.039 (t -1.47, 1662 cases), and five of six coins had a negative t (from -1.38 to -0.31; ZEC +0.15).
+- **F3:** The coin's own 28-day return points the other way from the score. The top quintile of 28-day return (mean +48 %) was followed by an unusual 5-day move of +1.11 % (t 2.09, 490 cases), while the bottom two quintiles had -0.46 % and -0.63 %. The pooled slope per standard deviation was +0.032 (t 1.61, 2450 cases), so a 28-day trend is something to follow rather than to fade with the score. The move in the top quintile is about 5.8 times the 0.19 % cost of a trade.
+- **F4:** The unusual 5-day move depends on the weekday of the starting bar. It was +1.45 % from Mondays (t 3.01, 477 cases) and +1.18 % from Tuesdays (t 2.31, 454), against -1.48 % from Sundays (t -2.82, 466). These are the strongest t's among about 60 groupings I looked at, so it is only borderline against chance, and a weekday is not a graded situation.
+- **F5:** The other single effects showed nothing beyond chance on these bars, with |t| below 2.1 throughout:
+- **F6:** Moves by year swing more than any signal does. The unusual 5-day move was -2.48 % in 2018 (t -3.22) and -1.47 % in 2022 (t -3.08), against +1.34 % in 2020 (t 2.66). The book's losses come from shorting against those rising stretches, not from cost: the per-case move of -0.74 % is 3.8 times the cost, in the wrong direction.
+
+## Ideas
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends.g1_strong-month-keeps-rising` (from F1, F2, F3): The higher a coin's 28-day return, the higher its return over the next 5 days, and the rise is largest for the coins whose past month rose the most.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

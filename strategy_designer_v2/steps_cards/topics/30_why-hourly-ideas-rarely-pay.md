@@ -113,9 +113,11 @@ the day in the record and step 5 judges it on the same years, which flatters its
 |---|---|---|---|---|
 | 2026-11-19 | 1h is not closed: the outcome is what to change | operator | profitability reached on 1d can logically be reached on 1h | closing 1h research |
 | 2026-11-19 | Change 1: in select_next, a success is a profitable book, not a confirmation | operator's go, on the design session's proposal | the goal is real and pays; on 1h confirmation is cheap and did not tell ideas apart (7.g record 0.80, none profitable); 7.d's 80 ideas were never tested | a t threshold scaled to the bar (holds no cost); fewer folds on 1h (topic 31) |
+| 2026-11-19 | Stop d_line_1h_run at 8 of 17 | operator's ok, on the design session's proposal | the 9 left would meet the same gap (step 3 drops the holding period) | running the 17 |
+| 2026-11-19 | The book holds for its idea's horizon: `strategies.min_holding_bars` in the engine, set by step 3's code to the plan's horizon (`common/forecast.md`, 7) | operator's go, on the design session's proposal | a replay of d_line_1h_run's books: net positive for 6 of 7 with a hold of the horizon; a wider band (`min_allocation_change`) only filters small changes and pays the full change when it passes (operator) | a wider band; a hold chosen from the data (it would collect the market's drift) |
 
 ## Status and next
-Change 1 built (`orchestration/select_next/card.md`: the rule, the records and rankings before and after). Next: change 2,
+The holding period built (2026-11-19); its test: `runs/D_LINE_1H_V2_RUN.md`. Change 1 built (`orchestration/select_next/card.md`: the rule, the records and rankings before and after). Next: change 2,
 a short run on 7.d's waiting ideas, on the operator's go. Change 3 only if change 2 shows it is needed.
 
 ## Links

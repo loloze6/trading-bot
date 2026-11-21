@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of y x (combined - best post_pipeline_value) / 10 over non-overlapping 5-bar cases",
+    "value": 0.0002543775941851874,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.20881137752956133
+    },
+    "threshold": "t >= 2 (with combined correlation > 0, >= 300 cases) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "Pearson correlation of y with combined post_pipeline_value > 0",
+    "value": -0.031787109171725066,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases": 3254,
+    "active bars": 16676
+  },
+  "decided_by": "The main mean's t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are grid bars 0,5,10,... of each window with a full 5-bar return inside the window, the drift is each coin's mean over all its grid returns, cases missing either score are left out, and fewer than 300 cases is reported as not observable per the workflow's minimum-count rule."
+}

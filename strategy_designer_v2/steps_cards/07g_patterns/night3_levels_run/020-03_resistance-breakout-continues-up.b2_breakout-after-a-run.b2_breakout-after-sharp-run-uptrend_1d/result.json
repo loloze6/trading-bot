@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45329449999999993,
+  "findings": {
+    "F1": "On grid bars where the regime marks a close through a repeatedly held level inside a rising quarter, the coin's next 5 days beat its normal drift by +2.05 % (t 3.5, 380 independent cases, strength 0.18), about 10 times the 0.19 % round-trip cost. This is far above the verdict's +0.44 % (t 1.28, 1205 cases), so the edge sits on the break bar itself: 377 of 380 in-position grid cases fall within 2 days of the forecast turning on.",
+    "F2": "The edge fades fast after the break. Grid bars 1 to 5 days after a break return \u22120.55 % (t \u22121.45, 981 cases), and bars 15 to 40 days after return \u22121.32 % (t \u22122.94, 523 cases).",
+    "F3": "Grading by the past 30-day return pays on every grid bar, not only at breaks. The slope of 5-day strength on the volatility-scaled 30-day return is 0.040 (t 2.24, 2555 cases) and is positive in both halves of the sample (t 1.96 up to 2021, t 1.13 after). It is positive in 5 of 6 coins (XMR \u22120.72 is the exception).",
+    "F4": "The top 30-day-return quintile earns +1.18 % unusual over 5 days (t 1.99, 510 cases, strength 0.10), against \u22121.07 % for the second-lowest quintile (t \u22122.76, 510 cases). The top quintile's move is about 6 times the cost.",
+    "F5": "The 10-day and 1-day versions of the same grading are not stable across the two halves:",
+    "F6": "5-day returns starting on a Monday or Tuesday close beat drift by +1.42 % in both halves (t 2.63 and 3.05, about 490 cases each), and are positive in all 6 coins (t 1.13 to 2.30). The other weekdays return \u22120.56 % (t \u22121.54 and \u22122.19). This is one of 7 weekdays and cannot be graded.",
+    "F7": "The Calmar failure comes from shared crash days, not from timing. On the book's worst 1 % of days the coins fell 10.5 % on average and the book fell 5.6 %. Window worst days reach \u221210.7 %.",
+    "F8": "Trades held longer than their 5-day minimum carry the book's gain. Trades of 5.5 days or less net +0.00 % (1232 trades), 10 to 20 days net +10.5 % (293 trades), and over 20 days net +15.7 % (83 trades). This is consistent with F9 of the earlier runs, but is partly selected by repeated breaks."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day return, measured against its own recent daily volatility, the more it rises over the next 5 days.",
+      "consequence": "A coin whose 30-day run stands high against its own volatility is a reason to be long for the following week, and one with a weak 30-day return is a reason to refuse a long.",
+      "name": "volatility-scaled 30-day momentum",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin closes beyond a price where it turned down several times in the past 90 days, the rise over the next 5 days from that close is larger the more often the level held. The rise is concentrated in the days right after the break, and the coin falls back over the following weeks.",
+      "consequence": "A close through a well-defended level is a reason to buy at that close and keep the trade short, not to stay long for weeks after the break.",
+      "name": "fresh break continues briefly",
+      "from": "F1, F2, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.g1_volatility-scaled-30-day-momentum",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.g2_fresh-break-continues-briefly"
+  ],
+  "no_ideas": null
+}

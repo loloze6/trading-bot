@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean of forecast/10 x excess 10-bar return (net of the coin's mean 10-bar return)",
+    "value": 0.010351875807875069,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.2413810036099293
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 300 non-overlapping cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping cases": 1691
+  },
+  "decided_by": "The mean forecast-weighted excess 10-bar return is positive with t >= 2 over at least 300 non-overlapping cases.",
+  "reading": "Every grid bar (positions 0, 10, 20, ... of each window with close[t+10] inside the window and a forecast recorded) is a case, including those with forecast 0, and the coin's mean 10-bar return is the mean over the same non-overlapping grid returns of all its windows; the situation's side is the sign of the recorded raw 28-day return (recomputed from closes where missing)."
+}

@@ -1,0 +1,39 @@
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise_1d: 3 ideas (2 explorations)
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation_1d: 2 ideas (3 explorations)
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins_1d: no ideas: I looked at about a dozen angles: past 1-, 3-, 10- and 20-day returns, where the price sits in its 20-day range, volatility level, weekday, year, forecast state, coin group and trade duration. None stood out enough to count. The best candidate, the 10-day momentum in F4, is not graded, is weaker than t 2 once cases are counted by day, disappears over 20 days and flips sign with the year's drift. That fits the year's drift rather than a timing edge that a new idea could rest on.
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.d3_failed-break-in-downtrend_1d: 1 ideas (2 explorations)
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: 1 ideas (2 explorations)
+020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation_1d: 2 ideas (2 explorations)
+020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high_1d: 1 ideas (2 explorations)
+020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high_1d: 1 ideas (3 explorations)
+020-01_resistance-retest-turns-down.d2_thirty-day-momentum-continues_1d: 2 ideas (2 explorations)
+020-01_resistance-retest-turns-down.d3_nearness-to-90-day-high_1d: 1 ideas (2 explorations)
+020-01_resistance-retest-turns-down_1d: 1 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d1_broken-support-without-collapse_1d: 2 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins_1d: 1 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c1_broken-support-below-average_1d: no ideas: About nine conditions were looked at over three horizons, and the best pattern was continuation after a close far above the 20-day average (t 2.84 in one quintile). It is unordered across quintiles, reverses at 20 days and changes sign in three of eight years, so it cannot be told apart from chance after that many looks; no other angle came close.
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c2_broken-support-in-downtrend_1d: no ideas: The only measured edges are either too small or move with the market's direction (F1, F2), or flip sign between periods (F4), or are not separable from chance after about a dozen angles (F3, F5, F6), so no pattern supports a new idea.
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d1_broken-support-without-capitulation_1d: 1 ideas (3 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall_1d: no ideas: Every pattern beyond the market's own direction is either within chance after about 30 looks or changes sign from year to year (best: 10-day momentum at t 2.54, split 4 to 4 across years), so no finding is firm enough to rest a new idea on.
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d1_clustered-broken-support-in-downtrend_1d: 2 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d2_tight-cluster-of-broken-lows_1d: 2 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: no ideas: After about 40 comparisons, nothing beyond the forecast's own weak echo of the known near-highs drift (F1, F2) is clearly more than chance: high-volatility momentum (F4) rests on one half of the windows and one coin, and the weekday gap (F5) is unstable across years and is not a graded situation.
+020-02_support-retest-bounces-up.d2_support-retest-fails-downtrend_1d: no ideas: Across the roughly 57 groups examined, chance alone would give a largest |t| near 3. The only patterns at or above that level are an ungraded weekday effect (F5) and a next-day reversal (F4) whose move barely exceeds a round trip's cost, so none stands out enough to support a graded idea.
+020-02_support-retest-bounces-up_1d: 1 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d1_false-break-while-month-falls_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend_1d: 3 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: no ideas: Across about fifteen angles (clearance, breakdown below the low, last-day and 3-day moves, 60-day trend, volatility level, weekday, year, horizons of 3 to 20 days, and the book's tails), the only pattern that stands out is the tested idea's own large-clearance continuation (F1, F2), and the rest is either ungraded (F3, F5) or disappears once coins are averaged per date (F4, F6), so no new idea is supported.
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins_1d: 1 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d1_breakout-above-rising-average_1d: 2 ideas (3 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.b2_breakout-in-downtrend-fails_1d: 1 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend_1d: no ideas: The only pattern that stands out (F1) is the 20-day underperformance after a moderate fall from the 60- to 90-day high, but it is not graded and it reverses across years (F2, F3), so no idea follows from it, and nothing else separates from chance across the many cuts made (F5, F6, F7).
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation_1d: 1 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d: no ideas: Across all the angles examined, no pattern outside the tested idea stands out from chance. The angles were forecast terciles and quartiles, the run-up and break components, trades by coin and forecast, nine bar features over 5, 10 and 20 days, weekday, year, and the book's extreme days. The only graded effect, the 20-day run-up within breaks (Welch t 1.89, Spearman 0.02), is the tested idea's own comparison and is inconsistent across coins and periods.
+020-03_resistance-breakout-continues-up.d2_breakout-above-rising-trend_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up_1d: 2 ideas (2 explorations)
+020-04_support-breakdown-continues-down.d2_deep-support-break-rebounds_1d: 2 ideas (2 explorations)
+020-04_support-breakdown-continues-down_1d: 1 ideas (2 explorations)

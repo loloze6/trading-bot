@@ -1,0 +1,32 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9950674313452994,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of excess 2-bar return on forecast, pooled pre-settlement episodes",
+    "value": 1.2976341556747695,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 1.2976341556747695
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess t >= 2; reject: slope t <= -2 or mean excess t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return over cases (t >= 2 and > 0); value is its t",
+    "value": 0.3568758754792549,
+    "passed": false
+  },
+  "counts": {
+    "cases pooled": 25569,
+    "cases BTCUSD": 4178,
+    "cases ETHUSD": 4199,
+    "cases LTCUSD": 4321,
+    "cases XMRUSD": 4063,
+    "cases XRPUSD": 4593,
+    "cases ZECUSD": 4215
+  },
+  "decided_by": "Neither the confirm rule (both t >= 2) nor the reject rule (either t <= -2) is met.",
+  "reading": "Situation = bars whose close is 1 or 2 hours before a 00/08/16 UTC settlement (bars stamped 05/06, 13/14, 21/22, holding through 06/07, 14/15, 22/23) with a negative 72-bar price change, long side; a case is such a bar with HoursToSettlement = 2 (stamped 05, 13, 21), regime trending and forecast > 0; the coin's mean 2-bar return uses positions 0,2,4,... of every window pooled; the per-coin minimum applies to every coin in the record; unmet minimums give 'not observable'."
+}

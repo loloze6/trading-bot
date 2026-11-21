@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 022-02_combination-beats-best-single_1d
+idea tested: 022-02_combination-beats-best-single
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3592 USD
+---
+## Findings
+- **F1:** The book loses because of its shorts. Its mean daily return is -0.071 %. Short bars (8,636, mean position -0.57) earned -0.157 % per bar, and about half of that, -0.077 %, is the coins' own rise working against the short. Long bars (7,404, mean position +0.50) earned +0.044 %, less than the +0.070 % that the market's rise alone would have given them. Timing is negative on both sides.
+- **F2:** The learned combination points the wrong way. Its correlation with the next 5-day unusual return is -0.032 pooled over 3,254 cases, and it is negative in 6 of 8 years and 5 of 6 coins. Its quintiles are not ordered: from lowest to highest the unusual return is +0.58 %, +0.65 %, -0.29 %, -1.11 % and +0.17 %. The idea's size is -0.23 % per case against a 0.19 % cost of a buy and a sell.
+- **F3:** The best-single score does no better, with a correlation of -0.034. The 365-day correlation weights trail effects that flip from year to year. The 28-day return's correlation with the next 5 days was -0.22 in 2018, -0.12 in 2022 and 2023, and +0.12 and +0.19 in 2024 and 2025. Weights learned on the previous year are therefore often of the wrong sign.
+- **F4:** The book shorted coins in uptrends and lost there. When the 90-day return was positive, the book was short 59 % of the time (mean position -0.17) and lost 0.69 % per 5-day case. When the 90-day return was negative, it gained 0.23 % per case.
+- **F5:** Taken alone, the coin's 28-day return carries a move larger than the cost, but it is not yet confirmed.
+- **F6:** The 20-day momentum depends on volatility. In the middle tercile of 30-day volatility it gives +1.69 % unusual (168 cases). In the highest tercile it gives -2.29 % (173 cases).
+- **F7:** The book beat holding only in falling years: +0.092 %/day against -0.395 % in 2018, and +0.011 % against -0.180 % in 2022. It lagged holding in all other 6 years and on all 6 coins.
+
+## Ideas
+- `022-02_combination-beats-best-single.d1_combination-only-in-downtrends` (from F1, F4, F7): A coin's return over the next 5 days lines up more closely with its relearned combined score of its 28-day return, last 1-day return, closeness to its 90-day high and 30-day volatility than with the score of whichever single signal has predicted best, only while its 90-day return is negative, and the more negative that 90-day return the closer the fit.
+- `022-02_combination-beats-best-single.d2_28-day-momentum-5-day-horizon` (from F3, F5): The higher a coin's 28-day return, the higher its return over the next 5 days.
+- `022-02_combination-beats-best-single.d3_momentum-fades-in-high-volatility` (from F5, F6): The higher a coin's 28-day return, the higher its return over the next 20 days, the more so the lower its 30-day volatility is against its own past.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

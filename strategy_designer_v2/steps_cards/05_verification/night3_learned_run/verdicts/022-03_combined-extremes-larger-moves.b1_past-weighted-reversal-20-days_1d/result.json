@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed excess 20-bar return over cases with abs(forecast) >= 2 (before costs)",
+    "value": 0.029084654028034333,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.6293034115222715
+    },
+    "threshold": "t >= 2 over at least 30 cases confirms (with supporting check > 0); t <= -2 over at least 30 cases rejects"
+  },
+  "supporting_check": {
+    "name": "mean signed excess return, larger-|forecast| half minus smaller half",
+    "value": 0.041255490638250514,
+    "passed": true
+  },
+  "counts": {
+    "cases": 512
+  },
+  "decided_by": "The main-measure t is 2 or more over at least 30 cases and the supporting check difference is above 0.",
+  "reading": "The situation is taken as a non-zero raw term (the graded size), its side as the sign of the raw term, compared with the sign of a non-zero forecast; the median split puts cases with abs(forecast) above the median in the larger half and the rest in the smaller half; the drift is each coin's mean 20-bar return on the non-overlapping grid of all its windows; fewer than 30 cases is reported as not observable."
+}

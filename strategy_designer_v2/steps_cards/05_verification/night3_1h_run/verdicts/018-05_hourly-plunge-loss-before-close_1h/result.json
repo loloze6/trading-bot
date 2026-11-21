@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess short return from the first -2 crossing to the same UTC day's close",
+    "value": -0.00019678249693907838,
+    "statistic": {
+      "name": "one-group t of the mean",
+      "value": -0.4510609058519088
+    },
+    "threshold": "confirm t >= 2 with supporting difference > 0, reject t <= -2, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess (forecast <= -10) minus mean excess (-10 < forecast <= -2)",
+    "value": 0.0024105541765347925,
+    "passed": true
+  },
+  "counts": {
+    "cases": 7593,
+    "cases forecast <= -10": 745,
+    "cases forecast between -10 and -2": 6848
+  },
+  "decided_by": "The t of the mean excess short return lies between -2 and 2.",
+  "reading": "A case is the first bar of each coin-window-UTC-day whose forecast is <= -2 while the previous bar's forecast in the same window was > -2 (a window's first row cannot cross), its end is the last recorded bar of that UTC day in the window (a signal on that last bar counts with a zero return), the hours remaining are the clock hours between the two bars, the coin's mean hourly return pools all its windows, and the one-case-per-coin-day cases stand in for the 24-bar grid."
+}

@@ -1,0 +1,64 @@
+{
+  "line": "7.g",
+  "backtest": "017-03_postsettle-recovery-after-uptrend_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3995529,
+  "findings": {
+    "F1": "Over the hour after each bar's close, returns run against that bar's own move in every coin and almost every year. The slope of the excess 1-hour return on the volatility-scaled last-hour move is negative for BTC (-1.15 bp per z, t -3.6), ETH (t -2.9), LTC (t -6.7), XMR (t -6.7), XRP (t -5.9) and ZEC (-4.43 bp per z, t -7.6), each with about 50,000 bars; 2022 is the only year with a positive slope (t +2.3).",
+    "F2": "The 1-hour reversal grows with the size of the move and with the volatility level. The lowest decile of last-hour return is followed by +7.2 bp excess (t 8.9) and the highest by -2.6 bp (t -3.4). In the highest volatility tercile, bars with a move below -2 z are followed by +27.1 bp, against +4.2 bp in the lowest volatility tercile.",
+    "F3": "Over the day after a 24-hour move, returns run against that move. Pooled over non-overlapping 24-hour cases, the slope is -24.0 bp per z (t -5.5, n 12,926) and it is negative in all six coins (t from -1.8 to -3.3). By quintile of the past 24-hour return, the bottom quintile is followed by +43.9 bp (t 4.3) and the top by -30.0 bp (t -3.1).",
+    "F4": "In the two hours after the 16:00 UTC settlement, the coin keeps moving with its 3-day trend instead of recovering against it. The trend-signed excess return for the bars stamped 15:00 and 16:00 is +5.0 bp (t 5.4) and +3.8 bp (t 4.7). It is positive in all six coins (ETH t 4.3, ZEC t 4.9) and in 7 of 8 years.",
+    "F5": "Later in the day the trend-signed returns flip. For the bars stamped 10:00, 12:00 and 13:00 UTC they are negative (-2.8, -3.3 and -3.6 bp, t -3.7, -3.5 and -3.8). For the bar stamped 22:00 UTC (the hour into 00:00) the trend-signed return is +4.0 bp (t 4.9).",
+    "F6": "The hours covered by the bars stamped 20:00 and 21:00 UTC rise more than the coin's average. The excess is +4.8 bp (t 6.0) and +3.7 bp (t 4.8), positive in all six coins (t 2.5 to 3.9) and in 7 of 8 years, with 2022 negative (t -1.8).",
+    "F7": "Fees, not direction, sink the book. The mean gross gain is 0.19 bp per bar against 0.72 bp of fees per bar, which comes to about 5.6% gross against 20.9% in fees per coin and window. The gain sits in the bars stamped 15:00 (+4.6 bp per active bar) and 16:00 (+2.2 bp), while the 07:00 bar loses -0.9 bp."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's return over the next 1 hour runs against its own last-hour return, and the larger that move relative to the coin's recent hourly volatility, the larger the reversal. The reversal is strongest when the coin's 30-day volatility is high.",
+      "consequence": "Fade sharp single-hour moves, sized up in volatile periods, and refuse to chase them.",
+      "name": "one-hour move reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 1 day runs against its own 1-day return, and the larger the past day's move relative to the coin's recent volatility, the larger the move back.",
+      "consequence": "After an outsized daily move, lean the other way for the next day rather than follow it.",
+      "name": "daily move reversal",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    },
+    {
+      "idea": "Over the 2 hours after the 16:00 UTC funding settlement, a coin moves in the direction of its own 3-day return, and the larger that 3-day return, the larger the move with it.",
+      "consequence": "Trade with the 3-day trend just after the 16:00 UTC settlement instead of expecting a recovery against it.",
+      "name": "post-settlement trend continuation",
+      "from": "F4, F7",
+      "refs": [
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "Over the 3 hours from 11:00 UTC, a coin moves against its own 3-day return, and the larger that 3-day return, the larger the move against it.",
+      "consequence": "Expect trending coins to give back part of their run during the European midday hours, and avoid adding to the trend then.",
+      "name": "midday trend giveback",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal",
+    "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal",
+    "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation",
+    "017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback"
+  ],
+  "no_ideas": null
+}

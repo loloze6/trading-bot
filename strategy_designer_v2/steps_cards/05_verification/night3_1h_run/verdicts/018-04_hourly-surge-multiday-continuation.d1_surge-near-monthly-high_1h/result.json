@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 120-bar move after long cases (return minus coin's normal 120-bar drift)",
+    "value": 0.003759499465919522,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.584739357174158
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move by entry forecast",
+    "value": 0.003561165918238314,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 2364
+  },
+  "decided_by": "The t-statistic lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "Situation bars are those where the raw component (24h return in usual daily moves times proximity weight) is positive, on the long side; a case is the first long bet (forecast rise >= 2 points from its long trough) in each 120-bar grid cell from each window's first row, with a full 120-bar forward return inside the window; drift is the coin's mean non-overlapping 120-bar return over all windows; halves are the lower and upper n//2 cases by entry forecast (stable sort, middle case dropped if n is odd); fewer than 30 cases is reported as not observable."
+}

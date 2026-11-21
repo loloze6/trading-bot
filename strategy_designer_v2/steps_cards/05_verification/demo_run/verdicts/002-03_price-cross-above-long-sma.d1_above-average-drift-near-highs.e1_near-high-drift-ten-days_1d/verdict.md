@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent grid cases in regime trending: 833
 - Decided by: Slope positive with t = 3.08 >= 2 and top-minus-bottom-third difference 0.0440 > 0: confirm rule met.
 - Reading: Coin mean 10-bar return taken over all grid samples of all its windows (all regimes), cases are grid bars whose `regime` is trending, and thirds are the n//3 lowest and n//3 highest forecasts by sorted rank.
+- Size: unusual move +1.26 % per case over 10 bars, 0.062 of the coin's usual move (14.49 %); normal drift in its direction +0.27 %, total +1.53 %; 906 cases
 Plan: `steps_cards/03_test_plan/demo_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days_1d.md`
 Record: `steps_cards/04_backtest/demo_run/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days_1d`
 Measure: `measure.py`

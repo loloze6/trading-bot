@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend_4h
+idea tested: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4165 USD
+---
+## Findings
+- **F1:** A sharp four-hour fall in a coin whose 30-day return is positive is followed by a rise over the next three days. Falls were taken as a bar's return of at most -2 times the coin's 30-day standard deviation of four-hour returns, de-overlapped to one per three days in each window. They are followed by a mean 18-bar return of +1.06 % above the coin's drift (t 2.61, 606 cases). The same falls when the 30-day return is negative give +0.14 % (t 0.37, 636 cases). Given the many angles examined, this t is only borderline.
+- **F2:** Over all de-overlapped sharp falls, the deepest falls are followed by the largest three-day excess rise, and the grading is weak and uneven. Falls of -4 standard deviations or more give +1.36 % (t 2.26, 167 cases), against +0.45 % to +0.72 % for -4 to -2.5 and +0.35 % (t 0.80, 568 cases) for -2.5 to -2. The Spearman correlation between fall size and the excess return is 0.039 (p 0.17, 1243 cases). The mean strength is 0.067 (t 2.05).
+- **F3:** The rebound after sharp falls does not come from one coin. Five of 6 coins have a positive mean excess (XRP +1.23 %, ZEC +0.93 %, XMR +0.75 %, LTC +0.47 %, BTC +0.23 %; ETH -0.08 %), but none reaches t 1.5 alone. By year, 2021 carries the most (+3.56 %, t 2.91), while 2018 and 2022 are negative (-0.42 %, -0.67 %).
+- **F4:** On the 4h grid, the break below the prior two-day low in an uptrend gains more after a wider broken stretch. The narrow, middle and wide terciles give -0.24 % (36 cases), +3.84 % (t 2.19, 24 cases) and +7.15 % (t 2.22, 16 cases) of 18-bar excess return. These samples are small and much smaller than the verdict's 1182 cases.
+- **F5:** The brief's premise that narrow stretches precede larger moves does not show. The mean absolute 18-bar move by quintile of the two-day width is 5.67 %, 5.40 %, 5.22 %, 5.76 % and 6.18 % from narrowest to widest (828 grid cases each). The narrowest stretches are not followed by larger moves than the widest.
+- **F6:** The four-hour bar from 20:00 to 24:00 UTC rises on average by +0.099 % (t 6.64, 17506 bars). It is positive on all 6 coins (t 1.94 to 3.59) and in all 8 years (t above 2.6 in 6 of them). Per bar, this is about half the 0.19 % cost of a round trip.
+- **F7:** Fridays rise from 04:00 UTC to Saturday 04:00 UTC. The five four-hour bars from 04:00 to 24:00 UTC and the following Saturday 00:00 to 04:00 bar have means of +0.09 % to +0.22 % each (t 2.3 to 6.3), about +0.70 % in total against a mean daily coin return near +0.12 %. Every coin is positive (t 1.89 to 4.04). No grading of this effect was measured.
+- **F8:** The book takes a smaller share of the falls than of the rises. On its worst decile of days it loses 1.38 % while the coin falls 4.91 % (28 % of the move); on its best decile it gains 1.56 % while the coin rises 4.41 % (35 % of the move). Over all days its mean is +0.025 % a day against the coin's +0.12 %.
+
+## Ideas
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.g1_sharp-drop-rebound-in-uptrend` (from F1, F2, F3, F4): In a coin whose 30-day return is positive, a sharp fall over one four-hour bar is followed by a rise over the next three days. The larger that fall compared with the coin's typical four-hour move over the past 30 days, the larger the rise.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.g2_deep-breakdown-rebound-uptrend` (from F1, F2, F4): In a coin whose 30-day return is positive, a four-hour close below the lowest low of the preceding two days is followed by a rise over the next three days. The more of the broken two-day range the close falls through, measured in the coin's 30-day average four-hour range, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

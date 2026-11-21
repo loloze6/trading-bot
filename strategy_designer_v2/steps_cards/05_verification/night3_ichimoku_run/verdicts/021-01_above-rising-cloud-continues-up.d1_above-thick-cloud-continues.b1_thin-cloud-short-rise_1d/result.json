@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the OLS slope of excess 5-day return on forecast",
+    "value": 3.0038370643893404,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.0038370643893404
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 50 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a forecast above 0": 852
+  },
+  "decided_by": "The slope is positive with t >= 2: excess 5-day returns grow with cloud thinness.",
+  "reading": "Situation recomputed from each window's recorded prices (close above max(spanA, spanB), 26-bar percent change of the cloud mid > 0); on active bars too early in a window for the Ichimoku lines to be computed, the recorded regime ('trending') stands in for the detector; the plan's 'fewer than 50 grid cases' minimum is reported as 'not observable'; the coin's normal 5-day drift is the mean of its non-overlapping 5-bar grid returns over all windows; the slope's t is the ordinary OLS t (slope / its standard error)."
+}

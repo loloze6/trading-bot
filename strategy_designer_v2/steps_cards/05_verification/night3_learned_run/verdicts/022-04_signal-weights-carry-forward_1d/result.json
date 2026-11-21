@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (5-day return minus coin's normal 5-day drift), pooled",
+    "value": -0.0022764141107397117,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.9666694801313942
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 300 independent cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping cases with a non-zero forecast": 3250
+  },
+  "decided_by": "The t of the mean lies between -2 and 2 on at least 300 cases.",
+  "reading": "Cases are the bars at positions 0, 5, 10, ... of each window with a full 5-bar return inside the window and a non-zero forecast; the normal drift is each coin's mean 5-day return over all its grid cells in all windows; the situation is the sign of the equal-weight mean of the components' standardised values, checked sign-consistent with their raw values."
+}

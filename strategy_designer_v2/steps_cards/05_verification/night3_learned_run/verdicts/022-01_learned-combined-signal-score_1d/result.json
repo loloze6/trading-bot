@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (5-day return - coin's mean 5-day return), non-overlapping grid",
+    "value": -0.004022977706166904,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.825109998984378
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; otherwise inconclusive; at least 100 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases with a non-zero forecast": 3278
+  },
+  "decided_by": "t = -1.83 lies between -2 and 2 over 3278 cases (inconclusive rule).",
+  "reading": "Situation read as long when the raw composite score is positive and short when negative; grid positions 0, 5, 10, ... of each window with a full 5-bar return inside the window; the coin's mean 5-day return is the mean over all its windows' grid returns (all grid bars, active or not); the 100-case minimum is applied as 'not observable'."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of de-drifted 5-bar forward return on the forecast (pooled, non-overlapping grid)",
+    "value": 0.00038556592189981044,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 2.3539958613110095
+    },
+    "threshold": "t >= 2 confirms (with timing gain > 0); t <= -2 rejects; at least 300 grid cases"
+  },
+  "supporting_check": {
+    "name": "book's mean daily return before costs minus its gain from the market's rise",
+    "value": 0.0007683601900046718,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with a recorded forecast": 3419
+  },
+  "decided_by": "Confirm: the slope's t is 2 or more and the book's timing gain is above 0.",
+  "reading": "Grid bars are positions 0,5,10,... of each window with a full 5-bar return inside it, the drift is each coin's mean grid return over all its windows, zero forecasts count as recorded, and the book is position x next-bar return averaged over coins per day with fewer than 300 cases treated as not observable."
+}

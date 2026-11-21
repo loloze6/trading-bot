@@ -11,6 +11,7 @@ Evidence:
 - Counts: bars with a non-zero forecast: 17363, bars in the regression: 17380
 - Decided by: The slope t is 2 or more but the book's timing gain is zero or below.
 - Reading: Situation bars are those with a non-zero recorded raw vsr value (the one-day move over the 20-day std, price return used where it is missing), with the expected side being the opposite sign of that move; the slope is plain OLS with an intercept on every in-window bar with a next close (horizon 1, so the non-overlapping grid is every bar), the count is bars with a non-zero forecast in that regression, and the timing gain uses per-coin daily returns of postRebalance_total_value averaged across coins by day.
+- Size: unusual move +0.19 % per case over 1 bars, 0.041 of the coin's usual move (4.78 %); normal drift in its direction -0.00 %, total +0.19 %; 11423 cases
 Plan: `steps_cards/03_test_plan/demo_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal_1d.md`
 Record: `steps_cards/04_backtest/demo_run/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal_1d`
 Measure: `measure.py`

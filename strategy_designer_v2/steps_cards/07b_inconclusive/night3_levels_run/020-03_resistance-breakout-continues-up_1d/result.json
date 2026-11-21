@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "020-03_resistance-breakout-continues-up_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34926500000000005,
+  "findings": {
+    "F1": "The result points the way the idea predicts but is too small for this data to show it: 1,817 cases, mean excess 5-day return +0.31 % with t 1.20, a strength of 0.025 of the coin's usual 5-day move (10.60 %), about half the 0.05 that real ideas usually show (findings F10).",
+    "F2": "The effect is a few large gains over many small losses: the median excess return is \u22120.96 % and only 45 % of cases end above the coin's drift.",
+    "F3": "The effect is mixed across the data. By coin, ZEC carries most of it (+1.52 %, t 1.74), BTC (+0.37 %) and XRP (+0.34 %) are small, and ETH, LTC and XMR are slightly negative (\u22120.06 % to \u22120.12 %). By year, 2020 (+1.31 %, t 2.11) and 2024 (+1.49 %, t 2.05) are positive while 2022 (\u22121.85 %, t \u22122.86) and 2018 (\u22121.45 %) are negative. By window, the mean runs from \u22123.96 % (w18) to +7.33 % (w11, t 3.64).",
+    "F4": "The effect shows mostly when the coin was already rising before the break. Cases in the top quarter of the prior 20-day return (median +25 %) gain +1.72 % over 5 days (t 2.53, 369 cases), against \u22120.44 % in the bottom quarter. The same top quarter gives +1.71 % over 3 days (t 3.22) and +3.08 % over 10 days (t 2.72). Measured on the prior 10-day return, the top quarter gains +2.30 % (t 3.19).",
+    "F5": "Inside that rising half, the level's strength grades the move as the idea says: cases above the median of N \u00d7 margin gain +1.91 % (t 2.74, 365 cases) against +0.51 % below it. Over all cases, the raw-value quintiles are not monotone (+0.19 %, \u22120.63 %, +1.15 %, +0.03 %, +0.84 %).",
+    "F6": "The prior-rise effect is not steady. Its overall Spearman correlation with the 5-day excess return is only 0.04. Only 54 % of windows have a positive mean in the rising half, against 46 % in the falling half. In 2022 both halves lose (\u22121.47 % and \u22121.51 %).",
+    "F7": "The idea is large enough to pay its costs: per case, the total move (+0.90 %) is 4.7 times the 0.19 % cost of a round trip, and the unusual move alone is 1.6 times it. The book beats holding on Sharpe (0.74, 0.19 above holding's) but fails on its falls (Calmar 0.49).",
+    "F8": "Among the horizons, the 3-day one shows the effect most clearly: +0.37 % with t 1.81, against t 1.20 at 5 days and t 0.75 at 10 days. At 1 day the excess return is about zero (\u22120.03 %)."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "resistance breakout, all coins",
+      "from": "F1, F3, F7",
+      "refs": [
+        "F1",
+        "F3",
+        "F7"
+      ],
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, and the more times the level held before, the larger the rise.",
+      "consequence": "A close through a repeatedly held level exhausts the defending orders and triggers stops in the break's direction, accelerating the move, more so the more often it held.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, and the larger its 20-day return before the break and the more times the level held, the larger the rise.",
+      "consequence": "A break through a repeatedly held level after a strong run is a reason to buy for the following days, while a break after a flat or falling month is not.",
+      "name": "breakout after a run",
+      "from": "F4, F5, F6, F7",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run"
+  ],
+  "no_ideas": null
+}

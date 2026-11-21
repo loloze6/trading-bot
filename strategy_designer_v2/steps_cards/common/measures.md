@@ -22,3 +22,51 @@ the book the same way). A plan's own words come first; these apply wherever it s
 - A difference is "A minus B" in the order named, so its sign keeps its meaning. A mean "weighted by" X is
   sum(value x X) / sum(X).
 - Rows with a missing value in a column a measure needs are left out of that measure.
+- **The size of an idea** (operator, 2026-11-20; `runs/RETRO_DIAGNOSIS_RUN.md`). Whether an idea is real (step 5) says
+  that its effect exists, not how large it is. Its size says how large, with no cost in it:
+  - a **case** is a signal of the idea: a rise of the forecast on its side of at least the band (the holding period's
+    bet, `forecast.md` 7), read once per grid cell of the horizon, so no move is counted twice;
+  - the **coin's usual move** over the horizon: the standard deviation of its returns over the horizon, on
+    non-overlapping stretches of all its windows; its **normal drift**: their mean (holding the coin);
+  - the **unusual move**: per case, the coin's return from the close of the signal's bar over the horizon, minus its
+    normal drift, in the signal's direction; its mean over the cases;
+  - the **total move**: the same without removing the drift (what a trade on the signal earns before costs);
+  - the **strength**: the unusual move divided by the coin's usual move, per case, then averaged: a pure number (0.05
+    means the idea predicts 5 % of a usual move).
+  Example: over 3 days a coin usually moves about 10 % up or down; an idea whose cases end 0.5 % higher than the coin's
+  normal drift has a strength of 0.05. Real ideas measured so far have a strength of about 0.05 whatever their horizon
+  (`runs/RETRO_DIAGNOSIS_RUN.md`, fourth question).
+- **The cost of a trade** (operator, 2026-11-20): what the backtest applied to a buy and a sell, as its record states it
+  (each window's `manifest.json`, `config.cost_model`: the fee per trade and the slippage per trade for the coin, or the
+  table's default): twice the fee plus the slippage, as a share of the value traded. For a record of several coins, the
+  mean over its coins. Its values come from `trading-bot/config/cost_model.json` (taker execution): the fee is Kraken
+  futures' taker fee; the slippage was a guess until 2026-11-20, then measured once on the venue's order books (topic 38).
+  They are estimates, not the bot's own fills.
+
+- **A paying book, and what it shares with the books we have** (operator, 2026-11-21; topic 41; computed by
+  `orchestration/ideas_similarities_check/`). The question: does a book that pays make its money on the same bars as a book we
+  already have, or is its profit new?
+  - A **paying book**: a backtest record whose idea step 5 confirmed and step 6 found profitable enough, in any run. An
+    idea run again in another run counts once (its latest record). Paying books are compared only with each other.
+  - A book's **bar returns**: its value after the last bar of each period against the one before, read from the
+    record's value series (`postRebalance_total_value`), inside each window, all its coins together (each period, the
+    mean of the coins' returns), as the book is built above for daily returns. Holding its coins: the same from their
+    closing prices.
+  - The **comparison timeframe** of two books: the larger of their two bar sizes (1h with 1h: the hour; 1h with 4h: 4
+    hours; with 1d: the day). A bar belongs to the UTC period it opens in (hours; 4-hour blocks from 00:00; days from
+    00:00), as the data files are cut.
+  - The **window in common**: the periods of the comparison timeframe both books ran, inside the folds. Every output
+    uses these periods only. Under one year in common, the pair is "not comparable".
+  - The **share explained**: the share (0 to 1) of the new book's period returns that the other book's period returns
+    account for (one-variable least squares: the square of their correlation), read three times: the other book's same
+    period, the period before, the period after. The largest of the three is the share explained; the reading it comes
+    from is **who leads** (the same period; the new book one period ahead: the other follows; one period behind). Its
+    **direction** is the sign of the slope (+ moves with, − against: the same effect either way).
+  - **What is left**: in that reading, the new book's mean return per period that the other book does not explain (the
+    intercept), and its t.
+  - The **nearest relative**: the paying book with the largest share explained. The new book is also compared with
+    holding its own coins, the same way.
+  - Example: a 1h book and a 1d book compared on days; the 1h book's day returns match the 1d book's next day (share
+    explained 0.8, the new book one period ahead, direction +, what is left 0.01 % a day with t 0.9): the same profit,
+    caught a day earlier, adding nothing reliable.
+  - Limit: a lead of more than one period of the comparison timeframe does not show (two 1h books 3 hours apart).

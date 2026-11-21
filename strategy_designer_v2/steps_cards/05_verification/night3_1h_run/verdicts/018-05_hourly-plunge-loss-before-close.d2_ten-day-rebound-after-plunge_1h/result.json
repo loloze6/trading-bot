@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean unusual 240-bar move after a long bet, pooled over coins",
+    "value": 0.01076945408269194,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.081112349965362
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and slope check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "t of the OLS slope of unusual move on signal forecast (positive, t >= 1)",
+    "value": 0.7090865673283969,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1090
+  },
+  "decided_by": "t >= 2 but the slope check fails.",
+  "reading": "Situation = raw component > 0 and, where the window's prices allow, a negative 24-bar and positive 720-bar return; a bet is a rise of the positive forecast of >= 2 points from its lowest positive level since the last bet (from 0 at a window start or after a flat), the first bet of each 240-bar grid cell (counted from each window's first row) is the case; drift is the coin's mean non-overlapping 240-bar return over all its windows; the slope is an OLS of the unusual move on the signal bar's forecast; fewer than 30 cases is reported as not observable."
+}

@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.45183379999999995,
+  "findings": {
+    "F1": "The book loses because fees are about five times what the positions earn: its mean gross gain is 0.000016 per bar against a fee of 0.000077 per bar (net about -0.00006 per bar in every coin, from -0.000054 in XRP to -0.000072 in LTC), so its mean daily return is about -0.0015 (-0.00132 to -0.00174 by coin) while holding the coins gains +0.0007 to +0.0016 a day.",
+    "F2": "The fees come from the clock gate rather than the signal: turnover is about 0.23 of the book at hours 1, 5, 9, 13, 17 and 21, when the 4-hour off-settlement gate opens and shuts. Each of those hours costs about 0.00025 in fees, while the gross gain in the open hours ranges from -0.00007 to +0.00019. Every holding is opened and closed within a 4-hour block, at a fee of 0.00108 per unit traded.",
+    "F3": "The 2-hour rebound is real but too small for a round trip of that cost. On the 50,986 active grid cases the excess 2-hour return rises from -0.000095 in the lowest forecast quintile to +0.000793 in the top one. Trades gain 0.117% gross but only 0.017% net, with a median length of 3 hours, and only 48.8% of trades are positive after fees against 54.2% before.",
+    "F4": "Over the next 24 hours the rebound after a 3-day fall is several times larger and graded by depth. Across all hours the excess 24-hour return by fall quintile goes from -0.0029 (t -2.37, n 1702) for the shallowest falls to +0.0037 (t 3.11) and +0.0027 (t 1.96) for the deepest two, and for falls deeper than 1.5 standard deviations it is +0.0033 (t 3.06, n 2634) against t 1.31 at 2 hours.",
+    "F5": "Starting from off-settlement closes, the 24-hour excess return after falls of 1.5 to 2 standard deviations is +0.0072 (n 405) and after deeper falls +0.0031 (n 352), while shallow falls give -0.0012 to -0.0033. The rebound at 48 hours is gone (top-quintile t 0.65, weighted t 0.16), so it plays out within about a day.",
+    "F6": "The clock contrast is real at 2 hours: after falls of 1 to 2 standard deviations, closes in settlement hours give an excess 2-hour return of -0.0004 to -0.00055, while off-settlement closes give +0.00015 to +0.0004. That contrast is too small to pay for switching the position in and out every 4 hours."
+  },
+  "ideas": [
+    {
+      "idea": "For a coin with a strong 3-day run down, the return over the next 24 hours from closes away from the funding settlement times is positive, and the deeper the 3-day fall, the larger that rebound.",
+      "consequence": "A trader should hold a deep-fall rebound through the next day instead of closing it at each settlement hour, so that one fee pays for a move several times larger.",
+      "name": "off-settlement fall daily rebound",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "For a coin whose 3-day return is a deep fall against its usual 3-day moves, the return over the next 24 hours is positive, and the deeper that fall, the larger the rebound.",
+      "consequence": "After a deep 3-day fall, a trader should expect a one-day bounce at any hour and should refuse to open new shorts there.",
+      "name": "deep fall one-day rebound",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls.d1_off-settlement-fall-daily-rebound",
+    "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls.d2_deep-fall-one-day-rebound"
+  ],
+  "no_ideas": null
+}

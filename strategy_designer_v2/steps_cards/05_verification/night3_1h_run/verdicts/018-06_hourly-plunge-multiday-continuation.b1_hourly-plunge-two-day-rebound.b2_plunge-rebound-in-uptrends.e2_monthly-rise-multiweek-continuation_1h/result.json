@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 336-bar return over cells with forecast > 0",
+    "value": 0.024090999785757825,
+    "statistic": {
+      "name": "t of the forecast-weighted mean over cells",
+      "value": 1.7735923226811798
+    },
+    "threshold": "confirm: > 0 with t >= 2 (and slope t >= 2); reject: < 0 with t <= -2 or slope t <= -2; at least 200 cells"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess return on forecast, t",
+    "value": 2.62226400452163,
+    "passed": true
+  },
+  "counts": {
+    "cells with forecast > 0": 568
+  },
+  "decided_by": "Inconclusive: the main measure's t is between -2 and 2 and no reject rule is met.",
+  "reading": "The t of the weighted mean is the ordinary t of the per-cell values forecast x excess / mean forecast (whose mean equals the weighted mean), the coin's mean 336-bar return is taken on the same non-overlapping grid over all its windows, and the slope's t is the OLS slope over its standard error."
+}

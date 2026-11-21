@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound_1h
+idea tested: 018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3366 USD
+---
+## Findings
+- **F1:** The tested effect is about zero, not small and positive: over 72 hours the 2,167 cases' mean unusual move is -0.15 % (t -0.74), and it varies little by coin, from -0.56 % on XRP (t -1.19) to +0.40 % on XMR (t 0.75), with no coin at t 2.
+- **F2:** The sign of the result is set by the period, not by the plunge: by year the 72-hour unusual move runs from -1.55 % in 2018 (502 cases, t -3.50) to +1.75 % in 2024 (156 cases, t 3.11), and over 7 days from -4.47 % (t -5.53) to +4.01 % (t 4.21). The cases ride the market's own trend of the year rather than a rebound of their own.
+- **F3:** Depth does not grade the rebound: by depth quartile the 72-hour unusual move is +0.88 % (t 1.70, depth -78 % to -33 %), -0.45 %, -0.31 % and +0.54 % (t 1.38, depth -21 % to -20 %). The Spearman correlation of depth with the 72-hour move is -0.011, so the step-5 depth check passed only on the sign of a +0.08 % difference.
+- **F4:** Even in the deepest quartile (depth below -33 %), the size of the 24-hour drop does not grade the move: the Spearman correlation of forecast with the 72-hour move there is 0.015 over 399 cases. Those cases' 24-hour unusual move of +0.80 % (t 2.43) is one horizon picked out of five (12 h: +0.19 %, t 0.95; 48 h: +0.35 %, t 0.81). It is also negative in 2018 (178 cases, -0.28 % at 72 h), so it is not a clear part where the idea shows.
+- **F5:** The steepest 24-hour drops do not rebound more: the cases in the lowest quartile of 24-hour return gain +0.27 % over 72 hours (t 0.56), against +0.55 % and -0.31 % in the middle quartiles. Over all cases the Spearman correlation between forecast and the 72-hour move is only 0.045.
+- **F6:** Over 7 days the cases fall behind the coin's drift, by -0.99 % (t -3.06, 2,092 cases), so the 72-hour horizon did not miss a later rebound. The total move per case, +0.28 %, is about 1.4 times the 0.19 % round trip and comes from the coins' own drift; the unusual move is -0.8 times the cost, below it (as in the earlier finding F11).
+
+## Ideas
+- No ideas: The effect is absent overall and not graded by drop size or by depth. Its sign follows the year's trend (2018 against 2024), and the only positive pocket, the deepest quartile at 24 hours, has no grading inside it and fails in 2018, so no part of the data shows the idea clearly enough to amend it to.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

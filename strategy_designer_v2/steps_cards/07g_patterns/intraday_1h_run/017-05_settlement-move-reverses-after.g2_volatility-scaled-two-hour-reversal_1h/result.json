@@ -1,0 +1,66 @@
+{
+  "line": "7.g",
+  "backtest": "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3670509,
+  "findings": {
+    "F1": "The book's gross gain before costs is 0.97 bp per bar, while fees cost 4.34 bp per bar on a turnover of 0.40 of the book per bar, so the mean daily book return is -80.4 bp against the coins' +11.9 bp over 17381 coin-days; the edge that was confirmed is real but far too thin for hourly rebalancing.",
+    "F2": "The reversal is lopsided. In the bottom decile of the 2-hour move (big falls, mean z -2.74), the next 2 hours return +12.3 bp in excess (t 8.2, n 19950). In the top decile (big rises, mean z +2.75), they return only -3.7 bp (t -2.9). In that falls decile, 8.4 bp of the fade comes in the first hour against 4.9 bp in the second, which contradicts the idea's claim that most of the reversal comes in the second hour.",
+    "F3": "Among the 20% largest 2-hour moves, the 2-hour fade rises steadily with 7-day volatility relative to its ~3-week median, by quintile: 1.0 bp (t 0.6), 4.2 bp (t 2.4), 7.7 bp (t 3.9), 8.7 bp (t 3.6), 17.4 bp (t 5.5), with about 7640 cases each.",
+    "F4": "Among large moves, the fade is small and not distinct from zero in BTC (1.5 bp, t 0.9) and ETH (2.5 bp, t 1.2). It is 8 to 14 bp in LTC, XMR, XRP and ZEC (t 3.6 to 4.6).",
+    "F5": "Among large 2-hour moves that go the same way as the coin's 24-hour return, the fade grows with the size of that 24-hour return in volatility units, by quartile: 4.0 bp (t 1.9), 4.2 bp (t 2.1), 6.3 bp (t 3.0), 16.2 bp (t 5.3), with 5573 to 7897 cases.",
+    "F6": "Large 2-hour moves ending at 11:00 and 12:00 UTC fade by 45.9 bp (t 5.3, n 819) and 27.6 bp (t 5.7, n 2142), against a typical 0 to 10 bp in other hours. These t values stand out even after 24 hours were checked. The funding hours do not line up with the effect: 08:00 is -6.3 bp, 00:00 is 12.5 bp and 16:00 is 18.6 bp.",
+    "F7": "The one-hour bar return has a clock pattern of its own across coins. It is positive at 21:00 UTC (+6.5 bp, t 4.0) and 22:00 UTC (+4.9 bp, t 5.3), and negative at 14:00 UTC (-4.0 bp, t -3.5) and 02:00\u201303:00 UTC (-2.5 bp, t -2.7; -4.4 bp, t -3.0)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's fall over 2 hours, measured in its usual 2-hour moves, is followed by a rise over the next 1 hour. The rise grows with the size of the fall and is larger than what follows an equal rise.",
+      "consequence": "A trader should buy sharp short falls and hold them for about an hour, and fade sharp rises with much less size or not at all.",
+      "name": "sharp falls rebound fast",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "A coin's 2-hour move reverses over the next 2 hours by an amount that grows with its 7-day hourly volatility relative to its own ~3-week level, and the reversal is largest when volatility is far above its norm.",
+      "consequence": "Short-term fading is only worth paying fees for when a coin's volatility is well above its recent norm.",
+      "name": "fade strength follows vol regime",
+      "from": "F3, F1, F4",
+      "refs": [
+        "F3",
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's 2-hour move in the same direction as its 24-hour return reverses over the next 2 hours by more as that 24-hour return grows in the coin's own volatility units.",
+      "consequence": "A trader should fade short spikes that extend an already stretched daily run, and stand aside from spikes that come without such a run.",
+      "name": "exhaustion spikes after stretched runs",
+      "from": "F5, F2",
+      "refs": [
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's 2-hour move ending in the European late-morning hours (11:00\u201313:00 UTC) reverses over the next 2 hours, by more the larger the move is relative to its usual 2-hour move.",
+      "consequence": "The midday European hours are where short-term fades pay best, so fading activity should be concentrated in them.",
+      "name": "midday European move reversal",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g1_sharp-falls-rebound-fast",
+    "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g2_fade-strength-follows-vol-regime",
+    "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g3_exhaustion-spikes-after-stretched-runs",
+    "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g4_midday-european-move-reversal"
+  ],
+  "no_ideas": null
+}

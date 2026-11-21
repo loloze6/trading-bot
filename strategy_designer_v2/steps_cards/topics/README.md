@@ -11,6 +11,9 @@ Run briefs, one per run, are in `../runs/`; the cards of the steps and functions
   and names that card. The topic card keeps the why (the decisions and their reasons); the step's card holds the how.
 - **A topic is closed:** decided, built, solved or dropped. The card stays, status closed, with the decision and where
   its result lives: the reasons are kept, so a question asked again finds its answer.
+- **A topic's working files** (its analysis scripts, tables, discovery tools, reviews) are in a folder `NN_review/`
+  next to its card (`30_review/`, `34_review/`, `36_review/`): what helps decide a topic, not a step of the workflow. A
+  tool that becomes part of a step moves to that step or to `../common/` (2026-11-21).
 - **Decisions** are one row each: date, decision, by whom, why, and what was rejected and why. A ruling the operator
   gives in conversation is written there the same day.
 

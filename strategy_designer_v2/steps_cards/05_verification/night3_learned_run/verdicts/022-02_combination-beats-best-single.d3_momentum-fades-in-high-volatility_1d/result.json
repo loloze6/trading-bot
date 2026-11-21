@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (20-bar forward return minus coin's normal 20-bar drift), non-overlapping grid, coins pooled",
+    "value": 0.0065822872729447805,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.5683866941459316
+    },
+    "threshold": "confirm: mean > 0 with t >= 2.0 and timing gain > 0; reject: mean < 0 with t <= -2.0; at least 300 grid cases"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily book return minus gain from market's own rise)",
+    "value": 0.00034209165073409263,
+    "passed": true
+  },
+  "counts": {
+    "grid cases pooled": 827
+  },
+  "decided_by": "The main t lies between -2.0 and 2.0 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "Every grid bar with a 20-bar forward return inside its window counts as a case, including flat (forecast 0) bars, and the coin's normal 20-bar drift is the mean of its grid forward returns over all windows; the plan's 'fewer than 300 grid cases' is treated as a minimum count, so it gives 'not observable'."
+}

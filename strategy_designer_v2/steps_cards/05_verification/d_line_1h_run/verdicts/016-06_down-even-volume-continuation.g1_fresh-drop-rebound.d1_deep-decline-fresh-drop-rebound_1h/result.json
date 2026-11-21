@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of excess 72-bar forward return on forecast, active grid bars",
+    "value": 3.162617862526462,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.162617862526462
+    },
+    "threshold": "confirm if t >= 2 (with check > 0), reject if t <= -2, at least 200 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return above median forecast minus below median",
+    "value": 0.007395278049345446,
+    "passed": true
+  },
+  "counts": {
+    "active grid cases": 2766
+  },
+  "decided_by": "The slope's t is 2 or more and the high-minus-low median split is above 0, with at least 200 cases.",
+  "reading": "The coin's mean 72-bar return is the mean of all its non-overlapping grid 72-bar returns over all windows, the regression is OLS with an intercept, and cases exactly at the median forecast are left out of the median split."
+}

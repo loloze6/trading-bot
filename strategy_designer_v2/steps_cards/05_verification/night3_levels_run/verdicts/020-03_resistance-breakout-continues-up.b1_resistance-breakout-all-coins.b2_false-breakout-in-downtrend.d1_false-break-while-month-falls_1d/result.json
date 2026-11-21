@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean excess fall of the short over 10 days, cut at the first day the 30-day return is >= 0, minus the coin's daily drift",
+    "value": 0.01261824933955271,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9688572178769578
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and deeper-minus-shallower > 0; reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean excess fall (split at median 30-day return)",
+    "value": 0.02054821517029136,
+    "passed": true
+  },
+  "counts": {
+    "cases": 106,
+    "deeper_half": 53,
+    "shallower_half": 53
+  },
+  "decided_by": "The t of the mean excess fall lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The situation is taken as regime == 'mean_reversion' (the detector's recorded decision on the break, the >=3 touch count and the falling month, whose components are not recorded) plus a negative 30-day return (recorded 'decline' raw value, else recomputed from closes) with a short forecast; a case is the first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet) in each 10-bar grid cell of a window with all 10 following bars in the window; the stop day's return is included, the 30-day return on each day is recomputed from the window's closes (falling back to the recorded value when 30 past bars are not in the window, and not stopping when neither exists); drift is the coin's mean daily return over all its windows times the days counted; the depth split uses the recorded 30-day return on the signal bar, deeper = strictly below the median."
+}

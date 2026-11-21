@@ -1,0 +1,26 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 5-bar excess return of cases",
+    "value": -0.005559707691819802,
+    "statistic": {
+      "name": "t of the forecast-weighted mean",
+      "value": -2.1027392751439633
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, 5-bar excess return)",
+    "value": -0.01740671545548496,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 1401
+  },
+  "decided_by": "The forecast-weighted mean excess return has t <= -2.",
+  "reading": "Situation = close below its close 5 bars earlier in the same window and the raw swing-low nearness count > 0, side long, with active bars lacking the 5-bar-earlier close or the raw value left out; a case is the first long bet (forecast rise >= 2 points from its lowest level since the last bet, from 0 after flat) in each 5-bar grid cell of a window, weighted by its forecast, the drift is the coin's mean 5-bar return on the grid of all its windows, and the t of the weighted mean uses the weighted (sandwich) standard error with n/(n-1) correction."
+}

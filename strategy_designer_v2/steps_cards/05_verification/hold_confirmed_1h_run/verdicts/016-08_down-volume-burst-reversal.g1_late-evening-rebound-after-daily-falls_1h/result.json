@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9951506754416349,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of excess 2-bar return on forecast (pooled)",
+    "value": 7.145652425494316e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.649097982530708
+    },
+    "threshold": "slope t >= 2 confirms (with check), t <= -2 rejects, otherwise inconclusive; at least 500 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return, top third minus bottom third of forecasts",
+    "value": 0.001079921728259214,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8626,
+    "top third": 2875,
+    "bottom third": 2875
+  },
+  "decided_by": "Slope t = 2.65 >= 2 and top-minus-bottom third excess return 0.00108 > 0.",
+  "reading": "Decision bars are those whose timestamp + 1h has hour 20 with a negative 24-bar raw change; one case per coin per UTC day (first such bar), cases without a full 2-bar return inside the window dropped; the coin mean uses non-overlapping 2-bar returns on each window's grid from its first row; thirds are the n//3 lowest and n//3 highest forecasts after a stable sort."
+}

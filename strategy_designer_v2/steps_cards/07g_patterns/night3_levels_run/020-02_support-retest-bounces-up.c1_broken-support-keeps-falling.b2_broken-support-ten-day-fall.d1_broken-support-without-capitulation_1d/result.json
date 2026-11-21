@@ -1,0 +1,31 @@
+{
+  "line": "7.g",
+  "backtest": "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d1_broken-support-without-capitulation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5459997,
+  "findings": {
+    "F1": "The book's loss comes from its normal-regime shorts, while its deep-fall longs earned. Shorts held in the unknown regime lost a mean of -0.084 % per bar over 10259 bars, a summed -8.59. Longs held in the mean_reversion regime gained +0.126 % per bar over 2322 bars, a summed +2.93. By trade, shorts closed at a mean net -2.53 % (2374 trades) and longs at +3.51 % (571 trades).",
+    "F2": "The tested idea shows up as the coin's excess move but not as a gain for a short, because the coins rose. In the normal regime, cases with |forecast| above 5 had a 10-day return 1.69 % below the coin's mean (t -2.93, 542 cases). The raw 10-day return over all normal-regime grid cases was still +1.08 % (t 2.55, 1387 cases), so the total move a short captured was -0.18 % per case, below the 0.19 % cost of a trade.",
+    "F3": "After a coin's largest one-day falls relative to its own recent volatility, the next day rises well above its usual return, and the effect is graded. The lowest decile of the one-day return over its 20-day standard deviation was followed by a next-day excess return of +0.61 % (t 4.20, 1580 cases; median +0.60 %, 5 %-trimmed mean +0.54 %). The second decile gave +0.30 % (t 2.50, 1580 cases), and the third to fifth deciles gave about 0. Over all down days, the Spearman correlation between the size of the fall and the next day's excess return was -0.068 (p 1.8e-9, 7761 days), and it was negative in all 6 coins: XRP -0.106, XMR -0.090, ZEC -0.071, ETH -0.070, LTC -0.033, BTC -0.033.",
+    "F4": "The rebound after large one-day falls holds across coins, windows and years, and lasts about two days. It was positive in 6 of 6 coins (XMR +0.99 % t 3.0, XRP +0.79 % t 2.0) and in 69 % of coin-windows. It was positive in 7 of 8 years, the exception being 2024 at -0.02 %. Over 2 days on non-overlapping cases it was +0.59 % (t 2.21, 819 cases), and over 3 days +0.65 % (t 1.64, 493 cases). That is about 3 times the 0.19 % cost of a trade.",
+    "F5": "Other angles did not stand out once you allow for how many were tested."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall relative to its own daily volatility over the past 20 days, the more it rises over the next day.",
+      "consequence": "A close after an unusually large daily fall is a reason to take a one-day long, or to refuse a new short, and the larger the fall the stronger that reason.",
+      "name": "Large daily fall rebounds",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d1_broken-support-without-capitulation.g1_large-daily-fall-rebounds"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,57 @@
+{
+  "line": "7.d",
+  "backtest": "021-02_below-falling-cloud-continues-down_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.47548630000000003,
+  "findings": {
+    "F1": "The book loses because it is short coins that rise on average. On its 7,398 short bars it earned -0.078 % per bar. Of that, -0.060 % came from the market's own rise and only -0.018 % from timing. The coins' normal drift against a short is -4.24 % per 26 days, which outweighs the +1.51 % unusual move (t 0.69, 156 cases). The total move per case is therefore -2.73 %, so the size of a trade's cost (0.19 %) is not what sinks it.",
+    "F2": "The idea's grading runs the wrong way. When the cloud has fallen slowly, the short pays; when it has fallen fast, the coin rebounds.",
+    "F3": "The inversion holds across coins and periods.",
+    "F4": "The short works when the coin is calm and fails when it is volatile.",
+    "F5": "Cloud thickness also grades the move.",
+    "F6": "When the coin has not itself fallen over the past 26 days but still sits below a falling cloud, it rises. In that quartile (26-day return -2 % to +16 %) the short-signed total move is -15.4 % (t -2.24, 30 cases). The quartile with returns of -20 % to -13 % gains +8.7 % (t 2.62)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is negative, and more negative the slower the cloud has fallen over the past 26 days and the calmer the coin's daily moves have been over the past 30 days.",
+      "consequence": "A trader would short a coin below a falling cloud mainly when the cloud's decline and the coin's swings are mild, and size down as either grows.",
+      "name": "below gently falling calm cloud",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is negative, and more negative the thinner the cloud is relative to the price.",
+      "consequence": "A trader would favour shorts below a thin falling cloud and refuse them below a thick one, where the coin tends to rebound.",
+      "name": "below thin falling cloud",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "After a coin's Ichimoku cloud has fallen fast over the past 26 days, the coin's return over the next 26 days is positive, and larger the faster the cloud has fallen.",
+      "consequence": "A trader would treat a steep fall of the cloud as a sign of exhaustion and a reason to go long, or at least to close shorts.",
+      "name": "fast cloud fall rebounds",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud",
+    "021-02_below-falling-cloud-continues-down.d2_below-thin-falling-cloud",
+    "021-02_below-falling-cloud-continues-down.d3_fast-cloud-fall-rebounds"
+  ],
+  "no_ideas": null
+}

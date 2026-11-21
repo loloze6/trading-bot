@@ -25,13 +25,15 @@ h3{font-size:1rem;margin:1em 0 .3em}
 .small{font-size:.85rem}
 .chip{display:inline-block;border-radius:6px;padding:1px 7px;margin:2px 4px 2px 0;font-size:.82rem;background:var(--nobg);color:var(--ink);overflow-wrap:anywhere}
 .good{background:var(--goodbg);color:var(--good)}.bad{background:var(--badbg);color:var(--bad)}.mid{background:var(--midbg);color:var(--mid)}
-.tag{font-size:.75rem;color:var(--ink2);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-right:6px}
 ul.tree,ul.tree ul{list-style:none;margin:0;padding:0}
 ul.tree ul{margin-left:9px;padding-left:9px;border-left:2px solid var(--line)}
 ul.tree li{margin:6px 0}
 .node{display:block;padding:6px 8px;border-radius:8px;background:var(--card);border:1px solid var(--line);color:inherit}
 .node.untested{opacity:.6}
 .node .t{font-weight:600}
+.chip.bar{font-weight:600;vertical-align:middle}
+.line{margin:6px 0 12px}
+.node .stmt{color:var(--ink2);margin:2px 0 3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 details{margin:6px 0}
 summary{cursor:pointer;min-height:32px;padding:4px 0;color:var(--accent)}
 .help>button{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;margin-left:4px;
@@ -51,7 +53,9 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .readout{font-size:.85rem;color:var(--ink2);min-height:1.3em}
 .btn{display:inline-block;border:1px solid var(--accent);border-radius:8px;padding:6px 12px;margin:6px 0;min-height:36px}
 .coins button{font:inherit;font-size:.85rem;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:5px 12px;margin:3px 4px 3px 0;min-height:34px}
-.coins button.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+.coins button.good{background:var(--goodbg);color:var(--good)}
+.coins button.bad{background:var(--badbg);color:var(--bad)}
+.coins button.on{border-color:var(--accent);border-width:2px;font-weight:600}
 svg text{fill:var(--ink2);font-size:11px}
 .zoom button{font:inherit;font-size:.85rem;background:var(--card);color:var(--accent);border:1px solid var(--line);border-radius:8px;min-width:40px;min-height:34px;margin:4px 4px 4px 0}
 .day{touch-action:pan-y;user-select:none;-webkit-user-select:none}
@@ -91,10 +95,10 @@ const HELP = {
   dated: "When this idea's test was first run, in UTC: its first dated journal line, else the backtest engine's own run time.",
   turns: "How many ideas the loop picked and ran, one per turn.",
   brief: "A brief is one theory about how the market behaves, written before any data is seen. Step 2 turns it into ideas that can be tested; step 7 lines then propose new ideas from each result, which is how the family tree grows.",
-  tree: "Each idea sits under the idea it came from. The name says it: '011-01_x.b1_y' is the first idea line 7.b wrote after testing '011-01_x'. The number at the start (011) is the brief.",
   s3: "Step 3 writes the test plan before seeing any data. 'plan': the idea can be tested. 'missing-components': the bot lacks a building block. 'untestable': it needs data or logic outside one coin's own bars.",
   fit: "'exact': the test measures the idea as stated. 'adapted': the same thing in the only form the bot allows (e.g. an on/off rule made graded, a holding period dropped).",
   book: "The book is what the strategy's money becomes, starting from 1. Each 4-month window is run separately on each coin; the window's return is averaged over the coins, and windows are chained in time order. Not the price of a coin.",
+  coinsharpe: "Each coin's button shows the Sharpe of that coin's own book, as step 6 defines Sharpe: the mean of its daily returns over their standard deviation, times the square root of 365. Green above 0, red at or below 0. Step 6 measures the book of all coins together; this is one coin at a time. It is read from the backtest's chart files, so a backtest without them keeps plain buttons.",
   s5: "Step 5 asks: is the idea real? It applies the plan's own rule, fixed before the data. 'confirmed': the market behaves as the idea says. 'rejected': it behaves the other way. 'inconclusive': enough cases, no clear answer. 'not observable': too few cases. 'mismatch': the test did not do what its plan said, so no verdict.",
   t: "The t-statistic says how far the measured effect is from zero, in units of its own noise. Beyond about 2 (or below -2) it is unlikely to be chance; between -2 and 2 it could be chance.",
   measure: "The one number the plan chose, before the data, to answer the question.",
@@ -118,8 +122,7 @@ const HELP = {
   "7.e": "7.e, profitable but not proven: what the book really earns from.",
   "7.f": "7.f, real and profitable: what could break the idea and its book.",
   "7.g": "7.g, patterns: what patterns the bars and the book show, whatever the verdict.",
-  cols: "Each row is one 4-month window on this coin. Ret %: its net return after fees. Trades: trades in the window. Win %: share of trades that gained after costs. Fall %: deepest fall of the book from a peak inside the window. Sharpe: the window's Sharpe, from the book's daily values. In %: share of the window's bars with a position open.",
-  day: "Day by day on this coin, windows in time order (each 4-month window is a separate test; its lines are chained so they read as one). Price: the coin's close, with each trade's entry (filled dot) and exit (hollow dot), green if the trade gained after fees, red if it lost. Book: the strategy's money on this coin; Holding: the coin bought and kept; both start at 1, from each window's first bar (after that bar's fee if it trades on it, the same basis as step 6). Forecast: the strategy's view, -20 (strong short) to +20 (strong long). Position: the share of the book in the coin after each rebalance (negative = short). Pinch or use + / - to zoom, drag sideways to move, touch to read the values.",
+  day: "Day by day on this coin, windows in time order (each 4-month window is a separate test; its lines are chained so they read as one). Price: the coin's close, with each trade's entry (filled dot) and exit (hollow dot), green if the trade gained after fees, red if it lost. 1 invested: what 1 becomes in the strategy on this coin (blue) and in the coin bought and kept (orange), on a log scale so a halving and a doubling take the same height; both start at 1, from each window's first bar (after that bar's fee if it trades on it, the same basis as step 6). Forecast: the strategy's view, -20 (strong short) to +20 (strong long). Position: the share of the book in the coin after each rebalance (negative = short). Pinch or use + / - to zoom, drag sideways to move, touch to read the values.",
   ran: "When the backtest engine ran (UTC), from the backtest's own record.",
 };
 const help = k => HELP[k] ? `<span class="help"><button type="button" aria-label="explain">?</button><span class="hb">${esc(HELP[k])}</span></span>` : "";
@@ -156,6 +159,18 @@ function md(t){                      // a small Markdown: headings, lists, bold,
 
 function dur(sec){ if (sec == null) return "–"; if (sec < 60) return Math.round(sec) + " s"; const m = Math.round(sec/60); return m < 60 ? m + " min" : Math.floor(m/60) + " h " + String(m%60).padStart(2,"0"); }
 function counts(o){ return Object.entries(o || {}).map(([k,v]) => chip(v + " " + k, k)).join(""); }
+// step 5's and step 6's statuses in one fixed order (any other status after them); each with the best of its key figure
+const S5 = ["confirmed", "inconclusive", "rejected", "mismatch", "not observable"], S6 = ["profitable enough", "not profitable enough"];
+const short = s => String(s).replace(/ enough$/, "");
+const fig = x => typeof x === "number" ? x.toFixed(2) : "–";          // t and Sharpe: always two decimals
+function results(o, order, best, name){ const rank = k => order.includes(k) ? order.indexOf(k) : order.length;
+  return Object.keys(o || {}).sort((a, b) => rank(a) - rank(b)).map(k =>
+    chip(`${o[k]} ${short(k)}${best && best[k] != null ? ` · best ${name} ${fig(best[k])}` : ""}`, k)).join(""); }
+// the run's bar sizes, from its backtests' ids; with more than one, how many backtests each
+function bars(t){ const e = Object.entries(t.bars || {}).sort((a, b) => b[1] - a[1]);
+  return e.map(([k, n]) => `<span class="chip bar">${esc(k)}${e.length > 1 ? " · " + n : ""}</span>`).join(""); }
+function depth(t){ const L = t.levels || [];             // per level below the brief: ideas tested of ideas written
+  return L.length ? "Tested per level: " + L.map(x => `L${x.level} ${x.tested} of ${x.ideas}`).join(" · ") : ""; }
 function when(d){ if (!d) return "date not recorded"; return d[0].slice(0,10) === d[1].slice(0,10) ? `${d[0]} to ${d[1].slice(11)} UTC` : `${d[0]} to ${d[1]} UTC`; }
 const briefOf = id => DATA.briefs[id] || {title: "brief not in the record", text: null, runs: []};
 
@@ -172,10 +187,12 @@ function view(){
 function runList(){
   return `<h1>Research runs</h1><p class="muted">${DATA.runs.length} runs, last updated first, read from the committed files of <code>steps_cards/</code>. Tap a run.</p>` +
     DATA.runs.map(r => { const t = r.totals; return `<a class="card runlink" href="${href(r.name)}">
-      <div><b>${esc(r.name)}</b></div>
+      <div><b>${esc(r.name)}</b> ${bars(t)}</div>
       <div class="muted small">${esc(when(r.dates))}</div>
       <div class="muted small">${t.ideas} ideas · ${(t.idea_states || {})["backtested"] || 0} backtested${t.usd != null ? " · " + t.usd.toFixed(2) + " USD" : ""}${t.seconds != null ? " · " + dur(t.seconds) + " of step time" : ""}</div>
-      <div>${counts(t.step5)}${counts(t.step6)}</div></a>`; }).join("");
+      <div class="small">Real: ${results(t.step5, S5, t.best_t, "t") || "–"}</div>
+      <div class="small">Pays: ${results(t.step6, S6, t.best_sharpe, "Sharpe") || "–"}</div>
+      <div class="muted small">${depth(t)}</div></a>`; }).join("");
 }
 
 function ideaChips(r, i){
@@ -184,10 +201,10 @@ function ideaChips(r, i){
     return chip(q, "");
   }
   return i.backtests.map(bid => { const b = r.backtests[bid]; let s = "";
-    if (b.step3) s += chip("3 " + (b.step3.outcome === "plan" ? "plan" : "refused: " + b.step3.outcome), b.step3.outcome);
-    if (b.step5) s += chip("5 " + b.step5.status + (b.step5.t != null ? " · t " + num(b.step5.t) : ""), b.step5.status);
-    if (b.step6) s += chip("6 " + b.step6.status, b.step6.status);
-    if (b.step7.length) s += chip("7 " + b.step7.map(x => x.line).join(" "), "");
+    if (b.step3 && !(b.step3.outcome === "plan" && (b.step5 || b.step6)))      // a plan shows only until a later step answers
+      s += chip(b.step3.outcome === "plan" ? "plan" : "refused: " + b.step3.outcome.replace(/-/g, " "), b.step3.outcome);
+    if (b.step5) s += chip(b.step5.status + (b.step5.t != null ? " · t " + fig(b.step5.t) : ""), b.step5.status);
+    if (b.step6) s += chip(short(b.step6.status) + (b.step6.sharpe != null ? " · Sharpe " + fig(b.step6.sharpe) : ""), b.step6.status);
     return s; }).join("<br>");
 }
 
@@ -195,13 +212,12 @@ function tested(r, id){ const i = r.ideas[id]; return i.backtests.length > 0 || 
 function below(r, id){ return r.ideas[id].children.reduce((n, c) => n + 1 + below(r, c), 0); }
 
 function node(r, id, depth, maxDepth){ const i = r.ideas[id];
-  const from = i.root && i.parent ? `<div class="muted small">from ${esc(i.parent.split(".").pop())}${i.parent_runs && i.parent_runs.length ? " (" + esc(i.parent_runs.join(", ")) + ")" : " (not in the record)"}</div>` : "";
   let kids = "";
   if (i.children.length) kids = maxDepth && depth >= maxDepth
     ? `<details><summary>${below(r, id)} more ideas below</summary>${tree(r, i.children, depth + 1, 0)}</details>`
     : tree(r, i.children, depth + 1, maxDepth);
   return `<li><a class="node ${i.backtests.length ? "" : "untested"}" href="${href(r.name, id)}">
-    <div>${i.line ? `<span class="tag">${esc(i.line)}</span>` : ""}<span class="t">${esc(i.title)}</span></div>${from}
+    <div><span class="t">${esc(i.title)}</span> ${(i.bars || []).map(x => `<span class="chip bar">${esc(x)}</span>`).join("")}</div>${i.statement ? `<div class="small stmt">${esc(i.statement)}</div>` : ""}
     <div>${ideaChips(r, i)}</div></a>${kids}</li>`; }
 
 // maxDepth 0: ideas with a test in their branch first, the others folded; maxDepth n: n levels open, deeper folded
@@ -216,21 +232,20 @@ function runView(r){
   const t = r.totals, st = t.idea_states || {};
   const order = ["backtested", "blocked at step 3", "planned, not backtested", "waiting in the queue", "duplicate", "not tested"];
   const kv = [[`Ideas`, t.ideas]].concat(order.filter(k => st[k]).map(k => [`&nbsp;&nbsp;${esc(k)}${help(k)}`, st[k]]),
-    [["Step 3 plans" + help("s3"), counts(t.step3) || "–"], ["Step 5 verdicts" + help("s5"), counts(t.step5) || "–"], ["Step 6 checks" + help("s6"), counts(t.step6) || "–"],
+    [["Step 3 plans" + help("s3"), counts(t.step3) || "–"], ["Step 5 verdicts" + help("s5"), results(t.step5, S5, t.best_t, "t") || "–"], ["Step 6 checks" + help("s6"), results(t.step6, S6, t.best_sharpe, "Sharpe") || "–"],
      ["Cost" + help("cost"), t.usd != null ? t.usd.toFixed(2) + " USD" : "not in the record"],
      ["Step time" + help("time"), t.seconds != null ? dur(t.seconds) : "not in the record"],
      ["Loop turns" + help("turns"), t.turns || "–"],
      ["Dates" + help("dates"), esc(when(r.dates))]]);
   const nums = [...new Set(r.briefs.map(b => b.id.slice(0,3)).concat(r.roots.map(id => r.ideas[id].brief)))].filter(n => /^\d{3}$/.test(n)).sort();
   const shared = r.run_brief && r.run_brief.toLowerCase() !== r.name.replace(/_run$/, "_RUN.md").toLowerCase();
-  return `<div class="top"><a href="#">← Runs</a></div><h1>${esc(r.name)}</h1>
+  return `<div class="top"><a href="#">← Runs</a></div><h1>${esc(r.name)} ${bars(t)}</h1>
     <div class="sub">Purpose of the run${r.run_brief ? " · from " + esc(r.run_brief) : ""}${help("purpose")}</div>
     ${shared ? `<p class="muted small">This run has no run brief of its own; this one is shared with the runs whose name starts the same.</p>` : ""}
     ${r.purpose ? md(r.purpose) : `<p class="muted">No purpose paragraph in the record.</p>`}
     ${r.run_brief_text ? `<details><summary>The whole run brief</summary>${md(r.run_brief_text)}</details>` : ""}
     <div class="card"><table class="kv">${kv.map(([k,v]) => `<tr><td>${k}</td><td>${typeof v === "string" && v.includes("<") ? v : esc(v)}</td></tr>`).join("")}</table></div>
     <h2>Briefs and their ideas${help("brief")}</h2>
-    <p class="muted small">Under each brief, its ideas as a family tree${help("tree")}. Chips: 3 = test plan, 5 = is it real (t), 6 = does its book pay, 7 = the lines that read it.</p>
     ${nums.map(n => { const b = briefOf(n), roots = r.roots.filter(id => r.ideas[id].brief === n);
       const own = r.briefs.some(x => x.id.startsWith(n + "_"));
       return `<h3>Brief ${n} · ${esc(b.title)}</h3>
@@ -254,8 +269,7 @@ function backtestView(r, i, b){
   h += step("Step 3 · test plan" + help("s3"), s3 ? chip(s3.outcome === "plan" ? "plan" : "refused: " + s3.outcome, s3.outcome) +
     (s3.fit ? chip("fit: " + s3.fit, "") + help("fit") : "") + (s3.reason ? md(s3.reason) : "") : `<span class="muted">not in the record</span>`);
   const bk = b.book;
-  h += step("Step 4 · backtest" + help("book"), bk ? bookChart(b.id, bk.values, bk.years, bk.windows,
-      `The book, starting from 1: each window's net return averaged over ${bk.coins.length} coins, windows in time order.`) +
+  h += step("Step 4 · backtest" + help("book"), bk ? bookChart(b.id, bk.values, bk.years, bk.windows, "") +
       `<a class="btn" href="${href(r.name, i.id, b.id)}">Open the backtest: coin by coin, window by window →</a>` : `<span class="muted">no backtest in the record</span>`);
   const s5 = b.step5;
   h += step("Step 5 · is it real" + help("s5"), s5 ? chip(s5.status, s5.status) + (s5.t != null ? chip(`${s5.t_name || "t"} ${num(s5.t)}`, "") + help("t") : "") +
@@ -267,19 +281,26 @@ function backtestView(r, i, b){
   h += step("Step 6 · does its book pay" + help("s6"), s6 ? chip(s6.status, s6.status) +
     `<div class="scroll"><table class="small"><tr><th>Measure</th><th class="n">Value</th><th>Rule</th><th></th></tr>${s6.measures.map(m =>
       `<tr><td>${esc(m.label)}${help(m.label)}</td><td class="n">${num(m.value, 3)}</td><td>${esc(m.comparison)} ${num(m.threshold)}</td><td>${m.passed ? "yes" : "<b>no</b>"}</td></tr>`).join("")}</table></div>` : `<span class="muted">not in the record</span>`);
-  h += step("Step 7 · lines" + help("s7"), b.step7.length ? b.step7.map(s => {
-    const f = Object.entries(s.findings);
-    return `<details><summary>${esc(s.line)} (${esc(s.folder.replace(/^07\w_/, "").replace(/_/g, " "))}): ${f.length} findings, ${s.ideas.length} ideas</summary>
-      ${help(s.line)}
-      ${f.map(([k,v]) => `<p class="small"><b>${esc(k)}</b> ${esc(v)}</p>`).join("")}
-      ${s.ideas.map(x => `<p>→ ${x.id && r.ideas[x.id] ? `<a href="${href(r.name, x.id)}">${esc(x.name || x.id)}</a>` : esc(x.name || x.id)}<br><span class="small">${esc(x.idea)}</span></p>`).join("")}
-      ${s.no_ideas ? `<p class="muted small">No idea: ${esc(typeof s.no_ideas === "string" ? s.no_ideas : JSON.stringify(s.no_ideas))}</p>` : ""}</details>`; }).join("")
+  // each line: its findings folded, then the ideas it wrote, as cards (two generations open, deeper folded)
+  h += step("Step 7 · lines and the ideas they wrote" + help("s7"), b.step7.length ? b.step7.map(s => {
+    const f = Object.entries(s.findings), here = s.ideas.filter(x => x.id && r.ideas[x.id]).map(x => x.id),
+      away = s.ideas.filter(x => !(x.id && r.ideas[x.id]));
+    return `<div class="line"><b>${esc(s.folder.replace(/^07\w_/, "").replace(/_/g, " "))} line</b>${help(s.line)}
+      <span class="muted small"> · ${s.ideas.length} idea${s.ideas.length === 1 ? "" : "s"}</span>
+      ${f.length ? `<details><summary>${f.length} finding${f.length === 1 ? "" : "s"}</summary>${f.map(([k,v]) => `<p class="small"><b>${esc(k)}</b> ${esc(v)}</p>`).join("")}</details>` : ""}
+      ${here.length ? tree(r, here, 1, 2) : ""}
+      ${away.map(x => `<p class="small">→ ${esc(x.name || x.id)} <span class="muted">(not in this run)</span><br>${esc(x.idea)}</p>`).join("")}
+      ${s.no_ideas ? `<p class="muted small">No idea: ${esc(typeof s.no_ideas === "string" ? s.no_ideas : JSON.stringify(s.no_ideas))}</p>` : ""}</div>`; }).join("")
     : `<span class="muted">no line ran in the record</span>`);
+  return h;
+}
+
+function costView(b){
   const all = Object.entries(b.cost), c = all.filter(([k,v]) => v.ran), skip = all.filter(([k,v]) => !v.ran);
   const secs = skip.reduce((n, [k,v]) => n + v.seconds, 0);
-  if (all.length) h += step("Cost and time" + help("cost"), `<table class="small">${c.map(([k,v]) => `<tr><td>${esc(k.replace("_", " "))}</td><td class="n">${v.usd.toFixed(3)} USD</td><td class="n">${dur(v.seconds)}</td></tr>`).join("")}
+  const table = (`<table class="small">${c.map(([k,v]) => `<tr><td>${esc(k.replace("_", " "))}</td><td class="n">${v.usd.toFixed(3)} USD</td><td class="n">${dur(v.seconds)}</td></tr>`).join("")}
     ${skip.length ? `<tr><td class="muted">${skip.length} line${skip.length > 1 ? "s" : ""} not run (entry condition not met)</td><td class="n">0 USD</td><td class="n">${dur(secs)}</td></tr>` : ""}</table>`);
-  return h;
+  return all.length ? step("Cost and time" + help("cost"), table) : "";
 }
 
 function crumbs(r, i, self){
@@ -289,17 +310,21 @@ function crumbs(r, i, self){
 }
 
 function ideaView(r, i){
+  // the ideas a step 7 line of this idea's backtests wrote show under that line; any other child idea after them
+  const shown = new Set(i.backtests.flatMap(bid => r.backtests[bid].step7.flatMap(s => s.ideas.map(x => x.id))));
+  const others = i.children.filter(id => !shown.has(id));
   return `<div class="top"><a href="${href(r.name)}">← ${esc(r.name)}</a></div>
     ${crumbs(r, i, false)}
-    <h1>${i.line ? `<span class="tag">${esc(i.line)}</span>` : ""}${esc(i.title)}${i.line ? help(i.line) : ""}</h1>
-    <div class="muted small"><code>${esc(i.id)}</code></div>
+    <h1>${esc(i.title)}</h1>
+    ${i.line ? `<div class="muted small">Written by step 7's ${esc((DATA.lines || {})[i.line] || i.line)} line${help(i.line)}</div>` : ""}
     <div class="muted small">${chip(i.state, i.state)}${help(i.state)}${i.dated ? ` tested ${esc(i.dated)} UTC${help("dated")}` : ""}</div>
     ${i.turn ? `<p class="muted small">Loop turn ${esc(i.turn.turn)}: ${esc(i.turn.why)}</p>` : ""}
     <div class="sub">The idea</div>
     ${i.statement ? `<p>${esc(i.statement)}</p>` : ""}
     ${i.text ? `<details><summary>The whole idea</summary>${md(i.text)}</details>` : `<p class="muted">The idea's file is not in the record.</p>`}
     ${i.backtests.length ? i.backtests.map(bid => backtestView(r, i, r.backtests[bid])).join("") : `<p>${ideaChips(r, i)}</p>`}
-    ${i.children.length ? `<h2>Ideas from this one (${below(r, i.id)})</h2><p class="muted small">Two generations shown; deeper ones folded.</p>` + tree(r, i.children, 1, 2) : ""}`;
+    ${others.length ? `<h2>Other ideas from this one</h2>` + tree(r, others, 1, 2) : ""}
+    ${i.backtests.map(bid => costView(r.backtests[bid])).join("")}`;
 }
 
 function backtestPage(r, i, b){
@@ -311,21 +336,17 @@ function backtestPage(r, i, b){
   const pct = x => x == null ? "–" : num(x, 3);
   return `<div class="top"><a href="${href(r.name, i.id)}">← ${esc(i.title)}</a></div>
     ${crumbs(r, i, true)}
-    <h1>Backtest</h1><div class="muted small"><code>${esc(b.id)}</code></div>
+    <h1>Backtest</h1>${i.statement ? `<p>${esc(i.statement)}</p>` : ""}
     ${b.step3 ? `<p class="muted small">${esc(b.step3.data)}</p>` : ""}
     ${bk.ran ? `<p class="muted small">Engine ran ${esc(bk.ran)} UTC${help("ran")}</p>` : ""}
     <div class="sub">All coins together${help("book")}</div>
     ${bookChart(b.id, bk.values, bk.years, bk.windows, "")}
-    <div class="sub">One coin</div>
+    <div class="sub">One coin${help("coinsharpe")}</div>
     <div class="coins">${bk.coins.map(c => `<button class="${c === coin ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
-    ${bookChart(b.id + "|" + coin, vals, bk.years, bk.windows, `${esc(coin)}'s own book, its windows chained in time order.`)}
+    ${bookChart(b.id + "|" + coin, vals, bk.years, bk.windows, "")}
     <div class="sub">Day by day${help("day")}</div>
     ${b.chart ? `<div id="day" data-path="${esc(b.chart)}" data-coin="${esc(coin)}"><p class="muted small">Loading the chart…</p></div>`
       : `<p class="muted small">Not in the record: no backtest folder.</p>`}
-    <div class="sub">Window by window${help("cols")}</div>
-    <div class="scroll"><table class="small"><tr><th>Window</th><th class="n">Ret %</th><th class="n">Trades</th><th class="n">Win %</th><th class="n">Fall %</th><th class="n">Sharpe</th><th class="n">In %</th></tr>
-      ${bk.windows.map((w, k) => { const x = rows[k]; return x ? `<tr><td>${esc(w)}<br><span class="muted">${esc(bk.years[k])}</span></td><td class="n">${pct(x[0])}</td><td class="n">${num(x[1])}</td><td class="n">${pct(x[2])}</td><td class="n">${pct(x[3])}</td><td class="n">${pct(x[4])}</td><td class="n">${pct(x[5])}</td></tr>` : `<tr><td>${esc(w)}</td><td colspan="6" class="muted">not run on this coin</td></tr>`; }).join("")}
-    </table></div>
 `;
 }
 
@@ -350,7 +371,6 @@ function drawChart(el){
     cx.setAttribute("visibility", "visible"); cd.setAttribute("visibility", "visible");
     ro.textContent = k === 0 ? "start: 1.00" : `after ${c.windows[k-1]} (${c.years[k-1]}): ${v[k].toFixed(3)} · this window ${((v[k]/v[k-1]-1)*100).toFixed(1)}%`; };
   svg.addEventListener("pointermove", show); svg.addEventListener("pointerdown", show);
-  ro.textContent = `end: ${v[v.length-1].toFixed(3)} after ${v.length-1} windows`;
 }
 
 // ------------------------------------------------------------------ day by day (chart files, loaded on demand)
@@ -403,6 +423,16 @@ function coinSeries(files, coin){
   return {n, t, price, book, hold, fc, pos, win, marks, trades: files.trades.filter(r => r.coin === coin).length};
 }
 
+// a coin's Sharpe, as step 6 defines it (common/measures.md) but on the coin's own book: the mean of its daily returns
+// over their standard deviation, times the square root of 365; a day's value is its last bar's (hourly bars included)
+function dailySharpe(S){ const day = new Map(); S.t.forEach((x, k) => day.set(String(x).slice(0, 10), S.book[k]));
+  const v = [...day.values()], r = []; for (let k = 1; k < v.length; k++) if (v[k - 1]) r.push(v[k] / v[k - 1] - 1);
+  if (r.length < 2) return null; const m = r.reduce((a, x) => a + x, 0) / r.length;
+  const sd = Math.sqrt(r.reduce((a, x) => a + (x - m) ** 2, 0) / (r.length - 1)); return sd > 0 ? m / sd * Math.sqrt(365) : null; }
+function colourCoins(files){ document.querySelectorAll(".coins button").forEach(btn => {
+  const sh = dailySharpe(coinSeries(files, btn.dataset.c)); if (sh == null) return;
+  btn.classList.add(sh > 0 ? "good" : "bad"); btn.textContent = btn.dataset.c + " · Sharpe " + fig(sh); }); }
+
 async function dayChart(el){
   let files;
   try { files = await chartFiles(el.dataset.path); }
@@ -412,6 +442,7 @@ async function dayChart(el){
       : `<p class="muted small">Chart files could not be loaded (${esc(e.message)}). Open the page through a web server or the phone link, not as a local file.</p>`;
     return; }
   if (!document.body.contains(el)) return;
+  colourCoins(files);
   const S = coinSeries(files, el.dataset.coin);
   if (!S.n) { el.innerHTML = `<p class="muted small">No bars for this coin in the chart files.</p>`; return; }
   const st = {i0: 0, i1: S.n - 1, cur: null};
@@ -420,10 +451,11 @@ async function dayChart(el){
     <div class="readout" id="dro"></div><div class="day" id="dsvg"></div>`;
   const box = el.querySelector("#dsvg"), ro = el.querySelector("#dro");
   const W = 360, L = 44, R = 6, PANELS = [
-    {h: 130, title: "Price", lines: [["price", "var(--ink2)"]], marks: true},
-    {h: 110, title: "Book and holding (from 1)", lines: [["book", "var(--accent)"], ["hold", "#eb6834"]], one: true},
-    {h: 60, title: "Forecast", lines: [["fc", "var(--accent)"]], zero: true},
-    {h: 60, title: "Position", lines: [["pos", "var(--accent)"]], zero: true}];
+    {h: 170, title: "Price", lines: [["price", "var(--ink2)"]], marks: true},
+    {h: 150, title: `1 invested in ${String(S.t[0]).slice(0, 4)}`, lines: [["book", "var(--accent)"], ["hold", "#eb6834"]], one: true, log: true,
+     legend: ["strategy", "holding the coin"]},
+    {h: 80, title: "Forecast", lines: [["fc", "var(--accent)"]], zero: true},
+    {h: 80, title: "Position", lines: [["pos", "var(--accent)"]], zero: true}];
   const GAP = 22, H = PANELS.reduce((a, p) => a + p.h + GAP, 0) + 16;
   const X = k => L + (k - st.i0) * (W - L - R) / Math.max(1, st.i1 - st.i0);
   function draw(){
@@ -437,14 +469,18 @@ async function dayChart(el){
       y0 += GAP;
       const vals = []; p.lines.forEach(([key]) => { for (let k = i0; k <= i1; k++) if (S[key][k] != null) vals.push(S[key][k]); });
       if (p.one) vals.push(1); if (p.zero) vals.push(0);
-      let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) { hi += 1; lo -= 1; } const pad = (hi - lo) * .06; lo -= pad; hi += pad;
-      const Y = v => y0 + (hi - v) * p.h / (hi - lo);
+      // a log scale for values of 1 invested: a fall to 0.1 and a rise to 10 take the same height
+      const tf = p.log ? v => Math.log10(Math.max(v, 1e-9)) : v => v, back = p.log ? u => 10 ** u : u => u;
+      let lo = Infinity, hi = -Infinity; for (const v of vals) { const u = tf(v); if (u < lo) lo = u; if (u > hi) hi = u; } if (hi === lo) { hi += 1; lo -= 1; } const pad = (hi - lo) * .06; lo -= pad; hi += pad;
+      const Y = v => y0 + (hi - tf(v)) * p.h / (hi - lo);
       s += `<text x="${L}" y="${y0 - 6}" style="font-weight:600">${p.title}</text>`;
       s += `<line x1="${L}" x2="${W - R}" y1="${y0 + p.h}" y2="${y0 + p.h}" stroke="var(--line)"/>`;
       S.win.forEach(k => { if (k > i0 && k <= i1) s += `<line x1="${X(k)}" x2="${X(k)}" y1="${y0}" y2="${y0 + p.h}" stroke="var(--line)" stroke-dasharray="2 3"/>`; });
       const ref = p.one ? 1 : p.zero ? 0 : null;
       if (ref != null) s += `<line x1="${L}" x2="${W - R}" y1="${Y(ref)}" y2="${Y(ref)}" stroke="var(--ink2)" stroke-width=".6"/>`;
-      [hi - pad, lo + pad].forEach(v => s += `<text x="${L - 4}" y="${Y(v) + 4}" text-anchor="end">${fmtAxis(v)}</text>`);
+      if (p.one) s += `<text x="${L - 4}" y="${Y(1) + 4}" text-anchor="end">start 1</text>`;
+      [back(hi - pad), back(lo + pad)].filter(v => !p.one || Math.abs(Y(v) - Y(1)) > 12)
+        .forEach(v => s += `<text x="${L - 4}" y="${Y(v) + 4}" text-anchor="end">${fmtAxis(v)}</text>`);
       p.lines.forEach(([key, col]) => {
         let d = "", pen = false;
         for (let k = i0; k <= i1; k += step) { const v = S[key][k]; if (v == null) { pen = false; continue; }
@@ -457,7 +493,7 @@ async function dayChart(el){
           s += `<circle cx="${X(m.k)}" cy="${Y(m.p)}" r="4" fill="${m.entry ? c : "var(--card)"}" stroke="${c}" stroke-width="1.6"/>`; });
         else s += `<text x="${W - R}" y="${y0 + 12}" text-anchor="end">zoom in to see the ${vis.length} trade marks</text>`;
       }
-      if (p.lines.length > 1) s += `<text x="${W - R}" y="${y0 - 6}" text-anchor="end"><tspan fill="var(--accent)">— book</tspan>  <tspan fill="#eb6834">— holding</tspan></text>`;
+      if (p.legend) s += `<text x="${W - R}" y="${y0 - 6}" text-anchor="end">${p.legend.map((n, k) => `<tspan fill="${p.lines[k][1]}">— ${n}</tspan>`).join("  ")}</text>`;
       y0 += p.h;
     });
     if (st.cur != null && st.cur >= i0 && st.cur <= i1) s += `<line x1="${X(st.cur)}" x2="${X(st.cur)}" y1="${GAP}" y2="${H - 16}" stroke="var(--ink)" stroke-width=".8"/>`;
@@ -469,7 +505,7 @@ async function dayChart(el){
     const k = st.cur;
     if (k == null) { ro.textContent = `${day10(S.t[st.i0])} to ${day10(S.t[st.i1])} · touch the chart to read a day`; return; }
     const tr = S.marks.filter(m => m.k === k).map(m => `${m.entry ? "entry" : "exit"} ${m.r.direction} ${num(toNum(m.r.realized_return), 3)} %`).join(", ");
-    ro.textContent = `${day10(S.t[k])} · price ${num(S.price[k], 4)} · book ${num(S.book[k], 4)} · holding ${num(S.hold[k], 4)} · forecast ${num(S.fc[k])} · position ${num(S.pos[k], 3)}${tr ? " · " + tr : ""}`;
+    ro.textContent = `${day10(S.t[k])} · price ${num(S.price[k], 4)} · strategy ${num(S.book[k], 4)} · holding ${num(S.hold[k], 4)} · forecast ${num(S.fc[k])} · position ${num(S.pos[k], 3)}${tr ? " · " + tr : ""}`;
   }
   const idx = clientX => { const r = box.getBoundingClientRect(), x = (clientX - r.left) * W / r.width;
     return Math.max(st.i0, Math.min(st.i1, Math.round(st.i0 + (x - L) * (st.i1 - st.i0) / (W - L - R)))); };

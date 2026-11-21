@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping cases: 814, cases BTCUSD: 407, cases ETHUSD: 407
 - Decided by: Pooled mean product is above 0 with t >= 2.0 and the coin check passes.
 - Reading: The supporting check '2 of the 3 coins' is applied to the coins present in the record, requiring at least 2 coins with a positive mean product (all coins when only 2 are present); the coin's mean 168-bar return is the mean over its non-overlapping grid cases across all its windows; cases with forecast 0 are kept (product 0); the 300-case minimum, if unmet, gives 'not observable'.
+- Size: unusual move +0.81 % per case over 168 bars, 0.071 of the coin's usual move (11.11 %); normal drift in its direction -0.01 %, total +0.80 %; 813 cases
 Plan: `steps_cards/03_test_plan/retest_1h_run/plans/010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h.md`
 Record: `steps_cards/04_backtest/retest_1h_run/backtests/010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h`
 Measure: `measure.py`

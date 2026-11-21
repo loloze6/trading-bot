@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping regime cases: 166, fresh cases (age 1-15): 88, stale cases (age 16-30): 78
 - Decided by: The main-measure t lies between -2 and +2.
 - Reading: Regime bars and freshness are read from the raw cross_age value on grid bars (positions 0,10,20,... of each window, with the forward return inside the window), the baseline is each coin's mean 10-bar grid return over all its windows, the supporting check counts as passed only when the Welch t (fresh minus stale) is below 0, and fewer than 20 cases gives 'not observable' as the workflow's minimum-count rule requires.
+- Size: unusual move +2.14 % per case over 10 bars, 0.114 of the coin's usual move (14.49 %); normal drift in its direction -1.24 %, total +0.90 %; 70 cases
 Plan: `steps_cards/03_test_plan/plans/002-01_sma-golden-cross-upward-drift.b2_fresh-golden-cross-fades_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-01_sma-golden-cross-upward-drift.b2_fresh-golden-cross-fades_1d`
 Measure: `measure.py`

@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9975008717889109,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "ordinary t of the mean of (excess 2-bar return x forecast/10) on 20:00 UTC decision bars",
+    "value": 0.0005980597930070172,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 6.174588183274656
+    },
+    "threshold": "confirm if t >= 2 and supporting slope > 0; reject if t <= -2; otherwise inconclusive; at least 200 decision bars with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 2-bar return on forecast, decision bars with forecast > 0",
+    "value": 3.265260652551102e-05,
+    "passed": true
+  },
+  "counts": {
+    "decision bars with forecast > 0": 8613,
+    "decision bars": 17403
+  },
+  "decided_by": "The main t is 2 or more and the supporting slope is above 0.",
+  "reading": "Coming hour is taken as the bar's start hour + 1; the fall is the sign of the raw fall24 value (the 24-bar price return where it is not recorded); the main mean pools all 20:00 decision bars, including those with forecast 0 (product 0); the coin mean 2-bar return is pooled over all its windows on a grid at positions 0, 2, 4, ... of each window; a shortfall of the plan's 200-bar minimum is reported as 'not observable'."
+}

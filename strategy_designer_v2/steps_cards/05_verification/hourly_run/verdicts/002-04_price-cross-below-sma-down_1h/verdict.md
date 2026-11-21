@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping 24-bar blocks with forecast < 0: 384, non-overlapping 24-bar blocks: 724, bars with forecast < 0: 9109
 - Decided by: Slope t lies between -2 and 2: inconclusive.
 - Reading: Non-overlapping blocks are the bars at positions 0, 24, 48, ... of each window, pooled over all windows into one OLS with the ordinary slope t; the excess return subtracts the mean 24-bar forward return of all bars of that window; the fall share uses all bars with forecast < 0 (not only grid bars); the block count is the number of grid bars with forecast < 0 and a valid forward return.
+- Size: unusual move -0.16 % per case over 24 bars, -0.056 of the coin's usual move (2.89 %); normal drift in its direction -0.04 %, total -0.20 %; 360 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/002-04_price-cross-below-sma-down_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/002-04_price-cross-below-sma-down_1h`
 Measure: `measure.py`

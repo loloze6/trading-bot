@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise_1d
+idea tested: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.5193 USD
+---
+## Findings
+- **F1:** When a coin's 20-day volatility is low against its 60-day volatility, the next 3 days fall. In the lowest tenth of that ratio (mean ratio 0.54), the excess 3-day return is -1.35 % (strength -0.14, t -4.76, 781 non-overlapping cases), about 6 times the 0.22 % round trip. In the lowest fifth it is -0.87 % (t -4.31, 1555 cases) over 3 days and -1.25 % (t -3.59, 955 cases) over 5 days. The second tenth is -0.39 % (t -1.36), and the higher tenths are between -0.5 % and +0.55 %. The lowest fifth is negative in 7 of 8 years (2020 is the exception, +0.84 %) and in 16 of 19 coins.
+- **F2:** A large one-day fall is followed by a rebound the next day. The bottom tenth of the past day's return, scaled by the coin's usual daily move (mean -1.64 usual moves), is followed by +0.75 % excess the next day (strength 0.13, t 4.83, 3600 cases), 3.4 times the cost. The other nine tenths lie between -0.19 % and +0.06 %. The bottom fifth is positive in 16 of 19 coins. It is near zero in 2022 (-0.02 %), 2024 (+0.09 %) and 2025 (-0.07 %), against +0.53 % to +1.50 % in 2020, 2021 and 2023. Over 2 days it shrinks to +0.42 % (t 2.08).
+- **F3:** Closes nearest their 20-day high close are followed by a rise. The top fifth (mean 0.6 % below the high) has +0.80 % excess over 3 days (strength 0.076, t 3.15, 1967 cases) and +1.07 % over 5 days (t 2.15). That is 3.7 times the cost and much larger than the tested break cases, which had +0.11 % over 3 days (t 0.77, 4914 cases). The top fifth is positive in 6 of 8 years, 2018 being the exception (-3.68 %, t -2.92). The pattern is U-shaped: the farthest fifth also rises, +0.44 % (t 2.09).
+- **F4:** Most of the break's move happens on the break day itself, before a trader acting at the close can capture it. The break day carries +5.08 % excess. After it, the excess return grows slowly: +0.11 % at 3 days, +0.12 % at 5, +0.36 % at 10 and +0.58 % at 20, all with t below 1.3. The strongest fifth of forecasts reaches +1.28 % at 10 days (strength 0.059), against -0.23 % for the weakest fifth.
+- **F5:** The book's gain comes from the few trades that last longest. Trades lasting 1.5 to 3.5 days (3634 trades) lose 0.17 % net. Trades lasting 3.5 to 6.5 days gain 3.99 % (1356 trades), 6.5 to 10.5 days gain 7.84 % (522), and more than 10.5 days gain 11.96 % (258).
+- **F6:** The book beats holding in falling years and lags it in strong rising years. Its Sharpe is -0.53 against -1.24 for holding in 2018, and -0.17 against -1.10 in 2022. It is 1.03 against 1.96 in 2021, and 1.70 against 2.16 in 2023.
+- **F7:** Next-day excess returns follow the weekday in both halves of the period, but each move is only about the size of a round trip. Days starting Monday, Wednesday and Sunday fall: -0.24 % (t -3.30), -0.27 % (t -2.44) and -0.21 % (t -2.68). Days starting Tuesday, Thursday and Friday rise: +0.27 % (t 3.29), +0.20 % (t 2.72) and +0.23 % (t 3.95). About 5100 cases each.
+
+## Ideas
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise.g1_quiet-coins-drift-lower` (from F1): When a coin's volatility over the past 20 days is low compared with its volatility over the past 60 days, it tends to fall over the next 3 days, and the lower that ratio, the larger the fall.
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise.g2_one-day-fall-rebounds` (from F2): The larger a coin's fall over the past day, measured against its usual daily move, the larger its rise over the next day.
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise.g3_nearness-to-20-day-high` (from F3, F4): The closer a coin's close is to its highest close of the past 20 days, the larger its rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

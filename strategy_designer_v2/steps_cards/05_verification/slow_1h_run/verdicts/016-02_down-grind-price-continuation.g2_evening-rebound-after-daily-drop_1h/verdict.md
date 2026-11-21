@@ -11,6 +11,7 @@ Evidence:
 - Counts: decision bars: 17403, decision bars with a positive forecast: 8613, decision bars above the median positive forecast: 4306
 - Decided by: The slope is positive with t >= 2 and the supporting check passes.
 - Reading: The situation is bars whose next bar starts at 21:00 or 22:00 UTC with a negative raw 24-bar vol-scaled return and a positive forecast. The regression pools all coins' 20:00-stamped decision bars, including those with a zero forecast. Each coin's mean 2-bar return is taken on the non-overlapping grid 0,2,4,... of every window, pooled across windows. A shortfall from the 300-case minimum is reported as 'not observable'.
+- Size: unusual move +0.11 % per case over 2 bars, 0.075 of the coin's usual move (1.47 %); normal drift in its direction +0.01 %, total +0.12 %; 8900 cases
 Plan: `steps_cards/03_test_plan/slow_1h_run/plans/016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h.md`
 Record: `steps_cards/04_backtest/slow_1h_run/backtests/016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h`
 Measure: `measure.py`

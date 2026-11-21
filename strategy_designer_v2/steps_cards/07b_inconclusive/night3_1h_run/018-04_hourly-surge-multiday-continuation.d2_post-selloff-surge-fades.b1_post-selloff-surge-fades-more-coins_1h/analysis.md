@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades.b1_post-selloff-surge-fades-more-coins_1h
+idea tested: 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades.b1_post-selloff-surge-fades-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4128 USD
+---
+## Findings
+- **F1:** The post-selloff surge has no fade at any horizon. The drift-removed short-side move per case is +0.006 % over 1 day (t 0.01, 1188 cases), +0.23 % over 2 days (t 0.86, 1182), -0.04 % over 5 days (t -0.11, 1158) and +0.13 % over 10 days (t 0.20, 1116). The test did not miss the effect by choosing the wrong horizon; there is none to find. This agrees with step 5's -0.18 % per case, t -0.47, 1186 cases.
+- **F2:** The effect changes sign by period, not by gradation. The 5-day short-side move is -1.88 % in 2023 (t -2.58, 167 cases) and -3.17 % in 2024 (t -3.81, 228), where surges kept rising. It is +1.71 % in 2025 (t 2.52, 223), +2.39 % in 2021 (t 1.34) and +1.50 % in 2022 (t 1.43), where they faded. These opposite years cancel out in the total.
+- **F3:** The depth grading is too weak to show. The Spearman correlation of the prior fall's depth with the 5-day short-side move is -0.037 (p 0.21; deeper fall, slightly larger fade). Only the deepest fifth of falls fades: +1.38 % per case, t 2.03, strength 0.125, 232 cases. The shallowest two fifths go the other way: -1.23 % (t -1.47) and -1.31 % (t -1.13).
+- **F4:** Raising the bar to the deepest falls does not make the deep fade reliable. Deep-half minus shallow-half is positive in 6 of 8 years (+1.7 to +4.6 %) but negative in 2022 (-3.6 %) and 2024 (-2.7 %). Inside a falling 30-day trend the deep half fades by only +0.54 % (t 0.98, 491 cases).
+- **F5:** No coin carries the effect except ETH, at +2.05 % per case (t 2.41, 92 cases) among 19 coins. The others range from -3.07 % (SUI, t -1.13) to +1.22 % (XRP, t 0.95). That ETH result is what one would expect by chance among 19 coins. The default six coins earn +0.39 % (t 0.90) and the newer thirteen -0.44 % (t -0.70).
+- **F6:** The book cannot pay even where the fade exists. The coin's normal drift works against the short by -0.85 % per case over 5 days, so the total move is -1.03 %, -4.6 times the 0.22 % cost of a round trip. The depth-weighted book's Sharpe is -0.30. This matches F11: an idea whose total move per case is below the cost does not pay.
+
+## Ideas
+- No ideas: The test already used every coin and fold available, and the result is zero at every horizon (F1). It flips sign between years with t from -3.8 to +2.5 (F2). Its depth grading is weak and changes sign by year (F3, F4), and its only bright spot is one coin of nineteen (F5). No part of the data shows the fade clearly enough to amend the idea to it, and the coin's drift would sink a short book anyway (F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

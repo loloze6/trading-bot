@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "thin minus thick cloud unusual 26-bar return",
+    "value": 0.07075459440771784,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.5927728895479623
+    },
+    "threshold": "difference > 0 with Welch t >= 2 to confirm; Welch t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "all-case mean unusual 26-bar return > 0 with t >= 2",
+    "value": 0.02223154735365722,
+    "passed": false,
+    "t": 0.9990876783988489
+  },
+  "counts": {
+    "cases": 285,
+    "thin_cases": 142,
+    "thick_cases": 143
+  },
+  "decided_by": "Neither the confirm rule (difference > 0, Welch t >= 2, with supporting check passed) nor the reject rule (t <= -2) is met.",
+  "reading": "agreement measured on active bars where the cloud (9/26/52, displacement 26) and the cross origin are computable from the window's prices; a case is a bar where the forecast rises by at least 2 from 0 on the previous bar, the first such in each 26-bar grid cell from the window's first row, thin cases have raw proximity strictly above the median of all cases and the rest are thick, and the plan's 'inconclusive with few cases' is reported as not observable."
+}

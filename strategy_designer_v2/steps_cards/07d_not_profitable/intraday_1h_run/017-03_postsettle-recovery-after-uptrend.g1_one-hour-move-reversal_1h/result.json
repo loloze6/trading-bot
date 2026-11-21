@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.30148790000000003,
+  "findings": {
+    "F1": "The fade has a real edge before costs but fees eat it about eight times over: per bar the book earned 0.81 bp gross and paid 6.56 bp in fees, for \u22125.75 bp net; that is 0.013 % gross against 0.107 % in fees per unit of turnover, from a turnover of 0.61 of the book per hour. The result is a mean daily book return of \u22121.36 % over 17,381 coin-days and the failed Sharpe of \u221216.35.",
+    "F2": "Every slice loses after fees. Gross gain rises with the move's size, from 0.2 bp to 19.9 bp per bar from the smallest to the largest quintile of |move / 20-bar vol|. Fees rise with it, from 4.3 bp to 10.0 bp, because sharp hours also cause the largest trades, so net is negative in every quintile (\u22124.2 bp to \u22128.0 bp) and for every coin (fees 5.7\u20137.7 bp against gross 0.1\u20131.4 bp).",
+    "F3": "The reversal is too small at 1 hour to pay for an hourly trade. On non-overlapping grids, fading the top quintile of 1-hour moves (sized by 720-bar vol) earns only 4.4 bp (t 8.4, n 77,569). The same fade earns 10.3 bp over 4 hours (t 5.4, n 19,378) and 50.1 bp over 24 hours (t 4.8, n 3,190). So the gain per position grows roughly with the horizon while one trade's fee stays fixed.",
+    "F4": "The reversal sits almost entirely in high-volatility periods, and most clearly at the slower horizons. Fading the two largest move quintiles in above-median 720-bar vol earns 75.6 bp over 24 hours (t 6.2, n 3,122) against 4.4 bp (t 0.6) in low vol. Over 4 hours it is 14.9 bp (t 7.0) against 0.7 bp (t 0.6), and over 1 hour 5.5 bp (t 9.6) against 1.2 bp.",
+    "F5": "The edge does not extend to every horizon. The fade is flat at 12 hours (top quintile \u22126.2 bp, t \u22121.2) and loses at 72 hours (top quintile \u221289 bp, t \u22123.0). The usable reversal is the 1-day move undone over the next day, not a longer drift."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's return over the next 24 hours runs against its own last 24-hour return, and the larger that move relative to the coin's recent daily volatility, the larger the reversal, only while the coin's 30-day volatility is high, the reversal growing with that volatility.",
+      "consequence": "Fade sharp one-day moves in volatile periods, rebalancing about once a day instead of every hour, so that one fee is set against a reversal of tens of basis points rather than a few.",
+      "name": "daily move reversal, high volatility",
+      "from": "F1, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 4 hours runs against its own last 4-hour return, and the larger that move relative to the coin's recent 4-hour volatility, the larger the reversal, only while the coin's 30-day volatility is high, the reversal growing with that volatility.",
+      "consequence": "Fade sharp four-hour moves only in volatile periods, where the reversal of about 15 bp per position can carry a fee that the 1-hour fade could not.",
+      "name": "four-hour reversal in volatility",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.d1_daily-move-reversal-high-volatility",
+    "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.d2_four-hour-reversal-in-volatility"
+  ],
+  "no_ideas": null
+}

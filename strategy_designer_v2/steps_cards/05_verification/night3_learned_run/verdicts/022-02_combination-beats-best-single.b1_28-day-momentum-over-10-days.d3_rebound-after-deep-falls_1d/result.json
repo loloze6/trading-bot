@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 10-bar forward return minus normal drift on forecast, non-overlapping 10-bar grid",
+    "value": -0.001009840681436246,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.4947367072182525
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual 10-bar move over cases (forecast rise >= 2 points, once per grid cell), long direction, > 0",
+    "value": -0.00916952230644349,
+    "passed": false
+  },
+  "counts": {
+    "grid cells with forecast > 0": 1036,
+    "cases": 931,
+    "grid cells (all)": 1691
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "situation read as raw fall28 < 0 or raw near_low60 < 0, side long; the regression uses every grid cell (forecast zero included) at positions 0,10,20,... of each window; normal drift is the coin's mean of those non-overlapping 10-bar returns over all windows; a case is the first long bet (forecast rise >= 2 from its lowest level since the last bet, from 0 after a flat) in each grid cell, measured from its bar's close; the plan's too-few-cases rule is reported as 'not observable'."
+}

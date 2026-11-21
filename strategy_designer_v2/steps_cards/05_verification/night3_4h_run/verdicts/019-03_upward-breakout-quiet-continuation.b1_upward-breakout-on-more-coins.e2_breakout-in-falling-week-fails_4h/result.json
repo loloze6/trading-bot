@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted 18-bar short return per case",
+    "value": 0.008342237499309695,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.439158001847437
+    },
+    "threshold": "t >= 2 with at least 30 cases (and deeper half ahead) confirms; t <= -2 with at least 30 cases rejects"
+  },
+  "supporting_check": {
+    "name": "deeper-fall half minus shallower half, mean drift-adjusted short return",
+    "value": 0.0017264610929945898,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1834
+  },
+  "decided_by": "Confirm: t >= 2 with at least 30 cases and the deeper-fall half ahead of the shallower half.",
+  "reading": "Situation computed from prices (close above max high of previous 12 bars in the window, 42-bar return < 0, using the recorded week_fall raw value where present); active bars whose situation cannot be computed inside the window (115) are left out of the agreement share; a case is the first short bet (forecast falling >= 2 points below its highest short level since the last bet, reset to 0 after flat or a side change) in each 18-bar grid cell counted from each window's first row, cases without 18 bars left in the window are dropped, and the median split puts |forecast| above the median in the deeper half and the rest in the shallower half."
+}

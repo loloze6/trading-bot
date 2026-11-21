@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of -forecast/10 x (26-bar forward return minus coin's mean 26-bar return), forecast<0, 26-bar grid",
+    "value": -0.00953702340305123,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.5530529111138516
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting difference < 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return, |forecast| above median minus below median, must be < 0",
+    "value": -0.05935594418892685,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 353,
+    "cases above median": 176,
+    "cases below median": 176
+  },
+  "decided_by": "The t of the main mean lies between -2 and 2 (or is undefined), which the plan makes inconclusive.",
+  "reading": "Cloud position recomputed from each window's own prices (cloud at t = spans computed at t-26, below = close under the lower span), cloud-slope sign taken from the recorded slope_size raw value (recomputed from prices if missing), and only active bars where both are computable enter the agreement; drift is the coin's mean 26-bar return on the non-overlapping grid of all its windows; median split is strict (cases equal to the median left out)."
+}

@@ -301,6 +301,15 @@ def validate(config: dict) -> List[str]:
                 f"number, got {mac!r}"
             )
 
+    # V20 (2026-11-19, topics/30): strategies.min_holding_bars, if present, is the idea's horizon in bars: after the
+    # book trades, it does not trade again for that many bars (core/trading_bot.py). An integer >= 1.
+    if "min_holding_bars" in config["strategies"]:
+        mhb = config["strategies"]["min_holding_bars"]
+        if isinstance(mhb, bool) or not isinstance(mhb, int) or mhb < 1:
+            violations.append(
+                f"VIOLATION V20 strategies.min_holding_bars: must be an integer >= 1, got {mhb!r}"
+            )
+
     # V12: every declared component's 'class' dotted path must resolve to a real,
     # importable class in strategies.strategy_components (or wherever it actually
     # points). Today (pre-V12), an invented/typo'd class name is never caught here

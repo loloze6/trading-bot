@@ -1,0 +1,10 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d3_ten-day-rebound-after-falls_1d: no ideas: The effect the book bets on is not in the data, and no market state found here (20-day trend, distance to the high, new low, volatility, 60-day trend) carries a significant rebound that would lift the book above holding or keep it out of its -80 % falls.
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound_1h: 2 ideas (2 explorations)
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_one-day-fall-next-day-rebound_1h: 3 ideas (2 explorations)
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising_1h: 3 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d1_extreme-two-hour-move-reverses_1h: 3 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d2_extreme-daily-run-reverses_1h: 2 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d3_midnight-settlement-daily-reversal_1h: 3 ideas (2 explorations)

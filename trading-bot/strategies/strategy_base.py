@@ -418,7 +418,7 @@ class RollingBuffer:
       - `add_data()` is O(1); a full rebuild costs one O(n) DataFrame construction
         per tick regardless of how many components read from the buffer.
       - The construction is columnar (2026-11-18, operator's go; measured: building the frame from the list of bar
-        dicts took 34% of a 1h window and 89% with a one-year history, `orchestration/duration/8_finer_bars_measure.md`).
+        dicts took 34% of a 1h window and 89% with a one-year history, `topics/33_review/duration/8_finer_bars_measure.md`).
         Each column is kept in its own typed array as bars arrive (one value written per bar; the arrays hold twice
         `max_size` and slide back when full), and the frame is built from the last `max_size` values. Only for bars
         whose every value is a float, an int, a bool or a tz-naive nanosecond Timestamp, with the same keys in the same

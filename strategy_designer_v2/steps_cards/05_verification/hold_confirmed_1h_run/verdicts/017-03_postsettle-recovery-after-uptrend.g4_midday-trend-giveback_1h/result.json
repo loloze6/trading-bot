@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9966589220223122,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 10:00-bar excess 3h return on forecast (pooled)",
+    "value": 4.379277364937788,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.379277364937788
+    },
+    "threshold": "t >= 2 confirms (with >= 500 cases and supporting check), t <= -2 rejects (with >= 500 cases)"
+  },
+  "supporting_check": {
+    "name": "mean before-cost excess gain of position over 11:00-13:00 bars",
+    "value": 8.664084827184903e-05,
+    "passed": true
+  },
+  "counts": {
+    "daily cases": 17334,
+    "supporting check bars": 52100
+  },
+  "decided_by": "The slope's t is 2 or more with at least 500 cases and the supporting check passes.",
+  "reading": "Situation bars are those stamped 10:00, 11:00, 12:00 UTC (next bar starts 11-13) with expected side minus the sign of the 72-bar return; close[t+3] is taken positionally inside the window; the coin's mean 3-bar return uses the non-overlapping grid 0,3,6,... of each window pooled over windows; the supporting check uses the positions after the 10:00, 11:00 and 12:00 bars' trades, held over the 11:00-13:00 bars, against the coin's mean hourly return over all windows."
+}

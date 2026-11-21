@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 336-bar forward return minus coin drift on forecast (grid bars with forecast > 0)",
+    "value": 0.0010952719681681484,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.13266016729624558
+    },
+    "threshold": "confirm if slope t >= 2 (with top-tercile mean excess > 0 and >= 100 cases); reject if t <= -2 (>= 100 cases)"
+  },
+  "supporting_check": {
+    "name": "top-tercile (by forecast) mean 336-bar excess return over drift > 0",
+    "value": -0.022356291382135525,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast > 0": 43,
+    "top tercile cases": 15
+  },
+  "decided_by": "Only 43 grid cases with forecast > 0, fewer than the plan's minimum of 100.",
+  "reading": "The regression pools all coins' grid bars with forecast > 0 (grid from each window's first row, returns inside the window), the drift is each coin's mean 336-bar return over all its windows' grid bars, and the top tercile is the top third of those bars ranked by forecast (ties broken by order)."
+}

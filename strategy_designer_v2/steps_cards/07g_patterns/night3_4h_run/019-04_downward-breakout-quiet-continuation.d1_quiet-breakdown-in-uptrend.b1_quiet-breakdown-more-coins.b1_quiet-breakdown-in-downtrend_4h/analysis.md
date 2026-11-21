@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend_4h
+idea tested: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5703 USD
+---
+## Findings
+- **F1:** The tested forecast is capped. 86 % of its active bars sit at -20 (median -20, 5th to 75th percentile all -20). The median split of the supporting check therefore put all 4087 cases in the smaller half and none in the larger. The idea's inconclusive verdict comes from this cap, not from a missing grading.
+- **F2:** Down-breaks of the two-day range while the 30-day return is negative are graded by narrowness. The narrowest fifth of the stretch against the 30-day mean 4h range gives an unusual 3-day fall of +1.31 % (t 4.08, 588 cases). The widest fifth gives -0.95 % (t -2.35). Spearman rho is 0.107 (p 6e-9, 2937 cases).
+- **F3:** The narrowness grading in F2 holds across the record.
+- **F4:** The depth of the break grades the wrong way. The deepest third of down-breaks gives -0.66 % in the short direction over 3 days (t -2.73), against +0.28 % and +0.26 % for the shallower two thirds. The forecast's depth multiplier works against its narrowness term.
+- **F5:** A 4h close beyond the two-day range against the sign of the 30-day return reverses.
+- **F6:** After a single 4h fall, the coin rebounds over the next day, and the larger the fall against the coin's usual 4h move, the larger the rebound.
+- **F7:** Up-breaks while the 30-day return is positive are not graded by narrowness. The narrowest fifth gives -0.09 % (t -0.27) and the widest fifth +1.23 % (t 1.57).
+- **F8:** The brief's premise that quiet stretches precede larger moves is contradicted. Over the next 3 days, the mean absolute move in usual-move units is 0.650 in the narrowest fifth of stretches and 0.723 in the widest.
+- **F9:** Hour of day matters, but too little to trade.
+
+## Ideas
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend.g1_narrow-stretch-breakdown-in-downtrend` (from F1, F2, F3, F4): When a four-hour bar closes below the lowest low of the preceding two days in a coin whose 30-day return is negative, the coin falls over the next three days. The narrower that two-day range is compared with the coin's 30-day average four-hour range, the larger the fall.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend.g2_counter-trend-wide-break-reverses` (from F5): When a four-hour bar closes beyond the preceding two-day range against the sign of the coin's 30-day return, the coin moves back the other way over the next three days. The wider that two-day range is compared with the coin's 30-day average four-hour range, the larger the move back.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend.g3_large-four-hour-drop-rebounds` (from F6): After a four-hour bar whose return is a fall, the coin rises over the next day. The larger that fall is against the coin's usual four-hour move, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

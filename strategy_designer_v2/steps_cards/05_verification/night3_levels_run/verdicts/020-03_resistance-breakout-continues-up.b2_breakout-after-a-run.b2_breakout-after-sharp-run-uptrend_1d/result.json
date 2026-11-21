@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move after long bets",
+    "value": 0.0043667250310624,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.277894671213063
+    },
+    "threshold": "above 0 with t >= 2 to confirm, below 0 with t <= -2 to reject, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope t of unusual move on forecast size",
+    "value": 1.725679991265662,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 1205
+  },
+  "decided_by": "The t of the mean unusual 5-day move lies between -2 and 2.",
+  "reading": "The 60-day return is recomputed from closes inside each window, so active bars in a window's first 60 bars (no 60-bar lookback) are left out of the agreement share; a case is the first long bet (forecast rise >= 2 points from its lowest long level since the last bet, from 0 after flat) in each 5-bar grid cell counted from the window's first row, its forecast size is the forecast on that bar, and the drift is the coin's mean 5-bar return on the same grid over all its windows; fewer than 30 cases is reported as not observable."
+}

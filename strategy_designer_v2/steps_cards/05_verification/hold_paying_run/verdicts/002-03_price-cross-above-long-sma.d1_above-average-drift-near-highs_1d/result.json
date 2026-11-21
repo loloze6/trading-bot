@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of de-meaned forward 20-bar return on forecast, pooled",
+    "value": 1.2207182351828094,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.2207182351828094
+    },
+    "threshold": "confirm if t >= 2 (with positive timing gain); reject if t <= -2",
+    "slope": 0.0020167155189671562
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return minus market-rise gain)",
+    "value": 0.0004169322171877272,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast above 0": 284,
+    "grid cases in total": 827
+  },
+  "decided_by": "Minimum counts not reached: 284 grid cases with forecast above 0 (need 100) and 827 cases in total (need about 860).",
+  "reading": "The situation 'close at or above SMA(200)' is read from the recorded regime == 'trending', because the detector's ma200 component is not recorded and windows are too short to recompute a 200-bar SMA, with the expected side long (forecast > 0) and the range position and rise only grading the size; the coin's mean 20-bar return is the mean of its non-overlapping grid returns over all windows, the slope t is the OLS slope t (with intercept) of the pooled grid cases, 'about 860 cases' is taken as at least 860 grid cases, and the book's daily returns are postRebalance_total_value bar-to-bar within each window, averaged across coins per day."
+}

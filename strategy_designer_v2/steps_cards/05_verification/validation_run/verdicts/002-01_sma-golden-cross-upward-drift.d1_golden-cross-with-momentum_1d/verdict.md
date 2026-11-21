@@ -11,6 +11,7 @@ Evidence:
 - Counts: active grid cases: 205, top half cases: 102, bottom half cases: 103
 - Decided by: t lies strictly between -2 and 2, which the plan calls inconclusive.
 - Reading: Situation read from regime == 'trending' with forecast > 0; grid at positions 0, 20, 40, ... of each window with only bars having a full 20-bar forward return inside the window; the coin's mean 20-bar return is the mean over all its grid bars in all windows; the median split puts forecasts above the median in the top half and those at or below it in the bottom half.
+- Size: unusual move +2.55 % per case over 20 bars, 0.077 of the coin's usual move (21.24 %); normal drift in its direction +2.44 %, total +4.99 %; 312 cases
 Plan: `steps_cards/03_test_plan/plans/002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-momentum_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-momentum_1d`
 Measure: `measure.py`

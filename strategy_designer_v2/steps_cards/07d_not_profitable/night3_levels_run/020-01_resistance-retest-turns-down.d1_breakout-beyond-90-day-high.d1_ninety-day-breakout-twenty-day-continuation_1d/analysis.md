@@ -1,0 +1,26 @@
+---
+line: 7.d not profitable
+backtest: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation_1d
+idea tested: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5425 USD
+---
+## Findings
+- **F1:** The book's gain comes from the few days the close stands above its prior 90-day high: on those days the next day's drift-adjusted return is +0.69 % (730 bars, t 2.80), but they are only 5.2 % of bars, while the 20-day minimum holding keeps the book in for 24.7 % of bars, and the 3,601 held days after the forecast fell back to 0 earn only +0.09 % (t 0.92).
+- **F2:** The move fades quickly after entry: the drift-adjusted next-day return in position is +1.13 % in the first 3 days held (308 bars, t 2.79), +0.33 % on days 4 to 10 (714, t 1.40), and -0.04 % on days 11 to 20 (997, t -0.18), so the 20-day hold spreads a short move over many idle days and pulls the mean daily return down to 0.024 % against the 0.05 % required.
+- **F3:** The breakout state is short-lived: of 903 positive-forecast bars, 809 are within 3 days of the forecast turning positive, 94 are 4 to 10 days in, and none are later, so a 20-day hold is mostly spent after the situation has ended.
+- **F4:** Cost is not the cause: per case the total move is +7.47 % over 20 days (152 cases), 38.7 times the 0.19 % round trip, and the unusual move is 25.7 times it; the gain is lost to dilution and small size (mean position 0.33 when in), not to fees.
+- **F5:** In position, the size of the next day's drift-adjusted gain grows with the distance above the 90-day high: -0.10 % at 5 to 10 % below it (601 bars), +0.04 % at 0 to 5 % below (857), +0.39 % at 0 to 5 % above (382, t 1.70), and +0.95 % at 5 to 15 % above (157, t 1.49); the same order holds on all bars (+0.11 %, +0.22 %, +0.86 %).
+- **F6:** In position, the next day's drift-adjusted gain also grows with the coin's own 10-day return: -0.14 % in the second-lowest quintile, +0.20 % in the middle, +0.35 % (t 2.20) and +0.38 % in the two highest; the 20-day-return quartiles go the same way (+0.09 %, +0.26 %, +0.33 %, +0.35 %).
+- **F7:** The idea's 20-day claim did not show on its own grid: the main-measure t is -0.14 on 41 cases, and on 37 grid cases within 3 days of a breakout the 20-day drift-adjusted return is -4.4 %, which is consistent with the move being spent in the first days (F2).
+- **F8:** The book's gain is concentrated in one coin: ZEC's trades sum +3,803 % of the 6,308 % total, while LTC's 49 trades lose (-1.7 % mean), and trade profit does not grow with the entry forecast (mean +32 %, +13 %, +11 % from the low to the high tercile); the deepest chained fall is 16.2 %, which gives the failing Calmar of 0.50.
+
+## Ideas
+- `020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation.d1_ninety-day-breakout-five-day-continuation` (from F1, F2, F3, F4, F5, F7): The further a coin's daily close stands above its highest close of the previous 90 days, the more it rises over the next 5 days.
+- `020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation.d2_breakout-with-strong-run-up` (from F2, F5, F6): The further a coin's daily close stands above its highest close of the previous 90 days, the more it rises over the next 5 days, the more so the larger its 10-day return.
+- `020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation.d3_hold-while-beyond-high` (from F1, F3, F5, F8): The further a coin's daily close stands above its highest close of the previous 90 days, the more it rises over the next day, while its close is still above that high.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

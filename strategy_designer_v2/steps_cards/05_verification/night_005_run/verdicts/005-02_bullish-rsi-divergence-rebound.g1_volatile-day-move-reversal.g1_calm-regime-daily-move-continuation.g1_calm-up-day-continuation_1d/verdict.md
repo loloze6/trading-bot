@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases with forecast >= 2: 205, other grid bars: 934, grid bars with forecast > 0: 522
 - Decided by: The difference is positive with Welch t >= 2 from at least 30 cases with forecast >= 2, and the supporting slope is positive.
 - Reading: Situation taken as bars where the raw component is positive (and the day's in-window close-to-close return is up when computable), side long; grid is positions 0,5,10,... of each BTC and ETH window with grid bars lacking a 5-bar forward return in the window dropped, 'all other grid bars' means grid bars with forecast < 2, and the slope is undefined (not positive) with fewer than 2 positive-forecast cases.
+- Size: unusual move +0.23 % per case over 5 bars, 0.021 of the coin's usual move (9.19 %); normal drift in its direction +0.66 %, total +0.88 %; 654 cases
 Plan: `steps_cards/03_test_plan/night_005_run/plans/005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.g1_calm-up-day-continuation_1d.md`
 Record: `steps_cards/04_backtest/night_005_run/backtests/005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.g1_calm-up-day-continuation_1d`
 Measure: `measure.py`

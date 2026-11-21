@@ -11,6 +11,7 @@ Evidence:
 - Counts: forecast > 0 grid samples: 108
 - Decided by: The slope's t lies between -2 and +2.
 - Reading: The coin's mean 10-bar return is the mean of all its non-overlapping 10-bar grid returns over all windows (not only forecast > 0 samples), the slope t is the ordinary OLS t with intercept, and the situation is read from the raw component value > 0 (price-based prior 20-bar high where it is missing).
+- Size: unusual move +3.07 % per case over 10 bars, 0.163 of the coin's usual move (14.49 %); normal drift in its direction +1.20 %, total +4.27 %; 335 cases
 Plan: `steps_cards/03_test_plan/night_006_run/plans/006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation_1d.md`
 Record: `steps_cards/04_backtest/night_006_run/backtests/006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation_1d`
 Measure: `measure.py`

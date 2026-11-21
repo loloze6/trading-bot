@@ -9,7 +9,9 @@ Options: --records-root (default: ../../04_backtest/backtests), --verdicts-dir (
 The model sees only the system prompt and the request (the plan, the config, the record description, and the coins,
 windows and columns of this record): no data, no tools, no files, an empty working folder. The runner executes the
 model's function on the record, in a separate process, with the venv's Python. Saved per plan, in verdicts/<plan id>/:
-verdict.md (status and evidence), measure.py (the function), result.json (what it returned). One line in INDEX.md.
+verdict.md (status and evidence), measure.py (the function), result.json (what it returned), size.json (the idea's size,
+computed by code from the record's prices and forecast: common/measures.md, "The size of an idea"; not for a mismatch).
+One line in INDEX.md.
 """
 import argparse, gzip, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
@@ -17,6 +19,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "common"))
 from lib import common_text, call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+from idea_size import size as idea_size  # noqa: E402  (the size of an idea, common/measures.md)
 
 ATTEMPTS = 3
 STATUSES = ("confirmed", "rejected", "inconclusive", "not observable", "mismatch")
@@ -107,8 +110,18 @@ def fmt(v):
     return f"{v:.6g}" if isinstance(v, float) else str(v)
 
 
-def render(d, plan_id, h, out, plan_path, record):
-    """verdict.md, from what the function returned."""
+def size_line(s):
+    """The idea's size, in words, for verdict.md."""
+    if not s or not s.get("cases"):
+        return "- Size: no case to measure"
+    p = lambda v: f"{100 * v:+.2f} %"
+    return (f"- Size: unusual move {p(s['unusual_move'])} per case over {s['horizon_bars']} bars, "
+            f"{s['strength']:.3f} of the coin's usual move ({100 * s['usual_move']:.2f} %); normal drift in its direction "
+            f"{p(s['normal_drift'])}, total {p(s['total_move'])}; {s['cases']} cases")
+
+
+def render(d, plan_id, h, out, plan_path, record, size=None):
+    """verdict.md, from what the function returned, and the idea's size."""
     chk = out.get("situation_check") or {}
     if out["status"] == "mismatch":
         lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}", "status: mismatch", "---",
@@ -128,6 +141,7 @@ def render(d, plan_id, h, out, plan_path, record):
              "- Counts: " + ", ".join(f"{k}: {fmt(v)}" for k, v in out["counts"].items()),
              f"- Decided by: {out['decided_by']}",
              f"- Reading: {out['reading']}",
+             size_line(size),
              f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`",
              f"Record: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`",
              "Measure: `measure.py`"]
@@ -202,7 +216,12 @@ def main():
     d.mkdir(parents=True, exist_ok=True)
     write_atomic(d / "measure.py", code)
     write_atomic(d / "result.json", json.dumps(out, indent=2) + "\n")
-    render(d, plan_id, h, out, plan_path, record)
+    s = None
+    if out["status"] != "mismatch":
+        hz = re.search(r"Horizon:\s*(\d+)", plan_text)
+        s = idea_size(record, int(hz.group(1))) if hz else {"cases": 0, "why": "the plan states no horizon"}
+        write_atomic(d / "size.json", json.dumps(s, indent=2) + "\n")
+    render(d, plan_id, h, out, plan_path, record, s)
     fit = h.get("fit", "not given")
     if out["status"] == "mismatch":
         index_line(f"{plan_id}: mismatch: the test does not match its plan (agreement {fmt(out['situation_check']['agreement'])}) (fit: {fit})")

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "ordinary t of mean strength of short cases over 120 bars (drift-adjusted, per usual 120-bar move)",
+    "value": 0.0006565894593157166,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.0370800091549909
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman of |forecast| at signal bar vs strength > 0",
+    "value": -0.013997709491559833,
+    "passed": false
+  },
+  "counts": {
+    "cases": 3165,
+    "active bars": 202702
+  },
+  "decided_by": "t between -2 and 2 over at least 30 cases.",
+  "reading": "The situation is a negative 24-bar return with a short forecast; a case is a deepening of the short forecast by at least 2 points from its shallowest level since the last bet (reset at flat), first one per 120-bar grid cell from each window's first row, dropped if its 120-bar return leaves the window; drift and usual move are the mean and sample std of each coin's non-overlapping 120-bar returns pooled over windows; fewer than 30 cases gives not observable per the workflow's minimum-count rule."
+}

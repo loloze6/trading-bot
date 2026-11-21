@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3475616,
+  "findings": {
+    "F1": "The test's mean is on the predicted side and past the bar: +0.49 % unusual move over 72 hours, t 2.99, on 2803 cases. The verdict is inconclusive only because the forecast's cap made the supporting check impossible: 54 % of cases (1515 of 2803) entered at exactly +20, so the median entry forecast is 20 and no case lies above it (0 above, 2803 at or below).",
+    "F2": "Within the cases, the size of the forecast does not grade the move. On the raw component, cases above the median minus those below differ by +0.09 %, Welch t 0.26 (1401 vs 1402 cases). Its quintiles are U-shaped: +0.72 %, +0.12 %, +0.18 %, +0.64 %, +0.81 %.",
+    "F3": "The 30-day rise does not grade the rebound either. On the 72-hour grid, dips (24-hour fall above 0) inside a positive month show no ordering across quintiles of the 30-day return in usual 30-day moves: +0.27 %, -0.31 %, +1.57 %, +0.24 %, +0.55 % (190 cases each).",
+    "F4": "What grades the rebound is the depth of the 24-hour fall. On the 72-hour grid with a positive 30-day return, falls of 0.5 to 1, 1 to 1.5 and over 1.5 times the 30-day mean absolute daily return are followed by +0.67 % (t 1.29, n 259), +0.87 % (t 1.42, n 164) and +2.67 % (t 3.58, n 171). The product of fall and rise ranks with the move at Spearman rho 0.13 (p 4e-5, n 950).",
+    "F5": "A deep fall rebounds less without a rising month. In a non-positive month, falls over 1.5 times the usual daily move are followed by +0.90 % (t 1.88, n 253). Fall depths from 0.5 to 1.5 times are followed by -1.22 % and -1.00 %.",
+    "F6": "The effect is mixed across periods and coins. By year, the case means run from -0.97 % (2022, t -1.95) and -0.96 % (2018) to +2.05 % (2021, t 3.57) and +1.22 % (2024, t 3.02). By coin, they run from -0.01 % on XMR to +0.93 % on LTC (t 2.39).",
+    "F7": "The move carried over 72 hours is large next to the 0.19 % cost of a round trip. The total move is 0.90 % per case (4.7 times the cost), and 2.67 % unusual on the deepest falls. The book paid: Sharpe 1.11, 0.56 above holding."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, falls by several times its 30-day average absolute daily return while its 30-day return is positive, the coin rises over the next 3 days more than its normal drift, and the deeper the 24-hour fall in multiples of its 30-day average absolute daily return, the larger the rise.",
+      "consequence": "A sharp one-day drop inside a month-long rise is a reason to buy for a few days, sized up the deeper the drop is relative to the coin's usual daily move.",
+      "name": "deeper dip larger rebound",
+      "from": "F1, F2, F3, F4, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, falls by several times its 30-day average absolute daily return, the coin rises over the next 3 days more than its normal drift, and the larger the fall in multiples of that average, the larger the rise.",
+      "consequence": "An outsized one-day drop is a reason to buy for a few days rather than to sell, more so the larger the drop is next to the coin's usual daily move.",
+      "name": "outsized daily drop rebounds",
+      "from": "F4, F5, F7",
+      "refs": [
+        "F4",
+        "F5",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.b1_deeper-dip-larger-rebound",
+    "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.b2_outsized-daily-drop-rebounds"
+  ],
+  "no_ideas": null
+}

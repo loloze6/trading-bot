@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h",
+  "step5": "rejected",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35593030000000003,
+  "findings": {
+    "F1": "The 21:00 UTC 2-hour return rises with the coin's 24-hour return, not with its fall. The pooled slope of the excess 2-hour return on the vol-scaled 24-hour return is +5.3 bp per unit (t 4.4, n 17271), and it is positive in all six coins (t from 0.5 to 3.0). The top 24-hour-return quintile earns +11.0 bp (t 4.4), while the bottom quintile earns -0.9 bp (t -0.3). This is the opposite of the tested idea, which was rejected with slope t -3.73.",
+    "F2": "The evening hours rise on their own. The mean excess 1-hour return is +4.8 bp at 20:00 (t 6.0) and +3.7 bp at 21:00 (t 4.8), the two strongest of the 24 hours, each with about 17,400 cases. Pooled over 20\u201321h it is positive in 7 of 8 years (t from 1.3 to 5.2), and negative only in 2022 (-2.8 bp, t -1.8).",
+    "F3": "A coin's next hour reverses its last hour, graded by the size of that move. Next-hour excess runs from +4.6 bp (t 7.0) in the lowest decile of the vol-scaled last-hour return to -3.1 bp (t -6.3) in the 9th decile. The reversal slope is -4.5 bp per unit (t -11.7) in the highest tercile of volatility relative to its 30-day median, against -0.2 bp (t -1.0) in the lowest tercile. It shows in every year (t -0.6 to -7.5) and is strongest in LTC, XMR, XRP and ZEC (t -5.0 to -7.5).",
+    "F4": "On a non-overlapping daily grid, the bottom quintile of vol-scaled 24-hour return is followed by +34.5 bp excess over the next 24 hours (t 3.7, n 3421). The top two quintiles are followed by -16.1 bp (t -2.0) and -15.6 bp (t -1.9).",
+    "F5": "The 14:00 UTC 2-hour return also follows the 24-hour return: slope +10.8 bp (t 7.4), positive in 5 of 6 coins. It is unstable by year, though: +47 bp (t 11.2) in 2020 against -15.9 bp (t -5.0) in 2022, so it is not a stable pattern."
+  },
+  "ideas": [
+    {
+      "idea": "In the late-evening UTC hours, a coin keeps moving the way it moved over the past day. The stronger its 24-hour rise, the larger its excess return over the next 2 hours from the 21:00 close.",
+      "consequence": "A trader would lean long into 21:00\u201323:00 UTC in proportion to the coin's 24-hour rise, and refuse that long if the continuation is absent.",
+      "name": "late-evening daily trend continuation",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next hour runs against its last hour's return. The larger the last hour's move relative to its recent volatility, the larger the reversal, and the reversal is stronger when the coin's 24-hour volatility is high against its own past month.",
+      "consequence": "A trader would fade sharp single-hour moves, sizing up with the move's size in volatile spells, and refuse the fade if no reversal appears.",
+      "name": "volatile hourly move reversal",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 24 hours runs against its past 24-hour return. The deeper its 24-hour fall relative to its recent volatility, the larger the rebound over the following day.",
+      "consequence": "A trader would buy coins after sharp daily falls for a one-day hold, sized by the depth of the fall, and refuse that buy if no rebound appears.",
+      "name": "daily fall next-day rebound",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.g1_late-evening-daily-trend-continuation",
+    "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.g2_volatile-hourly-move-reversal",
+    "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.g3_daily-fall-next-day-rebound"
+  ],
+  "no_ideas": null
+}

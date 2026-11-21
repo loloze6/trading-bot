@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high_1d
+idea tested: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3665 USD
+---
+## Findings
+- **F1:** Measured on non-overlapping 10-day grids, a coin's 5-day return scaled by its own volatility over the prior 30 days predicts its excess 10-day return: the slope is +0.10 of the coin's usual 10-day move per unit of scaled return, t 3.50 on 1115 independent cases. This stands out among the roughly 20 angles tried. The same measure gives t 2.23 over 5 days (2411 cases) and t 0.67 over 20 days (539 cases), so the continuation fades by the third week.
+- **F2:** The size of the scaled move also carries information without its sign: the absolute 5-day scaled return predicts the excess 10-day return with t 2.92 (1115 cases). Together with F1, this means large 5-day rises are followed by the largest gains, and large falls by somewhat above-normal returns. The overlapping 5-day table agrees: after daily moves beyond 2 of their usual size, the mean 5-day return is +2.26 % after rises and +0.64 % after falls, against about +0.3 % after small moves.
+- **F3:** The tested nearness to the 90-day high explains little of the 20-day return. Its forecast quintiles are not monotonic (excess -0.3 %, -1.6 %, -0.7 %, -1.2 %, +3.5 %), and the pooled slope t is 0.01 on 827 grid cases. The per-coin correlations run from -0.08 (XMR) to +0.17 (ZEC). The raw-distance bins are not monotonic either (-6.8 % at 25 to 40 % below the high, +4.4 % above it, 28 cases).
+- **F4:** The 20-day grid's mean excess return swings by year, from -12.1 % in 2018 to +6.3 % in 2020. The book's daily return correlates 0.38 with the coins' mean daily return. On its worst 2 % of days (58 days) the coins average -6.6 %, and on its best 2 % they average +6.1 %, so the book's tails are mostly the market's own.
+- **F5:** Saturdays are higher than other days on the coin-averaged excess daily return (+0.34 %, t 2.24, 414 days). They are higher on 5 of 6 coins (LTC t 2.67, XMR t 2.01, BTC t 0.34) and in 6 of 8 years. Given the seven weekdays tested, this is at most borderline.
+- **F6:** Scaled 1-day moves do not predict 20-day returns (slope t -1.08, 539 cases; per coin from -1.27 to +0.72). Volatility quintiles and position in the 60-day range show no ordered pattern (pooled slope t 0.61 and 0.15).
+
+## Ideas
+- `020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high.g1_volatility-scaled-five-day-continuation` (from F1, F2, F6): The larger a coin's 5-day return measured against its own daily volatility over the past month, the more the coin rises over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

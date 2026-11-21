@@ -1,0 +1,29 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted 18-bar short gain per case",
+    "value": -0.007171559669881751,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -4.4856176427390215
+    },
+    "threshold": "positive with t >= 2 confirms (with supporting check); negative with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "larger-forecast half minus smaller-forecast half drift-adjusted short gain",
+    "value": 0.006452886110382439,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 2731,
+    "larger-forecast half": 1365,
+    "smaller-forecast half": 1366,
+    "active bars": 5616
+  },
+  "decided_by": "The mean drift-adjusted short gain is negative with t <= -2.",
+  "reading": "Situation computed per window as close below the minimum low of the 12 prior bars, active bars whose 12-bar history is not inside the window are left out of the agreement; a case is the first short bet (a rise of the short forecast of at least 2 points) in each 18-bar grid cell of a window, dropped if its 18-bar return leaves the window; drift is the coin's mean non-overlapping 18-bar return over all its windows; the median split puts cases above the median absolute forecast in the larger half and the rest in the smaller half."
+}

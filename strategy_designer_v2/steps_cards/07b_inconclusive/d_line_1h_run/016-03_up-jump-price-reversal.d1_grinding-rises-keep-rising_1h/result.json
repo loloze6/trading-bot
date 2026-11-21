@@ -1,0 +1,42 @@
+{
+  "line": "7.b",
+  "backtest": "016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3454338,
+  "findings": {
+    "F1": "The tested slope sits on the wrong side of zero but is tiny (OLS t \u22120.65 on 947 grid cases), and the forecast cannot grade the rise: 568 of 947 cases (60%) sit at the +20 cap, and excess return does not rise across forecast groups (+0.0128 at mean forecast 5.8, +0.0063 at 14.8, +0.0082 at 20.0).",
+    "F2": "Measured raw, without the standardisation, a more even rise does carry a little more continuation, but only because even rises are bigger. Across residual-share quintiles of all 2,865 three-day rises, the 72-hour excess return goes \u22120.0055, 0.0000, \u22120.0006, +0.0040, +0.0110 while the mean rise size goes 0.009, 0.028, 0.051, 0.076, 0.119. The residual's t of 1.12 falls to 0.55 once rise size is controlled.",
+    "F3": "The size of the 3-day rise, not its shape, carries the continuation. Rise size predicts the next 72-hour excess return with t 2.98 (n 2,865). Bars inside a rise beat bars outside it by 0.0087 against \u22120.0017 (Welch t 3.32). Inside the active bars, the forecast adds nothing once the past return is controlled (t \u22120.55).",
+    "F4": "The shape effect is not hidden at another horizon, one side or one subgroup. The forecast's t is \u22120.33 at 24 hours and \u22121.17 at 168 hours. Per-coin t runs from \u22121.25 to +0.88. Per-year t runs from \u22122.90 (2019) to +0.77. On falls, evenness gives t \u22120.62 at 72 hours.",
+    "F5": "Volume concentration points the brief's way only faintly. A rise whose volume sits in its 3 heaviest hours continues less (t \u22121.75 at 72 hours, \u22121.43 at 24 hours, n 2,865 and 8,529), which is short of clear.",
+    "F6": "Large 3-day falls rebound rather than continue. Fall size predicts continuation with t \u22123.60 over the next 72 hours (n 2,669) and t \u221211.72 over the next 24 hours (n 8,272). Once size is controlled, the fall's evenness adds nothing (t \u22120.16 at 72 hours)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 3-day rise, the more the coin keeps rising over the next 3 days.",
+      "consequence": "A trader would size longs after 3-day rises by the rise's size, not by how evenly it was built.",
+      "name": "three-day rise size continues",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 3-day fall, the more the coin rebounds over the next day.",
+      "consequence": "A trader would refuse to short after large 3-day falls and lean long, sized by the depth of the fall.",
+      "name": "deep three-day falls rebound",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising.b1_three-day-rise-size-continues",
+    "016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising.b2_deep-three-day-falls-rebound"
+  ],
+  "no_ideas": null
+}

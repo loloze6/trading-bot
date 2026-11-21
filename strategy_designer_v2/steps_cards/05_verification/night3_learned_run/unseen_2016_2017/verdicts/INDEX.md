@@ -1,0 +1,5 @@
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d: confirmed (fit: adapted) [main: 0.0439111; Welch t 2.32814; top-fifth grid cases 161, other grid cases 411, remaining positive-forecast grid cases 218, positive-forecast grid cases 379]
+022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d: confirmed (fit: exact) [main: 0.00227723; OLS slope t 3.08666; grid cases with a recorded forecast 572, top fifth cases 114, bottom fifth cases 114]
+022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d: confirmed (fit: adapted) [main: 0.00446745; OLS slope t 2.0693; grid cases 284, grid cases with forecast > 0 183]
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d: confirmed (fit: exact) [main: 0.00245795; OLS t of slope 2.58745; grid cases on trending bars 446, book days 725]
+022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: confirmed (fit: exact) [main: 0.00329405; OLS slope t 3.36884; grid cells 572, grid cells with forecast > 0 379]

@@ -39,4 +39,4 @@ Recommended: local-only read with a coverage record.
 Closed. Lives in `trading-bot/data/coverage.py` and the data tools.
 
 ## Links
-Commits 941caa29, 97d8c94a, 434a71c5; `orchestration/duration/9_data_and_table_proof.md`.
+Commits 941caa29, 97d8c94a, 434a71c5; `topics/33_review/duration/9_data_and_table_proof.md`.

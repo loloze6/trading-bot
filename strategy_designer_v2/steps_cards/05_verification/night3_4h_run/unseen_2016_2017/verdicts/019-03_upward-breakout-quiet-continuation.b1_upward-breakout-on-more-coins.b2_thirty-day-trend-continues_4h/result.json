@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of the 18-bar forward return minus the coin's mean 18-bar return, on the forecast",
+    "value": 0.0024333845893758023,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.008374714165036
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 grid cases with forecast > 0"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with forecast > 0": 620,
+    "grid cases": 893
+  },
+  "decided_by": "The slope is positive with t >= 2, over at least 300 grid cases with forecast > 0.",
+  "reading": "The regression is pooled OLS with an intercept over all grid cases, flat cases included, with the drift taken as each coin's mean 18-bar grid return over all its windows; following the workflow, fewer than 300 grid cases with forecast > 0 is reported as 'not observable'."
+}

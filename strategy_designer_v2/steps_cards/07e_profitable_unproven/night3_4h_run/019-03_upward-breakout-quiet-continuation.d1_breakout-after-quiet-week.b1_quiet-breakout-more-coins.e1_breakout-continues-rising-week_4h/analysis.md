@@ -1,0 +1,26 @@
+---
+line: 7.e profitable but not proven
+backtest: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week_4h
+idea tested: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4948 USD
+---
+## Findings
+- **F1:** The book earns about as much per day as holding the coins, and most of its gain is the market's own rise: its mean daily return is 0.00138 against holding's 0.001388; 0.000849 of it (62 %) is the market's rise and 0.000531 is timing, over 2898 book days. Its Sharpe is higher (1.06) because it is out of the market part of the time.
+- **F2:** The book earns when a coin is already rising and loses when it is falling, because its position follows the coin's trend. On coin-days split by the coin's prior 30-day return, the top two fifths (mean +13 % and +59 %) contribute +0.000493 and +0.001847 to the book's daily mean, at positions of 0.86 and 0.82. The bottom three fifths contribute -0.000563, -0.000472 and -0.000252, at positions of 0.22 to 0.74.
+- **F3:** The gain is spread across coins and periods but carried by a few trades. No single coin dominates: the largest contributors are DOGE at 1.9e-4, XRP 1.6e-4, ADA 1.5e-4, ETH 1.5e-4 and BTC 1.4e-4 per day, out of 1.38e-3. By year, 2020 gives +0.00061 while 2018 and 2022 lose. Across 4906 trades, the median trade loses 0.35 %, 46 % of trades win, and the top 5 % of trades carry 103 % of the summed profit.
+- **F4:** Among breakout cases (a close above the prior 2-day high, one per 12-day cell), the 12-day unusual move splits on the 7-day return before the breakout. Cases in the top fifth of that return (mean +22 %) rise 5.4 % more than the coin's normal drift (t 3.2, 531 cases). Cases in the bottom fifth (mean -11 %) fall 5.9 % below it (t -8.1, 531 cases). The middle three fifths sit between -1.0 % and +0.6 %, which is why the plan's mean over all breakouts is near zero while its slope check passes (slope t 7.0 on the 7-day return).
+- **F5:** The 7-day return predicts the next 12 days on every bar, breakout or not. On non-overlapping 12-day grid bars (2680 cases), the slope of the unusual move on the 7-day return (scaled by the coin's usual move) has t 2.9. The top fifth gains +3.1 % (t 3.1) and the bottom fifth -0.9 %. The 185 breakout bars alone show a slope t of only 0.9, against 2.7 for the 2495 non-breakout bars.
+- **F6:** The 30-day return predicts the same way. Its slope on the 12-day unusual move has t 3.2 (2068 cases), with the top fifth at +2.2 % (t 2.1). On the 6-day horizon its slope has t 3.3 (4516 cases), with the top fifth at +1.3 % (t 2.5).
+- **F7:** The 7-day-return momentum at 12 days holds in most coins but in barely more than half the windows. The top fifth beats the bottom fifth in 14 of 19 coins (for example DOGE +10.2 % vs -7.3 %, XRP +6.9 % vs -4.8 %), but in only 14 of 24 windows.
+- **F8:** The momentum move is large next to the cost of a trade: the top fifth's +3.1 % unusual move over 12 days (F5) is about 14 times the 0.22 % that a buy and a sell cost this backtest.
+
+## Ideas
+- `019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.e1_weekly-momentum-predicts-twelve-days` (from F1, F2, F5, F7, F8): The larger a coin's 7-day return, the more the coin rises above its normal drift over the next 12 days, whether or not its latest four-hour bar broke out of a range.
+- `019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.e2_breakout-after-falling-week-fails` (from F4, F8): When a coin's four-hour bar closes above its high of the preceding two days, the more the coin fell over the 7 days before that bar, the more it falls below its normal drift over the next 12 days.
+- `019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.e3_monthly-momentum-predicts-six-days` (from F2, F6, F8): The larger a coin's 30-day return, the more the coin rises above its normal drift over the next 6 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

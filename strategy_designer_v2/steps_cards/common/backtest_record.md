@@ -26,6 +26,9 @@ Bars, one row per bar, in time order:
 - Do not use: `confidence`, `strategy`, `balances.*`, `postRebalance_balances.*` (known to be wrong), or other
   `debug_*` columns.
 
+Per window, `manifest.json` also records the cost model the engine applied (`config.cost_model`: exchange, market,
+fee per trade, slippage per trade by coin with a default), the source of "the cost of a trade" (`measures.md`).
+
 Trades, one row per trade: `side` (LONG or SHORT), `entry_time`, `exit_time`, `entry_price`, `exit_price`,
 `duration_minutes`, `entry_forecast`, `exit_forecast`, `entry_regime`, `profit_loss_percent` (before fees),
 `net_profit_loss_percent` (after fees), `total_commission`. A trade closed on a window's last bar was closed by the

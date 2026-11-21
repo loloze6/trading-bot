@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d1_clustered-broken-support-in-downtrend_1d
+idea tested: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d1_clustered-broken-support-in-downtrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3928 USD
+---
+## Findings
+- **F1:** Large daily falls are followed by a rebound the next day, and the rebound grows with the fall. After a 1-day fall of more than 2 of the coin's usual daily moves, the next day's unusual return is +0.33 of a usual daily move (t 3.77, 386 days). After a fall of 1 to 2 usual moves it is +0.10 (t 3.30, 1385 days). After moves between -1 and +1 it is -0.01 (t -1.83, 13599 days). The coins' usual 5-day move is 10.6 %, which puts a usual daily move near 4.7 %, so the rebound after the largest falls is about 1.5 % per case. That is roughly 8 times the 0.19 % one trade cost this backtest.
+- **F2:** Large daily rises are followed by a fall the next day. After a 1-day rise of more than 2 usual daily moves, the next day's unusual return is -0.15 of a usual daily move (t -2.69, 511 days). The effect is not graded below that: after rises of 1 to 2 usual moves it is only -0.01 (t -0.43, 1355 days).
+- **F3:** The tested idea's forecast saturates, so the supporting check could not run. Among bars with a negative forecast, the most negative quarter (438 bars) all sit at the -20 cap. Every one of the 1355 cases fell in the smaller half, and none in the larger half. The size of the idea, +0.19 % unusual move per case (0.013 of a usual 5-day move, 1.0 times the cost), is far below the 0.05 strength of real ideas.
+- **F4:** Next-day returns differ by weekday on the pooled bars: Friday +0.060 of a usual daily move (t 3.74), Thursday +0.051 (t 2.61), Wednesday -0.066 (t -2.92), Monday -0.049 (t -2.48), about 2480 days each. The signs change from year to year, though; for example, Friday is negative in 2018, 2022 and 2023. Among 7 weekdays this does not stand out from chance, and I draw no idea from it.
+- **F5:** Closes near their 20-day low look weak, but not consistently. The bottom fifth of the distance from the 20-day low is followed by a 5-day unusual move of -0.10 of a usual move (t -2.26, 569 cases). By year, however, it runs from -0.39 (t -2.93) in 2018 to +0.51 (t 2.62) in 2021. Nothing else stood out: past 5-day and 20-day returns, distance from the 50-day average, relative volatility and nearby swing-level counts all stay within |t| < 2 by bucket. With this many angles, none of these counts as a finding.
+
+## Ideas
+- `020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d1_clustered-broken-support-in-downtrend.g1_one-day-rebound-after-large-falls` (from F1): The larger a coin's fall over its last day, measured against its usual daily move, the more it rises over the next day.
+- `020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d1_clustered-broken-support-in-downtrend.g2_one-day-giveback-after-large-rises` (from F2): The larger a coin's rise over its last day, measured against its usual daily move, the more it falls over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

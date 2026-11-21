@@ -1,0 +1,26 @@
+---
+line: 7.e profitable but not proven
+backtest: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d
+idea tested: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4361 USD
+---
+## Findings
+- **F1:** The book earns 0.109 % a day (t 2.96), but 0.064 % of that is the market's own rise, because it holds an average position of 0.48 in coins that drift up. Its timing adds 0.045 % a day with a t of only 1.22, so the gain the step-6 check passed is mostly holding the coins.
+- **F2:** A few trades carry the book. Of 6144 trades the median is -0.07 % and 49.5 % win; the top 5 % of trades carry 105 % of the summed trade result, and the other 95 % sum to -679 %.
+- **F3:** The timing part is positive only in rising years (2020 +0.26 %/day, 2023 +0.14 %, 2024 +0.10 %). It is negative in falling or flat years (2018 -0.09 %, 2022 -0.16 %, 2025 -0.10 %), so it behaves like extra exposure to up-markets rather than a separate edge.
+- **F4:** The level breaks themselves show no continuation compared with other closes. On the 5163 break bars the unusual 5-day move is +0.18 % (t 1.0) against -0.03 % on the 31064 other bars. Within the same size of daily return, breaks do no better: in the top return quintile +0.17 % against +0.10 % for non-breaks.
+- **F5:** A close above the coin's highest close of the prior 20 days, read on a non-overlapping grid, is followed by real moves:
+- **F6:** The move is graded by how far the close clears the 20-day high, measured in the coin's 20-day daily volatility. Over 10 days the top quartile of that margin is followed by +9.03 % (t 2.89, 136 cases, strength 0.43); the three lower quartiles give +0.03 %, +0.42 % and +0.43 %. Over 5 days the top quartile gives +4.31 % (t 2.44).
+- **F7:** Counting the level's touches adds nothing on top of the new 20-day high. Over 10 days, new-high cases that were not level breaks rose +5.44 % (t 2.91, 248 cases); those that were breaks rose +0.53 % (t 0.32, 116 cases).
+- **F8:** Closes above the prior 60-day high show the same pattern: +5.74 % unusual over 10 days (t 2.18, 147 cases) against -0.37 % otherwise.
+- **F9:** The new-20-day-high move is uneven across periods but spread across coins. It is positive in 14 of 19 coins. It is largest in w7-12 (+17.9 %, 43 cases) and w13-18 (+8.5 %, t 2.79), smaller in w19-24 (+2.26 %, t 1.35), and negative in w1-6 (-1.03 %).
+- **F10:** The new-high move covers the cost of a trade by a wide margin. Over 10 days its unusual move alone (3.87 %) is about 17 times the 0.22 % cost of a buy and a sell, whereas the tested idea's unusual move was only 1.3 times it.
+
+## Ideas
+- `020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout` (from F5, F6, F7, F8, F10): The farther a coin's daily close sits above its highest close of the previous 20 days, measured in units of its own 20-day daily volatility, the more it rises over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

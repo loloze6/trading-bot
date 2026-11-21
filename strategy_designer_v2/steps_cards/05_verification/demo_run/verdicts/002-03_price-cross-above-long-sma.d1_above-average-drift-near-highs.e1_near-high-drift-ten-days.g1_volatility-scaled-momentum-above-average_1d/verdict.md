@@ -11,6 +11,7 @@ Evidence:
 - Counts: trending grid cases: 833
 - Decided by: The slope's t is 2 or more and the timing gain is above 0 before costs.
 - Reading: The 200-day condition is read from the recorded regime 'trending' (the detector's components are not recorded and the windows are too short to recompute a 200-day average), the situation is a trending bar with the vsr component recorded (graded, so any size counts) on the long side; the coin's mean 10-bar return is the mean over all grid bars of all its windows, the slope is an OLS slope with intercept, and the book's daily return is postRebalance_total_value bar to bar inside a window with the market part from the position held into that day.
+- Size: unusual move +1.02 % per case over 10 bars, 0.057 of the coin's usual move (14.49 %); normal drift in its direction +1.17 %, total +2.19 %; 710 cases
 Plan: `steps_cards/03_test_plan/demo_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.g1_volatility-scaled-momentum-above-average_1d.md`
 Record: `steps_cards/04_backtest/demo_run/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.g1_volatility-scaled-momentum-above-average_1d`
 Measure: `measure.py`

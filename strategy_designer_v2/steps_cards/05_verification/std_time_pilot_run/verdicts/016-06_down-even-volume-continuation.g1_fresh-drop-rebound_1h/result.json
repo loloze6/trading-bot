@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 72-bar forward return on forecast (mean_reversion grid bars)",
+    "value": 0.0008736084570596293,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.983749672996775
+    },
+    "threshold": "confirm if t >= 2 with the check passing; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 72-bar return > 0",
+    "value": 0.005036776858793706,
+    "passed": true
+  },
+  "counts": {
+    "grid bars in mean_reversion": 2762,
+    "grid bars in mean_reversion with forecast above 0": 1891
+  },
+  "decided_by": "The slope's t is 2 or more and the forecast-weighted mean excess return is above 0.",
+  "reading": "Grid at positions 0, 72, 144, ... of each window with a full 72-bar forward return inside the window; the coin's mean 72-bar return is the mean over all its grid bars across all windows and regimes; the plan's 'fewer cases is inconclusive' is reported as 'not observable' per the workflow."
+}

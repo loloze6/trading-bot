@@ -29,8 +29,8 @@ For each part, say how a config built from the catalogue would handle it:
 - kept: measured as the idea states it;
 - adapted: the same thing, in the only form the config's logic allows. There are three allowed
   adaptations, forced by the guide's design principle and its list of what the config cannot
-  express: a threshold or an on/off condition made graded; "after X" made "while X"; a holding
-  period dropped. Any other change of what is measured is a replacement. Settings taken from the
+  express: a threshold or an on/off condition made graded; "after X" made "while X". A holding
+  period is kept: the book holds for the idea's horizon (below). Any other change of what is measured is a replacement. Settings taken from the
   brief or from convention are not adaptations;
 - replaced: measured by a different quantity.
 Then ask: if this test confirms, is the idea confirmed; if it rejects, is the idea rejected? This
@@ -61,7 +61,9 @@ the position away from the extreme should be close to zero: use the strongest gr
 only, the forecast never goes below zero. The idea's own durations (its horizon, the past periods of its
 situation) are part of the idea, not settings: use them, converted to bars (the duration divided by the bar size: 5
 days is 5 bars on daily bars and 120 on hourly bars). A horizon shorter than one bar does not fit the bar size: the
-outcome is untestable, and the reason says so. Choose the other settings from the brief, or else from
+outcome is untestable, and the reason says so. The book holds what it takes for the idea's horizon: code sets
+`strategies.min_holding_bars` from your horizon line (the shared definition of a forecast, its holding period); do not
+set it yourself. Choose the other settings from the brief, or else from
 convention, never from what you expect the data to show. When the brief gives none, use the single
 most common convention for that indicator on that bar size, so that the same idea always gets the
 same settings.

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of forecast/10 x (20-bar return minus coin's normal 20-bar drift), non-overlapping grid",
+    "value": 0.012532829243734722,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.1270405967408244
+    },
+    "threshold": "confirm t >= 2 over at least 300 cases with supporting check passed; reject t <= -2 over at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in forecast's direction, larger minus smaller half of abs(forecast)",
+    "value": -0.0003619168070885803,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1606
+  },
+  "decided_by": "Main-measure t lies between -2 and 2.",
+  "reading": "All grid points (positions 0, 20, 40, ... of each window with a close 20 bars later) are cases, zero forecasts included in the main mean; the supporting split excludes zero-forecast cases (no direction) and puts abs(forecast) > median in the larger half, <= median in the smaller half; fewer than 300 cases is treated as not observable per the minimum-count rule."
+}

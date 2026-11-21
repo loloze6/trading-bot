@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "021-03_thin-cloud-upward-breakout_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3408506,
+  "findings": {
+    "F1": "The main measure is on the side the idea predicts but rests on a few large winners. Across 152 upward cloud crosses the mean unusual 26-day return is +4.87 % (t 1.55). Yet the median case is \u22121.8 % and only 44 % of cases are positive. The returns are strongly skewed (skew 4.47, sd 38.8 %). Dropping the top 5 % of cases turns the mean to \u22121.3 % (t \u22120.78).",
+    "F2": "The effect is mostly the market's own year. 2020 gives +26.1 % (t 3.40, 19 cases, 74 % positive) and 2021 gives +20.5 % (t 1.55, 18 cases). 2018 gives \u221219.8 % (t \u22122.89, 11 cases, 9 % positive), 2022 \u22126.6 % (t \u22121.48) and 2025 \u22125.6 % (t \u22121.29). The other years are near zero, so whether a cross is followed by a rise depends on the bull or bear year it falls in.",
+    "F3": "The thinness grading, the brief's own claim, is absent. The thin-minus-thick difference is +0.23 %. The rank correlation of cloud proximity with the unusual 26-day return is \u22120.02 (raw) and +0.02 (standardised). The raw-proximity quartiles run +0.9 %, +6.5 %, +12.4 %, \u22120.3 % with no order. More data would not make this grading appear.",
+    "F4": "Every coin is positive but none is clear. BTC is +0.4 % (t 0.13, 21 cases), ETH +0.2 % (t 0.04), LTC +4.5 % (t 1.16), XMR +3.0 % (t 0.68), XRP +12.6 % (t 0.98, median \u221212.1 %) and ZEC +5.1 % (t 0.77). The sign is consistent but too small for 21 to 32 cases per coin to show.",
+    "F5": "The horizon is not the problem. The unusual return is +0.9 % at 5 days (t 1.01), +2.4 % at 10 days (t 1.62) and +4.9 % at 26 days (t 1.55). At 52 days it vanishes (\u22120.5 %, t \u22120.08, 112 cases), so the move is built within the plan's 26 days and fades afterwards.",
+    "F6": "The rise after a cross is larger the more the coin had fallen over the 26 days before it. By quartile of the past 26-day return, the mean unusual 26-day return runs +12.6 % (t 1.38, 59 % positive), +10.1 %, +5.6 % and \u22124.2 % (t \u22121.00, 33 % positive), with 27 cases each. The 52-day past return shows no such order.",
+    "F7": "Cost does not explain the failing book. The total move per case (+9.44 %) is 48.9 times a round trip's 0.19 %. The book's Sharpe is 0.92, 0.35 above holding the coin. It fails on mean daily return (0.00044 against 0.0005) and Calmar (0.68 against 0.75), which fits the skewed, year-driven returns of F1 and F2."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "cloud breakout, all coins",
+      "from": "F1, F4, F5, F7",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F7"
+      ],
+      "idea": "After a daily close that crosses up from below a coin's Ichimoku cloud to above it, the coin rises over the next 26 days, and the thinner the cloud at the cross, measured as its width relative to price, the larger the rise.",
+      "consequence": "An upward close through a thin cloud is followed by a larger move than one through a thick cloud, because a thin cloud means weak equilibrium and little resistance.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "After a daily close that crosses up from below a coin's Ichimoku cloud to above it, the coin rises over the next 26 days, and the more the coin fell over the past 26 days before the cross, the larger the rise.",
+      "consequence": "An upward cloud cross that follows a fall is a reason to go long for the next few weeks, while a cross that comes after a run-up is a reason to refuse that trade.",
+      "name": "cloud breakout after a fall",
+      "from": "F3, F5, F6, F7",
+      "refs": [
+        "F3",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins",
+    "021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 72-bar unusual move (return minus coin's normal 72-bar drift) of long bets",
+    "value": 0.004943880685340933,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.99185735110277
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "Welch difference of mean unusual move, above minus at-or-below median entry forecast",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "independent cases": 2803,
+    "cases above median entry forecast": 0,
+    "cases at or below median entry forecast": 2803
+  },
+  "decided_by": "A confirming mean (above 0, t >= 2, at least 30 cases) whose supporting check fails.",
+  "reading": "Bets are long-side rises of the forecast of at least 2 points from its lowest level since the last bet (reset to 0 when flat), the first per 72-bar grid cell of each window counted from its first row, with cases whose 72-bar return leaves the window dropped; cases tied at the median entry forecast are put in the lower group, and the supporting check passes on the sign of the difference, as the confirm rule states."
+}

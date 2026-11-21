@@ -11,6 +11,7 @@ Evidence:
 - Counts: active non-overlapping 5-bar cases: 1130, active non-overlapping 20-bar cases: 269
 - Decided by: The mean 5-bar excess is positive with t >= 2 and the supporting check is above 0.
 - Reading: Situation recomputed from closes (20- and 60-bar returns > 0) where the window holds 60 prior bars, otherwise taken from the detector's regime == 'trending' (the detector's own components are not recorded); active = forecast > 0 on each window's grid at positions 0, h, 2h, ... with a full h-bar forward return inside the window; holding-the-coin mean = the coin's mean h-bar return over all its grid bars in all windows; the plan's 'fewer than 100 cases' is reported as 'not observable' per the workflow.
+- Size: unusual move +0.70 % per case over 5 bars, 0.063 of the coin's usual move (10.60 %); normal drift in its direction +0.58 %, total +1.28 %; 1026 cases
 Plan: `steps_cards/03_test_plan/plans/N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d.md`
 Record: `steps_cards/04_backtest/backtests/N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d`
 Measure: `measure.py`

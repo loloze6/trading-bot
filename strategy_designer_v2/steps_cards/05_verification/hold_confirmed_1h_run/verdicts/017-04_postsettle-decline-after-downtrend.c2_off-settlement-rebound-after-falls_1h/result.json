@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (2-bar return minus coin mean 2-bar return)",
+    "value": 0.00042384090392137854,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.076919328801837
+    },
+    "threshold": "t >= 2 confirms (with quintile check), t <= -2 rejects, with at least 200 cases"
+  },
+  "supporting_check": {
+    "name": "top minus bottom forecast quintile mean excess 2-bar return",
+    "value": 0.000888300147513381,
+    "passed": true
+  },
+  "counts": {
+    "cases": 50986
+  },
+  "decided_by": "The main t is 2 or more with at least 200 cases and the top-minus-bottom quintile difference is above 0.",
+  "reading": "The coin's mean 2-bar return is taken over all non-overlapping grid bars of all its windows, quintiles are cut on the forecast rank (ties by order), and the off-settlement situation is read from the recorded regime."
+}

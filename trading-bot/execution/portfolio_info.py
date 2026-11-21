@@ -417,7 +417,7 @@ def flatten_dict_columns(df):
 
     The same frame as expanding each row with `pd.Series(x)` (each row one dtype, then the column's), built with one
     construction per column (2026-11-18, operator's go: the row-by-row expansion was 26% of a 1h backtest window,
-    `strategy_designer_v2/steps_cards/orchestration/duration/`)."""
+    `strategy_designer_v2/steps_cards/topics/33_review/duration/`)."""
     changed = True
     while changed:
         changed = False

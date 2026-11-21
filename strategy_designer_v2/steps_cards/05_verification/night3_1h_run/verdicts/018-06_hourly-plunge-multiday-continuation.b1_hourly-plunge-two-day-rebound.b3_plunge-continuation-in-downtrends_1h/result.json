@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 96-bar short-direction move",
+    "value": 0.0030546218615872924,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.5577546606396608
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and depth slope < 0; reject: t <= -2, or confirm with depth slope > 0 and slope t >= 2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of unusual short move on 30-day return",
+    "value": 0.03600691063082567,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 2329,
+    "cases with 30-day return": 1657,
+    "active bars": 112010
+  },
+  "decided_by": "Inconclusive rule: the t of the mean unusual move lies between -2 and 2 (or the mean is not above 0).",
+  "reading": "A case is the first bet bar (short forecast magnitude rising >= 2 above its lowest level since the last bet, reset on flat) in each 96-bar grid cell from each window's first row, kept only if its 96-bar forward return lies in the window; the 30-day return is close[t]/close[t-720]-1 within the window (cases without 720 prior bars are left out of the slope); the plan's fewer-than-30-cases rule is applied as the minimum count giving 'not observable'."
+}

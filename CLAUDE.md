@@ -19,7 +19,9 @@ Step 1 writes a brief, step 2 turns it into ideas, step 3 writes a test plan, st
 whether the idea is real, step 6 whether its book pays, and the step 7 lines read the result and propose the next
 ideas. `orchestration/` chains them: `run_idea` (one idea through steps 3 to 7), `select_next` (which idea next, by one
 score), `loop` (run_idea on the next idea until stopped), `run_brief` (a brief's ideas, then the loop). `unseen_test`
-(called by `run_idea`) reruns a confirmed and profitable idea, unchanged, on the dates no fold covers. The `components`
+(called by `run_idea`) reruns a confirmed and profitable idea, unchanged, on the dates no fold covers. `ideas_similarities_check` (called by hand for
+now) compares a paying book with every other one: its nearest relative, how much that book explains, who acts first,
+what is left. The `components`
 step answers the measures step 3 lacked (exists, built, cannot build); `loop` calls it and its builds unblock ideas. Read first: `steps_cards/HOW_WE_DESIGN_A_CARD.md`, then the
 card of the step or function at hand, then `steps_cards/common/` (shared definitions). Improvements, open and decided,
 are topic cards in `steps_cards/topics/` (`INDEX.md` lists them; a decision is recorded there with its reason).
@@ -93,3 +95,5 @@ cd trading-bot && VENV_PYTHON -m pytest -q                   # the bot's tests (
 - Explain with a concrete example from the real files and real numbers. If the operator did not get it, say it again
   more simply, not at more length.
 - Report faithfully: counts, not impressions; say what failed, what was skipped, what is untested.
+- Times: give them in Paris time when they concern the operator (when a run ends, when to look, a deadline), e.g.
+  "about 14:30 Paris"; UTC stays for files, logs and schedules (operator, 2026-11-20).

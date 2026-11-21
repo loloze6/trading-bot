@@ -11,6 +11,7 @@ Evidence:
 - Counts: bars with forecast > 0: 8514
 - Decided by: The slope's t is +2 or more and the forecast-weighted mean next-bar excess return is above 0.
 - Reading: Bars with forecast > 0 counted where the next bar's close exists in the same window; the coin's mean daily return is the mean of all its in-window next-bar returns over all windows; the slope t is the ordinary OLS t (slope / its standard error); the plan's 500-bar minimum, when unmet, is reported as not observable.
+- Size: unusual move +0.19 % per case over 1 bars, 0.039 of the coin's usual move (4.78 %); normal drift in its direction +0.12 %, total +0.31 %; 5665 cases
 Plan: `steps_cards/03_test_plan/night_013_run/plans/013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d.md`
 Record: `steps_cards/04_backtest/night_013_run/backtests/013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d`
 Measure: `measure.py`

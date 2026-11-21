@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 021-04_thin-cloud-downward-breakdown_1d
+idea tested: 021-04_thin-cloud-downward-breakdown
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3066 USD
+---
+## Findings
+- **F1:** The effect is absent, not too small to show. After a cross down through the cloud, the coin's 26-day unusual move in the short direction is about zero: step 5 measures -0.19 % per case (t -0.10, 198 cases, strength -0.020) and my recount gives -0.77 % (t -0.39, 185 cases, strength -0.037). Both are on the wrong side and far from the 0.05 strength real ideas usually show, so more data would not lift it to the bar.
+- **F2:** Cloud thinness does not grade the move. Over 185 cases the rank correlation between the forecast's thinness and the 26-day unusual move is 0.01. The unusual move by thinness quarter is -0.0 % for the thinnest, -2.3 % for the second, +0.9 % for the third and -1.7 % for the thickest (all |t| < 0.7). Step 5's thin-minus-thick Welch t is -0.36.
+- **F3:** The effect flips sign from year to year, which looks like each year's market rather than the cloud. The mean unusual move is +16.4 % in 2018 (t 3.26, 21 cases) and -18.4 % in 2021 (t -2.16, 26 cases). The other years lie between -6.9 % and +7.2 % with |t| < 1.9.
+- **F4:** Across coins the effect is mixed and none is clear. Per-coin means range from -4.4 % (XMR, t -1.25, 39 cases) to +3.7 % (BTC, t 1.05, 26 cases).
+- **F5:** Before removing the drift, the coin tends to rise after the cross, not fall. Shorting it would have earned -5.0 % over 26 days (t -2.58, 185 cases) and -2.9 % over 14 days (t -2.31, 205 cases). This is the coins' normal upward drift (3.4 % to 7.6 % per 26 days), not a reversal caused by the cross.
+- **F6:** No other split of the cases shows a clear part where the idea holds:
+- **F7:** The move per case does not cover the cost of a trade. The unusual move per case (-0.19 %) is -1.0 times the 0.19 % cost of a buy and a sell, and the total move per case is -23.7 times it. The book's Sharpe is -0.67, which is 1.23 below holding the coins.
+
+## Ideas
+- No ideas: The downward cross through the cloud shows no move beyond the coin's normal drift: about zero overall (t -0.10), no grading by thinness (rank correlation 0.01), no coin or period where it holds clearly, and opposite signs across years (2018 t 3.26, 2021 t -2.16). This is a clear rejection in substance, and neither an amended version nor more data is supported (F1, F2, F3, F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

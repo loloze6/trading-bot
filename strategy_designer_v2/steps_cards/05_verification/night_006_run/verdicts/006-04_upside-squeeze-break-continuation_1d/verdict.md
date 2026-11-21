@@ -11,6 +11,7 @@ Evidence:
 - Counts: break-bar cases: 299
 - Decided by: The slope's t lies between -2 and 2, which the plan calls inconclusive.
 - Reading: The situation is rebuilt per window as close > max(high of the 20 prior bars). Each window's first 20 bars cannot be rebuilt and are left out of the agreement. The cases are pooled across all coins and windows into one OLS regression. Each coin's baseline is its mean 3-bar return on the non-overlapping grid of all its windows. The plan's 'fewer than 100 break-bar cases' minimum is treated as a minimum count, which gives 'not observable'.
+- Size: unusual move +1.07 % per case over 3 bars, 0.122 of the coin's usual move (7.96 %); normal drift in its direction +0.36 %, total +1.43 %; 616 cases
 Plan: `steps_cards/03_test_plan/night_006_run/plans/006-04_upside-squeeze-break-continuation_1d.md`
 Record: `steps_cards/04_backtest/night_006_run/backtests/006-04_upside-squeeze-break-continuation_1d`
 Measure: `measure.py`

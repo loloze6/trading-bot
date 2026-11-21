@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases: 2574
 - Decided by: t >= 2 but the supporting check is at or above 0, which the plan rules inconclusive.
 - Reading: Sunday bar = bar whose UTC start is a Sunday (next bar Monday); 'rose' read as raw 1-bar return > 0; cases need t+2 inside the window; thirds by |forecast| from a stable ascending sort split with np.array_split; fewer than 100 cases reported as not observable per the minimum-count rule.
+- Size: unusual move +1.08 % per case over 2 bars, 0.142 of the coin's usual move (7.48 %); normal drift in its direction -0.30 %, total +0.78 %; 2135 cases
 Plan: `steps_cards/03_test_plan/night_run/plans/011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins_1d.md`
 Record: `steps_cards/04_backtest/night_run/backtests/011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins_1d`
 Measure: `measure.py`

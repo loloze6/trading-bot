@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the 72-bar excess forward return on the forecast",
+    "value": -0.00032599521842456526,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.6509314722356739
+    },
+    "threshold": "confirm if t >= 2 with forecast-weighted mean excess > 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 72-bar forward return > 0",
+    "value": 0.008040942776177742,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases with forecast > 0": 947
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Grid is positions 0, 72, 144, ... of each window from its first row; the coin's mean 72-bar return is the mean over that grid in all of the coin's windows; the slope's t is the ordinary OLS t with an intercept; and a count below the plan's minimum of 100 is reported as not observable, as the workflow requires."
+}

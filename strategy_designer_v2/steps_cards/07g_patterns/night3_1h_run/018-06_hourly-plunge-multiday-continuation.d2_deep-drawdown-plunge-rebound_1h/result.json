@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4163814,
+  "findings": {
+    "F1": "Across 6 coins and 24 windows, the fifth of 72-hour grid cases with the largest 7-day rise, measured in multiples of the coin's 30-day mean absolute 7-day return (mean 2.06), was followed by an unusual move of +1.03 % over the next 3 days (strength 0.122, t 3.40, 909 cases); they beat the other four fifths by +1.23 % (Welch t 3.69, 909 vs 3622 cases).",
+    "F2": "The same top fifth at a 7-day horizon was followed by +2.51 % unusual move (strength 0.176, t 2.94, 369 cases), +3.00 % above the rest (Welch t 3.28, 369 vs 1479 cases), so the move after a strong week lasts beyond 3 days.",
+    "F3": "The 3-day effect after a strong 7-day rise holds on all 6 coins: +0.47 % on LTC to +2.06 % on XRP, t 0.70 to 2.05, about 150 cases each. It is positive in 6 of 8 years, negative in 2022 (\u22121.37 %, t \u22121.67) and about zero in 2023. It is stronger in the later half of the windows (+1.57 %, t 3.36) than in the earlier half (+0.45 %, t 1.19).",
+    "F4": "The effect sits in the tail only. Over all cases, each coin's rank correlation between the scaled 7-day return and the next 3 days' unusual move is about zero (rho \u22120.022 to +0.028). The middle three fifths have unusual moves of \u22120.27 % to \u22120.34 %, and the bottom fifth +0.10 %.",
+    "F5": "Per case over 3 days, the strong-week unusual move of +1.03 % is about 5.4 times the 0.19 % cost of a buy and a sell in this backtest. The tested deep-drawdown plunge idea had an unusual move of \u22120.15 % (\u22120.8 times the cost), consistent with the size findings F10 and F11.",
+    "F6": "Large 24-hour drops, in the bottom fifth of the scaled 24-hour return (mean \u22121.92 usual moves), were followed by +0.71 % unusual move over 3 days (t 2.58, 964 cases), positive on all 6 coins (t 0.04 to 1.94). The largest 24-hour rises were also followed by +0.44 % (t 1.52), while the middle fifths were negative. After a dozen angles at this t, this cannot be told apart from chance.",
+    "F7": "Standing close to the 30-day high (top fifth of depth, mean \u22122.3 %) was followed by +1.96 % over 7 days (t 2.45, 399 cases), but XRP carries it (+7.46 %, t 2.56) and the other coins range from \u22120.13 % to +2.60 % with t below 1. It looks like a weaker echo of F1.",
+    "F8": "The book earned +0.024 % a day on average and was below holding on every coin (book \u22120.017 % to +0.073 % a day against holding +0.067 % to +0.155 %). Its long-only bets in deep drawdowns gave up the coins' drift without adding timing.",
+    "F9": "The 3-day moves by starting weekday look uneven: Tuesday \u22120.93 % (t \u22122.92), Sunday \u22120.88 % (t \u22122.80), Thursday +0.76 % (t 2.82), each about 800 cases. These signs show only in the later half of the windows, among many angles looked at, so they are not counted as a finding to act on."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 7-day rise in multiples of its 30-day average absolute 7-day return, the larger its rise over the next 3 days.",
+      "consequence": "A trader should favour buying coins after an unusually strong week and refuse to fade such weeks, since the continuation that follows is several times the cost of a trade.",
+      "name": "strong-week multiday continuation",
+      "from": "F1, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 7-day rise in multiples of its 30-day average absolute 7-day return, the larger its rise over the next 7 days.",
+      "consequence": "A trader who buys after an unusually strong week should expect the gain to keep building for a week, not only for a few days.",
+      "name": "strong-week week-long continuation",
+      "from": "F2, F3, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound.g1_strong-week-multiday-continuation",
+    "018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound.g2_strong-week-week-long-continuation"
+  ],
+  "no_ideas": null
+}
