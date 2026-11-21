@@ -48,3 +48,15 @@ forecast divided by 10, scaled by the coin's volatility.
    (the risk gate, a large data gap) is never held. The horizon is the idea's own, never a value chosen from the data
    (a longer hold also collects the market's drift). Why: on hourly bars, books that followed the forecast every hour
    held a 24-hour idea for 1 hour, or re-sized every hour, and paid their costs without earning the move (topic 30: 0.3 to 4.6 bps earned per unit traded, against about 10 of cost).
+8. **The gap rule: what a book does when bars are missing** (operator, 2026-10-01, and 2026-11-18 and 19; topic 18;
+   code `trading-bot/core/launcher.py`, `default_gap_policy`, and `core/trading_bot.py`, `_classify_gap_tier`; each
+   window's `manifest.json` records it, `config.gap_rule`). A coin's file can lack bars (Kraken leaves out the hours
+   without a trade, an exchange stops). A hole is measured in bars missed, and one rule applies on every bar size:
+   - **up to one day** (1 bar on daily bars, 6 on 4h, 24 on 1h): ignored, the bars are read as they are;
+   - **longer than a day but shorter than the strategy's warm-up**: the book keeps its position but takes no new
+     position until a full warm-up of real bars has passed;
+   - **as long as the warm-up or longer**: the book is forced flat, the strategy warms up again, and trades once warm.
+   A forced flat is never held (point 7). Missing bars are never filled in (the indicator fill is off). Example: on
+   hourly bars with a 720-bar warm-up, a hole of 10 hours is ignored, one of 3 days stops new positions for 720 real
+   bars, one of 40 days flattens the book. Why this can't leak: the rule reads only the bars already seen (the gap is
+   known when the next bar arrives).

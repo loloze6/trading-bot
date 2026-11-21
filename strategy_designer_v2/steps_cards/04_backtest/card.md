@@ -87,6 +87,10 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 5. Runs the calls at the same time, as many at once as the machine has cores (the count Python reports; 2026-11-16, `orchestration/duration/3_plan.md`, change 2; one call per coin and fold since 2026-11-20, so 6 coins no longer run in two waves on 4 cores). The calls are separate processes with their own output folders. The wrapper's `--trades-file-in-out-dir` gives each call its own interim trades file instead of the engine's one shared `trading-bot/results/trades.json`; the campaign does not pass it, so its runs are unchanged. `run.md` and `INDEX.md` list the coins in the plan's order, whichever finishes first.
    - **Why this can't leak:** the coins share no memory: each runs in its own processes, which read only that coin's bars and the aux feeds, as when they ran one after another. The shared files they touch: the interim trades file (now one per call; it only feeds `tradesxl.xlsx`, which this step drops), the bot's log, and a data file the fetcher rewrites only when a read adds rows the file lacked (see "Open"). Checked on 299 windows, twice: every window's files are identical to one coin after another, manifests aside from run_id, created_utc and git_sha; no data file changed (`orchestration/duration/7_change2_proof.md`).
 
+**Missing bars: the gap rule** (`../common/forecast.md`, point 8; topic 18). A hole of up to one day in a coin's bars is
+read as it is; a longer one stops new positions for a warm-up of real bars; one as long as the warm-up flattens the
+book. The engine applies it to every backtest; each window's `manifest.json` records it (`config.gap_rule`).
+
 **The data: local files only** (2026-11-18, `trading-bot/data/coverage.py`). The engine reads the coins' files in
 `trading-bot/local_data/` and never calls an exchange. A window whose days (warm-up included) were not fetched stops,
 "the dates were not fetched (run the data tool)": a data tool fetches them first and records them in
