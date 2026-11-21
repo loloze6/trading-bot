@@ -11,13 +11,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins | 021-01_above-rising-cloud-continues-up | plan | inconclusive (+1.75) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: no ideas: The above-rising-cloud effect comes from a few large 2021 moves in small, volatile coins (F1, F3, F4), not from a steady pattern. It is not graded by the cloud's slope (F2), its trimmed t is 0.99, and its strength is about a third of a real idea's (F5). No condition, side or horizon in this data isolates a graded effect, and no more data is available (F6), so the clear answer is that a coin trading above a rising cloud does not reliably keep rising beyond its usual drift.; 7.d: 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.d1_lasting-stay-above-cloud, 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.d2_off-cloud-fallers-keep-lagging; 7.g: 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.g1_26-day-momentum-continues-26-days, 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.g2_scaled-momentum-over-ten-days | 1.67 | 11.2 |
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues | 021-02_below-falling-cloud-continues-down | missing-components | - | - | - | - | 0.09 | 0.7 |
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | 021-01_above-rising-cloud-continues-up | plan | inconclusive (-1.26) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise; 7.d: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d1_above-cloud-stretched-above-average, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d2_above-thin-cloud-continues, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d3_26-day-momentum-continues; 7.g: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.g1_sharp-daily-fall-rebounds-next-day, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.g2_last-week-s-move-continues-monthly | 4.65 | 20.7 |
+| 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | missing-components | - | - | - | - | 0.07 | 0.6 |
 
 ## Consumption
-7 ideas, 10.05 USD, 48.2 minutes in all.
+8 ideas, 10.12 USD, 48.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.17 | 5.6 |
+| step3_plan | 1.24 | 6.2 |
 | step4_backtest | 0.00 | 10.1 |
 | step5_verdict | 0.64 | 2.6 |
 | step6_check | 0.00 | 0.1 |
