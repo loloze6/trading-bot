@@ -2,6 +2,7 @@
 020-01_resistance-retest-turns-down_1d: not profitable enough [Sharpe -0.8127; Sharpe minus holding's Sharpe -1.367; Calmar -0.3334]
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: not profitable enough [Sharpe -0.4538; Sharpe minus holding's Sharpe -1.008; Calmar -0.2323]
 020-02_support-retest-bounces-up_1d: not profitable enough [Sharpe 0.0003385; Sharpe minus holding's Sharpe -0.5538; Calmar -0.1012]
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: profitable enough [Sharpe 1.171; Sharpe minus holding's Sharpe 0.5632; Calmar 1.189]
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: profitable enough [Sharpe 0.9465; Sharpe minus holding's Sharpe 0.3621; Calmar 0.8054]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation_1d: not profitable enough [Sharpe 0.6751; Sharpe minus holding's Sharpe 0.121; Calmar 0.3533]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d: profitable enough [Sharpe 0.8923; Sharpe minus holding's Sharpe 0.3381; Calmar 0.7815]

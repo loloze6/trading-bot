@@ -12,22 +12,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling | 020-02_support-retest-bounces-up | plan | inconclusive (+0.53) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins, 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall; 7.d: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d1_clustered-broken-support-in-downtrend, 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d2_tight-cluster-of-broken-lows; 7.g: no ideas: After about 40 comparisons, nothing beyond the forecast's own weak echo of the known near-highs drift (F1, F2) is clearly more than chance: high-volatility momentum (F4) rests on one half of the windows and one coin, and the weekday gap (F5) is unstable across years and is not a graded situation. | 1.27 | 5.9 |
 | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins | 020-03_resistance-breakout-continues-up | plan | inconclusive (+1.34) | profitable enough | - | 7.b: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend; 7.e: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout; 7.g: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.g1_nearness-to-60-day-high, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.g2_strong-breakouts-reverse-later | 1.51 | 10.4 |
 | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run | 020-03_resistance-breakout-continues-up | plan | inconclusive (+1.75) | profitable enough | - | 7.b: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend; 7.e: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation; 7.g: no ideas: Across all the angles examined, no pattern outside the tested idea stands out from chance. The angles were forecast terciles and quartiles, the run-up and break components, trades by coin and forecast, nine bar features over 5, 10 and 20 days, weekday, year, and the book's extreme days. The only graded effect, the 20-day run-up within breaks (Welch t 1.89, Spearman 0.02), is the tested idea's own comparison and is inconsistent across coins and periods. | 1.62 | 7.0 |
-| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins | missing-components | - | - | - | - | 0.06 | 0.4 |
 | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run | plan | inconclusive (+0.30) | not profitable enough (failed: Calmar) | - | 7.b: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.b1_breakout-continues-within-uptrend, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.b2_breakout-in-downtrend-fails; 7.d: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d2_distance-above-50-day-average; 7.g: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.g1_large-up-day-continues | 1.26 | 5.7 |
+| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins | plan | confirmed (+3.24) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: no ideas: Across about fifteen angles (clearance, breakdown below the low, last-day and 3-day moves, 60-day trend, volatility level, weekday, year, horizons of 3 to 20 days, and the book's tails), the only pattern that stands out is the tested idea's own large-clearance continuation (F1, F2), and the rest is either ungraded (F3, F5) or disappears once coins are averaged per date (F4, F6), so no new idea is supported. | 1.11 | 12.7 |
 
 ## Consumption
-10 ideas, 12.96 USD, 62.2 minutes in all.
+10 ideas, 14.01 USD, 74.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.27 | 6.5 |
-| step4_backtest | 0.00 | 15.0 |
-| step5_verdict | 1.32 | 5.3 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 1.72 | 7.0 |
+| step4_backtest | 0.00 | 22.1 |
+| step5_verdict | 1.48 | 5.9 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.40 | 1.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.85 | 2.9 |
 | step7_7.d | 2.61 | 8.9 |
 | step7_7.b | 2.87 | 9.4 |
-| step7_7.g | 3.64 | 12.4 |
+| step7_7.g | 4.08 | 13.8 |
+| unseen_test | 0.00 | 2.6 |

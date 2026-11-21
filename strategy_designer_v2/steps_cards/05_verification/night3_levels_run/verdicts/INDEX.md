@@ -2,6 +2,7 @@
 020-01_resistance-retest-turns-down_1d: inconclusive (fit: adapted) [main: -4.39712e-05; OLS slope t -0.171628; cases with forecast at -5 or below 1720, grid bars with a non-zero forecast 3226]
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: inconclusive (fit: adapted) [main: 0.00116072; t of the mean 0.527992; independent cases 2058]
 020-02_support-retest-bounces-up_1d: rejected (fit: adapted) [main: -0.00555971; t of the forecast-weighted mean -2.10274; independent cases 1401]
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: confirmed (fit: exact) [main: 0.00665272; OLS slope t 3.23516; cases 1129]
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: inconclusive (fit: adapted) [main: 0.00285348; ordinary t of the mean 1.34087; cases 3937, upper half cases 0, lower half cases 3937]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation_1d: inconclusive (fit: adapted) [main: 0.00347509; t of the mean 0.29652; cases 680, upper half cases 0, lower half cases 680]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d: inconclusive (fit: adapted) [main: 0.00548917; t of the mean 1.75064; cases 1309]

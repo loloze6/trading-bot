@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 10-bar excess return on signal-bar forecast",
+    "value": -0.0064437460091636934,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.1024129157700373
+    },
+    "threshold": "slope t >= 2 with mean excess > 0 confirms; slope t <= -2 rejects; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return over all cases above 0",
+    "value": 0.06827177144739424,
+    "passed": true
+  },
+  "counts": {
+    "cases": 124
+  },
+  "decided_by": "The slope's t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is the first bar in each 10-bar grid cell (counted from each window's first row) where the long forecast rises at least 2 points above its lowest level since the last such rise (reset to 0 when flat, starting from 0 at each window's start), cases whose 10-bar return would leave the window are dropped, the drift is the coin's mean return on the non-overlapping 10-bar grid of all its windows, and the plan's fewer-than-100-cases rule is reported as not observable."
+}
