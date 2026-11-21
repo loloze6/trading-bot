@@ -3790,3 +3790,166 @@ class NarrowRangeBreakoutComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return max(self.base_period, self.period + 1)
+
+
+class BreakoutInMeanRangesComponent(SubStrategyComponent):
+    """
+    The size of the close's break above the prior high, counted in average bar ranges, on every bar:
+
+        H = max(high[t - period .. t - 1])                        (bar t excluded)
+        B = mean(high[i] - low[i]) for i = t - base_period + 1 .. t  (bar t included)
+        raw_value = max(0, close[t] - H) / B                      (0.0 when B = 0)
+
+    Range & sign: 0 and up, unbounded above, never negative; no direction. It is 0 when the close is at or
+    below the prior high, and it grows linearly with the break measured in average bar ranges.
+    Warm-up: max(base_period, period + 1) rows, bar t included.
+
+    NaN: a NaN high in the stretch, a NaN high or low in the last base_period rows, or a NaN close[t] gives
+    NaN. B = 0 (base_period zero-range bars in a row) reads 0.0.
+    Building the component raises for a period below 1 or a base_period below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the rows up to and including bar t
+    (the last row of data): the highs of rows t-period .. t-1, the highs and lows of the last base_period
+    rows, and close[t]. All of these are known at bar t's close.
+    """
+
+    def __init__(self, name="BreakoutInMeanRanges", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 12))
+        if self.period < 1:
+            raise ValueError(f"BreakoutInMeanRangesComponent: period must be >= 1, got {self.period}")
+        self.base_period = int(self.parameters.get("base_period", 180))
+        if self.base_period < 1:
+            raise ValueError(
+                f"BreakoutInMeanRangesComponent: base_period must be >= 1, got {self.base_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        close = data['close'].astype(float).to_numpy()
+        stretch_high = high[-(self.period + 1):-1]
+        base_high = high[-self.base_period:]
+        base_low = low[-self.base_period:]
+        c = float(close[-1])
+        if (np.isnan(stretch_high).any() or np.isnan(base_high).any() or np.isnan(base_low).any()
+                or np.isnan(c)):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        prior_high = float(np.max(stretch_high))
+        mean_range = float(np.mean(base_high - base_low))
+        brk = max(0.0, c - prior_high)
+        if mean_range > 0:
+            self._raw_value = float(brk / mean_range)
+        else:
+            self._raw_value = 0.0
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': prior_high, 'mean_bar_range': mean_range, 'break': brk}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period, self.period + 1)
+
+
+class NarrowRangeBreakoutRangeRatioComponent(SubStrategyComponent):
+    """
+    A narrow-range upward breakout, weighted by how quiet the recent bars are against the long average bar range:
+
+        H = max(high[t-period .. t-1])                  (the stretch, bar t excluded)
+        S = H - min(low[t-period .. t-1])
+        B = mean(high[i] - low[i]) over the last base_period bars, bar t included
+        L = mean(high[i] - low[i]) over the last ratio_long_period bars, bar t included
+        Q = mean(high[i] - low[i]) over the last ratio_short_period bars, bar t included
+        raw_value = max(0, close[t] - H) / close[t] x 100 x B / S x L / Q
+        raw_value = 0.0 when S = 0 or Q = 0
+
+    This equals NarrowRangeBreakoutComponent(period, base_period) x L / Q.
+    Range and sign: 0 and up, unbounded above, never negative, no direction. It is 0 when the close is at or below
+    the prior high. It grows with the size of the break, the narrowness of the stretch, and the quietness of the
+    last ratio_short_period bars against the last ratio_long_period bars.
+    Graded: continuous in the close at the prior high.
+    Warm-up: max(base_period, period + 1, ratio_long_period) rows, bar t included (360 at the defaults).
+
+    NaN: a NaN high or low in any row read, or a NaN close[t], gives NaN. A close[t] not above 0 gives NaN.
+    Building the component raises for a period, base_period or ratio_short_period below 1, and for a
+    ratio_short_period at or above ratio_long_period.
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the last
+    max(base_period, period + 1, ratio_long_period) rows of data, bar t (the last row) included. The stretch uses
+    rows t-period .. t-1. Every value it reads is known at bar t's close.
+    """
+
+    def __init__(self, name="NarrowRangeBreakoutRangeRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 12))
+        self.base_period = int(self.parameters.get("base_period", 180))
+        self.ratio_long_period = int(self.parameters.get("ratio_long_period", 360))
+        self.ratio_short_period = int(self.parameters.get("ratio_short_period", 42))
+        if self.period < 1:
+            raise ValueError(f"NarrowRangeBreakoutRangeRatioComponent: period must be >= 1, got {self.period}")
+        if self.base_period < 1:
+            raise ValueError(
+                f"NarrowRangeBreakoutRangeRatioComponent: base_period must be >= 1, got {self.base_period}")
+        if self.ratio_short_period < 1:
+            raise ValueError(
+                f"NarrowRangeBreakoutRangeRatioComponent: ratio_short_period must be >= 1, "
+                f"got {self.ratio_short_period}")
+        if self.ratio_short_period >= self.ratio_long_period:
+            raise ValueError(
+                f"NarrowRangeBreakoutRangeRatioComponent: ratio_short_period must be below ratio_long_period, "
+                f"got {self.ratio_short_period} and {self.ratio_long_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data["high"].astype(float).to_numpy()
+        low = data["low"].astype(float).to_numpy()
+        close_t = float(data["close"].astype(float).to_numpy()[-1])
+        p = self.period
+        st_h = high[-(p + 1):-1]
+        st_l = low[-(p + 1):-1]
+        rng = high - low
+        b_win = rng[-self.base_period:]
+        l_win = rng[-self.ratio_long_period:]
+        q_win = rng[-self.ratio_short_period:]
+        if (np.isnan(close_t) or np.isnan(st_h).any() or np.isnan(st_l).any()
+                or np.isnan(b_win).any() or np.isnan(l_win).any() or np.isnan(q_win).any()):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        if not close_t > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        H = float(np.max(st_h))
+        S = H - float(np.min(st_l))
+        B = float(np.mean(b_win))
+        L = float(np.mean(l_win))
+        Q = float(np.mean(q_win))
+        brk = max(0.0, close_t - H)
+        if S <= 0 or Q <= 0:
+            value = 0.0
+        else:
+            value = brk / close_t * 100.0 * B / S * L / Q
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {"prior_high": H, "stretch_range": S, "base_mean_range": B,
+                           "long_mean_range": L, "short_mean_range": Q}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period, self.period + 1, self.ratio_long_period)
