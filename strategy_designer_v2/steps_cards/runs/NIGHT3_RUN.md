@@ -81,3 +81,10 @@ clipped at 0) instead of the breakout; steps 4 and 6 only.
 Both controls are profitable enough on all six checks. The breakout adds 0.06 to 0.15 of Sharpe (and trades less); the
 trend filter carries most of the result. Same reading as the levels run: the paying ideas of night 3 are, at heart, the
 known momentum family; what the new components add is small and not yet shown to hold on its own.
+
+## A defect in the designer's own fix: budgets overrun (08:30 Paris)
+The retry lines made the re-admitted ideas count as "unfinished", and the loop runs unfinished ideas before its budget
+check: the levels run spent about 58 USD on its 35 USD budget (29 ideas run past it), the learned run 41.13 on 35. Found
+and reported by the levels session; the learned session was stopped at once on the designer's word. Fixed on the
+working branch (the budget holds before every `run_idea` call; a test that fails on the previous loop). The 26 levels
+ideas still unrun and the learned run's remaining ones are not resumed. Overspend: about 29 USD over the two budgets.
