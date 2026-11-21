@@ -2,9 +2,11 @@
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: 1 ideas (2 explorations)
 020-01_resistance-retest-turns-down_1d: 1 ideas (2 explorations)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins_1d: 1 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall_1d: no ideas: Every pattern beyond the market's own direction is either within chance after about 30 looks or changes sign from year to year (best: 10-day momentum at t 2.54, split 4 to 4 across years), so no finding is firm enough to rest a new idea on.
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: no ideas: After about 40 comparisons, nothing beyond the forecast's own weak echo of the known near-highs drift (F1, F2) is clearly more than chance: high-volatility momentum (F4) rests on one half of the windows and one coin, and the weekday gap (F5) is unstable across years and is not a graded situation.
 020-02_support-retest-bounces-up_1d: 1 ideas (2 explorations)
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d: 2 ideas (2 explorations)
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend_1d: 3 ideas (2 explorations)
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: no ideas: Across about fifteen angles (clearance, breakdown below the low, last-day and 3-day moves, 60-day trend, volatility level, weekday, year, horizons of 3 to 20 days, and the book's tails), the only pattern that stands out is the tested idea's own large-clearance continuation (F1, F2), and the rest is either ungraded (F3, F5) or disappears once coins are averaged per date (F4, F6), so no new idea is supported.
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: 2 ideas (2 explorations)
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins_1d: 1 ideas (2 explorations)
