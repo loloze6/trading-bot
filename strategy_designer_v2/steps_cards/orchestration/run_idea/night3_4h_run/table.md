@@ -14,13 +14,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins | plan | confirmed (+4.44) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.d1_breakout-fails-after-deep-week, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.d2_failed-breakout-in-falling-month; 7.g: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.g1_breakdown-after-deep-week-rebounds, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.g2_quiet-ranges-precede-underperformance | 1.25 | 10.4 |
 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins | plan | confirmed (+4.51) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g1_quiet-breakdowns-in-falling-coins, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g2_wide-range-breakdown-rebound, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g3_deep-one-day-fall-rebound, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g4_rising-breakouts-over-six-days | 0.85 | 11.5 |
 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins | plan | confirmed (+6.89) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g1_sharp-dip-in-uptrend-rebounds, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g2_wide-range-falls-reverse-upward, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g3_wide-bar-precedes-rise | 0.66 | 10.8 |
+| 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 019-03_upward-breakout-quiet-continuation | missing-components | - | - | - | - | 0.05 | 0.4 |
 
 ## Consumption
-10 ideas, 8.69 USD, 69.3 minutes in all.
+11 ideas, 8.74 USD, 69.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.07 | 4.8 |
+| step3_plan | 1.12 | 5.2 |
 | step4_backtest | 0.00 | 33.4 |
 | step5_verdict | 1.10 | 4.1 |
 | step6_check | 0.00 | 0.5 |
