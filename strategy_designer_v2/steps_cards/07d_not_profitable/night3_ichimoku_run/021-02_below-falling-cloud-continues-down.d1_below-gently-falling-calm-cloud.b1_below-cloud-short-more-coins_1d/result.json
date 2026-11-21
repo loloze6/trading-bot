@@ -1,0 +1,63 @@
+{
+  "line": "7.d",
+  "backtest": "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4652302,
+  "findings": {
+    "F1": "The book's loss comes from shorting coins that kept rising. On the 26-day grid, coins below a falling cloud gained +3.90 % over the next 26 days (t 2.49, 353 cases), and the 995 short trades lost a mean of -4.49 % net of fees, with only 37 % winners and a book mean daily return of -0.000067 against the coins' +0.001409.",
+    "F2": "The idea's size is real on the unusual move but the wrong sign on the total. Per case the unusual move is +4.23 % (18.9 times the 0.22 % cost of a trade), but the coins' normal drift is -5.65 % in the short's direction, so the total move is -1.42 %; no holding, sizing or threshold of a short can turn that positive.",
+    "F3": "The book earns only in windows where the coins fell and loses where they rose. Summed daily returns show w14 at book +0.121 against coin -0.522, but w16 at -0.093 against +0.561, w4 at -0.079 against +0.510, and w11 at -0.031 against +2.265. The shorts' forward return was -16.0 % in 2018 and -9.9 % in 2025, but +23.9 % in 2020, +36.4 % in 2021 and +25.9 % in 2023.",
+    "F4": "The gentle-fall grading holds, and the gentlest cloud falls are the only cases where the coin actually fell. By cloud-slope quartile, the forward 26-day return is -5.3 % on the gentlest falls (t -2.05, 88 cases) and +1.0 % on the next. It is +10.2 % (t 3.20) and +9.6 % (t 2.60) on the two steepest.",
+    "F5": "The forecast's grading works on the unusual move but not enough on the total. The most-short forecast quartile has an unusual move of -6.6 % and a total of -0.4 % (89 cases). The least-short quartile has +0.1 % and +5.6 %.",
+    "F6": "A coin below a falling cloud that has itself risen over the past 26 days rises strongly next. The top quartile of past 26-day return (mean +3.3 %) gained +14.3 % over the next 26 days, against -0.5 % to -6.0 % in the other quartiles; the Spearman correlation of past 26-day return with the forward return is +0.198.",
+    "F7": "Combining the two, gently falling clouds where the coin has also fallen over the past 26 days give the strongest continuation. That group returned -6.6 % over the next 26 days (unusual move -11.8 %, 72 cases), while steep clouds where the coin had not fallen returned +12.4 % (72 cases).",
+    "F8": "After the deepest falls below a falling cloud the coin rebounds. The deepest quartile of 52-day return (mean -49 %) gained +10.8 % over the next 26 days (t 2.69, 49 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is negative, and more negative the slower the cloud has fallen over the past 26 days and the more the coin itself has fallen over its 26-day return, only while that 26-day return is negative.",
+      "consequence": "A trader would short a coin below a falling cloud only after the coin has itself fallen over the past 26 days under a gently sloping cloud, and would refuse the short after the coin has recovered or the cloud has dropped steeply.",
+      "name": "below cloud gentle continuing fall",
+      "from": "F1, F2, F4, F6, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is positive, and larger the steeper the cloud has fallen over the past 26 days and the deeper the coin's 52-day fall.",
+      "consequence": "A trader would buy a coin sitting below a steeply falling cloud after a deep 52-day fall, sizing up with the steepness of the cloud's decline, and take the coin's upward drift with the trade rather than against it.",
+      "name": "steep cloud fall rebound",
+      "from": "F1, F2, F3, F4, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F8"
+      ]
+    },
+    {
+      "idea": "When a coin closes below its falling Ichimoku cloud, its return over the next 26 days is higher the higher its own 26-day return.",
+      "consequence": "A trader would buy a coin that is climbing back toward a falling cloud from below, sizing up with the strength of its 26-day rise.",
+      "name": "recovery under falling cloud",
+      "from": "F1, F3, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d1_below-cloud-gentle-continuing-fall",
+    "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d2_steep-cloud-fall-rebound",
+    "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d3_recovery-under-falling-cloud"
+  ],
+  "no_ideas": null
+}

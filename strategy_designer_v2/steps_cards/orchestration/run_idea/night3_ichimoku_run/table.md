@@ -13,20 +13,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | 021-01_above-rising-cloud-continues-up | plan | inconclusive (-1.26) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise; 7.d: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d1_above-cloud-stretched-above-average, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d2_above-thin-cloud-continues, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d3_26-day-momentum-continues; 7.g: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.g1_sharp-daily-fall-rebounds-next-day, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.g2_last-week-s-move-continues-monthly | 4.65 | 20.7 |
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | missing-components | - | - | - | - | 0.07 | 0.6 |
 | 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud | 021-02_below-falling-cloud-continues-down | plan | inconclusive (+1.15) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b2_below-gently-falling-cloud; 7.d: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.d1_below-cloud-short-still-falling, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.d2_rebound-under-falling-cloud; 7.g: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.g1_strong-week-lifts-saturday | 1.42 | 7.0 |
+| 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins | 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud | plan | inconclusive (-1.55) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.b1_below-gently-falling-cloud, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.b2_gentle-cloud-wild-coin; 7.d: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d1_below-cloud-gentle-continuing-fall, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d2_steep-cloud-fall-rebound, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d3_recovery-under-falling-cloud; 7.g: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.g1_26-day-momentum-continues, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.g2_below-cloud-fall-keeps-falling, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.g3_gentle-cloud-fall-continues | 1.74 | 10.8 |
 
 ## Consumption
-9 ideas, 11.54 USD, 55.8 minutes in all.
+10 ideas, 13.28 USD, 66.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.35 | 7.0 |
-| step4_backtest | 0.00 | 11.8 |
-| step5_verdict | 0.81 | 3.3 |
+| step3_plan | 1.45 | 7.7 |
+| step4_backtest | 0.00 | 16.7 |
+| step5_verdict | 1.00 | 4.0 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 1.92 | 6.1 |
-| step7_7.g | 2.00 | 6.6 |
-| step7_7.d | 5.46 | 20.8 |
+| step7_7.b | 2.39 | 7.5 |
+| step7_7.g | 2.52 | 8.3 |
+| step7_7.d | 5.93 | 22.2 |
