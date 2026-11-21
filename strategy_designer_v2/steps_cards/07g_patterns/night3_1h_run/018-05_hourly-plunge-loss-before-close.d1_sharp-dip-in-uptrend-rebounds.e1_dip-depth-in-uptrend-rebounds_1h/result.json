@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4062646,
+  "findings": {
+    "F1": "When a coin's 30-day return is negative, its 24-hour move reverses over the next day on both sides and in grades. Falls of more than 2 times its 30-day average absolute daily move were followed by +0.82 % above drift (t 2.56, 507 cases). Rises of more than 2 times were followed by \u22120.94 % (t \u22123.45, 307 cases). The slope is 27 bps per unit of scaled move (t 6.06, 6319 cases) at 1 day and 38 bps per unit (t 4.31, 3140 cases) at 2 days. It fades to 5 bps per unit (t 0.41) at 3 days.",
+    "F2": "This down-trend reversal is carried by the coin's most volatile third of bars. There the 1-day slope is 69 bps per unit (t 7.29, 2419 cases), against \u22123 bps (t \u22120.61) in its calmest third. It holds in both halves of the windows: w1\u201312 t 2.22, w13\u201324 t 5.81. It holds in every coin with the same sign, from t 1.21 (ZEC) to t 4.27 (XRP).",
+    "F3": "The tested dip-in-uptrend rebound over 3 days also grows with the coin's 30-day volatility. In the calm third of up-trend dips the rebound is +0.49 % (t 1.09, 116 cases). In the middle third it is +2.41 % (t 4.12, 127), and in the volatile third +2.57 % (t 1.75, 92). The slope rises from 23 bps per unit in the calm third to 197 bps (t 3.25) in the middle third.",
+    "F4": "The tested rebound does not outlast its 3 days. After up-trend falls beyond 2 times the usual daily move, the excess is +2.68 % at 3 days (t 3.65, 93 cases). It turns to \u22120.82 % at 6 days (t \u22120.63, 39) and \u22123.01 % at 10 days (t \u22121.56, 26).",
+    "F5": "In an up-trend, large 24-hour rises are not reversed over the next day: +0.00 % in the reversal direction (t 0.02, 959 cases). Large falls are reversed: +0.53 % (t 2.34, 547). Only the down-trend reverses both ways.",
+    "F6": "The book's gain rests on its tails. Its top 1 % of coin-days sum to 21.9, more than its whole sum of daily returns (16.5), while its bottom 1 % sum to \u221218.7. Its mean daily return is negative in 11 of 24 windows.",
+    "F7": "A coin's 7-day return in its top fifth, inside a positive 30-day return, was followed by +0.98 % above drift over 3 days (t 2.39, 634 cases). Given the many angles looked at, this is too weak to stand apart from chance."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 30-day return is negative, the larger its 24-hour move in multiples of its 30-day average absolute daily return, the more the coin moves back the opposite way relative to its normal drift over the next 2 days.",
+      "consequence": "In a falling month, a sharp one-day move is a reason to trade against it for about 2 days, sized by how many usual daily moves it spans.",
+      "name": "downtrend day-move reverses",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's 30-day return is negative, the reversal over the next 2 days after its 24-hour move, in multiples of its 30-day average absolute daily return, is larger the higher its hourly volatility over the last 30 days.",
+      "consequence": "A trader fading sharp one-day moves in a falling month should lean on them most when the coin has been volatile and least when it has been calm.",
+      "name": "volatile downtrends reverse harder",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a coin's 30-day return is positive, the rebound above its normal drift over the next 3 days after a 24-hour fall, in multiples of its 30-day average absolute daily return, is larger the higher its hourly volatility over the last 30 days.",
+      "consequence": "A trader buying sharp dips inside a rising month should weight them by the coin's recent volatility and expect little from dips in calm stretches.",
+      "name": "dip rebound scales with volatility",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds.g1_downtrend-day-move-reverses",
+    "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds.g2_volatile-downtrends-reverse-harder",
+    "018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds.g3_dip-rebound-scales-with-volatility"
+  ],
+  "no_ideas": null
+}
