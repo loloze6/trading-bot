@@ -10,5 +10,6 @@
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: 2 ideas (2 explorations)
 019-03_upward-breakout-quiet-continuation_4h: 2 ideas (2 explorations)
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins_4h: 2 ideas (2 explorations)
+019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend_4h: 2 ideas (2 explorations)
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h: 2 ideas (2 explorations)
 019-04_downward-breakout-quiet-continuation_4h: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)

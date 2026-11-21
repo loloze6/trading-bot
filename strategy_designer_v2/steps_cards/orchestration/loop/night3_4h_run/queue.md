@@ -1,66 +1,72 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 19.81 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 21.21 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend | 7.b | 2 | 0.4762 | 0.1587 | candidate |
-| 2 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins | 7.b | 3 | 0.4762 | 0.119 | candidate |
-| 3 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend | 7.b | 3 | 0.4762 | 0.119 | candidate |
+| 1 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins | 7.b | 3 | 0.4762 | 0.119 | candidate |
+| 2 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend | 7.b | 3 | 0.4762 | 0.119 | candidate |
+| 3 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins | 7.b | 3 | 0.4762 | 0.119 | candidate |
 | 4 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b2_breakout-graded-by-trend-strength | 7.b | 3 | 0.4762 | 0.119 | candidate |
 | 5 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b2_wide-dip-in-uptrend-rebounds | 7.b | 3 | 0.4762 | 0.119 | candidate |
-| 6 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 7.d | 1 | 0.2333 | 0.1167 | candidate |
-| 7 | 019-03_upward-breakout-quiet-continuation.d2_breakout-with-rising-week | 7.d | 1 | 0.2333 | 0.1167 | candidate |
-| 8 | 019-04_downward-breakout-quiet-continuation.d2_wide-dip-rebound-uptrend | 7.d | 1 | 0.2333 | 0.1167 | candidate |
-| 9 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d1_wide-dip-rebound-in-uptrend | 7.d | 2 | 0.2333 | 0.0778 | candidate |
-| 10 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d2_narrow-breakdown-three-days-only | 7.d | 2 | 0.2333 | 0.0778 | candidate |
-| 11 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d3_deep-drawdown-low-rebound | 7.d | 2 | 0.2333 | 0.0778 | candidate |
-| 12 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.d1_weekly-momentum-with-monthly-agreement | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 13 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.d1_breakout-fails-after-deep-week | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 14 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.d1_breakout-above-rising-two-months | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 15 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d1_vol-scaled-week-rising-month | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 16 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d1_upward-weekly-momentum-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 17 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.d2_weekly-momentum-in-monthly-uptrends | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 18 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.d2_failed-breakout-in-falling-month | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 19 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.d2_breakout-graded-by-fortnight-trend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 20 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d2_extreme-weeks-carry-momentum | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 21 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d2_loud-momentum-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 22 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.d2_wide-breakdown-rebound-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 23 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.d3_aligned-week-and-month-momentum | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 24 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.d3_breakout-from-expanding-ranges | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 25 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d3_widening-ranges-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
-| 26 | 019-03_upward-breakout-quiet-continuation.g1_volatility-expansion-lifts-returns | 7.g | 1 | 0.1067 | 0.0533 | candidate |
-| 27 | 019-04_downward-breakout-quiet-continuation.g1_wide-range-precedes-rise | 7.g | 1 | 0.1067 | 0.0533 | candidate |
-| 28 | 019-03_upward-breakout-quiet-continuation.g2_quiet-ranges-precede-weakness | 7.g | 1 | 0.1067 | 0.0533 | candidate |
-| 29 | 019-04_downward-breakout-quiet-continuation.g2_volatility-expansion-precedes-rise | 7.g | 1 | 0.1067 | 0.0533 | candidate |
-| 30 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.g1_sharp-fall-three-day-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 31 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.g1_wide-range-breakdown-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 32 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g1_sharp-drop-rebound-uptrend | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 33 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.g2_failed-downside-break-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 34 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.g2_failed-breakout-after-falling-week | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 35 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g2_one-day-fall-next-day-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 36 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g3_uptrend-breakdown-snaps-back | 7.g | 2 | 0.1067 | 0.0356 | candidate |
-| 37 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g1_quiet-breakdowns-in-falling-coins | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 38 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g1_sharp-dip-in-uptrend-rebounds | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 39 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.g1_sharp-daily-fall-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 40 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.g1_breakdown-after-deep-week-rebounds | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 41 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g1_one-day-fall-rebounds-next-day | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 42 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.g1_sharp-daily-fall-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 43 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.g1_rising-volatility-precedes-rises | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 44 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.g1_rebound-after-sharp-daily-fall | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 45 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g2_wide-range-breakdown-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 46 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g2_wide-range-falls-reverse-upward | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 47 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.g2_dip-within-weekly-rise | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 48 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.g2_quiet-ranges-precede-underperformance | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 49 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g2_dip-in-rising-week-rebounds | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 50 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.g2_large-break-three-day-continuation | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 51 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g2_weak-week-downside-continuation | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 52 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.g2_momentum-after-wide-weeks | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 53 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.g2_quiet-breakdown-in-falling-month | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 54 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g3_deep-one-day-fall-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 55 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g3_wide-bar-precedes-rise | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 56 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g3_deep-downside-break-reverses | 7.g | 3 | 0.1067 | 0.0267 | candidate |
-| 57 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g4_rising-breakouts-over-six-days | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 6 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b2_wide-span-breakdown-rebound | 7.b | 3 | 0.4762 | 0.119 | candidate |
+| 7 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 7.d | 1 | 0.2333 | 0.1167 | candidate |
+| 8 | 019-03_upward-breakout-quiet-continuation.d2_breakout-with-rising-week | 7.d | 1 | 0.2333 | 0.1167 | candidate |
+| 9 | 019-04_downward-breakout-quiet-continuation.d2_wide-dip-rebound-uptrend | 7.d | 1 | 0.2333 | 0.1167 | candidate |
+| 10 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d1_wide-dip-rebound-in-uptrend | 7.d | 2 | 0.2333 | 0.0778 | candidate |
+| 11 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d2_narrow-breakdown-three-days-only | 7.d | 2 | 0.2333 | 0.0778 | candidate |
+| 12 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d3_deep-drawdown-low-rebound | 7.d | 2 | 0.2333 | 0.0778 | candidate |
+| 13 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.d1_weekly-momentum-with-monthly-agreement | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 14 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.d1_breakout-fails-after-deep-week | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 15 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.d1_breakout-above-rising-two-months | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 16 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d1_vol-scaled-week-rising-month | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 17 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d1_upward-weekly-momentum-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 18 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.d1_wide-volatile-breakdown-rebound | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 19 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.d2_weekly-momentum-in-monthly-uptrends | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 20 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.d2_failed-breakout-in-falling-month | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 21 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.d2_breakout-graded-by-fortnight-trend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 22 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d2_extreme-weeks-carry-momentum | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 23 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d2_loud-momentum-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 24 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.d2_wide-breakdown-rebound-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 25 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.d2_breakdown-rebound-strong-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 26 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.d3_aligned-week-and-month-momentum | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 27 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.d3_breakout-from-expanding-ranges | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 28 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d3_widening-ranges-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 29 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.d3_volatility-pickup-in-uptrend | 7.d | 3 | 0.2333 | 0.0583 | candidate |
+| 30 | 019-03_upward-breakout-quiet-continuation.g1_volatility-expansion-lifts-returns | 7.g | 1 | 0.1067 | 0.0533 | candidate |
+| 31 | 019-04_downward-breakout-quiet-continuation.g1_wide-range-precedes-rise | 7.g | 1 | 0.1067 | 0.0533 | candidate |
+| 32 | 019-03_upward-breakout-quiet-continuation.g2_quiet-ranges-precede-weakness | 7.g | 1 | 0.1067 | 0.0533 | candidate |
+| 33 | 019-04_downward-breakout-quiet-continuation.g2_volatility-expansion-precedes-rise | 7.g | 1 | 0.1067 | 0.0533 | candidate |
+| 34 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.g1_sharp-fall-three-day-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 35 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.g1_wide-range-breakdown-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 36 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g1_sharp-drop-rebound-uptrend | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 37 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.g2_failed-downside-break-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 38 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.g2_failed-breakout-after-falling-week | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 39 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g2_one-day-fall-next-day-rebound | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 40 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g3_uptrend-breakdown-snaps-back | 7.g | 2 | 0.1067 | 0.0356 | candidate |
+| 41 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g1_quiet-breakdowns-in-falling-coins | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 42 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g1_sharp-dip-in-uptrend-rebounds | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 43 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.g1_sharp-daily-fall-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 44 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.g1_breakdown-after-deep-week-rebounds | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 45 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g1_one-day-fall-rebounds-next-day | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 46 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.g1_sharp-daily-fall-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 47 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.g1_rising-volatility-precedes-rises | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 48 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.g1_rebound-after-sharp-daily-fall | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 49 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.g1_sharp-drop-rebound-in-uptrend | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 50 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g2_wide-range-breakdown-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 51 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g2_wide-range-falls-reverse-upward | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 52 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation.g2_dip-within-weekly-rise | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 53 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails.g2_quiet-ranges-precede-underperformance | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 54 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g2_dip-in-rising-week-rebounds | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 55 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.g2_large-break-three-day-continuation | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 56 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g2_weak-week-downside-continuation | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 57 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.g2_momentum-after-wide-weeks | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 58 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.g2_quiet-breakdown-in-falling-month | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 59 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.g2_deep-breakdown-rebound-uptrend | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 60 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g3_deep-one-day-fall-rebound | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 61 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g3_wide-bar-precedes-rise | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 62 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g3_deep-downside-break-reverses | 7.g | 3 | 0.1067 | 0.0267 | candidate |
+| 63 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g4_rising-breakouts-over-six-days | 7.g | 3 | 0.1067 | 0.0267 | candidate |
 | - | 019-01_narrow-range-larger-move | step 2 | 0 | 0.1364 | 0.1364 | tested: step 5 -; step 6 - |
 | - | 019-02_narrow-range-wider-span | step 2 | 0 | 0.1364 | 0.1364 | tested: step 5 -; step 6 - |
 | - | 019-03_upward-breakout-quiet-continuation | step 2 | 0 | 0.1364 | 0.1364 | tested: step 5 inconclusive (+1.28); step 6 not profitable enough (failed: Calmar) |
@@ -78,6 +84,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week | 7.e | 2 | 0.5 | 0.1667 | tested: step 5 -; step 6 - |
 | - | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days | 7.e | 2 | 0.5 | 0.1667 | tested: step 5 confirmed (+3.51); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
 | - | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins | 7.b | 2 | 0.4762 | 0.1587 | tested: step 5 inconclusive (-0.94); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) |
+| - | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend | 7.b | 2 | 0.4762 | 0.1587 | tested: step 5 inconclusive (+0.97); step 6 not profitable enough (failed: Mean daily return, Calmar) |
 | - | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 7.d | 1 | 0.2333 | 0.1167 | duplicate of 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week |
 | - | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g1_vol-scaled-momentum-twelve-day-hold | 7.g | 3 | 0.1067 | 0.0267 | duplicate of 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days |
 | - | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.d1_quiet-breakdown-in-downtrend | 7.d | 3 | 0.2333 | 0.0583 | duplicate of 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend |
