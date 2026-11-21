@@ -1,2 +1,3 @@
 022-01_learned-combined-signal-score_1d: no ideas: Across the 25 signal quintiles, the weekday-by-coin, by-year and by-volatility tables, the persistence check and the large-move bins, nothing is graded and stands out from chance. The one strong pattern, the weekday effect in F5, is a fixed calendar condition that is neither graded nor stable across years and volatility levels, so it cannot be written as a graded idea.
 022-02_combination-beats-best-single_1d: 2 ideas (3 explorations)
+022-03_combined-extremes-larger-moves_1d: 2 ideas (3 explorations)

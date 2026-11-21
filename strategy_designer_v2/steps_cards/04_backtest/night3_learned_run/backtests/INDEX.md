@@ -1,2 +1,3 @@
 022-01_learned-combined-signal-score_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 22/24 (2 not run: the engine stopped); XRPUSD 21/24 (3 not run: the engine stopped); ZECUSD 23/24 (1 not run: the engine stopped) [1d, folds A, B, C, D]
 022-02_combination-beats-best-single_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 22/24 (2 not run: the engine stopped); XRPUSD 21/24 (3 not run: the engine stopped); ZECUSD 22/24 (2 not run: the engine stopped) [1d, folds A, B, C, D]
+022-03_combined-extremes-larger-moves_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 22/24 (2 not run: the engine stopped); XRPUSD 21/24 (3 not run: the engine stopped); ZECUSD 22/24 (2 not run: the engine stopped) [1d, folds A, B, C, D]
