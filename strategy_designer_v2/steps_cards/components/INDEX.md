@@ -78,3 +78,5 @@ slow_1h_run | 016-01_up-grind-price-continuation_1h | GrindShareOfRise | built: 
 slow_1h_run | 016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h | VolRatioWeightedScaledReturn | built: VolatilityScaledReturnComponent {"period": 24, "vol_lookback": 720, "vol_period": 168}
 night3_1h_run | 018-02_hourly-breakout-multiday-continuation_1h | VolScaledBreakAboveHighComponent | built: VolScaledBreakAboveHighComponent {"period": 480, "step": 24, "steps": 30}
 night3_1h_run | 018-02_hourly-breakout-multiday-continuation_1h | MeanAbsDailyReturnComponent | built: MeanAbsReturnComponent {"period": 24, "window": 720}
+night3_1h_run | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends_1h | PlungeTimesMonthRiseComponent | built: MeanAbsScaledFallTimesRiseComponent {"fall_period": 24, "rise_period": 720, "window": 720}
+night3_1h_run | 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high_1h | ProximityWeightedSurgeComponent | built: HighProximityScaledReturnComponent {"period": 720, "power": 2.0, "return_period": 24, "window": 720}

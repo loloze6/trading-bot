@@ -3831,3 +3831,139 @@ class MeanAbsReturnComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return self.window + self.period
+
+
+class MeanAbsScaledFallTimesRiseComponent(SubStrategyComponent):
+    """
+    The depth of a recent fall in usual moves, times the size of a longer rise, on every bar:
+
+        r(i) = close[i] / close[i - fall_period] - 1
+        m    = mean(abs(r(i)) for i = t - window + 1 .. t)          (bar t included)
+        F    = max(0, -r(t) / m)                                     (0 when m = 0)
+        R    = max(0, close[t] / close[t - rise_period] - 1)
+        raw_value = F x R x 100
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 when the last fall_period bars did not
+    fall or when the rise_period-bar return is not positive. It grows continuously with the depth of the fall in
+    usual fall_period-bar moves and with the percent rise over rise_period bars.
+    Warm-up: max(window + fall_period, rise_period + 1) rows, bar t included (744 at the defaults).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(window + fall_period, rise_period + 1)
+    rows of data, the last row being bar t; a bar's close is known at that bar's close.
+
+    NaN: a NaN close in those rows gives NaN. A close not above 0 there gives NaN (never on real bars). m = 0
+    (every fall_period-bar return of the window flat, never on real bars) gives a first factor of 0.
+    Building the component raises for fall_period < 1, window < 1 or rise_period < 1.
+    """
+
+    def __init__(self, name="MeanAbsScaledFallTimesRise", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.fall_period = int(self.parameters.get("fall_period", 24))
+        if self.fall_period < 1:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: fall_period must be >= 1, got {self.fall_period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: window must be >= 1, got {self.window}")
+        self.rise_period = int(self.parameters.get("rise_period", 720))
+        if self.rise_period < 1:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: rise_period must be >= 1, got {self.rise_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        p = self.fall_period
+        rets = c[p:] / c[:-p] - 1.0
+        rets = rets[-self.window:]
+        m = float(np.mean(np.abs(rets)))
+        r = float(c[-1] / c[-1 - p] - 1.0)
+        fall = 0.0 if m == 0 else max(0.0, -r / m)
+        rise = max(0.0, float(c[-1] / c[-1 - self.rise_period] - 1.0))
+        self._raw_value = float(fall * rise * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {'fall_return': r, 'mean_abs_return': m, 'scaled_fall': fall, 'rise': rise}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.window + self.fall_period, self.rise_period + 1)
+
+
+class HighProximityScaledReturnComponent(SubStrategyComponent):
+    """
+    The return_period-bar return in usual return_period-bar moves, weighted by the nearness of the close to
+    its recent closing high:
+
+        H = max(close[t - period + 1 .. t])                                   (bar t included)
+        D = max(0, (H - close[t]) / H * 100)                                  (percent below the high)
+        W = (1 / (1 + D)) ** power
+        r(i) = close[i] / close[i - return_period] - 1
+        m = mean(abs(r(i)) for i in t - window + 1 .. t)                      (bar t included)
+        raw_value = W * r(t) / m        (0 when m == 0)
+
+    Range & sign: signed like r(t), unbounded in practice. abs(value) <= window, because r(t) is one of the
+    window returns in m and W <= 1. At a new high W = 1; W shrinks toward 0 far below the high.
+    Graded: continuous in the closes.
+    Warm-up: max(period, window + return_period) rows, bar t included (744 at the defaults).
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN. m == 0 gives 0.
+    Building the component raises for period < 2, return_period < 1, window < 1 or power not above 0.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, window + return_period)
+    rows of data, the last of which is bar t; a close is known at its bar's close.
+    """
+
+    def __init__(self, name="HighProximityScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 720))
+        if self.period < 2:
+            raise ValueError(f"HighProximityScaledReturnComponent: period must be >= 2, got {self.period}")
+        self.return_period = int(self.parameters.get("return_period", 24))
+        if self.return_period < 1:
+            raise ValueError(
+                f"HighProximityScaledReturnComponent: return_period must be >= 1, got {self.return_period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"HighProximityScaledReturnComponent: window must be >= 1, got {self.window}")
+        self.power = float(self.parameters.get("power", 2.0))
+        if not self.power > 0:
+            raise ValueError(f"HighProximityScaledReturnComponent: power must be above 0, got {self.power}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        high = float(c[-self.period:].max())
+        dist = max(0.0, (high - c[-1]) / high * 100.0)
+        w = (1.0 / (1.0 + dist)) ** self.power
+        rets = c[self.return_period:] / c[:-self.return_period] - 1.0
+        recent = rets[-self.window:]
+        m = float(np.abs(recent).mean())
+        ret = float(recent[-1])
+        self._raw_value = 0.0 if m == 0 else float(w * ret / m)
+        self.confidence = 1.0
+        self.debug_info = {'high': high, 'distance_pct': dist, 'weight': w, 'return': ret, 'mean_abs': m}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period, self.window + self.return_period)
