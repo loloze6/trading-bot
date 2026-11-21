@@ -7,28 +7,9 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from book_diagnosis import bets, diagnose, horizon_of  # noqa: E402
-
-
-def write_window(path, close, fc, alloc, value=None):
-    """One window of hourly bars. Without a value series, the book's value follows the book without costs."""
-    close = np.asarray(close, float); alloc = np.asarray(alloc, float)
-    if value is None:
-        r = np.append(close[1:] / close[:-1] - 1, 0.0)
-        value = 1000 * np.cumprod(np.concatenate([[1.0], 1 + alloc[:-1] * r[:-1]]))
-    n = len(close)
-    df = pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC").strftime("%Y-%m-%d %H:%M:%S+00:00"),
-                       "close": close, "forecast": fc, "previous_allocation": np.concatenate([[0.0], alloc[:-1]]),
-                       "postRebalance_current_allocation": alloc, "postRebalance_total_value": value})
-    path.mkdir(parents=True, exist_ok=True)
-    df.to_csv(path / "bars.csv.gz", index=False)
-
-
-def test_bets_are_rises_of_at_least_the_band_on_their_side():
-    fc = np.array([0, 2, 2, 5, 3, 0, -1, -3, 4, 4.5, 6, 0], float)
-    # 2 from 0: a bet; 5 (3 above 2): a bet; -1 is below the band, -3: a bet; 4 after a change of side: a bet;
-    # 4.5 is noise; 6 (2 above 4): a bet
-    assert bets(fc).tolist() == [1, 3, 7, 8, 10]
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
+from book_diagnosis import diagnose, horizon_of  # noqa: E402
+from test_idea_size import write_window  # noqa: E402
 
 
 def test_no_cost_when_the_book_is_the_book_without_costs(tmp_path):

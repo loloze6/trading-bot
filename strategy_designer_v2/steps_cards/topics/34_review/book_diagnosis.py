@@ -1,4 +1,4 @@
-"""The diagnosis of a backtest's book: why it does or does not pay (definition: common/book_diagnosis.md, topic 34).
+"""The diagnosis of a backtest's book: why it does or does not pay (definition: topics/34_review/book_diagnosis.md, topic 34; a discovery tool, not a step).
 Reads one backtest record and the idea's horizon from its plan; writes diagnosis.json and diagnosis.md into the record.
 An observation: it refuses nothing, it changes no decision, no model call.
 
@@ -12,8 +12,9 @@ Why this can't leak: it reads a finished backtest after the fact and changes not
 """
 import argparse, json, math, re, sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 from lib import write_atomic  # noqa: E402
+from bets import bets, band_of  # noqa: E402,F401
 
 import numpy as np
 import pandas as pd
@@ -33,37 +34,6 @@ def horizon_of(record):
     if not h:
         raise SystemExit(f"{record.name}: the plan has no 'Horizon: N' line; give --horizon")
     return int(h.group(1))
-
-
-def bets(fc, band=0.2):
-    """The bars where a bet is made: the forecast rises on its own side by at least the band (on the signal scale,
-    forecast / 10) from its lowest level on that side since its last bet (from 0 after a flat or a change of side).
-    The same rule as the engine's holding period (trading-bot/core/holding_period.py; common/forecast.md 7)."""
-    out, prev, low = [], 0.0, 0.0
-    for t, f in enumerate((np.asarray(fc, float) / 10.0).tolist()):
-        if not math.isfinite(f):
-            continue
-        side = (f > 0) - (f < 0)
-        if side == 0 or (prev > 0) != (f > 0) or (prev < 0) != (f < 0):
-            low = 0.0
-        prev = f
-        if side == 0:
-            continue
-        size = side * f
-        if size > 0 and size - low >= band - 1e-9:
-            out.append(t); low = size
-        elif low > 0:
-            low = min(low, size)
-    return np.array(out, dtype=int)
-
-
-def band_of(record):
-    """The band the record's config traded with: strategies.min_allocation_change, else the risk layer's 0.2."""
-    try:
-        v = json.loads((record / "config.json").read_text())["strategies"].get("min_allocation_change")
-        return float(v) if v is not None else 0.2
-    except (OSError, KeyError, ValueError):
-        return 0.2
 
 
 def read_coin(coin_dir):

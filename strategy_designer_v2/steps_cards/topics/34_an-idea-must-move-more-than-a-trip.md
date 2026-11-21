@@ -84,14 +84,14 @@ are designed together.
 | 2026-11-20 | Long term, the diagnosis is part of the analysts' work (step 7), around profitability; the helper in `common/` is temporary, for this test | the operator | the analysts read why a confirmed idea does not pay | a separate stage |
 
 ## Status and next
-2026-11-20: step 1 drafted, `common/book_diagnosis.md`, for the operator's review (three open points at its end).
+2026-11-20: step 1 drafted, `topics/34_review/book_diagnosis.md`, for the operator's review (three open points at its end).
 2026-11-20, review 1 (operator): readings worded as what they measure; reading 1 named "big enough"; the idea's closing
 time (does the move end at the horizon) added as its own reading, distinct from the book staying in after its bets.
 Review 2 (operator): opening time and closing time as a pair; the per-bet move against a round trip joins "big
 enough"; "book stays in" renamed "holding past the bets" (the book's real positions, not the coin after a signal).
 Review 3 (operator): "big enough" compares the price move over the horizon with the cost rate of a round trip;
 quantity does not enter (profit and cost both scale with it). The book-level per-unit version is dropped.
-2026-11-20, step 2 built (operator's go): `common/book_diagnosis.py`, next to its definition until the observe-and-advise
+2026-11-20, step 2 built (operator's go): `topics/34_review/book_diagnosis.py`, next to its definition until the observe-and-advise
 stage exists; 8 tests on records whose answers are known by construction (bets, a known fee, a known path, overlap,
 holding past the bets, a book that is all market, the horizon read from the plan); all pass. Proof: a rerun on the same
 record gives an identical `diagnosis.json`. The 3 open points are applied as proposed until decided. First real record

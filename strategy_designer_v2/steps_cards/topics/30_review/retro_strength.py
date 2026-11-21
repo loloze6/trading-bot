@@ -4,7 +4,7 @@ returns over all windows). A pure number: 0.05 means the idea predicts 5 % of a 
 import sys, json, math, pathlib, numpy as np, pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 sys.path.insert(0, "/home/user/trading-bot/strategy_designer_v2/steps_cards/common")
-from book_diagnosis import bets, band_of
+from bets import bets, band_of
 ST = pathlib.Path("/home/user/trading-bot/strategy_designer_v2/steps_cards")
 def one(a):
     run, pid, H = a; rec = ST/"04_backtest"/run/"backtests"/pid; band = band_of(rec); x = []; sig = []

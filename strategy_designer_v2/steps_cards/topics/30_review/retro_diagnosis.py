@@ -5,6 +5,7 @@ ST = pathlib.Path("/home/user/trading-bot/strategy_designer_v2/steps_cards")
 PY = sys.executable
 OUT = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path("/tmp/retro_out")
 sys.path.insert(0, str(ST / "common"))
+sys.path.insert(0, str(ST / "topics/34_review"))
 from book_diagnosis import horizon_of
 def res(path):
     try: return json.loads(path.read_text())
@@ -25,7 +26,7 @@ def one(rec):
         H = int(m.group(1))
     o = OUT / run / pid
     if not (o / "diagnosis.json").exists():
-        r = subprocess.run([PY, str(ST/"common/book_diagnosis.py"), str(rec), "--horizon", str(H), "--out-dir", str(o)], capture_output=True, text=True)
+        r = subprocess.run([PY, str(ST/"topics/34_review/book_diagnosis.py"), str(rec), "--horizon", str(H), "--out-dir", str(o)], capture_output=True, text=True)
         if r.returncode: row["error"] = r.stderr.strip().splitlines()[-1][:120] if r.stderr.strip() else "failed"; return row
     w = json.loads((o/"diagnosis.json").read_text())["whole_book"]
     row.update(H=H, bets=w["bets_read"], move=w["1_big_enough"]["move_over_horizon"], trip=w["1_big_enough"]["round_trip_cost"],
