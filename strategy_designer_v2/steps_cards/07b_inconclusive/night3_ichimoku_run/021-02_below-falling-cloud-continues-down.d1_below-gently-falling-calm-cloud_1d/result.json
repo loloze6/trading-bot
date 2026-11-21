@@ -1,0 +1,51 @@
+{
+  "line": "7.b",
+  "backtest": "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3800743,
+  "findings": {
+    "F1": "The tested short is on the side the idea predicts but too weak and too scattered to clear the bar. On the plan's 156 non-overlapping 26-day cases, my unweighted drift-adjusted short gain was +1.5 % (t 0.69, 59 % of cases positive), against step 5's weighted +2.8 % (t 1.15). Four of six coins were positive (BTC +3.1 %, ETH +3.2 %, LTC +5.6 %, ZEC +3.4 %) and two negative (XMR \u22124.4 %, XRP \u22124.3 %), with no coin reaching t 1.3 on 20 to 32 cases.",
+    "F2": "The market's own year drowns the effect. The drift-adjusted short gain was +20.0 % in 2018 (t 4.86, 34 cases), +5.5 % in 2019 (t 2.44, 30 cases) and +9.1 % in 2025 (t 1.92, 14 cases). It was \u221232.8 % in 2020 (t \u22123.00, 7 cases), \u221235.3 % in 2021 (t \u22122.91, 12 cases) and \u221210.9 % in 2023 (t \u22122.15, 11 cases).",
+    "F3": "The cloud's half of the grading works. Cases with the gentlest 26-day cloud fall (raw slope mean \u22124.0) gained +9.6 % drift-adjusted (t 2.94, 52 cases, 75 % positive). The middle third gained \u22120.9 % (t \u22120.20) and the steepest third (raw slope mean \u221219.2) \u22124.1 % (t \u22121.34). The Spearman correlation of cloud steepness with gain is \u22120.27. The gentle third is positive on all six coins (+3.2 % XRP to +16.3 % ZEC), and in the bear-year group it gains +15.0 % (t 4.96) against +0.8 % for the steep third.",
+    "F4": "The calm half of the grading does not work. The Spearman correlation of the standardised 30-day volatility with the gain is +0.04. The calmest third gained \u22124.7 % (t \u22121.09) against +6.1 % for the middle third and +3.2 % for the most volatile. Inside the gentle-fall third, calm and volatile cases gain about the same (+10.0 %, t 2.27, 32 cases, against +9.0 %, t 1.85, 20 cases).",
+    "F5": "The combined forecast still grades in the idea's direction. Its smallest quarter gained \u22123.7 % and its largest +7.4 % (t 1.94), with a Spearman correlation of |forecast| with gain of +0.20. This grading rests on the cloud's half (F3).",
+    "F6": "Before drift, the short loses: \u22122.7 % per case over 26 days (t \u22121.23), and \u22126.5 % over 40 days (t \u22122.61). Each coin's normal 26-day drift is +1.4 % to +7.4 %, so the book pays the coins' rise. This fits the book's Sharpe of \u22120.38 even though a case's unusual move (+2.33 %) is 12 times the 0.19 % cost of a trade.",
+    "F7": "More data is available than the test used. Thirteen more coins have daily bars: in folds A and D, and partly in B and C. The test ran on the six default coins only."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "below-cloud short, more coins",
+      "from": "F1, F2, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F7"
+      ],
+      "idea": "When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is negative, and more negative the slower the cloud has fallen over the past 26 days and the calmer the coin's daily moves have been over the past 30 days.",
+      "consequence": "A trader would short a coin below a falling cloud mainly when the cloud's decline and the coin's swings are mild, and size down as either grows.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is negative, and more negative the slower the cloud has fallen over the past 26 days.",
+      "consequence": "A trader would short a coin below a falling cloud mainly while the cloud's decline is gentle, and size down as the decline steepens, whatever the coin's recent calm.",
+      "name": "below gently falling cloud",
+      "from": "F3, F4, F2, F7",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "refs": [
+        "F3",
+        "F4",
+        "F2",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins",
+    "021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b2_below-gently-falling-cloud"
+  ],
+  "no_ideas": null
+}

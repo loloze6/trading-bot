@@ -12,20 +12,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues | 021-02_below-falling-cloud-continues-down | missing-components | - | - | - | - | 0.09 | 0.7 |
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | 021-01_above-rising-cloud-continues-up | plan | inconclusive (-1.26) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise; 7.d: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d1_above-cloud-stretched-above-average, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d2_above-thin-cloud-continues, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.d3_26-day-momentum-continues; 7.g: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.g1_sharp-daily-fall-rebounds-next-day, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.g2_last-week-s-move-continues-monthly | 4.65 | 20.7 |
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | missing-components | - | - | - | - | 0.07 | 0.6 |
+| 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud | 021-02_below-falling-cloud-continues-down | plan | inconclusive (+1.15) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b2_below-gently-falling-cloud; 7.d: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.d1_below-cloud-short-still-falling, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.d2_rebound-under-falling-cloud; 7.g: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.g1_strong-week-lifts-saturday | 1.42 | 7.0 |
 
 ## Consumption
-8 ideas, 10.12 USD, 48.8 minutes in all.
+9 ideas, 11.54 USD, 55.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.24 | 6.2 |
-| step4_backtest | 0.00 | 10.1 |
-| step5_verdict | 0.64 | 2.6 |
+| step3_plan | 1.35 | 7.0 |
+| step4_backtest | 0.00 | 11.8 |
+| step5_verdict | 0.81 | 3.3 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 1.54 | 4.8 |
-| step7_7.g | 1.63 | 5.4 |
-| step7_7.d | 5.07 | 19.5 |
+| step7_7.b | 1.92 | 6.1 |
+| step7_7.g | 2.00 | 6.6 |
+| step7_7.d | 5.46 | 20.8 |
