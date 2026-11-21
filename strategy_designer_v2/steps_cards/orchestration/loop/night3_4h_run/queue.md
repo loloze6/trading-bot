@@ -1,6 +1,6 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 30.58 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 31.02 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
@@ -117,5 +117,6 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins | 7.b | 3 | 0.48 | 0.12 | tested: step 5 inconclusive (+2.85); step 6 profitable enough |
 | - | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend | 7.b | 3 | 0.48 | 0.12 | tested: step 5 inconclusive (+2.67); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) |
 | - | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins | 7.b | 3 | 0.48 | 0.12 | tested: step 5 confirmed (+2.89); step 6 not profitable enough (failed: Mean daily return, Calmar) |
+| - | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week | 7.b | 2 | 0.48 | 0.16 | duplicate of 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week |
 | - | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g1_vol-scaled-momentum-twelve-day-hold | 7.g | 3 | 0.1067 | 0.0267 | duplicate of 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days |
 | - | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.d1_quiet-breakdown-in-downtrend | 7.d | 3 | 0.2258 | 0.0565 | duplicate of 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend |

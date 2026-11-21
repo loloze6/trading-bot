@@ -3974,3 +3974,66 @@ class NarrowRangeBreakoutRangeRatioComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return max(self.base_period, self.period + 1, self.ratio_long_period)
+
+
+class MeanBarRangeRatioComponent(SubStrategyComponent):
+    """
+    Long-run average bar range against the recent average bar range, on every bar:
+
+        L = mean(high[i] - low[i]) for i = t - long_period + 1 .. t     (bar t included)
+        Q = mean(high[i] - low[i]) for i = t - short_period + 1 .. t    (bar t included)
+        raw_value = L / Q
+
+    Range and sign: short_period / long_period and up, unbounded above, never negative, no direction. The short
+    window lies inside the long one, so L >= Q x short_period / long_period. The value is 1 when the recent bars are
+    as wide as the long average, grows as the recent bars get quieter, and falls below 1 as they get wider. Graded:
+    continuous in the highs and lows.
+    Warm-up: long_period rows, bar t included.
+
+    NaN: a NaN high or low in the last long_period rows gives NaN. Q = 0 needs short_period zero-range bars in a
+    row (never seen on real bars) and gives NaN. A missing column raises.
+    Building the component raises for a short_period below 1 or a short_period at or above long_period.
+
+    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of the last long_period rows of data, the last
+    of which is bar t; a bar's high and low are known at that bar's close.
+    """
+
+    def __init__(self, name="MeanBarRangeRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.long_period = int(self.parameters.get("long_period", 360))
+        self.short_period = int(self.parameters.get("short_period", 42))
+        if self.short_period < 1:
+            raise ValueError(f"MeanBarRangeRatioComponent: short_period must be >= 1, got {self.short_period}")
+        if self.short_period >= self.long_period:
+            raise ValueError(
+                f"MeanBarRangeRatioComponent: short_period must be below long_period, got "
+                f"{self.short_period} >= {self.long_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).iloc[-self.long_period:].to_numpy()
+        low = data['low'].astype(float).iloc[-self.long_period:].to_numpy()
+        rng = high - low
+        if np.isnan(rng).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        long_mean = float(rng.mean())
+        short_mean = float(rng[-self.short_period:].mean())
+        if not short_mean > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(long_mean / short_mean)
+        self.confidence = 1.0
+        self.debug_info = {'long_mean_range': long_mean, 'short_mean_range': short_mean}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.long_period

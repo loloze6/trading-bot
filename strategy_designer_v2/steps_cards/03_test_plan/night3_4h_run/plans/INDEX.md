@@ -13,7 +13,7 @@
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
-019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week_4h: missing-components: Each needed quantity is in a coin's own high and low columns, and a regime plus a graded component could [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
+019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
