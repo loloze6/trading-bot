@@ -7,4 +7,6 @@
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins_1h: confirmed (fit: adapted) [main: 0.00564082; t of the mean 5.32824; cases 6055]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends_1h: inconclusive (fit: adapted) [main: 0.00305462; t of the mean 1.55775; independent cases 2329, cases with 30-day return 1657, active bars 112010]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound_1h: inconclusive (fit: adapted) [main: 0.0018357; t of the mean 1.9754; cases 5958]
+018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound_1h: inconclusive (fit: exact) [main: 0.0010826; t of the mean 1.92127; cases 8426, cases forecast >= 10 1860, cases forecast < 10 6566]
+018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound_1h: rejected (fit: adapted) [main: -0.980247; t of the mean -86.9172; cases 8426]
 018-06_hourly-plunge-multiday-continuation_1h: inconclusive (fit: adapted) [main: 0.000656589; ordinary t of the mean 0.03708; cases 3165, active bars 202702]

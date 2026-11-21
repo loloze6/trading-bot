@@ -7,4 +7,6 @@
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins_1h: 2 ideas (2 explorations)
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends_1h: 2 ideas (3 explorations)
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound_1h: 2 ideas (2 explorations)
+018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound_1h: 2 ideas (2 explorations)
+018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound_1h: 2 ideas (2 explorations)
 018-06_hourly-plunge-multiday-continuation_1h: 1 ideas (2 explorations)

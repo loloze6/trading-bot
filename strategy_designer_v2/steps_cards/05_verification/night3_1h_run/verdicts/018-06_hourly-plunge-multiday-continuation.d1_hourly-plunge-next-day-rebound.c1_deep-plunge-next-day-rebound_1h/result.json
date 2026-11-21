@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 24-bar return after a bet, before costs",
+    "value": 0.0010826002489998155,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.921272372061816
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess, forecast >= 10 minus forecast < 10 (Welch t 1.999)",
+    "value": 0.002898521866109307,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8426,
+    "cases forecast >= 10": 1860,
+    "cases forecast < 10": 6566
+  },
+  "decided_by": "The t of the mean excess 24-bar return lies between -2 and 2.",
+  "reading": "The situation is read as a negative 24-bar return (a drop, which standardise expresses as a multiple of the usual daily move and the graded dead zone weights), on the long side. A bet is a rise of the forecast of at least 2 points from its lowest level since the last bet (from 0 after a flat), and the first bet in each 24-bar grid cell is the case. The coin's normal drift is the mean of its non-overlapping 24-bar returns on the grid of all its windows. The supporting check passes when the difference of means (forecast >= 10 minus < 10) is above 0, and the Welch t is reported. The plan's 30-case minimum, when not reached, gives 'not observable'."
+}

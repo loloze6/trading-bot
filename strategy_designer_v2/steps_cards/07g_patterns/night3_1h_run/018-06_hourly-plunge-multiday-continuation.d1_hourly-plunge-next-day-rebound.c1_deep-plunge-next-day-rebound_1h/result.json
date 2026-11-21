@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40715029999999997,
+  "findings": {
+    "F1": "The deeper the hourly plunge, the larger the next-day rebound, but only when the coin is already volatile against its own history. For a drop beyond 3 multiples of its 30-day mean absolute daily move, the next 24 hours, net of drift, are +956 bps (t 5.7, 55 independent cases, strength 1.95) when that 30-day level is over 1.4 times the coin's median, +173 bps (t 2.3, 85) between 1.0 and 1.4 times, and +13 bps (t 0.4, 236) below its median; drops of 2 to 3 multiples follow the same order (+215, +21, \u22123 bps).",
+    "F2": "Ranking drops of more than 1 multiple by depth times relative volatility, which is close to the drop in percent over the coin's long-run usual daily move, only the top fifth stands out. It gives +196 bps over 24 hours (t 5.6, 615 cases, strength 0.39), about 10 times the 19 bps cost of a round trip. The other four fifths give \u22129 to +34 bps (t \u2264 1.6).",
+    "F3": "The volatile-plunge rebound holds on every coin but not in every year. Drops of more than 1 multiple at relative volatility above 1.4 rebound +96 to +259 bps over 24 hours on all 6 coins (t 2.3 to 2.5 on five, 1.1 on XMR). By year they are positive in 2018 to 2021 and 2025 (+122 to +292 bps) and flat or negative in 2022 to 2024 (\u221232 to +2 bps).",
+    "F4": "The tested idea's weak overall size (0.020 strength, t 1.92) comes from mixing a strong tail with a dead middle. Drops beyond 3 multiples rebound +187 bps (t 4.6, 376 cases), while drops of 2 to 3 multiples give +39 bps (t 1.7). Measured by year, the beyond-3 group is \u221285 bps in 2022 and about 0 in 2023 and 2024, the calm years.",
+    "F5": "The rebound after a deep plunge is spread over the day rather than front-loaded. Of the +201 bps raw 24-hour move after drops beyond 3 multiples, +53 bps comes in the first 6 hours.",
+    "F6": "The book's worst days are the coin's crash days, and the coin rises the day after. In the book's worst decile of days, the book returns \u2212393 bps while the coin falls \u2212663 bps, and the coin then gains +79 bps the next day. This matches the idea buying into falls that are still under way.",
+    "F7": "Small fresh falls continue rather than revert. A 24-hour drop of 0 to 1 multiple is followed by \u221221 bps over the next 24 hours (t \u22123.1, 4991 cases).",
+    "F8": "Fridays stand out among weekdays, but a weekday is not a graded situation, so it gives no idea here. The 24-hour return net of drift is +49 bps on Fridays (t 4.9, 2333 cases; positive on all 6 coins and in 6 of 8 years), \u221243 bps on Mondays (t \u22123.8) and \u221236 bps on Thursdays (t \u22123.0).",
+    "F9": "A large 7-day rise as a multiple of the usual daily move is followed by more rise (+158 bps over 3 days, t 2.6, 353 cases), but it fails the robustness checks. It is negative on LTC (\u2212115 bps) and in 2019 and 2022, so given the many angles examined it does not count as a finding to act on."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, is a drop several times its 30-day average absolute daily return while that 30-day average itself is high relative to the coin's own past year, the price rises over the next 1 day by more than its normal 1-day drift. The deeper the drop in multiples and the higher the 30-day average stands against the past year, the larger the rise.",
+      "consequence": "A trader should buy a deep hourly plunge for a day mainly when the coin is already in a volatile spell, because the rebound there is many times the cost of a trade, and treat the same plunge in a calm spell as no reason to trade.",
+      "name": "volatile-spell plunge next-day rebound",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, is a drop several times its average absolute daily return over the past year, the price rises over the next 1 day by more than its normal 1-day drift. The larger the drop in those multiples, the larger the rise.",
+      "consequence": "A trader should size a one-day rebound buy by how large the drop is against the coin's long-run daily move rather than its last month's, because only the drops that are large on that scale rebound by several times the cost of a trade.",
+      "name": "long-scale plunge next-day rebound",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.g1_volatile-spell-plunge-next-day-rebound",
+    "018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.g2_long-scale-plunge-next-day-rebound"
+  ],
+  "no_ideas": null
+}

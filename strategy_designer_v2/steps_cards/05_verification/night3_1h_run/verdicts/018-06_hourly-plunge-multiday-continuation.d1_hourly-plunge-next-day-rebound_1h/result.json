@@ -1,0 +1,26 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean strength minus 1 of 24-bar long cases",
+    "value": -0.9802466489574144,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -86.91718121739392
+    },
+    "threshold": "confirm: > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman of case forecast vs unusual move",
+    "value": 0.042692319782839785,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8426
+  },
+  "decided_by": "Mean strength minus 1 is below 0 with t <= -2 over at least 30 cases.",
+  "reading": "Cases are long bets (forecast rises of at least 2 points from its lowest level since the last bet, reset at 0 after a flat), the first per 24-bar grid cell from each window's first row, kept only if 24 bars follow in the window; drift and usual move are the mean and sample std of each coin's non-overlapping 24-bar returns pooled over its windows; the t is the ordinary t of the mean of strength minus 1 over all cases pooled across coins."
+}
