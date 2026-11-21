@@ -1,5 +1,6 @@
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins_1d: no ideas: I looked at about a dozen angles: past 1-, 3-, 10- and 20-day returns, where the price sits in its 20-day range, volatility level, weekday, year, forecast state, coin group and trade duration. None stood out enough to count. The best candidate, the 10-day momentum in F4, is not graded, is weaker than t 2 once cases are counted by day, disappears over 20 days and flips sign with the year's drift. That fits the year's drift rather than a timing edge that a new idea could rest on.
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: 1 ideas (2 explorations)
+020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high_1d: 1 ideas (3 explorations)
 020-01_resistance-retest-turns-down_1d: 1 ideas (2 explorations)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins_1d: 1 ideas (2 explorations)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall_1d: no ideas: Every pattern beyond the market's own direction is either within chance after about 30 looks or changes sign from year to year (best: 10-day momentum at t 2.54, split 4 to 4 across years), so no finding is firm enough to rest a new idea on.

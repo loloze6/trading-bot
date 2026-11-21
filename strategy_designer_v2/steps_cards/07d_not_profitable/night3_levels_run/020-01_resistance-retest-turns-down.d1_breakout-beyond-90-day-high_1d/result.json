@@ -1,0 +1,61 @@
+{
+  "line": "7.d",
+  "backtest": "020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3493723000000001,
+  "findings": {
+    "F1": "The book is almost always out of the market, which keeps its mean daily return at 0.000165 against the 0.0005 required. It holds a position on only 17.6 % of bars, and its mean position is 0.036 of the book. When it is in, the position is only 0.15 to 0.38 of the book, because the forecast is 0.9 to 1.7 on average. Between 28 % and 48 % of those in-position bars already carry a forecast of 0, depending on the coin.",
+    "F2": "The breakout's move keeps growing well past the 5-day horizon that was tested. The mean total move after a breakout case is +1.4 % over 5 days, +3.2 % over 10, +4.8 % over 20 and +6.9 % over 40 (175, 172, 162 and 124 cases). The unusual move is +0.8 %, +2.0 %, +2.4 % and +2.5 % (t 0.81, 1.32, 1.14, 0.64).",
+    "F3": "The trades the book held longer earn almost all of its gain. Trades of up to 5.5 days average +0.85 % net (282 trades). Trades of 5.5 to 10 days average +13.6 % (93), 10 to 20 days +33.0 % (50) and 20 to 40 days +44.3 % (25). The median trade still lasts only 5 days.",
+    "F4": "The size of the breakout grades the longer move but not the 5-day one. By forecast quartile, the 20-day unusual move is -1.4 %, +0.5 %, +2.7 % and +8.1 %, and the 10-day one rises to +5.6 % in the top quartile. The 5-day move peaks in the third quartile (+5.4 %) and falls back to +0.7 % in the top one, which is why the 5-day slope has t 0.37.",
+    "F5": "The book's gain per bar fades as the last new 90-day high grows older, and the book is still in the coin then. Mean gain per in-position bar is 0.17 % on the day of a new high, 0.26 % one to two days after, 0.11 % three to five days after, 0.04 % six to ten days after, and about 0 beyond ten days. The book still has 618 position bars more than ten days after a new high.",
+    "F6": "The book's falls, the Calmar of 0.64, come in windows where the coin itself did well. ETH w17 fell 26 % while the coin rose 55 %, and BTC w15 fell 17 % while the coin rose 80 %. This points to breakouts that failed inside rising markets rather than to the market's own declines.",
+    "F7": "Measured over 20 days, closes just below the 90-day high are followed by more than deeper closes, though none of these differences is significant. Closes 0 to 5 % below the high are followed by a 20-day unusual move of +3.1 % (60 cases, t 1.05), and closes 5 to 15 % below by +1.9 % (151, t 1.06). Closes 15 to 50 % below are followed by -2.9 % to -3.5 % (250 cases, t -1.6 to -1.7).",
+    "F8": "Cost is not the cause of the shortfall. Per case, the 5-day total move is 19.5 times the 0.19 % round-trip cost, and the trades' mean fee is 0.15 %."
+  },
+  "ideas": [
+    {
+      "idea": "The further a coin's daily close stands above its highest close of the previous 90 days, the more it rises over the next 20 days.",
+      "consequence": "A trader should hold a long after a close beyond the 90-day high for about three weeks, larger the further beyond, rather than leaving it after five days.",
+      "name": "ninety-day breakout, twenty-day continuation",
+      "from": "F2, F3, F4, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "The further a coin's daily close stands above its highest close of the previous 90 days, the more it rises over the next 20 days, and the more so the fewer days have passed since that close first broke the 90-day high.",
+      "consequence": "A trader should weight a breakout long most heavily in its first days and reduce it as the breakout ages without a new high.",
+      "name": "fresh breakout carries further",
+      "from": "F5, F2, F4, F6",
+      "refs": [
+        "F5",
+        "F2",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The closer a coin's daily close stands to its highest close of the previous 90 days, the more it rises over the next 20 days.",
+      "consequence": "A trader should lean long as a coin's close approaches its 90-day high, and refuse longs on closes far beneath it.",
+      "name": "nearness to ninety-day high",
+      "from": "F7, F1, F2",
+      "refs": [
+        "F7",
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation",
+    "020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d2_fresh-breakout-carries-further",
+    "020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high"
+  ],
+  "no_ideas": null
+}
