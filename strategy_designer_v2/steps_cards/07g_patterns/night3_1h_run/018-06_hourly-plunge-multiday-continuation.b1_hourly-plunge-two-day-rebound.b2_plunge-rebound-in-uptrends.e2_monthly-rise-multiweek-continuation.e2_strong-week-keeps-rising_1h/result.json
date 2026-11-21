@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39077150000000005,
+  "findings": {
+    "F1": "A coin's 1-day fall that is large against its usual daily move was followed by an unusual rise over the next 24 hours. In the deepest decile of the 1-day return scaled by recent volatility, the unusual move was +0.76 % (strength 0.145, t 4.6, 1626 non-overlapping cases), and in the next decile +0.27 % (strength 0.060, t 2.4). That is about 4 times and 1.4 times the 0.19 % cost of a buy and a sell, while deciles 2 to 9 were flat or slightly negative.",
+    "F2": "The rebound after a sharp 1-day fall was graded and held up across samples. On the falling side, the slope of strength on the scaled 1-day return was -0.14 (the deeper the fall, the larger the rebound). The two deepest deciles were positive on all 6 coins (strength 0.077 on BTC to 0.128 on XRP, t 1.6 to 2.8), in 7 of 8 years (all but 2022, at -0.006), and in 69 % of coin-windows.",
+    "F3": "The rebound after a sharp 1-day fall was concentrated where the coin's 7-day volatility was high. In the two deepest deciles, the top volatility tercile gave an unusual 24-hour move of +1.58 % (strength 0.31, t 6.6, 1084 cases), about 8 times the cost. The middle tercile gave +0.11 % (t 0.7) and the low tercile -0.14 % (t -1.2).",
+    "F4": "The rebound after the deepest 1-day falls lasted beyond one day. In the deepest decile the unusual move was +0.59 % over 48 hours (t 2.2, 803 cases) and +1.29 % over 72 hours (strength 0.14, t 3.2, 529 cases), so the move per case keeps growing past the first day.",
+    "F5": "The tested continuation of strong weeks did not show up in the bars. The forward 7-day unusual move by quintile of the past 7-day return ran -0.37 %, -0.90 %, -1.00 %, +0.46 %, +0.96 %, with no t above 1.7. By past 30-day return the top quintile gave +1.56 % at t 1.7, which is not distinguishable from chance after this many angles.",
+    "F6": "The largest 1-day rises showed a mild reversal, not a continuation. The top decile gave an unusual 24-hour move of -0.26 % (t -2.1), and the next-24-hour strength by year was negative in 6 of 8 years (as low as -0.21 in 2018, t -3.4).",
+    "F7": "The hours 20 and 21 UTC rose more than other hours, but by too little to pay for a trade. Their next-hour z-scores were 0.043 and 0.053 (t 5.5 and 7.1) and were positive in 7 of 8 years, but the mean was only 2 to 10 bps per hour, below a round trip (F2 of the earlier runs). This is no basis for an idea on its own.",
+    "F8": "The book's worst 1 % of days were days the coin itself fell by a mean of 13.2 %, spread over every year (14 to 31 such days a year). Its losses come from holding through sharp falls, not from its timing."
+  },
+  "ideas": [
+    {
+      "idea": "A coin whose 1-day return is a large fall against its usual daily move rises over the next 1 to 3 days by more than its usual drift, and the deeper that fall against its usual daily move, the larger the rise.",
+      "consequence": "A sharp one-day fall is a reason to go long for the next day or few days, in proportion to how unusual the fall was, rather than to sell it.",
+      "name": "sharp daily fall rebounds",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "After a 1-day fall in a coin, the rise over the next day is larger the higher the coin's volatility over the past 7 days, and larger again the deeper the fall.",
+      "consequence": "A trader buying sharp one-day falls should commit most when the coin has been volatile over the past week and least when it has been calm.",
+      "name": "volatile-regime plunge rebound",
+      "from": "F3, F1",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.g1_sharp-daily-fall-rebounds",
+    "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.g2_volatile-regime-plunge-rebound"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 168-bar move after bets (return minus coin's normal 168-bar drift)",
+    "value": -0.000851811391058422,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.2781368397170539
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and slope > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of unusual move on forecast at signal bar",
+    "value": 0.0005288649277806957,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1883
+  },
+  "decided_by": "The t-statistic of the mean unusual move lies between -2 and 2.",
+  "reading": "A bet is a rise of the positive forecast of at least 2 points from its lowest level since the last bet (reset to 0 when the forecast is not positive and at each window's start), the first bet of each 168-bar grid cell counted from the window's first row is the case, cases without 168 bars ahead in their window are dropped, and the normal drift is the coin's mean non-overlapping 168-bar return over all its windows."
+}
