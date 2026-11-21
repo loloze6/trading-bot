@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 168-bar strength on forecast, all grid bars",
+    "value": 0.008641989110097482,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.931772779767375
+    },
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean strength on grid bars with forecast > 0 above 0",
+    "value": 0.038157995541751595,
+    "passed": true
+  },
+  "counts": {
+    "grid bars": 2424,
+    "grid bars with forecast > 0": 1196
+  },
+  "decided_by": "The slope's t is 2 or more and the mean strength on forecast > 0 grid bars is above 0.",
+  "reading": "The coin's normal drift and usual move are the mean and standard deviation of its forward 168-bar returns on the non-overlapping grid (positions 0, 168, ... of each window) pooled over all its windows, grid bars without a full 168-bar forward return inside the window are dropped, and the plan's '300 grid bars with forecast > 0' is treated as a minimum count giving 'not observable' when not reached."
+}
