@@ -1,4 +1,5 @@
 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-01_above-rising-cloud-continues-up_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: missing-components: The gradient needs a short that is largest when the cloud's slope is near zero and shrinks as the fall [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-02_below-falling-cloud-continues-down_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
