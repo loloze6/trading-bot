@@ -3,6 +3,7 @@
 018-03_hourly-surge-gain-before-close_1h: untestable: The idea's horizon is "to the same day's daily close", which lasts from 1 to 23 hourly bars depending on [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b1_surge-near-high-more-coins_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h: missing-components: Each part comes from one coin's own closes, and a regime rule could hold the trigger. But no catalogue component [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

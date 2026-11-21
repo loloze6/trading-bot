@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high_1h
+idea tested: 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4331 USD
+---
+## Findings
+- **F1:** Over the next 10 days, the bars whose close is within about 1.2 usual daily moves of the 30-day closing high (the top quintile of distance measured in daily volatilities, 249 non-overlapping cases) end 4.9 % above the coin's normal drift (strength 0.29, t 3.53). That is about 25 times the 0.19 % cost of a buy and a sell. Over 5 days the same quintile gives +1.71 % (strength 0.148, t 2.86, 535 cases). The effect is not graded across the other quintiles: the fourth is the worst at 10 days (-2.67 %, t -2.98).
+- **F2:** Among bars in the two quintiles nearest the 30-day high, the coin's past 7-day return grades the move over the next 10 days. From the lowest to the highest tercile the strength is -0.12, +0.01 and +0.38 (about 166 cases each; top minus bottom about 0.50 usual moves, roughly t 4.5). Over 5 days the terciles give -0.04, +0.08 and +0.14 (about 357 cases each; difference roughly t 2.4).
+- **F3:** The near-high effect is not stable. Top minus bottom quintile of distance from the 30-day high is +0.52 usual moves at 10 days in windows w13-w24 (t 3.20) and -0.05 in w1-w12 (t -0.41). It is negative in 2022 and 2023 (-0.61 and -0.59, t about -2.2 each). Per coin, the rank correlations of distance against the 10-day move are small: -0.07 to +0.12, none with p below 0.08.
+- **F4:** Next-hour returns net of each coin's mean are higher at 20 and 21 UTC (+3.8 and +4.1 bps, t 4.3 and 4.9, about 14,300 bars each). They are lower at 0 to 2 UTC and 7 UTC (-1.8 to -2.7 bps, t -2.2 to -3.2) and on Thursdays (-2.2 bps, t -4.7). Each is far below a round trip of 10 to 31 bps, so none can pay on its own.
+- **F5:** The 24-hour surge the tested idea uses grades the 5-day move only weakly. Its top quintile, 1 to 11 usual daily moves, has strength 0.071 (t 1.47, 535 cases), and the quintiles below are not ordered. In the book, the trades entered at the lowest forecast quartile earn the most: +4.1 % net per trade, held 597 hours on average, against +2.9 to +3.5 % for the higher quartiles.
+- **F6:** The book's worst daily decile (-5.9 %) comes on days after the coin rose 5.7 % over the previous 5 days. Its best decile (+7.1 %) follows the same 5.7 % rise. Being long after a rise carries the book's swings both ways, which is consistent with its Calmar of 0.57.
+
+## Ideas
+- `018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.g1_weekly-strength-at-monthly-high` (from F1, F2, F3): A coin whose close stands near its 30-day closing high keeps rising over the next 10 days by more than its usual 10-day return, and the larger its 7-day return measured in usual daily moves, the larger that rise.
+- `018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.g2_distance-to-high-in-vols` (from F1, F3, F5): The closer a coin's close stands to its 30-day closing high, counted in its usual daily moves, the more the coin rises over the next 10 days above its usual 10-day return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
