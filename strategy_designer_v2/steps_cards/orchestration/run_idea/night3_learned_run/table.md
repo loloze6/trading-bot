@@ -13,20 +13,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days | 022-03_combined-extremes-larger-moves | plan | confirmed (+2.63) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d1_weighted-reversal-with-trend-agreement, 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues, 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d3_persistent-weighted-reversal-extremes; 7.g: no ideas: The only strong pattern, the 20-day reversal, vanishes when the grid's starting point changes (mean t -0.88 over 20 offsets), and every other angle stays within what chance gives across the many angles looked at (forecast, 1-day move by horizon, by year, coin and volume level, volatility, range, nearness to highs, weekday, the book's long and short sides). | 1.04 | 10.9 |
 | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around | 022-04_signal-weights-carry-forward | missing-components | - | - | - | - | 0.08 | 0.6 |
 | 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around | 022-04_signal-weights-carry-forward | plan | confirmed (+2.99) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.d: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d1_volatility-reversal-with-trend, 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d2_nearness-to-90-day-high, 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues; 7.g: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.g1_two-week-return-continues-weekly, 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.g2_volatility-scaled-monthly-trend-continues | 1.11 | 7.2 |
+| 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score | 022-01_learned-combined-signal-score | plan | inconclusive (+1.21) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.b: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days; 7.d: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d1_momentum-and-nearness-score, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends; 7.g: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g1_volatility-scaled-short-term-continuation, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g2_calm-market-short-term-continuation, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g3_rises-carry-further-than-falls | 1.62 | 7.5 |
 
 ## Consumption
-9 ideas, 10.26 USD, 83.7 minutes in all.
+10 ideas, 11.87 USD, 91.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.23 | 6.1 |
-| step4_backtest | 0.00 | 47.1 |
-| step5_verdict | 1.05 | 3.9 |
+| step3_plan | 1.42 | 7.4 |
+| step4_backtest | 0.00 | 48.7 |
+| step5_verdict | 1.19 | 4.5 |
 | step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 2.93 | 9.9 |
-| step7_7.g | 3.68 | 11.8 |
-| step7_7.b | 1.36 | 4.4 |
+| step7_7.d | 3.35 | 11.3 |
+| step7_7.g | 4.23 | 13.4 |
+| step7_7.b | 1.69 | 5.4 |

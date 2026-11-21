@@ -1,4 +1,5 @@
 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: 2 ideas (2 explorations)
 022-01_learned-combined-signal-score_1d: 1 ideas (3 explorations)
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-02_combination-beats-best-single_1d: 1 ideas (2 explorations)

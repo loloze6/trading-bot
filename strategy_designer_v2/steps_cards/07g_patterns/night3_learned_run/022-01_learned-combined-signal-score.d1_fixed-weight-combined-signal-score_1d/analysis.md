@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d
+idea tested: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5491 USD
+---
+## Findings
+- **F1:** The coin's 3-day return divided by its 30-day volatility predicts its next 5-day return in the same direction, the opposite of the reversal this idea assumes. The product with the coin's standardised unusual 5-day move is positive on all five non-overlapping grid offsets, with t of 2.40, 3.22, 5.04, 1.39 and 1.37 on about 2,450 to 2,555 cases each. Lookbacks of 2, 5 and 7 days give similar t values, from 2.2 to 5.0 on offsets 0 to 2.
+- **F2:** The effect is graded. Pooled over all offsets, the unusual 5-day move rises steadily across 3-day z buckets: -1.11 % for z ≤ -2 (261 cases), -0.15 %, -0.32 %, -0.02 %, then +1.29 % for z of 1 to 2 (1,378 cases) and +2.57 % for z > 2 (451 cases).
+- **F3:** The idea's own 1-day reversal leg points the wrong way. Its component product has t -1.21 pooled and -2.04 on XRP. The raw 1-day z-score gives the continuation reading instead: t 2.37 on offset 0 (2,555 cases), and an unusual move of +3.74 % after 1-day z > 2 against -1.52 % after z ≤ -2 (91 and 63 cases).
+- **F4:** The continuation is larger per case than a trade costs. Cases with a 3-day |z| above 1 on the offset-0 grid have an unusual move of +0.90 % and a total move of +0.98 % over 5 days (676 cases), with a strength of 0.080. That is about 4.7 times the 0.19 % round-trip cost.
+- **F5:** The continuation is concentrated in calm periods. On offset 0, the 3-day z product has t 2.67 when the coin's 30-day volatility is below its median (1,278 cases) and t 0.82 above it (1,277 cases). The 1-day z product shows the same split: t 3.34 against 0.13.
+- **F6:** The continuation is stronger after rises than after falls. Its strength is 0.107 after a 3-day z above 1 (381 cases, unusual move +1.33 %) and 0.045 after a z below -1, read in the signal's direction (295 cases, +0.35 %).
+- **F7:** The continuation is not stable from year to year. On offset 0 the 3-day z product has t 2.87 in 2018 and 3.69 in 2021, but -1.82 in 2022 and -1.99 in 2025. The tested combined forecast swings the same way: t 3.30 in 2020, -3.05 in 2023.
+- **F8:** By coin, the continuation shows on every offset for XRP (t 1.30 to 2.67), BTC (0.93 to 2.13) and ETH (0.83 to 2.74). It is weak or mixed for LTC (-0.53 to 1.40), XMR (-0.76 to 1.02) and ZEC (-0.67 to 2.35).
+- **F9:** Weekday of the grid start and the 28-day momentum and 90-day-high quintiles show no graded pattern that stands out after this many angles. The 28-day momentum product reaches only t 1.89 pooled.
+
+## Ideas
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g1_volatility-scaled-short-term-continuation` (from F1, F2, F3, F4, F8): The larger a coin's 3-day return is next to its 30-day volatility, the higher its return over the next 5 days: a rise that is large for the coin's usual swings keeps rising, and a large fall keeps falling.
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g2_calm-market-short-term-continuation` (from F1, F4, F5, F7): In a calm period, the lower a coin's 30-day volatility is next to its usual level, the more its 3-day return, scaled by that volatility, carries into its return over the next 5 days in the same direction.
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g3_rises-carry-further-than-falls` (from F2, F4, F6): The larger a coin's 3-day rise is next to its 30-day volatility, the more its return over the next 5 days exceeds its normal drift, by more than the same-sized fall predicts on the downside.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

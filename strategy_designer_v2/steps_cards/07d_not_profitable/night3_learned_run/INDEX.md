@@ -1,4 +1,5 @@
 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d: 2 ideas (2 explorations)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: 3 ideas (2 explorations)
 022-01_learned-combined-signal-score_1d: 3 ideas (2 explorations)
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: 3 ideas (2 explorations)
 022-02_combination-beats-best-single_1d: 3 ideas (2 explorations)
