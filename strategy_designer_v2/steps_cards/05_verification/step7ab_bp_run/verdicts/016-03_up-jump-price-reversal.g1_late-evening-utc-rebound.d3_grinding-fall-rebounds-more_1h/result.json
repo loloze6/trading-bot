@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of 48-bar excess forward return on forecast (non-overlapping grid, pooled)",
+    "value": 0.906918154038563,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.906918154038563
+    },
+    "threshold": "confirm if slope t >= 2 (with >= 300 positive-forecast grid cases and supporting difference > 0); reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "grind (upper-median) minus jump (lower-median) mean excess 48-bar return among forecast > 0 grid bars",
+    "value": 0.0029292714850873906,
+    "passed": true,
+    "welch_t": 1.3922774618812999,
+    "slope": 0.00013078575260349424
+  },
+  "counts": {
+    "positive-forecast grid cases": 4191,
+    "grid cases": 8579,
+    "upper (grind) half cases": 2095,
+    "lower (jump) half cases": 2096
+  },
+  "decided_by": "Slope t lies between -2 and 2.",
+  "reading": "Net 24-hour fall is read from the sign of the raw component (prices' 24h return where it is missing); the grid is positions 0, 48, 96, ... of each window; the coin's normal drift is the mean of its non-overlapping 48-bar grid returns over all windows; the upper half is forecast > median and the lower half forecast <= median; the supporting check passes when the difference is > 0; fewer than 300 positive-forecast grid cases is 'not observable'."
+}

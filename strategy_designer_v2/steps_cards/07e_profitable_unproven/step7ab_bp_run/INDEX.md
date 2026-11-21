@@ -1,0 +1,6 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-two-day-rebound_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_grinding-fall-rebounds-more_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+017-05_settlement-move-reverses-after.d2_volatile-two-hour-overreaction-reverses_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

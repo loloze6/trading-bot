@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3439467,
+  "findings": {
+    "F1": "The test's main measure is on the side the idea predicts but short of the bar: bars with forecast \u2265 5 rose 0.25 % more than the coin's normal next day (t 1.51, 780 cases). The data held only BTC and ETH, because BNB has no data, so the test ran on 2 coins.",
+    "F2": "The effect is not convex, so the supporting check failed. The middle forecasts 5 to 20 earned +0.39 % (t 1.90, 436 cases), the forecasts at the cap of 20 only +0.06 % (t 0.24, 344). On raw size, falls of 2 to 3 of the 20-day volatility earned +0.96 % (t 2.08, 113), and falls beyond 3 earned \u22120.29 % (t \u22120.19, 28).",
+    "F3": "The rebound sits in high-volatility periods. Among forecast \u2265 5 bars, the highest third of 20-day volatility earned +1.15 % excess the next day (t 2.90, 219 cases), against \u22120.22 % (t \u22121.04) in the lowest third and \u22120.02 % (t \u22120.07) in the middle third.",
+    "F4": "The effect is too small for its cost overall. The unusual move is +0.06 % per case, 0.014 of the 4.01 % usual daily move, which is 0.5 times the 0.11 % round trip (about 10\u201311 bps on BTC and ETH by topic 38). The high-volatility third's +1.15 % is about 10 times that cost.",
+    "F5": "The rebound is a 1-day effect, uneven across years and the same with or without a 20-day trend.",
+    "F6": "Across all down days, the size of the fall barely ranks the next day's return (correlation 0.025, 2,389 days). The idea's grading by fall size alone is weak; the grading shows only through the volatility state."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D",
+      "name": "outsized-fall rebound, more coins",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ],
+      "idea": "The larger a coin's 1-day fall measured in its own 20-day daily volatility, the more it rises over the next 1 day, and this rise grows faster than the size of the fall itself, so the largest falls carry most of the rebound.",
+      "consequence": "A trader should buy only after the rare outsized vol-scaled down days, for one day, because ordinary down days give a rebound smaller than the cost of trading it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The larger a coin's 1-day fall measured in its own 20-day daily volatility, the more it rises over the next 1 day, only while its 20-day daily volatility is high against its own past year, and the more so the higher that volatility stands.",
+      "consequence": "A trader should buy a coin's vol-scaled down day for one day only in its turbulent, high-volatility stretches, where the rebound is several times a round trip, and refuse the same trade in calm stretches.",
+      "name": "rebound after falls in turbulence",
+      "from": "F2, F3, F4, F6",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls.b1_outsized-fall-rebound-more-coins",
+    "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls.b2_rebound-after-falls-in-turbulence"
+  ],
+  "no_ideas": null
+}
