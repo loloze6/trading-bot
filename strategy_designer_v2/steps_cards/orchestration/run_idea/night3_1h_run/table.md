@@ -17,13 +17,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | plan | confirmed (+5.33) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins.d1_plunge-rebound-in-uptrends, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins.d2_plunge-rebound-after-rising-week, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins.d3_plunge-rebound-fades-after-two-days; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins.g1_high-volatility-plunge-two-day-rebound, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins.g2_high-volatility-plunge-four-day-rebound | 1.32 | 21.9 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | missing-components | - | - | - | - | 0.08 | 0.6 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | plan | inconclusive (+1.56) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.b1_plunge-continuation-more-coins; 7.d: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.d1_plunge-continuation-shallow-downtrends, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.d2_capitulation-plunge-eight-day-rebound, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.d3_uptrend-plunge-four-day-rebound; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.g1_one-day-plunge-two-day-rebound, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.g2_downtrend-rally-next-day-fade | 1.61 | 12.0 |
+| 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high | 018-04_hourly-surge-multiday-continuation | missing-components | - | - | - | - | 0.12 | 0.9 |
 
 ## Consumption
-13 ideas, 13.38 USD, 128.2 minutes in all.
+14 ideas, 13.50 USD, 129.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.53 | 8.6 |
+| step3_plan | 1.65 | 9.5 |
 | step4_backtest | 0.00 | 70.7 |
 | step5_verdict | 1.45 | 6.5 |
 | step6_check | 0.00 | 0.9 |
