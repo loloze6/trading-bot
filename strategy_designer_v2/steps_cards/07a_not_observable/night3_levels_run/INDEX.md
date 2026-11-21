@@ -7,6 +7,7 @@
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 020-03_resistance-breakout-continues-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

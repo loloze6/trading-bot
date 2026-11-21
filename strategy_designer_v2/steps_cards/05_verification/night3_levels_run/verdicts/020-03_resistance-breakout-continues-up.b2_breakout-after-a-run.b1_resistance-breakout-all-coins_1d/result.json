@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar unusual move per case (return minus coin's normal 5-day drift), before costs",
+    "value": 0.007105215646081483,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.568917904919626
+    },
+    "threshold": "confirm t >= 2, reject t <= -2, over at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with entry forecast above the median minus below it (> 0)",
+    "value": 0.007192850329444592,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 2746
+  },
+  "decided_by": "Mean unusual move has t >= 2 over at least 30 independent cases and the supporting check passes.",
+  "reading": "Cases are forecast rises of at least 2 points on the long side, the first per 5-bar grid cell of each window, dropped when the 5-bar return leaves the window; the drift is the mean non-overlapping 5-bar return over all the coin's windows; cases exactly at the median forecast are in neither group, and an empty group fails the supporting check."
+}
