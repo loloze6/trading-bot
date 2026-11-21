@@ -22,16 +22,17 @@ One row per idea run; every status is read from the step's own result file. Each
 | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins | plan | confirmed (+4.05) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d1_false-break-while-month-falls, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d2_monthly-turn-up-continues, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d3_false-break-fades-within-horizon; 7.g: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.g1_volatility-scaled-monthly-momentum-continues, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.g2_closes-near-monthly-high-continue, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.g3_moderate-monthly-decline-continues | 1.11 | 9.1 |
 | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run | plan | inconclusive (+1.28) | not profitable enough (failed: Calmar) | - | 7.b: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins; 7.d: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d1_breakout-above-rising-average, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d2_breakout-after-strong-month, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d3_breakout-with-expanding-volatility; 7.g: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.g1_volatility-scaled-30-day-momentum, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.g2_fresh-break-continues-briefly | 1.47 | 6.3 |
 | 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high | 020-01_resistance-retest-turns-down | plan | inconclusive (+0.37) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.b: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.b1_90-day-breakout-more-coins; 7.d: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d1_ninety-day-breakout-twenty-day-continuation, 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d2_fresh-breakout-carries-further, 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high; 7.g: 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.g1_next-day-rebound-after-sharp-falls | 1.61 | 7.3 |
+| 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.b1_90-day-breakout-more-coins | 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high | plan | no verdict | not profitable enough (failed: Mean daily return) | - | 7.d: no answer; 7.g: no answer | 0.07 | 6.8 |
 
 ## Consumption
-18 ideas, 25.81 USD, 155.5 minutes in all.
+19 ideas, 25.87 USD, 162.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.34 | 11.5 |
-| step4_backtest | 0.00 | 51.3 |
+| step3_plan | 2.41 | 12.0 |
+| step4_backtest | 0.00 | 57.5 |
 | step5_verdict | 2.75 | 10.6 |
-| step6_check | 0.00 | 0.7 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.80 | 2.5 |
 | step7_7.a | 0.00 | 0.0 |

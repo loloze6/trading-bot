@@ -1,5 +1,6 @@
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.b1_90-day-breakout-more-coins_1d: not run: entry condition not met (step 5: none; step 6: not profitable enough)
 020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 020-01_resistance-retest-turns-down_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
