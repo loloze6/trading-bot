@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t-statistic of the pooled slope of 72-bar drift-adjusted forward return on the forecast",
+    "value": 3.5100836033483733,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.5100836033483733
+    },
+    "threshold": "confirm t >= 2 with per-coin check passing; reject t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "coins with a positive per-coin slope (need >= 4 of 6)",
+    "value": 6,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 1403,
+    "grid cases": 1404,
+    "coins with a positive slope": 6,
+    "coins": 6
+  },
+  "decided_by": "Pooled slope t >= 2 and the slope is positive for at least 4 of the 6 coins.",
+  "reading": "Regression is OLS with intercept on all grid cases (forecast at the grid bar, zero forecasts included) with drift = the coin's mean non-overlapping 72-bar grid return over all its windows; the per-coin check counts coins with a positive slope against the fixed requirement of 4; grid cells without a full 72-bar forward return in the window are dropped."
+}

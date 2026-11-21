@@ -6,6 +6,8 @@
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h: missing-components: The 7-day condition can be built as a regime rule on PriceEvolutionComponent (period 42) above 0. The depth below the [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week_4h: missing-components: The bars hold everything the idea needs, but no component computes the 7-day over 60-day average 4h range ratio. The [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
