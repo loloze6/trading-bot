@@ -38,9 +38,10 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 31 | [Choosing and judging an idea on different data (folds)](31_choosing-and-judging-on-different-data.md) | research: step 7, step 5, folds | open |
 | 32 | [How select_next weighs a step 7 line](32_how-select-next-weighs-a-line.md) | research: select_next | open (parked) |
 | 33 | [A second round of engine speed work](33_engine-speed-second-round.md) | engine (shared code) | built 2026-11-20 (A to D), awaiting merge |
-| 34 | [Why a real idea does not pay, and an idea that pays for its trip](34_an-idea-must-move-more-than-a-trip.md) | research: common, observe-and-advise (08), steps 2, 7 | designing: review, standardize, test the diagnosis |
+| 34 | [Why a real idea does not pay, and an idea that pays for its trip](34_an-idea-must-move-more-than-a-trip.md) | research: common, observe-and-advise (08), steps 2, 7 | built into the steps (size in step 5, size against cost in step 7); the diagnosis kept as a tool in `34_review/` |
 | 35 | [A horizon in price, not only in time](35_price-horizon.md) | research: common, steps 2, 3; engine | open (after topic 34 step 3) |
 | 36 | [Settings counted in bars, carried from daily to finer timeframes](36_fixed-bar-counts-across-timeframes.md) | research: step 3 guide; engine defaults | open |
 | 37 | [Long runs without the two-hour limit](37_long-runs-without-the-two-hour-limit.md) | research: how runs are launched | open (parked) |
 | 38 | [The backtest's cost of a trade against real Kraken futures](38_cost-of-a-trade-against-kraken-futures.md) | engine settings (shared config) | built 2026-11-20 (an estimate at a 10k USD order); refinement and maker parked |
 | 39 | [The idea's size against the cost, coin by coin](39_size-against-cost-per-coin.md) | research: steps 5, 7 | open (parked: about 2 points of accuracy gained; reopen with topic 31) |
+| 40 | [Repository clean-up, night 3](40_repository-clean-up-night-3.md) | the repository | part done (bets in `common/`, the diagnosis in `34_review/`); 3 changes proposed |
