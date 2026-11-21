@@ -1,4 +1,4 @@
-021-01_above-rising-cloud-continues-up_1d: missing-components: The cloud is built from 9-, 26- and 52-bar high-low midpoints displaced 26 bars forward, all from the coin's own [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+021-01_above-rising-cloud-continues-up_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-02_below-falling-cloud-continues-down_1d: missing-components: The Ichimoku cloud is two midpoints of high-low ranges (9/26 and 52 bars), plotted 26 bars ahead, and all of [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout_1d: missing-components: The cloud is built from the coin's own high and low, so the config could hold the idea. But no [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-04_thin-cloud-downward-breakdown_1d: missing-components: The cloud is computed from the coin's own high and low and could be held as a graded component. No [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
