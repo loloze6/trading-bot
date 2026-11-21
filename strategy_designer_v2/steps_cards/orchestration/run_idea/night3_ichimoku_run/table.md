@@ -6,7 +6,6 @@ One row per idea run; every status is read from the step's own result file. Each
 |---|---|---|---|---|---|---|---|---|
 | 021-01_above-rising-cloud-continues-up | - | plan | inconclusive (+1.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins; 7.d: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues, 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades; 7.g: 021-01_above-rising-cloud-continues-up.g1_one-day-rebound-after-falls, 021-01_above-rising-cloud-continues-up.g2_week-long-continuation-after-surges | 1.73 | 6.4 |
 | 021-02_below-falling-cloud-continues-down | - | plan | inconclusive (+0.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues; 7.d: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud, 021-02_below-falling-cloud-continues-down.d2_below-thin-falling-cloud, 021-02_below-falling-cloud-continues-down.d3_fast-cloud-fall-rebounds; 7.g: 021-02_below-falling-cloud-continues-down.g1_range-position-predicts-week, 021-02_below-falling-cloud-continues-down.g2_sharp-daily-drops-rebound, 021-02_below-falling-cloud-continues-down.g3_monthly-momentum-continues | 1.60 | 6.9 |
-| 021-03_thin-cloud-upward-breakout | - | missing-components | - | - | - | - | 0.12 | 0.9 |
 | 021-04_thin-cloud-downward-breakdown | - | missing-components | - | - | - | - | 0.19 | 1.4 |
 | 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins | 021-01_above-rising-cloud-continues-up | plan | inconclusive (+1.75) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: no ideas: The above-rising-cloud effect comes from a few large 2021 moves in small, volatile coins (F1, F3, F4), not from a steady pattern. It is not graded by the cloud's slope (F2), its trimmed t is 0.99, and its strength is about a third of a real idea's (F5). No condition, side or horizon in this data isolates a graded effect, and no more data is available (F6), so the clear answer is that a coin trading above a rising cloud does not reliably keep rising beyond its usual drift.; 7.d: 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.d1_lasting-stay-above-cloud, 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.d2_off-cloud-fallers-keep-lagging; 7.g: 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.g1_26-day-momentum-continues-26-days, 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins.g2_scaled-momentum-over-ten-days | 1.67 | 11.2 |
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues | 021-02_below-falling-cloud-continues-down | missing-components | - | - | - | - | 0.09 | 0.7 |
@@ -14,20 +13,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | missing-components | - | - | - | - | 0.07 | 0.6 |
 | 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud | 021-02_below-falling-cloud-continues-down | plan | inconclusive (+1.15) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b2_below-gently-falling-cloud; 7.d: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.d1_below-cloud-short-still-falling, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.d2_rebound-under-falling-cloud; 7.g: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.g1_strong-week-lifts-saturday | 1.42 | 7.0 |
 | 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins | 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud | plan | inconclusive (-1.55) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.b1_below-gently-falling-cloud, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.b2_gentle-cloud-wild-coin; 7.d: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d1_below-cloud-gentle-continuing-fall, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d2_steep-cloud-fall-rebound, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.d3_recovery-under-falling-cloud; 7.g: 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.g1_26-day-momentum-continues, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.g2_below-cloud-fall-keeps-falling, 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins.g3_gentle-cloud-fall-continues | 1.74 | 10.8 |
+| 021-03_thin-cloud-upward-breakout | - | plan | inconclusive (+1.55) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.b: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins, 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall; 7.d: 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold, 021-03_thin-cloud-upward-breakout.d2_calm-breakout-lasts-longer, 021-03_thin-cloud-upward-breakout.d3_broad-26-day-trend-continuation; 7.g: 021-03_thin-cloud-upward-breakout.g1_volatile-market-down-day-rebound | 2.12 | 9.8 |
 
 ## Consumption
-10 ideas, 13.28 USD, 66.6 minutes in all.
+10 ideas, 15.28 USD, 75.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.45 | 7.7 |
-| step4_backtest | 0.00 | 16.7 |
-| step5_verdict | 1.00 | 4.0 |
-| step6_check | 0.00 | 0.1 |
+| step3_plan | 1.91 | 8.2 |
+| step4_backtest | 0.00 | 19.3 |
+| step5_verdict | 1.19 | 4.9 |
+| step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 2.39 | 7.5 |
-| step7_7.g | 2.52 | 8.3 |
-| step7_7.d | 5.93 | 22.2 |
+| step7_7.b | 2.73 | 8.6 |
+| step7_7.g | 2.96 | 9.8 |
+| step7_7.d | 6.50 | 24.2 |

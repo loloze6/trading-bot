@@ -1,46 +1,50 @@
 """Spec of IchimokuCloudWidthComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'IchimokuCloudWidthComponent'
-SETTINGS = [{}, {"tenkan_period": 9, "kijun_period": 26, "senkou_period": 52, "displacement": 26}]
+SETTINGS = [{}, {"tenkan_period": 9, "kijun_period": 26, "senkou_period": 52, "displacement": 26}, {"form": "proximity"}]
 
 
 def hand(df, params):
-    tk = int(params.get("tenkan_period", 9))
-    kj = int(params.get("kijun_period", 26))
-    sk = int(params.get("senkou_period", 52))
+    tp = int(params.get("tenkan_period", 9))
+    kp = int(params.get("kijun_period", 26))
+    sp = int(params.get("senkou_period", 52))
     d = int(params.get("displacement", 26))
-    highs = [float(x) for x in list(df["high"])]
-    lows = [float(x) for x in list(df["low"])]
-    closes = [float(x) for x in list(df["close"])]
-    last = len(closes) - 1
-    e = last - d
+    form = params.get("form", "width")
+    hi = [float(x) for x in list(df["high"])]
+    lo = [float(x) for x in list(df["low"])]
+    cl = [float(x) for x in list(df["close"])]
+    t = len(cl) - 1
+    e = t - d
 
     def midpoint(p):
-        hi = None
-        lo = None
+        top = None
+        bot = None
         j = e - p + 1
         while j <= e:
-            h = highs[j]
-            l = lows[j]
+            h = hi[j]
+            l = lo[j]
             if h != h or l != l:
                 return float("nan")
-            if hi is None or h > hi:
-                hi = h
-            if lo is None or l < lo:
-                lo = l
+            if top is None or h > top:
+                top = h
+            if bot is None or l < bot:
+                bot = l
             j = j + 1
-        return (hi + lo) / 2.0
+        return (top + bot) / 2.0
 
-    m_tk = midpoint(tk)
-    m_kj = midpoint(kj)
-    m_sk = midpoint(sk)
-    if m_tk != m_tk or m_kj != m_kj or m_sk != m_sk:
+    m_t = midpoint(tp)
+    m_k = midpoint(kp)
+    m_s = midpoint(sp)
+    c = cl[t]
+    if m_t != m_t or m_k != m_k or m_s != m_s or c != c:
         return float("nan")
-    span_a = (m_tk + m_kj) / 2.0
-    span_b = m_sk
-    c = closes[last]
-    if c != c or not c > 0:
+    if not c > 0:
         return float("nan")
-    width = span_a - span_b
-    if width < 0:
-        width = -width
-    return width / c * 100.0
+    span_a = (m_t + m_k) / 2.0
+    span_b = m_s
+    diff = span_a - span_b
+    if diff < 0:
+        diff = -diff
+    width = diff / c * 100.0
+    if form == "proximity":
+        return 1.0 / (1.0 + width)
+    return width
