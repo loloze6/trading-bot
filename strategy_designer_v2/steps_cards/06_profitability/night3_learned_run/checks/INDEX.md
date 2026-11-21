@@ -1,5 +1,6 @@
 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d: not profitable enough [Sharpe 0.7693; Sharpe minus holding's Sharpe 0.2151; Calmar 0.7312]
 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: not profitable enough [Sharpe 0.9368; Sharpe minus holding's Sharpe 0.3826; Calmar 0.7462]
+022-01_learned-combined-signal-score.d2_four-week-momentum-alone_1d: not profitable enough [Sharpe 0.7744; Sharpe minus holding's Sharpe 0.2202; Calmar 0.4462]
 022-01_learned-combined-signal-score_1d: not profitable enough [Sharpe -0.8796; Sharpe minus holding's Sharpe -1.437; Calmar -0.2754]
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: not profitable enough [Sharpe 0.6524; Sharpe minus holding's Sharpe 0.09825; Calmar 0.309]
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: not profitable enough [Sharpe -0.3522; Sharpe minus holding's Sharpe -0.9065; Calmar -0.1564]

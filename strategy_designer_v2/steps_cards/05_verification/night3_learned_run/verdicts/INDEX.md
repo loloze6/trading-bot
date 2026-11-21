@@ -1,5 +1,6 @@
 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d: confirmed (fit: exact) [main: 0.000355971; OLS slope t 6.61628; bars with forecast > 0 8513, bars 17380]
 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: inconclusive (fit: exact) [main: 0.00647965; t of the mean 1.20898; grid cases 3419]
+022-01_learned-combined-signal-score.d2_four-week-momentum-alone_1d: inconclusive (fit: exact) [main: 0.00446863; ordinary t of the mean 1.95212; grid cases with a non-zero forecast 3419, grid cases 3419]
 022-01_learned-combined-signal-score_1d: inconclusive (fit: exact) [main: -0.00402298; t of the mean -1.82511; cases with a non-zero forecast 3278]
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: confirmed (fit: exact) [main: 0.0103519; t of the mean 2.24138; non-overlapping cases 1691]
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: not observable (fit: adapted) [main: None; grid cases on decline bars 0]
