@@ -18,13 +18,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | missing-components | - | - | - | - | 0.08 | 0.6 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | plan | inconclusive (+1.56) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.b1_plunge-continuation-more-coins; 7.d: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.d1_plunge-continuation-shallow-downtrends, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.d2_capitulation-plunge-eight-day-rebound, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.d3_uptrend-plunge-four-day-rebound; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.g1_one-day-plunge-two-day-rebound, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends.g2_downtrend-rally-next-day-fade | 1.61 | 12.0 |
 | 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high | 018-04_hourly-surge-multiday-continuation | missing-components | - | - | - | - | 0.12 | 0.9 |
+| 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds | 018-05_hourly-plunge-loss-before-close | missing-components | - | - | - | - | 0.06 | 0.4 |
 
 ## Consumption
-14 ideas, 13.50 USD, 129.1 minutes in all.
+15 ideas, 13.56 USD, 129.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.65 | 9.5 |
+| step3_plan | 1.71 | 10.0 |
 | step4_backtest | 0.00 | 70.7 |
 | step5_verdict | 1.45 | 6.5 |
 | step6_check | 0.00 | 0.9 |

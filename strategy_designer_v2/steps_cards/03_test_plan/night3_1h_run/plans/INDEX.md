@@ -6,6 +6,7 @@
 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high_1h: missing-components: A weighted mean of components cannot form the product "surge ratio × proximity to the 30-day high". `HighProximityMomentumComponent` has no [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h: missing-components: The idea's trigger is a ratio of two quantities: the 24-bar return divided by the mean absolute 24-bar return over [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-05_hourly-plunge-loss-before-close_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1h, folds A, B, C, D]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends_1h: missing-components: The config averages components by weight and has no op that multiplies one component by another. The idea needs the [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
