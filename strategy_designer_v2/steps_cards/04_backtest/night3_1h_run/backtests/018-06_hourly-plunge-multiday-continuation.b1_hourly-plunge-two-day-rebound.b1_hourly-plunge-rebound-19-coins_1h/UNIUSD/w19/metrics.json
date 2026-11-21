@@ -1,0 +1,321 @@
+{
+  "core": {
+    "net_return_pct": -0.068,
+    "sharpe": 0.184,
+    "max_drawdown_pct": -9.427,
+    "trade_count": 44,
+    "win_rate": 54.55,
+    "avg_trade_net_pnl": -0.019688,
+    "fees_paid": 1.951282,
+    "gross_pnl": 1.085006,
+    "net_pnl": -0.866276,
+    "cost_drag_pct": 179.8406,
+    "forecast_return_corr": 0.005557,
+    "forecast_return_corr_pvalue": 0.831094,
+    "forecast_return_corr_pvalue_block_adjusted": 0.966832,
+    "forecast_return_corr_n_eff": 59,
+    "forecast_return_corr_all_bars": 0.010436,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.910894,
+    "forecast_return_corr_all_bars_n_eff": 118,
+    "gap_skipped_pairs": 4,
+    "gap_skipped_pct": 0.1385,
+    "avg_trade_duration_bars": 367.59,
+    "sigma_bar_bps": 154.405,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 16.4507,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 0.8892,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0056, p=0.9668 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 368.9228,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 368.9228,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 36.8923,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0056, p=0.9668 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2890,
+      "avg_forecast": 0.63249,
+      "trade_count": 44,
+      "total_net_pnl": -0.866277
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 11,
+      "profitable_trades": 9,
+      "success_rate_pct": 81.82,
+      "total_net_pnl_usd": -0.7434,
+      "avg_pnl_per_trade_usd": -0.0676
+    },
+    "5_to_10": {
+      "total_forecasts": 7,
+      "profitable_trades": 2,
+      "success_rate_pct": 28.57,
+      "total_net_pnl_usd": 57.5327,
+      "avg_pnl_per_trade_usd": 8.219
+    },
+    "10_to_15": {
+      "total_forecasts": 15,
+      "profitable_trades": 8,
+      "success_rate_pct": 53.33,
+      "total_net_pnl_usd": -22.5358,
+      "avg_pnl_per_trade_usd": -1.5024
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 11,
+      "profitable_trades": 5,
+      "success_rate_pct": 45.45,
+      "total_net_pnl_usd": -35.1198,
+      "avg_pnl_per_trade_usd": -3.1927
+    }
+  },
+  "dynamic": {
+    "debug_info.components.drop24.last_history_value": {
+      "unknown": {
+        "mean": 0.219464,
+        "std": 7.512102
+      }
+    },
+    "debug_info.components.drop24.post_pipeline_value": {
+      "unknown": {
+        "mean": 0.63249,
+        "std": 2.476467
+      }
+    },
+    "debug_info.components.drop24.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.drop24.weighted_contribution": {
+      "unknown": {
+        "mean": 0.63249,
+        "std": 2.476467
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 9.205e-05,
+      "forward_return_std": 0.0154666,
+      "n_bars": 2889,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -20.8224,
+    "sharpe": 0.1504,
+    "sortino": 0.3295,
+    "exposure_pct": 97.8893,
+    "turnover": 3.851355,
+    "n_bars_total": 2890,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 59,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 20,
+    "events": [
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-09 11:00:00",
+        "previous_timestamp": "2023-09-09 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-09 18:00:00",
+        "previous_timestamp": "2023-09-09 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-13 20:00:00",
+        "previous_timestamp": "2023-09-13 17:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-14 07:00:00",
+        "previous_timestamp": "2023-09-14 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-14 10:00:00",
+        "previous_timestamp": "2023-09-14 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-17 05:00:00",
+        "previous_timestamp": "2023-09-17 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-20 12:00:00",
+        "previous_timestamp": "2023-09-20 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-09-30 12:00:00",
+        "previous_timestamp": "2023-09-30 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-07 21:00:00",
+        "previous_timestamp": "2023-10-07 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-08 02:00:00",
+        "previous_timestamp": "2023-10-07 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-08 12:00:00",
+        "previous_timestamp": "2023-10-08 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-11 21:00:00",
+        "previous_timestamp": "2023-10-11 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-14 23:00:00",
+        "previous_timestamp": "2023-10-14 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-15 13:00:00",
+        "previous_timestamp": "2023-10-15 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-15 17:00:00",
+        "previous_timestamp": "2023-10-15 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2023-10-16 05:00:00",
+        "previous_timestamp": "2023-10-16 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2024-01-08 11:00:00",
+        "previous_timestamp": "2024-01-08 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2024-01-20 21:00:00",
+        "previous_timestamp": "2024-01-20 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 21600.0,
+        "bars_missing": 5,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2024-04-14 09:00:00",
+        "previous_timestamp": "2024-04-14 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 25200.0,
+        "bars_missing": 6,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2024-04-30 04:00:00",
+        "previous_timestamp": "2024-04-30 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
