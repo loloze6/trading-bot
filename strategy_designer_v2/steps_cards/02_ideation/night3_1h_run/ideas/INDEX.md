@@ -1,0 +1,6 @@
+018-01_hourly-breakout-gain-before-close: After the first hourly close above the 20-day high, price rises into the daily close, more so the stronger the break. [bar: 1h]
+018-02_hourly-breakout-multiday-continuation: After the first hourly close above the 20-day high, price rises over the next 5 days, more so the stronger the break. [bar: 1h]
+018-03_hourly-surge-gain-before-close: After an hourly close first shows an outsized 24-hour gain, price keeps rising into the daily close, more so the larger the gain. [bar: 1h]
+018-04_hourly-surge-multiday-continuation: After an hourly close first shows an outsized 24-hour gain, price rises over the next 5 days, more so the larger the gain. [bar: 1h]
+018-05_hourly-plunge-loss-before-close: After an hourly close first shows an outsized 24-hour drop, price keeps falling into the daily close, more so the larger the drop. [bar: 1h]
+018-06_hourly-plunge-multiday-continuation: After an hourly close first shows an outsized 24-hour drop, price falls over the next 5 days, more so the larger the drop. [bar: 1h]
