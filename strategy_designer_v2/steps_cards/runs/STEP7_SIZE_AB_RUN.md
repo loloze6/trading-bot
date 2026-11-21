@@ -52,3 +52,39 @@ may repeat daily ideas already tested. Whether that matters is what testing them
 
 **Not yet shown:** whether B's ideas pay. That is the end-to-end run (step 3 of the plan agreed): the ideas through
 steps 3 to 6 with the holding period, on the faster engine.
+
+## B′: the information without the instruction (2026-11-21, about 01:00 Paris; 3.01 USD; in `runs/step7_size_ab/Bp/`)
+
+**Purpose (operator's go):** B added two things at once: the information (the idea's size, the cost of a trade, the
+findings) and one instruction paragraph in the shared rules ("The size of the idea against the cost of a trade ... what
+changes it is an idea whose move is larger"). B′ keeps the information and removes only that paragraph, to see which
+of the two changed the ideas. The findings were set back to the version B read (without the 2026-11-20 cost note);
+both files restored after the run (checked: git shows no change). Expected, stated before the run: like B, the
+information is enough and the paragraph goes; like A, the paragraph does the work and stays, watched.
+
+| Case | A | B | B′ (information only) |
+|---|---|---|---|
+| one-day volatility-scaled reversal (1d) | 1 day, 1 day | 1 day, 3 days, 10 days | 1 day, 1 day |
+| late-evening rebound (1h, 2 h) | 2 days, 24 hours | 3 days, 24 hours, 3 days | 2 days, 1 to 2 days, 2 days |
+| evening-hour drift (1h, 2 h) | 2 hours | 3 days, 7 days | 2 hours, 4 hours |
+| settlement move reverses (1h, 2 h) | no ideas | 24 hours, 24 hours, 24 hours | 8 hours, 8 hours |
+| **All** | **5 ideas; 4 of a day or more; 0 of 3 days or more** | **11; 11; 6** | **9; 5; 0** |
+
+**Outcome: neither of the two expected; B′ sits between A and B.**
+- The information alone does part of it: every analysis names the move per case against the cost (as A already did),
+  the settlement case no longer ends with no idea, and where the analyst's own exploration found a larger move it
+  follows it (the late-evening case: the deepest fifth of 24-hour falls gains about 45 bps over 1 to 2 days, "twice the
+  22-bps round trip").
+- B′ gets a larger move in a second way, which B used less: **a stronger situation, same horizon order**, by keeping
+  only the large cases (only outsized vol-scaled falls; only volatile markets; only large 2-hour moves) and holding
+  somewhat longer (2 to 4 hours, 8 hours). Its ideas stay closer to the tested idea's own situation (the evening
+  hour, the settlement, the vol-scaled fall); none drifts to general multi-day momentum.
+- The instruction paragraph is what moves the horizons to 3 days and more (6 of 11 in B, 0 of 9 in B′), and with it
+  the drift away from the brief's theory noted in B.
+- No idea in B′ names a level, a cost or a percentage in its Idea line; costs appear in the consequence and the
+  evidence, as in A and B.
+
+**Not shown:** which set pays. 4 of B′'s 9 ideas are under a day (2, 4, 8 and 8 hours), where F10 says an idea needs
+about 3 times the usual strength; their own evidence claims moves of 20 to 45 bps against a 22 bps round trip,
+close to the cost. One analysis per case and version: the counts of 3-day ideas (6 against 0) are a clear difference,
+one idea more or less is not.
