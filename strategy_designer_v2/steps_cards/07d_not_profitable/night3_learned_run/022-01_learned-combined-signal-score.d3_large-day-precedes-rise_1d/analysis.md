@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 022-01_learned-combined-signal-score.d3_large-day-precedes-rise_1d
+idea tested: 022-01_learned-combined-signal-score.d3_large-day-precedes-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3417 USD
+---
+## Findings
+- **F1:** The book fails on its falls. Its deepest fall is 31.9 % against a yearly return of 16.2 %, a Calmar of 0.51. That fall lasted 276 days across windows w12 to w14, while holding the coins fell 81.2 % over the same days. The book's gain is real but small next to that fall: Sharpe 0.69, holding's Sharpe 0.55.
+- **F2:** Only large up days carry the effect. On the non-overlapping 5-day grid, the excess 5-day return after the largest third of up days is +1.23 % (t 2.34, 453 cases). After the largest third of down days it is -0.01 % (t -0.03, 447 cases), and after mid-sized down days it is -0.61 % (t -1.20, 470 cases). Half the idea's situation, the down days, predicts no rise.
+- **F3:** Mid-sized down days inside a falling 20-day trend are followed by a fall. Their excess 5-day return is -1.58 % (t -2.26, 242 cases). Large up days inside a rising 20-day trend are followed by a rise: +1.42 % (t 2.00, 301 cases), 7.5 times the 0.19 % cost of a round trip.
+- **F4:** The deepest fall was carried by positions opened on down days. In w12 to w14, positions last raised after a down day lost a summed 0.95 of daily gain while the 20-day trend was falling (781 bars) and 0.15 while it was rising (229 bars). Positions opened on up days gained a net +0.42 over the same windows. In w14 alone, down-day positions lost 1.02 against 0.14 for up-day positions.
+- **F5:** Over all windows, the book's gain sits where the coin's 60-day return is positive. Up-day positions there earned 4.49 (2489 bars, 0.18 bps... mean 0.0018 per bar). Down-day positions in a falling 60-day trend lost 0.77 (2476 bars), and up-day positions in one lost 0.20 (1880 bars). Down-day positions hold 51 % of the book's bars.
+- **F6:** The idea as tested is too small to pay on its unusual move. That move is +0.09 % per case (strength 0.009), 0.5 times the 0.19 % cost of a round trip, so the book lives on the coin's drift (+0.59 %). That drift is what it gives back in a long bear stretch such as w12 to w14.
+
+## Ideas
+- `022-01_learned-combined-signal-score.d3_large-day-precedes-rise.d1_large-day-in-uptrend` (from F1, F4, F5): The larger a coin's absolute return over its last day, the higher its return over the next 5 days, only while the coin's 60-day return is positive, and the more so the larger that 60-day return.
+- `022-01_learned-combined-signal-score.d3_large-day-precedes-rise.d2_large-up-day-continues` (from F2, F3, F6): The larger a coin's rise over its last day, measured against its usual daily move, the higher its return over the next 5 days, the more so the larger its 20-day return.
+- `022-01_learned-combined-signal-score.d3_large-day-precedes-rise.d3_down-day-extends-decline` (from F3, F4): The larger a coin's fall over its last day, measured against its usual daily move, the lower its return over the next 5 days, the more so the larger its 20-day decline.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.5631506,
+  "findings": {
+    "F1": "In the top fifth of 28-day rises, the next 5 days run ahead of the coin's mean when its 20-day volatility is below its median: +2.33 %, t 2.48, 164 cases. When volatility is above its median they barely do: +0.48 %, t 0.71, 346 cases. Calm minus volatile is +1.87 %, Welch t 1.61. Calm cases are positive on all 6 coins (+1.1 % to +5.9 %, t 0.4 to 1.7), volatile cases on only 4 of 6.",
+    "F2": "The calm-rise effect sits mostly in the later windows: +3.93 % (t 2.54, 81 cases) in w13 to w24 against +0.75 % (t 0.71, 83 cases) in w1 to w12. Scaling the 28-day rise by volatility shows the same split: top fifth minus the rest is +2.45 % (t 2.67) late and \u22120.60 % (t \u22120.90) early.",
+    "F3": "Dividing the 28-day rise by its 20-day volatility grades the next 5 days only slightly better than the raw rise. Among rises, the Spearman correlation is 0.053 against 0.036 (1309 cases). The top fifth of the scaled rise gives +0.77 % (t 1.45), against +1.08 % (t 1.96) for the raw rise. So the calm effect in F1 is not just a rise measured in units of volatility.",
+    "F4": "The top fifth of 28-day rises leads the coin's mean by +1.08 % over 5 days (t 2.23, 510 cases). Over 10 days the lead is +1.26 % (t 1.18, 252 cases), and over 20 days it is gone (0.00 %, t 0.07, 108 cases). The move is done within about 10 days, unlike the outlasting moves of earlier runs.",
+    "F5": "The trades do not show the convex shape the idea claims. Trades entered at the second quarter of forecasts (mean 9.8) earned +19.3 % net. Those at the clipped top (mean 20.0) earned +4.8 %, and the third quarter (16.5) earned +3.2 %.",
+    "F6": "The book's gain is carried by its few long holds. Trades of about 51 days earned +45.0 % net on average (565 trades), and those of about 18 days +5.1 %. Trades under 8 days lost 0.4 % to 3.1 %.",
+    "F7": "Other angles showed nothing graded and steady enough to count, once the number of angles looked at is allowed for:",
+    "F8": "The 20-day volatility grades only the size of the next 5-day move, not its direction. The mean absolute move runs from 5.7 % to 9.4 % across its fifths, while excess returns are +0.00 % to +0.45 % (t \u2264 1.0)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 20-day volatility is below its usual level, the larger its 28-day rise, the higher its return over the next 5 days. In that calm regime the extra return following its strongest rises is several times what it is after rises of the same rank in volatile periods.",
+      "consequence": "Weight long exposure after strong 28-day rises toward calm conditions, and refuse to scale it up after rises made in turbulent conditions.",
+      "name": "calm rises keep rising",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising.g1_calm-rises-keep-rising"
+  ],
+  "no_ideas": null
+}

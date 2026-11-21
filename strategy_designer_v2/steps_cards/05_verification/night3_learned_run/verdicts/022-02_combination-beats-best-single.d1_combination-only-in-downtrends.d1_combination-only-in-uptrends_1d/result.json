@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of d = (scaled combined - scaled best) x excess 5-day return",
+    "value": 0.00047587244232569567,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.2819320551313831
+    },
+    "threshold": "confirm if t >= 2 with the check above 0; reject if t <= -2; at least 200 cases"
+  },
+  "supporting_check": {
+    "name": "mean d upper ret90 half minus lower half",
+    "value": 0.00573380779576709,
+    "passed": true
+  },
+  "counts": {
+    "independent cases in the regime": 1704,
+    "active bars": 8785
+  },
+  "decided_by": "The t of mean d lies between -2 and 2 (inconclusive rule).",
+  "reading": "The idea claims no rise or fall, so the expected side on each active bar is the sign of the combined score, and the situation is ret90 > 0 (recorded value, else recomputed from prices inside the window); trending cases are bars with regime 'trending' at grid positions 0,5,10,... of each window with a full 5-bar forward return; each coin's mean 5-day return is taken over the same grid on all its windows' bars; the pooled standard deviations are taken over all cases of all coins; the median split puts ret90 above the median in the upper half and the rest in the lower half; the plan's 200-case minimum, when not met, gives 'not observable'."
+}

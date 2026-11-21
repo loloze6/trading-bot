@@ -1,0 +1,60 @@
+{
+  "line": "7.b",
+  "backtest": "022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35720260000000004,
+  "findings": {
+    "F1": "The positive 5-day result does not hold at nearby horizons. On non-overlapping grids, the slope of the demeaned forward return on the forecast has t -5.64 over 1 day (17,380 cases), -1.62 over 2 days (8,650), -1.80 over 3 days (5,723), +1.46 over 5 days (3,419), -0.29 over 10 days (1,691) and -2.40 over 20 days (827), so the plan's t of 1.46 looks like a chance positive among mostly reversing horizons.",
+    "F2": "The 5-day effect is mixed across years and coins. By year the t is +3.76 in 2019 and +2.31 in 2023 but -2.23 in 2022, with five other years between -1.14 and +1.13. By coin only XRP reaches t 2.05 (570 cases), while BTC, ETH, LTC and XMR lie between -0.57 and +0.35.",
+    "F3": "The two sides disagree over 5 days. After down days the slope has t -2.25 (1,756 cases): the largest down-day decile, forecast -19.2, is followed by +0.75 % above the coin's drift, a rebound. After up days the slope has t +1.73 (1,660 cases): the largest up-day decile, forecast +19.3, is followed by +1.27 %, a continuation.",
+    "F4": "Even if real, the idea is too small to pay. Its unusual move is +0.18 % per case over 5 days, a strength of 0.015 (about a third of the 0.05 that real ideas usually show, findings F10), and its total move of +0.17 % is 0.9 times the 0.19 % cost of a buy and a sell, where no confirmed idea below the cost has paid (0 of 40, findings F11).",
+    "F5": "A day against the coin's 20-day return reverses over the next 20 days, and the reversal grows with the day's size: slope t -4.76 on 417 independent cases, a mean move in the day's direction of -3.11 % (16 times the 0.19 % cost). The same split shows it already over 10 days (t -2.36, -0.80 %, 921 cases) and over 3 days (t -2.87, 3,134 cases).",
+    "F6": "A day in the same direction as the 20-day return continues over 5 days (slope t 2.46, +0.85 % per case, 1,530 cases), but this is not robust. It is absent over 2 and 3 days (t 0.03 and 0.30), weak over 10 days (t 1.77), carried by ZEC (t 2.33) and XRP (t 1.87) with BTC, ETH, LTC and XMR near 0, and negative in 2022 (t -1.92).",
+    "F7": "Over the next day, large daily moves reverse in proportion to their size. The move in the day's direction is -0.06 %, -0.06 %, -0.12 % and -0.40 % from the smallest to the largest quartile of the forecast (mean sizes 1.6, 5.0, 9.9 and 18.3; 4,345 cases each). The largest quartile has t -4.74 and moves 2.1 times the 0.19 % cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "daily continuation, more coins",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ],
+      "idea": "The larger a coin's move over the last day, the larger its move in the same direction over the next 5 days.",
+      "consequence": "A trader would treat a large daily move as the start of a short continuation and refuse to fade it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The larger a coin's move over the last day against the direction of its 20-day return, the larger its move over the next 20 days in the direction of that 20-day return, undoing the day's move.",
+      "consequence": "A trader would fade a large day that goes against the coin's 20-day trend and expect the trend to resume over the following weeks.",
+      "name": "counter-trend days reverse",
+      "from": "F5, F1, F4",
+      "refs": [
+        "F5",
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's move over the last day, the larger its move in the opposite direction over the next day.",
+      "consequence": "A trader would refuse to chase a large daily move into the next day and would lean against it for one day.",
+      "name": "large day reverses next day",
+      "from": "F7, F1, F3",
+      "refs": [
+        "F7",
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days.b1_daily-continuation-more-coins",
+    "022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days.b2_counter-trend-days-reverse",
+    "022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days.b3_large-day-reverses-next-day"
+  ],
+  "no_ideas": null
+}

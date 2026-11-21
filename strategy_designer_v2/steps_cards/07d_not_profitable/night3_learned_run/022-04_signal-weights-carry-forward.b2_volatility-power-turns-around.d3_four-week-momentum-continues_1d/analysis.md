@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues_1d
+idea tested: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3487 USD
+---
+## Findings
+- **F1:** The failing Calmar comes from the short side. Before costs, the long positions alone earn 8.95 bps a day, with a yearly return of 33 %, a deepest fall of 24 % and a Calmar of 1.37. The short positions alone lose 0.36 bps a day, with a yearly return of -4 %, a deepest fall of 53 % and a Calmar of -0.08. Together, before costs, the book has a Calmar of 0.56 and a deepest fall of 50 %.
+- **F2:** The book's deepest fall is 54.5 %. It lasts 1009 days, from w2 to w10. During it the short positions lost on all 6 coins: summed gains of -0.90 on LTC, -0.77 on XRP, -0.53 on BTC, -0.44 on ZEC, -0.42 on XMR and -0.13 on ETH. The long positions on BTC and ETH gained (+0.71, +0.13).
+- **F3:** Bar by bar, long positions earn 17.9 bps a bar (t 5.17, 8705 bars). Short positions earn -0.68 bps a bar (t -0.26, 8622 bars), so they add risk with no gain.
+- **F4:** On non-overlapping 5-day cases, continuation holds only after rises. On 28-day rises the slope of the demeaned 5-day return on the 28-day return is +0.025 (t 2.86, 1309 cases). On 28-day falls it has the wrong sign, -0.030 (t -1.36, 1246 cases). The sixth of cases with the deepest falls (mean 28-day return -25 %) is followed by a demeaned 5-day return of -0.00 %, while the sixth with the largest rises (+46 %) is followed by +1.08 % (t 1.85).
+- **F5:** After 28-day falls, whether the fall continues depends on how calm recent swings are. Where 20-day volatility is lowest against 60-day volatility, the next 5 days are -1.56 % against the coin's mean (t -2.66, 286 cases). In the middle third they are -0.84 % (t -1.41, 292 cases). In the highest third they are +0.42 % (t 0.55, 227 cases).
+- **F6:** Bar by bar, short positions earn +11.8 bps a bar (t 2.46, 1519 bars) in the lowest third of 20-day to 60-day volatility. They earn -2.8 bps in the middle third and +0.4 bps in the highest third. In the highest third of 20-day volatility itself they earn -6.7 bps a bar (t -1.46).
+- **F7:** The cost of a trade is not the cause. The total move per case is +0.50 % over 5 days against 0.19 % for a buy and a sell, 2.6 times the cost. The book passes its Sharpe (0.77), its excess over holding (+0.22) and its mean return; only Calmar (0.45 against 0.75) fails.
+
+## Ideas
+- `022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues.d1_four-week-rises-keep-rising` (from F1, F2, F3, F4): The larger a coin's 28-day return, the larger its return over the next 5 days in the same direction, only while that 28-day return is a rise.
+- `022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues.d2_calm-falls-keep-falling` (from F4, F5, F6, F2): The larger a coin's 28-day return, the larger its return over the next 5 days in the same direction, with a 28-day fall carrying on more the calmer the coin's daily swings over the past 20 days are against those of the past 60 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

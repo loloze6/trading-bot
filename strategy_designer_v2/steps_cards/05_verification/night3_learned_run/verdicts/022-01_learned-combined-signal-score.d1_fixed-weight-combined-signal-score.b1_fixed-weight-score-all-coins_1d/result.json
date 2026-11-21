@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x excess 5-day return, before costs",
+    "value": 0.0011572031937739026,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.817325591557021
+    },
+    "threshold": "t >= 2 confirms (with supporting difference > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-day return, forecast > 0 minus forecast < 0 (Welch)",
+    "value": 0.007877194203290971,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases with a non-zero forecast": 7123,
+    "non-overlapping cases": 7128,
+    "cases with forecast > 0": 3600,
+    "cases with forecast < 0": 3523
+  },
+  "decided_by": "The main measure's t is 2 or more and the supporting difference is above 0.",
+  "reading": "The main mean pools every grid bar (positions 0, 5, 10, ... of each window) with a valid 5-bar return, a zero forecast giving a zero product, the drift is each coin's mean non-overlapping 5-bar return over all its windows, and the supporting check passes on the sign of the difference alone, as the plan states."
+}

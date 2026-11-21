@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "top-third minus bottom-third mean excess 5-day return",
+    "value": 0.007719859135348215,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.6352778008726947
+    },
+    "threshold": "confirm if difference > 0 with Welch t >= 2 and top third beats holding; reject if difference < 0 with Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third mean excess 5-day return > 0",
+    "value": 0.006672290039459305,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in top third": 1139,
+    "grid cases in bottom third": 1139,
+    "grid cases in total": 3419
+  },
+  "decided_by": "Welch t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Thirds are taken by rank of the pooled grid forecasts (stable sort, floor(n/3) cases each, ties broken by coin, window and position), grid points with forecast 0 included, and the drift is each coin's mean of its non-overlapping 5-day grid returns over all its windows."
+}

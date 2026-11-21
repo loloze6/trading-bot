@@ -1,1 +1,5 @@
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d: profitable enough [Sharpe 0.9387; Sharpe minus holding's Sharpe 0.8407; Calmar 1.754]
+022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d: profitable enough [Sharpe 1.022; Sharpe minus holding's Sharpe 0.9559; Calmar 1.923]
+022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d: profitable enough [Sharpe 0.7151; Sharpe minus holding's Sharpe 0.6171; Calmar 0.9976]
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d: profitable enough [Sharpe 2.306; Sharpe minus holding's Sharpe 2.208; Calmar 7.851]
 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: profitable enough [Sharpe 0.8964; Sharpe minus holding's Sharpe 0.7984; Calmar 1.493]

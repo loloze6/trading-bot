@@ -1,12 +1,32 @@
 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d: 2 ideas (2 explorations)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins_1d: 2 ideas (2 explorations)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days_1d: 3 ideas (2 explorations)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d1_momentum-and-nearness-score_1d: 3 ideas (3 explorations)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d: 1 ideas (3 explorations)
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends_1d: 1 ideas (2 explorations)
 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: 3 ideas (3 explorations)
+022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d: 2 ideas (2 explorations)
+022-01_learned-combined-signal-score.d3_large-day-precedes-rise_1d: 2 ideas (2 explorations)
 022-01_learned-combined-signal-score_1d: no ideas: Across the 25 signal quintiles, the weekday-by-coin, by-year and by-volatility tables, the persistence check and the large-move bins, nothing is graded and stands out from chance. The one strong pattern, the weekday effect in F5, is a fixed calendar condition that is neither graded nor stable across years and volatility levels, so it cannot be written as a graded idea.
+022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d: 2 ideas (2 explorations)
+022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d2_momentum-near-recent-highs_1d: 3 ideas (2 explorations)
+022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d3_rebound-after-deep-falls_1d: 1 ideas (2 explorations)
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: no ideas: Across about 30 angles (forecast, the 1-, 5-, 28- and 60-day returns, volatility, nearness to highs, reversal after large days, year, coin, side, trades), no pattern beyond the tested momentum stands out from chance: nothing passes t 2 except one volatility tercile at 2.04. The long/short gap in F1 to F3 comes from the coins' drift and the skew of long trades, not from a market effect the idea leaves unexplained.
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d1_combination-only-in-uptrends_1d: 2 ideas (2 explorations)
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d: 1 ideas (2 explorations)
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d3_rebound-after-deep-declines_1d: 2 ideas (2 explorations)
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: 1 ideas (2 explorations)
+022-02_combination-beats-best-single.d3_momentum-fades-in-high-volatility_1d: 2 ideas (2 explorations)
+022-02_combination-beats-best-single.g1_weekend-continuation-after-strong-week_1d: 5 ideas (2 explorations)
 022-02_combination-beats-best-single_1d: 2 ideas (3 explorations)
+022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues_1d: no ideas: Over about twenty angles (forecast by side and volatility, five price signals at two horizons, weekdays, years, coins, grid offsets, the book's tails), nothing stands out from chance enough to support a graded idea. The strongest pattern, relative volatility (t 3.27), reverses sign by year with t near ±3, and the large-day reversal (t 3.59) changes sign when the grid is shifted by 7 days. The weekday effect is a fixed condition, not a graded situation, and its move is no larger than a trade's cost.
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: no ideas: The only strong pattern, the 20-day reversal, vanishes when the grid's starting point changes (mean t -0.88 over 20 offsets), and every other angle stays within what chance gives across the many angles looked at (forecast, 1-day move by horizon, by year, coin and volume level, volatility, range, nearness to highs, weekday, the book's long and short sides).
 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: 2 ideas (2 explorations)
 022-03_combined-extremes-larger-moves_1d: 2 ideas (3 explorations)
+022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising_1d: 3 ideas (2 explorations)
 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: no ideas: I looked at about 35 groupings: six bar variables in quintiles, volatility terciles, weekday, year, coin, side and the book's tails. The only cell beyond t 2.5 is the large-up-day continuation (F6, t 2.66), and it is neither graded nor consistent across coins. That does not stand out from chance given how many angles were tried, so no finding supports a new idea.
+022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d2_nearness-to-90-day-high_1d: 2 ideas (2 explorations)
+022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues_1d: 3 ideas (2 explorations)
 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: 2 ideas (3 explorations)
+022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days_1d: no ideas: The only pattern that clears the many angles examined is the Saturday premium (F2, t 3.76), but it is a calendar condition with no grading and it is unsteady by year; the graded candidates (volume surprise, nearness, F3) hold in only one half of the windows and do not stand out from chance given how many angles were tried.
 022-04_signal-weights-carry-forward_1d: no ideas: The only pattern that is consistent across windows and coins is the Saturday excess return (F4). It is the best of seven weekdays tested and an on/off condition with no grading. Every graded angle tested (the components, the forecast, past returns, the volatility level) was non-monotonic or too weak to tell apart from chance (F3, F5, F6), so no finding supports a graded idea.

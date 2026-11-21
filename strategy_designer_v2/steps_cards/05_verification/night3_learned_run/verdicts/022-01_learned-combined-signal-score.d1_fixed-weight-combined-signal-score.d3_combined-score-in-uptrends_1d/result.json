@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar forward return minus coin drift on forecast, trending grid bars",
+    "value": -0.00029912452217585513,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": -1.1517088531778992
+    },
+    "threshold": "t >= 2 with at least 200 cases to confirm; t <= -2 with at least 200 cases to reject"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus gain from market rise (timing part) > 0",
+    "value": -0.0005294663260095355,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping trending cases": 1662
+  },
+  "decided_by": "The slope's t is between -2 and 2 with at least 200 cases.",
+  "reading": "The regression pools all coins' grid bars (positions 0,5,10,... of each window with a full 5-bar return inside it) that are trending with non-zero forecast, the drift is each coin's mean 5-bar return on that grid over all its windows, and the book's daily return is the change of postRebalance_total_value between consecutive daily bars with the market gain taken as the previous bar's held allocation times the coin's mean daily return."
+}

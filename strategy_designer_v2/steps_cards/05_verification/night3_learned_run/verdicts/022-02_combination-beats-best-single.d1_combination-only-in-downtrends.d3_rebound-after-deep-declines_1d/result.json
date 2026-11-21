@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 5-bar forward return on depth forecast, mean_reversion grid bars",
+    "value": 0.000385223464979517,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.786704553745915
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 100 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 1652
+  },
+  "decided_by": "The t lies between -2 and 2 (the inconclusive rule).",
+  "reading": "The situation is ret90 < 0, recomputed from the closes where 90 prior bars exist in the window and otherwise taken from the recorded regime, together with depth <= 0 and forecast > 0; the normal drift is each coin's mean 5-bar return over all grid bars of all its windows; the regression is one OLS of excess return on post_pipeline_value pooled over all coins; fewer than 100 cases is reported as not observable."
+}
