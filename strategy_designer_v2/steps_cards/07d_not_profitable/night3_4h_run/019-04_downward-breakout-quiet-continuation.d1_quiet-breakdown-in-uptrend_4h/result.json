@@ -1,0 +1,58 @@
+{
+  "line": "7.d",
+  "backtest": "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.417258,
+  "findings": {
+    "F1": "The book's loss comes from holding shorts long after the signal ends. There were 1254 short trades with a mean gross of -3.29 % and a net of -3.39 %, and 28 % of them won. They lasted 295 hours on average against a 72-hour horizon, and 97 % of the bars held short had a forecast of 0. The 302 trades held more than 12 days lost about -9.8 % to -10.0 % gross each, against -0.60 % for the trades held 2 to 3.5 days.",
+    "F2": "Because of that holding, the book stays short whatever the month does. 54 % of its held short bars had a negative 30-day return, which is outside the idea's own regime. The book earned only in falling years: 2018 at +0.038 %/day while the coin made -0.35 %/day, and 2022 at +0.008 %/day against -0.18 %/day. It lost in rising years, for example 2020 at -0.027 %/day while the coin made +0.42 %/day. This gives a Sharpe of -0.23 against holding's +0.55.",
+    "F3": "Inside the idea's regime (positive 30-day return), the 3-day short move after a close below the 12-bar low depends on the stretch's width. It falls steadily from the narrowest fifth to the widest: +1.04 % (n 101, t 1.04), +0.21 %, +0.12 %, -1.36 % (n 218, t -2.90) and -2.61 % (n 239, t -4.19). Only the narrowest fifth gives a total move above the 0.19 % cost of a trade, about 5 times it.",
+    "F4": "In a rising month, a break below the two-day low after a wide stretch is followed by a rise that keeps growing for days. In the widest fifth of stretch width the coin rose 1.09 % over 1 day, 2.61 % over 3 days, 3.90 % over 6 days and 5.56 % over 12 days. The 3-day rise alone is about 14 times the cost of a trade.",
+    "F5": "Over all down breaks, the 3-day short total depends on the 30-day return at both ends. In the strongest-rising fifth (median +29 %) it was -1.05 % (n 444, t -2.34), and in the steepest-falling fifth (median -31 %) it was -1.47 % (t -3.32), so the coin rose afterwards in both. In the middle three fifths it was between -0.58 % and +0.25 %.",
+    "F6": "The short effect is not stable over time. By year, in the idea's regime, it was +5.5 % in 2018 (t 4.70) and -3.9 % in 2021 (t -4.21), and it was negative in 6 of 8 years. Overall its total move per case is +0.14 %, 0.7 times the 0.19 % cost of a trade, so as tested the idea cannot pay."
+  },
+  "ideas": [
+    {
+      "idea": "When a four-hour bar closes below the lowest low of a coin's preceding two days while the coin's 30-day return is positive, the coin rises over the next three days, and the wider that two-day stretch was compared with the coin's 30-day average four-hour range, the larger the rise.",
+      "consequence": "Buy a two-day-low break in a coin that rose over the past month, more when the two days before it were wide, instead of shorting it.",
+      "name": "wide-dip rebound in uptrend",
+      "from": "F3, F4, F5, F2",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a four-hour bar closes below the lowest low of a coin's preceding two-day narrow stretch, the coin falls over the next three days, and the narrower that stretch was compared with the coin's 30-day average four-hour range, the larger the fall, only while the coin's 30-day return is positive and only over the three days after that bar's close.",
+      "consequence": "Short only the narrowest breakdowns in a rising month and close the short within three days, never carrying it into a month that has turned down.",
+      "name": "narrow breakdown, three days only",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a four-hour bar closes below the lowest low of a coin's preceding two days, the coin rises over the next three days, and the deeper the coin's fall over the past 30 days, the larger the rise.",
+      "consequence": "Buy new two-day lows in a coin that has already fallen hard over the past month rather than shorting them.",
+      "name": "deep-drawdown low rebound",
+      "from": "F5, F2",
+      "refs": [
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d1_wide-dip-rebound-in-uptrend",
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d2_narrow-breakdown-three-days-only",
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d3_deep-drawdown-low-rebound"
+  ],
+  "no_ideas": null
+}

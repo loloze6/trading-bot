@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3393606,
+  "findings": {
+    "F1": "The test could not measure its own grading, because the forecast is pinned at its cap: 87 % of the 3,101 bets enter at a forecast of 20, and the median, the 25th percentile and every quantile above them equal 20. The split at the median therefore left 0 cases in the high-forecast half and 3,102 in the low half, so the supporting check returned nothing.",
+    "F2": "The quietness of the past week is the part of the idea that does grade the move, though weakly. Over the 2,733 breakouts (first per 18-bar cell), those with the quietest 7-day/60-day range ratio (lowest quarter, below 0.77) end 18 bars later +0.69 % above drift (t 2.00, strength 0.087). The loudest quarter (above 1.15) ends \u22120.36 % (t \u22120.87, strength \u22120.059). The rank correlation of the ratio with strength is \u22120.068 (p 0.0004), and the slope on its within-coin rank is \u22121.27 % (t \u22122.16). The bets show the same pattern: quietest quarter +0.70 % (t 2.00, 661 cases), loudest \u22120.41 % (t \u22121.02).",
+    "F3": "The other two parts of the forecast predict nothing. The stretch's narrowness against the 30-day range has a rank correlation of 0.007 with strength (p 0.70), and the size of the break above the 12-bar high has 0.010 (p 0.61). Their multiplication only adds noise to the quiet-week factor.",
+    "F4": "The effect is mostly in the early years, which is why the overall t stays low. The bets' mean excess is +1.49 % in 2020 (t 3.67) but \u22120.87 % in 2019 (t \u22122.34) and \u22120.76 % in 2022 (t \u22122.05). The quiet-week gradient is clear in 2018-2021: quietest quarter +1.05 % (t 2.10) against loudest \u22121.56 % (t \u22122.35). In 2022-2025 it is absent: quietest +0.16 %, loudest +0.57 %.",
+    "F5": "Coins differ, and on its full cases the idea is too small to trade. Over all bets the move is +0.18 % above drift (t 1.13, 3,102 cases), 0.9 times the 0.19 % round-trip cost. By coin it ranges from LTC \u22120.54 % (t \u22121.56) to XRP +0.64 % (t 1.10). In the quietest-week quarter the unusual move is about +0.69 %, about 3.6 times the cost. On that quarter, five of the six coins are positive (XMR +1.34 %, t 2.15) and LTC is the exception at \u22120.45 %.",
+    "F6": "No other horizon shows the move more clearly. The bets' excess return is +0.02 % at 1 day (t 0.26), +0.03 % at 2 days (t 0.24), +0.18 % at 3 days (t 1.13) and +0.23 % at 6 days (t 1.05)."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D",
+      "name": "quiet breakout more coins",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ],
+      "idea": "When a four-hour bar closes above the highest high of a coin's preceding two-day narrow stretch, the coin rises over the next three days. The rise is larger the narrower that stretch was compared with the coin's 30-day average four-hour range, and larger still the quieter the coin's average four-hour range over the past 7 days was compared with its average over the past 60 days.",
+      "consequence": "A trader should weight an upward breakout by how quiet the whole preceding week was, and give little weight to breakouts out of a turbulent week, which is where the book's deepest falls came from.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a four-hour bar closes above the highest high of a coin's preceding two-day stretch, the coin rises over the next three days. The rise is larger the quieter the coin's average four-hour range over the past 7 days was compared with its average over the past 60 days.",
+      "consequence": "A trader should size an upward four-hour breakout by how quiet the preceding week was against the past two months, rather than by how narrow the two-day stretch itself was.",
+      "name": "breakout graded by quiet week",
+      "from": "F2, F3, F1, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins",
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week"
+  ],
+  "no_ideas": null
+}

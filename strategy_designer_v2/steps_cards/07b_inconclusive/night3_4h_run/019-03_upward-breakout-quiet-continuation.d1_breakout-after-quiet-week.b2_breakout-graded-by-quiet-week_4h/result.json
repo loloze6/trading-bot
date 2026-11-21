@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3722911,
+  "findings": {
+    "F1": "The tested result is on the predicted side but small and short of the bar. The mean 18-bar unusual move is +0.20 % (t 1.29, 3109 cases), a strength of 0.023 against a usual move of 8.17 %. That is under half the 0.05 typical of real ideas, and only 1.1 times the 0.19 % round-trip cost. Other horizons are no clearer: t 0.39 at 1 day, 0.68 at 2 days and 1.18 at 6 days.",
+    "F2": "The breakout's direction depends on the coin's recent path. Breakouts made while the coin's 5-day return was positive were followed by +0.74 % unusual moves over 3 days (t 3.72, 2149 cases). Breakouts after a falling 5 days were followed by \u22121.16 % (t \u22124.50, 792 cases). The two signs cancel in the tested pool.",
+    "F3": "The same split holds on the 10-day return. Breakouts after a rising 10 days gave +0.54 % (t 2.52, 1816 cases) and those after a falling 10 days gave \u22120.42 % (t \u22121.68, 995 cases), a difference of +0.96 % (Welch t 2.92). Only the lowest 10-day-return quintile is negative (\u22121.01 % at 3 days, t \u22122.64; \u22121.85 % at 6 days, t \u22124.17). The other four quintiles all sit at +0.36 to +0.62 % over 3 days.",
+    "F4": "Inside rising stretches the effect is spread rather than held by one coin. After a rising 10 days, BTC gave +0.53 %, ETH +0.59 %, XRP +2.10 % (t 2.54) and ZEC +0.77 %, while LTC (\u22120.50 %) and XMR (\u22120.02 %) did not.",
+    "F5": "The effect is uneven over time. It is concentrated in 2020 (+1.54 %, t 3.85) and 2021 (+0.94 %); 2019 (\u22120.82 %, t \u22122.20) and 2022 (\u22120.72 %, t \u22121.95) go the other way. It is also uneven across windows, ranging from t \u22122.82 to +3.18.",
+    "F6": "The quietness grading is weak and not monotone.",
+    "F7": "With 3109 cases, a dispersion of 8.8 % per case and a mean of +0.20 %, this data cannot show the pooled effect clearly. Thirteen more coins are available in folds A and D, and some of them in B and C, which would roughly double or triple the case count."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D",
+      "name": "quiet-week breakout, more coins",
+      "from": "F1, F7",
+      "refs": [
+        "F1",
+        "F7"
+      ],
+      "idea": "When a four-hour bar closes above the highest high of a coin's preceding two-day stretch, the coin rises over the next three days. The rise is larger the quieter the coin's average four-hour range over the past 7 days was compared with its average over the past 60 days.",
+      "consequence": "A trader should size an upward four-hour breakout by how quiet the preceding week was against the past two months, rather than by how narrow the two-day stretch itself was.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a four-hour bar closes above the highest high of a coin's preceding two-day stretch, the coin rises over the next three days, only while its 5-day return is positive. The rise is larger the quieter the coin's average four-hour range over the past 7 days was compared with its average over the past 60 days.",
+      "consequence": "A trader should take an upward four-hour breakout only when the coin has risen over the past five days, sized by how quiet the preceding week was, and refuse breakouts that come after a falling week.",
+      "name": "breakout after rising week",
+      "from": "F2, F3, F4, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.b1_quiet-week-breakout-more-coins",
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.b2_breakout-after-rising-week"
+  ],
+  "no_ideas": null
+}

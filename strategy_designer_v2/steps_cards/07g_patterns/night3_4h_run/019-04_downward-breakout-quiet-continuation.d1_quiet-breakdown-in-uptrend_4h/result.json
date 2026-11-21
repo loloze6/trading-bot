@@ -1,0 +1,62 @@
+{
+  "line": "7.g",
+  "backtest": "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.419735,
+  "findings": {
+    "F1": "Across the whole 4h grid, the bars after the largest one-day falls, scaled by the coin's own volatility, are followed by a three-day rise. The lowest decile of the 1-day return over its 180-bar volatility gains +1.47 % unusual over 18 bars (t 3.93, 432 independent cases, strength 0.163). The second decile gains +0.73 % (t 1.60). Deciles 3 to 9 sit between -0.15 % and -0.60 %. This is the sharpest pattern of the roughly 80 groups looked at, and it is well above what that many looks would produce by chance.",
+    "F2": "The rebound is concentrated in a rising month. With a positive 180-bar return, the lowest quintile of the scaled 1-day return gains +1.89 % unusual over three days (t 4.04, 401 cases, strength 0.22). With a negative 180-bar return, the same quintile gains only +0.41 % (t 1.10, 457 cases).",
+    "F3": "The same rebound shows at a one-day horizon. On the 6-bar grid, the lowest quintile of the scaled 1-day return gains +0.49 % unusual over the next 6 bars (t 5.04, 3046 cases, strength 0.10). Quintiles 2 to 5 gain between +0.00 % and -0.18 %.",
+    "F4": "The rebound is positive on all six coins but not in every period. In the lowest quintile, all six coins are positive: +0.23 % BTC (t 0.44), +0.94 % ETH, +1.56 % LTC (t 2.05), +0.81 % XMR, +1.23 % XRP, +1.84 % ZEC (t 2.20). It is positive in 16 of 24 windows (67 %). By year it is uneven: strong in 2020 (+4.0 %, t 4.91), 2021 (+4.3 %, t 2.76) and 2025 (+2.5 %, t 3.21), and negative in 2018 (-1.37 %, t -1.61).",
+    "F5": "Within the tested idea's own situation, the cases against it are the larger ones. A close below the 12-bar low while the 180-bar return is positive is followed by a three-day rise when the preceding stretch was wide: the widest tercile shows -1.74 % short-signed (t -3.89, 385 cases). The narrowest tercile, the one the idea backs, shows only +0.80 % (t 1.35, 220 cases).",
+    "F6": "That counter-move inside the tested situation is the F1 rebound. Among wide-stretch down-breaks in a rising month, those with a deep 1-day fall rise +2.23 % unusual (t 4.20, 302 cases, strength 0.25). Those with a mild fall show +0.01 % (t 0.01, 81 cases).",
+    "F7": "The rebound is large enough to pay for a trade. Its three-day unusual move in a rising month, +1.89 %, is about 10 times the 0.19 % round-trip cost of this backtest. The tested short's total move of +0.14 % per case was 0.7 times that cost. Its book lost money on five of six coins' trades (mean net trade from -1.3 % on BTC to -8.6 % on ZEC; +0.04 % on XRP).",
+    "F8": "The relation is weak away from the tail. Over the whole grid, the rank correlation between the scaled 1-day return and the next three days' unusual move is only -0.03 to -0.09 on each of the six coins (714 cases each). The effect lives in the largest falls, not across the whole range."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 30-day return is positive, the larger its 1-day fall relative to its own 30-day volatility of four-hour returns, the more it rises over the next three days.",
+      "consequence": "Buy a coin after a sharp one-day drop within a rising month, and refuse shorts of such drops, since the rebound that follows is several times a round trip's cost.",
+      "name": "sharp drop rebound uptrend",
+      "from": "F1, F2, F4, F7, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F7",
+        "F8"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 1-day fall relative to its own 30-day volatility of four-hour returns, the more it rises over the next day.",
+      "consequence": "A sharp one-day drop is a reason to take a short-term long and to refuse a short opened on it.",
+      "name": "one-day fall next-day rebound",
+      "from": "F3, F1, F8",
+      "refs": [
+        "F3",
+        "F1",
+        "F8"
+      ]
+    },
+    {
+      "idea": "When a four-hour bar closes below the lowest low of the coin's preceding two days while its 30-day return is positive, the coin rises over the next three days, the more so the deeper its 1-day fall relative to its 30-day volatility of four-hour returns.",
+      "consequence": "A breakdown in a rising month that comes with a steep one-day drop is a reason to buy the rebound and to refuse the breakdown short.",
+      "name": "uptrend breakdown snaps back",
+      "from": "F5, F6, F2, F7",
+      "refs": [
+        "F5",
+        "F6",
+        "F2",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g1_sharp-drop-rebound-uptrend",
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g2_one-day-fall-next-day-rebound",
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g3_uptrend-breakdown-snaps-back"
+  ],
+  "no_ideas": null
+}

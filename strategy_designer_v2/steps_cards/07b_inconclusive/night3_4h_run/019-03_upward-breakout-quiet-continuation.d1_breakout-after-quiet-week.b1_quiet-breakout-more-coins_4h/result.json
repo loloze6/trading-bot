@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins_4h",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.396332,
+  "findings": {
+    "F1": "The tested result points the way the idea predicts but is small. On my recount the mean unusual 18-bar move is +0.17 % per case with t 1.28 over 6,599 cases (step 5's forecast-weighted figure is +0.19 %, t 1.39). Its size is +0.15 %, a strength of 0.015, against a usual move of 9.29 %. That is a third of the usual strength of real ideas (about 0.05, findings F10) and 0.7 times the 0.22 % cost of a round trip. The test already used all 19 coins and all four folds, so no more data is available to test it on.",
+    "F2": "The result is blurred mainly because it changes sign with the coin's own 30-day trend. Breakouts while the 30-day return is positive have a mean unusual move of +0.55 % (t 2.50, 2,799 cases, strength 0.059). Breakouts while it is negative have \u22120.46 % (t \u22122.59, 2,084 cases, strength \u22120.046). Averaging the two brings the result close to zero. Inside the positive-trend cases, 15 of 19 coins (0.79) are positive.",
+    "F3": "The coin's 7-day return before the breakout grades the move monotonically. From the lowest to the highest fifth of 7-day return, the mean unusual move is \u22121.12 % (t \u22124.45), \u22120.21 %, +0.30 %, +0.38 % and +1.26 % (t 2.36), about 977 cases each. The top fifth's strength is 0.11 and its move is 5.7 times the cost; the bottom fifth's move is a fall.",
+    "F4": "The idea's own gradings show no order. By forecast fifth, the mean unusual moves are \u22120.14 %, +0.52 %, \u22120.03 %, +0.01 % and +0.47 %. By the 7-day over 60-day range ratio, from quietest to least quiet, they are +0.27 %, +0.70 %, \u22120.36 %, \u22120.21 % and +0.22 %. Within the positive-trend cases, the forecast thirds give +0.37 %, +0.91 % and +0.39 %. Neither the narrowness of the stretch nor the quietness of the week carries the effect.",
+    "F5": "The effect is also mixed across years.",
+    "F6": "The move builds with time and outlasts the horizon. Over all cases the mean unusual move is +0.08 % at 1 day, +0.17 % at 3 days and +0.30 % at 6 days. In the 30-day-return fifths it runs from \u22121.27 % to +2.17 % at 6 days, against \u22120.40 % to +0.83 % at 3 days."
+  },
+  "ideas": [
+    {
+      "idea": "When a four-hour bar closes above the highest high of a coin's preceding two-day narrow stretch, the coin rises over the next three days, only while the coin's 30-day return is positive. Inside that condition, the rise is larger the larger the coin's 7-day return up to the breakout.",
+      "consequence": "A trader should take upward breakouts only in a coin whose past month is rising, and weight them by how much the past week rose, rather than by how quiet the stretch was.",
+      "name": "breakout inside rising month",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a four-hour bar closes above the highest high of a coin's preceding two-day narrow stretch, the coin rises over the next three days by more the larger its 7-day return up to that bar.",
+      "consequence": "A trader should size an upward breakout by the strength of the week that led into it, and refuse breakouts that come after a falling week, which have been followed by falls.",
+      "name": "breakout graded by week's rise",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.b1_breakout-inside-rising-month",
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.b2_breakout-graded-by-week-s-rise"
+  ],
+  "no_ideas": null
+}

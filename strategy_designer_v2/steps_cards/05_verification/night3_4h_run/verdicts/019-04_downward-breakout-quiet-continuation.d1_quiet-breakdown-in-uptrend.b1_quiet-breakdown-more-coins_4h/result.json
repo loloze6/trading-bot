@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9997147746719909,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 18-bar move per case, before costs",
+    "value": -0.0038927953679417184,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.9364778008688192
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases to confirm; mean < 0 with t <= -2 over at least 30 cases to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, narrower half minus wider half (Welch difference > 0)",
+    "value": -0.004689541941653471,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1107,
+    "narrower half cases": 554,
+    "wider half cases": 553
+  },
+  "decided_by": "The t of the mean short-side unusual move lies between -2 and 2 with at least 30 cases.",
+  "reading": "The situation is recomputed per window as close below the minimum low of the 12 prior bars and close/close 180 bars earlier minus 1 above 0, using the recorded regime only on a window's first bars where that history is not in the record; a case is the first short bet (rise of the short forecast's size by at least 2 points from its smallest size since the last bet, from 0 after flat or a side change) in each 18-bar grid cell from each window's first row, the drift is the coin's mean 18-bar return on that grid over all its windows, and the supporting check passes when the narrower-minus-wider mean difference is above 0."
+}

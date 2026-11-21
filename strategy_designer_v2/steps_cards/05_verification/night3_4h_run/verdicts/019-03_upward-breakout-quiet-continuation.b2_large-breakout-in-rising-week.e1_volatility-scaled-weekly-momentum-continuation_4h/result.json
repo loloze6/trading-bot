@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 18-bar forward return minus coin mean, regressed on forecast",
+    "value": 0.00031482641537216124,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 3.3418535893546015
+    },
+    "threshold": "t >= 2 over at least 300 non-overlapping cases confirms (with timing gain > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book's timing gain before costs (mean daily)",
+    "value": 0.0006355167983957354,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 5724
+  },
+  "decided_by": "The slope's t is 2 or more over at least 300 non-overlapping cases and the timing gain before costs is above 0.",
+  "reading": "The regression is OLS with an intercept on all grid bars (forecast zero included), the coin's mean 18-bar return is taken over its grid samples of all windows, and the gross daily book return compounds each bar's position gain between consecutive days' last bars, with the market part as the day's mean position times the coin's mean daily return over all windows."
+}

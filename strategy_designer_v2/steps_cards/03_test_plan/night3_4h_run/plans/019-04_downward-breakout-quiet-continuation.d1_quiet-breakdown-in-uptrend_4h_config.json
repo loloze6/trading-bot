@@ -1,0 +1,113 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "brk",
+        "class": "strategies.strategy_components.DistanceFromHighComponent",
+        "params": {
+          "period": 12,
+          "source": "high",
+          "exclude_current": 1,
+          "form": "percent",
+          "extreme": "low"
+        }
+      },
+      {
+        "id": "ret30",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 180
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "brk",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "ret30",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "narrow",
+            "class": "strategies.strategy_components.RangeCompressionRatioComponent",
+            "params": {
+              "short_period": 12,
+              "long_period": 180,
+              "exclude_current": 2,
+              "form": "compression",
+              "base": "mean_bar_range"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 180,
+                  "min_periods": 45
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "max": 10.0
+                }
+              }
+            ]
+          },
+          {
+            "id": "offset",
+            "class": "strategies.strategy_components.BuyAndHoldStrategy",
+            "params": {},
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 180,
+                  "min_periods": 45
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}

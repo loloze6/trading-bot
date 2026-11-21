@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4585365,
+  "findings": {
+    "F1": "The tested shorts sit where the effect is zero. In rising months, the 18-bar cases the forecast actually traded (forecast at or below -2, the narrow stretches only) earned a short-side unusual move of +0.01 % (t 0.04, 813 cases) and +0.56 % over 36 bars (t 1.16, 630 cases). Step 5 measured -0.39 % (t -0.94, 1107 cases), so the result is zero to the wrong side, not a weak real effect.",
+    "F2": "In rising months, a 4h close below the prior 2-day low is followed by a rise, not a fall. Over all such breaks the short-side unusual move is -1.03 % over 18 bars (t -3.85, 1152 untested cases), -0.56 % over 6 bars (t -3.90) and -1.32 % over 36 bars (t -3.00).",
+    "F3": "In rising months, the rebound grows with the stretch's width, which is the opposite of the tested grading. By width quintile (narrowest to widest), the short-side unusual move is +0.46 %, +0.06 %, +0.39 %, -1.27 % (t -3.18) and -1.69 % (t -3.77, 539 cases). It also grows with the 30-day return: -0.14 % in the weakest rising quartile and -1.13 % (t -2.32) in the strongest.",
+    "F4": "In falling months (30-day return at or below 0), the tested narrowness grading does show, along its own gradient. By width quintile, narrowest to widest, the 18-bar short-side unusual move is +1.13 % (t 3.35, 588 cases), +0.77 % (t 2.52), +0.03 %, +0.25 % and -0.46 % (t -1.19). Over all 2,938 cases the Spearman between width and the move is -0.079 (p < 0.0001); at 36 bars it is weaker (narrowest quintile +1.50 %, t 2.37; rho -0.030, p 0.19).",
+    "F5": "The falling-month narrow-break effect is broad but not uniform, and it fails in the steepest falls.",
+    "F6": "Both moves are large next to the cost of a trade (0.22 % for a buy and a sell). The falling-month narrowest-quintile short has a total move of +0.60 % (2.7 times the cost) and an unusual move of +1.13 % (5 times). The rising-month widest-quintile break, read as a long, has a total move of +2.22 % (10 times) and an unusual move of +1.69 % (7.7 times). By F11, both are in the size range where books have paid."
+  },
+  "ideas": [
+    {
+      "idea": "When a four-hour bar closes below the lowest low of a coin's preceding two-day narrow stretch, the coin falls over the next three days, and the narrower that stretch was compared with the coin's 30-day average four-hour range, the larger the fall, only while the coin's 30-day return is negative.",
+      "consequence": "Short a downward break out of a narrow range in a coin that has fallen over the past month, sized up as the range is narrower, and treat the same break in a rising month as no reason to short.",
+      "name": "quiet breakdown in downtrend",
+      "from": "F1, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a four-hour bar closes below the lowest low of a coin's preceding two days while its 30-day return is positive, the coin rises over the next three days, and the wider those two days' range was compared with the coin's 30-day average four-hour range, the larger the rise.",
+      "consequence": "Buy a sharp break below the two-day low in a coin rising over the past month, sizing up as the preceding range was wider, rather than shorting it.",
+      "name": "wide dip in uptrend rebounds",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend",
+    "019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b2_wide-dip-in-uptrend-rebounds"
+  ],
+  "no_ideas": null
+}
