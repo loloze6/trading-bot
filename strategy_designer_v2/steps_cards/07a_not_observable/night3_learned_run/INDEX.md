@@ -5,5 +5,6 @@
 022-02_combination-beats-best-single_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-03_combined-extremes-larger-moves_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-04_signal-weights-carry-forward_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
