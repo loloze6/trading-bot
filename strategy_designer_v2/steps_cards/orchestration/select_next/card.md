@@ -106,6 +106,8 @@ A run name not ending in `_run` is refused. An idea file it cannot read is liste
 ## Done when
 On a run with known proposals: every candidate is listed with its score parts, the duplicates are found, the ranking
 follows the score, and a second call on the same files gives the same ranking.
+Status: **met** on demo_run (`validation/reading.md`); the duplicate rule met by the tests only (no duplicate in that
+run).
 
 ## What this function does not do
 It does not test an idea, judge one, or change a step.

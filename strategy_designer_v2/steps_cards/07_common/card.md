@@ -104,6 +104,12 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 ## Who judges the output
 The workflow: a line is relevant when one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to the line (each line's card says which). The operator reads the findings ("are they true and important?"). Code checks the shape.
 
+## Done when
+Each line's own card says when the line is done. The parts every line shares (the call, the explorations, the
+checks in code, the files) are done when, on two exercises, the lines' analyses meet the quality criteria above.
+Status: **met** for the shared parts and lines 7.a, 7.b, 7.d, 7.g (`validation/reading.md`); 7.c and 7.e in their own
+folders' validation.
+
 ## To observe in the tests
 - **Durations in ideas.** Settled (operator, 2026-11-15): an idea states its time in real time (its horizon, and the past period of its situation), never in bars; levels and thresholds stay out (`../common/idea_definition.md`). Before: Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`validation/reading.md`).
 - **How many looks at the data** a line takes before its ideas.

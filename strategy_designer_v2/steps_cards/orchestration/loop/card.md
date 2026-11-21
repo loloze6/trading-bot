@@ -120,6 +120,8 @@ positive number.
 On a fixed starting idea, with a small budget: every turn picks the idea `select_next` ranks first, no duplicate is
 run, the loop stops on the budget and says so, the queue and the turns say what happened, and a resumed call continues
 where it stopped.
+Status: **met** on demo_run, budget 4 USD (`validation/reading.md`); the duplicate rule met by the tests only (no
+duplicate in that run).
 
 ## What this function does not do
 It does not judge an idea, change a step, test on data the analysis did not see, or start from a brief.

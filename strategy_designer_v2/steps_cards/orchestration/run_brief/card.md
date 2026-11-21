@@ -78,6 +78,7 @@ that does not exist; a budget that is not a positive number.
 On one brief from step 1's list, with a small budget: step 2 writes the brief's ideas in the run, the loop's first
 turn tests the idea `select_next` ranks first among them, the loop goes on with the lines' ideas, stops on the budget
 and says so, and a second call makes no model call for steps 1 and 2.
+Status: **met** (`validation/reading.md`).
 
 ## What this function does not do
 It does not judge an idea, change a step, choose which theory to research (the operator or step 1 does), or test on
