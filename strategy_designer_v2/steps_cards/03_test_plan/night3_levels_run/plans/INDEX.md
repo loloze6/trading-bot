@@ -1,2 +1,3 @@
 020-01_resistance-retest-turns-down_1d: missing-components: The idea needs two things from the coin's own highs and closes over 90 days: the prices where it turned [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 020-02_support-retest-bounces-up_1d: missing-components: The idea needs, for one coin, the number of past 90-day turning-up points (swing lows) near the current close, reached [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+020-03_resistance-breakout-continues-up_1d: missing-components: The situation and its grading need the past swing highs (bars where the close turned down) grouped by price level [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
