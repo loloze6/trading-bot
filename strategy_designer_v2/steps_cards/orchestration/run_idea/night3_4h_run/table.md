@@ -19,21 +19,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week | plan | confirmed (+3.34) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d1_vol-scaled-week-rising-month, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d2_extreme-weeks-carry-momentum; 7.g: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g1_vol-scaled-momentum-twelve-day-hold, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g2_weak-week-downside-continuation | 1.02 | 5.7 |
 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week | missing-components | - | - | - | - | 0.05 | 0.3 |
 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week | plan | confirmed (+3.51) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d1_upward-weekly-momentum-in-uptrend, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d2_loud-momentum-in-uptrend, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.d3_widening-ranges-in-uptrend; 7.g: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.g1_rising-volatility-precedes-rises, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days.g2_momentum-after-wide-weeks | 0.97 | 5.4 |
+| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week | plan | confirmed (+2.30) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g1_one-day-fall-rebounds-next-day, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g2_dip-in-rising-week-rebounds, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges.g3_deep-downside-break-reverses | 0.64 | 5.2 |
 
 ## Consumption
-15 ideas, 14.11 USD, 96.5 minutes in all.
+16 ideas, 14.74 USD, 101.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.93 | 8.2 |
-| step4_backtest | 0.00 | 40.4 |
-| step5_verdict | 1.70 | 6.6 |
+| step3_plan | 2.00 | 8.7 |
+| step4_backtest | 0.00 | 42.0 |
+| step5_verdict | 1.84 | 7.2 |
 | step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.10 | 0.4 |
 | step7_7.e | 0.89 | 3.0 |
 | step7_7.d | 2.76 | 9.4 |
 | step7_7.b | 1.52 | 5.1 |
-| step7_7.g | 5.21 | 17.6 |
-| unseen_test | 0.00 | 4.7 |
+| step7_7.g | 5.63 | 18.9 |
+| unseen_test | 0.00 | 5.7 |

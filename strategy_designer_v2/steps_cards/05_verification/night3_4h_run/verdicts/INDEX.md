@@ -3,6 +3,7 @@
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation_4h: confirmed (fit: exact) [main: 0.00425126; ordinary t of the mean 3.89869; independent grid cases 12156]
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails_4h: confirmed (fit: exact) [main: 0.00834224; t of the mean 4.43916; cases 1834]
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h: inconclusive (fit: adapted) [main: 0.00174074; t of the mean 1.34859; cases 6664, upper half cases 0, lower half cases 6664]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h: confirmed (fit: adapted) [main: 0.00434428; t of the mean 2.302; independent cases 2357, large-break cases 509, small-break cases 1848]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation_4h: confirmed (fit: exact) [main: 0.000314826; OLS t of slope 3.34185; non-overlapping cases 5724]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h: confirmed (fit: exact) [main: 3.51008; OLS slope t 3.51008; grid cases with a non-zero forecast 1403, grid cases 1404, coins with a positive slope 6, coins 6]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: inconclusive (fit: exact) [main: 0.00430502; ordinary t of the mean 2.30906; independent cases 2398]
