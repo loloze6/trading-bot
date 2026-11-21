@@ -1,0 +1,139 @@
+{
+  "core": {
+    "net_return_pct": 4.737,
+    "sharpe": 1.193,
+    "max_drawdown_pct": -6.667,
+    "trade_count": 8,
+    "win_rate": 62.5,
+    "avg_trade_net_pnl": 5.854697,
+    "fees_paid": 2.029048,
+    "gross_pnl": 48.866623,
+    "net_pnl": 46.837575,
+    "cost_drag_pct": 4.1522,
+    "forecast_return_corr": 0.026786,
+    "forecast_return_corr_pvalue": 0.625696,
+    "forecast_return_corr_pvalue_block_adjusted": 0.932495,
+    "forecast_return_corr_n_eff": 13,
+    "forecast_return_corr_all_bars": 0.014095,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.879342,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 2,
+    "gap_skipped_pct": 0.0689,
+    "avg_trade_duration_bars": 278.88,
+    "sigma_bar_bps": 87.1882,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 39.0009,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 2.1082,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0268, p=0.9325 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 11.8091,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 11.8091,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 1.1809,
+      "safety_factor_required": 2.0,
+      "pass": false,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0268, p=0.9325 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2902,
+      "avg_forecast": 1.733202,
+      "trade_count": 8,
+      "total_net_pnl": 46.837575
+    }
+  },
+  "forecast_bins": {
+    "15_to_very_positive": {
+      "total_forecasts": 8,
+      "profitable_trades": 5,
+      "success_rate_pct": 62.5,
+      "total_net_pnl_usd": 46.8376,
+      "avg_pnl_per_trade_usd": 5.8547
+    }
+  },
+  "dynamic": {
+    "debug_info.components.plunge_in_uptrend.last_history_value": {
+      "unknown": {
+        "mean": 0.95959,
+        "std": 3.566518
+      }
+    },
+    "debug_info.components.plunge_in_uptrend.post_pipeline_value": {
+      "unknown": {
+        "mean": 6.351071,
+        "std": 21.193958
+      }
+    },
+    "debug_info.components.plunge_in_uptrend.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.plunge_in_uptrend.weighted_contribution": {
+      "unknown": {
+        "mean": 6.351071,
+        "std": 21.193958
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": -0.00015192,
+      "forward_return_std": 0.00968259,
+      "n_bars": 2901,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -16.0169,
+    "sharpe": 0.6073,
+    "sortino": 0.8792,
+    "exposure_pct": 30.5651,
+    "turnover": 3.774592,
+    "n_bars_total": 2902,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 19,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 2,
+    "events": [
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2022-05-13 00:00:00",
+        "previous_timestamp": "2022-05-10 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 180000.0,
+        "bars_missing": 49,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2022-05-26 23:00:00",
+        "previous_timestamp": "2022-05-26 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

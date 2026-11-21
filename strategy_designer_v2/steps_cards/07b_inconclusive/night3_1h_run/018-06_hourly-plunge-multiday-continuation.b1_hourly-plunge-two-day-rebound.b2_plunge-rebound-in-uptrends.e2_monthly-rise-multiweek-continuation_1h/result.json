@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation_1h",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3432141,
+  "findings": {
+    "F1": "The main measure is on the side the idea predicts but rests on a handful of cases: the forecast-weighted mean excess 336-bar return is +2.41 % at t 1.77 over 568 cells, yet without the 10 largest contributions the weighted sum falls from 142.05 to \u22120.17, the median excess is \u22122.09 %, only 43.3 % of cells beat the coin's drift (Wilcoxon p 0.17), the 2 %-winsorised weighted mean is +1.28 % at t 1.53, and the 5 %-trimmed mean excess is \u22120.77 %.",
+    "F2": "Those 10 largest cells come mostly from two coins and the latest years: 8 of the 10 are ZEC and XRP, carrying 12.2 of the 13.7 summed contribution, with mean excess returns of +112 % and +85 %, and 6 of the 10 fall in 2024\u20132025.",
+    "F3": "The effect changes sign with the period. It is positive in 2020 (+5.5 %, t 2.75, 93 cells), 2021 (+6.0 %, t 2.12, 84) and 2024 (+5.3 %, t 1.88, 82). It is negative in 2018 (\u221213.1 %, t \u22123.44, 42) and 2022 (\u22124.8 %, t \u22121.48, 42). By fold it runs from A at \u22122.4 % (t \u22121.81, 121 cells) to D at +7.8 % (t 1.86, 148).",
+    "F4": "The effect is mixed across coins: ZEC +10.2 % (t 1.50, 91 cells), ETH +2.7 % (t 1.26), LTC +2.3 % (t 1.12) and BTC +1.4 % (t 0.99) are positive, while XMR \u22120.7 % (t \u22120.47) and XRP \u22121.1 % (t \u22120.37) are negative. No coin reaches t 2 on its own roughly 90\u2013106 cells.",
+    "F5": "The effect is clearest at a shorter horizon than the plan's: over 168 bars (7 days) the weighted mean excess is +1.19 % at t 2.19 over 1,196 independent cells. Over 336 bars it is +2.41 % at t 1.77 over 568 cells, and over 672 bars +2.23 % at t 0.62 over 276 cells.",
+    "F6": "The grading shows on the standardised rise but not on the raw one. The slope of excess on forecast has t 2.62, and forecast quartiles go from \u22124.07 % (q1) to +4.18 % (q4). But raw 30-day-return quintiles over all cells are flat, from \u22120.14 % (lowest) to \u22120.17 % (highest, mean 30-day return +53 %). Cells with zero forecast average \u22120.77 % (t \u22121.01, 580 cells).",
+    "F7": "The effect sits where the coin's shorter rise agrees with its longer trend:",
+    "F8": "The size is above the cost but small next to the noise. The unusual move is +0.75 % per case (strength 0.029, about half the 0.05 of F10 in the prior findings), 3.9 times the 0.19 % round trip; the total move is +2.77 %, 14.4 times the cost. The book beat holding (Sharpe 1.07, 0.52 above holding's) with 0.13 trades a day."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D",
+      "name": "monthly rise on more coins",
+      "from": "F1, F2, F4, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F8"
+      ],
+      "idea": "A coin whose 30-day return is positive keeps rising over the next 2 weeks by more than its usual 2-week drift, and the larger its 30-day return, the larger that rise.",
+      "consequence": "A coin's month-long rise is a reason to stay long in it for weeks, more strongly as the rise is larger, which is what the book's long, paying trades actually held.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "A coin whose 30-day return is positive keeps rising over the next 7 days by more than its usual 7-day drift, and the larger its 30-day return, the larger that rise.",
+      "consequence": "A coin's month-long rise is a reason to hold it long for the following week, more strongly as the rise is larger.",
+      "name": "monthly rise one-week continuation",
+      "from": "F5, F6, F8",
+      "refs": [
+        "F5",
+        "F6",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.b1_monthly-rise-on-more-coins",
+    "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.b2_monthly-rise-one-week-continuation"
+  ],
+  "no_ideas": null
+}
