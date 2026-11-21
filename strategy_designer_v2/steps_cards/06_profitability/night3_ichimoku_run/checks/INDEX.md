@@ -10,4 +10,5 @@
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: not profitable enough [Sharpe 0.2449; Sharpe minus holding's Sharpe -0.3208; Calmar 0.1046]
 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold_1d: not profitable enough [Sharpe 1.117; Sharpe minus holding's Sharpe 0.5512; Calmar 0.9451]
 021-03_thin-cloud-upward-breakout_1d: not profitable enough [Sharpe 0.9159; Sharpe minus holding's Sharpe 0.3502; Calmar 0.6809]
+021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall_1d: not profitable enough [Sharpe -0.2989; Sharpe minus holding's Sharpe -0.8647; Calmar -0.1265]
 021-04_thin-cloud-downward-breakdown_1d: not profitable enough [Sharpe -0.6686; Sharpe minus holding's Sharpe -1.234; Calmar -0.2173]

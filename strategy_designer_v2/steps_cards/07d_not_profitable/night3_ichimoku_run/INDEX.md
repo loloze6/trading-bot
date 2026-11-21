@@ -10,4 +10,5 @@
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: 1 ideas (2 explorations)
 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold_1d: 3 ideas (0 explorations)
 021-03_thin-cloud-upward-breakout_1d: 3 ideas (3 explorations)
+021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall_1d: 2 ideas (2 explorations)
 021-04_thin-cloud-downward-breakdown_1d: 4 ideas (2 explorations)

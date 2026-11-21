@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 26-bar unusual move (short direction) after cross bars",
+    "value": 0.006967637996568654,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.30357110183952396
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of unusual move on |forecast| at the cross",
+    "value": -0.0028977009772935248,
+    "passed": false
+  },
+  "counts": {
+    "cases across all coins and windows": 112
+  },
+  "decided_by": "the t of the mean unusual move lies between -2 and 2 (or is not computable), which is inconclusive.",
+  "reading": "the situation is checked on the active bars where the cloud (52+26 bars of history) and the prior outside state can be computed inside their window, with the 26-bar return taken from the recorded fall26 raw value or recomputed from closes; cases are the short bets (forecast rising by at least 2 points on the short side from its low since the last bet), one per 26-bar grid cell of each window, with the coin's drift the mean of its non-overlapping 26-bar returns over all windows, and the plan's 'fewer than 30 cases' rule reported as not observable."
+}

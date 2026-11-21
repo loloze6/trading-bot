@@ -10,4 +10,5 @@
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: not observable (fit: exact) [main: 0.0582771; ordinary t of the mean 0.688599; independent cases 11]
 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold_1d: inconclusive (fit: adapted) [main: 0.00251812; OLS slope t 0.136594; cases 64]
 021-03_thin-cloud-upward-breakout_1d: inconclusive (fit: exact) [main: 0.0486939; t of the mean 1.54603; cross cases 152, thin group cases 76, thick group cases 76]
+021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall_1d: inconclusive (fit: exact) [main: 0.00696764; t of the mean 0.303571; cases across all coins and windows 112]
 021-04_thin-cloud-downward-breakdown_1d: inconclusive (fit: adapted) [main: -0.00188273; ordinary t of the mean -0.101087; cases 198, thin-cloud half 99, thick-cloud half 99]

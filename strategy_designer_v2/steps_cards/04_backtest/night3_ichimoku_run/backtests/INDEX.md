@@ -10,4 +10,5 @@
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
+021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 021-04_thin-cloud-downward-breakdown_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
