@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed 26-bar excess return over the coin's mean, on grid bars with forecast < 0",
+    "value": 0.01511595641404497,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6892438527493054
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-signed excess return on |forecast|",
+    "value": -0.009176204280675723,
+    "passed": false
+  },
+  "counts": {
+    "cases": 156
+  },
+  "decided_by": "The t-statistic lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The cloud position is recomputed from each window's own prices (standard Ichimoku 9/26/52 with 26-bar displacement, close below the lower span), the slope is the recorded cloud_slope raw value (recomputed where missing), and active bars whose cloud cannot be computed inside their window are left out of the agreement share; cases are grid bars at positions 0, 26, 52, ... of each window with a full 26-bar return inside the window, and the coin's mean 26-bar return is taken over the same grid across all its windows."
+}
