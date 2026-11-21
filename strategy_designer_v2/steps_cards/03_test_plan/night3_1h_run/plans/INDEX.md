@@ -1,3 +1,4 @@
 018-01_hourly-breakout-gain-before-close_1h: untestable: The outcome is a move that ends at the same day's daily close, so its length depends on the hour [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-02_hourly-breakout-multiday-continuation_1h: missing-components: The forecast must size the break above the prior 20-day high by the coin's 30-day average absolute daily return. That [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-03_hourly-surge-gain-before-close_1h: untestable: The idea's horizon is "to the same day's daily close", which lasts from 1 to 23 hourly bars depending on [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+018-04_hourly-surge-multiday-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
