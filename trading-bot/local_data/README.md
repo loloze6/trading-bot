@@ -21,6 +21,8 @@ research's paying ideas on unseen dates (`holdout_consumed_by: [unseen_run]`;
 Data gathering and backtesting are separate (operator, 2026-11-18; `trading-bot/data/coverage.py`):
 - **A data tool** fetches from an exchange, writes a file here, and records in `coverage.yaml` the days it fetched:
   `tools/extend_kraken_daily.py` (the latest daily bars), `tools/ingest_kraken_archive.py` (Kraken's archive files),
+  `tools/derive_kraken_bars.py` (the 4h Kraken files, built from the hourly ones only, UTC blocks from 00:00, their
+  coverage that of the hourly file; 2026-11-21, proof `strategy_designer_v2/steps_cards/runs/NIGHT3_4H_DATA.md`),
   and any fetcher that saves what it fetched.
 - **A backtest reads the files here only, never an exchange.** Its days, warm-up included, must be inside the file's
   coverage; otherwise it stops: "not fetched: run the data tool". Inside a covered range, a hole in the file is the

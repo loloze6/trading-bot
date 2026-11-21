@@ -1,10 +1,12 @@
-"""strategies.min_holding_bars (2026-11-20, strategy_designer_v2 topics/30, the operator's option 2): each rise of the
-target is an event holding its own size for that many bars: a long book does not go below the sum of the target's rises
-over the last min_holding_bars bars (at most its position); a short book, symmetrically, with the falls. Absent (every earlier config):
-nothing changes (proof: fixed backtests rerun, files identical; topics/30).
+"""strategies.min_holding_bars (2026-11-20, strategy_designer_v2 topics 30 and 34; the rule: common/forecast.md, point 7;
+the code: core/holding_period.py): each bet of the idea is held for its horizon. A bet is a rise of the forecast itself,
+on its own side, of at least the band (min_allocation_change), measured from its lowest level on that side since its
+last bet; a long book does not go below the sum of its long bets still within their horizon (at most its position), a
+short book symmetrically. Absent (every earlier config): nothing changes (proof: fixed backtests rerun, files identical;
+topics/30). The bet-by-bet cases are in tests/test_holding_period.py.
 
-Fast tests: the key is read and validated. Slow test: on real bars, a long position never falls below the sum of
-the target's rises over the last N bars (at most the position before the bar).
+Fast tests: the key is read and validated. Slow test: on real bars, a held book trades no more than the same book
+without the key.
   pytest tests/test_min_holding_bars.py -m slow --timeout=0
 """
 import json

@@ -151,7 +151,7 @@ components/
     build_component.py   one call per open wish; writes, checks, keeps or undoes; the index and journal lines
     wishes.py            the wishes, their answers, the open ones, the unblocking rule (used by select_next, run_idea)
     test_components.py   the tests of this code (a fake model call)
-  builds/<class>/        per component built: the calls' answers, the checks' output
+  builds/<class>/        per component built: answer.md (the calls' answers, then "checks:", the checks' output and the bot's suite)
   validation/reading.md  the validation (exercises 1 to 3 and the second night)
 (in trading-bot/: the class in strategies/strategy_components.py; its spec, the settings and the hand computation, in
  tests/built_components/<class>.py; the standard checks in tests/component_harness.py, run on every spec by
