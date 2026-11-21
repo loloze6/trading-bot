@@ -1,6 +1,7 @@
 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins_1d: inconclusive (fit: exact) [main: 0.0943107; t of the mean of forecast-weighted excess returns 1.74727; independent cases 277]
 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues_1d: inconclusive (fit: exact) [main: -0.00827817; OLS slope t -1.25962; independent in-regime cases 149, supporting check cases 0]
 021-01_above-rising-cloud-continues-up_1d: inconclusive (fit: exact) [main: 0.0481015; t of the mean 1.29715; non-overlapping cases 149, active bars 4356]
+021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: inconclusive (fit: exact) [main: 0.015116; t of the mean 0.689244; cases over all coins and windows 156, slow-fall half 78, fast-fall half 78]
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins_1d: inconclusive (fit: adapted) [main: -0.00953702; t of the mean -1.55305; non-overlapping cases 353, cases above median 176, cases below median 176]
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d: inconclusive (fit: adapted) [main: 0.02771; t of the weighted mean 1.15284; cases 156, active bars 4916, larger half 78, smaller half 78]
 021-02_below-falling-cloud-continues-down_1d: inconclusive (fit: exact) [main: 0.015116; t of the mean 0.689244; cases 156]

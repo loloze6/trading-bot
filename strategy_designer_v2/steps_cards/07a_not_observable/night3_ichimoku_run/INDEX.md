@@ -1,6 +1,7 @@
 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-01_above-rising-cloud-continues-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-02_below-falling-cloud-continues-down_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
