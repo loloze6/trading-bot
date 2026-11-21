@@ -3704,3 +3704,267 @@ class HourOfDayComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class PastPredictivePowerWeightedCompositeComponent(SubStrategyComponent):
+    """
+    Four price effects, weighted by how well each predicted the realised forward return over a past window.
+
+    Signals on bar i (closes only):
+        s1(i) = close[i] / close[i - return_period] - 1                         (momentum)
+        s2(i) = -(close[i] / close[i - reversal_period] - 1)                    (reversal)
+        s3(i) = close[i] / max(close[i - high_period + 1 .. i]) - 1             (distance from high)
+        s4(i) = -std_ddof1(r[i - vol_period + 1 .. i]), r[j] = close[j]/close[j-1] - 1   (volatility level)
+    z_k(t) = (s_k(t) - mean(s_k[t-z_window+1 .. t])) / std_ddof1(same window), 0 when that std is 0.
+    Training rows: i = t - corr_lookback .. t - horizon, y(i) = close[i + horizon] / close[i] - 1.
+    w_k = Pearson corr(s_k(i), y(i)) over the training rows, 0 when either side is flat.
+    weighting "correlation" (default): sum_k w_k z_k(t) / sum_k |w_k|, 0 when sum |w_k| = 0.
+    weighting "best":   sign(w_k*) z_k*(t), k* = argmax |w_k| (first of s1..s4 on a tie); 0 when all w_k = 0.
+    weighting "single": w_k z_k(t), k the effect named by `signal`
+                        ("momentum" s1, "reversal" s2, "high" s3, "volatility" s4).
+    weighting "regression": 100 sum_k b_k x_k(t), x_k = (s_k - m_k) / sd_k with m_k, sd_k (ddof 1) over the
+                        training rows (signals with sd_k = 0 dropped), b_k the OLS slopes of y on the x_k with an
+                        intercept; 0 when every signal is dropped.
+
+    Range & sign: "correlation", "best" and "single" are signed, with abs at most max |z_k(t)| (about 19.05 at
+    z_window 365). "single" grows with the effect's strength and with |w_k|, and its sign flips when the effect
+    recently worked in reverse. "regression" is unbounded and signed.
+    Warm-up: max(z_window - 1, corr_lookback) + max(return_period, reversal_period, high_period - 1, vol_period)
+    + 1 rows (455), bar t included.
+    NaN: a NaN close, or a close not above 0, in the last warm-up rows gives NaN.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last warm-up rows of data, ending at bar t.
+    The latest forward return used is y(t - horizon) = close[t] / close[t - horizon] - 1, which is fully realised
+    at bar t's close.
+    """
+
+    _SIGNALS = ("momentum", "reversal", "high", "volatility")
+
+    def __init__(self, name="PastPredictivePowerComposite", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        p = self.parameters
+        self.return_period = int(p.get("return_period", 28))
+        self.reversal_period = int(p.get("reversal_period", 1))
+        self.high_period = int(p.get("high_period", 90))
+        self.vol_period = int(p.get("vol_period", 30))
+        self.z_window = int(p.get("z_window", 365))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.weighting = p.get("weighting", "correlation")
+        self.signal = p.get("signal", "momentum")
+        if self.return_period < 1:
+            raise ValueError(f"return_period must be >= 1, got {self.return_period}")
+        if self.reversal_period < 1:
+            raise ValueError(f"reversal_period must be >= 1, got {self.reversal_period}")
+        if self.high_period < 2:
+            raise ValueError(f"high_period must be >= 2, got {self.high_period}")
+        if self.vol_period < 2:
+            raise ValueError(f"vol_period must be >= 2, got {self.vol_period}")
+        if self.z_window < 2:
+            raise ValueError(f"z_window must be >= 2, got {self.z_window}")
+        if self.horizon < 1:
+            raise ValueError(f"horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("corr_lookback - horizon must be >= 2")
+        if self.weighting not in ("correlation", "best", "single", "regression"):
+            raise ValueError(f"unknown weighting {self.weighting!r}")
+        if self.signal not in self._SIGNALS:
+            raise ValueError(f"unknown signal {self.signal!r}")
+        if self.weighting == "regression" and self.corr_lookback - self.horizon < 5:
+            raise ValueError("regression needs corr_lookback - horizon >= 5")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        self.confidence = 1.0
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            return
+        t = n - 1
+        first = t - max(self.z_window - 1, self.corr_lookback)
+        S = np.full((4, n), np.nan)
+        for i in range(first, n):
+            S[0, i] = c[i] / c[i - self.return_period] - 1.0
+            S[1, i] = -(c[i] / c[i - self.reversal_period] - 1.0)
+            S[2, i] = c[i] / np.max(c[i - self.high_period + 1:i + 1]) - 1.0
+            r = c[i - self.vol_period + 1:i + 1] / c[i - self.vol_period:i] - 1.0
+            S[3, i] = -float(np.std(r, ddof=1))
+
+        z = np.zeros(4)
+        for k in range(4):
+            win = S[k, t - self.z_window + 1:t + 1]
+            sd = float(np.std(win, ddof=1))
+            z[k] = (S[k, t] - float(win.mean())) / sd if sd > 0 else 0.0
+
+        tr = np.arange(t - self.corr_lookback, t - self.horizon + 1)
+        y = c[tr + self.horizon] / c[tr] - 1.0
+        X = S[:, tr]
+
+        w = np.zeros(4)
+        dy = y - y.mean()
+        syy = float(np.sum(dy * dy))
+        for k in range(4):
+            dx = X[k] - X[k].mean()
+            sxx = float(np.sum(dx * dx))
+            if sxx > 0 and syy > 0:
+                w[k] = float(np.sum(dx * dy)) / np.sqrt(sxx * syy)
+
+        if self.weighting == "correlation":
+            den = float(np.sum(np.abs(w)))
+            out = float(np.sum(w * z)) / den if den > 0 else 0.0
+        elif self.weighting == "best":
+            a = np.abs(w)
+            if not (a > 0).any():
+                out = 0.0
+            else:
+                k = int(np.argmax(a))
+                out = float(np.sign(w[k]) * z[k])
+        elif self.weighting == "single":
+            k = self._SIGNALS.index(self.signal)
+            out = float(w[k] * z[k])
+        else:
+            cols, xt = [], []
+            for k in range(4):
+                m = float(X[k].mean())
+                sd = float(np.std(X[k], ddof=1))
+                if sd > 0:
+                    cols.append((X[k] - m) / sd)
+                    xt.append((S[k, t] - m) / sd)
+            if not cols:
+                out = 0.0
+            else:
+                A = np.column_stack([np.ones(len(y))] + cols)
+                coef = np.linalg.lstsq(A, y, rcond=None)[0]
+                out = 100.0 * float(np.dot(coef[1:], np.array(xt)))
+
+        self._raw_value = float(out)
+        self.debug_info = {'weights': w.tolist(), 'z': z.tolist(), 'weighting': self.weighting,
+                           'signal': self.signal}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return (max(self.z_window - 1, self.corr_lookback)
+                + max(self.return_period, self.reversal_period, self.high_period - 1, self.vol_period) + 1)
+
+
+class SignalPredictivePowerComponent(SubStrategyComponent):
+    """
+    Trailing predictive power of one signal: how well it has forecast the return that followed it.
+
+        L = corr_lookback, h = horizon
+        training rows: i = t-L .. t-h  (L - h + 1 rows)
+        y(i) = close[i+h] / close[i] - 1
+        signal = "momentum" (default): s(i) = close[i] / close[i-return_period] - 1
+        signal = "reversal":           s(i) = -(close[i] / close[i-reversal_period] - 1)
+        signal = "high":               s(i) = close[i] / max(close[i-high_period+1 .. i]) - 1
+        signal = "volatility":         s(i) = -std (ddof 1) of the vol_period returns close[j]/close[j-1]-1,
+                                              j = i-vol_period+1 .. i
+        raw_value = Pearson corr of s(i) with y(i) over the training rows; 0 when s or y is flat there
+
+    Range: -1 to +1, signed. It is positive when a high signal was followed by a higher return (the signal worked).
+    It is negative when the signal worked in reverse, and near 0 when it did not predict.
+    It is graded and continuous in the closes.
+    Warm-up: corr_lookback + D + 1 rows, bar t included. D is the chosen signal's lag: return_period,
+    reversal_period, high_period - 1 or vol_period (394 at the defaults).
+
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN.
+    Building the component raises for return_period < 1, reversal_period < 1, high_period < 2, vol_period < 2,
+    horizon < 1, corr_lookback - horizon < 2, or a signal other than "momentum", "reversal", "high" or
+    "volatility".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last corr_lookback + D + 1 rows, bar t being the
+    last row. The latest forward return y(t-h) = close[t]/close[t-h] - 1 ends at bar t, so no row after t is read.
+    """
+
+    def __init__(self, name="SignalPredictivePower", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        p = self.parameters
+        self.return_period = int(p.get("return_period", 28))
+        self.reversal_period = int(p.get("reversal_period", 1))
+        self.high_period = int(p.get("high_period", 90))
+        self.vol_period = int(p.get("vol_period", 30))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.signal = p.get("signal", "momentum")
+        if self.return_period < 1:
+            raise ValueError(f"SignalPredictivePowerComponent: return_period must be >= 1, got {self.return_period}")
+        if self.reversal_period < 1:
+            raise ValueError(
+                f"SignalPredictivePowerComponent: reversal_period must be >= 1, got {self.reversal_period}")
+        if self.high_period < 2:
+            raise ValueError(f"SignalPredictivePowerComponent: high_period must be >= 2, got {self.high_period}")
+        if self.vol_period < 2:
+            raise ValueError(f"SignalPredictivePowerComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.horizon < 1:
+            raise ValueError(f"SignalPredictivePowerComponent: horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("SignalPredictivePowerComponent: corr_lookback - horizon must be >= 2")
+        if self.signal not in ("momentum", "reversal", "high", "volatility"):
+            raise ValueError(f"SignalPredictivePowerComponent: unknown signal {self.signal!r}")
+        self._raw_value = 0.0
+
+    def _lag(self):
+        if self.signal == "momentum":
+            return self.return_period
+        if self.signal == "reversal":
+            return self.reversal_period
+        if self.signal == "high":
+            return self.high_period - 1
+        return self.vol_period
+
+    def _signal_at(self, c, pos):
+        if self.signal == "momentum":
+            return c[pos] / c[pos - self.return_period] - 1.0
+        if self.signal == "reversal":
+            return -(c[pos] / c[pos - self.reversal_period] - 1.0)
+        if self.signal == "high":
+            return c[pos] / np.max(c[pos - self.high_period + 1:pos + 1]) - 1.0
+        r = c[pos - self.vol_period + 1:pos + 1] / c[pos - self.vol_period:pos] - 1.0
+        return -float(np.std(r, ddof=1))
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        d = self._lag()
+        h = self.horizon
+        xs = []
+        ys = []
+        for k in range(self.corr_lookback - h + 1):
+            pos = d + k
+            xs.append(self._signal_at(c, pos))
+            ys.append(c[pos + h] / c[pos] - 1.0)
+        x = np.array(xs, dtype=float)
+        y = np.array(ys, dtype=float)
+        if x.max() == x.min() or y.max() == y.min():
+            corr = 0.0
+        else:
+            dx = x - x.mean()
+            dy = y - y.mean()
+            den = float(np.sqrt(np.sum(dx * dx) * np.sum(dy * dy)))
+            corr = 0.0 if not den > 0 else float(np.clip(np.sum(dx * dy) / den, -1.0, 1.0))
+        self._raw_value = float(corr)
+        self.confidence = 1.0
+        self.debug_info = {"signal": self.signal, "rows": len(xs), "signal_now": float(self._signal_at(c, n - 1))}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.corr_lookback + self._lag() + 1
