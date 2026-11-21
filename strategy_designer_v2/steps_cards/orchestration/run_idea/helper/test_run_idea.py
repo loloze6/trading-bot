@@ -56,7 +56,7 @@ def test_a_resumed_run_does_not_copy_a_file_onto_itself(tmp_path):
 
 def test_the_journal_records_called_and_skipped_steps(tmp_path, monkeypatch):
     monkeypatch.setattr(r, "STEPS", tmp_path)
-    monkeypatch.setattr(r, "call", lambda cmd: ("cost: 0.25 USD\n", 0.25))
+    monkeypatch.setattr(r, "call", lambda cmd: ("cost: 0.25 USD\n", 0.25, 0))
     out = tmp_path / "plan.md"
     out.write_text("p")
     j = r.Journal(tmp_path / "t", "demo_run", "X_1d")
@@ -76,7 +76,7 @@ def test_model_calls_are_read_and_a_killed_call_is_marked(tmp_path, monkeypatch)
     calls = r.model_calls(out)
     assert calls == [{"seconds": 41.2, "usd": 0.31}, {"seconds": 900.0, "usd": None}]
     monkeypatch.setattr(r, "STEPS", tmp_path)
-    monkeypatch.setattr(r, "call", lambda cmd: (out, 0.31))
+    monkeypatch.setattr(r, "call", lambda cmd: (out, 0.31, 0))
     j = r.Journal(tmp_path / "t", "demo_run", "X_1d")
     j.step("step7_7.b", ["analyse.py"], [], done=False)
     e = json.loads((tmp_path / "t" / "journal.jsonl").read_text())
@@ -88,3 +88,26 @@ def test_a_verdict_without_a_main_measure_is_its_status():
     assert r.verdict_label({"status": "mismatch", "main_measure": None}) == "mismatch"
     assert r.verdict_label({"status": "confirmed", "main_measure": {"statistic": {"value": 2.931}}}) == "confirmed (+2.93)"
     assert r.verdict_label(None) == "no verdict"
+
+
+def test_a_failed_step_stops_the_run_and_a_refused_call_says_so(tmp_path, monkeypatch):
+    # night 3, 2026-11-21: step 3 called again failed on the usage limit, and its older refusal was read as its answer
+    import pytest
+    monkeypatch.setattr(r, "STEPS", tmp_path)
+    j = r.Journal(tmp_path / "t", "demo_run", "X_1d")
+    old = tmp_path / "plan.md"; old.write_text("an earlier answer")
+    monkeypatch.setattr(r, "call", lambda cmd: ("model call refused by the service: limit\n", 0.0, r.SERVICE_REFUSED))
+    with pytest.raises(SystemExit) as e:
+        j.step("step3_plan", ["x"], [old], done=False, required=True)
+    assert e.value.code == r.SERVICE_REFUSED                         # stopped, to be retried; the old plan not read
+    with pytest.raises(SystemExit) as e:
+        j.step("step7_7.d", ["x"], [old], done=False)                # any step: a refused call stops the run
+    assert e.value.code == r.SERVICE_REFUSED
+    monkeypatch.setattr(r, "call", lambda cmd: ("Traceback: a bug\n", 0.0, 1))
+    with pytest.raises(SystemExit) as e:
+        j.step("step3_plan", ["x"], [old], done=False, required=True)
+    assert "its helper failed (exit 1)" in str(e.value.code)          # a required step that fails: the idea fails
+    out, cost = j.step("step7_7.d", ["x"], [old], done=False)         # a line that fails: recorded, the run goes on
+    assert cost == 0.0
+    lines = (tmp_path / "t" / "journal.jsonl").read_text().splitlines()
+    assert all("its helper failed" in l for l in lines)
