@@ -67,7 +67,7 @@ Both controls are profitable enough on all six checks. **The level adds about 0.
 known momentum family.** Not a new paying family (N1 not supported for brief 020); the brief's first claim (a level
 turns price again) was not supported by its own ideas either.
 
-## Check: do the 4h breakouts add anything beyond their trend filter? (07:55 Paris, designer session, no model call)
+## Check: do the 4h breakouts add anything beyond their trend filter? (07:30 Paris, designer session, no model call)
 The 4h run's two breakout ideas that pay and hold on 2016-17 trade a breakout (`DistanceFromHighComponent`,
 `BreakoutInMeanRangesComponent`) only while the coin's past return is positive (`PriceEvolutionComponent`, 180 or 42
 bars). Control: the same gate, coins, folds, horizon and sizing, the forecast from the gate's own return (standardised,
