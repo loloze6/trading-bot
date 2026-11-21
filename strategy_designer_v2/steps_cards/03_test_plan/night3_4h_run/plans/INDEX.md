@@ -1,2 +1,3 @@
 019-01_narrow-range-larger-move_4h: untestable: The idea predicts the size of the next three days' move, not its direction. A config's forecast is a signed [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-02_narrow-range-wider-span_4h: untestable: The idea predicts how wide the coming three-day span is, regardless of direction. A config can only hold a signed [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
+019-03_upward-breakout-quiet-continuation_4h: missing-components: No catalogue component compares a stretch's range with the average 4h bar range (mean of high minus low over 180 [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
