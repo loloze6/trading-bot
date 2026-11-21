@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise_1d
+idea tested: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3885 USD
+---
+## Findings
+- **F1:** The book fails on its mean daily return (0.000459 against the 0.0005 required), while holding the coins earns 0.00118 a day; the book holds a position on only 28 % of bars, at a mean allocation of 0.54 when in (0.15 over all bars), so it is out of the coin most of the time. Its gain per bar splits into 0.000179 from the market's own rise and 0.000301 from timing.
+- **F2:** Cost is not what loses the gain: per case the total 5-day move is +1.85 % against a round trip of 0.19 % (9.6 times), and the unusual move is +1.28 % (6.6 times).
+- **F3:** The gain sits in the thinnest clouds. Bars with a forecast of 15 to 20 earn an excess +0.57 % a day and carry 5.10 of the book's 8.38 summed gain units (about 61 %). Bars with a forecast of 0 to 5 lose: excess -0.26 % a day, and -1.75 % over 5 days on 160 grid cases.
+- **F4:** Inside the above-rising-cloud regime the move outlasts the 5-day horizon. The mean return grows from +1.39 % over 5 days to +2.91 % over 10. By forecast quartile, the 10-day return is +0.5 %, +2.5 %, +2.4 % and +6.2 %, against 5-day excess returns of -0.57 %, +0.27 %, +0.19 % and +3.31 % (about 170 cases each).
+- **F5:** Inside the regime, cases whose close is below the midpoint of the past 26 days' high-low range have a 5-day excess return of -0.44 % (171 cases). Cases above that midpoint have +0.61 % to +1.57 %.
+- **F6:** Outside the regime (72 % of bars) the coin still rises 0.078 % a day before removing its drift. Its 5-day excess return is graded by the close's distance to the 26-day midpoint, from -0.33 % in the lowest quintile (mean -24.5 %) to +0.39 % in the highest (mean +11.3 %), with raw 5-day returns of 0.27 % to 1.00 % (about 404 cases each).
+- **F7:** Leaving the regime is not followed by a fall: the 5-day excess return after an exit is +0.49 % (t 0.72, 293 cases), and the 10-day return is +1.07 %.
+
+## Ideas
+- `021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.d1_thin-cloud-ten-day-rise` (from F1, F2, F4): When a coin closes above its Ichimoku cloud and the cloud is rising, its return over the next 10 days is larger the thinner the cloud (the gap between its two spans as a share of the price).
+- `021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.d2_thin-cloud-above-midrange` (from F3, F5): When a coin closes above its Ichimoku cloud and the cloud is rising, its return over the next 5 days is larger the thinner the cloud (the gap between its two spans as a share of the price), only while its close stands above the midpoint of its past 26 days' high-low range.
+- `021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.d3_distance-above-26-day-midrange` (from F1, F6, F7): A coin's return over the next 5 days is larger the further its close stands above the midpoint of its past 26 days' high-low range.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
