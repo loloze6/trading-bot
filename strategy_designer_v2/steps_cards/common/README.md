@@ -14,3 +14,4 @@ One definition, one file: a step that needs it reads it here, so the steps canno
 | `measures.md` | how the workflow measures (returns counted once, holding, the book, Sharpe, Calmar, t-statistics) | steps 3, 5, 7; step 6's code computes the book the same way |
 | `bets.py` | where an idea makes a bet on a record (the holding period's rule) and the band it trades with | `idea_size.py` (step 5); the book's diagnosis (`../topics/34_review/book_diagnosis.md`, a discovery tool of topic 34, not a step) |
 | `idea_size.py` | the size of an idea (`measures.md`): unusual move per case, normal drift, total, strength | step 5 (step 7 reads its `size.json`) |
+| `engine_changes.md` | the engine changes that can change a backtest's results, one dated line each (old runs stay as recorded) | anyone reading an older record; the readings of reruns |
