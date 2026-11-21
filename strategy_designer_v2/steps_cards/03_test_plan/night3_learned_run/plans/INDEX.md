@@ -10,4 +10,5 @@
 022-03_combined-extremes-larger-moves_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
