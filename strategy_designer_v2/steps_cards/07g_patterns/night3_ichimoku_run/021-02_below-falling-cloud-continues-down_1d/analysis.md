@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 021-02_below-falling-cloud-continues-down_1d
+idea tested: 021-02_below-falling-cloud-continues-down
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3916 USD
+---
+## Findings
+- **F1:** The book lost on every coin while the coins rose, and the forecast's grading points the wrong way. Mean daily book return ran from -1.1 to -5.2 bps per coin, against coin returns of +6.7 to +15.5 bps. The normal drift in the short's direction was -4.24 % per 26-day case, against an unusual move of only +1.51 % (t 0.69). The forecast's correlation with the 26-day excess return was -0.054, with 1 of 6 coins positive.
+- **F2:** The nearer a coin closes to the top of its 26-day high-low range, the more it beats its average over the next 7 days.
+- **F3:** A coin's past 26-day return grades its next 26 days.
+- **F4:** A daily fall of at least 2 times the coin's 30-day volatility is followed by a next-day return about 100 bps above average.
+- **F5:** Saturday's daily return beats the other days on 6 of 6 coins.
+
+## Ideas
+- `021-02_below-falling-cloud-continues-down.g1_range-position-predicts-week` (from F2, F1): The nearer a coin closes to the top of its own 26-day high-low range, the higher its return over the next 7 days.
+- `021-02_below-falling-cloud-continues-down.g2_sharp-daily-drops-rebound` (from F4): The larger a coin's one-day fall, measured against its own 30-day daily volatility, the higher its return over the next day.
+- `021-02_below-falling-cloud-continues-down.g3_monthly-momentum-continues` (from F3, F1): The larger a coin's 26-day return, the higher its return over the next 26 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

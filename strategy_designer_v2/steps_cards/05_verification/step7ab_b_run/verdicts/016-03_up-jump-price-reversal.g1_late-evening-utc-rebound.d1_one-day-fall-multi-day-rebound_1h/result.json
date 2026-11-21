@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 72-bar excess return (vs coin mean 72-bar return) on forecast, grid 0,72,144,...",
+    "value": 0.00031306798889692435,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.9202404052544146
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing check > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus market-rise gain (timing)",
+    "value": -4.241271227177035e-05,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast > 0": 2810,
+    "grid cases in total": 5683
+  },
+  "decided_by": "The slope's t-statistic lies between -2 and 2.",
+  "reading": "The slope comes from OLS with an intercept, pooled over all grid bars that have a full 72-bar forward return in their window; the coin's mean 72-bar return is the mean of its grid returns over all windows; the position behind each day's market gain is the mean of the positions held over that day's bars; and the plan's 'fewer than 200 cases' rule is reported as not observable, as the instructions require."
+}

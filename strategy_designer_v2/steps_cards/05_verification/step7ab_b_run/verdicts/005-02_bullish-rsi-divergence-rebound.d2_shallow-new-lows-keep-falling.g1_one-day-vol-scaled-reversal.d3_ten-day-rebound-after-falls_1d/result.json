@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of excess 10-bar return regressed on forecast, over positive-forecast grid cells",
+    "value": 0.0017395140751434715,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.5662603387267928
+    },
+    "threshold": "confirm if slope t >= 2 with mean excess > 0; reject if slope t <= -2; at least 100 cells"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return over the same cells above 0",
+    "value": 0.005690456144235347,
+    "passed": true
+  },
+  "counts": {
+    "cells with a positive forecast": 292
+  },
+  "decided_by": "a slope t between -2 and 2 is inconclusive.",
+  "reading": "cells are at positions 0, 10, 20, ... of each window with a full 10-bar forward return inside it; each coin's normal drift is the mean of its 10-bar returns over all such cells of all its windows; the regression pools the cells of all coins, and the main measure's value is the slope (excess return per forecast point)."
+}

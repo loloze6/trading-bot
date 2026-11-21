@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising_1d
+idea tested: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3998 USD
+---
+## Findings
+- **F1:** On daily bars, a large daily fall is followed by a rebound the next day. Daily returns were scaled by each coin's own 20-day volatility. In the bottom fifth of these scaled returns, the next day's return beats the coin's drift by +0.46 % (strength 0.095, t 4.9, 3162 non-overlapping cases), about 2.4 times the 0.19 % round trip. Over all bars, the next-day slope on the scaled return is negative (t -4.9, n 15796). These t's pool six coins on the same days, so they overstate the independent evidence.
+- **F2:** The rebound after a large fall does not last. It is +0.17 % at 3 days (t 0.6, n 1032) and -0.19 % at 5 days (t -0.5, n 600).
+- **F3:** A large daily rise is followed by further gains over the next 5 days, but not the next day.
+- **F4:** The large-rise continuation of F3 is not confined to one stretch or one coin.
+- **F5:** The large-rise continuation is strongest near the 90-day high. After a top-fifth daily rise, the next 5 days beat the drift by +1.46 % (t 2.1, n 288) when the close is in the nearest third to its 90-day high. They beat it by +1.02 % and +1.04 % in the other two thirds.
+- **F6:** Only the tested forecast's top fifth is followed by a real gain: +0.78 % over 5 days (t 1.5, n 684). Its four lower fifths are flat to slightly negative (-0.34 % to -0.09 %, all |t| < 0.9).
+- **F7:** The book earns on its longs and loses on its shorts.
+- **F8:** Daily coin returns differ by weekday: Saturday +45 bp (t 5.5) and Friday +33 bp (t 3.5), against Thursday -18 bp and Tuesday -12 bp, with about 2480 coin-days each. These are pooled across coins on shared days, the weekday is a condition rather than a graded situation, and the pattern was not checked per coin or per half. It is not used for an idea.
+
+## Ideas
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising.g1_large-up-day-keeps-rising` (from F3, F4, F6): The larger a coin's rise over its last day, measured against its own 20-day volatility of daily returns, the higher its return over the next 5 days, most of the move coming after the next day.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising.g2_breakout-day-near-highs` (from F3, F5, F6): The larger a coin's rise over its last day, measured against its 20-day volatility, and the nearer its close to its 90-day high, the higher its return over the next 5 days.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising.g3_next-day-rebound-after-falls` (from F1, F2): The larger a coin's fall over its last day, measured against its own 20-day volatility of daily returns, the higher its return over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 26-bar forward return over coin drift, on grid bars with forecast > 0",
+    "value": 0.048101456111644854,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.2971455613451373
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and slope t >= 2); reject if mean < 0 with t <= -2 or slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope t of excess return on forecast",
+    "value": 0.046588447061433176,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases": 149,
+    "active bars": 4356
+  },
+  "decided_by": "Inconclusive rule: mean excess return t between -2 and 2 and no reject condition met.",
+  "reading": "Cloud position is recomputed from each window's prices (9/26/52, displaced 26, top edge) and the slope taken from the recorded raw slope component, falling back to the detector's 'trending' regime on bars where window history is too short to recompute; normal drift is each coin's mean 26-bar return over all grid bars of all its windows; the plan's minimum of 30 cases is applied as 'not observable' when not met."
+}

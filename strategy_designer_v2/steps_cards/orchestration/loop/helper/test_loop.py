@@ -92,3 +92,57 @@ def test_a_failed_components_call_is_not_a_failed_idea(tmp_path):
     loop.log_turn("x_run", {"components": "x_run | p | W | cannot build", "outcome": "failed (exit -15)"}, tmp_path)
     loop.log_turn("x_run", {"idea": "c", "outcome": "failed: step 3 wrote no plan"}, tmp_path)
     assert loop.failed("x_run", tmp_path) == {"c"}
+
+
+def test_an_idea_turned_again_after_its_row_is_unfinished_until_its_row_is_written_again(tmp_path):
+    """017-02 (intraday_1h_run, 2026-11-19): refused at step 3 (a row), unblocked by the components step, turned again,
+    cut before its backtest: unfinished, though it has a row. A row without its end time (written before) counts as
+    finished, as before."""
+    d = tmp_path / "run_idea" / "x_run"
+    d.mkdir(parents=True)
+    log = tmp_path / "loop" / "x_run"
+    log.mkdir(parents=True)
+    turns = [{"at": "2026-11-19T00:10:00Z", "turn": 1, "idea": "a"}, {"at": "2026-11-19T00:20:00Z", "turn": 2, "idea": "b"},
+             {"at": "2026-11-19T08:50:00Z", "turn": 3, "idea": "a"}]
+    (log / "loop.jsonl").write_text("".join(json.dumps(x) + "\n" for x in turns))
+    rows = [{"idea": "a", "finished_at": "2026-11-19T00:13:00Z"}, {"idea": "b"}]
+    (d / "table.json").write_text(json.dumps(rows))
+    assert loop.unfinished("x_run", tmp_path) == ["a"]
+    rows[0]["finished_at"] = "2026-11-19T09:30:00Z"                   # run_idea finished it: its row written again
+    (d / "table.json").write_text(json.dumps(rows))
+    assert loop.unfinished("x_run", tmp_path) == []
+
+
+
+def test_a_retry_line_makes_a_failed_idea_a_candidate_again(tmp_path):
+    loop.log_turn("x_run", {"idea": "c", "outcome": "failed: model call failed"}, tmp_path)
+    assert loop.failed("x_run", tmp_path) == {"c"}
+    loop.log_turn("x_run", {"idea": "c", "outcome": "retry: its failure was the model service's, not the idea's"}, tmp_path)
+    assert loop.failed("x_run", tmp_path) == set()
+
+
+def test_a_refused_call_stops_the_loop_and_marks_nothing_failed(tmp_path):
+    (tmp_path / "run_idea" / "x_run").mkdir(parents=True)
+    (tmp_path / "run_idea" / "x_run" / "table.json").write_text("[]")
+    assert not loop.refused("x_run", "a", 1, ["a bug"], tmp_path)
+    assert loop.refused("x_run", "a", loop.SERVICE_REFUSED, ["model call refused by the service: limit"], tmp_path)
+    t = loop.turns("x_run", tmp_path)
+    assert t[-1]["stop"].startswith(loop.REFUSED) and loop.failed("x_run", tmp_path) == set()
+
+
+def test_a_resumed_idea_does_not_run_past_the_budget(tmp_path, monkeypatch):
+    # night 3: ideas re-admitted by retry lines counted as unfinished and ran before the budget check (58 of 35 USD)
+    monkeypatch.setattr(loop, "ORCH", tmp_path)
+    run = "x_run"
+    (tmp_path / "run_idea" / run).mkdir(parents=True)
+    (tmp_path / "run_idea" / run / "table.json").write_text(json.dumps([{"idea": "done", "cost": 40.0}]))
+    monkeypatch.setattr(loop, "table_rows", lambda r, root=tmp_path: json.loads((tmp_path / "run_idea" / run / "table.json").read_text()))
+    monkeypatch.setattr(loop, "spent", lambda r, root=tmp_path: 40.0)
+    monkeypatch.setattr(loop, "unfinished", lambda r, root=tmp_path: ["a"])
+    monkeypatch.setattr(loop.select_next, "written_in", lambda r: [tmp_path / "a.md"])
+    called = []
+    monkeypatch.setattr(loop, "call_run_idea", lambda *a, **k: called.append(a) or (0, [""]))
+    monkeypatch.setattr(loop, "log_turn", lambda r, e, root=tmp_path: None)
+    monkeypatch.setattr(sys, "argv", ["loop.py", "--run", run, "--python", "py", "--budget", "35"])
+    loop.main()
+    assert called == []                                              # stopped on the budget before the resumed idea

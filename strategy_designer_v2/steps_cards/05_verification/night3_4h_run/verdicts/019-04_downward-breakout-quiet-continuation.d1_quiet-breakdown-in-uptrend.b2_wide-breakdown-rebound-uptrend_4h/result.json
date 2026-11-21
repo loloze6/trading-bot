@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar excess return over coin drift of long bets",
+    "value": 0.0023625228056942276,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.967835063496517
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast width, excess return) > 0",
+    "value": 0.07796641819712825,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 1182
+  },
+  "decided_by": "The t of the mean excess return lies between -2 and 2.",
+  "reading": "The situation is recomputed from prices as close below the minimum low of the 12 prior bars and close/close 180 bars earlier minus 1 above 0, inside each window, leaving out active bars without 180 bars of in-window history; a case is the first long bet (forecast rise of at least 2 points from its lowest level since the last bet, from 0 after a flat) in each 18-bar grid cell of each window, with cases pooled over all coins and each coin's drift the mean of its non-overlapping 18-bar grid returns over all its windows; fewer than 30 cases is reported as not observable."
+}

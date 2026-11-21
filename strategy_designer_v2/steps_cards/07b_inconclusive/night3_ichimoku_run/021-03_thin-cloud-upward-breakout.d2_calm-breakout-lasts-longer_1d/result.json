@@ -1,0 +1,34 @@
+{
+  "line": "7.b",
+  "backtest": "021-03_thin-cloud-upward-breakout.d2_calm-breakout-lasts-longer_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3792255,
+  "findings": {
+    "F1": "The rise after an upward cloud cross comes from a few large cases, not from a typical one. Over 151 cross bars with 40 days left, the mean drift-adjusted 40-day return is +8.7 % (t 1.81), but the median is \u22122.1 % and only 48 % end above the drift. The 5 largest cases make up 141 % of the summed standardised return, and without them the mean is \u22120.066 of a usual move. This is why step 5's weighted mean only just reaches t 2.04.",
+    "F2": "The grading the idea states, calmer crosses rising more, does appear in the plain 20-day volatility, but the test's forecast does not carry it. The Spearman correlation of the 20-day volatility at the cross with the 40-day drift-adjusted return is \u22120.27 (p 0.005, 151 cases), while that of the forecast is only +0.04 to +0.13 (p 0.63). The forecast compares today's volatility with its own 365-day mean, which is why step 5's calm-minus-violent split came out at \u22120.169, on the wrong side.",
+    "F3": "Within each coin, the gradient runs the predicted way but is too weak to show clearly. Ranked within each coin, the calm, middle and violent thirds of crosses end at +0.39, +0.24 and \u22120.14 of a usual 40-day move, with 56 %, 50 % and 29 % of cases above the drift. Calm minus violent is +0.21, but its Welch t is only 0.82 (53 against 53 cases). The pattern is also not shared by every coin: it holds in BTC, ETH, LTC and XRP, while XMR and ZEC run the other way.",
+    "F4": "The effect is strongest at a shorter horizon than the plan's 40 days. The mean drift-adjusted return after the cross is +1.9 % over 10 days (t 1.51, 190 cases), +5.8 % over 20 days (t 2.32, 181 cases), +8.7 % over 40 days (t 1.81, 151 cases) and +7.6 % over 60 days (t 0.82, 103 cases). Its t peaks at 20 days.",
+    "F5": "The effect is uneven across years, which explains the book's weak Calmar (0.62 against 0.75). All 6 cases in 2018 fell (mean \u22120.39, t \u22123.96), and 2022 averaged \u22120.04 with 35 % of cases up, against 2020 at +0.22 (t 3.38, 70 % up). Trading costs are not the problem: the unusual move per case is 57 times the 0.19 % round-trip cost."
+  },
+  "ideas": [
+    {
+      "idea": "After a daily close that crosses up from below a coin's Ichimoku cloud to above it, the coin rises over the next 20 days, and the lower its 20-day realised volatility at the cross, the larger the rise.",
+      "consequence": "A trader would favour calm upward cloud breakouts held for about three weeks, rather than violent ones or a longer hold whose gain fades.",
+      "name": "calm cloud breakout, 20 days",
+      "from": "F2, F3, F4, F1",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-03_thin-cloud-upward-breakout.d2_calm-breakout-lasts-longer.b1_calm-cloud-breakout-20-days"
+  ],
+  "no_ideas": null
+}

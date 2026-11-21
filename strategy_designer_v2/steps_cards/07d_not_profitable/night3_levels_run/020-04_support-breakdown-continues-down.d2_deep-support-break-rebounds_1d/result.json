@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "020-04_support-breakdown-continues-down.d2_deep-support-break-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3633896,
+  "findings": {
+    "F1": "The book loses where it spends most of its time: it is long on 74 % of bars, and on the 2366 grid cases where the close sits under a past swing low at all, the following 5-day unusual move is -0.32 % (t -1.51; total +0.27 %, barely above the 0.19 % cost). On the 1053 cases with no support broken it is +0.71 % (t 1.83; total +1.30 %). Yet the book holds a mean allocation of 0.48 in the first state and 0.05 in the second, so it is long when the coin does worse than usual and flat when it does better. This is why it trails holding: 0.038 % against 0.119 % per day, and a Sharpe 0.15 below holding's.",
+    "F2": "The rebound exists only at the most extreme breaks. Sorting the raw depth \u00d7 touches into deciles, deciles 0 to 8 all have negative unusual 5-day moves (-0.10 % to -1.18 %; decile 3 has t -2.01 on 237 cases). Only the top decile rises: +2.03 % unusual (t 2.40, 237 cases, strength 0.18) and +2.63 % total, about 13 times the 0.19 % cost of a trade.",
+    "F3": "The forecast's dead zone does not isolate that extreme. The top fifth by forecast earns only +0.43 % unusual (t 0.75, 469 cases), against +0.99 % for the top fifth by raw value, and the second forecast quintile loses -1.13 % (t -2.50). Standardising against the coin's own past 90 values blurs how deep the break is in absolute terms.",
+    "F4": "Shallow closes under a much-touched support continue down rather than turn. Raw deciles 1 to 4 have unusual 5-day moves of -0.71 % to -1.18 % (total -0.13 % to -0.58 %), which matches the brief's break-continuation side rather than the rebound side.",
+    "F5": "Inside the top-fifth raw breaks, the rebound fails after the sharpest 5-day falls. The lowest tercile of the 5-day return has an unusual move of -0.20 % (t -0.20, 151 cases), against +1.74 % (t 2.03, 150 cases) and +1.20 % (t 1.18, 151 cases) for the middle and highest terciles.",
+    "F6": "The deep-break rebound is broad. Unusual moves are positive in all 6 coins (+0.07 % to +2.14 %) and in 71 % of the 21 windows that have such cases.",
+    "F7": "The book's falls are deep against its gain. Its deepest fall is 47 % in w14, where the coins averaged -0.43 % a day, and 5 other windows fall more than 35 %. This gives a Calmar of 0.17, with the book long through broken-support declines.",
+    "F8": "When the coin is above every recent swing low, the next 5 days rise more the nearer it is to its 60-day high. Across drawdown terciles the unusual move is +0.20 % (deepest drawdown), +0.82 % and +0.95 % (nearest the high; t 1.45, 324 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes far below a price where it turned up several times in the past 90 days, it tends to rise over the next 5 days, and the deeper its close under that level and the more times the level held, the larger the rise, a rise that grows steeply only among the very deepest breaks of the most-touched levels, except when its 5-day return into the break is among its sharpest falls.",
+      "consequence": "Buy a support break only when it is extreme in absolute depth \u00d7 touches and the slide into it was not a crash; otherwise stay out instead of carrying a long through ordinary breaks.",
+      "name": "only extreme support breaks rebound",
+      "from": "F2, F3, F5, F6, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F5",
+        "F6",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin closes a little below a price where it turned up several times in the past 90 days, it tends to fall over the next 5 days, and the more times that level held, the larger the fall.",
+      "consequence": "A shallow break of a well-defended support is a reason to sell or stay out of the coin for the next few days, not to buy it.",
+      "name": "shallow support break continues down",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin closes above every price where it turned up in the past 90 days, it tends to rise over the next 5 days, and the nearer its close is to its 60-day high, the larger the rise.",
+      "consequence": "Holding a coin that has broken none of its recent supports and sits near its highs captures the drift that the support-break book leaves on the table.",
+      "name": "above all supports keeps rising",
+      "from": "F1, F8, F7",
+      "refs": [
+        "F1",
+        "F8",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-04_support-breakdown-continues-down.d2_deep-support-break-rebounds.d1_only-extreme-support-breaks-rebound",
+    "020-04_support-breakdown-continues-down.d2_deep-support-break-rebounds.d2_shallow-support-break-continues-down",
+    "020-04_support-breakdown-continues-down.d2_deep-support-break-rebounds.d3_above-all-supports-keeps-rising"
+  ],
+  "no_ideas": null
+}

@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping 7-bar cases pooled across coins: 2443, coins with positive slope: 4
 - Decided by: Pooled slope t = 1.96 lies between -2 and 2 over 2443 cases.
 - Reading: Grid at positions 0, 7, 14, ... of each window keeping only points with a full 7-bar forward return inside the window, the coin's mean taken over its grid returns from all windows, OLS with intercept on all grid bars including zero forecasts, and the supporting check needs 4 positive per-coin slopes among the coins present.
+- Size: unusual move +0.04 % per case over 7 bars, 0.002 of the coin's usual move (12.44 %); normal drift in its direction +0.91 %, total +0.95 %; 2362 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d`
 Measure: `measure.py`

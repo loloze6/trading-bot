@@ -13,7 +13,12 @@ Step 7 is a set of analysis lines, each with its own objective and its own card:
 | 7.g | `../07g_patterns/` | none | what patterns the bars and the book show |
 
 ## Input (every line)
-One backtest record (its bars, its trades, its book day by day), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book.
+One backtest record (its bars, its trades, its book day by day), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book, **the idea's size and what one
+trade cost the backtest** (operator, 2026-11-20): step 5's `size.json` ("not measured" when the verdict has none), and
+the cost of a trade the backtest applied, read from its record (`../common/measures.md`, "The cost of a trade"). Why:
+of 103 confirmed ideas that did not pay, 53 had a move per case smaller than the cost of a trade, and none of those
+paid (`../runs/RETRO_DIAGNOSIS_RUN.md`); a line that does not see it proposes more ideas of the same small kind. And the
+findings register (`../common/findings.md`): what earlier runs measured, as evidence, not rules.
 
 ## Output (every line)
 One analysis per backtest: findings, then ideas, each idea in step 2's format, or "no ideas" with the reason.
@@ -85,7 +90,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 
 **Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis.
 
-**Prompts.** `helper/common_rules.md` + the workflow's measuring definitions (`../common/measures.md`) + the line's `line_prompt.md` + `helper/output_one_call.md`, with the definition of an idea (`../common/idea_definition.md`); shared files are pasted where a prompt names them (`{{NAME}}`).
+**Prompts.** `helper/common_rules.md` (with the findings register, `../common/findings.md`, pasted at `{{FINDINGS}}`) + the workflow's measuring definitions (`../common/measures.md`) + the line's `line_prompt.md` + `helper/output_one_call.md`, with the definition of an idea (`../common/idea_definition.md`); shared files are pasted where a prompt names them (`{{NAME}}`).
 
 ## Quality criteria (every line)
 - **Every finding states its numbers,** and they are in its exploration results.
@@ -104,6 +109,8 @@ The workflow: a line is relevant when one of its ideas, taken through steps 3 to
 ## To observe in the tests
 - **Durations in ideas.** Settled (operator, 2026-11-15): an idea states its time in real time (its horizon, and the past period of its situation), never in bars; levels and thresholds stay out (`../common/idea_definition.md`). Before: Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`validation/reading.md`).
 - **How many looks at the data** a line takes before its ideas.
+- **Ideas after a move too small for its cost** (since 2026-11-20): do they make the move larger (a longer horizon, a
+  stronger situation), and do those ideas pay when tested? First read: `../runs/STEP7_SIZE_AB_RUN.md`.
 
 ## What the lines do not do
 They do not test an idea, write a test plan, change a backtest or a rule, or decide what is done with their ideas.

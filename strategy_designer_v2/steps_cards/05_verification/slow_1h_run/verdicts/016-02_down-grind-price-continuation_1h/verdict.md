@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid bars with a negative forecast: 2762, grid bars below median forecast: 1381, grid bars above median forecast: 1381
 - Decided by: The main t is between -2 and 2 (inconclusive rule).
 - Reading: Grid bars are at positions 0, 72, 144, ... of each window and need an in-window forward return; each coin's mean 72-bar return is taken over all its grid bars in all windows; bars equal to the median forecast are left out of both groups of the supporting check; the plan's 'fewer than 300 grid bars' minimum is treated as 'not observable'.
+- Size: unusual move +0.39 % per case over 72 bars, 0.047 of the coin's usual move (8.23 %); normal drift in its direction -0.41 %, total -0.02 %; 4319 cases
 Plan: `steps_cards/03_test_plan/slow_1h_run/plans/016-02_down-grind-price-continuation_1h.md`
 Record: `steps_cards/04_backtest/slow_1h_run/backtests/016-02_down-grind-price-continuation_1h`
 Measure: `measure.py`

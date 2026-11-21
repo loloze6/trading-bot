@@ -1,0 +1,111 @@
+{
+  "run_id": "20261120T073730Z_a35a1017",
+  "created_utc": "2026-11-20T07:37:30.183687+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "hour",
+          "class": "strategies.strategy_components.HourOfDayComponent",
+          "params": {}
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "hour",
+                "op": "between",
+                "low": 15.5,
+                "high": 17.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "trend3d",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 72
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 73,
+                    "min_periods": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "unknown": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 2
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "a35a1017537e975a26a8760bd852d1dc8fba47d37e0a2107804d72eac81d7391",
+  "data": {
+    "symbols": [
+      "XRPUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2018-09-02 00:00:00",
+    "end": "2019-04-30 23:00:00",
+    "bar_count": 5782,
+    "data_sha256": "661cc861f0d2ae9a844de916aa1694ab8612b38f08de514205448c1fd531bceb"
+  },
+  "git_sha": "be6904d9c921b0acdf1b04645d33459654a8419c-dirty",
+  "engine": {
+    "lookback": 74,
+    "warmup": 74
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent sampled cases: 5683
 - Decided by: t >= 2 but the timing part of the book is at or below 0 (or not measurable).
 - Reading: situation = non-zero 72-bar move (raw component value, prices as fallback) on the long side; the coin's mean 72-bar return is the mean of its sampled forward returns over all windows; the position behind each day's market gain is the mean hourly allocation held over that day, and the coin's mean daily return comes from its day-end closes over all windows.
+- Size: unusual move -0.11 % per case over 72 bars, -0.012 of the coin's usual move (8.23 %); normal drift in its direction +0.41 %, total +0.30 %; 5530 cases
 Plan: `steps_cards/03_test_plan/slow_1h_run/plans/016-01_up-grind-price-continuation.g1_big-moves-precede-rises_1h.md`
 Record: `steps_cards/04_backtest/slow_1h_run/backtests/016-01_up-grind-price-continuation.g1_big-moves-precede-rises_1h`
 Measure: `measure.py`

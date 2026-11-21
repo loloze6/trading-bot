@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend_4h
+idea tested: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4077 USD
+---
+## Findings
+- **F1:** The two failed measures come from the weak cases, not from costs. Cases from the narrowest fifth of broken stretches (width 1.0 to 1.9 average 4h ranges) end 18 bars later at -0.86 % against the drift, with a total move of -0.47 % (t -1.46, 125 cases). Cases from the widest fifth (3.7 to 13.5 ranges) end at +2.77 % (t 2.95, 125 cases), a total move of +3.19 %, about 17 times the 0.19 % round trip. The middle three fifths sit between -0.49 % and +0.95 %, so 3 of 5 fifths do not clear the cost on their unusual move.
+- **F2:** A rise of the coin's recent volatility grades the rebound as strongly as width does. Cases where the 7-day volatility is highest against the 30-day volatility (ratio 1.21 to 1.91) end at +2.73 % against the drift (t 3.02, 124 cases); the four lower fifths end between -0.50 % and +0.17 %. At bar level, the position earns 0.067 % per held bar in that top fifth and about 0.000 % in the two lowest fifths, where the book still holds 17 to 26 % allocation.
+- **F3:** Width and the volatility rise together carry the effect. Wide stretches with a high volatility ratio end at +2.91 % (t 3.26, 130 cases). Wide stretches with a low volatility ratio end at -3.07 % (t -2.45, 20 cases), and every narrow-stretch cell is negative (-0.60 % to -0.77 %). Across cases, the Spearman correlation with the excess return is 0.143 for raw width and 0.134 for the volatility ratio, against 0.078 for the book's forecast, which re-standardises width against its own past 180 values.
+- **F4:** The size of the 30-day rise also grades the rebound. Excess return rises steadily across the fifths of the 30-day return, from -1.08 % (just above zero) to +1.74 % (30-day return above +31 %, t 1.98). Narrow stretches in a barely rising month lose -2.04 % (t -2.45, 87 cases), the worst cell of the width-by-30-day table.
+- **F5:** The deep falls behind the 0.47 Calmar sit in the early windows. Windows w3 to w10 have the deepest falls (-16 % to -19 %) and mostly negative book means. Their cases lose: w1 to w3 -1.2 % to -2.7 %, w9 -2.4 %. By year, 2018 cases lose -1.30 % and 2022 cases -1.99 %. From w12 on, no fall is deeper than -10 %.
+- **F6:** The book's trades are not eaten by fees. There are 2683 trades, with a mean of +1.18 % gross and +1.08 % net and a 67 % hit rate, and they last a median 72 hours. The low mean daily return (0.025 % against 0.05 %) comes from small allocations and from taking the many weak cases, not from cost.
+
+## Ideas
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.d1_wide-volatile-breakdown-rebound` (from F1, F2, F3, F6): When a four-hour bar closes below the lowest low of a coin's preceding two-day stretch while the coin's 30-day return is positive, the coin rises over the next three days. The wider that stretch was compared with the coin's 30-day average four-hour range, and the higher the coin's 7-day volatility against its 30-day volatility, the larger the rise.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.d2_breakdown-rebound-strong-uptrend` (from F1, F4, F5): When a four-hour bar closes below the lowest low of a coin's preceding two-day stretch while the coin's 30-day return is positive, the coin rises over the next three days. The wider that stretch was compared with the coin's 30-day average four-hour range, and the larger the coin's 30-day rise, the larger the rise.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.d3_volatility-pickup-in-uptrend` (from F2, F3): When a coin's 7-day volatility rises above its 30-day volatility after its 30-day return was positive, the coin rises over the next three days, and more so the higher that volatility ratio.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

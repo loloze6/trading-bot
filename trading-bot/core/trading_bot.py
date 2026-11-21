@@ -9,6 +9,7 @@ import copy
 import datetime
 import logging
 import math
+from core.holding_period import HoldingPeriod
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
@@ -204,6 +205,9 @@ class TradingBot:
         # (0.0 = flat, the start). The min_allocation_change band judges the
         # signal's move away from it. Never read or written without a block.
         self._held_signal_allocation: Dict[str, float] = {}
+        # 2026-11-20 (the operator's option 2; topics/30, 34): strategies.min_holding_bars. All of its logic and state is
+        # in core/holding_period.py; created at the first bar, None without the key (nothing below changes).
+        self._holding = None
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -426,7 +430,9 @@ class TradingBot:
                 self.strategy.update(data)
                 return
 
-            self.logger.debug(f"🕯 CANDLE │ {symbol} │ {data_time} │ Close: ${close:.2f} ")
+            debug_on = self.logger.isEnabledFor(logging.DEBUG)   # topic 33: per-bar messages formatted only when kept
+            if debug_on:
+                self.logger.debug(f"🕯 CANDLE │ {symbol} │ {data_time} │ Close: ${close:.2f} ")
 
             # Retrieve portfolio information
             balances = self.portfolio_info.get_account_balance()
@@ -444,7 +450,8 @@ class TradingBot:
                     self.portfolio_info.apply_funding(symbol, close, f_bar)
 
             total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(balances, close)
-            self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
+            if debug_on:
+                self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
 
             # 2026-08-29 (fix/risk-layer, PR-2): fold this bar's decision-time equity
             # into the stateful controls (drawdown peak, Paris-day loss anchor) BEFORE
@@ -506,6 +513,22 @@ class TradingBot:
                     f"controls and gap tiers still apply)"
                 )
                 target_allocation = previous_allocation
+
+            # 2026-11-20 (the operator's option 2; topics/30, 34): strategies.min_holding_bars, the idea's horizon in
+            # bars. Each bet (a rise of the forecast of at least the band) is held for that many bars: see
+            # core/holding_period.py, where all of the rule is. The risk gate and the gap tiers below still override it
+            # (a forced flat is never held). Absent (None): nothing below changes.
+            min_holding = getattr(self.strategy, "min_holding_bars", None)
+            if isinstance(min_holding, bool) or not isinstance(min_holding, int):
+                min_holding = None              # absent (or not an integer: a test double); validate_config's V20
+            if min_holding is not None:
+                if self._holding is None:
+                    controls = getattr(self.risk_manager, "controls", None)
+                    band = ((controls.get("min_allocation_change") or {}).get("threshold", 0.0)
+                            if isinstance(controls, dict) else 0.0)   # the band that decides a trade decides a bet
+                    self._holding = HoldingPeriod(min_holding, band)
+                target_allocation = self._holding.apply(
+                    symbol, None if nan_forecast_bar else signal.forecast, target_allocation, previous_allocation)
 
             # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
@@ -640,8 +663,9 @@ class TradingBot:
                         self.logger.error(f"   ✗ REBALANCE execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 
                 else:
-                    self.logger.debug(f"   X🔄X No rebalance performed (rejected) │ Actual allocation: {previous_allocation:+.4f} | Δ (rejected): {allocation_change:+.4f}")
-                
+                    if debug_on:
+                        self.logger.debug(f"   X🔄X No rebalance performed (rejected) │ Actual allocation: {previous_allocation:+.4f} | Δ (rejected): {allocation_change:+.4f}")
+
             # Retrieve portfolio information after rebalance 
             postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
             postRebalance_total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(postRebalance_balances, close) if success_execute_portfolio_rebalance else total_portfolio_value

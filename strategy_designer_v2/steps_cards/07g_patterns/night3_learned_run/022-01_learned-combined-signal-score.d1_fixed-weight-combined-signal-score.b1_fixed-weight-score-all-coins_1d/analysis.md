@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins_1d
+idea tested: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4721 USD
+---
+## Findings
+- **F1:** The 1-day move's effect on the next 5 days changes direction with the coin's volatility level. In the coin's calmest third of 30-day volatility, the negated 1-day component ranks against the 5-day excess return with a t of -5.1, so a rise continues. In its most volatile third the t is +4.8, so a rise reverses. In the middle third it is +1.3. On the full sample the component's t is only 1.7.
+- **F2:** The split holds coin by coin. The rank correlation of the 1-day return with the next 5-day excess return is positive in the calm third for 15 of 19 coins (up to +0.25 on AVAX, +0.24 on ADA, +0.19 on ETH). It is negative in the volatile third for 15 of 19 coins (down to -0.27 on ADA, -0.30 on TRX, -0.68 on TAO over 59 cases).
+- **F3:** The split also holds year by year. The calm-third correlation is positive in 7 of 8 years (+0.05 to +0.33, one year at -0.00). The volatile-third correlation is negative in 5 of 8 years (-0.01 to -0.24, every year from 2020 on except a flat 2024).
+- **F4:** Averaged across coins on each date, the calm continuation keeps a t of 2.69 over 315 independent 5-day dates (1-day move scaled by volatility, times the next 5-day z). At 10 days it fades to t 1.34, and over 3-day moves it is weaker (t 1.84). The graded interaction with the volatility rank has t -1.94 over 414 dates. This is suggestive but marginal after the many angles looked at.
+- **F5:** In the volatile third, the reversal shows mostly on the next day: date-clustered t of -2.34 over 2029 dates at 1 day, against -0.22 at 5 days. A 1-day move is unlikely to cover the 0.22 % round trip.
+- **F6:** The tested score is uneven across years. Its product with the 5-day excess return has t +4.18 in 2020, +2.07 in 2021 and +2.97 in 2025, but -2.48 in 2023 and is negative in 2018 to 2019. In the rising years 2020, 2021, 2023 and 2024, the book's mean daily return (0.0009, 0.0005, 0.0003, 0.0002) was far below the coins' (0.0044, 0.0054, 0.0032, 0.0028).
+- **F7:** The weekday pattern in the pooled 5-day cases (Tuesday +2.4 %, t 4.4; Sunday -1.6 %, t -2.9) disappears once cases are averaged by date (all |t| ≤ 1.5 over 72 to 76 dates). It is shared market moves, not a finding.
+- **F8:** Among the tested score's parts, only the 1-day reversal and 28-day momentum come near significance alone (rank t 1.74 and 1.30). Nearness to the 90-day high (0.64) and calm (-0.23) add almost nothing, and the score's quintiles run only from -0.52 % to +0.60 % of excess 5-day return.
+
+## Ideas
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins.g1_calm-market-day-continues` (from F1, F2, F3, F4): When a coin's 30-day volatility is low compared with its own usual level, the larger its last 1-day return in units of that volatility, the higher its return over the next 5 days, in the same direction as that day's move.
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins.g2_turbulent-market-day-reverses` (from F1, F2, F5): When a coin's 30-day volatility is high compared with its own usual level, the larger its last 1-day return in units of that volatility, the more its return over the next 1 day goes the opposite way.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

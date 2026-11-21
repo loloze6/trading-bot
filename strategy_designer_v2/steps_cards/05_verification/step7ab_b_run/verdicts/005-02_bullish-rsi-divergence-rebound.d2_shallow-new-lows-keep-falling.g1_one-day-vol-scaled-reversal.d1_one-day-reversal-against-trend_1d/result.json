@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of position held x (next-day return - coin mean daily return), forecast != 0 bars",
+    "value": 0.0017871889774726411,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.445339428228065
+    },
+    "threshold": "confirm if t >= 2 with top-minus-bottom third > 0; reject if t <= -2; else inconclusive; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom third of |forecast|, drift-adjusted directional next-day return",
+    "value": 0.0012831059496026457,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2540
+  },
+  "decided_by": "The main measure's t is 2 or more and the top-minus-bottom third difference is above 0.",
+  "reading": "Position held is postRebalance_current_allocation; the directional return for the thirds is sign(forecast) x drift-adjusted next-day return; thirds are equal-count splits of cases ranked by |forecast| (ties by order); the pool of fewer than 100 cases is treated as the plan's minimum count; the 50-day side is recomputed within a window where 50 bars exist, otherwise read from the recorded regime."
+}

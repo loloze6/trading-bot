@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar forward return minus normal drift on post_pipeline_value",
+    "value": 0.0007324014000209165,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.4366265183622824
+    },
+    "threshold": "t >= 2 over at least 300 cases confirms (with timing gain > 0); t <= -2 over at least 300 cases rejects"
+  },
+  "supporting_check": {
+    "name": "timing gain before costs (mean daily book return minus position x coin mean daily return)",
+    "value": 0.0003892040549642639,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 3419
+  },
+  "decided_by": "The slope's t is 2 or more over at least 300 cases and the timing gain before costs is above 0.",
+  "reading": "Slope is an OLS with intercept on grid bars 0,5,10,... of each window (pooled), normal drift is each coin's mean grid 5-bar return over all its windows, and the timing gain uses each bar as a day, the book's daily return being the mean over coins of position x next-bar return."
+}

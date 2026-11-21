@@ -1,0 +1,3 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d: not profitable enough [Sharpe 0.09818; Sharpe minus holding's Sharpe 0.7201; Calmar -0.05209]
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d: not profitable enough [Sharpe 0.005226; Sharpe minus holding's Sharpe 0.6271; Calmar -0.2185]
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h: not checked: the record holds no window that ran

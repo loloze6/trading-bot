@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean of forecast/10 x excess 24-bar return on the 24-bar grid",
+    "value": 0.002262735749211498,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.889021533278374
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 1,000 independent cases"
+  },
+  "supporting_check": {
+    "name": "top-fifth minus bottom-fifth |forecast| mean of sign(forecast) x excess 24-bar return",
+    "value": 0.005090815163177793,
+    "passed": true,
+    "welch_t": 3.9625027719714447
+  },
+  "counts": {
+    "independent cases": 17246,
+    "top fifth cases": 3452,
+    "bottom fifth cases": 3447
+  },
+  "decided_by": "Pooled mean positive with t >= 2 over at least 1,000 cases, and the top-fifth minus bottom-fifth Welch t is >= 2.",
+  "reading": "The coin's mean 24-bar return is the mean of its grid returns over all windows; the top and bottom fifths are the rank-based top and bottom 20% of grid bars by |forecast| within each coin, pooled across coins; the supporting check passes when that difference is positive with Welch t >= 2; too few cases are reported as not observable."
+}

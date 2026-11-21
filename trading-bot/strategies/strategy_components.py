@@ -1939,6 +1939,32 @@ class DistanceFromHighComponent(SubStrategyComponent):
         return self.period + self.exclude_current
 
 
+
+def trailing_return_stds(owner, r, vol_period: int, count: int) -> list:
+    """The std (ddof 1) of each of the last `count` windows of `vol_period` returns, newest first:
+
+        stds[k] = np.std(r[m - k - vol_period : m - k], ddof=1),  k = 0 .. count - 1,  m = len(r)
+
+    Topic 33 (2026-11-20; measured: 82 % of a book whose components average 720 such stds, recomputed on every
+    bar). The values of the previous call are reused when this call's returns are the previous call's shifted by one
+    (the same values, compared byte for byte): stds[k] for k >= 1 is then the previous stds[k - 1], np.std on the same
+    returns. Only stds[0] is computed. Otherwise all are computed. The list is the one the loop gives, value for value.
+    `owner` (the component) keeps the previous call's returns and stds.
+
+    WHY THIS CANNOT LEAK: it reads only `r`, which the caller builds from closes at or before bar t; a reused std
+    was computed from the same returns.
+    """
+    m = len(r)
+    prev = getattr(owner, "_trailing_stds_memo", None)
+    if (prev is not None and prev[1] == (vol_period, count) and len(prev[0]) == m
+            and prev[0][1:].tobytes() == r[:-1].tobytes()):
+        stds = [float(np.std(r[m - vol_period:m], ddof=1))] + prev[2][:-1]
+    else:
+        stds = [float(np.std(r[m - k - vol_period:m - k], ddof=1)) for k in range(count)]
+    owner._trailing_stds_memo = (np.array(r, dtype=float, copy=True), (vol_period, count), stds)
+    return stds
+
+
 class VolatilityScaledReturnComponent(SubStrategyComponent):
     """
     A past move against the coin's usual move, on every bar:
@@ -1996,12 +2022,8 @@ class VolatilityScaledReturnComponent(SubStrategyComponent):
             return
         e = n - 1 - self.lag
         ret = c[e] / c[e - self.period] - 1.0
-        sds = []
-        for k in range(self.vol_lookback):
-            i = e - k
-            w = c[i - self.vol_period:i + 1]
-            r = w[1:] / w[:-1] - 1.0
-            sds.append(float(np.std(r, ddof=1)))
+        span = c[e - self.vol_lookback + 1 - self.vol_period:e + 1]   # the closes of the vol_lookback windows
+        sds = trailing_return_stds(self, span[1:] / span[:-1] - 1.0, self.vol_period, self.vol_lookback)
         m = float(np.mean(sds))
         if not m > 0:
             self._raw_value = 0.0
@@ -2252,33 +2274,36 @@ class RsiChangeFromPriorLowComponent(SubStrategyComponent):
 
 class RangeCompressionRatioComponent(SubStrategyComponent):
     """
-    How narrow the recent high-low band is against a longer one, on every bar:
+    How narrow a short stretch of bars is against a longer base, on every bar.
 
-        exclude_current = 0 (default): end = t      (windows end at bar t, included)
-        exclude_current = 1:           end = t - 1  (windows end at bar t-1)
-        S = max(high[end-short_period+1 .. end]) - min(low[end-short_period+1 .. end])
-        L = max(high[end-long_period+1 .. end])  - min(low[end-long_period+1 .. end])
-        form = "compression" (default): raw_value = 1 - S / L   (0.0 when L is 0)
-        form = "width":                  raw_value = S / L       (1.0 when L is 0)
+        exclude_current = 0 (default): short = bars t-short_period+1 .. t,  long = bars t-long_period+1 .. t
+        exclude_current = 1:           short = bars t-short_period .. t-1,  long = bars t-long_period .. t-1
+        exclude_current = 2:           short = bars t-short_period .. t-1,  long = bars t-long_period+1 .. t
+        S = max(high[short]) - min(low[short])
+        base = "range" (default):    B = max(high[long]) - min(low[long])
+        base = "mean_bar_range":     B = mean(high[i] - low[i] for i in long)
+        ratio = S / B
+        form = "compression" (default): raw_value = 1 - ratio   (0.0 when B == 0)
+        form = "width":                 raw_value = ratio       (1.0 when B == 0)
 
-    "width" is exactly 1 minus "compression". No config step gives 1 minus a value, so it is a setting.
-    The defaults (form "compression", exclude_current 0) give the original output, unchanged.
-    With short_period 20, long_period 100 and form "width", the output is
-    (max high - min low over the last 20 bars) / (max high - min low over the last 100 bars).
+    Range & sign: base "range": 0 to 1, never negative, no direction ("compression" near 1 when the short band is
+    very narrow, 0 when it spans the whole long range; "width" the reverse). base "mean_bar_range": "width" is 0 and
+    up, unbounded (the stretch counted in average bar ranges); "compression" is 1 minus that, up to 1, signed,
+    rising as the stretch narrows. Graded.
+    Warm-up: long_period + 1 rows when exclude_current is 1, else long_period rows (bar t included); the short
+    window needs short_period + 1 rows at most, never more than long_period since short_period < long_period.
+    exclude_current 0 and 1 and base "range" are the original outputs, unchanged. exclude_current 2 leaves bar t
+    out of the stretch only, so bar t's own move cannot widen it, while the base of average bar ranges includes it.
 
-    Range and sign: 0 to 1, never negative, no direction. The short window lies inside the long one, so S <= L.
-    Graded: the value moves continuously with the two ranges.
-    Warm-up: long_period + exclude_current rows, bar t included.
+    NaN: a NaN high or low in any row read (long window or short window) gives NaN. A missing column raises.
+    Building the component raises for short_period < 1, short_period >= long_period, exclude_current not 0, 1 or 2,
+    form other than "compression" or "width", base other than "range" or "mean_bar_range".
 
-    NaN: a NaN high or low anywhere in the long window gives NaN. A missing high or low column raises.
-    Building the component raises for a short_period below 1, a short_period at or above long_period, an
-    exclude_current other than 0 or 1, or a form other than "compression" or "width".
-
-    WHY THIS CANNOT LEAK: it reads only the high and low columns of the last long_period + exclude_current rows
-    of data, the last of which is bar t; a bar's high and low are known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of the last long_period + 1 rows at most of
+    data, the last row being bar t; no later row exists in the data it is given.
     """
 
-    def __init__(self, name="RangeCompressionRatio", weight=1.0, parameters=None):
+    def __init__(self, name="RangeCompression", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.short_period = int(self.parameters.get("short_period", 20))
         self.long_period = int(self.parameters.get("long_period", 100))
@@ -2286,17 +2311,20 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
             raise ValueError(f"RangeCompressionRatioComponent: short_period must be >= 1, got {self.short_period}")
         if self.short_period >= self.long_period:
             raise ValueError(
-                f"RangeCompressionRatioComponent: short_period must be below long_period, got "
-                f"{self.short_period} and {self.long_period}")
+                f"RangeCompressionRatioComponent: short_period must be < long_period, "
+                f"got {self.short_period} and {self.long_period}")
         ex = self.parameters.get("exclude_current", 0)
-        if ex not in (0, 1):
-            raise ValueError(f"RangeCompressionRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
+        if ex not in (0, 1, 2):
+            raise ValueError(f"RangeCompressionRatioComponent: exclude_current must be 0, 1 or 2, got {ex!r}")
         self.exclude_current = int(ex)
-        form = self.parameters.get("form", "compression")
-        if form not in ("compression", "width"):
+        self.form = self.parameters.get("form", "compression")
+        if self.form not in ("compression", "width"):
             raise ValueError(
-                f"RangeCompressionRatioComponent: form must be 'compression' or 'width', got {form!r}")
-        self.form = form
+                f"RangeCompressionRatioComponent: form must be 'compression' or 'width', got {self.form!r}")
+        self.base = self.parameters.get("base", "range")
+        if self.base not in ("range", "mean_bar_range"):
+            raise ValueError(
+                f"RangeCompressionRatioComponent: base must be 'range' or 'mean_bar_range', got {self.base!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2305,35 +2333,42 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        high = data['high'].astype(float).to_numpy()
-        low = data['low'].astype(float).to_numpy()
-        end = len(high) - self.exclude_current
-        lh = high[end - self.long_period:end]
-        ll = low[end - self.long_period:end]
-        sh = high[end - self.short_period:end]
-        sl = low[end - self.short_period:end]
-        if np.isnan(lh).any() or np.isnan(ll).any():
-            self._raw_value = float("nan")
-            self.debug_info = {'short_range': float("nan"), 'long_range': float("nan")}
+        high = data['high'].astype(float)
+        low = data['low'].astype(float)
+        sp = self.short_period
+        lp = self.long_period
+        if self.exclude_current == 1:
+            lh, ll = high.iloc[-(lp + 1):-1], low.iloc[-(lp + 1):-1]
+            sh, sl = high.iloc[-(sp + 1):-1], low.iloc[-(sp + 1):-1]
+        elif self.exclude_current == 2:
+            lh, ll = high.iloc[-lp:], low.iloc[-lp:]
+            sh, sl = high.iloc[-(sp + 1):-1], low.iloc[-(sp + 1):-1]
         else:
-            long_range = float(lh.max() - ll.min())
-            short_range = float(sh.max() - sl.min())
-            if not long_range > 0:
-                compression = 0.0
-                width = 1.0
-            else:
-                ratio = short_range / long_range
-                compression = 1.0 - ratio
-                width = ratio
-            self._raw_value = float(width if self.form == "width" else compression)
-            self.debug_info = {'short_range': short_range, 'long_range': long_range, 'form': self.form}
+            lh, ll = high.iloc[-lp:], low.iloc[-lp:]
+            sh, sl = high.iloc[-sp:], low.iloc[-sp:]
+        if lh.isna().any() or ll.isna().any() or sh.isna().any() or sl.isna().any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        s_range = float(sh.max() - sl.min())
+        if self.base == "mean_bar_range":
+            b = float((lh - ll).mean())
+        else:
+            b = float(lh.max() - ll.min())
+        if b == 0:
+            self._raw_value = 0.0 if self.form == "compression" else 1.0
+        else:
+            ratio = s_range / b
+            self._raw_value = float(1.0 - ratio) if self.form == "compression" else float(ratio)
         self.confidence = 1.0
+        self.debug_info = {'short_range': s_range, 'base': b, 'base_kind': self.base,
+                           'exclude_current': self.exclude_current}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.long_period + self.exclude_current
+        return self.long_period + (1 if self.exclude_current == 1 else 0)
 
 
 class LowerWickComponent(SubStrategyComponent):
@@ -2848,10 +2883,7 @@ class VolatilityRankedFallComponent(SubStrategyComponent):
             self._raw_value = float("nan")
             return
         r = c[1:] / c[:-1] - 1.0
-        stds = []
-        for k in range(self.lookback):
-            end = self.vol_period + k
-            stds.append(float(np.std(r[end - self.vol_period:end], ddof=1)))
+        stds = trailing_return_stds(self, r, self.vol_period, self.lookback)[::-1]   # oldest first
         s_t = stds[-1]
         if not s_t > 0:
             self._raw_value = float("nan")
@@ -3114,11 +3146,7 @@ class VolatilityRatioToAverageComponent(SubStrategyComponent):
             self.confidence = 1.0
             return
         r = c[1:] / c[:-1] - 1.0
-        m = len(r)
-        stds = []
-        for k in range(self.vol_lookback):
-            end = m - k
-            stds.append(float(np.std(r[end - self.vol_period:end], ddof=1)))
+        stds = trailing_return_stds(self, r, self.vol_period, self.vol_lookback)
         s_t = stds[0]
         avg = float(np.mean(stds))
         if np.isnan(s_t) or np.isnan(avg) or not avg > 0:
@@ -3188,12 +3216,7 @@ class RankWeightedScaledMoveComponent(SubStrategyComponent):
         r_t = float(r[-1])
         m = float(np.mean(np.abs(r[-self.abs_period:])))
         move = 0.0 if m == 0 else r_t / m
-        last = len(r) - 1
-        stds = []
-        for k in range(self.lookback):
-            end = last - k
-            w = r[end - self.vol_period + 1:end + 1]
-            stds.append(float(np.std(w, ddof=1)))
+        stds = trailing_return_stds(self, r, self.vol_period, self.lookback)
         s_t = stds[0]
         rank = float(sum(1 for s in stds if s <= s_t)) / self.lookback
         self._raw_value = float(move * (1.0 - rank))
@@ -3694,3 +3717,1689 @@ class HourOfDayComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class NarrowRangeBreakoutComponent(SubStrategyComponent):
+    """
+    A break out of a narrow stretch, scaled by how narrow the stretch is, on every bar:
+
+        stretch = bars t-period .. t-1                      (bar t excluded)
+        H = max(high over the stretch), L = min(low over the stretch), S = H - L
+        B = mean(high[i] - low[i]) over the last base_period bars, bar t included
+        side = "above" (default): brk = max(0, close[t] - H)
+        side = "below":           brk = max(0, L - close[t])
+        raw_value = brk / close[t] x 100 x B / S            (0.0 when S = 0)
+
+    Range & sign: 0 and up, unbounded above, never negative; no direction. "above" is 0 when the close is at or
+    below the prior high. "below" is 0 when the close is at or above the prior low. Both grow with the size of
+    the break and with how narrow the stretch is against the average bar range. side "above" is the original
+    output, unchanged; use `negate` on "below" for a short-side forecast.
+    Warm-up: max(base_period, period + 1) rows, bar t included.
+    NaN: a NaN high or low in the stretch or in the last base_period rows, or a NaN close[t], gives NaN. A
+    close[t] not above 0 gives NaN (never on real bars). S = 0 (period identical flat bars) gives 0.0.
+    Building the component raises for a period below 1, a base_period below 1, or a side other than "above"
+    or "below".
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close of the rows up to and including bar t (the last
+    row of data): highs and lows of the last max(base_period, period + 1) rows and the close of bar t, all known
+    at bar t's close.
+    """
+
+    def __init__(self, name="NarrowRangeBreakout", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 12))
+        if self.period < 1:
+            raise ValueError(f"NarrowRangeBreakoutComponent: period must be >= 1, got {self.period}")
+        self.base_period = int(self.parameters.get("base_period", 180))
+        if self.base_period < 1:
+            raise ValueError(f"NarrowRangeBreakoutComponent: base_period must be >= 1, got {self.base_period}")
+        side = self.parameters.get("side", "above")
+        if side not in ("above", "below"):
+            raise ValueError(f"NarrowRangeBreakoutComponent: side must be 'above' or 'below', got {side!r}")
+        self.side = side
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        close_t = float(data['close'].astype(float).to_numpy()[-1])
+        sh = high[-(self.period + 1):-1]
+        sl = low[-(self.period + 1):-1]
+        bh = high[-self.base_period:]
+        bl = low[-self.base_period:]
+        if (np.isnan(sh).any() or np.isnan(sl).any() or np.isnan(bh).any() or np.isnan(bl).any()
+                or np.isnan(close_t)):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        if not close_t > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        hi = float(np.max(sh))
+        lo = float(np.min(sl))
+        s = hi - lo
+        b = float(np.mean(bh - bl))
+        if s == 0:
+            value = 0.0
+            brk = 0.0
+        else:
+            if self.side == "below":
+                brk = max(0.0, lo - close_t)
+            else:
+                brk = max(0.0, close_t - hi)
+            value = brk / close_t * 100.0 * b / s
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': hi, 'prior_low': lo, 'stretch_range': s,
+                           'mean_bar_range': b, 'break': brk, 'side': self.side}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period, self.period + 1)
+
+
+class BreakoutInMeanRangesComponent(SubStrategyComponent):
+    """
+    The close's distance from the prior stretch's highest high, in average bar ranges, on one side of it:
+
+        H = max(high[t - period .. t - 1])                     (bar t excluded)
+        B = mean(high[i] - low[i]) for i = t - base_period + 1 .. t   (bar t included)
+        side = "above" (default): raw_value = max(0, close[t] - H) / B
+        side = "below":           raw_value = max(0, H - close[t]) / B
+        raw_value = 0.0 when B = 0
+
+    Range and sign: 0 and up, unbounded above, never negative; no direction. "above" is 0 when the close is at or
+    below the prior high and grows linearly with the size of the break. "below" is 0 when the close is at or above
+    the prior high and grows linearly as the close sits deeper below it. Units: mean bar ranges. Graded and
+    continuous in the close at H. The default "above" is the original output, unchanged.
+    Warm-up: max(base_period, period + 1) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads the `high` column of rows t-period .. t-1, the `high` and `low` columns of the
+    last base_period rows (up to and including bar t, the last row of data), and close[t]. All of these are known at
+    bar t's close.
+
+    NaN: a NaN high in the stretch, a NaN high or low in the last base_period rows, or a NaN close[t] gives NaN.
+    Building the component raises for a period below 1, a base_period below 1, or a side other than "above" or
+    "below".
+    """
+
+    def __init__(self, name="BreakoutInMeanRanges", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 12))
+        if self.period < 1:
+            raise ValueError(f"BreakoutInMeanRangesComponent: period must be >= 1, got {self.period}")
+        self.base_period = int(self.parameters.get("base_period", 180))
+        if self.base_period < 1:
+            raise ValueError(
+                f"BreakoutInMeanRangesComponent: base_period must be >= 1, got {self.base_period}")
+        side = self.parameters.get("side", "above")
+        if side not in ("above", "below"):
+            raise ValueError(f"BreakoutInMeanRangesComponent: side must be 'above' or 'below', got {side!r}")
+        self.side = side
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        close = data['close'].astype(float).to_numpy()
+        stretch = high[-(self.period + 1):-1]
+        base_h = high[-self.base_period:]
+        base_l = low[-self.base_period:]
+        c = float(close[-1])
+        if np.isnan(stretch).any() or np.isnan(base_h).any() or np.isnan(base_l).any() or np.isnan(c):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        h = float(stretch.max())
+        b = float(np.mean(base_h - base_l))
+        gap = (c - h) if self.side == "above" else (h - c)
+        if b == 0:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(max(0.0, gap) / b)
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': h, 'mean_bar_range': b, 'side': self.side}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period, self.period + 1)
+
+
+class NarrowRangeBreakoutRangeRatioComponent(SubStrategyComponent):
+    """
+    A narrow-range upward breakout, weighted by how quiet the recent bars are against the long average bar range:
+
+        H = max(high[t-period .. t-1])                  (the stretch, bar t excluded)
+        S = H - min(low[t-period .. t-1])
+        B = mean(high[i] - low[i]) over the last base_period bars, bar t included
+        L = mean(high[i] - low[i]) over the last ratio_long_period bars, bar t included
+        Q = mean(high[i] - low[i]) over the last ratio_short_period bars, bar t included
+        raw_value = max(0, close[t] - H) / close[t] x 100 x B / S x L / Q
+        raw_value = 0.0 when S = 0 or Q = 0
+
+    This equals NarrowRangeBreakoutComponent(period, base_period) x L / Q.
+    Range and sign: 0 and up, unbounded above, never negative, no direction. It is 0 when the close is at or below
+    the prior high. It grows with the size of the break, the narrowness of the stretch, and the quietness of the
+    last ratio_short_period bars against the last ratio_long_period bars.
+    Graded: continuous in the close at the prior high.
+    Warm-up: max(base_period, period + 1, ratio_long_period) rows, bar t included (360 at the defaults).
+
+    NaN: a NaN high or low in any row read, or a NaN close[t], gives NaN. A close[t] not above 0 gives NaN.
+    Building the component raises for a period, base_period or ratio_short_period below 1, and for a
+    ratio_short_period at or above ratio_long_period.
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the last
+    max(base_period, period + 1, ratio_long_period) rows of data, bar t (the last row) included. The stretch uses
+    rows t-period .. t-1. Every value it reads is known at bar t's close.
+    """
+
+    def __init__(self, name="NarrowRangeBreakoutRangeRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 12))
+        self.base_period = int(self.parameters.get("base_period", 180))
+        self.ratio_long_period = int(self.parameters.get("ratio_long_period", 360))
+        self.ratio_short_period = int(self.parameters.get("ratio_short_period", 42))
+        if self.period < 1:
+            raise ValueError(f"NarrowRangeBreakoutRangeRatioComponent: period must be >= 1, got {self.period}")
+        if self.base_period < 1:
+            raise ValueError(
+                f"NarrowRangeBreakoutRangeRatioComponent: base_period must be >= 1, got {self.base_period}")
+        if self.ratio_short_period < 1:
+            raise ValueError(
+                f"NarrowRangeBreakoutRangeRatioComponent: ratio_short_period must be >= 1, "
+                f"got {self.ratio_short_period}")
+        if self.ratio_short_period >= self.ratio_long_period:
+            raise ValueError(
+                f"NarrowRangeBreakoutRangeRatioComponent: ratio_short_period must be below ratio_long_period, "
+                f"got {self.ratio_short_period} and {self.ratio_long_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data["high"].astype(float).to_numpy()
+        low = data["low"].astype(float).to_numpy()
+        close_t = float(data["close"].astype(float).to_numpy()[-1])
+        p = self.period
+        st_h = high[-(p + 1):-1]
+        st_l = low[-(p + 1):-1]
+        rng = high - low
+        b_win = rng[-self.base_period:]
+        l_win = rng[-self.ratio_long_period:]
+        q_win = rng[-self.ratio_short_period:]
+        if (np.isnan(close_t) or np.isnan(st_h).any() or np.isnan(st_l).any()
+                or np.isnan(b_win).any() or np.isnan(l_win).any() or np.isnan(q_win).any()):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        if not close_t > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        H = float(np.max(st_h))
+        S = H - float(np.min(st_l))
+        B = float(np.mean(b_win))
+        L = float(np.mean(l_win))
+        Q = float(np.mean(q_win))
+        brk = max(0.0, close_t - H)
+        if S <= 0 or Q <= 0:
+            value = 0.0
+        else:
+            value = brk / close_t * 100.0 * B / S * L / Q
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {"prior_high": H, "stretch_range": S, "base_mean_range": B,
+                           "long_mean_range": L, "short_mean_range": Q}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period, self.period + 1, self.ratio_long_period)
+
+
+class MeanBarRangeRatioComponent(SubStrategyComponent):
+    """
+    Long-run average bar range against the recent average bar range, on every bar:
+
+        L = mean(high[i] - low[i]) for i = t - long_period + 1 .. t     (bar t included)
+        Q = mean(high[i] - low[i]) for i = t - short_period + 1 .. t    (bar t included)
+        raw_value = L / Q
+
+    Range and sign: short_period / long_period and up, unbounded above, never negative, no direction. The short
+    window lies inside the long one, so L >= Q x short_period / long_period. The value is 1 when the recent bars are
+    as wide as the long average, grows as the recent bars get quieter, and falls below 1 as they get wider. Graded:
+    continuous in the highs and lows.
+    Warm-up: long_period rows, bar t included.
+
+    NaN: a NaN high or low in the last long_period rows gives NaN. Q = 0 needs short_period zero-range bars in a
+    row (never seen on real bars) and gives NaN. A missing column raises.
+    Building the component raises for a short_period below 1 or a short_period at or above long_period.
+
+    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of the last long_period rows of data, the last
+    of which is bar t; a bar's high and low are known at that bar's close.
+    """
+
+    def __init__(self, name="MeanBarRangeRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.long_period = int(self.parameters.get("long_period", 360))
+        self.short_period = int(self.parameters.get("short_period", 42))
+        if self.short_period < 1:
+            raise ValueError(f"MeanBarRangeRatioComponent: short_period must be >= 1, got {self.short_period}")
+        if self.short_period >= self.long_period:
+            raise ValueError(
+                f"MeanBarRangeRatioComponent: short_period must be below long_period, got "
+                f"{self.short_period} >= {self.long_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).iloc[-self.long_period:].to_numpy()
+        low = data['low'].astype(float).iloc[-self.long_period:].to_numpy()
+        rng = high - low
+        if np.isnan(rng).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        long_mean = float(rng.mean())
+        short_mean = float(rng[-self.short_period:].mean())
+        if not short_mean > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(long_mean / short_mean)
+        self.confidence = 1.0
+        self.debug_info = {'long_mean_range': long_mean, 'short_mean_range': short_mean}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.long_period
+
+
+
+
+class IchimokuCloudPositionComponent(SubStrategyComponent):
+    """
+    Where the close sits against the Ichimoku cloud, on every bar.
+
+        e = t - displacement
+        M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
+        A = (M(tenkan_period) + M(kijun_period)) / 2,  B = M(senkou_period)
+        top = max(A, B),  bottom = min(A, B)
+
+        edge = "top" (default):  d = close[t] - top,  edge value = top
+        edge = "nearest":        d = close[t] - top     (edge value top)    when close[t] > top
+                                 d = close[t] - bottom  (edge value bottom) when close[t] < bottom
+                                 d = 0                  (edge value bottom) when bottom <= close[t] <= top
+
+        base = "edge" (default): raw_value = d / edge value x 100
+        base = "close":          raw_value = d / close[t] x 100
+
+    The defaults ("top", "edge") give the original output, unchanged.
+    Range: with base "edge" it is -100 and up; with base "close" it is below +100 and unbounded below.
+    Signed: positive above the cloud. With "nearest" it is negative below the cloud and 0 inside it, and it is
+    continuous at both edges. Graded.
+    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement rows, bar t included.
+
+    NaN: a NaN high or low in the windows ending at bar e, or a NaN close[t], gives NaN. A divisor that is not
+    above 0 gives NaN; this never happens on real bars.
+    Building raises for any period < 1, a displacement < 0, an edge other than "top" or "nearest", or a base
+    other than "edge" or "close".
+
+    WHY THIS CANNOT LEAK: it reads the high and low of rows up to bar e = t - displacement, and the close of
+    bar t, the last row of data. It reads no row after t.
+    """
+
+    def __init__(self, name="IchimokuCloudPosition", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.tenkan_period = int(self.parameters.get("tenkan_period", 9))
+        self.kijun_period = int(self.parameters.get("kijun_period", 26))
+        self.senkou_period = int(self.parameters.get("senkou_period", 52))
+        self.displacement = int(self.parameters.get("displacement", 26))
+        for nm, p in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+                      ("senkou_period", self.senkou_period)):
+            if p < 1:
+                raise ValueError(f"IchimokuCloudPositionComponent: {nm} must be >= 1, got {p}")
+        if self.displacement < 0:
+            raise ValueError(f"IchimokuCloudPositionComponent: displacement must be >= 0, got {self.displacement}")
+        self.edge = self.parameters.get("edge", "top")
+        if self.edge not in ("top", "nearest"):
+            raise ValueError(f"IchimokuCloudPositionComponent: edge must be 'top' or 'nearest', got {self.edge!r}")
+        self.base = self.parameters.get("base", "edge")
+        if self.base not in ("edge", "close"):
+            raise ValueError(f"IchimokuCloudPositionComponent: base must be 'edge' or 'close', got {self.base!r}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        h = data['high'].astype(float).to_numpy()
+        lo = data['low'].astype(float).to_numpy()
+        c = float(data['close'].astype(float).iloc[-1])
+        e = len(data) - 1 - self.displacement
+
+        def mid(p):
+            hw = h[e - p + 1:e + 1]
+            lw = lo[e - p + 1:e + 1]
+            if np.isnan(hw).any() or np.isnan(lw).any():
+                return float("nan")
+            return (float(hw.max()) + float(lw.min())) / 2.0
+
+        a = (mid(self.tenkan_period) + mid(self.kijun_period)) / 2.0
+        b = mid(self.senkou_period)
+        self.confidence = 1.0
+        if np.isnan(a) or np.isnan(b) or np.isnan(c):
+            self._raw_value = float("nan")
+            return
+        top = max(a, b)
+        bottom = min(a, b)
+        if self.edge == "top":
+            d, ref = c - top, top
+        elif c > top:
+            d, ref = c - top, top
+        elif c < bottom:
+            d, ref = c - bottom, bottom
+        else:
+            d, ref = 0.0, bottom
+        div = ref if self.base == "edge" else c
+        if not div > 0:
+            self._raw_value = float("nan")
+            return
+        self._raw_value = float(d / div * 100.0)
+        self.debug_info = {'span_a': a, 'span_b': b, 'top': top, 'bottom': bottom,
+                           'edge': self.edge, 'base': self.base}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement
+
+
+class IchimokuCloudSlopeComponent(SubStrategyComponent):
+    """
+    The slope of the Ichimoku cloud's mid level over `lookback` bars, on every bar:
+
+        for a bar i, e = i - displacement and
+        M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
+        A(i) = (M(tenkan_period) + M(kijun_period)) / 2,  B(i) = M(senkou_period)
+        C(i) = (A(i) + B(i)) / 2                       (the leading spans plotted at bar i)
+        S = (C(t) - C(t - lookback)) / C(t - lookback) x 100
+        form = "percent" (default):  raw_value = S
+        form = "proximity":          raw_value = 1 / (1 + D),  D = max(0, -S)
+
+    Range and sign. With "percent" the value is -100 and up, unbounded above, and signed. It is positive while the
+    cloud's mid level rises, negative while it falls. With "proximity" it runs above 1/101 up to 1 and is never
+    negative. It is 1 when the cloud is flat or rising and shrinks toward 0 as the cloud falls faster. Graded, and
+    continuous in the highs and lows. The default "percent" is the original output, unchanged.
+    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement + lookback rows, bar t included.
+
+    NaN: a NaN high or low in any window used for C(t) or C(t - lookback) gives NaN. A C(t - lookback) not above 0
+    gives NaN, which never happens on real bars.
+    Building the component raises for any period below 1, a displacement below 0, a lookback below 1, or a form
+    other than "percent" or "proximity".
+
+    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of rows up to bar t - displacement (the last
+    row of data is bar t), over windows ending at bars t - displacement and t - lookback - displacement; it never
+    reads a row after bar t.
+    """
+
+    def __init__(self, name="IchimokuCloudSlope", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.tenkan_period = int(self.parameters.get("tenkan_period", 9))
+        self.kijun_period = int(self.parameters.get("kijun_period", 26))
+        self.senkou_period = int(self.parameters.get("senkou_period", 52))
+        for label, p in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+                         ("senkou_period", self.senkou_period)):
+            if p < 1:
+                raise ValueError(f"IchimokuCloudSlopeComponent: {label} must be >= 1, got {p}")
+        self.displacement = int(self.parameters.get("displacement", 26))
+        if self.displacement < 0:
+            raise ValueError(f"IchimokuCloudSlopeComponent: displacement must be >= 0, got {self.displacement}")
+        self.lookback = int(self.parameters.get("lookback", 26))
+        if self.lookback < 1:
+            raise ValueError(f"IchimokuCloudSlopeComponent: lookback must be >= 1, got {self.lookback}")
+        self.form = self.parameters.get("form", "percent")
+        if self.form not in ("percent", "proximity"):
+            raise ValueError(
+                f"IchimokuCloudSlopeComponent: form must be 'percent' or 'proximity', got {self.form!r}")
+        self._raw_value = 0.0
+
+    @staticmethod
+    def _mid(high, low, e, p):
+        h = high[e - p + 1:e + 1]
+        l = low[e - p + 1:e + 1]
+        if np.isnan(h).any() or np.isnan(l).any():
+            return float("nan")
+        return (float(np.max(h)) + float(np.min(l))) / 2.0
+
+    def _cloud_mid(self, high, low, i):
+        e = i - self.displacement
+        m_t = self._mid(high, low, e, self.tenkan_period)
+        m_k = self._mid(high, low, e, self.kijun_period)
+        m_s = self._mid(high, low, e, self.senkou_period)
+        a = (m_t + m_k) / 2.0
+        return (a + m_s) / 2.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        t = len(high) - 1
+        c_now = self._cloud_mid(high, low, t)
+        c_then = self._cloud_mid(high, low, t - self.lookback)
+        if np.isnan(c_now) or np.isnan(c_then) or not c_then > 0:
+            self._raw_value = float("nan")
+        else:
+            s = (c_now - c_then) / c_then * 100.0
+            if self.form == "proximity":
+                d = max(0.0, -s)
+                self._raw_value = float(1.0 / (1.0 + d))
+            else:
+                self._raw_value = float(s)
+        self.confidence = 1.0
+        self.debug_info = {'cloud_mid_now': c_now, 'cloud_mid_then': c_then, 'form': self.form}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement + self.lookback
+
+
+class IchimokuCloudWidthComponent(SubStrategyComponent):
+    """
+    Thickness of the Ichimoku cloud plotted at bar t, against the current close:
+
+        e = t - displacement
+        M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
+        A = (M(tenkan_period) + M(kijun_period)) / 2          (leading span A plotted at bar t)
+        B = M(senkou_period)                                  (leading span B plotted at bar t)
+        W = abs(A - B) / close[t] x 100
+        form = "width" (default):  raw_value = W
+        form = "proximity":        raw_value = 1 / (1 + W)
+
+    "width": 0 and up, unbounded above, never negative, no direction; 0 when the spans meet.
+    "proximity": above 0, up to 1, never negative, no direction; 1 when the spans meet, growing smoothly
+    as the cloud thins against the price. The default "width" is the original output, unchanged.
+    Graded and continuous in the highs and lows.
+    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement rows, bar t included.
+
+    NaN: a NaN high or low in any span window ending at bar e, or a NaN close[t], gives NaN; a close[t]
+    not above 0 gives NaN (never on real bars). Building the component raises for any period below 1, a
+    displacement below 0, or a form other than "width" or "proximity".
+
+    WHY THIS CANNOT LEAK: the spans read only the high and low of bars up to e = t - displacement, and the
+    divisor is close[t], the last row of data; no row after bar t is read.
+    """
+
+    def __init__(self, name="IchimokuCloudWidth", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.tenkan_period = int(self.parameters.get("tenkan_period", 9))
+        self.kijun_period = int(self.parameters.get("kijun_period", 26))
+        self.senkou_period = int(self.parameters.get("senkou_period", 52))
+        self.displacement = int(self.parameters.get("displacement", 26))
+        for nm, p in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+                      ("senkou_period", self.senkou_period)):
+            if p < 1:
+                raise ValueError(f"IchimokuCloudWidthComponent: {nm} must be >= 1, got {p}")
+        if self.displacement < 0:
+            raise ValueError(
+                f"IchimokuCloudWidthComponent: displacement must be >= 0, got {self.displacement}")
+        self.form = self.parameters.get("form", "width")
+        if self.form not in ("width", "proximity"):
+            raise ValueError(
+                f"IchimokuCloudWidthComponent: form must be 'width' or 'proximity', got {self.form!r}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        close = data['close'].astype(float).to_numpy()
+        e = len(data) - 1 - self.displacement
+
+        def mid(p):
+            h = high[e - p + 1:e + 1]
+            l = low[e - p + 1:e + 1]
+            if np.isnan(h).any() or np.isnan(l).any():
+                return float("nan")
+            return (float(np.max(h)) + float(np.min(l))) / 2.0
+
+        a = (mid(self.tenkan_period) + mid(self.kijun_period)) / 2.0
+        b = mid(self.senkou_period)
+        c = float(close[-1])
+        if np.isnan(a) or np.isnan(b) or np.isnan(c) or not c > 0:
+            self._raw_value = float("nan")
+        else:
+            w = abs(a - b) / c * 100.0
+            self._raw_value = float(w) if self.form == "width" else float(1.0 / (1.0 + w))
+        self.confidence = 1.0
+        self.debug_info = {'span_a': a, 'span_b': b, 'close': c, 'form': self.form}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement
+
+
+class IchimokuCloudCrossAgeComponent(SubStrategyComponent):
+    """
+    How long the close has stayed outside the Ichimoku cloud since it crossed through it from the other side:
+
+        for each bar i: e = i - displacement
+            M(p)   = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
+            A      = (M(tenkan_period) + M(kijun_period)) / 2,  B = M(senkou_period)
+            top    = max(A, B),  bottom = min(A, B)
+            side(i) = +1 if close[i] > top, -1 if close[i] < bottom, 0 otherwise (inside or on an edge)
+        sides are read for bars i = t-window+1 .. t
+        s = side(t); n = number of consecutive bars ending at t with side s
+        q = side of the nearest bar before that run (inside the window) whose side is not 0
+        raw_value = s * min(n, max_bars)  if s != 0 and q == -s
+                    0                     otherwise (inside the cloud, re-exit on the same side,
+                                                     or no earlier outside bar in the window)
+
+    Range: integers -max_bars .. +max_bars. Positive above the cloud after a cross up from below, negative
+    below it after a cross down from above. Its size grows by one per bar spent on that side. A regime measure
+    for rules (it jumps at a cross), not a forecast source.
+    Warm-up: window + max(tenkan_period, kijun_period, senkou_period) + displacement - 1 rows (327 at the
+    defaults), bar t included.
+    NaN: a NaN high or low in any span window, or a NaN close, used for a side in the window gives NaN.
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the last
+    get_required_periods() rows of data, bar t (the last row) included. The cloud at bar i uses only bars up to
+    i - displacement, and the side of bar i uses close[i]; no row after t is read.
+    """
+
+    def __init__(self, name="IchimokuCloudCrossAge", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.tenkan_period = int(self.parameters.get("tenkan_period", 9))
+        self.kijun_period = int(self.parameters.get("kijun_period", 26))
+        self.senkou_period = int(self.parameters.get("senkou_period", 52))
+        self.displacement = int(self.parameters.get("displacement", 26))
+        self.max_bars = int(self.parameters.get("max_bars", 120))
+        self.window = int(self.parameters.get("window", 250))
+        for nm, v in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+                      ("senkou_period", self.senkou_period)):
+            if v < 1:
+                raise ValueError(f"IchimokuCloudCrossAgeComponent: {nm} must be >= 1, got {v}")
+        if self.displacement < 0:
+            raise ValueError(f"IchimokuCloudCrossAgeComponent: displacement must be >= 0, got {self.displacement}")
+        if self.max_bars < 1:
+            raise ValueError(f"IchimokuCloudCrossAgeComponent: max_bars must be >= 1, got {self.max_bars}")
+        if self.window <= self.max_bars:
+            raise ValueError(
+                f"IchimokuCloudCrossAgeComponent: window must be > max_bars, got {self.window} <= {self.max_bars}")
+        self._offset = max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement - 1
+        self._raw_value = 0.0
+
+    @staticmethod
+    def _mid(h, l, e, p):
+        hw = h[e - p + 1:e + 1]
+        lw = l[e - p + 1:e + 1]
+        if np.isnan(hw).any() or np.isnan(lw).any():
+            return float("nan")
+        return (float(hw.max()) + float(lw.min())) / 2.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        rows = self.get_required_periods()
+        h = data["high"].astype(float).to_numpy()[-rows:]
+        l = data["low"].astype(float).to_numpy()[-rows:]
+        c = data["close"].astype(float).to_numpy()[-rows:]
+        sides = []
+        for i in range(self._offset, rows):
+            e = i - self.displacement
+            a = (self._mid(h, l, e, self.tenkan_period) + self._mid(h, l, e, self.kijun_period)) / 2.0
+            b = self._mid(h, l, e, self.senkou_period)
+            ci = c[i]
+            if np.isnan(a) or np.isnan(b) or np.isnan(ci):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                self.debug_info = {"nan": True}
+                return
+            top = max(a, b)
+            bottom = min(a, b)
+            if ci > top:
+                sides.append(1)
+            elif ci < bottom:
+                sides.append(-1)
+            else:
+                sides.append(0)
+        s = sides[-1]
+        value = 0.0
+        n = 0
+        prior = 0
+        if s != 0:
+            j = len(sides) - 1
+            while j >= 0 and sides[j] == s:
+                n += 1
+                j -= 1
+            while j >= 0 and sides[j] == 0:
+                j -= 1
+            prior = sides[j] if j >= 0 else 0
+            if prior == -s:
+                value = float(s * min(n, self.max_bars))
+        self._raw_value = value
+        self.confidence = 1.0
+        self.debug_info = {"side": s, "run": n, "prior_side": prior}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.window + self._offset
+
+
+class IchimokuBelowCloudDistancePerWidthComponent(SubStrategyComponent):
+    """
+    Distance of the close below the Ichimoku cloud bottom, per (1 + cloud width), on every bar:
+
+        e = t - displacement
+        M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
+        A = (M(tenkan_period) + M(kijun_period)) / 2,  B = M(senkou_period)
+        bottom = min(A, B)
+        D = max(0, bottom - close[t]) / close[t] x 100       (distance below the bottom, percent of close)
+        W = abs(A - B) / close[t] x 100                        (cloud width, percent of close)
+        raw_value = D / (1 + W)
+
+    Range and sign: 0 and up, unbounded above, never negative. The value is 0 inside the cloud (edges included)
+    or above it, continuous at the bottom edge, and grows as the close falls further below a thinner cloud.
+    Graded, one-sided.
+    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement rows (78 at the defaults), bar t
+    included.
+    NaN: a NaN high or low in the windows ending at bar e, or a NaN close[t], gives NaN; a close[t] not above 0
+    gives NaN (never on real bars).
+
+    WHY THIS CANNOT LEAK: it reads high and low only on bars up to e = t - displacement, and the close of bar t,
+    the last row of data; every value is known at bar t's close.
+    """
+
+    def __init__(self, name="Ichimoku Below Cloud Per Width", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.tenkan_period = int(self.parameters.get("tenkan_period", 9))
+        self.kijun_period = int(self.parameters.get("kijun_period", 26))
+        self.senkou_period = int(self.parameters.get("senkou_period", 52))
+        self.displacement = int(self.parameters.get("displacement", 26))
+        for nm, p in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+                      ("senkou_period", self.senkou_period)):
+            if p < 1:
+                raise ValueError(f"IchimokuBelowCloudDistancePerWidthComponent: {nm} must be >= 1, got {p}")
+        if self.displacement < 0:
+            raise ValueError(
+                f"IchimokuBelowCloudDistancePerWidthComponent: displacement must be >= 0, got {self.displacement}")
+        self._raw_value = 0.0
+
+    def _mid(self, high, low, e, p):
+        h = high.iloc[e - p + 1:e + 1]
+        l = low.iloc[e - p + 1:e + 1]
+        if h.isna().any() or l.isna().any():
+            return float("nan")
+        return (float(h.max()) + float(l.min())) / 2.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float)
+        low = data['low'].astype(float)
+        close_t = float(data['close'].astype(float).iloc[-1])
+        n = len(data)
+        e = n - 1 - self.displacement
+        mt = self._mid(high, low, e, self.tenkan_period)
+        mk = self._mid(high, low, e, self.kijun_period)
+        ms = self._mid(high, low, e, self.senkou_period)
+        a = (mt + mk) / 2.0
+        b = ms
+        if np.isnan(a) or np.isnan(b) or np.isnan(close_t) or not close_t > 0:
+            self._raw_value = float("nan")
+        else:
+            bottom = min(a, b)
+            dist = max(0.0, bottom - close_t) / close_t * 100.0
+            width = abs(a - b) / close_t * 100.0
+            self._raw_value = float(dist / (1.0 + width))
+            self.debug_info = {'span_a': a, 'span_b': b, 'distance_below_pct': dist, 'width_pct': width}
+        self.confidence = 1.0
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement
+
+
+
+
+class SwingHighProximityComponent(SubStrategyComponent):
+    """
+    How near the close sits below the nearest swing-high level above it, on every bar:
+
+        W = rows t - period + 1 .. t                                      (bar t included)
+        swing high: a bar i of W with i - side and i + side inside W (i = t-period+1+side .. t-side)
+                    and high[i] >= high[j] for every j in i-side .. i+side, j != i
+        levels = { high[i] : i a swing high }
+        A = { L in levels : L >= close[t] }
+        A empty:     raw_value = 0.0
+        otherwise:   L = min(A), D = (L - close[t]) / L x 100,
+                     raw_value = (1 / (1 + D)) ** power
+
+    Range 0 to 1, never negative, no direction. The value is above 0 and up to 1 when a level exists at or above
+    the close, nearing 1 as the close rises to that level from below (1 when the close equals it). It is 0 when no
+    swing high in the window is at or above the close. Graded in the gap; the value jumps when the close crosses a
+    level (to the next level up, or to 0).
+    Warm-up: period rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads the `high` column of the last `period` rows of data (bar t the last row) and
+    close[t]; a swing high at bar i is confirmed with highs up to i + side <= t, so no row after t is read.
+
+    NaN: a NaN high in the window or a NaN close[t] gives NaN; a level L not above 0 gives NaN (never on real bars).
+    Building the component raises for side < 1, period < 2 x side + 1, or power not above 0.
+    """
+
+    def __init__(self, name="SwingHighProximity", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.power = float(self.parameters.get("power", 1.0))
+        if self.side < 1:
+            raise ValueError(f"SwingHighProximityComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"SwingHighProximityComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.power > 0:
+            raise ValueError(f"SwingHighProximityComponent: power must be above 0, got {self.power}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        highs = data['high'].astype(float).iloc[-self.period:].to_numpy()
+        c = float(data['close'].astype(float).iloc[-1])
+        if np.isnan(highs).any() or np.isnan(c):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = len(highs)
+        s = self.side
+        levels = []
+        for j in range(s, n - s):
+            neigh = np.concatenate([highs[j - s:j], highs[j + 1:j + s + 1]])
+            if highs[j] >= neigh.max():
+                levels.append(float(highs[j]))
+        above = [lv for lv in levels if lv >= c]
+        if not above:
+            value = 0.0
+            level = float("nan")
+        else:
+            level = min(above)
+            if not level > 0:
+                value = float("nan")
+            else:
+                d = (level - c) / level * 100.0
+                value = float((1.0 / (1.0 + d)) ** self.power)
+        self._raw_value = value
+        self.confidence = 1.0
+        self.debug_info = {'level': level, 'n_swing_highs': len(levels), 'close': c}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
+
+
+class SwingHighClusterCountComponent(SubStrategyComponent):
+    """
+    How many swing turns cluster at the nearest swing level on one side of the close.
+
+        W = the last `period` bars ending at bar t (exclude_current 0)
+            or bars t-period .. t-1 (exclude_current 1)
+        swing point: a bar i of W with `side` bars of W before it and `side` after it, such that
+            pivot "high" (default): high[i] >= each of those highs, price p[i] = high[i]
+            pivot "low":            low[i]  <  each of those lows,  price p[i] = low[i]
+        level "above" (default): L = min(p[i] for swing points with p[i] >= close[t])
+        level "below":           L = max(p[i] for swing points with p[i] <  close[t])
+        N = number of swing points with abs(p[i] - L) / L * 100 <= band   (L's own included)
+        form "count" (default): raw_value = N
+        form "proximity":       raw_value = N * (1 / (1 + D)) ** power,
+            D = (L - close[t]) / L * 100 ("above") or (close[t] - L) / L * 100 ("below")
+        raw_value = 0.0 when no swing point lies on the chosen side of close[t].
+
+    The defaults (pivot "high", exclude_current 0) give the original output, unchanged. With pivot "low",
+    exclude_current 1, period 90 and level "above", the value is the number of swing lows of bars t-90 .. t-1
+    within `band` percent of the nearest swing-low level at or above the close: the touch count of the
+    support the close sits under.
+    Range: "count" gives 0, or an integer from 1 to period - 2*side; "proximity" gives 0 to N. Never negative,
+    no direction. Graded: it grows by one with each further turn near the level.
+    Warm-up: period + exclude_current rows, bar t included.
+    NaN: a NaN high (pivot "high") or low (pivot "low") anywhere in W, or a NaN close[t], gives NaN.
+    An L not above 0 gives NaN (never on real bars).
+    Building the component raises for side < 1, period < 2*side + 1, band not above 0, an unknown form, power
+    not above 0, an unknown level, a pivot other than "high" or "low", or an exclude_current other than 0 or 1.
+
+    WHY THIS CANNOT LEAK: it reads the high or low column of the rows of W only, which are at most the last
+    period + exclude_current rows of data and end at bar t or t-1. It also reads close[t], the last row. A swing
+    point is confirmed only by bars inside W, all at or before bar t.
+    """
+
+    def __init__(self, name="SwingHighClusterCount", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        if self.side < 1:
+            raise ValueError(f"SwingHighClusterCountComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"SwingHighClusterCountComponent: period must be >= 2*side+1, got {self.period}")
+        self.band = float(self.parameters.get("band", 2.0))
+        if not self.band > 0:
+            raise ValueError(f"SwingHighClusterCountComponent: band must be > 0, got {self.band}")
+        self.form = self.parameters.get("form", "count")
+        if self.form not in ("count", "proximity"):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: form must be 'count' or 'proximity', got {self.form!r}")
+        self.power = float(self.parameters.get("power", 1.0))
+        if not self.power > 0:
+            raise ValueError(f"SwingHighClusterCountComponent: power must be > 0, got {self.power}")
+        self.level = self.parameters.get("level", "above")
+        if self.level not in ("above", "below"):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: level must be 'above' or 'below', got {self.level!r}")
+        self.pivot = self.parameters.get("pivot", "high")
+        if self.pivot not in ("high", "low"):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: pivot must be 'high' or 'low', got {self.pivot!r}")
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        col = "high" if self.pivot == "high" else "low"
+        p = data[col].astype(float).to_numpy()
+        end = len(p) - self.exclude_current
+        w = p[end - self.period:end]
+        close_t = float(data["close"].astype(float).iloc[-1])
+        if np.isnan(w).any() or np.isnan(close_t):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        s = self.side
+        prices = []
+        for j in range(s, self.period - s):
+            v = w[j]
+            nb = np.concatenate([w[j - s:j], w[j + 1:j + s + 1]])
+            if self.pivot == "high":
+                ok = bool(np.all(v >= nb))
+            else:
+                ok = bool(np.all(v < nb))
+            if ok:
+                prices.append(float(v))
+        if self.level == "above":
+            cands = [x for x in prices if x >= close_t]
+        else:
+            cands = [x for x in prices if x < close_t]
+        if not cands:
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {"swing_points": len(prices), "level": None, "count": 0}
+            return
+        L = min(cands) if self.level == "above" else max(cands)
+        if not L > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = 0
+        for x in prices:
+            if abs(x - L) / L * 100.0 <= self.band:
+                n += 1
+        if self.form == "count":
+            val = float(n)
+        else:
+            if self.level == "above":
+                d = (L - close_t) / L * 100.0
+            else:
+                d = (close_t - L) / L * 100.0
+            val = float(n * (1.0 / (1.0 + d)) ** self.power)
+        self._raw_value = val
+        self.confidence = 1.0
+        self.debug_info = {"swing_points": len(prices), "level": L, "count": n}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.exclude_current
+
+
+class SwingLowTouchNearnessComponent(SubStrategyComponent):
+    """
+    Nearness-weighted count of the swing lows close to the current close, while the close is falling:
+
+        swing low: a bar i in t-period+1+side .. t-side whose low[i] < low[j] for every j in
+                   i-side .. i-1 and i+1 .. i+side (all inside the last `period` bars, bar t included)
+        D_i = abs(close[t] - low[i]) / close[t] x 100                    (percent of the close)
+        w_i = max(0, 1 - D_i / band)                                     (1 on the level, 0 at the band's edge)
+        G   = 1 if close[t] < close[t - fall_period] else 0
+        raw_value = G x sum of w_i over the swing lows
+
+    Range: 0 up to the number of swing lows (at most period - 2 x side). It is never negative and has no
+    direction. It is 0 with no swing low within `band` percent of the close, and 0 when the close is not below
+    its value fall_period bars ago. It grows continuously with each further nearby swing low and with the
+    nearness of the close to each one.
+    Warm-up: max(period, fall_period + 1) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `low` column of the last `period` rows and the `close` of the last
+    row (bar t) and of the row fall_period rows before it. A swing low at bar i is confirmed with lows up to
+    bar i + side <= t, all known at bar t's close.
+
+    NaN: a NaN low in the window, or a NaN close[t] or close[t - fall_period], gives NaN. A close[t] not above 0
+    gives NaN (never on real bars).
+    Building the component raises for side < 1, period < 2 x side + 1, band not above 0, or fall_period < 1.
+    """
+
+    def __init__(self, name="SwingLowTouchNearness", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.band = float(self.parameters.get("band", 1.5))
+        self.fall_period = int(self.parameters.get("fall_period", 5))
+        if self.side < 1:
+            raise ValueError(f"SwingLowTouchNearnessComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"SwingLowTouchNearnessComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.band > 0:
+            raise ValueError(f"SwingLowTouchNearnessComponent: band must be above 0, got {self.band}")
+        if self.fall_period < 1:
+            raise ValueError(
+                f"SwingLowTouchNearnessComponent: fall_period must be >= 1, got {self.fall_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        lows = data['low'].astype(float).iloc[-self.period:].to_numpy()
+        closes = data['close'].astype(float)
+        c_t = float(closes.iloc[-1])
+        c_base = float(closes.iloc[-(self.fall_period + 1)])
+        if np.isnan(lows).any() or np.isnan(c_t) or np.isnan(c_base) or not c_t > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        k = self.side
+        n = len(lows)
+        total = 0.0
+        swings = 0
+        for i in range(k, n - k):
+            neighbours = np.concatenate([lows[i - k:i], lows[i + 1:i + k + 1]])
+            if np.all(lows[i] < neighbours):
+                swings += 1
+                d = abs(c_t - lows[i]) / c_t * 100.0
+                w = 1.0 - d / self.band
+                if w > 0:
+                    total += w
+        gate = 1.0 if c_t < c_base else 0.0
+        self._raw_value = float(gate * total)
+        self.confidence = 1.0
+        self.debug_info = {'swing_lows': swings, 'weighted_touches': total, 'falling': bool(gate)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.fall_period + 1)
+
+
+class ResistanceBreakTouchCountComponent(SubStrategyComponent):
+    """
+    The touch count of the resistance level the close has just broken, times the margin of the break, on every bar:
+
+        W = close[t - period + 1 .. t]                                  (bar t included)
+        swing high: bar i in t - period + 1 + side .. t - side with
+                    close[i] >= close[j] for j = i - side .. i - 1 and
+                    close[i] >  close[j] for j = i + 1 .. i + side        (all inside W)
+        L = the highest swing-high close with close[t - cross_period] <= L < close[t]
+        N = the number of swing highs i with abs(close[i] - L) / L x 100 <= band (L's own included)
+        raw_value = N x (close[t] - L) / L x 100,   0.0 when no swing high satisfies the crossing condition
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 when no level was crossed upward
+    within the last cross_period bars, and it grows with the level's touch count and with the close's percent
+    distance above it.
+    Warm-up: max(period, cross_period + 1) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, cross_period + 1) rows of data,
+    bar t (the last row) included. A swing high at bar i is confirmed by the closes of bars i+1 .. i+side, which all
+    lie at or before bar t.
+
+    NaN: a NaN close in the last max(period, cross_period + 1) rows gives NaN. An L not above 0 gives NaN (never on
+    real bars). A missing `close` column raises.
+    Building the component raises for a side below 1, a period below 2 x side + 1, a band not above 0, or a
+    cross_period below 1.
+    """
+
+    def __init__(self, name="ResistanceBreakTouchCount", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.band = float(self.parameters.get("band", 2.0))
+        self.cross_period = int(self.parameters.get("cross_period", 1))
+        if self.side < 1:
+            raise ValueError(f"ResistanceBreakTouchCountComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"ResistanceBreakTouchCountComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.band > 0:
+            raise ValueError(f"ResistanceBreakTouchCountComponent: band must be above 0, got {self.band}")
+        if self.cross_period < 1:
+            raise ValueError(
+                f"ResistanceBreakTouchCountComponent: cross_period must be >= 1, got {self.cross_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        w = c[-self.period:]
+        s = self.side
+        highs = []
+        for k in range(s, self.period - s):
+            v = w[k]
+            if np.all(v >= w[k - s:k]) and np.all(v > w[k + 1:k + s + 1]):
+                highs.append(float(v))
+        c_now = float(c[-1])
+        c_before = float(c[-1 - self.cross_period])
+        crossed = [h for h in highs if c_before <= h < c_now]
+        if not crossed:
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {'swing_highs': len(highs), 'level': None, 'touches': 0}
+            return
+        level = max(crossed)
+        if not level > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        touches = sum(1 for h in highs if abs(h - level) / level * 100.0 <= self.band)
+        self._raw_value = float(touches * (c_now - level) / level * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {'swing_highs': len(highs), 'level': level, 'touches': touches}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.cross_period + 1)
+
+
+class TouchWeightedSupportBreakDepthComponent(SubStrategyComponent):
+    """
+    How far the close sits under the most-touched support level of the prior bars, weighted by that level's
+    touch count:
+
+        W = bars t-period .. t-1                                   (bar t excluded)
+        swing low: bar i of W, i in t-period+side .. t-1-side, with low[i] < low[i-k] and low[i] < low[i+k]
+                   for k = 1 .. side (strictly lower; all those bars inside W)
+        N_j = #{swing lows i : abs(low[i] - low[j]) / low[j] x 100 <= band}   (j's own included)
+        candidates = swing lows j with low[j] >= close[t]
+        L = low[j] of the candidate with the largest N_j (a tie goes to the lowest low[j]); N = that N_j
+        raw_value = N x (L - close[t]) / L x 100, or 0.0 when there is no candidate
+
+    Range: 0 and up, never negative, below N x 100. It has no direction. It is 0 when the close is above every
+    swing low of W, and it grows with the close's percent depth under the level and with the level's touch count.
+    Graded: continuous in close[t] while the chosen level stays the same, and 0 at the level itself. It jumps where
+    the close crosses another swing low.
+    Warm-up: period + 1 rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads the `low` column of bars t-period .. t-1 and the `close` of bar t (the last row
+    of data), nothing later; a swing low is confirmed only by the side bars after it inside W, all before bar t.
+
+    NaN: a NaN low in W or a NaN close[t] gives NaN; a candidate level not above 0 gives NaN (never on real bars).
+    Building the component raises for a side below 1, a period below 2 x side + 1, or a band not above 0.
+    """
+
+    def __init__(self, name="TouchWeightedSupportBreakDepth", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.band = float(self.parameters.get("band", 2.0))
+        if self.side < 1:
+            raise ValueError(f"TouchWeightedSupportBreakDepthComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"TouchWeightedSupportBreakDepthComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.band > 0:
+            raise ValueError(f"TouchWeightedSupportBreakDepthComponent: band must be above 0, got {self.band}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.period
+        lows = data['low'].astype(float).to_numpy()[-(n + 1):-1]
+        c = float(data['close'].astype(float).iloc[-1])
+        self.confidence = 1.0
+        if np.isnan(lows).any() or np.isnan(c):
+            self._raw_value = float("nan")
+            return
+        swings = []
+        for i in range(self.side, n - self.side):
+            v = lows[i]
+            ok = True
+            for k in range(1, self.side + 1):
+                if not (v < lows[i - k] and v < lows[i + k]):
+                    ok = False
+                    break
+            if ok:
+                swings.append(float(v))
+        best_n = 0
+        best_level = None
+        for level in swings:
+            if level < c:
+                continue
+            if not level > 0:
+                self._raw_value = float("nan")
+                return
+            cnt = sum(1 for p in swings if abs(p - level) / level * 100.0 <= self.band)
+            if cnt > best_n or (cnt == best_n and best_level is not None and level < best_level):
+                best_n = cnt
+                best_level = level
+        if best_level is None:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(best_n * (best_level - c) / best_level * 100.0)
+        self.debug_info = {'level': best_level, 'touches': best_n, 'swing_lows': len(swings)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
+
+
+class VolatilityScaledDistanceFromHighComponent(SubStrategyComponent):
+    """
+    Distance of the close from its prior closing high, in usual one-bar moves:
+
+        H = max(close[t - period .. t - 1])                     (bar t excluded)
+        r[j] = close[j] / close[j-1] - 1, j = t - vol_period + 1 .. t   (bar t's return included)
+        s = std(r, ddof 1)
+        raw_value = (close[t] - H) / H / s        (0 when s = 0)
+
+    Range & sign: unbounded and signed. It is 0 when the close equals the prior high, positive when the close
+    is above it and negative below it. Its size is the distance counted in usual one-bar moves. Graded.
+    Warm-up: max(period, vol_period) + 1 rows, bar t included.
+    NaN: a NaN close in the last max(period, vol_period) + 1 rows gives NaN. An H or a return base close not
+    above 0 gives NaN (never on real bars). A flat return window (s = 0, never on real bars) gives 0.
+    Building the component raises for a period below 1 or a vol_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, vol_period) + 1 rows of data,
+    which end at bar t (the last row). H uses bars t-period .. t-1, and s uses the returns ending at bar t,
+    and every one of those closes is known at bar t's close.
+    """
+
+    def __init__(self, name="VolScaledDistFromHigh", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"VolatilityScaledDistanceFromHighComponent: period must be >= 1, got {self.period}")
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(
+                f"VolatilityScaledDistanceFromHighComponent: vol_period must be >= 2, got {self.vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        prior = c[-(self.period + 1):-1]
+        high = float(np.max(prior))
+        bases = c[-(self.vol_period + 1):-1]
+        if not high > 0 or not (bases > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = c[-self.vol_period:] / bases - 1.0
+        s = float(np.std(rets, ddof=1))
+        if s == 0:
+            value = 0.0
+        else:
+            value = (float(c[-1]) - high) / high / s
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': high, 'return_std': s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.vol_period) + 1
+
+
+
+
+class PastPredictivePowerWeightedCompositeComponent(SubStrategyComponent):
+    """
+    Four price effects, weighted by how well each predicted the realised forward return over a past window.
+
+    Signals on bar i (closes only):
+        s1(i) = close[i] / close[i - return_period] - 1                         (momentum)
+        s2(i) = -(close[i] / close[i - reversal_period] - 1)                    (reversal)
+        s3(i) = close[i] / max(close[i - high_period + 1 .. i]) - 1             (distance from high)
+        s4(i) = -std_ddof1(r[i - vol_period + 1 .. i]), r[j] = close[j]/close[j-1] - 1   (volatility level)
+    z_k(t) = (s_k(t) - mean(s_k[t-z_window+1 .. t])) / std_ddof1(same window), 0 when that std is 0.
+    Training rows: i = t - corr_lookback .. t - horizon, y(i) = close[i + horizon] / close[i] - 1.
+    w_k = Pearson corr(s_k(i), y(i)) over the training rows, 0 when either side is flat.
+    weighting "correlation" (default): sum_k w_k z_k(t) / sum_k |w_k|, 0 when sum |w_k| = 0.
+    weighting "best":   sign(w_k*) z_k*(t), k* = argmax |w_k| (first of s1..s4 on a tie); 0 when all w_k = 0.
+    weighting "single": w_k z_k(t), k the effect named by `signal`
+                        ("momentum" s1, "reversal" s2, "high" s3, "volatility" s4).
+    weighting "regression": 100 sum_k b_k x_k(t), x_k = (s_k - m_k) / sd_k with m_k, sd_k (ddof 1) over the
+                        training rows (signals with sd_k = 0 dropped), b_k the OLS slopes of y on the x_k with an
+                        intercept; 0 when every signal is dropped.
+
+    Range & sign: "correlation", "best" and "single" are signed, with abs at most max |z_k(t)| (about 19.05 at
+    z_window 365). "single" grows with the effect's strength and with |w_k|, and its sign flips when the effect
+    recently worked in reverse. "regression" is unbounded and signed.
+    Warm-up: max(z_window - 1, corr_lookback) + max(return_period, reversal_period, high_period - 1, vol_period)
+    + 1 rows (455), bar t included.
+    NaN: a NaN close, or a close not above 0, in the last warm-up rows gives NaN.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last warm-up rows of data, ending at bar t.
+    The latest forward return used is y(t - horizon) = close[t] / close[t - horizon] - 1, which is fully realised
+    at bar t's close.
+    """
+
+    _SIGNALS = ("momentum", "reversal", "high", "volatility")
+
+    def __init__(self, name="PastPredictivePowerComposite", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        p = self.parameters
+        self.return_period = int(p.get("return_period", 28))
+        self.reversal_period = int(p.get("reversal_period", 1))
+        self.high_period = int(p.get("high_period", 90))
+        self.vol_period = int(p.get("vol_period", 30))
+        self.z_window = int(p.get("z_window", 365))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.weighting = p.get("weighting", "correlation")
+        self.signal = p.get("signal", "momentum")
+        if self.return_period < 1:
+            raise ValueError(f"return_period must be >= 1, got {self.return_period}")
+        if self.reversal_period < 1:
+            raise ValueError(f"reversal_period must be >= 1, got {self.reversal_period}")
+        if self.high_period < 2:
+            raise ValueError(f"high_period must be >= 2, got {self.high_period}")
+        if self.vol_period < 2:
+            raise ValueError(f"vol_period must be >= 2, got {self.vol_period}")
+        if self.z_window < 2:
+            raise ValueError(f"z_window must be >= 2, got {self.z_window}")
+        if self.horizon < 1:
+            raise ValueError(f"horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("corr_lookback - horizon must be >= 2")
+        if self.weighting not in ("correlation", "best", "single", "regression"):
+            raise ValueError(f"unknown weighting {self.weighting!r}")
+        if self.signal not in self._SIGNALS:
+            raise ValueError(f"unknown signal {self.signal!r}")
+        if self.weighting == "regression" and self.corr_lookback - self.horizon < 5:
+            raise ValueError("regression needs corr_lookback - horizon >= 5")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        self.confidence = 1.0
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            return
+        t = n - 1
+        first = t - max(self.z_window - 1, self.corr_lookback)
+        S = np.full((4, n), np.nan)
+        for i in range(first, n):
+            S[0, i] = c[i] / c[i - self.return_period] - 1.0
+            S[1, i] = -(c[i] / c[i - self.reversal_period] - 1.0)
+            S[2, i] = c[i] / np.max(c[i - self.high_period + 1:i + 1]) - 1.0
+            r = c[i - self.vol_period + 1:i + 1] / c[i - self.vol_period:i] - 1.0
+            S[3, i] = -float(np.std(r, ddof=1))
+
+        z = np.zeros(4)
+        for k in range(4):
+            win = S[k, t - self.z_window + 1:t + 1]
+            sd = float(np.std(win, ddof=1))
+            z[k] = (S[k, t] - float(win.mean())) / sd if sd > 0 else 0.0
+
+        tr = np.arange(t - self.corr_lookback, t - self.horizon + 1)
+        y = c[tr + self.horizon] / c[tr] - 1.0
+        X = S[:, tr]
+
+        w = np.zeros(4)
+        dy = y - y.mean()
+        syy = float(np.sum(dy * dy))
+        for k in range(4):
+            dx = X[k] - X[k].mean()
+            sxx = float(np.sum(dx * dx))
+            if sxx > 0 and syy > 0:
+                w[k] = float(np.sum(dx * dy)) / np.sqrt(sxx * syy)
+
+        if self.weighting == "correlation":
+            den = float(np.sum(np.abs(w)))
+            out = float(np.sum(w * z)) / den if den > 0 else 0.0
+        elif self.weighting == "best":
+            a = np.abs(w)
+            if not (a > 0).any():
+                out = 0.0
+            else:
+                k = int(np.argmax(a))
+                out = float(np.sign(w[k]) * z[k])
+        elif self.weighting == "single":
+            k = self._SIGNALS.index(self.signal)
+            out = float(w[k] * z[k])
+        else:
+            cols, xt = [], []
+            for k in range(4):
+                m = float(X[k].mean())
+                sd = float(np.std(X[k], ddof=1))
+                if sd > 0:
+                    cols.append((X[k] - m) / sd)
+                    xt.append((S[k, t] - m) / sd)
+            if not cols:
+                out = 0.0
+            else:
+                A = np.column_stack([np.ones(len(y))] + cols)
+                coef = np.linalg.lstsq(A, y, rcond=None)[0]
+                out = 100.0 * float(np.dot(coef[1:], np.array(xt)))
+
+        self._raw_value = float(out)
+        self.debug_info = {'weights': w.tolist(), 'z': z.tolist(), 'weighting': self.weighting,
+                           'signal': self.signal}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return (max(self.z_window - 1, self.corr_lookback)
+                + max(self.return_period, self.reversal_period, self.high_period - 1, self.vol_period) + 1)
+
+
+class SignalPredictivePowerComponent(SubStrategyComponent):
+    """
+    Trailing predictive power of one signal: how well it has forecast the return that followed it.
+
+        L = corr_lookback, h = horizon
+        training rows: i = t-L .. t-h  (L - h + 1 rows)
+        y(i) = close[i+h] / close[i] - 1
+        signal = "momentum" (default): s(i) = close[i] / close[i-return_period] - 1
+        signal = "reversal":           s(i) = -(close[i] / close[i-reversal_period] - 1)
+        signal = "high":               s(i) = close[i] / max(close[i-high_period+1 .. i]) - 1
+        signal = "volatility":         s(i) = -std (ddof 1) of the vol_period returns close[j]/close[j-1]-1,
+                                              j = i-vol_period+1 .. i
+        raw_value = Pearson corr of s(i) with y(i) over the training rows; 0 when s or y is flat there
+
+    Range: -1 to +1, signed. It is positive when a high signal was followed by a higher return (the signal worked).
+    It is negative when the signal worked in reverse, and near 0 when it did not predict.
+    It is graded and continuous in the closes.
+    Warm-up: corr_lookback + D + 1 rows, bar t included. D is the chosen signal's lag: return_period,
+    reversal_period, high_period - 1 or vol_period (394 at the defaults).
+
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN.
+    Building the component raises for return_period < 1, reversal_period < 1, high_period < 2, vol_period < 2,
+    horizon < 1, corr_lookback - horizon < 2, or a signal other than "momentum", "reversal", "high" or
+    "volatility".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last corr_lookback + D + 1 rows, bar t being the
+    last row. The latest forward return y(t-h) = close[t]/close[t-h] - 1 ends at bar t, so no row after t is read.
+    """
+
+    def __init__(self, name="SignalPredictivePower", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        p = self.parameters
+        self.return_period = int(p.get("return_period", 28))
+        self.reversal_period = int(p.get("reversal_period", 1))
+        self.high_period = int(p.get("high_period", 90))
+        self.vol_period = int(p.get("vol_period", 30))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.signal = p.get("signal", "momentum")
+        if self.return_period < 1:
+            raise ValueError(f"SignalPredictivePowerComponent: return_period must be >= 1, got {self.return_period}")
+        if self.reversal_period < 1:
+            raise ValueError(
+                f"SignalPredictivePowerComponent: reversal_period must be >= 1, got {self.reversal_period}")
+        if self.high_period < 2:
+            raise ValueError(f"SignalPredictivePowerComponent: high_period must be >= 2, got {self.high_period}")
+        if self.vol_period < 2:
+            raise ValueError(f"SignalPredictivePowerComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.horizon < 1:
+            raise ValueError(f"SignalPredictivePowerComponent: horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("SignalPredictivePowerComponent: corr_lookback - horizon must be >= 2")
+        if self.signal not in ("momentum", "reversal", "high", "volatility"):
+            raise ValueError(f"SignalPredictivePowerComponent: unknown signal {self.signal!r}")
+        self._raw_value = 0.0
+
+    def _lag(self):
+        if self.signal == "momentum":
+            return self.return_period
+        if self.signal == "reversal":
+            return self.reversal_period
+        if self.signal == "high":
+            return self.high_period - 1
+        return self.vol_period
+
+    def _signal_at(self, c, pos):
+        if self.signal == "momentum":
+            return c[pos] / c[pos - self.return_period] - 1.0
+        if self.signal == "reversal":
+            return -(c[pos] / c[pos - self.reversal_period] - 1.0)
+        if self.signal == "high":
+            return c[pos] / np.max(c[pos - self.high_period + 1:pos + 1]) - 1.0
+        r = c[pos - self.vol_period + 1:pos + 1] / c[pos - self.vol_period:pos] - 1.0
+        return -float(np.std(r, ddof=1))
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        d = self._lag()
+        h = self.horizon
+        xs = []
+        ys = []
+        for k in range(self.corr_lookback - h + 1):
+            pos = d + k
+            xs.append(self._signal_at(c, pos))
+            ys.append(c[pos + h] / c[pos] - 1.0)
+        x = np.array(xs, dtype=float)
+        y = np.array(ys, dtype=float)
+        if x.max() == x.min() or y.max() == y.min():
+            corr = 0.0
+        else:
+            dx = x - x.mean()
+            dy = y - y.mean()
+            den = float(np.sqrt(np.sum(dx * dx) * np.sum(dy * dy)))
+            corr = 0.0 if not den > 0 else float(np.clip(np.sum(dx * dy) / den, -1.0, 1.0))
+        self._raw_value = float(corr)
+        self.confidence = 1.0
+        self.debug_info = {"signal": self.signal, "rows": len(xs), "signal_now": float(self._signal_at(c, n - 1))}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.corr_lookback + self._lag() + 1
+
+
+class ExcessPredictivePowerZComponent(SubStrategyComponent):
+    """
+    Excess past predictive power of nearness to the high, times that nearness's z-score:
+
+        s(i)    = close[i] / max(close[i - high_period + 1 .. i]) - 1
+        y(i)    = close[i + horizon] / close[i] - 1
+        w(u)    = Pearson corr of s(i) with y(i), i = u - corr_lookback .. u - horizon
+                  (0 when s or y is flat over those rows)
+        wbar(t) = mean of w(t - mean_window) .. w(t - 1)
+        z(t)    = (s(t) - mean(S)) / std(S, ddof 1), S = s(t - z_window + 1 .. t)  (0 when std is 0)
+        raw_value = (w(t) - wbar(t)) * z(t)
+
+    Range and sign: signed. abs(w - wbar) <= 2 and abs(z) <= (z_window - 1) / sqrt(z_window), so the value is
+    at most about 38.1 in size at the defaults. It is positive when the power is above its usual level and s is
+    above its mean. `negate` gives the counter-bet -(w - wbar) * z.
+    Warm-up: max(mean_window + corr_lookback, z_window - 1) + high_period rows, bar t included (820 at defaults).
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN.
+    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2 or
+    mean_window < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows up to and
+    including bar t. Each y(i) used by w(u), u <= t, ends at close[i + horizon] with i + horizon <= u <= t.
+    """
+
+    def __init__(self, name="ExcessPredictivePowerZ", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.high_period = int(self.parameters.get("high_period", 90))
+        self.corr_lookback = int(self.parameters.get("corr_lookback", 365))
+        self.horizon = int(self.parameters.get("horizon", 5))
+        self.z_window = int(self.parameters.get("z_window", 365))
+        self.mean_window = int(self.parameters.get("mean_window", 365))
+        if self.high_period < 2:
+            raise ValueError(f"ExcessPredictivePowerZComponent: high_period must be >= 2, got {self.high_period}")
+        if self.horizon < 1:
+            raise ValueError(f"ExcessPredictivePowerZComponent: horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("ExcessPredictivePowerZComponent: corr_lookback - horizon must be >= 2")
+        if self.z_window < 2:
+            raise ValueError(f"ExcessPredictivePowerZComponent: z_window must be >= 2, got {self.z_window}")
+        if self.mean_window < 1:
+            raise ValueError(f"ExcessPredictivePowerZComponent: mean_window must be >= 1, got {self.mean_window}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        self.confidence = 1.0
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            return
+        h, L, H, Z, M = self.high_period, self.corr_lookback, self.horizon, self.z_window, self.mean_window
+        t = n - 1
+        rmax = pd.Series(c).rolling(h).max().to_numpy()
+        s = c / rmax - 1.0
+        y = np.full(n, np.nan)
+        y[:n - H] = c[H:] / c[:n - H] - 1.0
+
+        def corr_at(u):
+            xs = s[u - L:u - H + 1]
+            ys = y[u - L:u - H + 1]
+            dx = xs - xs.mean()
+            dy = ys - ys.mean()
+            sxx = float(np.dot(dx, dx))
+            syy = float(np.dot(dy, dy))
+            if not (sxx > 0 and syy > 0):
+                return 0.0
+            return float(np.dot(dx, dy) / np.sqrt(sxx * syy))
+
+        w_now = corr_at(t)
+        w_past = [corr_at(u) for u in range(t - M, t)]
+        wbar = float(np.mean(w_past))
+        win = s[t - Z + 1:t + 1]
+        sd = float(np.std(win, ddof=1))
+        z = float((s[t] - win.mean()) / sd) if sd > 0 else 0.0
+        self._raw_value = float((w_now - wbar) * z)
+        self.debug_info = {'w': w_now, 'w_mean': wbar, 'z': z}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period

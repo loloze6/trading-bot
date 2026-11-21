@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted 10-bar fall after short cases",
+    "value": 0.017895562647328247,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.054670885073376
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and deeper-half minus shallower-half > 0; reject: mean is a rise with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "deeper-decline half minus shallower half, mean drift-adjusted fall",
+    "value": 0.030049662156407517,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1230,
+    "deeper-half cases": 425,
+    "shallower-half cases": 425
+  },
+  "decided_by": "The mean drift-adjusted fall is above 0 with t >= 2 over at least 30 cases, and the deeper-decline half falls more.",
+  "reading": "The plan's situation is computed as a fresh resistance break (raw break component > 0) on a bar whose 30-bar close-to-close return is below 0 (from the window's closes, or the recorded regime where 30 past closes are not in the window), on the short side; a case is a short bet of the forecast (a rise of at least 2 points on the short side), the first one per 10-bar grid cell from each window's first row, with the drift the mean of the coin's grid 10-bar returns over all windows; the deeper-decline half is the cases with 30-bar return below the median, the rest the shallower half; the plan's 'fewer than 30 cases' is applied as the minimum count (not observable)."
+}

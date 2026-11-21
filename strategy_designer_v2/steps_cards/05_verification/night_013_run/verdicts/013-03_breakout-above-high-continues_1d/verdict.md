@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid bars where the forecast is above 0: 10
 - Decided by: Only 10 grid bars with forecast above 0, fewer than the plan's minimum of 30 cases.
 - Reading: The coin's mean 30-bar return is the mean over all its windows' non-overlapping 30-bar grid returns (positions 0, 30, 60, ... with a full 30 bars ahead), and the plan's fewer-than-30-cases rule is reported as 'not observable' per the workflow's minimum-count rule.
+- Size: unusual move +6.93 % per case over 30 bars, 0.175 of the coin's usual move (25.51 %); normal drift in its direction +3.85 %, total +10.78 %; 52 cases
 Plan: `steps_cards/03_test_plan/night_013_run/plans/013-03_breakout-above-high-continues_1d.md`
 Record: `steps_cards/04_backtest/night_013_run/backtests/013-03_breakout-above-high-continues_1d`
 Measure: `measure.py`

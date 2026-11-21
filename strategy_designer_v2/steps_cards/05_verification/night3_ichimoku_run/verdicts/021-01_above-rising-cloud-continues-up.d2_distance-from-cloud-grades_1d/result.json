@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of pooled 26-bar forward excess return (minus coin drift) on forecast",
+    "value": 1.5217287861766684,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 1.5217287861766684
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 100 non-overlapping cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping cases": 576
+  },
+  "decided_by": "t = 1.52 lies between -2 and 2 on 576 non-overlapping cases.",
+  "reading": "Ordinary least squares with an intercept, pooled over all coins, on every grid bar with a 26-bar return inside its window (bars with forecast 0 included); drift is the coin's mean of these grid returns over all windows."
+}

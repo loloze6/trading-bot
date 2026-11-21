@@ -1,0 +1,50 @@
+{
+  "line": "7.d",
+  "backtest": "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3468842,
+  "findings": {
+    "F1": "The Calmar failure comes from the days the coin closed below its 30-day average price. On those 6,743 coin-days the book's position averaged 0.87 and its gain averaged only 0.031 % a day. On the 6,430 coin-days above that average the position averaged 0.81 and the gain averaged 0.207 % a day. These are hourly gains before costs, with the coin's state read at the first bar of each day.",
+    "F2": "Rebuilt from those daily gains before costs, the book over all days falls 81 % at its deepest and has a Calmar of 0.34. Kept only on days above the 30-day average, its deepest fall shrinks to 34 %, its yearly return rises from 27.6 % to 37.2 %, its Calmar reaches 1.11 and its Sharpe 1.13. Kept only below it, Calmar is -0.06 and Sharpe 0.13.",
+    "F3": "The recorded book's deepest fall is 66 % and lasts across many windows: inside the chain it is between 50 % and 64 % in 12 of the 24 windows. Its worst 3 % of days hold 2.9 times the book's whole net gain in losses. The falls are long declines the book stays long through, not one window's accident.",
+    "F4": "The rebound sits in the deepest falls and is not graded across the rest. On the 2,054 grid cases with a positive forecast, the 72-hour excess return by forecast quartile is -0.03 %, -0.27 %, -0.69 % (t -2.1), then +1.22 % (t 3.5) in the deepest quartile only.",
+    "F5": "Measured against the coin's own hourly volatility over the last 30 days, the 24-hour fall separates the cases more sharply. The deepest quartile is followed by +1.93 % over 72 hours (t 5.2, 514 cases); the other three quartiles give -0.27 %, +0.32 % and +0.04 %.",
+    "F6": "The deepest falls rebound most when the coin is above its 30-day average.",
+    "F7": "As tested, the idea's unusual move is +0.06 % per case, 0.3 times the 0.19 % round-trip cost. In the deepest quartile above the 30-day average, the total move is +2.83 % per case. That is about 15 times the cost, and still several times the cost once the coin's normal drift of about 0.4 % over 72 hours is removed.",
+    "F8": "The book's 30-day context matters for the forecast itself. The forecast is standardised over its last 60 hours, so it grades a fall against the last 2.5 days, not against the coin's usual volatility. This is why its middle quartiles carry no rebound (F4), while the volatility-scaled fall does (F5)."
+  },
+  "ideas": [
+    {
+      "idea": "The more a coin has fallen over its last 24 hours, the more it rises over the next 3 days, only while its price is above its average price of the last 30 days.",
+      "consequence": "A trader buys one-day falls in coins that sit above their 30-day average and refuses them below it, where the long falls that sink the book happen.",
+      "name": "dip rebound above trend",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall over its last 24 hours relative to its typical hourly moves of the last 30 days, the more it rises over the next 3 days, only while its price is above its average price of the last 30 days.",
+      "consequence": "A trader sizes the rebound bet by how unusual the one-day fall is for that coin, which concentrates the position in the cases whose move is many times a round trip.",
+      "name": "volatility-scaled dip rebound",
+      "from": "F4, F5, F6, F7, F8",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound.d1_dip-rebound-above-trend",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound.d2_volatility-scaled-dip-rebound"
+  ],
+  "no_ideas": null
+}

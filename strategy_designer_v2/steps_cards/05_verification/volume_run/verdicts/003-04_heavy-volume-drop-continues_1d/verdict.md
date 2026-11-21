@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent events: 286
 - Decided by: t lies between -2 and +2 over at least 30 events.
 - Reading: A signal is kept when at least 5 bars after the previous kept one in its window (so 5-bar returns do not overlap) and only if close[t+5] exists in the window; the coin's mean is over non-overlapping 5-bar returns on positions 0,5,10,... of all its windows; the median split puts the floor(n/2) most negative forecasts (stable sort) in the more-negative half.
+- Size: unusual move +0.80 % per case over 5 bars, 0.066 of the coin's usual move (10.60 %); normal drift in its direction -0.58 %, total +0.22 %; 294 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/003-04_heavy-volume-drop-continues_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/003-04_heavy-volume-drop-continues_1d`
 Measure: `measure.py`

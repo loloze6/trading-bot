@@ -103,13 +103,13 @@ def test_one_call_per_coin_and_fallback_for_a_coin_whose_call_fails(monkeypatch,
     assert [w for c, w in calls if c == "ETHUSD"] == [["W1", "W2", "W3"], ["W1"], ["W2"], ["W3"]]
 
     rec = out_root / "001-01_some-idea_1d"
-    # BTC: one call; window files per window, the call's files in the coin's folder
+    # BTC: one call; window files per window, the call's files in the call's folder
     for k in (1, 2, 3):
         assert (rec / "BTCUSD" / f"w{k}" / "bars.csv.gz").exists()
         assert (rec / "BTCUSD" / f"w{k}" / "metrics.json").exists()
         assert not (rec / "BTCUSD" / f"w{k}" / "engine_log.txt").exists()
-    assert (rec / "BTCUSD" / "engine_log.txt").read_text() == "log of BTCUSD ['W1', 'W2', 'W3']"
-    assert (rec / "BTCUSD" / "protocol_summary.json.gz").exists()
+    assert (rec / "BTCUSD" / "fold_A" / "engine_log.txt").read_text() == "log of BTCUSD ['W1', 'W2', 'W3']"
+    assert (rec / "BTCUSD" / "fold_A" / "protocol_summary.json.gz").exists()
     # ETH: one call per window, as before 2026-11-16; nothing left from the failed coin call
     assert sorted(p.name for p in (rec / "ETHUSD").iterdir()) == ["w1", "w3"]
     assert (rec / "ETHUSD" / "w1" / "engine_log.txt").read_text() == "log of ETHUSD ['W1']"
@@ -141,6 +141,25 @@ def test_fallback_when_two_windows_share_a_run_folder(monkeypatch, plan, tmp_pat
 
 
 # --- the coins at the same time ------------------------------------------------------------------------------------
+
+def test_one_call_per_coin_and_fold_windows_numbered_in_the_folds_order(monkeypatch, plan, tmp_path):
+    plan.write_text(plan.read_text().replace("fold A", "folds A, B"))
+
+    def wrapper(symbol, windows, out):
+        return fake_call(out, windows, log=f"log of {symbol} {[w['label'] for w in windows]}")
+
+    out_root = tmp_path / "backtests"
+    calls = run_main(monkeypatch, plan, out_root, wrapper)
+    for coin in ("BTCUSD", "ETHUSD"):
+        assert [w for c, w in calls if c == coin] == [["W1", "W2", "W3"], ["W1", "W2", "W3"]]   # fold A, fold B
+    rec = out_root / "001-01_some-idea_1d"
+    assert sorted(p.name for p in (rec / "BTCUSD").iterdir()) == ["fold_A", "fold_B", "w1", "w2", "w3", "w4", "w5", "w6"]
+    assert (rec / "BTCUSD" / "fold_B" / "protocol_summary.json.gz").exists()
+    assert (rec / "BTCUSD" / "w4" / "bars.csv.gz").exists()
+    run_md = (rec / "run.md").read_text()
+    assert "- BTCUSD: 6 of 6 windows run." in run_md and "| w6 |" in run_md
+    assert "BTCUSD 6/6; ETHUSD 6/6 [1d, folds A, B]" in (out_root / "INDEX.md").read_text()
+
 
 def test_coins_run_at_the_same_time_up_to_the_cores(monkeypatch, plan, tmp_path):
     plan.write_text(plan.read_text().replace("BTC, ETH", "BTC, ETH, LTC, XMR, XRP, ZEC"))

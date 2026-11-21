@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean unusual 18-bar move of cases",
+    "value": 0.0018527866601915353,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 1.3888622281426268
+    },
+    "threshold": "confirm: positive with t >= 2 (and top-minus-bottom third > 0); reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of top third by forecast minus bottom third",
+    "value": 0.0029514025595649067,
+    "passed": true
+  },
+  "counts": {
+    "cases": 6617,
+    "cases per third": 2205
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is the first bet bar (a forecast rise of >= 2 points above its lowest long level since the last bet, from 0 after a flat) in each 18-bar grid cell of a window, with its full 18-bar return inside the window; the t of the forecast-weighted mean uses its weighted standard error sqrt(n/(n-1) * sum(w^2 (x - mean)^2)) / sum(w); thirds are floor(n/3) cases by forecast, unweighted means; the plan's 'at least 100 cases' minimum gives 'not observable' when not reached."
+}

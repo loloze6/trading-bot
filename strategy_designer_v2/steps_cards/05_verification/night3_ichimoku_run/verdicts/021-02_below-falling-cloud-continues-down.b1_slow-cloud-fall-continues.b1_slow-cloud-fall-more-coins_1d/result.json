@@ -1,0 +1,29 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (26-bar forward return - coin's 26-bar drift) on trending grid bars",
+    "value": 0.028713502844408,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.90037021241827
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slow-fall half minus fast-fall half excess 26-bar return (split at median slow_fall), Welch t",
+    "value": -0.11783051882413081,
+    "passed": true,
+    "welch_t": -3.8164806062571213
+  },
+  "counts": {
+    "independent grid cases in the regime": 353,
+    "slow-fall half": 176,
+    "fast-fall half": 177
+  },
+  "reading": "Situation recomputed from each window's own prices (Ichimoku 9/26/52/26, close below the lower cloud edge and cloud mid 26-bar percent slope < 0) where enough history exists, and taken from the recorded regime 'trending' (the detector's rule of those two conditions) on bars where it cannot be recomputed; the slower-fall half is slow_fall above its median (larger 1/(1+fall%)), the faster half at or below it; drift is the coin's mean non-overlapping 26-bar return over all its windows; the plan's 'fewer than 30 cases or 15 per half' is treated as the minimum-count rule giving 'not observable'.",
+  "status": "confirmed",
+  "decided_by": "Confirm rule met: the main mean is above 0 with t >= 2 and the slow-minus-fast difference is below 0 with t <= -1."
+}

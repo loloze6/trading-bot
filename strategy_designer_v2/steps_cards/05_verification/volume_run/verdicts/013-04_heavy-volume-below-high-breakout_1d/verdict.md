@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases: 49
 - Decided by: The slope is positive with t = 2.46 >= 2 on 49 cases (>= 20): the confirm rule.
 - Reading: The situation is checked as a necessary condition, close above the highest high of the prior bars available inside the window (at most 365, the window's first bar counted as consistent) with a positive forecast, since the 365-bar history is not recorded; a break bar is a 'trending' regime bar whose previous row in the same window is not 'trending' (a window's first row is not a case), and the coin's mean 30-bar return is taken on the non-overlapping grid (positions 0, 30, 60, ...) of all its windows pooled.
+- Size: unusual move +9.53 % per case over 30 bars, 0.295 of the coin's usual move (25.51 %); normal drift in its direction +3.63 %, total +13.16 %; 58 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/013-04_heavy-volume-below-high-breakout_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/013-04_heavy-volume-below-high-breakout_1d`
 Measure: `measure.py`

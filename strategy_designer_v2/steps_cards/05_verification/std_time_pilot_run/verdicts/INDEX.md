@@ -1,0 +1,4 @@
+016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h: confirmed (fit: adapted) [main: 2.39707; OLS t of forecast coefficient 2.39707; rising grid cases pooled over the coins 2865]
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound_1h: confirmed (fit: adapted) [main: 0.00855405; t of the mean 7.0489; cases 3592]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h: confirmed (fit: adapted) [main: 0.000677689; OLS slope t 3.00237; independent grid cases with a positive forecast 2762, top third cases 921]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: confirmed (fit: adapted) [main: 0.000873608; OLS slope t 3.98375; grid bars in mean_reversion 2762, grid bars in mean_reversion with forecast above 0 1891]

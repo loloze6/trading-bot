@@ -11,6 +11,7 @@ Evidence:
 - Counts: top half grid cases: 412, bottom half grid cases: 413, trending grid cases: 825, cases with forecast > 0: 595
 - Decided by: Welch t >= 2 for top minus bottom and cases with forecast > 0 have a positive mean excess return.
 - Reading: The situation is checked on the regime column (the detector's MovingAverageAgeComponent(200) >= 1 rule, labelled 'trending'), with forecast > 0 as the expected long side; the coin's mean 10-bar return uses every non-overlapping grid case of all its windows; the halves split all trending grid cases pooled across coins and windows by forecast rank. Ties are ordered stably by coin, window and bar. The bottom half takes the extra case when the count is odd.
+- Size: unusual move +1.10 % per case over 10 bars, 0.056 of the coin's usual move (14.49 %); normal drift in its direction +1.22 %, total +2.32 %; 682 cases
 Plan: `steps_cards/03_test_plan/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d`
 Measure: `measure.py`

@@ -1,0 +1,17 @@
+---
+brief: 016_grind-versus-jump-moves
+source-idea: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound
+line: 7.d not profitable
+backtest: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound_1h
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC
+bar: 1h
+period: folds A, B, C, D
+---
+Idea: The more a coin has fallen over the 24 hours up to the 20:00 UTC close, the more it rises over the next 24 hours, only while its 10-day hourly volatility is high, and the higher that volatility the larger the rise. This rise builds steadily through the whole following day rather than in the first hour, so a long held from the 20:00 close earns most of it between 1 and 24 hours later.
+Consequence: A trader should hold the evening rebound long for the full day after the 20:00 close, sized by the fall, instead of taking a one-hour position that pays the fee and misses the move.
+Why:
+- F1: The book holds each long for only one hour. 99.5% of its 3310 trades last 1 hour or less, with a mean duration of 1.01 h. The position is flat on the bar after the signal in 99.7% of cases, and the book is in the market on only 0.8% of bars. This is because the forecast exists only on the 20:00 bar.
+- F2: That single hour carries almost none of the rebound. The mean return over the first hour is 0.036% (t 1.57, n 3894), while hours 1 to 24 after the signal carry 0.518% (t 6.09).
+- F3: The one-hour trades lose before fees and lose more after them. The mean gross is -0.083% per trade (t -3.45), the fee is 0.100% per trade, the mean net is -0.183%, and only 43.6% of trades are positive net. The result is a daily book return of -0.000189 and a Sharpe of -1.19, against a mean holding return of 0.00118 per day.
+- F4: The rebound the book misses is large next to the fee. The raw 24-hour return after a signal averages 0.557% (t 6.24, 3894 non-overlapping cases), or 0.457% after one 0.1% fee. It is positive in 83% of windows, and its lowest mean with one window left out is 0.504%.
+- F5: The rebound is graded by the size of the fall. The mean raw 24-hour return is -0.025% in the bottom forecast third, 0.485% in the middle third (t 3.28) and 1.210% in the top third (t 6.97).

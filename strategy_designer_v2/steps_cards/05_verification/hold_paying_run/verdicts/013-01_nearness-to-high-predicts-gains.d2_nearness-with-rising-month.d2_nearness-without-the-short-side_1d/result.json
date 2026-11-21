@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 7-bar forward return minus coin's grid mean, forecast > 0 grid bars, pooled",
+    "value": 0.006904251942843727,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.7147173937215874
+    },
+    "threshold": "confirm if t >= 2 and supporting check passes; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return (median forecast split)",
+    "value": 0.018532727284251413,
+    "passed": true
+  },
+  "counts": {
+    "independent forecast > 0 cases": 1199,
+    "upper half cases": 599,
+    "lower half cases": 600
+  },
+  "decided_by": "The main measure's t is between -2 and 2.",
+  "reading": "Grid bars are positions 0, 7, 14, ... of each window with a 7-bar forward return inside the window; the coin mean is over all such grid bars of all windows; the median split puts forecast > median in the upper half and forecast <= median in the lower half; the 100-case minimum is applied as 'not observable'."
+}

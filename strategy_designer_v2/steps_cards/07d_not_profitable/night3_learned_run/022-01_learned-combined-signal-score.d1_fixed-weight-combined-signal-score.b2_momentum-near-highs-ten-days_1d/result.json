@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.448591,
+  "findings": {
+    "F1": "Only the long side pays. On 8,544 long bars the book earns +8.2 bps a day (t 4.7), of which +4.7 is timing. On 8,640 short bars it earns \u22120.7 bps (t \u22120.58): their +1.9 bps of timing is more than eaten by \u22122.7 bps of the coins' own rise. Counting the long bars alone gives 4.0 bps a day per coin-bar, against 3.65 for the whole book.",
+    "F2": "Almost all the gain comes from the strongest forecasts. The top forecast quintile (mean forecast 8.2) earns +17.6 bps a day (t 4.5), while the other four earn between \u22121.7 and +2.2 bps. On the 10-day grid, the top three deciles end +1.5 % to +2.1 % above drift (169 cases each). The middle is not graded: decile 6 ends \u22121.27 % and decile 0 ends \u22120.39 %.",
+    "F3": "Two of the book's deepest falls came while the coins rose.",
+    "F4": "Shorts taken deep below the 90-day high lose. The deepest quartile (mean \u221254 % below the high) earns \u22124.3 bps a day (t \u22121.48). The quartile at \u221223 % earns +3.2 bps.",
+    "F5": "Shorts taken after a rise over the last week lose. The quartile with the highest 7-day return (mean +11.8 %) earns \u22124.0 bps a day (t \u22122.07, 2,039 bars). The quartile at \u22124.5 % earns +3.1 bps.",
+    "F6": "Longs are graded by nearness to the high and by the 4-week rise.",
+    "F7": "Costs are not the cause. Allocation turnover is 272 bps a day per coin. The gain before costs (3.65 bps) is barely above the book's 3.43 bps. The move per case is 7.9 times the 0.19 % cost of a trade.",
+    "F8": "The book lags holding in bull windows. It earns in 15 of 24 windows, but in w11 it made +7.4 % against holding's +281 %, and in w21 +19 % against +87 %."
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's 28-day return plus its closeness to its 90-day high, the higher its return over the next 10 days, the rise above the coin's usual drift growing with how far both stand above their usual level.",
+      "consequence": "A trader would lean long a coin only as far as its four-week rise and nearness to its three-month high exceed their usual level, more so the stronger they are, rather than shorting coins where they are weak.",
+      "name": "momentum near highs, upside only",
+      "from": "F1, F2, F6, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F6",
+        "F8"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 28-day return plus its closeness to its 90-day high, the higher its return over the next 10 days, except when the coin stands far below its 90-day high after rising over its last 7 days: there, the deeper it stands below that high and the larger its 7-day rise, the higher its return over the next 10 days.",
+      "consequence": "A trader would stop leaning short a coin that is deep under its three-month high and has begun to climb over the past week, and would lean long instead, more so the deeper and the stronger the climb.",
+      "name": "momentum near highs, rebound exception",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The deeper a coin stands below its 90-day high and the larger its 7-day return, the higher its return over the next 10 days.",
+      "consequence": "A trader would lean long a coin that has fallen far from its three-month high and has begun to recover over the last week, holding it for about ten days.",
+      "name": "rebound from deep drawdown",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days.d1_momentum-near-highs-upside-only",
+    "022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days.d2_momentum-near-highs-rebound-exception",
+    "022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days.d3_rebound-from-deep-drawdown"
+  ],
+  "no_ideas": null
+}

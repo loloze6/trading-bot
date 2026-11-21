@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend_4h
+idea tested: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4688 USD
+---
+## Findings
+- **F1:** The supporting check could not run because the forecast is saturated: 88 % of the 4,229 short bets sit at the -20 cap (median |forecast| 20, 25th percentile 20), so the split above the median left 0 cases in the larger half and 4,087 in the smaller. The idea's grading was therefore never tested, although the main measure was on the predicted side (+0.38 % per case, t 2.67).
+- **F2:** The idea's own grade, the narrowness of the two-day stretch against the 30-day average four-hour range, is strongly graded on these cases. The mean unusual 18-bar move rises by quartile of narrowness from -0.41 % (t -1.2) to -0.13 %, +0.53 % (t 2.0) and +1.67 % (t 6.0, strength 0.166, 770 cases). Its Spearman correlation with the move is 0.096.
+- **F3:** The tested forecast did not separate cases, for two reasons.
+- **F4:** The effect builds beyond the plan's three days. Over all cases the unusual move is +0.14 % over 1 day, +0.35 % over 2, +0.38 % over 3 and +0.67 % over 6 (t 3.4). In the narrowest quartile it reaches +2.77 % over 6 days (t 6.6, 733 cases), against +1.67 % over 3.
+- **F5:** The narrowest quartile holds across periods and coins: its mean unusual 3-day move is positive in all 8 years (from +0.10 % in 2019 to +2.99 % in 2024) and in 17 of 19 coins.
+- **F6:** The narrowest quartile also holds in the steepest falling months. In the deeper half of 30-day falls it gives +1.98 % (t 4.8), while the wider stretches there give -1.19 % (t -2.2) and -1.00 % (t -2.0) in the two widest quartiles. Over all cases, the most negative quartile of 30-day returns gives -1.20 % (t -3.3). Wide breaks in steep falls are where the pooled result is drowned.
+- **F7:** Measured against the cost of a trade (0.22 %, F1 in the findings above), the pooled idea cannot pay but its narrow cases can.
+
+## Ideas
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend.b1_narrow-breakdown-six-days` (from F1, F2, F3, F4, F5, F6, F7): When a four-hour bar closes below the lowest low of a coin's preceding two-day narrow stretch, the coin falls over the next six days, and the narrower that stretch was compared with the coin's 30-day average four-hour range, the larger the fall, only while the coin's 30-day return is negative.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

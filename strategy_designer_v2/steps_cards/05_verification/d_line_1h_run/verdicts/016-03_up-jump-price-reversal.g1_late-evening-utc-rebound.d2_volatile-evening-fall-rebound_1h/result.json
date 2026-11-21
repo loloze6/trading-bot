@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9961705386775593,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 24-bar forward return of forecast>0 cases",
+    "value": 0.007982656334130983,
+    "statistic": {
+      "name": "t of the forecast-weighted mean",
+      "value": 6.5234685073244325
+    },
+    "threshold": "confirm: positive with t >= 2 (and top-minus-bottom third > 0); reject: negative with t <= -2; at least 100 pooled cases"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean excess 24-bar return",
+    "value": 0.012370006445554152,
+    "passed": true
+  },
+  "counts": {
+    "pooled cases": 3894
+  },
+  "decided_by": "The forecast-weighted mean excess return is positive with t >= 2 and the top-minus-bottom-third difference is above 0.",
+  "reading": "The bar 'closing at 20:00 UTC' is the bar whose start timestamp is 19:00 UTC; the fall is the recorded raw 24-bar change (recomputed from closes where missing) below 0; the high-volatility condition is read from the recorded regime 'mean_reversion' since the detector's volatility rank is not recorded; the coin's mean 24-bar return uses the non-overlapping grid 0,24,48,... of every window pooled per coin; the t of the forecast-weighted mean uses the weighted standard error sqrt(n/(n-1)*sum(w^2(x-m)^2))/sum(w); thirds are equal-size splits of the cases sorted by forecast and compared on unweighted mean excess return."
+}

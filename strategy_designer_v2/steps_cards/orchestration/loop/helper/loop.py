@@ -18,7 +18,7 @@ ORCH = HERE.parents[1]
 STEPS = ORCH.parent
 sys.path.insert(0, str(STEPS / "common"))
 sys.path.insert(0, str(ORCH / "select_next" / "helper"))
-from lib import write_atomic, utc_now  # noqa: E402
+from lib import write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402
 import select_next  # noqa: E402
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402
@@ -81,21 +81,29 @@ def components_due(args, why_stop):
 
 
 def failed(run, root=ORCH):
-    """Ideas whose run_idea call failed: not picked again (they are not retried)."""
-    return {t["idea"] for t in turns(run, root) if "idea" in t and t.get("outcome", "").startswith("failed")}
+    """Ideas whose run_idea call failed: not picked again (they are not retried). An idea's latest outcome line counts:
+    a later line that is not a failure (a "retry" line, written with its reason when the failure was not the idea's,
+    such as the model service refusing every call; 2026-11-21) makes it a candidate again."""
+    latest = {}
+    for t in turns(run, root):
+        if "idea" in t and "outcome" in t:
+            latest[t["idea"]] = t["outcome"]
+    return {i for i, o in latest.items() if o.startswith("failed")}
 
 
 def unfinished(run, root=ORCH):
-    """Ideas a turn started whose run_idea call did not finish (no row in run_idea's table, not marked failed): the loop
-    was stopped mid-idea (the operator, a restart). Their plan exists, so select_next counts them as tested; they are
-    finished first when the loop resumes (run_idea skips the steps already done)."""
-    rows = {r["idea"] for r in table_rows(run, root)}
-    seen, out = set(), []
+    """Ideas whose latest turn did not finish: no row in run_idea's table written after that turn started, and not
+    marked failed. The loop was stopped mid-idea (the operator, a restart). Their plan exists, so select_next counts them
+    as tested; they are finished first when the loop resumes (run_idea skips the steps already done). An idea turned
+    again after a row (a refusal the components step unblocked) is unfinished until run_idea writes its row again
+    (2026-11-19: 017-02 was read as finished from its old refusal row). A row written before rows carried their end
+    time (`finished_at`) counts as finished, as before."""
+    ended = {r["idea"]: r.get("finished_at", "") for r in table_rows(run, root)}
+    latest = {}
     for t in turns(run, root):
-        i = t.get("idea")
-        if "turn" in t and i not in rows and i not in seen:
-            seen.add(i)
-            out.append(i)
+        if "turn" in t:
+            latest[t.get("idea")] = t.get("at", "")
+    out = [i for i, at in latest.items() if i not in ended or (ended[i] and ended[i] < at)]
     return [i for i in out if i not in failed(run, root)]
 
 
@@ -151,6 +159,21 @@ def call_run_idea(idea_path, args, brief=None):
     return p.returncode, (p.stdout + p.stderr).strip().splitlines()[-1:] or [""]
 
 
+REFUSED = "not run: the model service refused a call"
+
+
+def refused(run, iid, code, last, root=ORCH):
+    """A turn the model service refused (exit SERVICE_REFUSED: a usage limit, an outage): not the idea's fault. Nothing
+    is marked failed; the loop stops, and the idea is picked again when the loop is resumed (2026-11-21, night 3: the
+    account's usage limit marked 138 untested ideas failed in minutes, and turned one idea about 4,000 times)."""
+    if code != SERVICE_REFUSED:
+        return False
+    log_turn(run, {"idea": iid, "outcome": f"{REFUSED}: {last[0][:300]}"}, root)
+    log_turn(run, {"stop": f"{REFUSED} (resume the loop later)", "spent": spent(run, root)}, root)
+    print(f"{run}: stopped: {REFUSED}: {last[0][:200]}")
+    return True
+
+
 def main():
     a = argparse.ArgumentParser()
     a.add_argument("idea", type=Path, nargs="?", help="the starting idea (a new run); without it, the run's own ideas are used")
@@ -171,14 +194,23 @@ def main():
         used = spent(args.run)
         log_turn(args.run, {"turn": next_turn(args.run), "idea": args.idea.stem, "why": "the starting idea", "spent_before": used})
         code, last = call_run_idea(args.idea, args, args.brief)
+        if refused(args.run, args.idea.stem, code, last):
+            return
         if code:
             log_turn(args.run, {"idea": args.idea.stem, "outcome": f"failed: {last[0][:300]}"})
     paths = {f.stem: f for f in select_next.written_in(args.run)}
     for iid in unfinished(args.run):
         if iid not in paths:
             continue
+        why = stop_reason(args.budget, spent(args.run), [iid])          # the budget holds for a resumed idea too
+        if why:                                                        # (2026-11-21: 29 resumed ideas ran past it)
+            log_turn(args.run, {"stop": why, "spent": spent(args.run)})
+            print(f"{args.run}: stopped: {why}")
+            return
         log_turn(args.run, {"idea": iid, "resumed": "its run was stopped before it finished", "spent_before": spent(args.run)})
         code, last = call_run_idea(paths[iid], args)
+        if refused(args.run, iid, code, last):
+            return
         if code:
             log_turn(args.run, {"idea": iid, "outcome": f"failed: {last[0][:300]}"})
     while True:
@@ -191,6 +223,10 @@ def main():
             log_turn(args.run, {"components": last[:300], "outcome": "ok" if code == 0 else f"failed (exit {code})",
                                 "spent_before": used})
             print(f"{args.run}: components: {last[:200]}")
+            if code == SERVICE_REFUSED:
+                log_turn(args.run, {"stop": f"{REFUSED} (the components step; resume the loop later)", "spent": used})
+                print(f"{args.run}: stopped: {REFUSED} (the components step)")
+                return
             continue
         write_queue(args.run, ranking)
         if why:
@@ -202,6 +238,8 @@ def main():
                             "why": f"select_next rank 1: score {top['score']} = record {top['record']} ({top['line']}) / (1 + generation {top['generation']})",
                             "spent_before": used})
         code, last = call_run_idea(Path(top["path"]), args)
+        if refused(args.run, top["idea"], code, last):
+            return
         if code:
             log_turn(args.run, {"idea": top["idea"], "outcome": f"failed: {last[0][:300]}"})
         print(f"{args.run}: {top['idea']}: {last[0][:200]}")

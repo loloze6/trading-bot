@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid cases (trending, forecast > 0): 2916, top third grid cases: 972, bottom third grid cases: 972
 - Decided by: Welch t of the top-minus-bottom difference lies between -2 and 2, which the plan calls inconclusive.
 - Reading: Situation check uses only bars whose 72-bar-back close lies inside the same window (the first 72 bars of each window are left out of it). Thirds are the floor(n/3) lowest and highest forecasts of the pooled grid cases (stable sort by forecast). Each coin's mean 72-bar return is the mean over its non-overlapping 72-bar grid of all windows. Trending bars are those with regime 'trending'. Fewer than 30 cases in a third is reported as not observable.
+- Size: unusual move -0.21 % per case over 72 bars, -0.025 of the coin's usual move (8.23 %); normal drift in its direction +0.41 %, total +0.20 %; 4796 cases
 Plan: `steps_cards/03_test_plan/slow_1h_run/plans/016-05_up-even-volume-continuation_1h.md`
 Record: `steps_cards/04_backtest/slow_1h_run/backtests/016-05_up-even-volume-continuation_1h`
 Measure: `measure.py`

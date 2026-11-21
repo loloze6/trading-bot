@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar excess return of long bets over the coin's mean 5-bar return",
+    "value": 0.0042607243344353765,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.4221461614639765
+    },
+    "threshold": "confirm t >= 2, reject t <= -2, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess minus unweighted mean excess (> 0)",
+    "value": 0.002702404050631051,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2511
+  },
+  "decided_by": "Mean excess return t between -2 and 2 over at least 30 cases.",
+  "reading": "Situation = break component raw value > 0 and 60-bar close return (recomputed within the window) > 0, side long; active bars whose 60-bar return cannot be computed inside the window are left out of the agreement, a missing break value counts as outside the situation; a case is the first long bet (forecast rise >= 2 points from its lowest positive level since the last bet, from 0 after flat) in each 5-bar grid cell of a window, its excess return is the 5-bar return from that bar minus the coin's mean 5-bar return on the non-overlapping grid of all its windows, and the supporting check weights by the forecast on the signal bar."
+}

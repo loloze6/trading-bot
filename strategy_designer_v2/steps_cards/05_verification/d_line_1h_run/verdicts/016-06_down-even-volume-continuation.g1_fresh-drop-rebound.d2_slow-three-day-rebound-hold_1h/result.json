@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of 72-bar excess return on forecast (mean_reversion grid bars)",
+    "value": 2.7454479653345665,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.7454479653345665
+    },
+    "threshold": "confirm if t >= 2 with supporting check passed; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of 24-to-72-bar excess return on forecast, > 0 and >= half the main slope",
+    "value": 6.034387282429025e-05,
+    "passed": false
+  },
+  "counts": {
+    "grid cases in the regime": 2762,
+    "grid cases with forecast > 0": 1891
+  },
+  "decided_by": "Main slope t >= 2 but the supporting check fails.",
+  "reading": "Grid bars are positions 0, 72, 144... of each window with close[t+72] inside it, the regime is the recorded `regime` at the grid bar, and each excess (72-bar and 24-to-72-bar) is over that coin's mean of the same grid return across all its grid bars in all windows."
+}

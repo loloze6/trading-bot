@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9964171974522293,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of forecast/10 x excess 24-bar return, one case per coin-day",
+    "value": 0.00827513751565389,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 6.946236232168249
+    },
+    "threshold": "confirm t >= 2 with >= 100 cases and slope > 0; reject t <= -2 with >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 24-bar return on forecast",
+    "value": 0.0008376075705724009,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3592
+  },
+  "decided_by": "Confirm: t >= 2 with at least 100 cases, and the slope is above 0.",
+  "reading": "The 20:00 UTC close is the bar whose timestamp (start) is 19:00 UTC; volatility high is the 240-bar std of hourly simple returns at or above its 720-bar mean, recomputed inside each window, with the agreement taken over active bars where that ratio is computable; a fall is a negative raw fall_x_vol value; one case per coin-day is the first qualifying bar of that UTC date within a window, cases without a bar 24 rows later in the same window are dropped, and the coin's mean 24-bar return uses the non-overlapping grid of all its windows."
+}

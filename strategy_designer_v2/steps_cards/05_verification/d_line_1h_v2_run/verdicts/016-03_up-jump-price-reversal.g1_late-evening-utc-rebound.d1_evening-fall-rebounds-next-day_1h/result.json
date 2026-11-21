@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9951506754416349,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-24-bar excess return on fall24 post_pipeline_value at 20:00 UTC bars",
+    "value": 0.00015003191746362427,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.6980766696731844
+    },
+    "threshold": "slope t >= +2 confirms (with supporting check); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean next-24-bar excess return on 20:00 bars with forecast > 0",
+    "value": 0.0005208443995208419,
+    "passed": true
+  },
+  "counts": {
+    "bars at 20:00 with forecast > 0": 8538,
+    "bars at 20:00 in regression": 17196
+  },
+  "decided_by": "The slope's t is +2 or more and the mean excess return on forecast > 0 bars is positive.",
+  "reading": "The 20:00 UTC bar is the bar stamped 19:00; the coin's mean 24-bar return is the mean of the non-overlapping 24-bar returns (positions 0, 24, 48, ... of each window) pooled over all its windows; the slope's t is the ordinary OLS t with an intercept; the 300-bar minimum counts 20:00 bars with forecast > 0 and a next-24-bar return inside the window, and a shortfall is reported as not observable."
+}

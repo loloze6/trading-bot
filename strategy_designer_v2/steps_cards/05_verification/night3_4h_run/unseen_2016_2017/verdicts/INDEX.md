@@ -1,0 +1,4 @@
+019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins_4h: confirmed (fit: adapted) [main: 0.022297; ordinary t of the mean 2.03106; cases 328, upper half cases 164, lower half cases 164]
+019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h: confirmed (fit: exact) [main: 0.00243338; OLS slope t 4.00837; grid cases with forecast > 0 620, grid cases 893]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h: confirmed (fit: adapted) [main: 0.0192582; t of the mean 2.04922; independent cases 414, large-break cases 115, small-break cases 299]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h: inconclusive (fit: exact) [main: -0.00025163; OLS slope t -0.281791; independent grid cases with forecast > 0 466]

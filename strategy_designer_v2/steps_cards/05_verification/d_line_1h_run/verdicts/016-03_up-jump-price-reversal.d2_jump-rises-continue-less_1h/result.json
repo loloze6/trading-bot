@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-72-bar excess return on raw residual, risen grid bars",
+    "value": 0.02937481847355086,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.1088406275196014
+    },
+    "threshold": "confirm: slope > 0 with t >= 2.0; reject: slope < 0 with t <= -2.0; else inconclusive; at least 200 risen grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "risen grid cases pooled across coins": 2865
+  },
+  "decided_by": "The slope is positive with t >= 2.0: the future excess rise grows as the top-3 share falls.",
+  "reading": "Active bars in each window's first 72 rows (no past 72-bar return computable from the record) are left out of the situation check; the grid is positions 0, 72, 144, ... of each window, so position 0 has no past return and drops out; the coin's mean 72-bar return is the mean of all its grid forward returns over all windows; the slope's t is the ordinary OLS t (slope / standard error); fewer than 200 risen grid cases is reported as not observable."
+}

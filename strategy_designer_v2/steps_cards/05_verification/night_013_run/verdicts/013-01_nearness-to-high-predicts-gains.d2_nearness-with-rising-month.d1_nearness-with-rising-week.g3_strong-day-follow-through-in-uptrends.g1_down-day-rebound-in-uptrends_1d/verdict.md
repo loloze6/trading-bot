@@ -11,6 +11,7 @@ Evidence:
 - Counts: qualifying bars: 3839
 - Decided by: The slope is positive with t >= 2 and the forecast-weighted mean excess return is above 0.
 - Reading: The plan's situation is taken as the 30-day close-to-close return > 0 (from prices inside the window, the recorded regime where 30 prior bars are missing) and a negative raw vol-scaled 1-day return (the recorded 'fall' value, else the 1-day price return), side long; the coin's mean daily return is the mean of all its next-1-bar returns over all windows; the slope t is the OLS slope over its standard error.
+- Size: unusual move +0.19 % per case over 1 bars, 0.039 of the coin's usual move (4.78 %); normal drift in its direction +0.12 %, total +0.31 %; 2637 cases
 Plan: `steps_cards/03_test_plan/night_013_run/plans/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends_1d.md`
 Record: `steps_cards/04_backtest/night_013_run/backtests/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends_1d`
 Measure: `measure.py`

@@ -21,8 +21,8 @@ ideas. `orchestration/` chains them: `run_idea` (one idea through steps 3 to 7),
 score), `loop` (run_idea on the next idea until stopped), `run_brief` (a brief's ideas, then the loop). `unseen_test`
 (called by `run_idea`) reruns a confirmed and profitable idea, unchanged, on the dates no fold covers. The `components`
 step answers the measures step 3 lacked (exists, built, cannot build); `loop` calls it and its builds unblock ideas. Read first: `steps_cards/HOW_WE_DESIGN_A_CARD.md`, then the
-card of the step or function at hand, then `steps_cards/common/` (shared definitions). Open questions the operator
-has not ruled on are in `steps_cards/POTENTIAL_ADJUSTMENTS.md`.
+card of the step or function at hand, then `steps_cards/common/` (shared definitions). Improvements, open and decided,
+are topic cards in `steps_cards/topics/` (`INDEX.md` lists them; a decision is recorded there with its reason).
 
 ## Commands
 ```
@@ -61,7 +61,7 @@ cd trading-bot && VENV_PYTHON -m pytest -q                   # the bot's tests (
 - "Ok", "go" or "yes" approves what the message answers. A hook asking for a commit is not an approval.
 - Recommend one option, with reasons; disagree when you disagree. Say "I do not know" when true.
 - Build only what was asked, or what a run showed is needed (a defect it revealed, a finding it made). Everything else
-  is parked in `POTENTIAL_ADJUSTMENTS.md` for the operator.
+  is noted as a topic card in `steps_cards/topics/` for the operator.
 
 **Rules, not patches**
 - One rule for every case: no special case for one kind of input. Prefer a standard, explicit mechanism (one score,
@@ -93,3 +93,5 @@ cd trading-bot && VENV_PYTHON -m pytest -q                   # the bot's tests (
 - Explain with a concrete example from the real files and real numbers. If the operator did not get it, say it again
   more simply, not at more length.
 - Report faithfully: counts, not impressions; say what failed, what was skipped, what is untested.
+- Times: give them in Paris time when they concern the operator (when a run ends, when to look, a deadline), e.g.
+  "about 14:30 Paris"; UTC stays for files, logs and schedules (operator, 2026-11-20).

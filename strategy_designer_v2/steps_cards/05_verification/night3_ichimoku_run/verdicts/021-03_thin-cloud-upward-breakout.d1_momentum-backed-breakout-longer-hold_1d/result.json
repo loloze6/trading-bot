@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of unusual 40-bar move on case forecast",
+    "value": 0.002518122429408192,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.13659445785464563
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean unusual move > 0; reject: slope < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 40-bar move over cases > 0",
+    "value": 0.18946733505152646,
+    "passed": true
+  },
+  "counts": {
+    "cases": 64
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Situation recomputed from prices as an Ichimoku (9,26,52,26) close first above the cloud whose last outside state was below, using the recorded regime 'trending' where the window lacks the history to compute it; a case is the first long bet (forecast rise >= 2 from its low since the last bet, from 0 after flat) in each 40-bar grid cell of a window, cases without 40 forward bars in the window are dropped, drift is the coin's mean 40-bar return on the window grids, and the count of 30 is treated as a minimum count (not observable if unmet)."
+}

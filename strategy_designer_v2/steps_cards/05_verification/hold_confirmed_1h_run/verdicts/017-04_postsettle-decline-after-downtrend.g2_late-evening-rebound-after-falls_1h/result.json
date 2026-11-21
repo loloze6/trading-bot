@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.997662595687489,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x excess 2-bar return at 21:00 cases, pooled",
+    "value": 0.010075883018905031,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 4.776653094762822
+    },
+    "threshold": "t >= +2 to confirm (with top-minus-bottom > 0); t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top minus bottom forecast tercile, mean excess 2-bar return (Welch t)",
+    "value": 0.0010080033370974944,
+    "passed": true
+  },
+  "counts": {
+    "cases overall": 8553,
+    "cases in top tercile": 2851,
+    "cases in bottom tercile": 2851
+  },
+  "decided_by": "Confirm rule met: main t = 4.78 >= +2 and top-minus-bottom difference 0.00101 > 0.",
+  "reading": "Cases are bars whose timestamp + 1h is 21:00 UTC with forecast > 0, first per UTC date per window, return taken positionally close[t+2]/close[t]-1 inside the window; the coin mean uses the non-overlapping 0,2,4,... grid of all its windows; terciles are pooled forecast cut points with bottom <= lower cut and top >= upper cut."
+}

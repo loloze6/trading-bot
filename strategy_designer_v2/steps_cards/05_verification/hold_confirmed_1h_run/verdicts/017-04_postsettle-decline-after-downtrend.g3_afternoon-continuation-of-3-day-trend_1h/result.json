@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.996877327680055,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean of forecast/10 x excess 2-bar return from the 16:00 slot open",
+    "value": 0.00126971446926443,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 8.070089773522474
+    },
+    "threshold": "confirm: mean > 0 with ordinary t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "signed excess 2-bar return, top third minus bottom third of |forecast| (Welch t >= 1)",
+    "value": 0.0013609441399741386,
+    "passed": true,
+    "welch_t": 4.634052894908491
+  },
+  "counts": {
+    "independent cases": 17452
+  },
+  "decided_by": "The main mean is above 0 with t >= 2 and the supporting check passes (Welch t >= 1, top third larger).",
+  "reading": "Cases are the rows stamped 15:00 UTC with close[t+2] taken two rows later in the same window; cases with forecast 0 are kept; the coin's mean 2-bar return is the mean over the non-overlapping grid (positions 0, 2, 4, ...) of all its windows pooled; thirds are n//3 cases by |forecast| (stable sort); the 300 minimum is checked on the number of cases."
+}

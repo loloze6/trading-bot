@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of forward 72-bar excess return on forecast (forecast > 0 grid bars)",
+    "value": 0.0005881018553736142,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.6273319746672787
+    },
+    "threshold": "slope t >= 2 confirms (with supporting check), t <= -2 rejects; at least 100 grid cases with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "mean excess 72-bar return of top third of forecast > 0",
+    "value": 0.0046955369841536745,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases with a positive forecast": 2762,
+    "top third cases": 921
+  },
+  "decided_by": "The slope's t is 2.63 (>= 2) and the top third's mean excess return is above 0.",
+  "reading": "Grid is positions 0, 72, 144, ... of each window; the coin's mean 72-bar return is the mean over all its grid bars in all windows; top third is forecast at or above its 2/3 quantile among the positive-forecast samples."
+}

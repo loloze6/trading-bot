@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-zero-forecast grid cases pooled across coins: 1806, high-volatility grid cases: 1033
 - Decided by: Mean product positive with t >= 2 on at least 30 cases, and low-vol minus high-vol mean product is above 0.
 - Reading: The plan's low-volatility situation is read from the recorded regime ('trending' is the config rule volpct <= 0.5, since the 100-bar percentile cannot be recomputed inside ~120-bar windows), the side is the sign of the day's return, the coin mean 5-bar return is the mean over all its grid bars of all windows, and on high-volatility bars the forecast is recomputed as k*sign(z)*z^2 (clipped to +-20) from the price-recomputed standardised scaled move, with k fitted on the active bars against the recorded forecast.
+- Size: unusual move +0.62 % per case over 5 bars, 0.057 of the coin's usual move (10.60 %); normal drift in its direction -0.01 %, total +0.61 %; 2007 cases
 Plan: `steps_cards/03_test_plan/plans/002-03_price-cross-above-long-sma.g1_calm-regime-daily-move-continuation_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-03_price-cross-above-long-sma.g1_calm-regime-daily-move-continuation_1d`
 Measure: `measure.py`

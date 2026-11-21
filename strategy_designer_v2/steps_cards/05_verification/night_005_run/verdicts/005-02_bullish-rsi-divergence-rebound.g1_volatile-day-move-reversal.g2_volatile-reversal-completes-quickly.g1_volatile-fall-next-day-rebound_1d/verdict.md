@@ -11,6 +11,7 @@ Evidence:
 - Counts: bars with forecast > 0: 1192, top half bars: 596, bottom half bars: 596
 - Decided by: The main measure's t is >= 2.0 and the top-minus-bottom difference is above 0.
 - Reading: Situation = regime 'mean_reversion' (the detector's recorded decision, since its 20-day/100-day volatility ratio is not recorded and windows are too short to rebuild it) and a negative 1-day return, side long; supporting split puts forecasts >= the median in the top half and < the median in the bottom half, with unweighted mean excess returns; the minimum of 30 counts forecast > 0 bars with a next-day return in the same window.
+- Size: unusual move +0.19 % per case over 1 bars, 0.051 of the coin's usual move (4.01 %); normal drift in its direction +0.13 %, total +0.32 %; 613 cases
 Plan: `steps_cards/03_test_plan/night_005_run/plans/005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound_1d.md`
 Record: `steps_cards/04_backtest/night_005_run/backtests/005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound_1d`
 Measure: `measure.py`

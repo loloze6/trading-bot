@@ -1,0 +1,23 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of (zc - zb) x r on decline grid cases",
+    "value": null,
+    "statistic": null,
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, otherwise inconclusive; at least 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "deeper-half mean minus shallower-half mean of (zc - zb) x r",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "grid cases on decline bars": 0
+  },
+  "decided_by": "Fewer than 100 grid cases on decline bars with both scores and the forward return (the best-single composite needs 365-bar histories inside a window), so the plan's minimum is not reached.",
+  "reading": "The expected side is the sign of the combined score (forecast sign = sign of combo's raw value); the 90-day return is close[t]/close[t-90]-1 inside the window, with the recorded regime used where the window has fewer than 90 prior bars; 'best' weighting = the z-scored signal with the largest absolute past 365-bar correlation to the 5-bar forward return, signed by that correlation, needing full 365-bar windows inside one window; standard deviations use ddof=1 over the cases used; the deeper half is 90-day return below the median, the shallower half at or above it; cases with any missing value are left out."
+}

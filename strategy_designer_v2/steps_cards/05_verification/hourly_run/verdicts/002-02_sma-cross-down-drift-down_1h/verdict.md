@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping active blocks (forecast < 0): 376, non-overlapping blocks: 724
 - Decided by: The main-measure t-stat lies strictly between -2 and 2, which neither confirms nor rejects.
 - Reading: Each window's mean 24-bar return is the mean of the forward 24-bar returns from every bar of that window; all grid blocks (including forecast 0, whose product is 0) enter the t-stat; the supporting check passes when the share exceeds 50%.
+- Size: unusual move +0.02 % per case over 24 bars, 0.006 of the coin's usual move (2.89 %); normal drift in its direction -0.04 %, total -0.02 %; 148 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/002-02_sma-cross-down-drift-down_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/002-02_sma-cross-down-drift-down_1h`
 Measure: `measure.py`

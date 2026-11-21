@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping top-decile cases: 222, non-overlapping zero-forecast cases: 724, coins: 2
 - Decided by: |t| < 2 but the estimate lies outside the +/-0.1% near-zero bound.
 - Reading: Top decile is forecast >= the 90th percentile of all pooled bars' forecasts (and > 0), returns are sampled on each window's 0, 24, 48... grid, the per-coin supporting measure sums bar gains over all windows divided by mean |allocation| minus the summed coin returns over the same bars, and 'at least 2 of the 3 coins' is applied literally as at least 2 positive coins among those present.
+- Size: unusual move -0.07 % per case over 24 bars, -0.021 of the coin's usual move (3.25 %); normal drift in its direction +0.02 %, total -0.05 %; 1143 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/001-02_rsi-low-extreme-reversal-up_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/001-02_rsi-low-extreme-reversal-up_1h`
 Measure: `measure.py`

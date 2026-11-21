@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "022-04_signal-weights-carry-forward_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2084799,
+  "findings": {
+    "F1": "The tested measure points the opposite way to the idea, not too weakly the right way. The mean of (forecast/10) x 5-day excess return is -0.00228 with t -1.97 on 3,250 non-overlapping cases. Per case the unusual move is -0.48 %, a strength of -0.048, which is the usual 0.05 of a real idea but with the sign reversed. More data on the same idea would not rescue it.",
+    "F2": "The reversal comes from two of the four signals.",
+    "F3": "The nearness component's correlation with the next 5-day excess return is negative in 6 of 8 years, reaching -0.153 in 2021. The volatility component's is negative in 5 of 8, reaching -0.189 in 2019. In these two signals, past power tends to turn around over the following period rather than carry forward.",
+    "F4": "The reversal is broad but uneven, so this data cannot pin it to one place.",
+    "F5": "The reversed move would be large enough to trade. The total move of -0.51 % per case is 2.7 times the 0.19 % round-trip cost, and the unusual move is 2.5 times it. As F11 of the findings requires for a paying book, the reversed move covers the cost by the unusual move alone. Taking the forecast as given, the book lost: Sharpe -0.76, 1.3 below holding."
+  },
+  "ideas": [
+    {
+      "idea": "For a coin's nearness to its 90-day high, the higher that signal's predictive power for the coin's 5-day returns over the past 365 days, the lower the same signal's predictive power for that coin's 5-day returns over the following 90 days.",
+      "consequence": "A trader should lean against, not with, a nearness-to-high relation that has recently worked on a coin, because over the next months it tends to turn around.",
+      "name": "nearness power turns around",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "For a coin's 30-day volatility, the higher that signal's predictive power for the coin's 5-day returns over the past 365 days, the lower the same signal's predictive power for that coin's 5-day returns over the following 90 days.",
+      "consequence": "A volatility relation that predicted a coin's returns over the past year is a reason to expect the opposite over the next quarter, not a weight to keep.",
+      "name": "volatility power turns around",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around",
+    "022-04_signal-weights-carry-forward.b2_volatility-power-turns-around"
+  ],
+  "no_ideas": null
+}

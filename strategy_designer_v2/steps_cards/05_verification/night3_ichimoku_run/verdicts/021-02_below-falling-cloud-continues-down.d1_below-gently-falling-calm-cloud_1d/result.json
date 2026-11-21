@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean drift-adjusted 26-bar short gain",
+    "value": 0.02771000576726978,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 1.1528430080064074
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 30 cases and check passes; reject: mean < 0 with t <= -2 on >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted return, larger minus smaller |forecast| half (< 0)",
+    "value": -0.07957205283493085,
+    "passed": true
+  },
+  "counts": {
+    "cases": 156,
+    "active bars": 4916,
+    "larger half": 78,
+    "smaller half": 78
+  },
+  "decided_by": "The t of the weighted mean short gain lies between -2 and 2 on at least 30 cases.",
+  "reading": "Situation = close below the lower edge of the 9/26/52/26 cloud (recomputed from the window's prices, the detector's 'trending' regime where too few bars exist) and the cloud_fall raw slope < 0, side short; drift = each coin's mean non-overlapping 26-bar return over all its windows; the t of the weighted mean uses the weighted standard error sqrt(sum w^2 (x-m)^2)/sum w; the larger half is |forecast| above the median, the smaller half at or below it."
+}

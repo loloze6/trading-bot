@@ -1,0 +1,6 @@
+016-01_upward-grind-continues-rising: The steadier a coin's 3-day hourly climb, the larger its further rise over the next 3 days. [bar: 1h]
+016-02_downward-grind-continues-falling: The steadier a coin's 3-day hourly decline, the larger its further fall over the next 3 days. [bar: 1h]
+016-03_upward-jump-gives-back: The more a coin's 3-day rise came from a few violent hours, the more it falls back over the next 3 days. [bar: 1h]
+016-04_downward-jump-rebounds: The more a coin's 3-day fall came from a few violent hours, the more it rebounds over the next 3 days. [bar: 1h]
+016-05_volume-burst-rise-reverses: The more a coin's 3-day rise volume sat in a few hours, the more it falls back over the next 3 days. [bar: 1h]
+016-06_volume-burst-fall-rebounds: The more a coin's 3-day fall volume sat in a few hours, the more it rebounds over the next 3 days. [bar: 1h]

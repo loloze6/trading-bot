@@ -1,0 +1,108 @@
+{
+  "run_id": "20261121T014259Z_4778bc04",
+  "created_utc": "2026-11-21T01:42:59.585094+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "res_break",
+              "class": "strategies.strategy_components.ResistanceBreakTouchCountComponent",
+              "params": {
+                "period": 90,
+                "side": 2,
+                "band": 2.0,
+                "cross_period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 90,
+                    "min_periods": 22
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 10
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "4778bc04dc5b1dd64ce4e100f9dd0f7e581656613fc50c036c6a8d315c843417",
+  "data": {
+    "symbols": [
+      "ZECUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2020-09-19 00:00:00",
+    "end": "2021-08-31 00:00:00",
+    "bar_count": 347,
+    "data_sha256": "acf452c6aa3049d44e955d79bdff609bbc17f5a8e73bfddb3c26b4b40141fc86"
+  },
+  "git_sha": "80751d0ebb0bc6aef0b315d7a9dc9fc7c1e8a304-dirty",
+  "engine": {
+    "lookback": 91,
+    "warmup": 91
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

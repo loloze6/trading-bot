@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9669595982652363,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next 5-bar excess return on forecast (non-overlapping grid)",
+    "value": 0.000668681027470458,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.8975395827422252
+    },
+    "threshold": "confirm: t >= 2 with timing gain > 0; reject: t <= -2; else inconclusive; at least 200 grid cases with non-zero forecast"
+  },
+  "supporting_check": {
+    "name": "book timing gain before costs (mean daily)",
+    "value": 0.00020767251883032313,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 3419,
+    "grid cases": 3419
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The situation is rebuilt as the sign of the mean of the three standardised components (from raw values, using the recorded post-pipeline value where a window's own history is too short); the slope uses every grid bar (zero forecasts included) while the minimum count is the grid bars with non-zero forecast; the timing gain uses the before-cost position gain, allocation x next bar return, averaged over coins per day; fewer than 200 cases gives 'not observable' per the workflow rule."
+}

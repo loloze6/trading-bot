@@ -1,0 +1,58 @@
+**Draft for the operator's review (topic 34). No step reads it yet.** Code: `book_diagnosis.py` (tests:
+`test_book_diagnosis.py`), which writes `diagnosis.json` and `diagnosis.md` into a backtest record.
+
+Why a book does or does not pay: the diagnosis of a backtest's book. It is an observation, not a check: it refuses
+nothing, and step 6 stays the profitability check (topic 08). It is read the same way for every timeframe, and for
+paying and non-paying books alike. Every term below follows `measures.md` (simple returns; the coin's average over
+all windows; never across two windows) and `forecast.md` 7 (a bet and its holding period).
+
+**Business definition.** An idea predicts a move: when its condition is seen, the coin moves by some amount over the
+idea's horizon. The book pays when the move it captures, from the moment it can act, is larger than what the trades
+cost, and is not just the coin's own rise. The diagnosis says, from the backtest's own record, which of these went
+wrong: the price move over the horizon cannot cover the cost of a trade, the move started before the bot could open, the idea's
+horizon is not where its move ends, the book stayed in after its bets ended, or the book earned the market's rise rather than the idea's move.
+
+**Terms**
+- **Unit traded:** a change of 1 in the position, as a share of the book (`postRebalance_current_allocation` minus
+  `previous_allocation`, in absolute value). Opening a position of 1 and closing it is 2 units: a **round trip**.
+- **Book without costs:** the position held after bar t's trade x the coin's return from t's close to t+1's close,
+  summed over the bars (`measures.md`, the position's gain before costs).
+- **Cost per unit traded:** (book without costs − the backtest's own book) / units traded: what the backtest actually
+  paid (fees, spread, slippage) as a share of the value traded, read from its record. No cost is assumed or read from a
+  config.
+- **Drift:** the coin's mean return per bar over all its windows together (`measures.md`, the coin's average).
+- **A bet:** a rise of the forecast on its own side of at least the band (`min_allocation_change`), from its lowest
+  level since its last bet: the same rule as the engine's holding period (`forecast.md` 7). It asks for the position
+  for the idea's horizon H. **A bet's age:** bars since that rise.
+
+**The five readings**, each for the whole book (all coins and windows) and per coin:
+1. **Big enough: can the price move over the horizon cover the cost of a trade?** Per bet: the coin's price move in
+   the bet's direction, minus the drift, from the close of the bar that fires it (bar 0, where the bot opens) to H bars
+   later, as a share of the price, against the cost of a round trip as a share of the value traded (2 x the cost per
+   unit traded). Both are rates, so the quantity traded does not enter: a larger position earns more and pays more in
+   the same proportion. Every bet is read: bets overlap, and each is a bet the book takes; only averages
+   are given, no count of independent cases.
+2. **Opening time: does the move start before the bot can open?** For the same bets, the move on bar 0 itself, in the
+   bet's direction, minus the drift. It is not counted as captured. In the bet's direction (a continuation), part of
+   the move happened before the bot could open. Against it (a reversal's trigger), it is the condition, not a late
+   opening. It does not tell whether a move started inside bar 0 or before it.
+3. **Closing time: does the move end at the idea's horizon?** For the same bets, the cumulative move (in the bet's
+   direction, minus the drift) from bar 0's close, bar by bar up to 2H: the bar where it peaks, its value at the peak,
+   at H and at 2H. A peak well before H, given back by H: the idea closes too late. Still rising at 2H: it closes too
+   early. A peak near H: the horizon is right.
+4. **Holding past the bets: does the book close when its bets end?** Readings 1 to 3 measure the coin after each
+   signal; this one measures the book's real positions. The bars in a position where no bet is younger than H (no rise
+   of the forecast in the last H bars), as a share of the bars in a position, and the book without costs, minus the
+   drift, earned on them per bar, against the bars covered by a bet. A large share earning little: the book keeps the
+   coin's risk after its bets have ended.
+5. **Trend: is the gain the market's rise?** The book's gain from the market's own rise (`measures.md`), as a share
+   of the book's mean daily gain; the rest is timing.
+
+**Why this can't leak:** it reads a finished backtest after the fact and changes no decision; bar 0's move is
+measured, not traded on.
+
+**Decided (operator, 2026-11-20)**
+- A forecast that stays on with no new rise counts as past its bets (reading 4).
+- Every bet is read (readings 1 to 3): bets overlap, and each is a bet the book takes.
+- Numbers only, no threshold: the analyst reads them and judges.
+- Long term, the diagnosis is part of the analysts' work (step 7); `book_diagnosis.py` sits here for the test.

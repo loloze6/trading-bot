@@ -1,0 +1,50 @@
+{
+  "line": "7.c",
+  "backtest": "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall_1d",
+  "step5": "rejected",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4001724,
+  "findings": {
+    "F1": "The verdict's sign reads the wrong way. On these closes the coin fell beyond its drift, as the idea says: \u22120.64 % over 10 days on 1164 non-overlapping cases (t \u22121.54). Recomputing the plan's own measure, \u2212(forecast/10) \u00d7 drift-adjusted return, gives \u22120.0118 (t \u22122.30), but with a negative forecast that product is a long's gain. The short's sized gain beyond drift is +0.0118 (t +2.30, n 1164). Read as the plan describes it (\"the short's gain beyond holding the coin\"), the measure confirms the idea and the supporting check also passed (+1.09 %, Welch t 1.31).",
+    "F2": "The fall is graded with the size of the forecast. By quartile of |forecast|, the 10-day drift-adjusted return runs +0.45 %, \u22120.64 %, \u22120.75 %, \u22121.62 % (t \u22122.24, n 291 each). On the 5-day horizon it runs +0.44 %, \u22120.13 %, \u22120.73 %, \u22120.98 % (t \u22122.61, n 590). At 20 days it is noisy: \u22120.90 %, \u22121.57 %, +2.20 %, \u22123.77 %.",
+    "F3": "The idea is small and the book shorts against the coins' rise. Its strength is only 0.026 of a usual 10-day move (14.49 %). The signal is active on 69 % of grid bars, and its cases rose +0.55 % in total over 10 days because the normal drift is +1.19 %. So the always-short book lost: Sharpe \u22120.55, mean daily return \u22120.07 %. This fits F8 and F11: in a total move against the short, no holding rule pays.",
+    "F4": "The idea holds below the 50-day average. There, larger forecasts are followed by a 10-day drift-adjusted fall of \u22122.65 % (t \u22122.91, n 228) and a total fall of \u22121.45 %, about 7.6 times the 0.19 % cost of a round trip. Smaller forecasts below the average give +0.42 % (n 251). Above the 50-day average there is no gradient: \u22120.79 % (n 73) and \u22120.81 % (n 96), both with |t| < 0.6.",
+    "F5": "The 60-day return separates the same way, though less sharply than the 50-day average. With the 60-day return negative, larger forecasts give \u22122.53 % drift-adjusted (t \u22122.27, n 176) and \u22121.34 % in total, against \u22120.25 % for smaller ones (n 220). The slope of the excess return on |forecast| is \u22120.18 % per unit (t \u22121.79, n 396). With the 60-day return positive the slope is +0.05 % (t 0.26, n 152).",
+    "F6": "The effect swings with the year. The 10-day drift-adjusted return on active cases is \u22124.53 % in 2018 (t \u22123.44), \u22122.49 % in 2019, and \u22122.22 % in 2022. It is +3.06 % in 2020, +3.13 % in 2021 and +1.96 % in 2023. The falls come in the bear years, which agrees with the trend condition in F4 and F5.",
+    "F7": "Every coin shows a drift-adjusted fall over the next 10 days, from \u22120.16 % on LTC to \u22121.53 % on ZEC. Each coin alone has |t| < 1.4, so the effect is broad but weak per coin."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily close sits just below prices where it turned up several times in the past 90 days, it tends to fall over the next 10 days, and the more such past turning-up lows lie just above the close, the larger the fall, only while the close is below its 50-day average.",
+      "consequence": "Below its 50-day average, a close just under a support that held several times is a reason to be short for the next ten days, the larger the cluster the stronger; above that average, it is a reason to refuse the short.",
+      "name": "broken support below average",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's daily close sits just below prices where it turned up several times in the past 90 days, it tends to fall over the next 10 days, and the more such past turning-up lows lie just above the close, the larger the fall, only while its 60-day return is negative.",
+      "consequence": "After a 60-day decline, a close under a support that held several times is a reason to short for ten days in proportion to the cluster; after a 60-day rise it is no reason to.",
+      "name": "broken support in downtrend",
+      "from": "F1, F2, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c1_broken-support-below-average",
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c2_broken-support-in-downtrend"
+  ],
+  "no_ideas": null
+}

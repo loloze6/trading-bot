@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.6243993000000001,
+  "findings": {
+    "F1": "The tested upward breakout adds little on this data: on the 18-bar grid, bars that close above the prior 2-day high are followed by an unusual 3-day move of +0.12 % (t 0.63, 831 cases), and the breakout's size does not grade it (quartiles +0.30, \u22121.27, +0.46, +1.04 %).",
+    "F2": "The brief's premise that narrow stretches lead to larger moves fails here: the 3-day absolute move, in units of the coin's usual move, is 0.66 after the narrowest fifth of 2-day stretches and 0.73 after the widest, and the narrowest fifth is followed by \u22120.72 % unusual (t \u22123.1, 1829 cases; \u22120.33 %, t \u22120.97 over 515 bar times when averaged across coins at the same time).",
+    "F3": "The opposite break pays instead. A 4h close below the prior 2-day low is followed by +1.53 % unusual over 3 days (t 4.4, 753 cases), and the effect is graded by depth in the coin's volatility. From the deepest quartile to the shallowest the moves are +3.98 % (t 4.2), +3.84 % (t 5.9), +1.47 % and \u22120.53 %. The mean is positive in all 19 coins and in 16 of 24 windows.",
+    "F4": "That rebound is a market-wide one. Down-breaks shared by many coins at the same bar are followed by +3.87 % (t 7.3, 320 cases), those by few coins by \u22121.15 % (t \u22121.3, 97 cases). Averaged per bar time, the down-break mean is +0.05 % (t 0.07, 164 times), and the coin's move minus the other coins' same-time move is +0.16 % (t 0.66). It also failed in the 2018 bear year (\u22123.53 %, t \u22122.2, 37 cases).",
+    "F5": "Graded on the 1-day return itself, only the sharpest falls stand out. The lowest decile of the 1-day return, measured in the coin's volatility, is followed by +2.09 % unusual over 3 days (t 7.4, 911 cases). This holds as +1.11 % (t 2.2, 253 bar times) when averaged across coins at the same time, and gives way to \u22480 or negative from the third decile on. The +2.09 % is about 9.5 times the 0.22 % cost of a round trip.",
+    "F6": "The book's gain is mostly the market's own move. Its daily return correlates 0.68 with the coin's, it gives \u22122.4 % on the coin's worst fifth of days (coin \u22126.4 %) and +3.3 % on its best fifth (coin +7.1 %), and its mean is 0.099 %/day against the coins' 0.152 %.",
+    "F7": "The other angles gave patterns that are not graded or not robust, so none counts. The 30-day return and distance from the 30-day high give U-shapes (e.g. dist_hi quintiles +0.59, \u22120.97, \u22120.46, +0.05, +0.73 %). The weekday effect seen per coin (Sunday t \u22125.5) shrinks to |t| \u2264 2.0 when averaged across coins at the same time. The bar hour is sampled mostly at one hour of the grid, so it is not readable."
+  },
+  "ideas": [
+    {
+      "idea": "After a coin's sharp fall over the past day, measured against its own 30-day volatility, the coin rises over the next three days, and the larger that fall, the larger the rise.",
+      "consequence": "A trader would buy a coin after an unusually sharp one-day fall rather than sell it, and size the bet larger the sharper the fall, instead of trading quiet-range breakouts.",
+      "name": "sharp-fall three-day rebound",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's four-hour bar closes below the lowest low of its preceding two days, the coin rises over the next three days, and the deeper that close lies below the low, measured in the coin's 30-day volatility, the larger the rise.",
+      "consequence": "A downside break of a two-day range is a reason to buy the coin and not to sell it, all the more as the break is deep.",
+      "name": "failed downside break rebound",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.g1_sharp-fall-three-day-rebound",
+    "019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.g2_failed-downside-break-rebound"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess return on short size (-forecast/10), non-overlapping grid, pooled",
+    "value": -0.008388040874092458,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -3.3963286028017254
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 (and largest-third mean < 0); reject: slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return in the largest third of short sizes",
+    "value": -0.007802613095094754,
+    "passed": true
+  },
+  "counts": {
+    "non-zero-forecast grid cases": 2359,
+    "largest-third cases": 786,
+    "grid cases in regression": 3419
+  },
+  "decided_by": "The slope is negative with t <= -2 and the largest-third mean excess return is below zero.",
+  "reading": "The regression uses every grid bar (zero-forecast bars at short size 0) with the coin's mean taken over all its non-overlapping grid returns, and the largest third is the top floor(n/3) non-zero-forecast grid cases ranked by short size."
+}

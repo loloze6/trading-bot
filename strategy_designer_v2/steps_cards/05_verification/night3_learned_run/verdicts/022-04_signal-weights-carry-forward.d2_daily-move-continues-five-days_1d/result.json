@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of demeaned 5-bar forward return on forecast, pooled 5-bar grid",
+    "value": 0.00025311975297349047,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4592668587593798
+    },
+    "threshold": "confirm if t >= 2 (with the supporting check), reject if t <= -2, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus market-rise gain",
+    "value": -0.0001231119712920347,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 3416,
+    "grid cases": 3419
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The regression is OLS with an intercept on every grid bar with a full 5-bar forward return, zero forecasts included; the coin's mean 5-bar return is the mean of its grid returns over all windows; the book's daily return is the change in postRebalance_total_value per coin, averaged across coins each day, and its market gain is the previous bar's allocation times the coin's mean daily return."
+}

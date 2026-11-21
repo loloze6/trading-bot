@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-two-day-rebound_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3556937,
+  "findings": {
+    "F1": "The tested relation points the way the idea predicts but is far too small to clear the bar or a trade's cost: step 5's pooled slope t is 1.70 on 4,236 non-overlapping cases. Per case the unusual move is +0.10 % over 48 hours, a strength of 0.016, about a third of the usual 0.05 (findings F10). That is 0.5 times the 0.19 % cost of a buy and a sell (findings F11).",
+    "F2": "The effect is mixed across coins and drowned by the market's own moves.",
+    "F3": "The gain sits in the deepest falls only.",
+    "F4": "The 48-hour horizon is not where the relation is clearest.",
+    "F5": "The 20:00 UTC hour is not where the rebound shows; it is among the weakest hours.",
+    "F6": "The rebound follows falls made as a grind, the opposite of the brief's jump story.",
+    "F7": "The rebound shows mainly while the coin is below its level of 30 days earlier: slope t 1.90 (2,768 cases) there, against -0.53 (1,496 cases) after a 30-day rise.",
+    "F8": "Without the clip to falls, the evening's raw 24-hour return has no linear relation to the next 48 hours (slope t -0.65, 8,446 cases). The relation is U-shaped: both extreme quintiles are followed by about +0.3 % (falls of -6.2 %: +0.30 %; rises of +6.5 %: +0.27 %), and the middle three by -0.20 % to -0.36 %."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D",
+      "name": "evening fall rebound, more coins",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ],
+      "idea": "The more a coin has fallen over the 24 hours up to the 20:00 UTC close, the more it rises over the next 2 days.",
+      "consequence": "An evening long after a deep daily fall is paid by holding it for a day or two, where the rebound is larger than a round trip, not by selling two hours later.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The more a coin has fallen over the 24 hours up to the 20:00 UTC close, the more it rises over the next 2 days, only while that fall was made of many small hourly steps rather than a few large hours.",
+      "consequence": "An evening long after a deep fall is worth holding for two days when the fall was a grind, and not when one or two violent hours made it.",
+      "name": "evening grind-fall rebound",
+      "from": "F3, F6",
+      "refs": [
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-two-day-rebound.b1_evening-fall-rebound-more-coins",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-two-day-rebound.b2_evening-grind-fall-rebound"
+  ],
+  "no_ideas": null
+}

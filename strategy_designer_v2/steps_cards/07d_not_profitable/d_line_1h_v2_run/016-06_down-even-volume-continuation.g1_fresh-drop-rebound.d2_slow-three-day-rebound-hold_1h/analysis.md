@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold_1h
+idea tested: 016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3621 USD
+---
+## Findings
+- **F1:** Of the book's mean daily return of 0.000115, the market's own rise accounts for 0.000397 (mean position 0.34), so the timing part is -0.000281: being long after 1-day falls has cost money against simply holding, which is why the Sharpe trails holding's by 0.41 and the mean daily return stays below 0.0005.
+- **F2:** On the non-overlapping 72-bar grid bars with a long forecast, how much the coin traded over the last day decides the outcome. In the quietest quarter, where 24-hour volume is lowest against its 30-day mean, the next-3-day excess return is -0.0132 (t -3.17, n 448). In the busiest quarter it is +0.0095 (t 2.34, n 448). The same split holds over all grid bars with both a 3-day and a 1-day fall.
+- **F3:** The coin's 24-hour volatility against its 30-day volatility splits the long bars the same way. In the calmest quarter the next-3-day excess return is -0.0112 (t -2.59, n 344); in the most volatile quarter it is +0.0114 (t 2.40, n 344). Even among the larger forecasts, those with low relative volatility lose -0.0107 (t -2.74, n 277), while those with high relative volatility gain +0.0112 (t 2.93, n 411).
+- **F4:** The forecast's size alone is not enough. Its two lower quarters lose (-0.0103, t -2.51, n 473; -0.0058, t -1.47, n 473), and only the upper half gains (+0.0047, t 1.85, n 945). The size of the 1-day fall multiplied by its volume ratio grades better: its quintiles run monotonically from -0.0115 (t -2.80) to +0.0110 (t 2.10), n 275 each.
+- **F5:** Most long positions sit on shallow 3-day falls, and these lose. The shallowest quarter of 3-day falls returns -0.0115 over the next 3 days (t -3.60, n 456), while the deepest quarter gains +0.0100 (t 2.05, n 457).
+- **F6:** The book's gain rests on a few windows. Book Sharpe ranges from -2.43 (w14) and -2.20 (w7) to +3.20 (w11), and the windows where the coin fell (w2, w7, w14) are the book's worst. This matches the failed leave-one-out Sharpe (-0.015) and the Calmar (0.0014).
+
+## Ideas
+- `016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold.d1_high-volume-drop-rebound` (from F1, F2, F4): When a coin has fallen over the past 3 days, the larger its fall over the last 1 day, the more it rises over the next 3 days, only while that 1-day fall came with heavy trading, and the heavier the last day's volume against its usual 30-day level, the larger the rise.
+- `016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold.d2_violent-drop-rebound-only` (from F1, F3, F5): When a coin has fallen over the past 3 days, the larger its fall over the last 1 day, the more it rises over the next 3 days, only while its 1-day hourly volatility is high against its 30-day hourly volatility, and the higher that ratio, the larger the rise.
+- `016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold.d3_deep-three-day-fall-rebound` (from F5, F6): The deeper a coin's 3-day fall, the more it rises over the next 3 days.
+- `016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold.d4_down-day-volume-sets-direction` (from F2, F4): The more heavily a coin traded during a 1-day fall, relative to its 30-day average volume, the more it rises over the next 3 days, while a fall on light volume is followed by a further decline over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,218 @@
+{
+  "core": {
+    "net_return_pct": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_pct": 0.0,
+    "trade_count": 0,
+    "win_rate": 0.0,
+    "avg_trade_net_pnl": 0.0,
+    "fees_paid": 0,
+    "gross_pnl": 0,
+    "net_pnl": 0,
+    "cost_drag_pct": null,
+    "forecast_return_corr": 0.009078,
+    "forecast_return_corr_pvalue": 0.763194,
+    "forecast_return_corr_pvalue_block_adjusted": 0.952532,
+    "forecast_return_corr_n_eff": 46,
+    "forecast_return_corr_all_bars": 0.012285,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.89384,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": null,
+    "sigma_bar_bps": 93.1555,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": null,
+    "real_gross_edge_bps_per_trade": null,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "trending": {
+      "bar_count": 1104,
+      "avg_forecast": 12.030664
+    },
+    "unknown": {
+      "bar_count": 1824,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {},
+  "dynamic": {
+    "debug_info.components.hpm.last_history_value": {
+      "trending": {
+        "mean": 0.006714,
+        "std": 0.004484
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.hpm.post_pipeline_value": {
+      "trending": {
+        "mean": 11.05031,
+        "std": 6.95047
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.hpm.weight_normalized": {
+      "trending": {
+        "mean": 0.5,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.hpm.weighted_contribution": {
+      "trending": {
+        "mean": 5.525155,
+        "std": 3.475235
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.above_low.last_history_value": {
+      "trending": {
+        "mean": 55.671177,
+        "std": 14.863876
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.above_low.post_pipeline_value": {
+      "trending": {
+        "mean": 13.011018,
+        "std": 3.920107
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.above_low.weight_normalized": {
+      "trending": {
+        "mean": 0.5,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.above_low.weighted_contribution": {
+      "trending": {
+        "mean": 6.505509,
+        "std": 1.960054
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "trending": {
+      "forward_return_mean": 0.00017942,
+      "forward_return_std": 0.01113174,
+      "n_bars": 1104,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": -1.966e-05,
+      "forward_return_std": 0.00802064,
+      "n_bars": 1823,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": 0.0,
+    "sharpe": 0.0,
+    "sortino": 0.0,
+    "exposure_pct": 0.0,
+    "turnover": 0.0,
+    "n_bars_total": 2928,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 0,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 6,
+    "events": [
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2020-10-24 19:00:00",
+        "previous_timestamp": "2020-10-24 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2021-01-29 17:00:00",
+        "previous_timestamp": "2021-01-29 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2021-07-23 02:00:00",
+        "previous_timestamp": "2021-07-22 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 18000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2021-07-23 14:00:00",
+        "previous_timestamp": "2021-07-23 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2022-05-13 00:00:00",
+        "previous_timestamp": "2022-05-10 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 180000.0,
+        "bars_missing": 49,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2022-05-26 23:00:00",
+        "previous_timestamp": "2022-05-26 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

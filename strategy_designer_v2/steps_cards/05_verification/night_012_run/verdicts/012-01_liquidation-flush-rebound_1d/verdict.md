@@ -11,6 +11,7 @@ Evidence:
 - Counts: flush cases: 158
 - Decided by: Confirming t >= 2 but the Spearman correlation is at or below 0 (supporting check failed).
 - Reading: A flush bar is dropped when it lies 1 to 3 bars after any earlier flush bar in the same window (the dedup is applied before dropping cases without a close 3 bars ahead in the window), and the coin's mean is over grid positions 0, 3, 6, ... of each window pooled across all its windows.
+- Size: unusual move +1.63 % per case over 3 bars, 0.210 of the coin's usual move (7.96 %); normal drift in its direction +0.36 %, total +1.99 %; 158 cases
 Plan: `steps_cards/03_test_plan/night_012_run/plans/012-01_liquidation-flush-rebound_1d.md`
 Record: `steps_cards/04_backtest/night_012_run/backtests/012-01_liquidation-flush-rebound_1d`
 Measure: `measure.py`

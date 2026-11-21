@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 5-bar return on forecast at cell's first bar",
+    "value": 0.0012364160990018301,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.5808780743979383
+    },
+    "threshold": "confirm: slope t >= 2 with supporting check passing; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 5-bar return over cells with forecast > 0 above 0",
+    "value": 0.006223580354625802,
+    "passed": true
+  },
+  "counts": {
+    "grid cells": 372,
+    "grid cells with forecast > 0": 198
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "Situation bars are those whose raw 28-bar return (recomputed from closes where not recorded) is above 0 with a positive forecast; cells are bars at positions 0,5,10,... of each window having a close 5 bars later in the same window, the slope's t is the ordinary OLS t, and the plan's minimum counts are read as 'not observable' when unmet."
+}

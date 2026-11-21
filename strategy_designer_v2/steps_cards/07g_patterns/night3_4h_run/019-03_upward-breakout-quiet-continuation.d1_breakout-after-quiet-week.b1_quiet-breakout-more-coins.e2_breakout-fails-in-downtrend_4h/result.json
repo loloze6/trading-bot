@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e2_breakout-fails-in-downtrend_4h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5506509,
+  "findings": {
+    "F1": "The confirmed decline after an upward breakout in a falling coin is not about the upward breakout. Downward breakouts in a falling coin are followed by nearly the same unusual 12-day move: -2.36 % (t -5.29, 1397 cases) against -2.67 % (t -5.04, 1122 cases) for upward ones. The negative 30-day return carries the effect, not the break of the two-day range.",
+    "F2": "The confirmation rests mostly on one year. In 2025 the unusual move after an upward breakout in a falling coin is -7.4 % (t -9.68, 252 cases). In 2018, 2020, 2023 and 2024 it is +0.4 %, +1.7 %, 0.0 % and +1.5 % (no t below -2, 460 cases together).",
+    "F3": "The book is mainly a bet on the market falling. Its mean daily return is positive in 2018, 2022 and 2025, the years the coins fell (coin daily mean -0.35 %, -0.26 % and -0.03 %). It is negative in 2020, 2023 and 2024, the years they rose (book -0.10 %, -0.11 % and -0.10 %). Trades lose on average in every year except 2025: mean net from -1.2 % to -13.2 %, against +3.6 % in 2025.",
+    "F4": "Shorting fights the coins' normal rise. Per case the unusual move is +2.55 %, but the normal drift in the short direction is -2.21 %, so a short earns only +0.34 % before costs. Trades held 13 to 20 days lost 10.5 % net on average (452 trades).",
+    "F5": "An upward breakout in a coin whose 30-day return is positive is followed by a larger rise than usual, at every horizon from 6 to 24 days:",
+    "F6": "On the 12-day grid, the coin's next 12 days rise with its volatility-scaled 30-day return (Spearman 0.058, p 0.009, about 2070 cases).",
+    "F7": "The brief's premise that a narrow range comes before a larger move is absent. After a breakout, the mean absolute 12-day move is 13.0 % in the narrowest quintile of the prior two-day range and 13.4 % in the widest. On the grid it is 14.8 % in the narrowest quintile against 14.0 % in the widest, with no gradient between them.",
+    "F8": "Within upward breakouts in a falling coin, the decline is not graded by the depth of the fall:"
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's four-hour bar closes above the high of its preceding two days while its 30-day return is positive, the coin rises more than usual over the next 6 to 24 days, and the stronger its 30-day rise relative to its volatility, the larger the further rise.",
+      "consequence": "A trader should take, and hold for days, upward breakouts in a coin that is already rising over the month, rather than fade them, the more so the stronger the month's rise.",
+      "name": "breakout continues in uptrend",
+      "from": "F5, F6, F4",
+      "refs": [
+        "F5",
+        "F6",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 24 days rises with its 30-day return divided by its 30-day volatility: the stronger its recent risk-adjusted rise, the more it gains over the following weeks.",
+      "consequence": "A trader should hold a coin long in proportion to the strength of its volatility-scaled monthly rise, and refuse longs in coins whose month has been weak.",
+      "name": "volatility-scaled monthly momentum",
+      "from": "F6, F1, F3",
+      "refs": [
+        "F6",
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e2_breakout-fails-in-downtrend.g1_breakout-continues-in-uptrend",
+    "019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e2_breakout-fails-in-downtrend.g2_volatility-scaled-monthly-momentum"
+  ],
+  "no_ideas": null
+}

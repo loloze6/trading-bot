@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 5-bar return on forecast (forecast < 0, grid bars)",
+    "value": -4.3971159998829056e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.17162750036947294
+    },
+    "threshold": "confirm if t >= 2 with the supporting check passing; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move in short direction of cases (forecast <= -5)",
+    "value": -0.00037042285398695426,
+    "passed": false
+  },
+  "counts": {
+    "cases with forecast at -5 or below": 1720,
+    "grid bars with a non-zero forecast": 3226
+  },
+  "decided_by": "The slope's t is between -2 and +2.",
+  "reading": "Cases are short-side bets (a rise of |forecast| of at least 2 points from its lowest since the last bet) with forecast <= -5, the first one per 5-bar grid cell, measured from that bar's close over 5 bars within the window; the regression uses grid bars (positions 0,5,10,...) with forecast < 0 and an OLS fit with intercept; drift is each coin's mean non-overlapping 5-bar return over all its windows."
+}

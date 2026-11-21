@@ -1,0 +1,26 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar unusual move (return minus coin's normal 5-bar drift, in signal direction)",
+    "value": 0.006965690391136076,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.794257851813423
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, unusual move) > 0",
+    "value": 0.03472125761020969,
+    "passed": true
+  },
+  "counts": {
+    "cases": 990
+  },
+  "reading": "ret60 is recomputed from closes inside the window where 60 prior bars exist, else taken from the recorded regime being 'trending'; break and ma_dist conditions use their recorded raw values; a case is the first bet bar (forecast rise of >= 2 points on its side from its lowest level since the last bet, from 0 after flat) in each 5-bar grid cell of a window, with a full 5-bar forward return inside that window; drift is the coin's mean 5-bar return on the grid positions 0,5,10,... of all its windows.",
+  "status": "inconclusive",
+  "decided_by": "The t of the mean unusual move lies between -2 and 2."
+}

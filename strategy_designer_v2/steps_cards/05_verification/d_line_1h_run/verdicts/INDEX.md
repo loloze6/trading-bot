@@ -1,0 +1,7 @@
+016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops_1h: confirmed (fit: adapted) [main: 0.00059806; ordinary t of the mean 6.17459; decision bars with forecast > 0 8613, decision bars 17403]
+016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h: inconclusive (fit: adapted) [main: -0.000325995; OLS slope t -0.650931; independent grid cases with forecast > 0 947]
+016-03_up-jump-price-reversal.d2_jump-rises-continue-less_1h: confirmed (fit: exact) [main: 0.0293748; OLS slope t 3.10884; risen grid cases pooled across coins 2865]
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day_1h: confirmed (fit: adapted) [main: 0.000148871; OLS slope t 2.68289; regime bars with a full 24-bar forward return 17280, regime bars with forecast > 0 8580]
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound_1h: confirmed (fit: adapted) [main: 0.00798266; t of the forecast-weighted mean 6.52347; pooled cases 3894]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h: confirmed (fit: exact) [main: 3.16262; OLS slope t 3.16262; active grid cases 2766]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold_1h: inconclusive (fit: adapted) [main: 2.74545; OLS slope t 2.74545; grid cases in the regime 2762, grid cases with forecast > 0 1891]

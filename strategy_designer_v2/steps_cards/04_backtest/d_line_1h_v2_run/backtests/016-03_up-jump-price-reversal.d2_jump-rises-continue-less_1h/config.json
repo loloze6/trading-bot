@@ -1,0 +1,52 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "grind_residual",
+            "class": "strategies.strategy_components.TopGainsShareOfRiseComponent",
+            "params": {
+              "period": 72,
+              "k": 3,
+              "form": "residual"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 72,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 72
+  }
+}

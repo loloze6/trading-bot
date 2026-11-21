@@ -24,6 +24,13 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
 
   It is not written out again.
 - **The verdict is about the idea's reality, judged before costs.** Whether the book pays is branch 3's question (`06_profitability`).
+- **Next to the verdict, the idea's size** (operator, 2026-11-20): how large its effect is, not only whether it exists.
+  Computed by code from the record's prices and forecast (`../common/measures.md`, "The size of an idea";
+  `../common/idea_size.py`): per case (a signal of the idea), the unusual move over the horizon net of the coin's normal
+  drift, the drift in the signal's direction, the total, and the strength (the unusual move as a share of the coin's
+  usual move over the horizon). No cost enters it and it does not change the status: the status says "real or not",
+  the size says "how large". Why it matters: of 103 confirmed ideas that did not pay, 53 had a move per case smaller than
+  the cost of a trade (`../runs/RETRO_DIAGNOSIS_RUN.md`).
 
 ## The fields of a verdict
 **In `verdict.md`:**
@@ -56,6 +63,11 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
    - Used by: the reading of each exercise, and anyone who disputes a number.
    - Without it: the numbers cannot be checked.
 6. **`result.json`:** what the function returned, as it returned it.
+6b. **`size.json`:** the idea's size (cases, unusual move, normal drift, total move, the coin's usual move, strength),
+   with one line in `verdict.md` ("Size: ..."). Not for a mismatch.
+   - For: telling a real but small idea from a real and large one.
+   - Used by: the operator, step 7, and whoever compares an idea's size with what a trade costs.
+   - Without it: "confirmed" says nothing of whether the effect can ever pay.
 7. **The index line** (`INDEX.md`): `<plan id>: <status> (fit: exact|adapted) [main: <value>; <statistic>; <counts>]`, or `<plan id>: no verdict: <why>` for a plan with no record (untestable, missing-components, or refused by the engine).
 
 ## Storage and naming
@@ -71,7 +83,7 @@ Aligned with the other steps.
   verdicts/                    created by the helper when it runs (default):
     INDEX.md                   one line per plan
     REVIEW.md, run_log*.txt    once a real run has filled it
-    <plan id>/                 one folder per verdict: verdict.md, measure.py, result.json
+    <plan id>/                 one folder per verdict: verdict.md, measure.py, result.json, size.json
   validation/reading.md        the reading of the exercise that validated this card
   planted_test/                a test set: copies of real records with a known gain planted (not market evidence)
   cut_records/                 a test set: two real records cut to one window of one coin, with their plans, verdicts, ideas and briefs (7.a's fixed inputs)

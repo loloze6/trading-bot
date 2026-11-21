@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed (short) excess 5-bar return at grid bars where a short bet starts",
+    "value": 0.005984836186110302,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.130698792978536
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: t <= -2; fewer than 30 cases inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean signed excess fall, larger |forecast| half minus smaller half",
+    "value": -0.009473129592077282,
+    "passed": false
+  },
+  "counts": {
+    "cases": 271,
+    "larger-forecast half": 135,
+    "smaller-forecast half": 136,
+    "active bars": 2299
+  },
+  "decided_by": "The t of the mean signed excess fall lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are the bars at positions 0, 5, 10, ... of each window on which a short bet starts (a fall of the forecast of at least 2 points below its least-negative level since the last bet, reset at flat), the excess is against the coin's mean 5-bar grid return over all its windows, and the median split puts cases with |forecast| above the median in the larger half and the rest in the smaller."
+}

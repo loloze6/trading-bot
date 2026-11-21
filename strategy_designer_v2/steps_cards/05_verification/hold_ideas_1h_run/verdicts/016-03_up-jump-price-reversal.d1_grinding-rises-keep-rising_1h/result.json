@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of forecast coefficient in pooled regression of next-72-bar excess return on forecast and past 72-bar return (rising grid bars)",
+    "value": 1.5008667562061628,
+    "statistic": {
+      "name": "OLS t of forecast coefficient",
+      "value": 1.5008667562061628
+    },
+    "threshold": "confirm if coefficient > 0 with t >= 2; reject if coefficient < 0 with t <= -2; else inconclusive; fewer than 300 rising grid cases is not enough"
+  },
+  "supporting_check": null,
+  "counts": {
+    "rising grid cases pooled over the coins": 2865
+  },
+  "decided_by": "The forecast coefficient's t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Grid at positions 0,72,144,... of each window; rising cases need a past 72-bar close and a next-72-bar close inside the window; the coin's mean 72-bar return is the mean of the forward returns of all its grid bars over all windows; OLS with an intercept and the ordinary coefficient t."
+}

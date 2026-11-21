@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9263866697101119,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar forward return minus coin drift on forecast, non-overlapping grid, pooled",
+    "value": 0.0013737294256475838,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 2.310424365119619
+    },
+    "threshold": "t >= 2 confirms, t <= -2 rejects, over at least 1000 grid cases"
+  },
+  "supporting_check": {
+    "name": "timing gain before costs (mean daily position gain minus gain from coin mean drift)",
+    "value": 0.00011245030241090609,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases": 3419
+  },
+  "decided_by": "The slope's t is 2 or more over at least 1000 grid cases and the timing gain is positive.",
+  "reading": "All grid bars (positions 0,5,10,... of each window with a full 5-bar return, flat forecasts included) enter an ordinary least-squares slope with intercept, the drift is the coin's mean grid 5-bar return over all windows, and the book before costs is the previous bar's allocation times the coin's daily return, averaged over coins per day."
+}

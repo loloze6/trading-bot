@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-removed 5-bar return on forecast (pooled breakout cases)",
+    "value": 0.0008875444885936328,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.3721298535656461
+    },
+    "threshold": "confirm if slope t >= 2 (with supporting check), reject if slope t <= -2, at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 5-bar return of breakout cases above 0",
+    "value": 0.008133356249459593,
+    "passed": true
+  },
+  "counts": {
+    "breakout cases": 175,
+    "active bars": 908
+  },
+  "decided_by": "The slope t lies between -2 and 2.",
+  "reading": "Grid bars are positions 0,5,10,... of each window with a full 5-bar return inside it; the coin's mean 5-bar return is the mean over all its grid returns across windows; the regressor is post_pipeline_value (forecast where it is missing); the situation check uses the raw distance above 0 with a positive forecast."
+}

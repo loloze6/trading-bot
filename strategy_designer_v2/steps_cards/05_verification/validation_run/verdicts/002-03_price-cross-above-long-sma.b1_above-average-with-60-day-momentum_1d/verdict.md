@@ -11,6 +11,7 @@ Evidence:
 - Counts: active non-overlapping cases: 329, active bars: 6890
 - Decided by: t is between -2.0 and 2.0, which the plan calls inconclusive.
 - Reading: The situation is checked as regime == 'trending' (the detector's close-above-200-SMA rule) and ret60 last_history_value > 0 with a positive forecast; the coin's mean 20-bar return is the mean over all windows' non-overlapping grid bars (positions 0, 20, 40, ...), active or not, and a case is a grid bar with forecast > 0 and a forward return inside its window.
+- Size: unusual move +3.03 % per case over 20 bars, 0.113 of the coin's usual move (21.24 %); normal drift in its direction +2.45 %, total +5.48 %; 350 cases
 Plan: `steps_cards/03_test_plan/plans/002-03_price-cross-above-long-sma.b1_above-average-with-60-day-momentum_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-03_price-cross-above-long-sma.b1_above-average-with-60-day-momentum_1d`
 Measure: `measure.py`

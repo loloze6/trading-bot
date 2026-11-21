@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid cases with forecast > 0: 1067
 - Decided by: The main measure's t lies between -2 and 2.
 - Reading: The coin's mean 5-bar return is taken over the same non-overlapping grid (positions 0, 5, 10, ... of each window, with t+5 inside the window) across all its windows; the supporting check compares cases strictly above and strictly below the median positive forecast, ties left out; fewer than 30 cases gives 'not observable'.
+- Size: unusual move -0.68 % per case over 5 bars, -0.057 of the coin's usual move (10.60 %); normal drift in its direction +0.59 %, total -0.09 %; 1880 cases
 Plan: `steps_cards/03_test_plan/night_run/plans/003-02_thin-volume-drop-rebounds_1d.md`
 Record: `steps_cards/04_backtest/night_run/backtests/003-02_thin-volume-drop-rebounds_1d`
 Measure: `measure.py`

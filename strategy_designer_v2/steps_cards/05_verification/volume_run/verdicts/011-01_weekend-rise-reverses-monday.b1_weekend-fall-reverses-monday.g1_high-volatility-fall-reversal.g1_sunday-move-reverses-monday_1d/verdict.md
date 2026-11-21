@@ -11,6 +11,7 @@ Evidence:
 - Counts: Sunday cases: 2489, high-volume half: 1242, low-volume half: 1247
 - Decided by: the result meets neither the confirm rule nor the reject rule, so it is inconclusive
 - Reading: Sunday cases are the regime 'mean_reversion' bars with a next bar in the same window, the slope is OLS with intercept on the 'forecast' column, the volume split is per coin at the median of sunday_volume last_history_value over all its Sunday cases (high = above median, low = at or below), the difference t is (b_high - b_low)/sqrt(se_high^2 + se_low^2), and the situation side is taken from the sign of sunday_move last_history_value (price return if missing).
+- Size: unusual move +0.48 % per case over 1 bars, 0.098 of the coin's usual move (4.78 %); normal drift in its direction -0.00 %, total +0.48 %; 2089 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d`
 Measure: `measure.py`

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar unusual move of breakout bets",
+    "value": 0.002040123927866543,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.2948327478866934
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting difference > 0); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "high-half minus low-half quiet mean unusual move",
+    "value": 0.003473446940004908,
+    "passed": true,
+    "welch_t": 1.1019540313496532
+  },
+  "counts": {
+    "cases": 3109,
+    "high-half cases": 1554,
+    "low-half cases": 1554
+  },
+  "decided_by": "Neither rule met: the main t is between -2 and 2, or it is positive with a supporting difference <= 0 whose Welch t is above -2.",
+  "reading": "The breakout is rebuilt from prices as close[t] > max(high[t-12..t-1]) inside each window, and the first 12 bars of a window, where it cannot be computed, are left out of the agreement; a case is a holding-period bet (a rise of a positive forecast of at least 2 points from its lowest level since the last bet, from 0 after a flat) on a trending bar, the first such bet in each 18-bar grid cell counted from the window's first row, with no case where the 18-bar return leaves the window; the normal drift is the coin's mean 18-bar return on the grid of all its windows; the halves are the cases strictly above and strictly below the median of quiet's post_pipeline_value (ties at the median left out); the plan's 'fewer than 30 cases / 15 per half' is reported as not observable."
+}

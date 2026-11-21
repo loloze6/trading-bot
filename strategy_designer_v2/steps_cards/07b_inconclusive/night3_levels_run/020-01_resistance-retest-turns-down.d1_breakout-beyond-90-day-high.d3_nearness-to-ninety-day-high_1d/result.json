@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3235975,
+  "findings": {
+    "F1": "At the plan's 20-day horizon there is no effect beyond the reported slope t of 0.73 (827 cases): the rank correlation is -0.014, the slope t is -0.16 once excess returns are clipped at their 2nd and 98th percentiles, and 0.007 once each coin's returns are scaled by their spread.",
+    "F2": "The +2.9 % top-minus-bottom quintile difference at 20 days comes from a few large outliers, not the typical case: the top quintile's mean excess return is +3.8 % but its median is -3.5 % (sd 43 %, t 1.14, 166 cases), and the quintiles do not rise in order (+0.9 %, -3.2 %, +0.7 %, -2.2 %, +3.8 %).",
+    "F3": "At 20 days the effect sits in one coin and part of the data only: ZEC's slope t is 1.97, while the other five coins range from -0.92 to 0.02 and give -0.76 together; by window group the t runs -1.00, -1.32, -0.02 and +1.70 from w1-6 to w19-24.",
+    "F4": "The test measured the idea beyond the horizon where it shows: the pooled slope t is 2.27 at 5 days (3,419 cases) and 2.94 at 10 days (1,691 cases), then falls to 0.73 at 20 days, 0.58 at 40 days and -0.23 at 60 days.",
+    "F5": "At 10 days the effect holds up better than at 20 days: the slope t is 2.57 on returns scaled per coin and 2.00 with clipped returns, four of six coins are positive (BTC 0.87, ETH 1.53, XRP 1.37, ZEC 3.26), and it is 1.49 without ZEC; the top quintile's excess is +2.5 % (t 2.36) against -0.9 % for the bottom quintile.",
+    "F6": "Even at 10 days the effect comes from the closes nearest or beyond the 90-day high: among cases with forecast at or below 2.7 the slope t is 0.16 at 10 days and 0.06 at 5 days, and the top quintile's median is only +0.18 % against its mean of +2.5 %.",
+    "F7": "Size is not what blocks the book: at 20 days the total move per case is +3.39 %, 17.6 times the 0.19 % cost of a round trip. Consistent with prior F11, the issue is whether the effect is real, not whether it is large enough to cover costs."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's daily close stands to its highest close of the previous 90 days, the more it rises over the next 10 days.",
+      "consequence": "A trader should lean long for about ten days as a coin's close approaches or passes its 90-day high, and not expect the lift to last to twenty days.",
+      "name": "nearness to high, ten days",
+      "from": "F1, F4, F5, F6, F7",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-01_resistance-retest-turns-down.d1_breakout-beyond-90-day-high.d3_nearness-to-ninety-day-high.b1_nearness-to-high-ten-days"
+  ],
+  "no_ideas": null
+}

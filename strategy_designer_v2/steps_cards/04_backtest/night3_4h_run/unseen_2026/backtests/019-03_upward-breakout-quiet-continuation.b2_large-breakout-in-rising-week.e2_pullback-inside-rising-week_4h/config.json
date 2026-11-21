@@ -1,0 +1,68 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "ret7d",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 42
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "ret7d",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "pullback",
+            "class": "strategies.strategy_components.BreakoutInMeanRangesComponent",
+            "params": {
+              "period": 12,
+              "base_period": 180,
+              "side": "below"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 180,
+                  "min_periods": 45
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}

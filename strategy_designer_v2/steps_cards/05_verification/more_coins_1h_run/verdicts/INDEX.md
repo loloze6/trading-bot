@@ -1,0 +1,1 @@
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound.b1_volatile-evening-fall-more-coins_1h: confirmed (fit: adapted) [main: 0.00805157; t of the mean 8.94501; cases 7691]

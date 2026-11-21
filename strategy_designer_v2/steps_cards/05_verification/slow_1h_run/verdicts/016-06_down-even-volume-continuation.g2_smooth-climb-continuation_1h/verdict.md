@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent trending grid cases: 2916, top third cases: 972, bottom third cases: 972
 - Decided by: Slope t = 1.25 lies between -2 and 2, inconclusive per the plan.
 - Reading: The coin's mean 72-bar return is the mean of the forward 72-bar returns on every grid bar (positions 0, 72, 144, ... of each window, all regimes) over all its windows; the slope's t is the OLS slope over its standard error with the pooled trending grid cases; the top and bottom thirds are the floor(n/3) highest and lowest forecasts by sort order; the plan's 'fewer than 100 independent trending grid cases' is treated as the minimum count (not observable); for the situation check, ret72 is recomputed from closes and, on a window's first 72 bars where it cannot be, the recorded regime is used.
+- Size: unusual move -0.12 % per case over 72 bars, -0.015 of the coin's usual move (8.23 %); normal drift in its direction +0.41 %, total +0.28 %; 4911 cases
 Plan: `steps_cards/03_test_plan/slow_1h_run/plans/016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h.md`
 Record: `steps_cards/04_backtest/slow_1h_run/backtests/016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h`
 Measure: `measure.py`

@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 10-day return minus normal drift on forecast, pooled non-overlapping grid cases",
+    "value": 0.0013684897141610331,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.497303523183562
+    },
+    "threshold": "confirm if slope t >= 2 with supporting check passing; reject if t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean 10-day return minus normal drift among grid cases with forecast > 0, above 0",
+    "value": 0.006362876020788602,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1691,
+    "grid cases with forecast > 0": 837
+  },
+  "decided_by": "The slope's t is 2 or more (2.50) and the supporting check passes.",
+  "reading": "Situation = raw 28-day return > 0 with a long (positive) forecast, raw value recomputed from closes where missing; grid = rows 0,10,20,... of each window with close[t+10] in the same window; normal drift = each coin's mean grid 10-day return over all its windows; slope t from pooled OLS with intercept; the plan's 'fewer than 100 grid cases with forecast > 0' minimum is reported as 'not observable' per the workflow rule."
+}

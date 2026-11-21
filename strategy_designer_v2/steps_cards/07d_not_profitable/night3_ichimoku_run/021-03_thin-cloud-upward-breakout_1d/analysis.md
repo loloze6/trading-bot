@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 021-03_thin-cloud-upward-breakout_1d
+idea tested: 021-03_thin-cloud-upward-breakout
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5751 USD
+---
+## Findings
+- **F1:** The book's low mean daily return (0.00044 against the 0.0005 needed) comes mostly from how little it holds: it is invested on only 21 % to 33 % of bars per coin (BTC 21 %, ZEC 33 %), with a mean absolute allocation of 0.12 to 0.20, even though each trade earns +6.7 % net on average (336 trades, median +1.6 %). Cost is not the cause: the total move per case is 48.9 times the 0.19 % round trip.
+- **F2:** The move after an upward cloud cross outlasts the 26-day hold. The mean rise from the cross is +8.7 % at 26 days and +12.6 % at 39 days (181 and 161 crosses). On trades, the mean is +10.1 % at 26 days and +13.6 % at 52 days (287 and 210). The position's gain per bar is largest at ages 25 to 40 days, at 0.00586 (t 3.28, 485 bar-cases), against 0.0015 to 0.0024 at ages 0 to 25. It turns to -0.00038 beyond 40 days. The book exits just before its best stretch.
+- **F3:** The cloud-thinness grading points the wrong way in the book. Thinner clouds at entry give slightly lower net trade returns (Spearman rho -0.125, p 0.02, 336 trades), and the forecast size does the same (rho -0.136, p 0.012). The verdict's thin-minus-thick difference is only +0.23 %. The sizing therefore adds risk without adding gain.
+- **F4:** The coin's 60-day return before the cross sorts the outcome. Trades in its top tercile net +18.7 % against +2.0 % in its bottom tercile (161 trades). Their 26-day forward return is +27.0 % against -0.1 %. The 40-day return sorts the same way more weakly (+10.2 % against +5.8 %, rho 0.155, 208 trades).
+- **F5:** The losses that pull Calmar to 0.68 (deepest fall 23 %) fall in the bear years. Trades lost -7.8 % on average in 2018 (26 trades) and -1.0 % in 2022 (40 trades), against +17.5 % to +18.5 % in 2020 and 2021. In those two years the book's mean daily return was -0.00033 and -0.00039, while the coins fell -0.0033 and -0.0019 a day. Within a trade, the mean worst point of the path is -7.5 %, and the 10th percentile is -22.6 %.
+- **F6:** The deep falls come mostly from the volatile coins. Of the book's worst 2 % of coin-days, 81 are XRP, 75 ZEC and 66 LTC, against 27 ETH and 41 BTC.
+- **F7:** Across all bars, being above the 52-day range midpoint is followed by a modestly better 26-day unusual return. Above, it is +3.7 % (140 non-overlapping cases); below, it is -1.7 % (146). The graded quintiles are noisy: the top-minus-bottom t is -0.62 by position against the 52-day midpoint, 1.35 by position against the 26-day midpoint, and 1.54 by the prior 26-day return.
+
+## Ideas
+- `021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold` (from F2, F3, F4, F5): After a daily close that crosses up from below a coin's Ichimoku cloud to above it, the coin rises over the next 40 days, and the larger the coin's 60-day return before the cross, the larger the rise.
+- `021-03_thin-cloud-upward-breakout.d2_calm-breakout-lasts-longer` (from F2, F5, F6): After a daily close that crosses up from below a coin's Ichimoku cloud to above it, the coin rises over the next 40 days, and the lower its 20-day realised volatility at the cross, the larger the rise.
+- `021-03_thin-cloud-upward-breakout.d3_broad-26-day-trend-continuation` (from F1, F4, F7): The larger a coin's 26-day return, the more the coin rises over the next 26 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

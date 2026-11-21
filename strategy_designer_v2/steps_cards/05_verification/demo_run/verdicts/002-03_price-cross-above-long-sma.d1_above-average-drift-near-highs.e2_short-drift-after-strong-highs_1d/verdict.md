@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid cases with regime trending and forecast > 0: 1032, grid cases with regime trending: 1674
 - Decided by: The pooled slope is positive with t >= 2 (confirm rule).
 - Reading: The coin's mean 5-bar return is taken over all grid bars of all its windows (every regime), the pooled regression is an OLS with intercept over all coins' trending grid bars, and the 200-day gate is read from the regime column since the detector's component is not recorded.
+- Size: unusual move +0.26 % per case over 5 bars, 0.022 of the coin's usual move (10.60 %); normal drift in its direction +0.58 %, total +0.84 %; 1069 cases
 Plan: `steps_cards/03_test_plan/demo_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs_1d.md`
 Record: `steps_cards/04_backtest/demo_run/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs_1d`
 Measure: `measure.py`

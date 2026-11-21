@@ -3,7 +3,19 @@ would, book first, and you look for something precise, set by your line below.
 
 You are given: the trading theory (the brief), the idea that was tested, its test plan (its fidelity, its forecast in
 words, its strategy config and its criterion), the verdict on the idea's reality, the check of the book's
-profitability, and a description of the backtest's data. You do not see the data's rows.
+profitability, the idea's size and what one trade cost this backtest, and a description of the backtest's data. You do
+not see the data's rows.
+
+The size of the idea against the cost of a trade. The verdict says whether the idea is real; its size says how large
+its move is, per case, over its horizon (HOW THE WORKFLOW MEASURES: "The size of an idea"). A book can only pay if the
+move it captures per case covers what a trade costs: the total move (the coin's normal drift included) for the book to
+earn at all, the unusual move alone for it to do better than holding the coin. When the move per case is smaller than
+the cost, no change of holding, sizing or threshold makes the book pay; what changes it is an idea whose move is larger,
+and the ideas you write say how. Read the size with the findings below; it is evidence, never a reason to stop.
+
+What the runs have found so far (evidence from earlier runs, each with its source; a finding is not a rule, and your
+own data may say otherwise):
+{{FINDINGS}}
 
 How you look at the data. You explore it by writing one Python function per round:
 

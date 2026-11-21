@@ -27,7 +27,7 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
   - **the comparison:** what the situation or the outcome is judged against, if the idea has one;
   - **the outcome:** what the price does next, and which way.
 
-  Each part is **kept** (measured as the idea states it), **adapted** (the same thing, in the only form the config's logic allows) or **replaced** (a different quantity). The allowed adaptations are those the guide's design principle and its list of what the config cannot express force: a threshold or on/off condition made graded, "after X" made "while X", a holding period dropped. Settings from the brief or from convention are not adaptations.
+  Each part is **kept** (measured as the idea states it), **adapted** (the same thing, in the only form the config's logic allows) or **replaced** (a different quantity). The allowed adaptations are those the guide's design principle and its list of what the config cannot express force: a threshold or on/off condition made graded, "after X" made "while X" (a holding period is kept since 2026-11-19: `strategies.min_holding_bars` = the horizon in bars, set by code from the plan's horizon line like the sizing block, `common/forecast.md` 7). Settings from the brief or from convention are not adaptations.
 - **The verdict transfer:** "if this test confirms, is the idea confirmed; if it rejects, is the idea rejected?". It is yes only if both answers are yes.
 - **The three outcomes:**
   - **plan:** no part replaced, and the verdict transfer is yes. Its **fit** is *exact* when every part is kept, and *adapted* otherwise. Code works the fit out from the fidelity lines.

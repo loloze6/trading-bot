@@ -1,0 +1,145 @@
+{
+  "core": {
+    "net_return_pct": -13.572,
+    "sharpe": -1.072,
+    "max_drawdown_pct": -27.264,
+    "trade_count": 30,
+    "win_rate": 63.33,
+    "avg_trade_net_pnl": -4.554297,
+    "fees_paid": 11.419123,
+    "gross_pnl": -125.209773,
+    "net_pnl": -136.628896,
+    "cost_drag_pct": 9.12,
+    "forecast_return_corr": -0.08572,
+    "forecast_return_corr_pvalue": 0.624408,
+    "forecast_return_corr_pvalue_block_adjusted": 0.903512,
+    "forecast_return_corr_n_eff": 5,
+    "forecast_return_corr_all_bars": 0.001841,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.984183,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 16.5,
+    "sigma_bar_bps": 156.0641,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 54.341,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 2.9373,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.0857, p=0.9035 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -2.862,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -2.862,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 0.2862,
+      "safety_factor_required": 2.0,
+      "pass": false,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=-0.0857, p=0.9035 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "trending": {
+      "bar_count": 433,
+      "avg_forecast": 1.398649,
+      "trade_count": 30,
+      "total_net_pnl": -136.628898
+    },
+    "unknown": {
+      "bar_count": 287,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "15_to_very_positive": {
+      "total_forecasts": 30,
+      "profitable_trades": 19,
+      "success_rate_pct": 63.33,
+      "total_net_pnl_usd": -136.6289,
+      "avg_pnl_per_trade_usd": -4.5543
+    }
+  },
+  "dynamic": {
+    "debug_info.components.break.last_history_value": {
+      "trending": {
+        "mean": 0.062917,
+        "std": 0.309799
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.break.post_pipeline_value": {
+      "trending": {
+        "mean": 1.398649,
+        "std": 5.082659
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.break.weight_normalized": {
+      "trending": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.break.weighted_contribution": {
+      "trending": {
+        "mean": 1.398649,
+        "std": 5.082659
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "trending": {
+      "forward_return_mean": 0.00040351,
+      "forward_return_std": 0.01499579,
+      "n_bars": 432,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00052214,
+      "forward_return_std": 0.0165095,
+      "n_bars": 287,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -31.1157,
+    "sharpe": -0.6848,
+    "sortino": -0.9026,
+    "exposure_pct": 42.5,
+    "turnover": 22.958718,
+    "n_bars_total": 720,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 31,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

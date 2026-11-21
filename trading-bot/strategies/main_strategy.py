@@ -55,6 +55,11 @@ class AdvancedStrategy(MainStrategy):
         # been live since commit ac277917. See known_divergences.md (1).
         self.min_allocation_change_override = config["strategies"].get("min_allocation_change")
 
+        # 2026-11-19/20 (topics/30, 34): optional strategies.min_holding_bars, the idea's horizon in bars: each bet (a
+        # rise of the forecast of at least the band) is held that many bars (core/holding_period.py). None (key absent,
+        # every earlier config) changes nothing.
+        self.min_holding_bars = config["strategies"].get("min_holding_bars")
+
         # D-176: optional strategies.sizing block (vol targeting in the
         # allocation step; core/launcher.py hands it to ForecastManager). None
         # (key absent, every earlier config) changes nothing. validate_config's

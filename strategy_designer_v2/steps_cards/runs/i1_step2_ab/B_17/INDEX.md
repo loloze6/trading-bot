@@ -1,0 +1,6 @@
+017-01_pre-funding-dip-after-runup: Strong 3-day run up gives a negative 4-hour return into each 00/08/16 UTC funding time, scaled by run-up size. [bar: 1h]
+017-02_pre-funding-rise-after-rundown: Strong 3-day run down gives a positive 4-hour return into each 00/08/16 UTC funding time, scaled by run-down size. [bar: 1h]
+017-03_post-funding-rebound-after-runup: Strong 3-day run up gives a positive 4-hour return after each 00/08/16 UTC funding time, scaled by run-up size. [bar: 1h]
+017-04_post-funding-fade-after-rundown: Strong 3-day run down gives a negative 4-hour return after each 00/08/16 UTC funding time, scaled by run-down size. [bar: 1h]
+017-05_counter-trend-dip-recovers-post-funding: A drop against an up 3-day trend into a 00/08/16 UTC funding time recovers over the next 4 hours, scaled by the drop. [bar: 1h]
+017-06_counter-trend-rise-reverses-post-funding: A rise against a down 3-day trend into a 00/08/16 UTC funding time reverses over the next 4 hours, scaled by the rise. [bar: 1h]

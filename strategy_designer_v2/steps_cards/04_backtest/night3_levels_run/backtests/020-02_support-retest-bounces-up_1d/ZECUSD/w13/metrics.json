@@ -1,0 +1,143 @@
+{
+  "core": {
+    "net_return_pct": -3.68,
+    "sharpe": -0.3,
+    "max_drawdown_pct": -15.356,
+    "trade_count": 10,
+    "win_rate": 70.0,
+    "avg_trade_net_pnl": -3.745927,
+    "fees_paid": 1.564642,
+    "gross_pnl": -35.894628,
+    "net_pnl": -37.459271,
+    "cost_drag_pct": 4.359,
+    "forecast_return_corr": 0.209191,
+    "forecast_return_corr_pvalue": 0.420362,
+    "forecast_return_corr_pvalue_block_adjusted": 0.433791,
+    "forecast_return_corr_n_eff": 17,
+    "forecast_return_corr_all_bars": 0.064566,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.488692,
+    "forecast_return_corr_all_bars_n_eff": 118,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.8475,
+    "avg_trade_duration_bars": 8.5,
+    "sigma_bar_bps": 748.741,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 456.6507,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 24.6838,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.2092, p=0.4338 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 163.066,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 163.066,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 16.3066,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.2092, p=0.4338 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 119,
+      "avg_forecast": 2.426384,
+      "trade_count": 10,
+      "total_net_pnl": -37.45927
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 2,
+      "profitable_trades": 1,
+      "success_rate_pct": 50.0,
+      "total_net_pnl_usd": -3.6056,
+      "avg_pnl_per_trade_usd": -1.8028
+    },
+    "5_to_10": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -30.5613,
+      "avg_pnl_per_trade_usd": -30.5613
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 7,
+      "profitable_trades": 6,
+      "success_rate_pct": 85.71,
+      "total_net_pnl_usd": -3.2923,
+      "avg_pnl_per_trade_usd": -0.4703
+    }
+  },
+  "dynamic": {
+    "debug_info.components.support_touches.last_history_value": {
+      "unknown": {
+        "mean": 0.096687,
+        "std": 0.285433
+      }
+    },
+    "debug_info.components.support_touches.post_pipeline_value": {
+      "unknown": {
+        "mean": 4.779325,
+        "std": 12.929761
+      }
+    },
+    "debug_info.components.support_touches.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.support_touches.weighted_contribution": {
+      "unknown": {
+        "mean": 4.779325,
+        "std": 12.929761
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": -0.00274443,
+      "forward_return_std": 0.07526272,
+      "n_bars": 118,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -15.1063,
+    "sharpe": -0.2113,
+    "sortino": -0.3442,
+    "exposure_pct": 45.3782,
+    "turnover": 3.133532,
+    "n_bars_total": 119,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 118,
+    "n_downside_days": 34,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2018-01-13 00:00:00",
+        "previous_timestamp": "2018-01-11 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

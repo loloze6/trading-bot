@@ -27,6 +27,12 @@ step before it, and recorded under one run name.**
 - **The unseen test** (2026-11-18): after step 7, for an idea step 5 confirmed and step 6 found profitable enough, it
   calls `orchestration/unseen_test/` (code only): the plan unchanged on every unseen period; one journal line
   (`unseen_test`). Step 7 has run before it and never reads its files. The rule is steps 5 and 6's results.
+- **A step that fails stops it** (2026-11-21, night 3): a called step whose helper fails ends the run of the idea, for
+  steps 3 to 6, whose outputs the next step reads (an output left on disk by an earlier call is not read as this call's
+  answer: step 3 called again for an unblocked refusal failed on the usage limit, and its old refusal was read instead).
+  A step 7 line or the chart files that fail are recorded in the journal and the run goes on. A model call the service
+  refused stops the run of the idea at any step with exit code `SERVICE_REFUSED` (`common/lib.py`), for the loop to
+  retry later.
 - **It stops where a step stops.** A plan that is untestable or misses a component ends the run of that idea (the
   component goes to step 3's wish list, as step 3 does).
 - **It can be resumed.** A step whose output for the idea already exists in the run is not called again, but step 3
@@ -61,6 +67,12 @@ In `<name>_run/table.md` (and `table.json`, for code), one row per idea:
    - For: what a run costs, and where.
    - Used by: the operator; the stop rules (scope 2).
    - Without it: a run's cost is unknown.
+5b. **finished at** (`finished_at`, in `table.json` only, 2026-11-19): the UTC time this call of `run_idea` wrote the
+   row, at its end (a refusal at step 3, or the whole run of the idea).
+   - For: telling a finished idea from one whose latest turn was cut.
+   - Used by: `loop` (its resume rule).
+   - Without it: an idea turned again after a row (a refusal the components step unblocked) and cut before its end
+     reads as finished, and is never backtested (017-02, intraday_1h_run, 2026-11-19).
 
 **Next to the table:**
 

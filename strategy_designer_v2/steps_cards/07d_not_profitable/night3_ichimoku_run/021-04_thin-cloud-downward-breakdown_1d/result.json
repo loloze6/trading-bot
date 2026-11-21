@@ -1,0 +1,76 @@
+{
+  "line": "7.d",
+  "backtest": "021-04_thin-cloud-downward-breakdown_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3564885,
+  "findings": {
+    "F1": "The book loses mainly because it is short while the coins rise. Its per-bar position gain is -0.0283 %, and -0.0241 % of that comes from the market's own rise against the short; timing adds only -0.0042 %. Over its 213 first-in-cell cases the short's total move is -3.97 % per 26 days against an unusual move of +0.46 %.",
+    "F2": "The cloud's thinness carries nothing. The step-5 check gives a thin-minus-thick Welch t of -0.36 over 198 cases, with an unusual move of -0.19 % (strength -0.020), so neither the main measure nor the grading the forecast is sized by is in the data.",
+    "F3": "Among the book's cases, the short's unusual move depends on how far the coin had already fallen. After a 26-day fall deeper than about -20 % it is +4.4 % (t 1.26, 50 cases), and the total move is +0.3 %. After a 26-day return above about -6 % it is -4.9 % (t -1.04), and the total move is -9.0 %. The 10-day return grades the same way: below about -13 %, +6.0 % (t 1.64, 58 cases); above about -6 %, -3.4 %.",
+    "F4": "The short worked better when the coin was turbulent. In the high-volatility tercile of 20-day daily moves the unusual move is +4.4 % (t 1.33, 58 cases); in the low tercile it is -3.9 % (t -1.48).",
+    "F5": "The result swings by year. The unusual move is +18.7 % in 2018 (25 cases) and +5.6 % in 2025. It is -10.2 % in 2021 and -7.3 % in 2023. On the daily book the 2023 mean is -0.22 % against holding's +0.15 %.",
+    "F6": "On a 26-day grid over all bars, the side of the cloud predicts the next 26 days. Above the cloud the unusual move is +12.5 % (t 2.57, 59 cases) and the total move +19.5 %. Inside the cloud it is -12.9 % (t -2.96, 25 cases). Below the cloud it is -7.0 % (t -1.78, 59 cases).",
+    "F7": "The effect grows with the close's distance from the cloud's middle, but not past it on the downside. More than 11 % above the middle, the unusual move is +10.7 % (t 2.40, 36 cases) and the total +17.8 %. Between 17 % and 1 % below the middle, it is -13.7 % (t -4.16, 36 cases) and the total -6.2 %. More than 17 % below, it is only -4.2 % (t -0.72).",
+    "F8": "Below the cloud, the coin falls further when it is already falling. With a 26-day return under about -5.6 %, the unusual move is -8.9 % (t -2.08, 20 cases) and -16.7 % (t -2.54, 19 cases). With a 26-day return above that, it is +4.0 % (total +11.2 %, 20 cases).",
+    "F9": "Above the cloud, a thick cloud is followed by the larger rise, the opposite of the brief's grading. With a width above 5.6 % of the price, the unusual move is +26.5 % (t 2.28, 20 cases); with a width below 2.4 %, it is +5.6 %.",
+    "F10": "The size is far from the cost. A round trip costs 0.19 %, while the moves the cloud separates are 6 % to 18 % of total move per 26 days (F6, F7). The cost does not cause the failure; the direction of the bet does."
+  },
+  "ideas": [
+    {
+      "idea": "After a daily close that crosses down from above a coin's Ichimoku cloud to below it, the coin falls over the next 26 days, only while its 26-day return is already a fall, and the deeper that 26-day fall at the cross, the larger the fall that follows.",
+      "consequence": "A trader would short a downward cloud break only when it confirms an ongoing slide, and would refuse the shallow breaks that tend to rebound with the coin's drift.",
+      "name": "cloud breakdown after deep fall",
+      "from": "F1, F2, F3, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F8"
+      ]
+    },
+    {
+      "idea": "While a coin's daily close is below the middle of its Ichimoku cloud, the coin falls over the next 26 days, and the larger its 26-day fall, the larger the fall that follows.",
+      "consequence": "A falling coin sitting under its cloud is a reason to be short or out over the following weeks, and the reason is stronger the steeper the recent slide.",
+      "name": "falling coin under cloud",
+      "from": "F6, F7, F8, F10",
+      "refs": [
+        "F6",
+        "F7",
+        "F8",
+        "F10"
+      ]
+    },
+    {
+      "idea": "A coin whose daily close stands above its Ichimoku cloud rises over the next 26 days, and the further the close stands above the cloud's middle as a share of the price, the larger the rise.",
+      "consequence": "A trader would be long the coin over the following weeks when it trades well above its cloud, and more so the wider that gap.",
+      "name": "distance above cloud rises",
+      "from": "F6, F7, F9, F10",
+      "refs": [
+        "F6",
+        "F7",
+        "F9",
+        "F10"
+      ]
+    },
+    {
+      "idea": "A coin trading above its Ichimoku cloud rises over the next 26 days, and the thicker the cloud as a share of the price, the larger the rise.",
+      "consequence": "A trend that holds above a thick cloud is a reason to stay long for weeks, the opposite of reading a thin cloud as the stronger signal.",
+      "name": "thick cloud supports rise",
+      "from": "F2, F6, F9",
+      "refs": [
+        "F2",
+        "F6",
+        "F9"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall",
+    "021-04_thin-cloud-downward-breakdown.d2_falling-coin-under-cloud",
+    "021-04_thin-cloud-downward-breakdown.d3_distance-above-cloud-rises",
+    "021-04_thin-cloud-downward-breakdown.d4_thick-cloud-supports-rise"
+  ],
+  "no_ideas": null
+}

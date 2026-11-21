@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move over long bet cases (5-day return minus coin's normal 5-day drift)",
+    "value": 0.010374225981854814,
+    "statistic": {
+      "name": "one-sample t",
+      "value": 2.5814540176938903
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 independent cases and slope > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 5-day excess return on case forecast > 0",
+    "value": -6.81539377932664e-05,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 655
+  },
+  "decided_by": "The t is confirming (>= 2) but the supporting slope is 0 or below (or not computable), so the result is inconclusive.",
+  "reading": "The breakout and swing-high cluster conditions are taken from the recorded regime 'trending', since the detector's components are not recorded. Close above SMA50 comes from the ma_dist raw value, or from the SMA50 of in-window closes where that value is missing. A fresh upward cross is checked as a close above the previous close. A case is the first long bet in each 5-bar grid cell counted from each window's first row. A bet is a rise of >= 2 points over the lowest positive forecast since the last bet, starting from 0 after a flat bar, on a trending bar. A case without 5 bars left in its window is dropped. The drift is the mean of non-overlapping 5-bar returns on the same grid over all of the coin's windows. The slope is the OLS slope of excess return on the case-bar forecast."
+}

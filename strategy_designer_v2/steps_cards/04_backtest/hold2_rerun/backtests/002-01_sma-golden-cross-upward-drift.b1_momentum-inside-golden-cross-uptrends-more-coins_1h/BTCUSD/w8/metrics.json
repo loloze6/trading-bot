@@ -1,0 +1,209 @@
+{
+  "core": {
+    "net_return_pct": -1.755,
+    "sharpe": 0.0,
+    "max_drawdown_pct": -1.778,
+    "trade_count": 1,
+    "win_rate": 0.0,
+    "avg_trade_net_pnl": -17.776489,
+    "fees_paid": 0.316085,
+    "gross_pnl": -17.460404,
+    "net_pnl": -17.776489,
+    "cost_drag_pct": 1.8103,
+    "forecast_return_corr": -0.092857,
+    "forecast_return_corr_pvalue": 0.389525,
+    "forecast_return_corr_pvalue_block_adjusted": 0.926017,
+    "forecast_return_corr_n_eff": 3,
+    "forecast_return_corr_all_bars": -0.041861,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.65209,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 164.0,
+    "sigma_bar_bps": 52.5241,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 62.4591,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 3.3762,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=3 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -537.6826,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -537.6826,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 53.7683,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=3 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test); n_trades=1 < min_n_trades=5 (too few completed trades to trust an average built from them).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "trending": {
+      "bar_count": 165,
+      "avg_forecast": 1.168308,
+      "trade_count": 1,
+      "total_net_pnl": -17.776489
+    },
+    "unknown": {
+      "bar_count": 2715,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -17.7765,
+      "avg_pnl_per_trade_usd": -17.7765
+    }
+  },
+  "dynamic": {
+    "debug_info.components.mom20d.last_history_value": {
+      "trending": {
+        "mean": 4.931786,
+        "std": 9.384096
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.mom20d.post_pipeline_value": {
+      "trending": {
+        "mean": 1.168308,
+        "std": 1.593422
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.mom20d.weight_normalized": {
+      "trending": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.mom20d.weighted_contribution": {
+      "trending": {
+        "mean": 1.168308,
+        "std": 1.593422
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "trending": {
+      "forward_return_mean": -0.00031867,
+      "forward_return_std": 0.00548758,
+      "n_bars": 164,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.0001647,
+      "forward_return_std": 0.00523765,
+      "n_bars": 2715,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -3.1051,
+    "sharpe": -1.4569,
+    "sortino": -1.5542,
+    "exposure_pct": 5.6944,
+    "turnover": 0.637572,
+    "n_bars_total": 2880,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 4,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 7,
+    "events": [
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2017-12-10 08:00:00",
+        "previous_timestamp": "2017-12-10 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2018-01-11 12:00:00",
+        "previous_timestamp": "2018-01-11 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 21600.0,
+        "bars_missing": 5,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2018-01-11 14:00:00",
+        "previous_timestamp": "2018-01-11 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2018-01-12 15:00:00",
+        "previous_timestamp": "2018-01-11 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 86400.0,
+        "bars_missing": 23,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2018-01-13 11:00:00",
+        "previous_timestamp": "2018-01-12 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 72000.0,
+        "bars_missing": 19,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2018-01-13 14:00:00",
+        "previous_timestamp": "2018-01-13 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2018-04-21 18:00:00",
+        "previous_timestamp": "2018-04-21 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

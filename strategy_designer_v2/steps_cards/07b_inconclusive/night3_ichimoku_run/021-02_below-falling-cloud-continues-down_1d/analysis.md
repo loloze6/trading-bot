@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 021-02_below-falling-cloud-continues-down_1d
+idea tested: 021-02_below-falling-cloud-continues-down
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.4717 USD
+---
+## Findings
+- **F1:** The tested result is close to zero and is not a near miss. The short-signed 26-day excess return is +1.51 % per case with t 0.69 over 156 cases, and only 59 % of cases are on the short side. The idea's size is not the problem: the unusual move is 0.071 of the coin's usual move (25.48 %) and 7.8 times the 0.19 % cost of a trade. The effect is simply not consistently one-sided.
+- **F2:** The grading runs the opposite way to the idea. Against the cloud's 26-day fall speed, the coin's long-side excess 26-day return has a regression slope of +0.0069 (t 2.66, n 156), so the faster the cloud fell, the more the coin rose afterwards. The supporting check's slope on |forecast| is likewise -0.0092.
+- **F3:** The fall the idea predicts shows only where the cloud falls slowly. In the gentlest-fall quartile the long excess is -7.8 % (t -2.36, n 39) and in the next quartile -6.8 % (t -1.95, n 39), versus +7.5 % (t 1.36) and +1.1 % (t 0.24) in the two steepest quartiles. By |forecast| quartile the short excess is +12.3 % (t 4.24, 84 % hits, n 37) in the smallest quartile and -4.0 % (t -1.21, n 41) in the largest.
+- **F4:** The effect is also split by period, so the market's own regime drowns the average. By year the short excess is +20.0 % (t 4.86, n 34) in 2018 and +5.5 % (t 2.44, n 30) in 2019, but -32.8 % (t -3.00, n 7) in 2020 and -35.3 % (t -2.91, n 12) in 2021. The steep-fall cases rebounded strongly in 2020 (+38 % long excess, n 6) and 2021 (+59 %, n 7) but kept falling in 2018 (-17 %, t -2.56) and 2019 (-6 %, t -2.64). So F2's slope rests partly on 13 cases from two years.
+- **F5:** The test also misses at other horizons. At 10 days the short excess is -2.6 % (t -2.22, n 198): coins below a falling cloud rose more than usual. At 52 days it is +2.0 % (t 0.58, n 117). Only the coins' strong positive drift (26-day mean +1.4 % to +7.4 %) makes the total short move -2.73 % per case.
+
+## Ideas
+- `021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues` (from F2, F3, F1): When a coin closes below its Ichimoku cloud and the cloud is falling, its return over the next 26 days is negative, and more negative the more slowly the cloud has fallen over the past 26 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,170 @@
+{
+  "run_id": "20261121T021549Z_317e06e4",
+  "created_utc": "2026-11-21T02:15:49.686189+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "brk",
+          "class": "strategies.strategy_components.DistanceFromHighComponent",
+          "params": {
+            "period": 12,
+            "source": "high",
+            "exclude_current": 1,
+            "form": "percent",
+            "extreme": "low"
+          }
+        },
+        {
+          "id": "ret30",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 180
+          }
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "brk",
+                "op": "lt",
+                "value": 0.0
+              },
+              {
+                "id": "ret30",
+                "op": "gt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "width",
+              "class": "strategies.strategy_components.RangeCompressionRatioComponent",
+              "params": {
+                "short_period": 12,
+                "long_period": 180,
+                "exclude_current": 2,
+                "form": "width",
+                "base": "mean_bar_range"
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 180,
+                    "min_periods": 45
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 10.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "offset",
+              "class": "strategies.strategy_components.BuyAndHoldStrategy",
+              "params": {},
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 180,
+                    "min_periods": 45
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 360,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 2190,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 18
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 6,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "317e06e4beffadbad9b12da8fd4cca26e31afe6739090f11e59c1407e77e36c0",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "14400s",
+    "start": "2018-05-03 00:00:00",
+    "end": "2018-12-31 20:00:00",
+    "bar_count": 1457,
+    "data_sha256": "2c6a5ca293ce31e6b16df21a171e41bf107f7b2357473285ca55d505170916bf"
+  },
+  "git_sha": "2ad6024e994c4c34e559cbec2c4fb21f504547dc-dirty",
+  "engine": {
+    "lookback": 181,
+    "warmup": 181
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

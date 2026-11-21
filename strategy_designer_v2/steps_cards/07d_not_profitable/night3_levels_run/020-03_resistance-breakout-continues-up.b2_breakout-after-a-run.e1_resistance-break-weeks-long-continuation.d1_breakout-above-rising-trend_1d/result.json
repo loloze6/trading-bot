@@ -1,0 +1,58 @@
+{
+  "line": "7.d",
+  "backtest": "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36858599999999997,
+  "findings": {
+    "F1": "The Calmar fails because of one long fall: the book's deepest fall is 50.5 %, from its peak in w12 to its trough in w14, and the book lost 16.5 %, 7.8 % and 33.0 % in w12, w13 and w14 while the coins' average fell 25.0 %, 34.4 % and 49.4 %; the book was long 0.33 of the time in those windows (0.59 elsewhere), so it is the breaks taken inside a falling market that make the fall.",
+    "F2": "The entries made inside the falling windows w12 to w14 lost 14.0 % on average over 20 days (25 entries), against +2.1 % for the 189 entries in the other windows, so the breaks fail when the market is falling.",
+    "F3": "The test \"close above its 50-day average\" does not mean the trend is rising: at entry the 50-day average had on average fallen 1.7 % over the previous 10 days. The 193 entries made while that average was falling earned \u22120.4 % over 20 days, and 32.6 % of them lost more than 10 %. The 21 entries made while it was rising earned +6.0 %, and only 9.5 % of them lost more than 10 %.",
+    "F4": "The coin's 60-day return at entry also grades the outcome: entries in the top quarter of 60-day return (above +4.7 %) gained 14.0 % over 20 days, while those in the bottom quarter (below \u221216 %) lost 0.5 %, and 42.9 % of the bottom quarter lost more than 10 % (13 to 14 entries per quarter).",
+    "F5": "The idea's grading points the wrong way: entries in the top quarter of forecast lost 4.8 % over 20 days, and 38.3 % of them lost more than 10 % (60 entries). Entries in the bottom quarter of distance above the 50-day average gained 6.3 %, against +0.8 % in the top quarter. Step 5's split agrees: upper half minus lower half is \u22122.8 %.",
+    "F6": "A break that fails early keeps failing: when the coin fell more than 8 % in the 5 days after entry, it fell another 6.3 % over the next 15 days (t \u22122.46, 34 entries). After a 0 to 5 % rise in those 5 days it gained 2.2 % (t 0.76, 47 entries).",
+    "F7": "Cost is not the cause: the total move per case (+3.81 % over 20 days) is 19.8 times a 0.19 % round trip. The unusual move is +1.37 % with a strength of 0.036 (t 0.95, 507 cases), so the book's weakness is its losing breaks, not its trading costs."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 20 days, only while its 50-day average has itself risen over the past 10 days; the more times the level held and the faster that average rose over those 10 days, the larger the rise.",
+      "consequence": "A break through a repeatedly held level is a reason to stay long for weeks only when the coin's 50-day average is already climbing, and a reason to stay flat when that average is falling, even if the close is above it.",
+      "name": "breakout with rising average",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 20 days, only while its 60-day return is positive; the more times the level held and the larger its 60-day return, the larger the rise.",
+      "consequence": "A break through a repeatedly held level after two months of gains is a reason to stay long for weeks; the same break after two months of losses is a reason to stay flat.",
+      "name": "breakout after two-month rise",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin has closed above a price where it turned down several times in the past 90 days and then falls in the 5 days that follow, it tends to keep falling over the next 15 days; the deeper that 5-day fall, the larger the further fall.",
+      "consequence": "A break that has fallen back sharply within days is a reason to leave the long, not to hold it for the rest of its horizon.",
+      "name": "failed breakout keeps falling",
+      "from": "F1, F6",
+      "refs": [
+        "F1",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend.d1_breakout-with-rising-average",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend.d2_breakout-after-two-month-rise",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend.d3_failed-breakout-keeps-falling"
+  ],
+  "no_ideas": null
+}

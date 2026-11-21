@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 72-bar forward return, grind group minus jump group",
+    "value": 0.004711308991769683,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.8273590382406049
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2; reject: difference < 0 with Welch t <= -2; at least 200 grid cases per group"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grind group grid cases": 487,
+    "jump group grid cases": 490
+  },
+  "decided_by": "The Welch t is between -2 and 2 (or its sign disagrees with the difference), which the plan calls inconclusive.",
+  "reading": "The sample is the grid bars (positions 0, 72, 144, ... of each window) with raw grind_residual above 0 and a 72-bar forward return inside the window; the per-coin median is taken over that coin's sample across all its windows; the plan's 200-case minimum, when not met, is reported as not observable."
+}

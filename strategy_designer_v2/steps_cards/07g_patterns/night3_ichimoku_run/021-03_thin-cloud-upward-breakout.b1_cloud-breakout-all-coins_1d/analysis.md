@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins_1d
+idea tested: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5297 USD
+---
+## Findings
+- **F1:** Among the 285 upward cloud crosses, a larger 26-day run-up into the cross is followed by a smaller 26-day return, not a larger one. The top third by prior 26-day return ends -8.0 % against the coin's drift (t -2.55, 79 cases), while the lower two thirds end +10.4 % and +12.5 %. Spearman rho is -0.222 (p 0.0015, 201 cases), and the sign holds in both halves (-0.311 up to 2022, 78 cases; -0.144 from 2023, 123 cases) and in 8 of 12 coins.
+- **F2:** The F1 reversal is particular to the cross. On all non-overlapping 26-day stretches, the prior 26-day return predicts the next one positively: rho +0.123 up to 2022 (375 cases), +0.068 from 2023 (450 cases), positive in 12 of 17 coins. The top quintile ends +8.6 % against drift and the bottom one -4.6 % (t -2.36).
+- **F3:** Lower volatility before a cross is followed by a larger 26-day return. At the cross, 20-day volatility has rho -0.242 (p 0.0003, 217 cases); the calmest third ends +12.1 % against drift and the most volatile third -3.0 %. The sign is negative in 10 of 13 coins, and the effect survives the run-up in a rank regression (t -2.42, with the run-up at t -2.04).
+- **F4:** The F3 volatility effect is not specific to the cross, and it is recent. On all 26-day stretches from 2023, 20-day volatility has rho -0.251 (p < 0.0001, 450 cases), and the calmest quintile over all years ends +4.8 % against drift (t 2.11, 155 cases). Up to 2022 the grid shows no such effect (rho -0.038, p 0.46, 375 cases), so this rests mainly on one period.
+- **F5:** The cloud's thinness itself carries nothing visible. The three thirds of raw proximity all end +2.1 % to +2.3 % against drift (t about 0.56 each). Of the 26-day unusual move of +2.2 %, only +0.16 % is there after 13 days.
+- **F6:** Three other patterns do not stand out once the many angles looked at are counted:
+
+## Ideas
+- `021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.g1_extended-cloud-breakouts-fade` (from F1, F2, F5): After a daily close that crosses up from below a coin's Ichimoku cloud to above it, the larger the coin's 26-day return into that close, the lower its return over the next 26 days relative to its normal drift.
+- `021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.g2_calm-coins-outrun-drift` (from F3, F4): The lower a coin's volatility of daily returns over the past 20 days, the higher its return over the next 26 days relative to its normal drift.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

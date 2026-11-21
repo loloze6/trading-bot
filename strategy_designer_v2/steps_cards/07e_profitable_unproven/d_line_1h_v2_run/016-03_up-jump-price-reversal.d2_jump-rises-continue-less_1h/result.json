@@ -1,0 +1,48 @@
+{
+  "line": "7.e",
+  "backtest": "016-03_up-jump-price-reversal.d2_jump-rises-continue-less_1h",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.330953,
+  "findings": {
+    "F1": "Of the book's mean daily return of 0.000706, 0.000387 (55%) is the market's own rise (the position held x the coin's mean daily return), leaving 0.000319 for timing; the book also trails holding in every rising year (for example 2021: 0.000895 against 0.004090), and only beats it in falling years (2018: 0.000185 against -0.003487).",
+    "F2": "The size of the 3-day rise, not how it was built, predicts the next 3 days: on the non-overlapping 72-bar grid, coins in their top quintile of past 72-bar return (mean +0.118) went on to gain +0.0108 over the next 72 bars, against -0.0040 in the middle quintile (Welch t 3.96, about 1,100 cases each), and among rising cases the pooled slope of the forward 72-bar return on the past 72-bar return is 0.066 (t 2.77, n 2,802).",
+    "F3": "Once the size of the rise is held fixed, the share carried by the 3 biggest hours adds nothing: grind minus jump inside size terciles has Welch t 1.20, 1.65 and 0.14 (about 465 cases per group), and in a regression of the forward 72-bar return the past rise keeps t 2.34 while the top-3 share has t -1.02 and volatility t -0.09.",
+    "F4": "The book's top-3 share mostly measures the size of the rise: in the lowest share quartile the rise averaged +0.121 and the next 72 bars gained +0.0135, while in the highest share quartile the rise averaged only +0.0115 and the next 72 bars lost -0.0028, so the \"grind\" signal ranks rises by their size.",
+    "F5": "The book is long where rises were large: in its top position tercile (mean allocation 0.96) the past 72-bar return averaged +0.057 and the forward 72-bar return +0.0059, against +0.0003 in the flat tercile.",
+    "F6": "The continuation is concentrated in a few coins: the per-coin slope of the forward 72-bar return on the past rise has t 3.61 for ZEC and 1.72 for LTC, but -0.25 for XMR and -0.36 for XRP; LTC's book lost on average (-0.000092 per day) despite LTC's own +0.000670.",
+    "F7": "The effect also persists at a longer horizon: the top past-return quintile gained +0.0135 over the next 144 bars, against +0.0007 for the middle quintile.",
+    "F8": "Large falls were also followed by gains: the bottom past-return quintile (mean -0.103) gained +0.0059 over the next 72 bars, against -0.0040 for the middle quintile, so forward returns are U-shaped in the past 3-day move."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 3-day return has been on the upside, the larger its rise over the next 3 days, whatever the way the rise was built.",
+      "consequence": "A trader would size long exposure up with the size of a coin's recent 3-day rise rather than with how evenly that rise was spread across hours.",
+      "name": "three-day rise size continues",
+      "from": "F2, F3, F4, F5, F7",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall over the past 3 days, the larger its rebound over the next 3 days.",
+      "consequence": "A trader would lean long after deep 3-day falls rather than stay flat, as the book does now.",
+      "name": "deep three-day falls rebound",
+      "from": "F8, F1",
+      "refs": [
+        "F8",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.d2_jump-rises-continue-less.e1_three-day-rise-size-continues",
+    "016-03_up-jump-price-reversal.d2_jump-rises-continue-less.e2_deep-three-day-falls-rebound"
+  ],
+  "no_ideas": null
+}

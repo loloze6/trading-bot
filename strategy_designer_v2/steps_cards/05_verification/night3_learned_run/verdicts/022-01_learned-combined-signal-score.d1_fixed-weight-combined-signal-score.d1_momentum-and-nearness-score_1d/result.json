@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-removed 5-bar forward return on forecast",
+    "value": 0.0008302034318614679,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.369995452001876
+    },
+    "threshold": "t >= 2 confirms (with top-minus-bottom fifth > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom fifth drift-removed 5-bar return",
+    "value": 0.011521623351557667,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with a non-zero forecast": 3419,
+    "top fifth cases": 683,
+    "bottom fifth cases": 683
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom-fifth difference is positive.",
+  "reading": "The slope, its t and the fifths use the non-overlapping 5-bar grid bars (positions 0,5,10,... of each window) with a non-zero forecast, pooled; the drift is the coin's mean 5-bar grid return over all its windows; the fifths are the n//5 lowest and highest forecasts after sorting; the slope's t is the OLS t with an intercept."
+}

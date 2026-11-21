@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping grid cases with forecast > 0: 2201, non-overlapping grid cases (all): 4530
 - Decided by: The slope's t is >= 2 and the mean excess return on forecast > 0 grid bars is above 0.
 - Reading: The 720-bar return is recomputed from each window's closes and, on bars without 720 bars of history in the window, its sign is taken from the raw HPM value; the coin's benchmark is the mean of all its non-overlapping 168-bar grid returns over all its windows; the slope's t is the ordinary OLS t with an intercept; the plan's 'fewer than 300 cases' rule is reported as not observable per the workflow.
+- Size: unusual move +0.64 % per case over 168 bars, 0.047 of the coin's usual move (14.12 %); normal drift in its direction +1.13 %, total +1.76 %; 2879 cases
 Plan: `steps_cards/03_test_plan/retest_1h_run/plans/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h.md`
 Record: `steps_cards/04_backtest/retest_1h_run/backtests/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h`
 Measure: `measure.py`

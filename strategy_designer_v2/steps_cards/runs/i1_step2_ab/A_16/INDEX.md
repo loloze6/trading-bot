@@ -1,0 +1,8 @@
+016-01_up-grind-keeps-rising: A 3-day rise built from many small, evenly spread up hours keeps rising over the next 3 days, more the smoother it was. [bar: 1h]
+016-02_down-grind-keeps-falling: A 3-day fall built from many small, evenly spread down hours keeps falling over the next 3 days, more the smoother it was. [bar: 1h]
+016-03_up-jump-gives-back: A 3-day rise concentrated in a few violent hours partly reverses over the next 3 days, more the more concentrated it was. [bar: 1h]
+016-04_down-jump-rebounds: A 3-day fall concentrated in a few violent hours partly rebounds over the next 3 days, more the more concentrated it was. [bar: 1h]
+016-05_even-volume-rise-continues: A 3-day rise with volume spread evenly across hours keeps rising over the next 3 days, more the evener the volume. [bar: 1h]
+016-06_even-volume-fall-continues: A 3-day fall with volume spread evenly across hours keeps falling over the next 3 days, more the evener the volume. [bar: 1h]
+016-07_burst-volume-rise-reverses: A 3-day rise whose volume is concentrated in a few burst hours partly reverses over the next 3 days, more the bigger the burst. [bar: 1h]
+016-08_burst-volume-fall-rebounds: A 3-day fall whose volume is concentrated in a few burst hours partly rebounds over the next 3 days, more the bigger the burst. [bar: 1h]

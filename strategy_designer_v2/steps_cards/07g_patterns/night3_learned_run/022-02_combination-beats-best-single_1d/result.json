@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "022-02_combination-beats-best-single_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5317346000000001,
+  "findings": {
+    "F1": "The learned combination points the wrong way on unseen dates. Its post-pipeline score correlates -0.032 with the next 5-day return net of drift (3254 non-overlapping cases), and the best-single copy correlates -0.034. Its top quintile earns +0.09 % against +0.76 % for its bottom quintile (t -1.11), and its fourth quintile is the lowest at -0.97 % (t -2.47).",
+    "F2": "The book lost on timing, not on drift. Its position held a mean of -0.18 to +0.01 of the book and was long only 41 to 53 % of bars. Timing was negative on 5 of 6 coins, from -0.04 to -0.10 % per day, against drift contributions of at most 0.02 % per day.",
+    "F3": "The raw single signals, unweighted, point the right way while the learned combination does not. The 28-day return has a Pearson correlation of +0.059 with the next 5-day return, top minus bottom quintile +1.65 % (t 2.21). The volatility-scaled 1-day return has +0.051, top minus bottom +1.78 % (t 2.81, 2432 cases). The 1-day return therefore continues rather than reverses, the opposite of the brief's assumed short reversal. It also correlates -0.152 with the combined score.",
+    "F4": "Neither single signal is stable across periods. The volatility-scaled 1-day signal's signed-rank t is 1.51 overall, 2.42 in w1-12 and 0.03 in w13-24, and runs from 4.11 in 2019 to -2.08 in 2025. The 28-day signal's is 1.31 overall, with yearly t from -1.14 to 2.03. Neither stands out once the many angles looked at are counted.",
+    "F5": "Saturday's daily return is the highest of the week. It averages +0.31 % above the coin's mean (t 3.78, 2365 days) and is above the rest of the week on all 6 coins (+0.04 % to +0.51 %, t vs rest 0.34 to 2.67) and in 6 of 8 years. Thursday (-0.32 %, t -2.87) and Tuesday (-0.23 %, t -2.43) are the lowest.",
+    "F6": "The Saturday rise grows with the coin's return over the preceding 7 days. By quintile of that return, Saturday's demeaned return is -0.13 %, -0.29 %, +0.13 %, +0.48 % (t 2.94) and +1.29 % (t 4.42, 360 days). In volatility units that is a mean z of +0.05, -0.08, +0.03, +0.15 and +0.28. The top quintile's move is about 6.8 times the 0.19 % round-trip cost.",
+    "F7": "Grouping Saturdays by the prior day's volatility, return or volume gives no ordered pattern. By prior 30-day volatility the quintile means are +0.35, +0.48, -0.12, +0.57 and +0.21 %. Only the prior week's return grades the Saturday move.",
+    "F8": "The size of the next 5-day move rises steadily with 30-day volatility. The mean absolute move is 5.7 %, 6.1 %, 6.5 %, 7.3 % and 10.0 % from the lowest to the highest volatility quintile. The direction of the move does not follow volatility: quintile means run from -0.30 % to +0.57 %, with t no larger than 0.91."
+  },
+  "ideas": [
+    {
+      "idea": "On a Saturday, a coin's return over the next day is larger the higher its return over the preceding 7 days.",
+      "consequence": "A trader would lean long into the weekend on coins that rose over the past week, in proportion to that rise, and stay out of those that fell.",
+      "name": "weekend continuation after strong week",
+      "from": "F5, F6, F7",
+      "refs": [
+        "F5",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next day is higher on Saturday than on its other days of the week, and higher the more the coin rose over the preceding 7 days.",
+      "consequence": "A trader would place a coin's weekly long exposure on the Saturday, sized up after a strong week, rather than spread it evenly across the week.",
+      "name": "Saturday drift scaled by week",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-02_combination-beats-best-single.g1_weekend-continuation-after-strong-week",
+    "022-02_combination-beats-best-single.g2_saturday-drift-scaled-by-week"
+  ],
+  "no_ideas": null
+}

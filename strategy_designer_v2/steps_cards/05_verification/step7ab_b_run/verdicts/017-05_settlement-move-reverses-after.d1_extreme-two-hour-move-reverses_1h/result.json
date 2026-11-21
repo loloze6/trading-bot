@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 24-bar move per case, pooled, in the signal's direction",
+    "value": 0.0007852668126660956,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.065626019530567
+    },
+    "threshold": "confirm t >= 2 over >= 30 cases (with top-quartile difference > 0); reject t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of top-quartile |forecast| cases minus that of other cases",
+    "value": 0.0010879045156826101,
+    "passed": true
+  },
+  "counts": {
+    "cases": 17242,
+    "top_quartile_cases": 4311,
+    "other_cases": 12931
+  },
+  "decided_by": "The main measure has t >= 2 over at least 30 cases and the top-quartile difference is above 0.",
+  "reading": "A case is the first bet (a rise of |forecast| of >= 2 points on its side from its lowest level since the last bet, reset at flat or side change) in each 24-bar grid cell counted from each window's first row, the drift is the mean of the coin's 24-bar returns on that grid over all its windows, and the top quartile is the cases with |forecast| at or above the 75th percentile of the cases' |forecast|."
+}

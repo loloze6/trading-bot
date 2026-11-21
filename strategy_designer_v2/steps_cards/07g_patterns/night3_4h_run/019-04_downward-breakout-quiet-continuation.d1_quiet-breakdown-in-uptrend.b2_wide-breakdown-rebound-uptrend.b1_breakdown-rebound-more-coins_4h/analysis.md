@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins_4h
+idea tested: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5328 USD
+---
+## Findings
+- **F1:** An upward break in a rising coin keeps paying for longer than the tested downward break. After a 4h close above the highest high of the prior two days, with a positive 30-day return, the unusual move grows with the horizon: +0.20 % over 1 day (t 2.20, 4392 cases), +0.56 % over 3 days (t 2.69, 3090 cases) and +1.29 % over 6 days (t 3.47, 2169 cases). The tested downward break in a rising coin fades over 6 days: +0.35 % (t 3.23), then +0.56 % (t 2.73), then +0.37 % (t 1.15, 1569 cases). At 6 days the upward break's unusual move is about 5.9 times the 0.22 % cost of a trade.
+- **F2:** The coin's 30-day return sets the sign of what follows any break, up or down. When the 30-day return is negative, both a break below the two-day low and a break above the two-day high are followed by underperformance over 6 days: -0.87 % (t -3.46, 2230 cases) and -0.99 % (t -3.33, 1634 cases).
+- **F3:** On all bars, read once per 6-day grid cell, the 30-day return scaled by the coin's volatility grades the next 6 days from its second quintile up. By per-coin quintile, the unusual move is -1.55 % (t -3.66), -0.28 %, +0.58 % and +1.19 % (t 2.40), about 900 cases each. The lowest quintile breaks the order at -0.37 % (t -0.91). Over 3 days the same quintiles run from -0.87 % (t -4.75) to +0.75 % (t 2.96).
+- **F4:** The width of the past two days' range, compared with the coin's 30-day average 4h range, grades the next 3 days on all bars, with no break needed. Spearman rho is 0.051 (p 1e-7, 10636 cases), the bottom quintile gives -1.02 % and the top +0.47 %. Rho is positive in 18 of 19 coins. In rising coins the quintiles run from -0.62 % to +0.94 %. The effect is strongest in 2021 (rho 0.18); in other years rho is -0.03 to 0.07, with 2023 and 2024 significant.
+- **F5:** In the tested downward break in a rising coin, the width carries the edge. The two narrowest quintiles give -0.30 % and -0.53 % over 3 days. The two widest give +1.53 % (t 3.56) and +1.83 % (t 3.32). Wider minus narrower is positive in all 8 years.
+- **F6:** Over 3 days a large 1-day rise is followed by a weaker move than a large 1-day fall. Rho of the 1-day return with the next 3 days' unusual move is -0.048 (p 1.6e-7, 11860 cases), with the lowest quintile at +0.78 % and the highest at +0.02 %. The middle quintile is -0.33 %, so the effect is not monotone.
+- **F7:** The breakout effects turn in bear years. In 2018 the downward break in a rising coin gives -5.8 % (t -5.2) and in 2022 -2.1 % (t -3.3). The upward break over 6 days gives -4.1 % (t -2.3) in 2018 and -2.0 % (t -2.5) in 2022. The book earns 0.028 % a day against 0.10 % to 0.48 % a day for holding, coin by coin, so most of the drift is left on the table.
+- **F8:** Weekday effects reach t 4.1 for a Friday start (+0.30 % over 1 day) and t -3.3 for a Sunday start (-0.23 %). I looked at many angles, so I do not count these as findings to build on.
+
+## Ideas
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins.g1_upward-break-six-day-continuation` (from F1, F4, F5): When a 4h close rises above the highest high of the coin's preceding two days while the coin's 30-day return is positive, the coin rises more than usual over the next six days. The wider the two-day range was compared with the coin's 30-day average 4h range, the larger the rise.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins.g2_wide-range-precedes-rise` (from F4, F5): The wider a coin's two-day range compared with its 30-day average 4h range, the more the coin rises over the next three days.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins.g3_volatility-scaled-monthly-momentum` (from F2, F3, F7): The higher a coin's 30-day return compared with its volatility over those 30 days, the larger its rise over the next six days.
+- `019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins.g4_one-day-fall-rebounds` (from F6): The larger a coin's fall over the past day, the more it rises over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

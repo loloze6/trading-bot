@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls_1d
+idea tested: 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.4842 USD
+---
+## Findings
+- **F1:** Over 10 days, a coin's 10-day rise measured in its own 20-day daily volatility is followed by more rise. The top quintile of that vol-scaled 10-day return (mean 1.71 volatility units) earns +2.74 % above drift over the next 10 days (t 2.26, 94 independent cases). That is 0.22 of the coin's usual 10-day move, about 25 times the 0.11 % cost of a trade. It shows on both coins alike: BTC +2.78 %, ETH +2.71 %. Across all quintiles the slope t is 1.94.
+- **F2:** The same continuation shows with a 5-day vol-scaled return. Restricted to rises, the slope t is 2.58. The top quintile's 10-day excess return is positive on 9 of 10 grid offsets, with t from 1.32 to 2.95 on the positive ones, and t at or above 2 on 4 of them (offsets 1, 7, 8, 9). The lowest quintile's results scatter around zero (t from -1.13 to +1.21).
+- **F3:** The continuation is not steady over time. The top z10 quintile's 10-day excess is +0.17 % in windows w1-12 against +5.21 % in w13-24. By year it runs from +9.9 % (2020) to -7.3 % (2022), with 6 of 8 years positive.
+- **F4:** The day after a fall, the coins rise, but not convexly. Next-day returns are +0.34 % in the lowest quintile of the 1-day vol-scaled return (mean -1.34 units, t 2.37, 968 cases) and +0.30 % in the second (mean -0.39 units, t 2.30). The top two quintiles are flat or slightly negative (-0.10 %, -0.00 %). Ordinary falls rebound almost as much as the largest, which is why the convexity check failed.
+- **F5:** Large 1-day falls do not lead to a durable 10-day rebound. Raw 10-day returns after the lowest 1-day z quintile were +3.21 % at grid offset 0 (t 2.67, 94 cases). The excess was not robust: positive on only 5 of 10 offsets (t from -1.92 to +1.61), and slope t of 10-day excess on the 1-day z between -1.17 and +1.69.
+- **F6:** The tested book earns almost nothing, 0.011 % a day (5794 coin-days, daily std 1.49 %). Next-day returns by weekday (Tuesday +0.37 % t 2.46, Friday +0.26 % t 2.62, Wednesday -0.26 % t -1.60) are not strong enough to count as a finding among 7 groups and the many angles examined.
+
+## Ideas
+- `005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls.g1_vol-scaled-ten-day-rise-continues` (from F1, F2, F3): The larger a coin's rise over the past 10 days measured in its own 20-day daily volatility, the more the coin rises beyond its normal drift over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

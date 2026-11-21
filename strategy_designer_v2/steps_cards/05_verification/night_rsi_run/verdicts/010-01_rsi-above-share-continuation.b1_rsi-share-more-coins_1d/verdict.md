@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping cases with a recorded forecast: 1152
 - Decided by: t = -0.30 lies between -2 and +2 over 1152 cases.
 - Reading: Grid at positions 0, 14, 28, ... of each window, keeping only bars with a bar 14 rows later in the same window. Each coin's mean 14-bar return is the mean over all of its grid returns in all windows. OLS with an intercept and its usual slope t. The plan's 'fewer than 200 cases' minimum is treated as 'not observable'. Active bars with a missing or zero raw value count as disagreeing in the situation check.
+- Size: unusual move +0.89 % per case over 14 bars, 0.038 of the coin's usual move (18.06 %); normal drift in its direction -0.09 %, total +0.80 %; 690 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-01_rsi-above-share-continuation.b1_rsi-share-more-coins_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-01_rsi-above-share-continuation.b1_rsi-share-more-coins_1d`
 Measure: `measure.py`
