@@ -11,13 +11,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls | 022-01_learned-combined-signal-score | plan | confirmed (+6.62) | not profitable enough (failed: Calmar) | - | 7.d: 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls.d1_fall-rebound-in-volatility-bursts, 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls.d2_fall-rebound-after-strong-months; 7.g: 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls.g1_fall-rebound-scaled-by-volatility, 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls.g2_large-rise-multi-day-continuation | 0.96 | 6.2 |
 | 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days | 022-02_combination-beats-best-single | plan | confirmed (+2.24) | not profitable enough (failed: Calmar) | - | 7.d: 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward, 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d2_momentum-near-recent-highs, 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d3_rebound-after-deep-falls; 7.g: no ideas: Across about 30 angles (forecast, the 1-, 5-, 28- and 60-day returns, volatility, nearness to highs, reversal after large days, year, coin, side, trades), no pattern beyond the tested momentum stands out from chance: nothing passes t 2 except one volatility tercile at 2.04. The long/short gap in F1 to F3 comes from the coins' drift and the skew of long trades, not from a market effect the idea leaves unexplained. | 0.91 | 5.9 |
 | 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days | 022-03_combined-extremes-larger-moves | plan | confirmed (+2.63) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d1_weighted-reversal-with-trend-agreement, 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d2_sixty-day-trend-continues, 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days.d3_persistent-weighted-reversal-extremes; 7.g: no ideas: The only strong pattern, the 20-day reversal, vanishes when the grid's starting point changes (mean t -0.88 over 20 offsets), and every other angle stays within what chance gives across the many angles looked at (forecast, 1-day move by horizon, by year, coin and volume level, volatility, range, nearness to highs, weekday, the book's long and short sides). | 1.04 | 10.9 |
+| 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around | 022-04_signal-weights-carry-forward | missing-components | - | - | - | - | 0.08 | 0.6 |
 
 ## Consumption
-7 ideas, 9.07 USD, 75.9 minutes in all.
+8 ideas, 9.15 USD, 76.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.07 | 4.8 |
+| step3_plan | 1.14 | 5.4 |
 | step4_backtest | 0.00 | 43.8 |
 | step5_verdict | 0.92 | 3.5 |
 | step6_check | 0.00 | 0.3 |
