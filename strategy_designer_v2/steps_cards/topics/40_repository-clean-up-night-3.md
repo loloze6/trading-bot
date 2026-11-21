@@ -32,7 +32,7 @@ Is every file in the one place named after what it is, with the same layout in e
 | Change | Gain | Risk |
 |---|---|---|
 | Rename `hold2_rerun` to `hold2_rerun_run` everywhere | one naming rule for every run | 65 files, records' own paths inside; a rename touches records (git keeps the history) |
-| Move `orchestration/duration/` to `topics/33_review/duration/` | `orchestration/` holds only functions with cards | 14 references to update |
+| Move `orchestration/duration/` to `topics/33_review/duration/` | `orchestration/` holds only functions with cards | 14 references to update, 4 of them comments in `trading-bot/` code (shared code: the operator's go) and one in step 4's helper, which runs tonight |
 | Validate line 7.f (its own `validation/`), or say in its card why it has none | the same layout in every line | one small exercise (model calls) |
 
 Recommended: the second and the third; the first only if a tool needs the `_run` suffix (none does today).
