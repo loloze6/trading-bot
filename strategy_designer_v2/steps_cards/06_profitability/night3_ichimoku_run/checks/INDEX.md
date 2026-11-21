@@ -7,6 +7,7 @@
 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: not profitable enough [Sharpe -0.0008411; Sharpe minus holding's Sharpe -0.555; Calmar -0.02699]
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins_1d: not profitable enough [Sharpe -0.1855; Sharpe minus holding's Sharpe -0.7715; Calmar -0.05987]
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d: not profitable enough [Sharpe -0.3809; Sharpe minus holding's Sharpe -0.9351; Calmar -0.09753]
+021-02_below-falling-cloud-continues-down.d2_below-thin-falling-cloud_1d: not profitable enough [Sharpe -0.3053; Sharpe minus holding's Sharpe -0.8595; Calmar -0.1401]
 021-02_below-falling-cloud-continues-down_1d: not profitable enough [Sharpe -0.5713; Sharpe minus holding's Sharpe -1.125; Calmar -0.1818]
 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins_1d: not profitable enough [Sharpe 0.9776; Sharpe minus holding's Sharpe 0.3518; Calmar 0.6029]
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: not profitable enough [Sharpe 0.2449; Sharpe minus holding's Sharpe -0.3208; Calmar 0.1046]

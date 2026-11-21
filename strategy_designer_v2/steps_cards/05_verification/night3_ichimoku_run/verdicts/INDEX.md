@@ -7,6 +7,7 @@
 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: inconclusive (fit: exact) [main: 0.015116; t of the mean 0.689244; cases over all coins and windows 156, slow-fall half 78, fast-fall half 78]
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud.b1_below-cloud-short-more-coins_1d: inconclusive (fit: adapted) [main: -0.00953702; t of the mean -1.55305; non-overlapping cases 353, cases above median 176, cases below median 176]
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d: inconclusive (fit: adapted) [main: 0.02771; t of the weighted mean 1.15284; cases 156, active bars 4916, larger half 78, smaller half 78]
+021-02_below-falling-cloud-continues-down.d2_below-thin-falling-cloud_1d: inconclusive (fit: exact) [main: 0.015116; ordinary t of the mean 0.689244; non-overlapping cases 156]
 021-02_below-falling-cloud-continues-down_1d: inconclusive (fit: exact) [main: 0.015116; t of the mean 0.689244; cases 156]
 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins_1d: inconclusive (fit: adapted) [main: 0.0707546; Welch t 1.59277; cases 285, thin_cases 142, thick_cases 143]
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: not observable (fit: exact) [main: 0.0582771; ordinary t of the mean 0.688599; independent cases 11]
