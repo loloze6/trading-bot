@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 5-bar return on forecast (grid bars, before costs)",
+    "value": 0.0006377253237803859,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.106628212454022
+    },
+    "threshold": "confirm: slope t >= 2 with supporting check; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on grid bars with forecast < 0 below 0",
+    "value": -0.003420930858560448,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast below 0": 4943,
+    "grid bars": 7128
+  },
+  "decided_by": "Slope t >= 2 and mean excess return on forecast<0 grid bars is below 0 (confirm rule).",
+  "reading": "Grid bars at positions 0,5,10,... of each window with the 5-bar return inside the window; coin mean is the mean of those grid returns over all its windows; the regression is OLS with an intercept over all grid bars including forecast 0; situation taken as raw component > 0 on the short side; the 200-bar minimum yields 'not observable' per the workflow."
+}

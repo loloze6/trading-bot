@@ -15,21 +15,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run | plan | inconclusive (+0.30) | not profitable enough (failed: Calmar) | - | 7.b: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.b1_breakout-continues-within-uptrend, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.b2_breakout-in-downtrend-fails; 7.d: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d2_distance-above-50-day-average; 7.g: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.g1_large-up-day-continues | 1.26 | 5.7 |
 | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins | plan | confirmed (+3.24) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: no ideas: Across about fifteen angles (clearance, breakdown below the low, last-day and 3-day moves, 60-day trend, volatility level, weekday, year, horizons of 3 to 20 days, and the book's tails), the only pattern that stands out is the tested idea's own large-clearance continuation (F1, F2), and the rest is either ungraded (F3, F5) or disappears once coins are averaged per date (F4, F6), so no new idea is supported. | 1.11 | 12.7 |
 | 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins | 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance | plan | inconclusive (+0.23) | not profitable enough (failed: Calmar) | - | 7.b: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b1_resistance-breakout-three-day-rise, 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation; 7.d: no answer; 7.g: no ideas: I looked at about a dozen angles: past 1-, 3-, 10- and 20-day returns, where the price sits in its 20-day range, volatility level, weekday, year, forecast state, coin group and trade duration. None stood out enough to count. The best candidate, the 10-day momentum in F4, is not graded, is weaker than t 2 once cases are counted by day, disappears over 20 days and flips sign with the year's drift. That fits the year's drift rather than a timing edge that a new idea could rest on. | 3.81 | 24.1 |
+| 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins | 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling | plan | confirmed (+3.11) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d1_broken-support-without-collapse, 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d2_capitulation-below-broken-support, 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d3_clear-above-supports-rises; 7.g: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.g1_wide-range-day-precedes-rise | 1.06 | 9.0 |
 
 ## Consumption
-11 ideas, 17.82 USD, 98.5 minutes in all.
+12 ideas, 18.88 USD, 107.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.78 | 7.4 |
-| step4_backtest | 0.00 | 27.2 |
-| step5_verdict | 1.68 | 6.8 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.85 | 7.9 |
+| step4_backtest | 0.00 | 32.5 |
+| step5_verdict | 1.82 | 7.2 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.40 | 1.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.85 | 2.9 |
-| step7_7.d | 5.29 | 23.9 |
+| step7_7.d | 5.70 | 25.3 |
 | step7_7.b | 3.28 | 10.6 |
-| step7_7.g | 4.54 | 15.2 |
+| step7_7.g | 4.98 | 16.5 |
 | unseen_test | 0.00 | 2.6 |

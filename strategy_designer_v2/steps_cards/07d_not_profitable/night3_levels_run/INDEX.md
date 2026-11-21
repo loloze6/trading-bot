@@ -1,5 +1,6 @@
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: 3 ideas (2 explorations)
 020-01_resistance-retest-turns-down_1d: 3 ideas (2 explorations)
+020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins_1d: 3 ideas (2 explorations)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: 2 ideas (2 explorations)
 020-02_support-retest-bounces-up_1d: 2 ideas (3 explorations)
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
