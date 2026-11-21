@@ -2,5 +2,6 @@
 022-01_learned-combined-signal-score_1d: 1 ideas (3 explorations)
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-02_combination-beats-best-single_1d: 1 ideas (2 explorations)
+022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-03_combined-extremes-larger-moves_1d: 1 ideas (2 explorations)
 022-04_signal-weights-carry-forward_1d: 2 ideas (1 explorations)

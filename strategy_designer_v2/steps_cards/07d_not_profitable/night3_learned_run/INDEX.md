@@ -2,5 +2,6 @@
 022-01_learned-combined-signal-score_1d: 3 ideas (2 explorations)
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: 3 ideas (2 explorations)
 022-02_combination-beats-best-single_1d: 3 ideas (2 explorations)
+022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: 3 ideas (2 explorations)
 022-03_combined-extremes-larger-moves_1d: 1 ideas (2 explorations)
 022-04_signal-weights-carry-forward_1d: 2 ideas (2 explorations)
