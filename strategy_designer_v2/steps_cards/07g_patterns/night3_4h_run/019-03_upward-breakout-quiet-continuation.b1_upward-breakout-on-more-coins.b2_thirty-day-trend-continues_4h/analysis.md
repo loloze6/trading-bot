@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h
+idea tested: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4662 USD
+---
+## Findings
+- **F1:** The brief's premise does not hold on these 4h bars. After the narrowest ranges (5-day mean high-low range over its 30-day mean, lowest quintile) the 3-day move is below the coin's drift (strength -0.053, t -2.5, 1822 non-overlapping cases), while after the widest ranges it is above it (+0.094, t 3.5, excess +0.97 %). After narrow ranges, the direction of the last day does not predict the next 3 days (+0.016, t 0.8).
+- **F2:** The larger a coin's last-day fall measured against its own 5-day volatility, the more it rises over the next 3 days. The largest-fall decile ends +1.18 % above drift (strength 0.125, t 4.5, 1156 cases), the next decile +0.42 % (0.054, t 2.0), and the middle deciles end slightly below drift. The rebound is about 5 times a round trip's 0.22 %.
+- **F3:** This rebound after a large fall is concentrated where the 30-day forecast is on: 0.161 (t 5.0, 932 cases) against 0.041 (t 1.7, 1379 cases) when it is off. It is positive in 6 of 8 years, but negative in 2018 (-0.203, t -2.1) and flat in 2022 (-0.035).
+- **F4:** After wide-range stretches (top quintile of the 5-day/30-day range ratio), a last-day fall is followed by a rise (strength 0.199, t 5.2, 855 cases) and a last-day rise by nothing (0.000, t 0.0). The larger the last-day move, the more it reverses (signed strength +0.034, -0.116, -0.199 by tercile, t up to -4.4). The reversal is negative in all 8 years.
+- **F5:** The width of the last 4-hour bar's range against its 5-day average adds to the 30-day forecast in a joint regression of the 3-day excess return: log range ratio t 5.0, forecast t 4.9, 5-day range compression t 1.3. The widest last-bar quintile ends +0.83 % above drift (t 3.1) and the narrowest -0.67 % (t -3.6).
+- **F6:** The tested forecast works only from mid values up. Cases at 0 to 5 end below drift (-0.056, t -2.3, 1578 cases), and cases from 5 to 20 end above it (+0.067 to +0.101, t 2.3 to 3.4). Coins whose 30-day return is in the second-lowest quintile do worst (-0.117, t -5.7).
+- **F7:** The 4h bar starting 16:00 UTC rises on average 10.0 bps (t 9.2, 37206 bars), positive in 18 of 19 coins and in 7 of 8 years. The bar starting 00:00 rises 6.9 bps (t 6.9). Both are below a round trip's 22 bps, so neither pays alone (as in findings F2 and F11 of the runs).
+- **F8:** Friday's 4h bars rise 8.5 bps on average (t 7.1) and Wednesday's 6.6 bps (t 5.2), also below the cost of a round trip.
+
+## Ideas
+- `019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g1_sharp-dip-in-uptrend-rebounds` (from F2, F3, F6): The larger a coin's 1-day fall compared with its typical 1-day move over the past 5 days, the more the coin rises over the next 3 days, most strongly while its 30-day return is positive.
+- `019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g2_wide-range-falls-reverse-upward` (from F1, F4): The wider a coin's high-low ranges over the past 5 days compared with its ranges over the past 30 days, the more a fall over its last day reverses into a rise over the next 3 days.
+- `019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g3_wide-bar-precedes-rise` (from F1, F5): The wider a coin's last four-hour high-low range compared with its average four-hour range over the past 5 days, the more the coin rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

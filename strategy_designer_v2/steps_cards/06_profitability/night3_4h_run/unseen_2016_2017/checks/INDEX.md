@@ -1,1 +1,2 @@
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins_4h: not profitable enough [Sharpe 2.988; Sharpe minus holding's Sharpe -0.8506; Calmar 7.358]
+019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h: not profitable enough [Sharpe 3.481; Sharpe minus holding's Sharpe -0.3577; Calmar 10.78]
