@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 96-bar move of the cases (return minus the coin's normal 96-bar drift)",
+    "value": 0.007021171318786564,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.385850181808556
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 30 cases and supporting check > 0; reject: mean < 0 with t <= -2 on >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases above the median entry forecast minus that of cases below it",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 2345
+  },
+  "decided_by": "t >= 2 but the supporting check is not above 0.",
+  "reading": "the situation is a positive raw fall-times-rise value (prices used where the raw value is missing); a case is the first bet (forecast rise >= 2 from its lowest level since the last bet, reset at 0) in each 96-bar grid cell from a window's first row, cases without 96 bars left in their window are dropped, and the supporting split uses cases strictly above versus strictly below the median entry forecast."
+}

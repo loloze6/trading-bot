@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 72-bar unusual move of the long cases (return minus coin's normal 72-bar drift)",
+    "value": -0.001486850924041195,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.7413922654537113
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean unusual move (Welch difference > 0)",
+    "value": 0.0008418691880759722,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2167,
+    "deeper half cases": 782,
+    "shallower half cases": 782
+  },
+  "decided_by": "Main t between -2 and 2 over at least 30 cases.",
+  "reading": "Bets are long forecast rises of >= 2 points from the lowest level since the last bet, the first per 72-bar grid cell of each window counted from its first row; depth uses the 720 closes including the current bar within the window, cases or bars without 720 closes of history are left out of the depth measures; the deeper half is depth strictly below the median and the shallower half the rest; the check passes on the sign of the difference (Welch t reported as supporting information only).",
+  "supporting_welch_t": 0.1834787359458657
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 72-bar return of the bets (return minus coin's normal drift), pooled",
+    "value": 0.005537416067034882,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.9834902723093744
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and supporting check passes); reject if mean < 0 with t <= -2; at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual return of larger-forecast half minus smaller-forecast half > 0",
+    "value": -0.0023222991067430214,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 2440,
+    "larger-forecast half": 1220,
+    "smaller-forecast half": 1220
+  },
+  "decided_by": "Mean unusual 72-bar return above 0 with t >= 2, but the larger-forecast half does not beat the smaller half.",
+  "reading": "Bets are long forecast rises of at least 2 points from the lowest level since the last bet (reset to 0 when flat), the first per 72-bar grid cell counted from each window's first row, with cases lacking 72 bars ahead in the window dropped; the median split puts forecasts above the median in the larger half and those at or below it in the smaller half; a missed 30-case minimum is reported as not observable."
+}

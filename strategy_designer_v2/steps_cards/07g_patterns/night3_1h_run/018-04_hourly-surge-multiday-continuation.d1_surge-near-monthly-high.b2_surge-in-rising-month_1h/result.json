@@ -1,0 +1,50 @@
+{
+  "line": "7.g",
+  "backtest": "018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b2_surge-in-rising-month_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3670184,
+  "findings": {
+    "F1": "The tested surge idea is too small to show here: across all 6 coins and grid cells with a positive 30-day return, the 10-day excess return rises from -1.5 % (t -1.43, 117 cases) in the lowest surge quintile to +2.2 % to +3.3 % (t 1.12 to 1.75, 126 to 139 cases) in the top three quintiles, and no quintile reaches t 2; with a negative 30-day return every surge quintile is slightly negative (-0.5 % to -1.1 %, |t| < 0.85).",
+    "F2": "Nearness to the 30-day high carries a 10-day move the surge does not explain: on the grid starting at each window's first row, cells in each coin's top quintile of close over its 30-day highest close are followed by a 10-day excess return of +3.9 % (t 3.02, 278 cases), against -0.1 % to -3.0 % in the four lower quintiles; on the 5-day horizon the same top quintile gives +2.3 % (t 2.67).",
+    "F3": "The nearness effect is not robust to where the grid starts: on the grid shifted by 5 days, the same top quintile gives +1.5 % (t 1.35, 287 cases). The within-coin Spearman correlation of nearness with the 10-day excess is weak (-0.04 to +0.12, no p below 0.06), and earlier runs already found nearness to highs pays (findings F3, F9). F2 is therefore at best a modest, graded effect at the top end only.",
+    "F4": "Nearness and a strong 7-day return reinforce each other. Cells in both top quintiles are followed by +7.4 % excess over 10 days (t 2.97, 130 cases), against +0.8 % (t 0.83, 148) for near-high alone, +0.6 % (t 0.44, 148) for a top 7-day return alone, and -1.5 % (t -3.32, 960) for neither.",
+    "F5": "The 7-day return alone sorts the next 10 days on the first grid: -2.1 % to -1.6 % excess in the lowest three quintiles (t about -2.1 to -2.4), +3.7 % (t 2.76, 278) in the top quintile. On the shifted grid the top quintile falls to +1.1 % (t 1.03), so it is weaker than F4.",
+    "F6": "Nearness scaled by the coin's 30-day volatility sorts like raw nearness. Its top quintile gives +4.0 % (t 3.05) on the first grid and +1.9 % (t 1.63) on the shifted grid, the most stable of the nearness measures across the two grids.",
+    "F7": "The near-high effect is concentrated in the earlier years and in some coins. The top quintile gives +6.8 % (t 3.22, 116 cases) before 2022 and +1.8 % (t 1.12, 162) from 2022. By coin it gives +11.8 % for XRP (t 2.62), +2.2 % to +2.4 % for BTC and ETH (t 1.27 to 1.58), and +0.6 % to +0.7 % for LTC and XMR.",
+    "F8": "The book's year and window results follow the coins. Its mean daily return is negative in 2018 (-0.19 %) and 2022 (-0.08 %), as are the coins' (-0.35 %, -0.18 %). Its largest windows (+131 %, +113 %) are those where the coins rose most (+281 %, +87 %), so its Calmar failure comes from shared down years, not from surges.",
+    "F9": "The moves in F2 and F4 are large against a trade: a 10-day excess of +3.9 % to +7.4 % per case is 20 to 39 times the 0.19 % round-trip cost of this backtest. Size is not the obstacle; robustness across grid offsets (F3) and years (F7) is."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's hourly close is to its highest close of the last 30 days, the more it rises over the next 10 days above its usual 10-day return, and the more so the larger its 7-day return.",
+      "consequence": "A trader would hold a coin for about ten days when it trades at its monthly high after a strong week, and refuse long entries in coins far below their monthly high after a weak week.",
+      "name": "strong week at monthly high",
+      "from": "F2, F4, F5, F9",
+      "refs": [
+        "F2",
+        "F4",
+        "F5",
+        "F9"
+      ]
+    },
+    {
+      "idea": "The closer a coin's hourly close is to its highest close of the last 30 days, measured in units of its 30-day hourly volatility, the more it rises over the next 10 days above its usual 10-day return.",
+      "consequence": "A trader would favour ten-day longs in coins sitting within a small number of their own usual moves of the monthly high, and give less weight to coins further below it.",
+      "name": "volatility-scaled nearness to high",
+      "from": "F2, F3, F6, F9",
+      "refs": [
+        "F2",
+        "F3",
+        "F6",
+        "F9"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b2_surge-in-rising-month.g1_strong-week-at-monthly-high",
+    "018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b2_surge-in-rising-month.g2_volatility-scaled-nearness-to-high"
+  ],
+  "no_ideas": null
+}

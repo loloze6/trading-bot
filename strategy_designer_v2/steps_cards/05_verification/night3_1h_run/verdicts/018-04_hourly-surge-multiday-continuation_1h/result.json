@@ -1,0 +1,26 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 120-bar move after long forecast rises of >= 2 points",
+    "value": -0.00011533384191724206,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.058949539085077315
+    },
+    "threshold": "positive with t >= 2 over at least 30 cases to confirm; negative with t <= -2 over at least 30 cases to reject"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast at the case's bar",
+    "value": 0.0006760349781261847,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3205
+  },
+  "reading": "The situation is read as 'the 24-bar return is above 0' on the long side; a case is a long-side rise of the forecast of at least 2 points from its lowest level since the last such rise (from 0 after flat), the first per 120-bar grid cell counted from each window's first row, with a full 120-bar forward return inside the window; the drift is the coin's mean 120-bar return on that grid over all windows; the slope is an OLS fit of unusual move on forecast, failed if not computable; fewer than 30 cases is reported as not observable.",
+  "status": "inconclusive",
+  "decided_by": "The t-statistic is between -2 and 2."
+}

@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3987836,
+  "findings": {
+    "F1": "The coin's own 10-day return carries forward over the next 10 days. On non-overlapping 240-hour cases ranked within each coin, the top quintile of the prior 10-day return is followed by an unusual move of +3.0 % (t 2.52, 312 cases, strength 0.17). The second and third quintiles are followed by \u22122.3 % (t \u22123.11, 303 cases) and \u22121.8 % (t \u22122.34, 296 cases). Top quintile minus second quintile is about +5.3 % (Welch t \u2248 3.8). The top quintile's unusual move is about 16 times the 0.19 % cost of a trade.",
+    "F2": "The prior 30-day return shows the same carry-forward, more weakly. Its top quintile is followed by +2.8 % unusual over 10 days (t 1.96, 249 cases), its middle quintile by \u22121.7 % (t \u22122.13, 248 cases), and its bottom quintile by +0.6 % (t 0.59), so the carry-forward is not clean at the low end.",
+    "F3": "The tested idea's own situation points the other way, though not beyond chance. After a 24-hour fall of more than 2 usual daily moves that followed a 30-day rise, the next 10 days run \u22123.0 % against drift (t \u22121.56, 26 cases). After a 24-hour rise of the same size following a 30-day rise, they run +4.4 % (t 1.19, 57 cases).",
+    "F4": "The 24-hour return's sign also carries forward over the next 10 days. A 24-hour rise of up to one usual daily move is followed by +1.9 % unusual (t 2.21, 369 cases); a fall of up to one is followed by \u22121.4 % (t \u22122.06, 409 cases).",
+    "F5": "Ten-day outcomes depend heavily on the year. 2018 averaged \u22124.7 % unusual (t \u22123.64, 207 cases) and 2022 \u22122.6 % (t \u22122.80), against +3.0 % in 2020 (t 2.67). The book's mean daily return was likewise \u22120.22 % in 2018 and +0.44 % in 2020, close to holding (\u22120.35 % and +0.42 %).",
+    "F6": "The book's gain sits in rare large days and in skewed trades.",
+    "F7": "Coin by coin, the book's trades are mostly carried by ZEC. Its mean net trade is +44 % (166 trades) against +0.7 % to +9.4 % for the other five coins. Trades entered in the 00\u201306 UTC quarter average +21.7 % against about +4 % for the other quarters.",
+    "F8": "Several angles showed no pattern beyond chance across about ten groupings. These were 24-hour volatility terciles (\u22120.7 % to +0.8 %, |t| \u2264 1.17), weekday (|t| \u2264 2.04, only Saturday near 2), and whether the book was in or flat (t 0.26 and \u22120.42)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's own 10-day return, read at an hourly close, the more the coin rises over the next 10 days beyond its normal drift; a coin that fell over its last 10 days lags its drift over the next 10 days, by more the larger its fall.",
+      "consequence": "A trader who holds a coin for ten days after a strong 10-day rise captures a move many times the cost of a round trip, and has a reason to refuse a ten-day long after a 10-day fall.",
+      "name": "ten-day return carries forward",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge.g1_ten-day-return-carries-forward"
+  ],
+  "no_ideas": null
+}

@@ -5403,3 +5403,324 @@ class ExcessPredictivePowerZComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period
+
+
+
+
+class VolScaledBreakAboveHighComponent(SubStrategyComponent):
+    """
+    How far the close has broken above the prior high, in usual step-bar moves, on every bar:
+
+        H = max(high[t - period] .. high[t - 1])                         (bar t excluded)
+        m = mean over k = 0 .. steps-1 of abs(close[t - k*step] / close[t - (k+1)*step] - 1)
+        raw_value = max(0, close[t] - H) / close[t] / m                  (0 when m = 0)
+
+    With the defaults (period 480, step 24, steps 30) on 1h bars: the break above the prior 20-day high,
+    as a fraction of the close, divided by the mean absolute daily return over the last 30 daily steps.
+    Range: 0 and up, unbounded above, never negative. It is 0 while close[t] <= H and grows continuously
+    as the close sits further above the prior high, in usual moves. Graded, one-sided, with no direction.
+    m = 0 happens only when close[t] = close[t-step]. Then high[t-step] >= close[t] lies inside the prior
+    window, so the numerator is 0 too, and the output is 0.
+    Warm-up: max(period + 1, step * steps + 1) rows, bar t included (721 at the defaults).
+
+    WHY THIS CANNOT LEAK: it reads the `high` column of rows t-period .. t-1 and the `close` column of
+    rows t, t-step, ..., t-steps*step, all at or before bar t (the last row of data). Each value is known
+    at its bar's close.
+
+    NaN: a NaN high in the prior window, a NaN close[t] or a NaN among the closes used gives NaN. A close
+    not above 0 among them gives NaN (never on real bars). Building the component raises for a period,
+    step or steps below 1.
+    """
+
+    def __init__(self, name="VolScaledBreakAboveHigh", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 480))
+        if self.period < 1:
+            raise ValueError(f"VolScaledBreakAboveHighComponent: period must be >= 1, got {self.period}")
+        self.step = int(self.parameters.get("step", 24))
+        if self.step < 1:
+            raise ValueError(f"VolScaledBreakAboveHighComponent: step must be >= 1, got {self.step}")
+        self.steps = int(self.parameters.get("steps", 30))
+        if self.steps < 1:
+            raise ValueError(f"VolScaledBreakAboveHighComponent: steps must be >= 1, got {self.steps}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        close = data['close'].astype(float).to_numpy()
+        n = len(close)
+        prior = high[n - 1 - self.period:n - 1]
+        c = close[n - 1]
+        if np.isnan(prior).any() or np.isnan(c) or not c > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        h = float(prior.max())
+        idx = [n - 1 - k * self.step for k in range(self.steps + 1)]
+        pts = close[idx]
+        if np.isnan(pts).any() or not (pts > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        moves = np.abs(pts[:-1] / pts[1:] - 1.0)
+        m = float(moves.mean())
+        brk = max(0.0, c - h) / c
+        self._raw_value = float(brk / m) if m > 0 else 0.0
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': h, 'break_frac': brk, 'mean_abs_move': m}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period + 1, self.step * self.steps + 1)
+
+
+class MeanAbsReturnComponent(SubStrategyComponent):
+    """
+    The usual size of a `period`-bar move, on every bar:
+
+        r(i) = close[i] / close[i - period] - 1,  i = t - window + 1 .. t   (bar t included)
+        raw_value = (1 / window) x sum over those i of abs(r(i))
+
+    The returns overlap: one is taken ending at each of the last `window` bars.
+    Range & sign: 0 and up, unbounded above, never negative; no direction. It grows with the coin's
+    usual `period`-bar move. Units: a fraction of price (a simple return, not percent).
+    Warm-up: window + period rows, bar t included (744 at the defaults).
+    NaN: a NaN close anywhere in the last window + period rows gives NaN. A close not above 0 there
+    gives NaN (never on real bars). A missing `close` column raises.
+    Building the component raises for a period below 1 or a window below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + period rows of data.
+    Those are bars t - window - period + 1 .. t, and the last row is bar t. A bar's close is known at
+    that bar's close.
+    """
+
+    def __init__(self, name="MeanAbsReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 24))
+        if self.period < 1:
+            raise ValueError(f"MeanAbsReturnComponent: period must be >= 1, got {self.period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"MeanAbsReturnComponent: window must be >= 1, got {self.window}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.window + self.period
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+        else:
+            r = c[self.period:] / c[:-self.period] - 1.0
+            self._raw_value = float(np.mean(np.abs(r)))
+        self.confidence = 1.0
+        self.debug_info = {'period': self.period, 'window': self.window}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.window + self.period
+
+
+class MeanAbsScaledFallTimesRiseComponent(SubStrategyComponent):
+    """
+    The depth of a recent fall in usual moves, times the size of a longer rise, on every bar:
+
+        r(i) = close[i] / close[i - fall_period] - 1
+        m    = mean(abs(r(i)) for i = t - window + 1 .. t)          (bar t included)
+        F    = max(0, -r(t) / m)                                     (0 when m = 0)
+        R    = max(0, close[t] / close[t - rise_period] - 1)
+        raw_value = F x R x 100
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 when the last fall_period bars did not
+    fall or when the rise_period-bar return is not positive. It grows continuously with the depth of the fall in
+    usual fall_period-bar moves and with the percent rise over rise_period bars.
+    Warm-up: max(window + fall_period, rise_period + 1) rows, bar t included (744 at the defaults).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(window + fall_period, rise_period + 1)
+    rows of data, the last row being bar t; a bar's close is known at that bar's close.
+
+    NaN: a NaN close in those rows gives NaN. A close not above 0 there gives NaN (never on real bars). m = 0
+    (every fall_period-bar return of the window flat, never on real bars) gives a first factor of 0.
+    Building the component raises for fall_period < 1, window < 1 or rise_period < 1.
+    """
+
+    def __init__(self, name="MeanAbsScaledFallTimesRise", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.fall_period = int(self.parameters.get("fall_period", 24))
+        if self.fall_period < 1:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: fall_period must be >= 1, got {self.fall_period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: window must be >= 1, got {self.window}")
+        self.rise_period = int(self.parameters.get("rise_period", 720))
+        if self.rise_period < 1:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: rise_period must be >= 1, got {self.rise_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        p = self.fall_period
+        rets = c[p:] / c[:-p] - 1.0
+        rets = rets[-self.window:]
+        m = float(np.mean(np.abs(rets)))
+        r = float(c[-1] / c[-1 - p] - 1.0)
+        fall = 0.0 if m == 0 else max(0.0, -r / m)
+        rise = max(0.0, float(c[-1] / c[-1 - self.rise_period] - 1.0))
+        self._raw_value = float(fall * rise * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {'fall_return': r, 'mean_abs_return': m, 'scaled_fall': fall, 'rise': rise}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.window + self.fall_period, self.rise_period + 1)
+
+
+class HighProximityScaledReturnComponent(SubStrategyComponent):
+    """
+    The return_period-bar return in usual return_period-bar moves, weighted by the nearness of the close to
+    its recent closing high:
+
+        H = max(close[t - period + 1 .. t])                                   (bar t included)
+        D = max(0, (H - close[t]) / H * 100)                                  (percent below the high)
+        W = (1 / (1 + D)) ** power
+        r(i) = close[i] / close[i - return_period] - 1
+        m = mean(abs(r(i)) for i in t - window + 1 .. t)                      (bar t included)
+        raw_value = W * r(t) / m        (0 when m == 0)
+
+    Range & sign: signed like r(t), unbounded in practice. abs(value) <= window, because r(t) is one of the
+    window returns in m and W <= 1. At a new high W = 1; W shrinks toward 0 far below the high.
+    Graded: continuous in the closes.
+    Warm-up: max(period, window + return_period) rows, bar t included (744 at the defaults).
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN. m == 0 gives 0.
+    Building the component raises for period < 2, return_period < 1, window < 1 or power not above 0.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, window + return_period)
+    rows of data, the last of which is bar t; a close is known at its bar's close.
+    """
+
+    def __init__(self, name="HighProximityScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 720))
+        if self.period < 2:
+            raise ValueError(f"HighProximityScaledReturnComponent: period must be >= 2, got {self.period}")
+        self.return_period = int(self.parameters.get("return_period", 24))
+        if self.return_period < 1:
+            raise ValueError(
+                f"HighProximityScaledReturnComponent: return_period must be >= 1, got {self.return_period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"HighProximityScaledReturnComponent: window must be >= 1, got {self.window}")
+        self.power = float(self.parameters.get("power", 2.0))
+        if not self.power > 0:
+            raise ValueError(f"HighProximityScaledReturnComponent: power must be above 0, got {self.power}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        high = float(c[-self.period:].max())
+        dist = max(0.0, (high - c[-1]) / high * 100.0)
+        w = (1.0 / (1.0 + dist)) ** self.power
+        rets = c[self.return_period:] / c[:-self.return_period] - 1.0
+        recent = rets[-self.window:]
+        m = float(np.abs(recent).mean())
+        ret = float(recent[-1])
+        self._raw_value = 0.0 if m == 0 else float(w * ret / m)
+        self.confidence = 1.0
+        self.debug_info = {'high': high, 'distance_pct': dist, 'weight': w, 'return': ret, 'mean_abs': m}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period, self.window + self.return_period)
+
+
+class MeanAbsScaledReturnComponent(SubStrategyComponent):
+    """
+    The period-bar return in multiples of the coin's usual period-bar move, on every bar:
+
+        r(i) = close[i] / close[i - period] - 1
+        m    = mean(abs(r(i)) for i = t - window + 1 .. t)       (overlapping returns, bar t included)
+        raw_value = r(t) / m        (0.0 when m = 0)
+
+    Graded and signed like the period-bar return: negative after a fall, more negative the deeper the fall in
+    usual moves; positive after a rise. Its size is at most `window`, because r(t) is one of the averaged returns.
+    Warm-up: window + period rows, bar t included (the oldest return needs close[t - window + 1 - period]).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + period rows of data, the last
+    row being bar t; a bar's close is known at that bar's close.
+
+    NaN: a NaN close in the last window + period rows gives NaN, and so does a close not above 0 there (never on
+    real bars). m = 0 (every return flat, never on real bars) gives 0.0; the return is then 0 as well.
+    Building the component raises for a period below 1 or a window below 1.
+    """
+
+    def __init__(self, name="MeanAbsScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 24))
+        if self.period < 1:
+            raise ValueError(f"MeanAbsScaledReturnComponent: period must be >= 1, got {self.period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"MeanAbsScaledReturnComponent: window must be >= 1, got {self.window}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[self.period:] / c[:-self.period] - 1.0
+        m = float(np.mean(np.abs(r)))
+        ret = float(r[-1])
+        self._raw_value = float(ret / m) if m > 0 else 0.0
+        self.confidence = 1.0
+        self.debug_info = {'return': ret, 'mean_abs_return': m}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.window + self.period

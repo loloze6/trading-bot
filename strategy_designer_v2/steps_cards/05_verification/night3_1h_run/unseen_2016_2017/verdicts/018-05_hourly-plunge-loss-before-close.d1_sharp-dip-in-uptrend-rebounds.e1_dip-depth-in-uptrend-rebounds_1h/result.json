@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 72-bar unusual move (return minus coin's mean 72-bar return)",
+    "value": 0.012356344855839375,
+    "statistic": {
+      "name": "t of mean of forecast x unusual move",
+      "value": 1.127680281064296
+    },
+    "threshold": "confirm: > 0 with t >= 2 and top-minus-bottom third > 0; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean unusual move (by forecast)",
+    "value": 0.025649900359607077,
+    "passed": true
+  },
+  "counts": {
+    "cases over all coins and windows": 241
+  },
+  "decided_by": "The t is between -2 and 2 (or sign and t disagree), which the plan calls inconclusive.",
+  "reading": "The 30-day return is recomputed from closes 720 bars back inside each window and taken from the recorded regime where the window has fewer than 720 earlier bars; the coin's mean 72-bar return is the mean over all grid bars of all its windows; thirds are formed on all cases pooled across coins, sorted by forecast and split into three near-equal groups with numpy.array_split."
+}

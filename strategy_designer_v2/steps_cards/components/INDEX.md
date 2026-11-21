@@ -111,3 +111,10 @@ night3_learned_run | 022-03_combined-extremes-larger-moves_1d | PerformanceWeigh
 night3_learned_run | 022-04_signal-weights-carry-forward_1d | PastPredictivePowerWeightedSignal | exists: PastPredictivePowerWeightedCompositeComponent {"signal": "momentum", "weighting": "single"}
 night3_learned_run | 022-04_signal-weights-carry-forward_1d | TrailingPredictivePower | built: SignalPredictivePowerComponent {"corr_lookback": 365, "horizon": 5, "signal": "momentum"}
 night3_learned_run | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d | centred-power counter-bet | built: ExcessPredictivePowerZComponent {"corr_lookback": 365, "high_period": 90, "horizon": 5, "mean_window": 365, "z_window": 365}
+night3_1h_run | 018-02_hourly-breakout-multiday-continuation_1h | VolScaledBreakAboveHighComponent | built: VolScaledBreakAboveHighComponent {"period": 480, "step": 24, "steps": 30}
+night3_1h_run | 018-02_hourly-breakout-multiday-continuation_1h | MeanAbsDailyReturnComponent | built: MeanAbsReturnComponent {"period": 24, "window": 720}
+night3_1h_run | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends_1h | PlungeTimesMonthRiseComponent | built: MeanAbsScaledFallTimesRiseComponent {"fall_period": 24, "rise_period": 720, "window": 720}
+night3_1h_run | 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high_1h | ProximityWeightedSurgeComponent | built: HighProximityScaledReturnComponent {"period": 720, "power": 2.0, "return_period": 24, "window": 720}
+night3_1h_run | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h | DropInMeanAbsDailyMoves | built: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
+night3_1h_run | 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h | ReturnToMeanAbsReturnRatio | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
+night3_1h_run | 018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h | DailyDropToMeanAbsDailyReturn | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}

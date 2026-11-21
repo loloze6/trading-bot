@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4406451,
+  "findings": {
+    "F1": "A coin's 7-day return measured in units of its 30-day mean absolute daily return predicts its next 10 days, and the effect is graded at the top: on non-overlapping 240-hour cells, the top fifth of that measure is followed by an unusual move of +4.49 % (t 3.44, 278 cases, strength 0.27), the fourth fifth by +0.20 % (t 0.25), and the bottom three fifths by -1.23 %, -1.92 % and -1.57 % (t -1.5 to -2.2). Top minus bottom is positive in all 6 coins (Spearman 0.03 to 0.15, BTC and ETH p 0.02) and in 6 of 8 years (2022 and 2023 negative).",
+    "F2": "The same continuation shows over 4 days and only when the 30-day return is positive. On 96-hour cells, the top fifth of the 7-day measure gives +1.86 % unusual move (t 3.73, 508 cases) when the 30-day return is positive, against +0.06 % (t 0.09, 229 cases) when it is not. Over all coins, the top fifth gives +1.30 % (t 3.22, 737 cases).",
+    "F3": "The tested idea's own deep 24-hour fall carries little of its result. Falls below -2 usual daily moves are followed by +0.25 % unusual move over 4 days (t 0.33, 220 cases) and +0.18 % over 10 days (t 0.19, 210 cases). Only the 17 cases below -3 usual moves with a positive 30-day return show +8.1 % (t 3.08), too few to stand apart from chance after this many angles.",
+    "F4": "A 24-hour rise larger than 2 usual daily moves is followed by an unusual move of +3.43 % over the next 10 days (t 2.28, 248 cases) and +1.23 % over 4 days (t 1.64, 258 cases). This matches the brief's breakout, but on the long side rather than after a plunge.",
+    "F5": "The book is carried by trades held far beyond the 4-day horizon: the median trade lasts 219 hours. The longest quarter of trades (median 822 hours) earns +23.8 % mean and +11.7 % median after fees, against +0.10 % for the shortest quarter (median 5 hours) and -3.2 % for the second quarter (median 130 hours).",
+    "F6": "The hours 20 and 21 UTC rise on every coin, by +4.2 to +5.5 bps per hour (t 3.0 to 4.4 per coin, about 5,800 bars each), in 7 of 8 years (2022 at -2.2 bps). Over all 24 hours tested, hour 20 stands out at t 6.7. The move is far below the 19 bps a round trip cost here, so it is not a book on its own.",
+    "F7": "A 4-day cell starting on a Saturday ends +1.72 % above the drift (t 4.02, 433 cases), and the result is positive in 5 of 6 coins. It is negative in 2018 and 2019 (t -1.45 and -0.65) and carried by 2020 to 2022, so it does not stand apart from a period effect among 7 weekdays tested."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 30-day return is positive, the larger its 7-day return in units of its 30-day mean absolute daily return, the more its price rises over the next 10 days above its usual 10-day drift.",
+      "consequence": "A strong week, measured against the coin's usual daily move, in a coin already rising over the month, is a reason to buy and hold for about 10 days, and the stronger the week, the stronger the case.",
+      "name": "strong week continues uptrend",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 24-hour rise in units of its 30-day mean absolute daily return, the more its price rises over the next 10 days above its usual 10-day drift.",
+      "consequence": "A one-day surge several times the coin's usual daily move, caught at the hour it forms, is a reason to buy for about 10 days rather than to fade it.",
+      "name": "one-day surge keeps rising",
+      "from": "F4, F1, F5",
+      "refs": [
+        "F4",
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend.g1_strong-week-continues-uptrend",
+    "018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend.g2_one-day-surge-keeps-rising"
+  ],
+  "no_ideas": null
+}

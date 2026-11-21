@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound_1h
+idea tested: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3298 USD
+---
+## Findings
+- **F1:** The effect is on the side the idea predicts but only just short of the bar: the mean 48-hour excess return is +0.18 % with t 1.98 over 5958 cases, the same size over 24 hours (+0.13 %, t 1.97), and still +0.19 % over 96 hours (t 1.48, 5878 cases); 57 % of coin-windows have a positive mean.
+- **F2:** The effect depends on the coin's 30-day trend. Drops while the 30-day return is positive rebound by +0.41 % over 48 hours (t 2.68, 1946 cases), +0.67 % over 96 hours (t 3.07, 1910 cases) and +1.03 % over 168 hours (t 3.11, 1831 cases). The same drops while the 30-day return is negative keep falling: -0.27 % over 48 hours (t -1.91, 1981 cases) and -0.51 % over 96 hours (t -2.46, 1944 cases).
+- **F3:** Mixing the two trends is what holds the overall t near 2, and the split is graded rather than a switch. Over 48 hours the excess return rises across the 30-day-return octiles from about -0.4 % to -0.6 % in octiles 2 and 3 (t -1.34, -2.20) to +0.48 %, +0.68 % and +0.69 % in octiles 6 to 8 (t 1.86, 2.19, 1.81). The Spearman of the 30-day return with the 48-hour excess is 0.038, larger than the forecast's own 0.027.
+- **F4:** The size of the drop grades the rebound only weakly, and only at the top. Forecasts of 0 to 10 give +0.04 % to +0.16 % over 48 hours (t 0.15 to 0.78). Forecasts of 10 to 20 give +0.53 % (t 2.14, 701 cases), and capped forecasts give +0.56 % (t 1.35, 425 cases).
+- **F5:** The effect is mixed across coins and years. BTC and ETH show none (-0.03 %, -0.14 % over 48 hours, t -0.18, -0.67), while LTC, XMR, XRP and ZEC show +0.23 % to +0.36 % (t 1.03 to 1.47). 2018 is strongly negative (-1.16 %, t -3.50), while 2020, 2021, 2023 and 2025 are positive (t 2.09 to 2.76).
+- **F6:** The move covers the cost only where the trend is up. Overall, the unusual move of +0.18 % per case equals the 0.19 % cost of a round trip (1.0 times). Under a positive 30-day return the unusual move over 96 hours is +0.67 %, about 3.5 times the cost, and +1.03 % over 168 hours, about 5.4 times.
+- **F7:** More data is available than the test used. The test used the 6 default coins, while hourly bars exist for 19 coins: 6 more in folds A and D and parts of B and C, AVAX, SOL and INJ in folds A and D, and NEAR, SUI, TAO and ONDO in fold D.
+
+## Ideas
+- `018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins` (from F1, F7): When a coin's 24-hour return, read at an hourly close, falls by a large multiple of its 30-day average absolute daily return, the price rises over the next 2 days by more than the coin's usual 2-day drift, and the larger the 24-hour drop in those multiples, the larger the rise.
+- `018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends` (from F2, F3, F6): When a coin's 24-hour return, read at an hourly close, falls by a large multiple of its 30-day average absolute daily return, the price rises over the next 4 days by more than the coin's usual 4-day drift, only while the coin's 30-day return is positive, and the larger that 30-day rise, the larger the rebound.
+- `018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends` (from F2, F3): When a coin's 24-hour return, read at an hourly close, falls by a large multiple of its 30-day average absolute daily return while its 30-day return is negative, the price falls further over the next 4 days by more than the coin's usual 4-day drift, and the deeper the 30-day fall, the larger the further decline.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

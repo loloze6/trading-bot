@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 96-bar move of long bets (return minus coin's mean 96-bar return)",
+    "value": 0.012515985066410534,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.457882367348843
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject; at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of forecast at case bar vs unusual move > 0",
+    "value": -0.052156009436449116,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 392
+  },
+  "decided_by": "t lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "Situation = raw component > 0 (24h fall with positive 30-day return, recomputed from prices where the raw value is missing) on the long side; cases are long bets (forecast rise >= 2 from its lowest positive level since the last bet, from 0 after a flat), the first one in each 96-bar grid cell of a window counted from its first row, kept only if the 96-bar forward return stays inside the window; the drift is the coin's mean return on the 0, 96, 192, ... grid of all its windows."
+}

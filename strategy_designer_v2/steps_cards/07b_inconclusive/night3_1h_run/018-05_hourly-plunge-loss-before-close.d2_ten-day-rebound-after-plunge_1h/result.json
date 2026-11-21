@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3394463,
+  "findings": {
+    "F1": "The tested move shows up at 10 days and nowhere else. Over 1,093 cases the unusual move is +1.04 % at 240 hours (t 2.03). It is +0.12 % at 24 hours (t 0.81), +0.46 % at 72 hours (t 1.64) and +0.96 % at 480 hours (t 1.09). So the main measure clears t 2 by only a hair.",
+    "F2": "The grading the idea names fails because it runs the wrong way on the drop. Across cases, the slope of the 10-day move (in usual moves) on the depth of the 24-hour fall is \u22120.117 (t \u22122.32, n 1,009): the deepest quarter of drops is followed by \u22120.70 % (t \u22120.70, n 251), while the shallower three quarters give +0.94 % to +1.91 %. The slope on the forecast is \u22120.004 (t \u22120.84, n 1,093).",
+    "F3": "The 30-day prior rise is the part that is graded the predicted way. Across cases its slope is +0.22 (t 2.01, n 815), and +0.27 (t 2.35, n 678) among cases whose fall is under one usual daily move. Among drops deeper than one usual daily move it is \u22120.17 (t \u22120.55, n 137).",
+    "F4": "The drop adds nothing on top of the prior rise; it subtracts. On the plain 240-hour grid with a positive 30-day return:",
+    "F5": "The effect is a market-period effect more than a per-case one.",
+    "F6": "Size is not the obstacle. The unusual move is +1.08 % per case, 5.6 times the 0.19 % cost of a round trip, and the total move is 12.6 times that cost. What leaves the result unclear is the mis-signed drop grading (F2), not too few cases or too small a move."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, falls, the coin rises over the next 10 days more than its normal drift, and the shallower the fall measured in its 30-day average absolute daily return and the larger its 30-day return before the fall, the larger the rise.",
+      "consequence": "A trader who buys a shallow dip in a coin that has risen strongly over the past month, and holds about ten days, captures a move several times a round trip's cost, while a deep plunge is a reason to refuse that buy.",
+      "name": "shallow dip after monthly rise",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 30-day return, read at an hourly close, the more the coin rises over the next 10 days than its normal drift.",
+      "consequence": "A trader who holds coins in proportion to their past month's rise for about ten days earns the continuation, a move large next to the cost of a trade.",
+      "name": "thirty-day rise continues ten days",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge.b1_shallow-dip-after-monthly-rise",
+    "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge.b2_thirty-day-rise-continues-ten-days"
+  ],
+  "no_ideas": null
+}

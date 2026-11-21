@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h
+idea tested: 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4937 USD
+---
+## Findings
+- **F1:** Below zero, the coin's 30-day return in multiples of its usual 30-day move reverts: regressing excess return over drift on the scaled return, on the negative side only, gives slope -0.0033 with t -3.4 over the next 24 hours (8,339 cases), slope -0.015 with t -2.4 over the next 168 hours (1,182 cases), and t -0.19 over 336 hours (557 cases). The size is small. At 24 hours the deepest bucket (at or below -1) earns only +0.10 % above drift, below the 0.19 % round trip. At 168 hours that bucket earns +0.51 % (t 0.8, 339 cases), but the next bucket (-1 to -0.3) earns -1.54 % (t -3.1, 529 cases), so the grading is not clean.
+- **F2:** The tested idea's positive-side slope holds at shorter horizons too: t 3.1 over 24 hours (8,432 cases), t 2.9 over 168 hours (1,177 cases) and t 2.6 over 336 hours (559 cases). Only the top bucket carries it: scaled return above 1 earns +1.23 % over 168 hours (t 1.9, 542 cases), while the shallow bucket (0 to 0.3) earns -1.96 % (t -3.0, 257 cases).
+- **F3:** After a day whose return is at least 2.5 times the coin's 30-day standard deviation of daily returns on the downside, the next day is +1.14 % above the coin's mean (t 2.3, 208 cases). This is about 6 times the 0.19 % round trip. The effect shrinks for smaller falls: +0.28 % for falls of 1.5 to 2.5 times (t 1.4, 562 cases) and +0.17 % for 0.5 to 1.5 times (t 1.7, 2,548 cases). It does not last a week: -1.13 % over the next 7 days for the deepest falls. This t is modest given the many angles looked at.
+- **F4:** The tested idea's gain depends on the year. On the 336-hour grid with positive scaled return, excess over drift was -17.3 % in 2018 (t -6.4, 25 cases) and -2.0 % in 2023 (t -2.0, 75 cases). It was +3.9 % in 2020 (t 2.1, 85 cases), and 2021, 2024 and 2025 were also positive at about +3.9 to +4.1 %.
+- **F5:** Hourly returns have a time-of-day pattern strong enough to survive looking at 24 hours. Excess over the coin's mean is +4.7 bps at 21h UTC (t 6.0) and +3.7 bps at 22h (t 5.0), and -3.85 bps at 14h (t -4.1), each with about 16,900 bars. The two evening hours together, about 8 bps, stay well below the 19 bps round trip, as F2 of the earlier runs found.
+- **F6:** Daily returns differ by weekday: Saturday is +0.31 % above the coin's mean (t 3.8, 2,416 days) and Thursday -0.31 % (t -2.8, 2,420 days). With 7 weekdays looked at, only Saturday clearly stands out.
+- **F7:** The book's trades are graded by the forecast at entry. The median net trade is +0.05 %, +2.25 % and +7.0 % from the lowest to the highest third of entry forecast (842 to 843 trades each). Mean trades are dominated by a few large winners (means 15.9 %, 28.6 % and 16.8 %). The book's daily returns have no autocorrelation (-0.025).
+
+## Ideas
+- `018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks.g1_sharp-daily-fall-rebounds` (from F3, F1): The larger a coin's 1-day fall in multiples of its usual daily move, the more the coin rises above its normal drift over the next day.
+- `018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks.g2_monthly-fall-reverts-within-week` (from F1, F2): When a coin's 30-day return is negative, the larger that fall in multiples of its usual 30-day move, the more the coin rises above its normal drift over the next week.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

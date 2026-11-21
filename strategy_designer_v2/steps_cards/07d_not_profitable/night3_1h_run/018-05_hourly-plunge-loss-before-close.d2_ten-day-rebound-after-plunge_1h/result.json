@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6383566,
+  "findings": {
+    "F1": "The Calmar fails because of falls the six coins share. The book's deepest fall is 57.3 %, from w12 to a trough in w14: 351 days down and 326 days to recover, while the coins' average fell 75 % over the same days. The second is 43.7 % (w6 to w9) against a 57 % fall of the coins. With a yearly return of 38.9 %, this gives the 0.68 Calmar.",
+    "F2": "The book is a near-permanent long position, not a rebound bet. It is long on 71 % of bars at a mean allocation of 0.93, because every 240-hour hold is followed by another drop signal. In the losing windows w7, w9, w13 and w14 it was still long on 58 % of bars and lost 0.90 bps per bar, while the coin lost 1.07.",
+    "F3": "The book's gain sits where the coin trades above its 60-day average price. On those bars it is long on 96 % of bars and earns 1.02 bps per bar (t 4.2, 154 438 bars). Below that average it is long on 53 % of bars and earns 0.22 bps (t 1.5, 158 671 bars). In the quintile furthest above the average it earns 1.52 bps per bar.",
+    "F4": "Leaving out the positions entered below the 60-day average cuts the gross deepest fall from 56.3 % to 38.8 %. Gross Calmar rises from 0.74 to 0.78 and gross yearly return falls from 41 % to 30 %. Time long falls from 71 % to 57 %.",
+    "F5": "The depth of the drop does not grade the rebound. Trades by quintile of the 24-hour fall in usual daily moves net 6.3, 4.3, 2.3, 7.2 and 7.8 % from the deepest to the mildest. The step 5 slope of the unusual move on the forecast has a t of only 0.71.",
+    "F6": "The unusual rebound shows only after drops in coins already below their 60-day average. There it is +1.63 % per case (t 0.96, 120 cases). Above that average it is -0.05 % (137 cases). By quintile of distance from the average, the strength is 0.12 and 0.11 in the two furthest below, and -0.01, -0.07 and 0.07 in the others.",
+    "F7": "Trades entered while the coin's 60-day return is between -10 % and +2 % lose 4.3 % net on average, with 22 % winners (78 trades). Trades entered after a 60-day rise above 13 % earn 13.7 % (80 trades).",
+    "F8": "Size is not what fails the book. The per-case total move of +2.44 % is 12.6 times the 0.19 % round-trip cost, and the unusual move is 5.6 times that cost. The median trade still nets -0.67 %, with a 10th percentile of -20 % and a mean adverse move of -10.9 % during the hold. This is risk from holding through shared falls."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, falls by several times its 30-day average absolute daily return, the coin rises over the next 10 days more than its normal drift, only while its price is above its 60-day average price, and the further above that average and the larger its 30-day return before the drop, the larger the rise.",
+      "consequence": "A trader buys sharp drops only in coins trading above their 60-day average, and so stands aside through the long shared declines that carry the book's deepest falls.",
+      "name": "plunge rebound above 60-day average",
+      "from": "F1, F2, F3, F4, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, falls by several times its 30-day average absolute daily return while its price is below its 60-day average price, the coin rises over the next 10 days more than its normal drift, and the further below that average, the larger the rise.",
+      "consequence": "A trader sizes a drop-rebound bet by how far the coin is already below its 60-day average, and refuses the bet in coins near or above it, where no unusual rebound follows.",
+      "name": "capitulation rebound below average",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge.d1_plunge-rebound-above-60-day-average",
+    "018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge.d2_capitulation-rebound-below-average"
+  ],
+  "no_ideas": null
+}

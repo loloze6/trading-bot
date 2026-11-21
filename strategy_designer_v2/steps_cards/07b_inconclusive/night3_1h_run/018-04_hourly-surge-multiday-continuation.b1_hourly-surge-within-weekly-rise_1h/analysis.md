@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h
+idea tested: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3497 USD
+---
+## Findings
+- **F1:** The tested effect is close to zero rather than small. Over 2390 cases at 5 days the mean unusual move is +0.17 % (t 0.76), a strength of 0.013 (step 5 measured 0.007), against about 0.05 for real ideas. It stays near zero at every horizon: 24 h −0.03 % (t −0.35), 48 h +0.04 % (t 0.32), 10 days +0.08 % (t 0.23).
+- **F2:** The effect sits only in the largest surges. Cases in the top fifth of the 24-hour surge (median 2.3 times the 30-day average absolute daily return, 440 cases) earn +1.29 % (t 2.16, strength 0.13). The four lower fifths (medians 1.03 to 1.61 times) earn −0.55 % to +0.22 % (t −1.18 to 0.39). The test's gentler bets diluted the strong cases about five to one.
+- **F3:** Inside the positive-week regime, the 7-day return does not grade the move as the idea says. Its Spearman correlation with the unusual move is −0.003, and the four lower fifths of the 7-day return earn −0.42 % to +0.04 %. Only the top fifth (median 7-day return +18.6 %) earns more, +1.51 % (t 1.99).
+- **F4:** The market's own years drown the average. The unusual 5-day move is −2.44 % in 2022 (t −4.34, 284 cases) and −1.34 % in 2018 (t −1.44), against +1.78 % in 2020 (t 2.74) and +1.40 % in 2021 (t 1.92). The 30-day trend's sign also splits it: +0.71 % (t 2.03) when positive, −0.26 % (t −0.88) when not.
+- **F5:** The largest surges hold up across coins and most years.
+- **F6:** Size against cost. The tested idea's unusual move is 0.6 times the 0.19 % round trip (step 5), so it cannot pay on timing. The top-surge cases' +1.29 % unusual move is about 6.8 times that cost, enough to beat holding if it is real (findings F11: paying ideas cover the cost by a median of 3.8 times).
+
+## Ideas
+- `018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue` (from F1, F2, F3, F5, F6): When a coin's 24-hour return, read at an hourly close, first reaches several times its 30-day average absolute daily return on the upside, the price keeps rising over the next 5 days by more than the coin's usual 5-day return, only while its 7-day return is positive. The larger that 24-hour return against its 30-day average absolute daily return, the larger the rise, with most of it after surges of about twice the usual daily move and more.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
