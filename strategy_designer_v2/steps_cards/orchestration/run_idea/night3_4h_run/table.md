@@ -28,21 +28,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 019-03_upward-breakout-quiet-continuation | plan | inconclusive (+1.13) | not profitable enough (failed: Calmar) | - | 7.b: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week; 7.d: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.d1_breakout-inside-rising-month, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.d2_breakout-after-busy-week; 7.g: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.g1_sharp-fall-three-day-rebound, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.g2_quiet-stretch-three-day-underperformance | 1.43 | 7.2 |
 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | plan | inconclusive (+1.39) | profitable enough | - | 7.b: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.b1_breakout-inside-rising-month, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.b2_breakout-graded-by-week-s-rise; 7.e: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e2_breakout-fails-in-downtrend; 7.g: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.g1_loud-week-precedes-rise, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.g2_one-day-fall-rebounds | 1.53 | 11.5 |
 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | plan | inconclusive (+1.29) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.b: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.b1_quiet-week-breakout-more-coins, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.b2_breakout-after-rising-week; 7.d: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.d1_decisive-breakout-graded-continuation, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.d2_breakout-after-rising-week, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.d3_breakout-distance-predicts-rise; 7.g: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.g1_busy-week-downside-break-rebound, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b2_breakout-graded-by-quiet-week.g2_busy-week-then-rise | 1.88 | 7.9 |
+| 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins | plan | inconclusive (+0.85) | profitable enough | - | 7.b: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.b1_breakout-continues-in-uptrend, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.b2_breakout-continues-six-days; 7.e: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.e1_weekly-momentum-predicts-twelve-days, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.e2_breakout-after-falling-week-fails, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.e3_monthly-momentum-predicts-six-days; 7.g: 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.g1_downside-break-snaps-back, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.g2_volatile-one-day-fall-rebounds, 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e1_breakout-continues-rising-week.g3_downside-break-longer-rebound | 1.68 | 12.0 |
 
 ## Consumption
-24 ideas, 30.08 USD, 273.6 minutes in all.
+25 ideas, 31.76 USD, 285.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.13 | 95.2 |
-| step4_backtest | 0.00 | 82.6 |
-| step5_verdict | 3.44 | 13.3 |
+| step3_plan | 4.22 | 95.8 |
+| step4_backtest | 0.00 | 88.8 |
+| step5_verdict | 3.61 | 13.9 |
 | step6_check | 0.00 | 1.2 |
 | chart_files | 0.00 | 0.9 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.10 | 0.4 |
-| step7_7.e | 1.81 | 5.8 |
+| step7_7.e | 2.31 | 7.5 |
 | step7_7.d | 5.99 | 19.4 |
-| step7_7.b | 4.69 | 14.8 |
-| step7_7.g | 9.92 | 33.4 |
+| step7_7.b | 5.11 | 16.0 |
+| step7_7.g | 10.42 | 35.0 |
 | unseen_test | 0.00 | 6.7 |
