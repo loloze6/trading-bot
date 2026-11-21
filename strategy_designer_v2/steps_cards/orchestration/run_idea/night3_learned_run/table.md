@@ -14,20 +14,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around | 022-04_signal-weights-carry-forward | plan | confirmed (+2.99) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.d: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d1_volatility-reversal-with-trend, 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d2_nearness-to-90-day-high, 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues; 7.g: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.g1_two-week-return-continues-weekly, 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.g2_volatility-scaled-monthly-trend-continues | 1.11 | 7.2 |
 | 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score | 022-01_learned-combined-signal-score | plan | inconclusive (+1.21) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.b: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days; 7.d: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d1_momentum-and-nearness-score, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends; 7.g: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g1_volatility-scaled-short-term-continuation, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g2_calm-market-short-term-continuation, 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.g3_rises-carry-further-than-falls | 1.62 | 7.5 |
 | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around | 022-04_signal-weights-carry-forward | plan | confirmed (+2.04) | not profitable enough (failed: Calmar) | - | 7.d: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d1_power-turnaround-except-near-highs, 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_near-high-momentum-keeps-rising; 7.g: no ideas: I looked at about 35 groupings: six bar variables in quintiles, volatility terciles, weekday, year, coin, side and the book's tails. The only cell beyond t 2.5 is the large-up-day continuation (F6, t 2.66), and it is neither graded nor consistent across coins. That does not stand out from chance given how many angles were tried, so no finding supports a new idea. | 1.37 | 7.5 |
+| 022-02_combination-beats-best-single.d1_combination-only-in-downtrends | 022-02_combination-beats-best-single | plan | not observable | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.a: no ideas: The plan needs at least 100 decline grid cases on which both scores exist. The available data can give 0, because the folds split every coin into windows of about 122 days, while the best-single score needs 365 days of history inside one window. This holds on any bar size, since the idea's times are real days. More coins cannot help either, because every coin uses the same windows.; 7.d: 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d1_combination-only-in-uptrends, 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises, 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d3_rebound-after-deep-declines; 7.g: 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.g1_downtrend-combined-score-short-reversal | 1.21 | 8.0 |
 
 ## Consumption
-10 ideas, 13.17 USD, 98.1 minutes in all.
+11 ideas, 14.38 USD, 106.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.89 | 8.2 |
-| step4_backtest | 0.00 | 52.3 |
-| step5_verdict | 1.32 | 5.0 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 1.98 | 8.9 |
+| step4_backtest | 0.00 | 55.6 |
+| step5_verdict | 1.50 | 5.8 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 3.69 | 12.3 |
-| step7_7.g | 4.58 | 14.4 |
+| step7_7.a | 0.16 | 0.5 |
+| step7_7.d | 4.08 | 13.7 |
+| step7_7.g | 4.97 | 15.8 |
 | step7_7.b | 1.69 | 5.4 |

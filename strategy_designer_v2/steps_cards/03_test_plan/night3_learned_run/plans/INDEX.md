@@ -2,6 +2,7 @@
 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-01_learned-combined-signal-score_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-02_combination-beats-best-single_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, 1d, folds A, B, C, D]
 022-03_combined-extremes-larger-moves_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

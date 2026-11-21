@@ -2,6 +2,7 @@
 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 022-01_learned-combined-signal-score_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: no ideas: The plan needs at least 100 decline grid cases on which both scores exist. The available data can give 0, because the folds split every coin into windows of about 122 days, while the best-single score needs 365 days of history inside one window. This holds on any bar size, since the idea's times are real days. More coins cannot help either, because every coin uses the same windows.
 022-02_combination-beats-best-single_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 022-03_combined-extremes-larger-moves_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
