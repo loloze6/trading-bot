@@ -1,5 +1,6 @@
 019-01_narrow-range-larger-move_4h: untestable: The idea predicts the size of the next three days' move, not its direction. A config's forecast is a signed [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-02_narrow-range-wider-span_4h: untestable: The idea predicts how wide the coming three-day span is, regardless of direction. A config can only hold a signed [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: missing-components: The break size in units of the 30-day average 4h range can be built from the coin's own high, low [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
