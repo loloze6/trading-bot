@@ -31,6 +31,7 @@ ul.tree li{margin:6px 0}
 .node{display:block;padding:6px 8px;border-radius:8px;background:var(--card);border:1px solid var(--line);color:inherit}
 .node.untested{opacity:.6}
 .node .t{font-weight:600}
+.chip.bar{font-weight:600;vertical-align:middle}
 .line{margin:6px 0 12px}
 .node .stmt{color:var(--ink2);margin:2px 0 3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 details{margin:6px 0}
@@ -165,6 +166,9 @@ const fig = x => typeof x === "number" ? x.toFixed(2) : "–";          // t and
 function results(o, order, best, name){ const rank = k => order.includes(k) ? order.indexOf(k) : order.length;
   return Object.keys(o || {}).sort((a, b) => rank(a) - rank(b)).map(k =>
     chip(`${o[k]} ${short(k)}${best && best[k] != null ? ` · best ${name} ${fig(best[k])}` : ""}`, k)).join(""); }
+// the run's bar sizes, from its backtests' ids; with more than one, how many backtests each
+function bars(t){ const e = Object.entries(t.bars || {}).sort((a, b) => b[1] - a[1]);
+  return e.map(([k, n]) => `<span class="chip bar">${esc(k)}${e.length > 1 ? " · " + n : ""}</span>`).join(""); }
 function depth(t){ const L = t.levels || [];             // per level below the brief: ideas tested of ideas written
   return L.length ? "Tested per level: " + L.map(x => `L${x.level} ${x.tested} of ${x.ideas}`).join(" · ") : ""; }
 function when(d){ if (!d) return "date not recorded"; return d[0].slice(0,10) === d[1].slice(0,10) ? `${d[0]} to ${d[1].slice(11)} UTC` : `${d[0]} to ${d[1]} UTC`; }
@@ -183,7 +187,7 @@ function view(){
 function runList(){
   return `<h1>Research runs</h1><p class="muted">${DATA.runs.length} runs, last updated first, read from the committed files of <code>steps_cards/</code>. Tap a run.</p>` +
     DATA.runs.map(r => { const t = r.totals; return `<a class="card runlink" href="${href(r.name)}">
-      <div><b>${esc(r.name)}</b></div>
+      <div><b>${esc(r.name)}</b> ${bars(t)}</div>
       <div class="muted small">${esc(when(r.dates))}</div>
       <div class="muted small">${t.ideas} ideas · ${(t.idea_states || {})["backtested"] || 0} backtested${t.usd != null ? " · " + t.usd.toFixed(2) + " USD" : ""}${t.seconds != null ? " · " + dur(t.seconds) + " of step time" : ""}</div>
       <div class="small">Real: ${results(t.step5, S5, t.best_t, "t") || "–"}</div>
@@ -235,7 +239,7 @@ function runView(r){
      ["Dates" + help("dates"), esc(when(r.dates))]]);
   const nums = [...new Set(r.briefs.map(b => b.id.slice(0,3)).concat(r.roots.map(id => r.ideas[id].brief)))].filter(n => /^\d{3}$/.test(n)).sort();
   const shared = r.run_brief && r.run_brief.toLowerCase() !== r.name.replace(/_run$/, "_RUN.md").toLowerCase();
-  return `<div class="top"><a href="#">← Runs</a></div><h1>${esc(r.name)}</h1>
+  return `<div class="top"><a href="#">← Runs</a></div><h1>${esc(r.name)} ${bars(t)}</h1>
     <div class="sub">Purpose of the run${r.run_brief ? " · from " + esc(r.run_brief) : ""}${help("purpose")}</div>
     ${shared ? `<p class="muted small">This run has no run brief of its own; this one is shared with the runs whose name starts the same.</p>` : ""}
     ${r.purpose ? md(r.purpose) : `<p class="muted">No purpose paragraph in the record.</p>`}

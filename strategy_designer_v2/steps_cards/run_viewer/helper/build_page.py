@@ -351,6 +351,7 @@ def build_run(cards, run, files):
         "briefs": briefs, "ideas": ideas, "roots": roots, "backtests": backtests,
         "dates": run_dates(journal + brief_journal + turns, backtests),
         "totals": {"ideas": len(ideas), "backtests": len(tested), "idea_states": _count(i["state"] for i in ideas.values()),
+                   "bars": _count(bar_of(b["id"]) for b in tested),
                    "step3": _count((b["step3"] or {}).get("outcome") for b in backtests.values() if b["step3"]),
                    "step5": count("step5"), "step6": count("step6"),
                    "best_t": best(backtests, "step5", "t"), "best_sharpe": best(backtests, "step6", "sharpe"),
@@ -377,6 +378,12 @@ def best(backtests, step, key):
         if s and isinstance(s.get(key), (int, float)):
             out[s["status"]] = max(out.get(s["status"], s[key]), s[key])
     return out
+
+
+def bar_of(bid):
+    """A backtest's bar size, the last part of its id: '..._1d' -> '1d', '..._4h' -> '4h'."""
+    m = re.search(r"_(\d+[smhdw])$", bid)
+    return m.group(1) if m else "bar not in the id"
 
 
 def level_of(idea):

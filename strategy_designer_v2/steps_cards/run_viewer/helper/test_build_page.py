@@ -105,6 +105,7 @@ def test_counts_and_sums(cards):
     t = the_run(cards)["totals"]
     assert t["step3"] == {"plan": 1, "missing-components": 1}
     assert t["step5"] == {"confirmed": 1} and t["step6"] == {"not profitable enough": 1}
+    assert t["bars"] == {"1d": 2}                                          # the bar size from each backtest's id
     assert t["usd"] == pytest.approx(0.39) and t["seconds"] == pytest.approx(72.5, abs=0.5) and t["turns"] == 1
     cost = the_run(cards)["backtests"][f"{ROOT}_1d"]["cost"]
     assert cost == {"step3_plan": {"usd": 0.1, "seconds": 20.0, "ran": True},

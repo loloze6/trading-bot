@@ -34,7 +34,8 @@ in order with one result per step, and the run's cost and time.**
   journal lines dated in full, the engine's run times).
 
 ## The fields of a view
-1. **Run line** (the list of runs, last updated first): name, dates, ideas, backtested ideas, cost, step time; "Is it
+1. **Run line** (the list of runs, last updated first): name and bar size (from its backtests' ids, e.g. `_4h`; with
+   more than one, how many backtests each; operator, 2026-11-21), dates, ideas, backtested ideas, cost, step time; "Is it
    real": step 5's counts, "Does it pay": step 6's, each in one fixed order (confirmed, inconclusive, rejected,
    mismatch, not observable; profitable, not profitable) with the best of its key figure (step 5: t; step 6: Sharpe);
    the depth in one line (field 11).
