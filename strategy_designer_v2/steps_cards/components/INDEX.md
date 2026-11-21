@@ -83,3 +83,4 @@ night3_levels_run | 020-03_resistance-breakout-continues-up_1d | ResistanceBreak
 night3_levels_run | 020-03_resistance-breakout-continues-up_1d | LevelTouchCountComponent | built: SwingHighClusterCountComponent {"band": 2.0, "form": "count", "level": "below", "period": 90, "side": 2}
 night3_levels_run | 020-04_support-breakdown-continues-down_1d | SupportTouchCount | built: SwingHighClusterCountComponent {"band": 1.0, "exclude_current": 1, "form": "count", "level": "above", "period": 90, "pivot": "low", "side": 2}
 night3_levels_run | 020-04_support-breakdown-continues-down_1d | HeldLevelBreakDepth | built: TouchWeightedSupportBreakDepthComponent {"band": 2.0, "period": 90, "side": 2}
+night3_levels_run | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d | VolatilityScaledHighBreakComponent | built: VolatilityScaledDistanceFromHighComponent {"period": 20, "vol_period": 20}
