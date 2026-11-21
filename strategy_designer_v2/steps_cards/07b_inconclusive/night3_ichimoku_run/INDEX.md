@@ -5,3 +5,4 @@
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d: 2 ideas (2 explorations)
 021-02_below-falling-cloud-continues-down_1d: 1 ideas (3 explorations)
 021-03_thin-cloud-upward-breakout_1d: 2 ideas (2 explorations)
+021-04_thin-cloud-downward-breakdown_1d: no ideas: The downward cross through the cloud shows no move beyond the coin's normal drift: about zero overall (t -0.10), no grading by thinness (rank correlation 0.01), no coin or period where it holds clearly, and opposite signs across years (2018 t 3.26, 2021 t -2.16). This is a clear rejection in substance, and neither an amended version nor more data is supported (F1, F2, F3, F6).
