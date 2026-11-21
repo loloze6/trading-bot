@@ -45,3 +45,24 @@ known at each bar (no lookahead), and its proof must show it.
 - **06:15 Paris:** the operator: "continue; the other sessions reached the limit as well, so to be resumed". The five
   sessions were told to resume their loops, keep their own turns short, and start nothing after 10:00 Paris (09:00
   UTC) instead of 08:00, to give back the time lost; budgets unchanged.
+- **06:20 Paris, a fix (operator: "feel free to fix if necessary"):** two loop defects the limit revealed, fixed on the
+  working branch (e9df36fe; tests, and a proof with a model that answers "usage limit"): a refused model call stops the
+  loop and marks nothing failed (it had marked 55 + 83 + 39 untested ideas failed in the levels, Ichimoku and learned
+  runs); a step that fails stops `run_idea` instead of its old output being read (it had turned one idea about 4,000
+  times in the 1h and 4h runs). The levels and learned sessions merged the fix, wrote one "retry" line per idea the limit
+  had failed (55 and 39), and resumed with their budgets unchanged (the levels session refused a raise to 50 USD from a
+  session: it needs the operator's word). Ichimoku stays closed (1.35 USD left).
+
+## Check: do the resistance breakouts add anything beyond momentum? (06:45 Paris, designer session, no model call)
+The levels run's two ideas that pay and hold on both unseen periods pair the new `ResistanceBreakTouchCountComponent`
+with a 30-day or 20-day price change (`PriceEvolutionComponent`), in the gate and in the forecast. Control: the same
+config, coins, folds, horizon and sizing with the level removed (the price change alone); steps 4 and 6 only.
+| Idea | Sharpe | Minus holding's | Calmar | Mean daily return |
+|---|---|---|---|---|
+| resistance breakout in an uptrend (level + 30-day rise) | 1.26 | +0.68 | 1.35 | 0.086 % |
+| control: the 30-day rise alone | 1.18 | +0.58 | 1.30 | 0.09 % |
+| breakout after a run (level + 20-day rise) | 1.13 | +0.55 | 1.12 | 0.081 % |
+| control: the 20-day rise alone | 1.13 | +0.52 | 1.04 | 0.09 % |
+Both controls are profitable enough on all six checks. **The level adds about 0.1 of Sharpe at most; what pays is the
+known momentum family.** Not a new paying family (N1 not supported for brief 020); the brief's first claim (a level
+turns price again) was not supported by its own ideas either.
