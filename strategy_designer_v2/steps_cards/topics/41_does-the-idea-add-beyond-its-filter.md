@@ -30,7 +30,7 @@ are one bet taken twice (operator, 2026-11-21).
    record's own value series, all its coins together (built the way step 6 builds its daily returns).
 3. **The comparison timeframe of two books:** the larger of their two bar sizes (1h with 1h: the hour; 1h with 4h: 4
    hours; 1h or 4h with 1d: the day). Each book's returns are compounded over that timeframe; a bar belongs to the bar
-   of the comparison timeframe in which it closes (UTC: hours, 4-hour blocks from 00:00, days from 00:00, as the data
+   of the comparison timeframe in which it opens, as step 6 cuts its days (UTC: hours, 4-hour blocks from 00:00, days from 00:00, as the data
    files are cut).
 4. **The window in common:** the bars of the comparison timeframe both books ran, inside the folds (never the unseen
    dates). Every output uses these bars only: a period only one book ran cannot move any number. Under one year in
