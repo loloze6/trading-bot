@@ -1,6 +1,6 @@
 # Topic 33: A second round of engine speed work
 
-Status: built 2026-11-20 (A to D, files identical, `topics/33_review/duration/14_round2_proof.md`); merged into the working branch on 2026-11-20 (7826ad81); into master: the operator's go  
+Status: built 2026-11-20 (A to D, files identical, `topics/33_review/duration/14_round2_proof.md`); merged into the working branch on 2026-11-20 (7826ad81) and into master on 2026-11-22 (PR 577)  
 Where: engine (`trading-bot/`), shared code  
 Opened: 2026-11-19 (operator, during d_line_1h_run)
 
