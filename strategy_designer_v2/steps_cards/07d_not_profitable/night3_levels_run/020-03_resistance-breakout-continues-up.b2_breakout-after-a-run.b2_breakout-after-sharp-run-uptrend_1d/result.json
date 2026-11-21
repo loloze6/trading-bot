@@ -1,0 +1,59 @@
+{
+  "line": "7.d",
+  "backtest": "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.41997700000000004,
+  "findings": {
+    "F1": "Calmar fails because the falls are long and come with bear markets in the coins: the yearly return is 22.4 % against a deepest fall of 33.3 %. That fall took 226 days to its trough, from w1 to w3, while holding the coins lost 64 %. The next falls are 27.7 % (w16\u2013w17, coins \u221244 %), 25.8 % (w12\u2013w15, coins \u221276 %) and 23.1 % (w18\u2013w21, coins \u221226 %).",
+    "F2": "The book loses in the windows where the coins fall: w2 \u221210.7 % (coins \u221244 %), w3 \u221216.6 %, w13 \u22129.5 % (coins \u221234 %), w14 \u22128.1 % (coins \u221249 %), w18 \u221214.5 % (coins \u221222 %). It is long in bear markets, with only the 60-day filter between it and them.",
+    "F3": "Held positions earn nothing once the coin has turned down, even with the 60-day return positive at entry. The daily gain on held bars is \u22123.0 bps (t \u22120.63, 1144 bars) when the coin's 20-day return is below \u22126 %, and +6.2 bps (t 0.69) between \u22126 % and +2 %. It is +28 to +38 bps (t 2.7 to 3.1) above +2 %.",
+    "F4": "The same split appears against the 50-day average, measured as the share the close sits above or below it. Held bars earn \u22127.5 bps (t \u22120.66, 791 bars) with the close more than 2 % below it, and +8.6 bps (t 1.10) within \u22122 % to +5 %. They earn +31 to +41 bps (t 2.6 to 3.1) above +5 %.",
+    "F5": "Held bars also earn nothing at the weak end of the 60-day return. Below +3 % they earn \u22123.6 bps (t \u22120.33). Between +3 % and +47 % they earn +32 to +44 bps (t 2.0 to 3.2).",
+    "F6": "The 10-day run-up the idea grades by does not grade the trades: mean net gain per trade by run-up quartile is 2.2 %, 3.1 %, 2.0 % and 3.8 % (452 trades each).",
+    "F7": "Calm, contracting volatility carries no gain. Held bars where the coin's 10-day volatility is below 0.65 of its 60-day volatility earn +4.6 bps (t 0.54, 666 bars). Above 1.27 of it they earn +53.6 bps (t 2.55).",
+    "F8": "Cost is not the cause. The unusual move per case (+0.44 %, 1205 cases, t 1.28) is 2.3 times the 0.19 % cost of a trade, and the total move (+1.02 %) is 5.3 times it."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its 60-day return is positive and its close is above its 50-day average, and the further its close stands above that average, the larger the rise.",
+      "consequence": "A break of a repeatedly held level is a reason to buy only when the coin already trades well above its 50-day average; a break made from below or near that average, as in the bear phases that carry the book's deepest falls, is a reason to stay out.",
+      "name": "breakout above rising average",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its 60-day return is positive, and the larger its 20-day return before the break, the larger the rise.",
+      "consequence": "A break that comes after a strong month is a reason to buy; a break after a flat or falling month, which is where the held positions earned nothing, is a reason to refuse it.",
+      "name": "breakout after strong month",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its 60-day return is positive, and the larger its 10-day volatility relative to its 60-day volatility, the larger the rise.",
+      "consequence": "A break that comes with widening daily swings is a reason to buy; a break in a quiet, contracting market is not.",
+      "name": "breakout with expanding volatility",
+      "from": "F6, F7",
+      "refs": [
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d1_breakout-above-rising-average",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d2_breakout-after-strong-month",
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d3_breakout-with-expanding-volatility"
+  ],
+  "no_ideas": null
+}

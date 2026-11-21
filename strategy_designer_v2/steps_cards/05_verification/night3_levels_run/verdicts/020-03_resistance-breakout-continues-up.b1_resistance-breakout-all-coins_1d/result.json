@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per long case",
+    "value": 0.0028534824742117142,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.3408718331331326
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half (by signal-bar forecast) mean unusual move, Welch t >= 1",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 3937,
+    "upper half cases": 0,
+    "lower half cases": 3937
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (or is undefined), with at least 30 cases.",
+  "reading": "A case is the first bet bar (forecast rise >= 2 from its floor since the last bet, floor reset to 0 when flat) in each 5-bar grid cell counted from each window's first row, cases without 5 later bars in the window are dropped, the drift is the coin's mean 5-bar return on that grid over all its windows, and the median split puts forecasts above the median in the upper half and those at or below it in the lower half."
+}

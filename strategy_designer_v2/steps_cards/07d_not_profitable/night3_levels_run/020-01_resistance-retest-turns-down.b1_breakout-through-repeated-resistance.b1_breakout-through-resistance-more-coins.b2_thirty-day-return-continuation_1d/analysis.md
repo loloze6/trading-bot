@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation_1d
+idea tested: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4220 USD
+---
+## Findings
+- **F1:** The short side earns nothing and carries the deepest fall, so it is why Calmar fails. Before costs, the long legs alone earn 0.088 % a day with Sharpe 1.16, deepest fall -25 % and Calmar 1.30. The short legs alone earn -0.001 % a day with Sharpe -0.01 and deepest fall -53 %. Short bars lose on average (-0.014 % per bar over 18,873 bars), while long bars gain +0.20 % per bar over 17,958 bars.
+- **F2:** The book's deepest fall is -36.7 % and lasts 478 days, through windows w2 to w6, while the coins' daily returns summed to +41 %. Of the fall's -0.35 bar gain, the short legs lost -0.27 and the long legs only -0.08. The worst single stretch is w4, where the coins rose +51 % and the shorts lost -0.14.
+- **F3:** The deepest 30-day falls are not followed by further falls. On the non-overlapping 10-day grid, the most negative forecast sextile (forecast about -16) has a 10-day excess return of only -0.5 % (t -0.79, 447 cases). The next two sextiles show -2.1 % (t -3.04) and -1.7 % (t -2.60).
+- **F4:** On the long side the effect is graded. The two highest forecast sextiles show +1.5 % (t 1.67) and +2.1 % (t 2.30) of 10-day excess over 447 cases each. Long-bar gains rise from -0.004 % in the lowest 60-day-return quartile to +0.42 % and +0.25 % in the top two.
+- **F5:** Shorts held after the deepest 60-day falls lose most. In the quartile where the coin's 60-day return averages -46 %, the coin's next-day return is +0.23 % and the short bars lose -0.18 % per bar over 2,243 bars. In the other three quartiles the coin's next-day return is between -0.05 % and -0.14 %.
+- **F6:** The move is large against the cost of a trade. Per case it is 6.4 times the 0.22 % round trip (total move +1.43 % over 10 days), so costs are not the cause. Book and bar gains correlate at 0.999, with 0.082 % against 0.088 % a day.
+
+## Ideas
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation.d1_thirty-day-rise-continuation-only` (from F1, F2, F3, F4, F6): The larger a coin's 30-day return, the larger its rise over the next 10 days, only while that 30-day return is a rise.
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation.d2_deep-sixty-day-fall-rebounds` (from F3, F5, F2): The deeper a coin's 60-day fall, the larger its rise over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

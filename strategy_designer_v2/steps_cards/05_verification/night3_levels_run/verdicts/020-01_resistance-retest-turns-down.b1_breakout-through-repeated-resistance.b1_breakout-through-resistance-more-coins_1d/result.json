@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9878213802435724,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move of long cases",
+    "value": 0.0008309114454258261,
+    "statistic": {
+      "name": "one-sample t",
+      "value": 0.23316434795537058
+    },
+    "threshold": "mean above 0 with t >= 2 on at least 30 cases to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move N>=3 minus N<=2",
+    "value": 0.0037279545123101478,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2613,
+    "cases with N >= 3": 340,
+    "cases with N <= 2": 1658
+  },
+  "decided_by": "The t of the mean unusual move is between -2 and 2 on at least 30 cases.",
+  "reading": "A case is the first forecast rise of at least 2 points above its floor (reset to 0 when the forecast is flat) in each 10-bar grid cell of a window, and N is recomputed from the window's own closes (swing-high closes above their 2 neighbours on each side within the past 90 bars, using the crossed level whose N x margin matches the recorded raw value, else the one with most touches), with cases where no crossed level is found left out of the supporting check."
+}

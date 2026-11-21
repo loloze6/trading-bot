@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return over cases (case return minus coin's normal 5-bar drift)",
+    "value": 0.003146079676740184,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.2015469208917113
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top half minus bottom half of raw value (N x margin)",
+    "value": 0.002426638328608164,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1817,
+    "top half cases": 908,
+    "bottom half cases": 909,
+    "active bars": 3207
+  },
+  "decided_by": "t strictly between -2 and 2 (with at least 30 cases).",
+  "reading": "A case is the first bet bar (long forecast rise of at least 2 points from its lowest level since the last bet, from 0 after a flat) in each 5-bar grid cell counted from each window's first row, dropped if its 5-bar return leaves the window; the median split puts raw values strictly above the median in the top half and the rest in the bottom half."
+}

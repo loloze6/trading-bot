@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d
+idea tested: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 3
+cost: 0.6137 USD
+---
+## Findings
+- **F1:** Among the idea's cases (closes above a repeatedly held 90-day level after a rising 20-day run, first case per 5-day cell), the 20-day return grades the next 5 days only at its top. By terciles of the 20-day return (medians +2.2 %, +9.6 %, +26.9 %), the unusual moves are +0.07 % (t 0.15), +0.70 % (t 1.30) and +1.58 % (t 2.35), 367 cases each. Top minus bottom is +1.51 % (Welch t 1.89), but the Spearman correlation over all 1101 cases is only 0.02.
+- **F2:** That run-up grading does not hold across coins or periods. The top tercile beats the bottom on XRP (+2.65 % vs −1.74 %) and ZEC (+5.57 % vs −1.97 %), but not on BTC, ETH, LTC or XMR. It shrinks from the early half (terciles +0.72 %, +1.76 %, +2.23 %) to the late half (−0.40 %, −0.13 %, +0.67 %).
+- **F3:** The touch-count-times-margin part of the forecast does not grade the move. Its Spearman correlation with the 5-day unusual move is −0.033 over 1335 cases, and its terciles give +0.42 %, +0.36 % and +1.01 %. The whole forecast's correlation is 0.007, and trades by entry-forecast quartile net +3.28 %, +1.65 %, +3.65 % and +2.37 % (560 trades each), with no order.
+- **F4:** The cases' edge per usual move fades with the horizon. Strength is 0.050 over 5 days (t 1.92, 1335 cases), 0.034 over 10 days (t 1.24, 914 cases) and 0.032 over 20 days (t 0.96, 553 cases).
+- **F5:** The book's best days come after big runs in the coin.
+- **F6:** Weekday patterns do not stand out from chance.
+- **F7:** Across all bars, no situation separates the next 5 days clearly.
+- **F8:** Cost is not what limits this idea. The total move per case (+1.13 %) is 5.8 times the 0.19 % round trip, and the unusual move (+0.55 %, strength 0.045, 1309 cases) is 2.8 times it. This is in line with F10 and F11 of the earlier runs.
+
+## Ideas
+- No ideas: Across all the angles examined, no pattern outside the tested idea stands out from chance. The angles were forecast terciles and quartiles, the run-up and break components, trades by coin and forecast, nine bar features over 5, 10 and 20 days, weekday, year, and the book's extreme days. The only graded effect, the 20-day run-up within breaks (Welch t 1.89, Spearman 0.02), is the tested idea's own comparison and is inconsistent across coins and periods.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

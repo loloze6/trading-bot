@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-removed 10-bar short-side move per short case",
+    "value": 0.005456689277029443,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.8590907472989304
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 20 cases and supporting check passes; reject: t <= -2 over >= 20 cases"
+  },
+  "supporting_check": {
+    "name": "larger minus smaller |forecast| half, mean short-side unusual move",
+    "value": -0.02678753685646739,
+    "passed": false
+  },
+  "counts": {
+    "cases": 627,
+    "larger-forecast half": 313,
+    "smaller-forecast half": 314
+  },
+  "decided_by": "t lies between -2 and 2 over at least 20 cases, meeting neither the confirm nor the reject rule.",
+  "reading": "Cases are short bets (forecast rising by >= 2 points in size on the short side, per the workflow's case definition), the first per 10-bar grid cell of each window counted from its first row, with a full 10-bar return inside the window; drift is the mean 10-bar return on the same grid over all the coin's windows; the median split puts cases with |forecast| strictly above the median in the larger half."
+}

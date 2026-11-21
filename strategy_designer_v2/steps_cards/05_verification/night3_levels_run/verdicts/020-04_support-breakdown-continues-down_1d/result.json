@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean unusual 5-bar move of short cases, pooled",
+    "value": 0.0019630250861617233,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.7318392282026868
+    },
+    "threshold": "t >= 2 (with check) confirms, t <= -2 rejects, between is inconclusive; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-|forecast| half minus smaller half",
+    "value": -0.0004139014817964265,
+    "passed": false
+  },
+  "counts": {
+    "cases pooled across coins": 1536,
+    "larger half": 768,
+    "smaller half": 768
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first short bet (forecast deepening >= 2 points from its least-deep short level since the last bet, reset at flat) in each 5-bar grid cell from each window's first row, with its 5-bar return inside the window; drift is the coin's mean 5-bar return on that grid over all its windows; the larger half is |forecast| strictly above the median, the rest the smaller half; the situation is a non-zero raw component value and the side is forecast < 0."
+}

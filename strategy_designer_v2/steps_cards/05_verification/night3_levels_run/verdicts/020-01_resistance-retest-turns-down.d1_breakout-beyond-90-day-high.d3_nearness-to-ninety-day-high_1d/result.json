@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of 20-bar excess return on forecast, grid cases pooled",
+    "value": 0.0020929676690713567,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.733509878244956
+    },
+    "threshold": "confirm if slope t >= 2 with top-minus-bottom quintile > 0; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "top minus bottom quintile mean excess 20-bar return",
+    "value": 0.029352187663364324,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 827,
+    "top quintile cases": 166,
+    "bottom quintile cases": 166
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "Expected side rebuilt as sign(standardised distance + 10) from dist_high's post-pipeline value (rebuilt from raw values where missing); grid cases include every grid bar with a full 20-bar forward return inside its window, including zero forecasts; the coin's mean 20-bar return is the mean of its grid returns over all windows; quintiles are the bars at or above the 80th and at or below the 20th percentile of the pooled grid forecasts."
+}

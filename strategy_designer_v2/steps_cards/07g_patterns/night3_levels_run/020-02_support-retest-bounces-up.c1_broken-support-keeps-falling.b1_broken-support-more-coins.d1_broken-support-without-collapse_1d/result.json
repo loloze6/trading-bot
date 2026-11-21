@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d1_broken-support-without-collapse_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.47319639999999996,
+  "findings": {
+    "F1": "The book loses because it is short against coins that rise. Coins rose 0.142 % a day on average, the book lost 0.085 % a day, and all 5797 trades were shorts (mean net -3.03 %, median -2.90 %, negative on every one of 19 coins). The idea's unusual fall (+0.48 % per case, 2.2 times the 0.22 % cost) is smaller than the coin's drift against it (-1.38 %), so the total move per case is -0.90 %.",
+    "F2": "Flat grid bars were followed by a 10-day move of z +0.108 (t 3.24, n 1277) and short bars by z -0.061 (t -3.35, n 2251). But short bars still rose +0.26 % in raw terms, and the weakest-short fifth of cases rose +2.06 %. The forecast separates relative moves, not rises from falls.",
+    "F3": "The day just before is what most predicts the next 10 days in these bars, and the sign is a rebound after a fall.",
+    "F4": "The rebound after a large down day holds in both halves of the 30-day trend. The lowest last-day fifth gave +1.84 % unusual when the 30-day return was in its lower half (n 284) and +3.02 % in its upper half (n 217); every other fifth in the lower half was negative.",
+    "F5": "The rebound comes after the first days. The lowest decile of the volatility-scaled last day returns -0.24 % over the next 3 days but +2.18 % unusual over 10 days, about 10 times the 0.22 % cost of a trade.",
+    "F6": "The rebound is not steady across coins or years. The rank correlation of the volatility-scaled last day with the following 10-day move is -0.069 overall (n 2928), negative in 15 of 19 coins (median -0.081). But the top-minus-bottom difference was positive in 2018, 2019 and 2023 and negative in 2020-2022, 2024 and 2025 (2025 t -3.67).",
+    "F7": "Prior momentum continues on average but reverses in falling years.",
+    "F8": "Daily returns on Wednesday, Friday and Saturday (UTC days) averaged +0.41 %, +0.33 % and +0.41 % (t 5.0, 4.4, 6.8, about 5170 coin-days each); the other days were -0.11 % to +0.07 %."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall over its last day, measured against its usual daily move over the past 20 days, the more the coin rises over the next 10 days.",
+      "consequence": "A daily close after an unusually large one-day drop is a reason to be long for about ten days and to refuse a fresh short there.",
+      "name": "rebound after large daily fall",
+      "from": "F3, F4, F5, F6, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's daily close sits just below prices where it turned up several times in the past 90 days, it rises over the next 10 days by less than usual, and the more such past lows lie just above the close, the smaller its rise relative to its rises after other closes.",
+      "consequence": "A close under a support that held several times is a reason to cut or refuse a long for about ten days rather than to go short against the coin's rise.",
+      "name": "broken support weakens the rise",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d1_broken-support-without-collapse.g1_rebound-after-large-daily-fall",
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d1_broken-support-without-collapse.g2_broken-support-weakens-the-rise"
+  ],
+  "no_ideas": null
+}

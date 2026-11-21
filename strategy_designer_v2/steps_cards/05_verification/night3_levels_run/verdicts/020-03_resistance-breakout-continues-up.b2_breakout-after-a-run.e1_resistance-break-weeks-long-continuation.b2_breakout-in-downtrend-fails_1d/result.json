@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 20-bar move per case",
+    "value": 0.019886833947742436,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.8574044676566952
+    },
+    "threshold": "confirm t >= 2 over >= 20 cases with rank correlation > 0; reject t <= -2 over >= 20 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of |entry forecast| vs short-direction unusual move",
+    "value": 0.026151109076036284,
+    "passed": true
+  },
+  "counts": {
+    "cases": 413
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is the first short bet (a rise of at least 2 forecast points in short size from its lowest level since the last bet) in each 20-bar grid cell of a window, dropped when its 20-bar return would leave the window, with drift the coin's mean non-overlapping 20-bar return over all its windows."
+}

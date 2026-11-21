@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of long cases (return from signal close minus coin's normal 5-bar drift)",
+    "value": 0.005489167760961754,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.7506423408092917
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and slope > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast at entry",
+    "value": 0.0009318232878196247,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1309
+  },
+  "decided_by": "t between -2 and 2 over at least 30 cases: inconclusive.",
+  "reading": "A case is the first long bet bar (forecast rise >= 2 from its low since the last bet) in each non-overlapping 5-bar grid cell of a window, its return taken from that bar's close over 5 bars within the window, minus the coin's mean grid 5-bar return over all its windows."
+}
