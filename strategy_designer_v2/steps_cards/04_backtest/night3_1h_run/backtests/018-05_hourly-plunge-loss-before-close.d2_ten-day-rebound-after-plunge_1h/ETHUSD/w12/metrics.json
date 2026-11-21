@@ -1,0 +1,145 @@
+{
+  "core": {
+    "net_return_pct": -18.329,
+    "sharpe": -1.431,
+    "max_drawdown_pct": -17.32,
+    "trade_count": 16,
+    "win_rate": 37.5,
+    "avg_trade_net_pnl": -11.484966,
+    "fees_paid": 2.702893,
+    "gross_pnl": -181.056557,
+    "net_pnl": -183.759451,
+    "cost_drag_pct": 1.4928,
+    "forecast_return_corr": -0.005169,
+    "forecast_return_corr_pvalue": 0.884881,
+    "forecast_return_corr_pvalue_block_adjusted": 0.977792,
+    "forecast_return_corr_n_eff": 32,
+    "forecast_return_corr_all_bars": -0.006446,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.944174,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 571.0,
+    "sigma_bar_bps": 85.8772,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 10.6072,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 0.5734,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.0052, p=0.9778 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -565.6663,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -565.6663,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 56.5666,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=-0.0052, p=0.9778 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2928,
+      "avg_forecast": 3.579659,
+      "trade_count": 16,
+      "total_net_pnl": -183.75945
+    }
+  },
+  "forecast_bins": {
+    "10_to_15": {
+      "total_forecasts": 3,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -129.4201,
+      "avg_pnl_per_trade_usd": -43.14
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 13,
+      "profitable_trades": 6,
+      "success_rate_pct": 46.15,
+      "total_net_pnl_usd": -54.3394,
+      "avg_pnl_per_trade_usd": -4.18
+    }
+  },
+  "dynamic": {
+    "debug_info.components.drop_after_rise.last_history_value": {
+      "unknown": {
+        "mean": 3.811598,
+        "std": 10.507657
+      }
+    },
+    "debug_info.components.drop_after_rise.post_pipeline_value": {
+      "unknown": {
+        "mean": 11.728073,
+        "std": 27.054995
+      }
+    },
+    "debug_info.components.drop_after_rise.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.drop_after_rise.weighted_contribution": {
+      "unknown": {
+        "mean": 11.728073,
+        "std": 27.054995
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 6.376e-05,
+      "forward_return_std": 0.00858772,
+      "n_bars": 2927,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -29.9553,
+    "sharpe": -0.5122,
+    "sortino": -0.6816,
+    "exposure_pct": 85.6899,
+    "turnover": 6.146443,
+    "n_bars_total": 2928,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 56,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 2,
+    "events": [
+      {
+        "symbol": "ETHUSD",
+        "timestamp": "2021-07-23 02:00:00",
+        "previous_timestamp": "2021-07-22 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 18000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ETHUSD",
+        "timestamp": "2021-07-23 14:00:00",
+        "previous_timestamp": "2021-07-23 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

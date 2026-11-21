@@ -4,6 +4,7 @@
 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b1_surge-near-high-more-coins_1h: 2 ideas (2 explorations)
 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b2_surge-in-rising-month_1h: 2 ideas (2 explorations)
 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high_1h: 2 ideas (2 explorations)
+018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades.b1_post-selloff-surge-fades-more-coins_1h: no ideas: The test already used every coin and fold available, and the result is zero at every horizon (F1). It flips sign between years with t from -3.8 to +2.5 (F2). Its depth grading is weak and changes sign by year (F3, F4), and its only bright spot is one coin of nineteen (F5). No part of the data shows the fade clearly enough to amend the idea to it, and the coin's drift would sink a short book anyway (F6).
 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h: 2 ideas (2 explorations)
 018-04_hourly-surge-multiday-continuation_1h: 1 ideas (2 explorations)
 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
@@ -11,6 +12,7 @@
 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h: 2 ideas (2 explorations)
+018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h: 2 ideas (2 explorations)
 018-05_hourly-plunge-loss-before-close_1h: 1 ideas (2 explorations)
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
@@ -23,4 +25,5 @@
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound_1h: 3 ideas (2 explorations)
 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound_1h: 3 ideas (2 explorations)
 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound_1h: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)
+018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound_1h: no ideas: The effect is absent overall and not graded by drop size or by depth. Its sign follows the year's trend (2018 against 2024), and the only positive pocket, the deepest quartile at 24 hours, has no grading inside it and fails in 2018, so no part of the data shows the idea clearly enough to amend it to.
 018-06_hourly-plunge-multiday-continuation_1h: 1 ideas (2 explorations)
