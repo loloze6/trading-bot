@@ -1,0 +1,57 @@
+{
+  "line": "7.d",
+  "backtest": "022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3476171,
+  "findings": {
+    "F1": "The book fails on its falls and not on its trading costs: its deepest fall is 54.5 % over 556 days in w14\u2013w18, where the book summed \u22120.73 while holding the coins summed +0.83, and its fees are only 0.002 % to 0.006 % of the book per bar.",
+    "F2": "The idea is real but far too small to pay: per case over 5 days the unusual move is +0.12 % (strength 0.004, against about 0.05 for confirmed ideas so far), and the total move is +0.07 %. A round trip costs 0.19 %, so the moves are 0.6 and 0.4 times the cost.",
+    "F3": "The book's gain comes from its longs only. Long bars earn +0.118 % per bar (7497 bars); short bars earn \u22120.009 % (8190 bars), although the book is short about half the time in every stretch (46 % to 51 %).",
+    "F4": "In w14\u2013w18 both sides lose, shorts \u22120.165 % per bar (1609 bars) and longs \u22120.051 % (1872 bars), while in w1\u2013w13 both earn (+0.068 % and +0.172 %). The book's deepest fall is therefore a period in which the reversed volatility relation did not hold.",
+    "F5": "The book's gain sits in the bets that agree with the coin's 28-day return:",
+    "F6": "Nearness to the 90-day high separates the 5-day timing gain by more than the cost of a trade:",
+    "F7": "The forecast's size is graded. Bars in the top quintile of |forecast| gain +0.120 % per bar, against \u22120.003 % in the bottom quintile, and shorts in the highest-volatility quintile lose \u22120.090 % per bar."
+  },
+  "ideas": [
+    {
+      "idea": "For a coin's 30-day volatility, the higher that signal's predictive power for the coin's 5-day returns over the past 365 days, the lower the same signal's predictive power for that coin's 5-day returns over the following 90 days. This reversal is larger the more the side it points to agrees with the coin's own 28-day return.",
+      "consequence": "A trader would take the reversed-volatility bet mainly when it runs with the coin's 4-week trend, and refuse it against the trend, which cuts the losing shorts in rising stretches.",
+      "name": "volatility reversal with trend",
+      "from": "F1, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The closer a coin's daily close sits to its highest close of the past 90 days, the higher its return over the next 5 days.",
+      "consequence": "A coin trading near its 90-day high is a reason to be long for the next week, and one far below it a reason to refuse a long.",
+      "name": "nearness to 90-day high",
+      "from": "F2, F6",
+      "refs": [
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 28-day return, the larger its return over the next 5 days in the same direction.",
+      "consequence": "A strong 4-week move is a reason to bet with it for the next week, with a move per case large enough to cover a trade's cost.",
+      "name": "four-week momentum continues",
+      "from": "F2, F5",
+      "refs": [
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d1_volatility-reversal-with-trend",
+    "022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d2_nearness-to-90-day-high",
+    "022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues"
+  ],
+  "no_ideas": null
+}

@@ -4,4 +4,5 @@
 022-02_combination-beats-best-single_1d: 2 ideas (3 explorations)
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: no ideas: The only strong pattern, the 20-day reversal, vanishes when the grid's starting point changes (mean t -0.88 over 20 offsets), and every other angle stays within what chance gives across the many angles looked at (forecast, 1-day move by horizon, by year, coin and volume level, volatility, range, nearness to highs, weekday, the book's long and short sides).
 022-03_combined-extremes-larger-moves_1d: 2 ideas (3 explorations)
+022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: 2 ideas (3 explorations)
 022-04_signal-weights-carry-forward_1d: no ideas: The only pattern that is consistent across windows and coins is the Saturday excess return (F4). It is the best of seven weekdays tested and an on/off condition with no grading. Every graded angle tested (the components, the forecast, past returns, the volatility level) was non-monotonic or too weak to tell apart from chance (F3, F5, F6), so no finding supports a graded idea.

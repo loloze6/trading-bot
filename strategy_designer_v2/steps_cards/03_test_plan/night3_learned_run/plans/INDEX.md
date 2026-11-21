@@ -5,4 +5,5 @@
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, 1d, folds A, B, C, D]
 022-03_combined-extremes-larger-moves_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: missing-components: The idea's outcome needs the past power centred on its usual level and multiplied by the signal, so that the [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
