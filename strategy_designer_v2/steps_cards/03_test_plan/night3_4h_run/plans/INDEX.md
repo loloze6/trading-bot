@@ -8,4 +8,5 @@
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: missing-components: The break size in units of the 30-day average 4h range can be built from the coin's own high, low [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week_4h: missing-components: The bars hold everything the idea needs, but no component computes the 7-day over 60-day average 4h range ratio. The [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-03_upward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
+019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]

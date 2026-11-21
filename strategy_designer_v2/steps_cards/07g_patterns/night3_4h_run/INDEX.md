@@ -4,4 +4,5 @@
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails_4h: 2 ideas (2 explorations)
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h: 2 ideas (3 explorations)
 019-03_upward-breakout-quiet-continuation_4h: 2 ideas (2 explorations)
+019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h: 3 ideas (2 explorations)
 019-04_downward-breakout-quiet-continuation_4h: 2 ideas (2 explorations)

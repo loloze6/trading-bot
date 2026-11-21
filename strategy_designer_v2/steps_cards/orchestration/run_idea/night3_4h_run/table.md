@@ -15,21 +15,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins | plan | confirmed (+4.51) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g1_quiet-breakdowns-in-falling-coins, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g2_wide-range-breakdown-rebound, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g3_deep-one-day-fall-rebound, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins.g4_rising-breakouts-over-six-days | 0.85 | 11.5 |
 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins | plan | confirmed (+6.89) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g1_sharp-dip-in-uptrend-rebounds, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g2_wide-range-falls-reverse-upward, 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues.g3_wide-bar-precedes-rise | 0.66 | 10.8 |
 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 019-03_upward-breakout-quiet-continuation | missing-components | - | - | - | - | 0.05 | 0.4 |
+| 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend | 019-04_downward-breakout-quiet-continuation | plan | inconclusive (+1.74) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend; 7.d: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d1_wide-dip-rebound-in-uptrend, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d2_narrow-breakdown-three-days-only, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d3_deep-drawdown-low-rebound; 7.g: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g1_sharp-drop-rebound-uptrend, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g2_one-day-fall-next-day-rebound, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g3_uptrend-breakdown-snaps-back | 1.61 | 8.5 |
 
 ## Consumption
-11 ideas, 8.74 USD, 69.7 minutes in all.
+12 ideas, 10.35 USD, 78.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.12 | 5.2 |
-| step4_backtest | 0.00 | 33.4 |
-| step5_verdict | 1.10 | 4.1 |
+| step3_plan | 1.33 | 6.7 |
+| step4_backtest | 0.00 | 35.3 |
+| step5_verdict | 1.26 | 4.8 |
 | step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.3 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.10 | 0.4 |
 | step7_7.e | 0.49 | 1.6 |
-| step7_7.d | 1.62 | 5.3 |
-| step7_7.b | 0.77 | 2.5 |
-| step7_7.g | 3.53 | 11.8 |
+| step7_7.d | 2.03 | 6.7 |
+| step7_7.b | 1.18 | 4.0 |
+| step7_7.g | 3.95 | 13.2 |
 | unseen_test | 0.00 | 4.7 |

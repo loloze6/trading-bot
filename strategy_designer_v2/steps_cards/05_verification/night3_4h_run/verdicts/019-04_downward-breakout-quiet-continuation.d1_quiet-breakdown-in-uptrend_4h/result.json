@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed unusual 18-bar move",
+    "value": 0.005571729467193996,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.740032201657781
+    },
+    "threshold": "positive with t >= 2 to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger minus smaller absolute forecast (median split)",
+    "value": -0.001703850352964855,
+    "passed": false
+  },
+  "counts": {
+    "cases over all coins and windows": 670,
+    "larger-forecast cases": 335,
+    "smaller-forecast cases": 335
+  },
+  "decided_by": "the t of the mean lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "the situation is recomputed per window from prices (close below the minimum low of the 12 prior bars and close over the close 180 bars earlier above 1), and active bars whose 180-bar history lies before the window's first recorded row are left out of the agreement; a short bet is a rise of the short forecast's size by at least 2 points from its lowest size since the last bet (from 0 after a flat or a long), the first such bet in each 18-bar grid cell of a window is the cell's case, and cases without 18 bars left in their window are left out; the normal drift is the mean of each coin's 18-bar returns on the 0,18,36,... grid of all its windows; the supporting split puts cases with absolute forecast strictly above the median in the larger group and the rest in the smaller group; the plan's 30-case minimum, when not reached, gives 'not observable'."
+}
