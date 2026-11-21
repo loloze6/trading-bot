@@ -88,3 +88,45 @@ check: the levels run spent about 58 USD on its 35 USD budget (29 ideas run past
 and reported by the levels session; the learned session was stopped at once on the designer's word. Fixed on the
 working branch (the budget holds before every `run_idea` call; a test that fails on the previous loop). The 26 levels
 ideas still unrun and the learned run's remaining ones are not resumed. Overspend: about 29 USD over the two budgets.
+
+## Check: the 1h "plunge in an uptrend rebounds" family against its trend filter alone (10:45 Paris)
+The 1h run's three rebound ideas buy a sharp 24-hour fall only while the coin is up over 30 days (720 bars), or weight
+the fall by that rise. Control: the same gate, coins, folds, horizon and sizing, the forecast from the 30-day rise alone
+(standardised, clipped at 0); steps 4 and 6 only.
+| Idea | Sharpe | Minus holding's | Calmar | Mean daily return |
+|---|---|---|---|---|
+| plunge in an uptrend rebounds | 0.87 | +0.31 | 0.83 | 0.07 % |
+| dip depth in an uptrend rebounds | 0.96 | +0.40 | 0.93 | 0.10 % |
+| depth-graded plunge rebound (fall times rise, no gate) | 1.02 | +0.47 | 1.00 | 0.13 % |
+| control: the 30-day rise alone (gated) | 1.19 | +0.64 | 1.34 | 0.10 % |
+| control: the 30-day rise alone (no gate) | 1.18 | +0.63 | 1.20 | 0.10 % |
+The 30-day rise alone does better than every rebound idea: the plunge takes away from it. Not a new family.
+
+## Reading (2026-11-21, 10:50 Paris)
+
+| Brief | Ideas run | Confirmed | Confirmed and profitable | Held on the unseen dates | USD (budget) |
+|---|---|---|---|---|---|
+| 018, 1h: a daily situation caught on the hour | 31 | 7 | 6 | 6 of 6 on 2016-17 (no 2026 hourly data) | 40.36 (45) |
+| 019, 4h: a quiet range then a breakout | 26 | 10 | 4 | 3 of 4 on 2016-17 (no 2026 data) | 35.75 (35) |
+| 020, support and resistance | 47 | 12 | 3 | 2 of 3, on both periods | about 57.8 (35) |
+| 021, Ichimoku cloud | 18 | 2 | 0 | - | 33.65 (35) |
+| 022, weights learned on past data | 52 | 22 | 6 | 5 of 5, on both periods | 41.13 (35) |
+| **All** | **174** | **53** | **19** | **16 of 19 tested** | **about 209 (185 + the designer's 15)** |
+
+**Outcome, against the expected outcomes: N2 for the briefs' own theories, and the paying ideas are momentum.**
+- N1 (a new paying family) is **not supported** by the controls: on 7 paying ideas checked (4 breakouts, 3 rebounds), the
+  idea's own component adds 0 to 0.15 of Sharpe, or takes some away (the 1h rebounds); every trend filter alone pays on
+  all six checks. The other paying ideas of the night are momentum outright (monthly, four-week and 90-day rises; the
+  learned run's five, step 7 A/B set B's two).
+- The briefs' own claims: 018's (the hour before the daily close) not measured; 019's (narrowness alone) not confirmed;
+  020's first claim (a level turns price) not supported, its second (a break continues) supported but carried by
+  momentum; 021 (Ichimoku): 2 confirmed, none pays; 022: the learned combinations inconclusive.
+- **What the night shows about the workflow:** step 6 compares a book with holding the coin, never with the simplest
+  book its own filter makes, so momentum is found again under new names (topic 41, proposed).
+
+**Costs and failures:** about 209 USD for the five runs (budget 185, plus 15 for the designer, 200 in all): about 29 USD
+over the levels and learned budgets because of the designer's retry fix (see above), 0.75 over the 4h budget (the loop
+finishes an idea once started). 2.3 hours lost to the account's 5-hour limit; the account's 7-day limit shows a warning.
+Two loop defects found and fixed (a refused call; a step that fails), one defect of the fix found and fixed (the
+budget on resume). Not run: 26 levels ideas, 83 Ichimoku ideas (budgets spent). Not done: the 2026 check of hourly and
+4h ideas (hourly data ends 2025-12-31).
