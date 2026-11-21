@@ -1,38 +1,46 @@
-# IchimokuCloudPositionComponent: night3_ichimoku_run | 021-01_above-rising-cloud-continues-up_1d | IchimokuCloudPositionComponent
+# IchimokuCloudPositionComponent: night3_ichimoku_run | 021-03_thin-cloud-upward-breakout_1d | IchimokuCloudPositionComponent
 
 ## attempt 1
 
 answer: built
 class: IchimokuCloudPositionComponent
-settings: {"tenkan_period": 9, "kijun_period": 26, "senkou_period": 52, "displacement": 26}
-reason: No component in the catalogue computes Ichimoku spans or any distance to them. The measure uses only the coin's own high, low and close, and its displaced spans read only rows at or before bar t, so it can be computed exactly with no lookahead.
+settings: {"tenkan_period": 9, "kijun_period": 26, "senkou_period": 52, "displacement": 26, "edge": "nearest", "base": "close"}
+reason: `IchimokuCloudPositionComponent` with `edge` "nearest" measures the same distance outside the cloud, but it divides by the cloud edge, and the wish divides by close[t]. The two values differ on real bars. The same quantity against another base is a setting on that class, so the class is written again with a new `base` setting. Its default "edge" keeps today's output exactly.
 
 table: Directional components
-row: | `IchimokuCloudPositionComponent` | `tenkan_period` (9), `kijun_period` (26), `senkou_period` (52), `displacement` (26) | (close[t] - top) / top x 100, top = max(A, B). With e = t - `displacement` and M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2: A = (M(`tenkan_period`) + M(`kijun_period`)) / 2 and B = M(`senkou_period`). These are the leading spans plotted at bar t, computed from bars ending `displacement` bars earlier | -100 and up, unbounded above, signed; positive when the close is above the cloud top, negative at or below it (inside or under the cloud); grows as the close sits further above the cloud | graded | percent of the cloud top | max(`tenkan_period`, `kijun_period`, `senkou_period`) + `displacement` (78) | high, low, close. A NaN high or low in the windows ending at bar e, or a NaN close[t], gives NaN; a top not above 0 gives NaN (never on real bars). These settings raise when the component is built: any period < 1, `displacement` < 0 | stateless; the spans are displaced forward, so the cloud at bar t uses no bar after t-`displacement`. Not a cloud-bottom or inside-cloud measure: only the distance from the top. No `scaling_factor`: scale it with transforms |
+row: | `IchimokuCloudPositionComponent` | `tenkan_period` (9), `kijun_period` (26), `senkou_period` (52), `displacement` (26), `edge` ("top"), `base` ("edge") | With e = t - `displacement` and M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2: A = (M(`tenkan_period`) + M(`kijun_period`)) / 2, B = M(`senkou_period`), top = max(A, B), bottom = min(A, B). The distance d is close[t] - top for `edge` "top". For `edge` "nearest", d is close[t] - top when close[t] > top, close[t] - bottom when close[t] < bottom, and 0 inside the cloud. The divisor is the edge used (top, or bottom below the cloud) for `base` "edge", or close[t] for `base` "close". Output = d / divisor x 100 | `base` "edge": -100 and up, signed. `base` "close": below +100, unbounded below, signed. With "top" it is positive above the cloud top and negative at or below it. With "nearest" it is positive above the cloud, negative below it, 0 inside it, and grows in size the further the close sits outside the cloud; it is continuous at both edges | graded | percent of the cloud edge (`base` "edge") or of the close (`base` "close") | max(`tenkan_period`, `kijun_period`, `senkou_period`) + `displacement` (78) | high, low, close. A NaN high or low in the windows ending at bar e, or a NaN close[t], gives NaN. A divisor not above 0 gives NaN, which never happens on real bars. These settings raise when the component is built: any period < 1, `displacement` < 0, `edge` other than "top" or "nearest", `base` other than "edge" or "close" | stateless. The spans are displaced forward, so the cloud at bar t uses no bar after t-`displacement`. `edge` "top" with `base` "edge" (the defaults) is the original output, unchanged. `base` "close" gives the distance outside the cloud as a percent of the current close. Use `clip` with `max` 0 to keep only the below-cloud reading. No `scaling_factor`: scale it with transforms |
 
 ```python class
 class IchimokuCloudPositionComponent(SubStrategyComponent):
     """
-    Percent distance of the close from the top of the Ichimoku cloud plotted at bar t:
+    Where the close sits against the Ichimoku cloud, on every bar.
 
         e = t - displacement
         M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
-        span A = (M(tenkan_period) + M(kijun_period)) / 2
-        span B = M(senkou_period)
-        top = max(span A, span B)
-        raw_value = (close[t] - top) / top x 100
+        A = (M(tenkan_period) + M(kijun_period)) / 2,  B = M(senkou_period)
+        top = max(A, B),  bottom = min(A, B)
 
-    Range & sign: -100 and up, unbounded above, signed. It is positive when the close is above the cloud top and
-    negative at or below it. It grows continuously as the close sits further above the cloud. Units: percent of
-    the cloud top.
-    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement rows, bar t included (78 at the
-    defaults).
-    NaN: a NaN high or low in any span window, or a NaN close[t], gives NaN. A top not above 0 gives NaN (never
-    on real bars).
-    Building the component raises for any period below 1 or a displacement below 0.
+        edge = "top" (default):  d = close[t] - top,  edge value = top
+        edge = "nearest":        d = close[t] - top     (edge value top)    when close[t] > top
+                                 d = close[t] - bottom  (edge value bottom) when close[t] < bottom
+                                 d = 0                  (edge value bottom) when bottom <= close[t] <= top
 
-    WHY THIS CANNOT LEAK: it reads high and low only on rows up to t - displacement, and the close only on row t
-    (the last row of data). Every row it reads is known at bar t's close.
+        base = "edge" (default): raw_value = d / edge value x 100
+        base = "close":          raw_value = d / close[t] x 100
+
+    The defaults ("top", "edge") give the original output, unchanged.
+    Range: with base "edge" it is -100 and up; with base "close" it is below +100 and unbounded below.
+    Signed: positive above the cloud. With "nearest" it is negative below the cloud and 0 inside it, and it is
+    continuous at both edges. Graded.
+    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement rows, bar t included.
+
+    NaN: a NaN high or low in the windows ending at bar e, or a NaN close[t], gives NaN. A divisor that is not
+    above 0 gives NaN; this never happens on real bars.
+    Building raises for any period < 1, a displacement < 0, an edge other than "top" or "nearest", or a base
+    other than "edge" or "close".
+
+    WHY THIS CANNOT LEAK: it reads the high and low of rows up to bar e = t - displacement, and the close of
+    bar t, the last row of data. It reads no row after t.
     """
 
     def __init__(self, name="IchimokuCloudPosition", weight=1.0, parameters=None):
@@ -41,16 +49,21 @@ class IchimokuCloudPositionComponent(SubStrategyComponent):
         self.kijun_period = int(self.parameters.get("kijun_period", 26))
         self.senkou_period = int(self.parameters.get("senkou_period", 52))
         self.displacement = int(self.parameters.get("displacement", 26))
-        for nm, v in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+        for nm, p in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
                       ("senkou_period", self.senkou_period)):
-            if v < 1:
-                raise ValueError(f"IchimokuCloudPositionComponent: {nm} must be >= 1, got {v}")
+            if p < 1:
+                raise ValueError(f"IchimokuCloudPositionComponent: {nm} must be >= 1, got {p}")
         if self.displacement < 0:
-            raise ValueError(
-                f"IchimokuCloudPositionComponent: displacement must be >= 0, got {self.displacement}")
+            raise ValueError(f"IchimokuCloudPositionComponent: displacement must be >= 0, got {self.displacement}")
+        self.edge = self.parameters.get("edge", "top")
+        if self.edge not in ("top", "nearest"):
+            raise ValueError(f"IchimokuCloudPositionComponent: edge must be 'top' or 'nearest', got {self.edge!r}")
+        self.base = self.parameters.get("base", "edge")
+        if self.base not in ("edge", "close"):
+            raise ValueError(f"IchimokuCloudPositionComponent: base must be 'edge' or 'close', got {self.base!r}")
         self._raw_value = 0.0
 
-    def update(self, data):
+    def update(self, data: pd.DataFrame):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
@@ -58,77 +71,104 @@ class IchimokuCloudPositionComponent(SubStrategyComponent):
             return
         h = data['high'].astype(float).to_numpy()
         lo = data['low'].astype(float).to_numpy()
-        c = data['close'].astype(float).to_numpy()
-        last = len(c) - 1
-        end = last - self.displacement
+        c = float(data['close'].astype(float).iloc[-1])
+        e = len(data) - 1 - self.displacement
 
         def mid(p):
-            hw = h[end - p + 1:end + 1]
-            lw = lo[end - p + 1:end + 1]
+            hw = h[e - p + 1:e + 1]
+            lw = lo[e - p + 1:e + 1]
             if np.isnan(hw).any() or np.isnan(lw).any():
                 return float("nan")
             return (float(hw.max()) + float(lw.min())) / 2.0
 
-        span_a = (mid(self.tenkan_period) + mid(self.kijun_period)) / 2.0
-        span_b = mid(self.senkou_period)
-        close_t = float(c[last])
-        if np.isnan(span_a) or np.isnan(span_b) or np.isnan(close_t):
-            self._raw_value = float("nan")
-        else:
-            top = max(span_a, span_b)
-            if not top > 0:
-                self._raw_value = float("nan")
-            else:
-                self._raw_value = float((close_t - top) / top * 100.0)
-            self.debug_info = {'span_a': span_a, 'span_b': span_b, 'cloud_top': top}
+        a = (mid(self.tenkan_period) + mid(self.kijun_period)) / 2.0
+        b = mid(self.senkou_period)
         self.confidence = 1.0
+        if np.isnan(a) or np.isnan(b) or np.isnan(c):
+            self._raw_value = float("nan")
+            return
+        top = max(a, b)
+        bottom = min(a, b)
+        if self.edge == "top":
+            d, ref = c - top, top
+        elif c > top:
+            d, ref = c - top, top
+        elif c < bottom:
+            d, ref = c - bottom, bottom
+        else:
+            d, ref = 0.0, bottom
+        div = ref if self.base == "edge" else c
+        if not div > 0:
+            self._raw_value = float("nan")
+            return
+        self._raw_value = float(d / div * 100.0)
+        self.debug_info = {'span_a': a, 'span_b': b, 'top': top, 'bottom': bottom,
+                           'edge': self.edge, 'base': self.base}
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self):
+    def get_required_periods(self) -> int:
         return max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement
 ```
 
 ```python hand
 def hand(df, params):
-    tp = int(params.get("tenkan_period", 9))
-    kp = int(params.get("kijun_period", 26))
-    sp = int(params.get("senkou_period", 52))
-    d = int(params.get("displacement", 26))
+    tk = int(params.get("tenkan_period", 9))
+    kj = int(params.get("kijun_period", 26))
+    sk = int(params.get("senkou_period", 52))
+    disp = int(params.get("displacement", 26))
+    edge = params.get("edge", "top")
+    base = params.get("base", "edge")
     highs = [float(x) for x in list(df["high"])]
     lows = [float(x) for x in list(df["low"])]
     closes = [float(x) for x in list(df["close"])]
     t = len(closes) - 1
-    e = t - d
+    e = t - disp
 
     def midpoint(p):
         hi = None
-        lo = None
-        j = e - p + 1
-        while j <= e:
-            if highs[j] != highs[j] or lows[j] != lows[j]:
-                return float("nan")
-            if hi is None or highs[j] > hi:
-                hi = highs[j]
-            if lo is None or lows[j] < lo:
-                lo = lows[j]
-            j = j + 1
-        return (hi + lo) / 2.0
+        lw = None
+        i = e - p + 1
+        while i <= e:
+            if highs[i] != highs[i] or lows[i] != lows[i]:
+                return None
+            if hi is None or highs[i] > hi:
+                hi = highs[i]
+            if lw is None or lows[i] < lw:
+                lw = lows[i]
+            i = i + 1
+        return (hi + lw) / 2.0
 
-    tenkan = midpoint(tp)
-    kijun = midpoint(kp)
-    span_b = midpoint(sp)
-    span_a = (tenkan + kijun) / 2.0
-    ct = closes[t]
-    if span_a != span_a or span_b != span_b or ct != ct:
+    m_tk = midpoint(tk)
+    m_kj = midpoint(kj)
+    m_sk = midpoint(sk)
+    close_t = closes[t]
+    if m_tk is None or m_kj is None or m_sk is None or close_t != close_t:
         return float("nan")
-    top = span_a if span_a >= span_b else span_b
-    if not top > 0:
+    span_a = (m_tk + m_kj) / 2.0
+    span_b = m_sk
+    top = span_a if span_a > span_b else span_b
+    bottom = span_b if span_a > span_b else span_a
+    if edge == "top":
+        dist = close_t - top
+        ref = top
+    else:
+        if close_t > top:
+            dist = close_t - top
+            ref = top
+        elif close_t < bottom:
+            dist = close_t - bottom
+            ref = bottom
+        else:
+            dist = 0.0
+            ref = bottom
+    divisor = close_t if base == "close" else ref
+    if not divisor > 0:
         return float("nan")
-    return (ct - top) / top * 100.0
+    return dist / divisor * 100.0
 ```
 
 checks:
 IchimokuCloudPositionComponent: every check passed
-the bot's suite: ======= 1579 passed, 16 skipped, 75 deselected, 2244 warnings in 52.88s ========
+the bot's suite: ======= 1580 passed, 16 skipped, 75 deselected, 2244 warnings in 48.01s ========
