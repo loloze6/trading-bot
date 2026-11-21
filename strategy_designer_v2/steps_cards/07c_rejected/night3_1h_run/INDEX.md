@@ -1,3 +1,4 @@
+018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 018-04_hourly-surge-multiday-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 018-05_hourly-plunge-loss-before-close_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 018-06_hourly-plunge-multiday-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

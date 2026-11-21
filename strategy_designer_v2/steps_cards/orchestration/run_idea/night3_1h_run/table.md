@@ -10,20 +10,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-04_hourly-surge-multiday-continuation | - | plan | inconclusive (-0.06) | not profitable enough (failed: Calmar) | - | 7.b: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise; 7.d: 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high, 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades, 018-04_hourly-surge-multiday-continuation.d3_nearness-to-monthly-high; 7.g: 018-04_hourly-surge-multiday-continuation.g1_deep-daily-fall-rebounds, 018-04_hourly-surge-multiday-continuation.g2_top-of-range-continues | 1.36 | 11.7 |
 | 018-05_hourly-plunge-loss-before-close | - | plan | inconclusive (-0.45) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds; 7.d: 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds, 018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge; 7.g: 018-05_hourly-plunge-loss-before-close.g1_rebound-after-outsized-daily-plunge, 018-05_hourly-plunge-loss-before-close.g2_outsized-weekly-rise-continues | 1.34 | 11.9 |
 | 018-06_hourly-plunge-multiday-continuation | - | plan | inconclusive (+0.04) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound; 7.d: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound, 018-06_hourly-plunge-multiday-continuation.d2_deep-drawdown-plunge-rebound, 018-06_hourly-plunge-multiday-continuation.d3_deep-drawdown-bounce-fades; 7.g: 018-06_hourly-plunge-multiday-continuation.g1_hourly-plunge-two-day-rebound | 1.38 | 11.3 |
+| 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise | 018-04_hourly-surge-multiday-continuation | plan | inconclusive (+0.52) | not profitable enough (failed: Calmar) | - | 7.b: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue; 7.d: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.d1_surge-within-monthly-uptrend, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.d2_monthly-return-predicts-five-days; 7.g: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.g1_near-month-high-five-day-continuation, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.g2_sharp-hourly-drop-rebound | 1.58 | 12.0 |
 
 ## Consumption
-6 ideas, 4.24 USD, 36.0 minutes in all.
+7 ideas, 5.82 USD, 48.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.46 | 3.4 |
-| step4_backtest | 0.00 | 18.3 |
-| step5_verdict | 0.40 | 1.8 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 0.56 | 4.2 |
+| step4_backtest | 0.00 | 24.1 |
+| step5_verdict | 0.56 | 2.5 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.06 | 3.7 |
-| step7_7.d | 1.11 | 4.0 |
-| step7_7.g | 1.21 | 4.1 |
+| step7_7.b | 1.41 | 5.0 |
+| step7_7.d | 1.67 | 5.9 |
+| step7_7.g | 1.61 | 5.6 |
