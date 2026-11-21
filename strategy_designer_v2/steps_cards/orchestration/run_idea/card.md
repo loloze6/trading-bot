@@ -130,7 +130,7 @@ None: the function is code only. The steps' own calls are theirs (steps 3, 5 and
 
 **Checks in code:** a run name not ending in `_run`, an idea file without its `brief`, `Idea:` or `Consequence:` line,
 or a brief that cannot be found is refused before any step is called. A line whose `helper/line.yaml` says
-`active: false` (7.f, on hold) is not run.
+`active: false` is not run. (Line 7.f, on hold since 2026-11-15, was deleted on 2026-11-21 by the operator: "proven and profitable, what next" is topic 08.)
 
 ## Quality criteria
 - **Every step is called as validated:** its own helper, its usual arguments, the run's folders.

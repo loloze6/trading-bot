@@ -1,4 +1,4 @@
-# Function card: paying_books (orchestration, 2026-11-21)
+# Function card: ideas_similarities_check (orchestration, 2026-11-21; named by the operator)
 
 ## Business objective, one question
 Is a book that pays a new source of profit, or one we already have?
@@ -24,29 +24,29 @@ books that make money on the same bars are one bet taken twice.
 **The new book's returns set against another paying book's, period by period, on the comparison timeframe and the window
 in common, read on the same period, the period before and the period after; the definitions are in `common/measures.md`
 ("A paying book, and what it shares with the books we have").**
-- **It records; it decides nothing.** No threshold, no gate: the numbers are reported; line 7.f and the operator read them.
+- **It records; it decides nothing.** No threshold, no gate: the numbers are reported; the operator reads them (who else reads them is open: topic 41).
 - **It compares paying books with paying books only:** the question is whether we already have this profit, and only
   paying books are something we have.
 - **One rule for every pair**, whatever the bar sizes, coins or configs: the larger bar size, the periods in common.
 
 ## The fields of a comparison (`<id>.json`, one entry per other book, and one for holding)
 1. **other:** the other book (run and id), its bar size and its coins.
-   - For: which book this is about. Used by: the operator, 7.f. Without it: a number with no book.
+   - For: which book this is about. Used by: the operator. Without it: a number with no book.
 2. **comparison_timeframe:** the larger of the two bar sizes.
    - For: the precision of the comparison. Used by: the reader. Without it: an hour and a day read alike.
 3. **window_in_common:** the first and last period in common, their count, and the span in days; "not comparable" under
    one year.
    - For: how much evidence the result rests on. Used by: the reader. Without it: a result on a few weeks reads as sure.
 4. **share_explained** (0 to 1): the largest of the three readings.
-   - For: how much of this profit we already have. Used by: 7.f, the operator. Without it: a copy reads as new.
+   - For: how much of this profit we already have. Used by: the operator. Without it: a copy reads as new.
 5. **who_leads:** the reading it came from: `same period`, `new one period ahead`, `new one period behind`.
-   - For: the same profit caught earlier shows. Used by: 7.f, the operator (which version to keep). Without it: a book
+   - For: the same profit caught earlier shows. Used by: the operator (which version to keep). Without it: a book
      one period apart reads as unrelated.
 6. **direction:** `+` (moves with) or `−` (against).
    - For: the same effect used the other way round is still the same effect. Used by: the reader. Without it: a reversed
      copy reads as a new, opposite profit.
 7. **what_is_left:** the mean return per period the other book does not explain, and its t.
-   - For: what the new book really adds. Used by: 7.f, the operator. Without it: "explained" says nothing of what remains.
+   - For: what the new book really adds. Used by: the operator. Without it: "explained" says nothing of what remains.
 8. **readings:** the three shares (same period, period before, period after), for checking.
    - For: auditing who leads. Used by: the operator. Without it: who leads cannot be checked.
 
@@ -55,12 +55,12 @@ and **against_holding** (fields 2 to 8 against holding its own coins).
 
 ## Storage and naming
 ```
-orchestration/paying_books/
+orchestration/ideas_similarities_check/
   card.md                      this card
   helper/
-    paying_books.py            add a book to the register and compare it; --all compares every book again
+    ideas_similarities_check.py            add a book to the register and compare it; --all compares every book again
     book_returns.py            a record's bar returns, per window (the definition in common/measures.md)
-    test_paying_books.py       its tests, on books whose answer is known by construction (no backtest, no model call)
+    test_ideas_similarities_check.py       its tests, on books whose answer is known by construction (no backtest, no model call)
   register/
     INDEX.md                   one line per paying book: run, id, bar size, coins, engine (git sha), made on
     books.json                 the same, for code
@@ -72,15 +72,16 @@ The bar returns are committed (a few hundred kilobytes per hourly book): the rec
 new session must find the register whole.
 
 ## Who calls it, and when
-- **`run_idea`**, after the unseen test, for an idea step 5 confirmed and step 6 found profitable enough (the same rule
-  and the same place as the unseen test, so no step 7 line of that idea reads it before it ran).
+- **Open (topic 41, to be decided with the operator):** whether `run_idea` calls it, after the unseen test, for an idea
+  step 5 confirmed and step 6 found profitable enough, and who reads it besides the operator. Until then it is called
+  by hand.
 - **The operator** (or the designer, on the operator's go), with `--all`, to compare every book again (after the
   register is first filled, or a book is rerun).
 
 ## How to call it
 ```
-python3 orchestration/paying_books/helper/paying_books.py RECORD --run NAME_run      # one book
-python3 orchestration/paying_books/helper/paying_books.py --all                       # every book again
+python3 orchestration/ideas_similarities_check/helper/ideas_similarities_check.py RECORD --run NAME_run      # one book
+python3 orchestration/ideas_similarities_check/helper/ideas_similarities_check.py --all                       # every book again
 ```
 
 ## When something fails
@@ -95,8 +96,7 @@ python3 orchestration/paying_books/helper/paying_books.py --all                 
 - Each comparison's three readings use the same periods' lagged pairs only (no period across a window gap).
 
 ## Visibility
-- `run_idea`'s journal: one line `paying_books` (called or skipped, seconds, 0 USD).
-- The register's files above, committed.
+- The register's files above, committed. (A journal line in `run_idea` comes with its call, if decided: topic 41.)
 
 ## The AI
 None: code only. Cost: 0 USD; seconds per book.
@@ -116,16 +116,16 @@ Night 3's paying books (`runs/NIGHT3_RUN.md`) and the step 7 A/B set B's 1-day r
 None.
 
 ## Who judges the output
-Code: the numbers. Line 7.f and the operator: what a book adds, which to keep.
+Code: the numbers. The operator: what a book adds, which to keep.
 
 ## Done when
 The tests pass; daily returns equal step 6's on 3 records; the register holds every paying book on today's engine; the
 comparisons on night 3's books agree with the hand checks.
-Status: **designed, not built.**
+Status: **built, not yet proven** (2026-11-21): the function and its 9 tests (they pass); daily returns identical to step 6's on 3
+records. Next: the register filled with the paying books rerun on today's engine, then the proof on night 3's books.
 
 ## What it changes elsewhere (each in its own card)
-- `run_idea`: the call after the unseen test (a journal line).
-- Line 7.f: reads the book's comparison (`<id>.md`) with the step 6 check.
+- None yet (`run_idea`'s call is open: topic 41).
 
 ## What this function does not do
 It does not judge whether a book pays (step 6), choose ideas, gate anything, group books into families, or combine books

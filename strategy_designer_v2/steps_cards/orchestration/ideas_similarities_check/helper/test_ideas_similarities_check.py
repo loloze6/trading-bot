@@ -1,4 +1,4 @@
-"""paying_books on books whose answer is known by construction (no backtest, no model call)."""
+"""ideas_similarities_check on books whose answer is known by construction (no backtest, no model call)."""
 import json, sys
 from pathlib import Path
 import numpy as np
@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import paying_books as pb  # noqa: E402
+import ideas_similarities_check as pb  # noqa: E402
 import book_returns as br  # noqa: E402
 
 rng = np.random.default_rng(7)

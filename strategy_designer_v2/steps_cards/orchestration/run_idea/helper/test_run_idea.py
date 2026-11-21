@@ -11,7 +11,7 @@ import run_idea as r  # noqa: E402
 
 def test_the_lines_are_the_active_ones():
     ids = [lid for lid, _ in r.active_lines()]
-    assert ids == ["7.a", "7.b", "7.c", "7.d", "7.e", "7.g"]   # 7.f is on hold
+    assert ids == ["7.a", "7.b", "7.c", "7.d", "7.e", "7.g"]   # 7.f was deleted (operator, 2026-11-21)
 
 
 def test_an_idea_without_its_fields_is_refused():

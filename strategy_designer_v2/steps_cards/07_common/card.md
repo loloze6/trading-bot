@@ -9,7 +9,6 @@ Step 7 is a set of analysis lines, each with its own objective and its own card:
 | 7.c | `../07c_rejected/` | step 5: rejected | why the idea was rejected, and what other idea could be confirmed |
 | 7.d | `../07d_not_profitable/` | step 6: not profitable enough | why the book does not pay, and what idea would make it pay |
 | 7.e | `../07e_profitable_unproven/` | step 6: profitable enough, step 5: not confirmed | what the book really earns from |
-| 7.f | `../07f_real_and_profitable/` | step 5: confirmed, step 6: profitable enough | what could break the idea and its book |
 | 7.g | `../07g_patterns/` | none | what patterns the bars and the book show |
 
 ## Input (every line)

@@ -1,7 +1,7 @@
 # Topic 41: is a paying book a new source of profit, or one we already have?
 
-Status: open (designing: definitions and outputs agreed with the operator, 2026-11-21; nothing built)  
-Where: research: a function of its own in `orchestration/` (next to `unseen_test`), read by step 7's line 7.f;
+Status: open (built, not yet proven: `orchestration/ideas_similarities_check/`; its reader and its call by `run_idea` to decide)  
+Where: research: a function of its own in `orchestration/` (next to `unseen_test`), read by the operator (other readers open);
 shared definitions in `common/measures.md`  
 Opened: 2026-11-21, the designer session, from night 3 (`runs/NIGHT3_RUN.md`, the "Check" sections); designed the same
 day with the operator ("keep it simple, standard, structured").
@@ -69,12 +69,12 @@ What the outputs mean together (examples, not rules):
 books, a lead of 3 hours). Widened only if a run shows it is needed.
 
 ## Where it runs and who reads it
-- **A function, `orchestration/paying_books/`** (its card by `HOW_WE_DESIGN_A_CARD.md`), called by `run_idea` with the
+- **A function, `orchestration/ideas_similarities_check/`** (its card by `HOW_WE_DESIGN_A_CARD.md`), called by `run_idea` with the
   same trigger as the unseen test (confirmed and profitable). It adds the book to **the register of paying books**
   (each book's bar returns as one small committed file, its run, idea, bar size, coins, engine version) and writes the
   book's comparison with every other paying book and with holding.
-- **Readers:** line 7.f (real and profitable: what next) reads the comparison; the operator; later the briefs, through
-  the findings.
+- **Readers:** the operator. Who else reads it, and whether `run_idea` calls it, is open (line 7.f was deleted on
+  2026-11-21; decision below).
 - **Step 6 is not changed.** The daily returns it builds for its own measures are built the same way here (one
   definition, `common/measures.md`), so the two cannot disagree.
 
@@ -100,7 +100,7 @@ books with the same idea, one with it and one without, would look less alike tha
 | 2 | The function, with tests on books whose answer is known by construction (a book equal to another: 100 % explained, same bar; the same book one bar later: 100 %, one bar behind; the opposite book: 100 %, direction −; noise: about 0 %; no window in common: not comparable) | the comparison for every new paying book | medium (one helper, the register) | none to the steps: nothing they decide changes |
 | 3 | The 20 older paying records rerun on today's engine (steps 4 and 6), the before and after table, then every paying book added to the register | references on equal terms; the holding rule and the measured costs proven on real books | CPU only, 20 backtests | some may no longer pay: reported, not hidden |
 | 4 | Proof: the comparisons read on night 3's 19 paying books against the hand controls already run (they should read "a profit we already have") and on step 7 A/B's 1-day reversal (it should read differently) | shows the measure says what the controls said, with one rule | small | if they disagree, the definition is wrong: rework it before use |
-| 5 | `run_idea` calls it; line 7.f reads its file | every new paying book compared at once | small | none |
+| 5 | (open) `run_idea` calls it; its reader decided with the operator | every new paying book compared at once | small | none |
 
 Not in this topic: grouping books into families (next, with the operator), the two measures of topic 42, combining
 books in one live bot (it will use the register).
@@ -115,6 +115,8 @@ books in one live bot (it will use the register).
 | 2026-11-21 | Three readings (same bar, one bar ahead, one bar behind), reported as one share explained (the largest) and who leads; the sign does not count | the operator's remarks (a book shorting momentum still uses momentum; "would we still see that A is a bit sooner?"), the designer | the same profit caught one bar apart, or reversed, is the same profit, and which one is sooner shows | correlation alone; the three shares all reported (more reading for little gain) |
 | 2026-11-21 | Names: comparison timeframe, window in common; only the bars in common are used; one year minimum | the operator | - | - |
 | 2026-11-21 | The 20 older paying records rerun on today's engine, with a before and after table | the operator | references on equal terms; a proof of the holding rule and the measured costs on real books | keeping them as recorded (biased: other holding, other costs) |
+| 2026-11-21 | The function is named `ideas_similarities_check` | the operator | "paying books" is confusing as a function name (the notion keeps its name) | `paying_books` |
+| 2026-11-21 | Line 7.f deleted; who reads the comparisons, and whether `run_idea` calls the function, stays open in this topic | the operator | 7.f was on hold since 2026-11-15 and never ran; what comes after a paying idea is topic 08 | 7.f as its reader |
 
 ## Status and next
 The definitions agreed with the operator (2026-11-21); next: the plan in order, step 1 first (the definitions in

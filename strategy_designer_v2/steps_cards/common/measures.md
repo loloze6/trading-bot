@@ -44,7 +44,7 @@ the book the same way). A plan's own words come first; these apply wherever it s
   They are estimates, not the bot's own fills.
 
 - **A paying book, and what it shares with the books we have** (operator, 2026-11-21; topic 41; computed by
-  `orchestration/paying_books/`). The question: does a book that pays make its money on the same bars as a book we
+  `orchestration/ideas_similarities_check/`). The question: does a book that pays make its money on the same bars as a book we
   already have, or is its profit new?
   - A **paying book**: a backtest record whose idea step 5 confirmed and step 6 found profitable enough, in any run. An
     idea run again in another run counts once (its latest record). Paying books are compared only with each other.

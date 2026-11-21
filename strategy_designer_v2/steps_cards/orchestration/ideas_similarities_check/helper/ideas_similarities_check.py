@@ -1,9 +1,9 @@
-"""paying_books: add a paying book to the register and compare it with every other paying book and with holding
-(card: orchestration/paying_books/card.md; definitions: common/measures.md, "A paying book, and what it shares with the
+"""ideas_similarities_check: add a paying book to the register and compare it with every other paying book and with holding
+(card: orchestration/ideas_similarities_check/card.md; definitions: common/measures.md, "A paying book, and what it shares with the
 books we have"). Code only, no model call. It records; it decides nothing.
 
-  python3 orchestration/paying_books/helper/paying_books.py RECORD --run NAME_run [--no-compare]
-  python3 orchestration/paying_books/helper/paying_books.py --all
+  python3 orchestration/ideas_similarities_check/helper/ideas_similarities_check.py RECORD --run NAME_run [--no-compare]
+  python3 orchestration/ideas_similarities_check/helper/ideas_similarities_check.py --all
 
 Why this can't leak: it reads finished records after the fact; it changes no decision of any step.
 """
@@ -103,7 +103,7 @@ def write_books(rows, root=REGISTER):
     write_atomic(root / "books.json", json.dumps(rows, indent=2) + "\n")
     lines = ["# The register of paying books", "",
              "One line per paying book (step 5 confirmed, step 6 profitable enough): definitions in `common/measures.md`;",
-             "card: `orchestration/paying_books/card.md`. An idea's latest record counts once.", "",
+             "card: `orchestration/ideas_similarities_check/card.md`. An idea's latest record counts once.", "",
              "| Book | Run | Bar | Coins | Engine (git) | Made (UTC) |", "|---|---|---|---|---|---|"]
     lines += [f"| {r['id']} | {r['run']} | {r['bar']} | {len(r['coins'])} | {r['git_sha'][:9]} | {r['made_utc']} |" for r in rows]
     write_atomic(root / "INDEX.md", "\n".join(lines) + "\n")
@@ -214,7 +214,7 @@ def main():
         for r in books():
             write_comparison(r["key"])
         write_summary()
-        print(f"paying_books: {len(books())} books compared")
+        print(f"ideas_similarities_check: {len(books())} books compared")
         return
     if not args.record or not args.run:
         sys.exit("give a record and its --run, or --all")
