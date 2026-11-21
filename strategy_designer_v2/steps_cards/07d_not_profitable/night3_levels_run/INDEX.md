@@ -2,5 +2,6 @@
 020-01_resistance-retest-turns-down_1d: 3 ideas (2 explorations)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: 2 ideas (2 explorations)
 020-02_support-retest-bounces-up_1d: 2 ideas (3 explorations)
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 020-03_resistance-breakout-continues-up_1d: 2 ideas (2 explorations)
 020-04_support-breakdown-continues-down_1d: 2 ideas (2 explorations)
