@@ -1,3 +1,4 @@
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins_1d: 2 ideas (2 explorations)
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: 1 ideas (3 explorations)
 020-01_resistance-retest-turns-down_1d: 1 ideas (2 explorations)
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: 2 ideas (2 explorations)

@@ -1,3 +1,4 @@
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins_1d: not profitable enough [Sharpe 0.7107; Sharpe minus holding's Sharpe 0.1263; Calmar 0.495]
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: not profitable enough [Sharpe 0.7649; Sharpe minus holding's Sharpe 0.2107; Calmar 0.5333]
 020-01_resistance-retest-turns-down_1d: not profitable enough [Sharpe -0.8127; Sharpe minus holding's Sharpe -1.367; Calmar -0.3334]
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: not profitable enough [Sharpe -0.4538; Sharpe minus holding's Sharpe -1.008; Calmar -0.2323]

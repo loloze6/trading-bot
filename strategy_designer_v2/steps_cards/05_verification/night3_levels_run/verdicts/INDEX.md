@@ -1,3 +1,4 @@
+020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins_1d: inconclusive (fit: adapted) [main: 0.000830911; one-sample t 0.233164; cases 2613, cases with N >= 3 340, cases with N <= 2 1658]
 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance_1d: inconclusive (fit: adapted) [main: 0.00309019; ordinary t of the mean 0.621326; cases 1084]
 020-01_resistance-retest-turns-down_1d: inconclusive (fit: adapted) [main: -4.39712e-05; OLS slope t -0.171628; cases with forecast at -5 or below 1720, grid bars with a non-zero forecast 3226]
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: inconclusive (fit: adapted) [main: 0.00116072; t of the mean 0.527992; independent cases 2058]
