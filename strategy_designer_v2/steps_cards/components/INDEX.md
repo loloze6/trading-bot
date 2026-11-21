@@ -76,3 +76,10 @@ intraday_1h_run | 017-04_postsettle-decline-after-downtrend_1h | HourOfDayCompon
 intraday_1h_run | 017-05_settlement-move-reverses-after_1h | HourOfDayComponent | exists: HourOfDayComponent {}
 slow_1h_run | 016-01_up-grind-price-continuation_1h | GrindShareOfRise | built: TopGainsShareOfRiseComponent {"form": "residual", "k": 3, "period": 72}
 slow_1h_run | 016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h | VolRatioWeightedScaledReturn | built: VolatilityScaledReturnComponent {"period": 24, "vol_lookback": 720, "vol_period": 168}
+night3_levels_run | 020-01_resistance-retest-turns-down_1d | TurnDownLevelProximity | built: SwingHighProximityComponent {"period": 90, "power": 1.0, "side": 2}
+night3_levels_run | 020-01_resistance-retest-turns-down_1d | TurnDownLevelTouchCount | built: SwingHighClusterCountComponent {"band": 2.0, "form": "count", "period": 90, "side": 2}
+night3_levels_run | 020-02_support-retest-bounces-up_1d | SupportTouchCountComponent | built: SwingLowTouchNearnessComponent {"band": 1.5, "fall_period": 5, "period": 90, "side": 2}
+night3_levels_run | 020-03_resistance-breakout-continues-up_1d | ResistanceBreakTouchCountComponent | built: ResistanceBreakTouchCountComponent {"band": 2.0, "cross_period": 1, "period": 90, "side": 2}
+night3_levels_run | 020-03_resistance-breakout-continues-up_1d | LevelTouchCountComponent | built: SwingHighClusterCountComponent {"band": 2.0, "form": "count", "level": "below", "period": 90, "side": 2}
+night3_levels_run | 020-04_support-breakdown-continues-down_1d | SupportTouchCount | built: SwingHighClusterCountComponent {"band": 1.0, "exclude_current": 1, "form": "count", "level": "above", "period": 90, "pivot": "low", "side": 2}
+night3_levels_run | 020-04_support-breakdown-continues-down_1d | HeldLevelBreakDepth | built: TouchWeightedSupportBreakDepthComponent {"band": 2.0, "period": 90, "side": 2}

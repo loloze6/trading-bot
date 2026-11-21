@@ -3704,3 +3704,474 @@ class HourOfDayComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class SwingHighProximityComponent(SubStrategyComponent):
+    """
+    How near the close sits below the nearest swing-high level above it, on every bar:
+
+        W = rows t - period + 1 .. t                                      (bar t included)
+        swing high: a bar i of W with i - side and i + side inside W (i = t-period+1+side .. t-side)
+                    and high[i] >= high[j] for every j in i-side .. i+side, j != i
+        levels = { high[i] : i a swing high }
+        A = { L in levels : L >= close[t] }
+        A empty:     raw_value = 0.0
+        otherwise:   L = min(A), D = (L - close[t]) / L x 100,
+                     raw_value = (1 / (1 + D)) ** power
+
+    Range 0 to 1, never negative, no direction. The value is above 0 and up to 1 when a level exists at or above
+    the close, nearing 1 as the close rises to that level from below (1 when the close equals it). It is 0 when no
+    swing high in the window is at or above the close. Graded in the gap; the value jumps when the close crosses a
+    level (to the next level up, or to 0).
+    Warm-up: period rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads the `high` column of the last `period` rows of data (bar t the last row) and
+    close[t]; a swing high at bar i is confirmed with highs up to i + side <= t, so no row after t is read.
+
+    NaN: a NaN high in the window or a NaN close[t] gives NaN; a level L not above 0 gives NaN (never on real bars).
+    Building the component raises for side < 1, period < 2 x side + 1, or power not above 0.
+    """
+
+    def __init__(self, name="SwingHighProximity", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.power = float(self.parameters.get("power", 1.0))
+        if self.side < 1:
+            raise ValueError(f"SwingHighProximityComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"SwingHighProximityComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.power > 0:
+            raise ValueError(f"SwingHighProximityComponent: power must be above 0, got {self.power}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        highs = data['high'].astype(float).iloc[-self.period:].to_numpy()
+        c = float(data['close'].astype(float).iloc[-1])
+        if np.isnan(highs).any() or np.isnan(c):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = len(highs)
+        s = self.side
+        levels = []
+        for j in range(s, n - s):
+            neigh = np.concatenate([highs[j - s:j], highs[j + 1:j + s + 1]])
+            if highs[j] >= neigh.max():
+                levels.append(float(highs[j]))
+        above = [lv for lv in levels if lv >= c]
+        if not above:
+            value = 0.0
+            level = float("nan")
+        else:
+            level = min(above)
+            if not level > 0:
+                value = float("nan")
+            else:
+                d = (level - c) / level * 100.0
+                value = float((1.0 / (1.0 + d)) ** self.power)
+        self._raw_value = value
+        self.confidence = 1.0
+        self.debug_info = {'level': level, 'n_swing_highs': len(levels), 'close': c}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
+
+
+class SwingHighClusterCountComponent(SubStrategyComponent):
+    """
+    How many swing turns cluster at the nearest swing level on one side of the close.
+
+        W = the last `period` bars ending at bar t (exclude_current 0)
+            or bars t-period .. t-1 (exclude_current 1)
+        swing point: a bar i of W with `side` bars of W before it and `side` after it, such that
+            pivot "high" (default): high[i] >= each of those highs, price p[i] = high[i]
+            pivot "low":            low[i]  <  each of those lows,  price p[i] = low[i]
+        level "above" (default): L = min(p[i] for swing points with p[i] >= close[t])
+        level "below":           L = max(p[i] for swing points with p[i] <  close[t])
+        N = number of swing points with abs(p[i] - L) / L * 100 <= band   (L's own included)
+        form "count" (default): raw_value = N
+        form "proximity":       raw_value = N * (1 / (1 + D)) ** power,
+            D = (L - close[t]) / L * 100 ("above") or (close[t] - L) / L * 100 ("below")
+        raw_value = 0.0 when no swing point lies on the chosen side of close[t].
+
+    The defaults (pivot "high", exclude_current 0) give the original output, unchanged. With pivot "low",
+    exclude_current 1, period 90 and level "above", the value is the number of swing lows of bars t-90 .. t-1
+    within `band` percent of the nearest swing-low level at or above the close: the touch count of the
+    support the close sits under.
+    Range: "count" gives 0, or an integer from 1 to period - 2*side; "proximity" gives 0 to N. Never negative,
+    no direction. Graded: it grows by one with each further turn near the level.
+    Warm-up: period + exclude_current rows, bar t included.
+    NaN: a NaN high (pivot "high") or low (pivot "low") anywhere in W, or a NaN close[t], gives NaN.
+    An L not above 0 gives NaN (never on real bars).
+    Building the component raises for side < 1, period < 2*side + 1, band not above 0, an unknown form, power
+    not above 0, an unknown level, a pivot other than "high" or "low", or an exclude_current other than 0 or 1.
+
+    WHY THIS CANNOT LEAK: it reads the high or low column of the rows of W only, which are at most the last
+    period + exclude_current rows of data and end at bar t or t-1. It also reads close[t], the last row. A swing
+    point is confirmed only by bars inside W, all at or before bar t.
+    """
+
+    def __init__(self, name="SwingHighClusterCount", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        if self.side < 1:
+            raise ValueError(f"SwingHighClusterCountComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"SwingHighClusterCountComponent: period must be >= 2*side+1, got {self.period}")
+        self.band = float(self.parameters.get("band", 2.0))
+        if not self.band > 0:
+            raise ValueError(f"SwingHighClusterCountComponent: band must be > 0, got {self.band}")
+        self.form = self.parameters.get("form", "count")
+        if self.form not in ("count", "proximity"):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: form must be 'count' or 'proximity', got {self.form!r}")
+        self.power = float(self.parameters.get("power", 1.0))
+        if not self.power > 0:
+            raise ValueError(f"SwingHighClusterCountComponent: power must be > 0, got {self.power}")
+        self.level = self.parameters.get("level", "above")
+        if self.level not in ("above", "below"):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: level must be 'above' or 'below', got {self.level!r}")
+        self.pivot = self.parameters.get("pivot", "high")
+        if self.pivot not in ("high", "low"):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: pivot must be 'high' or 'low', got {self.pivot!r}")
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(
+                f"SwingHighClusterCountComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        col = "high" if self.pivot == "high" else "low"
+        p = data[col].astype(float).to_numpy()
+        end = len(p) - self.exclude_current
+        w = p[end - self.period:end]
+        close_t = float(data["close"].astype(float).iloc[-1])
+        if np.isnan(w).any() or np.isnan(close_t):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        s = self.side
+        prices = []
+        for j in range(s, self.period - s):
+            v = w[j]
+            nb = np.concatenate([w[j - s:j], w[j + 1:j + s + 1]])
+            if self.pivot == "high":
+                ok = bool(np.all(v >= nb))
+            else:
+                ok = bool(np.all(v < nb))
+            if ok:
+                prices.append(float(v))
+        if self.level == "above":
+            cands = [x for x in prices if x >= close_t]
+        else:
+            cands = [x for x in prices if x < close_t]
+        if not cands:
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {"swing_points": len(prices), "level": None, "count": 0}
+            return
+        L = min(cands) if self.level == "above" else max(cands)
+        if not L > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = 0
+        for x in prices:
+            if abs(x - L) / L * 100.0 <= self.band:
+                n += 1
+        if self.form == "count":
+            val = float(n)
+        else:
+            if self.level == "above":
+                d = (L - close_t) / L * 100.0
+            else:
+                d = (close_t - L) / L * 100.0
+            val = float(n * (1.0 / (1.0 + d)) ** self.power)
+        self._raw_value = val
+        self.confidence = 1.0
+        self.debug_info = {"swing_points": len(prices), "level": L, "count": n}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.exclude_current
+
+
+class SwingLowTouchNearnessComponent(SubStrategyComponent):
+    """
+    Nearness-weighted count of the swing lows close to the current close, while the close is falling:
+
+        swing low: a bar i in t-period+1+side .. t-side whose low[i] < low[j] for every j in
+                   i-side .. i-1 and i+1 .. i+side (all inside the last `period` bars, bar t included)
+        D_i = abs(close[t] - low[i]) / close[t] x 100                    (percent of the close)
+        w_i = max(0, 1 - D_i / band)                                     (1 on the level, 0 at the band's edge)
+        G   = 1 if close[t] < close[t - fall_period] else 0
+        raw_value = G x sum of w_i over the swing lows
+
+    Range: 0 up to the number of swing lows (at most period - 2 x side). It is never negative and has no
+    direction. It is 0 with no swing low within `band` percent of the close, and 0 when the close is not below
+    its value fall_period bars ago. It grows continuously with each further nearby swing low and with the
+    nearness of the close to each one.
+    Warm-up: max(period, fall_period + 1) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `low` column of the last `period` rows and the `close` of the last
+    row (bar t) and of the row fall_period rows before it. A swing low at bar i is confirmed with lows up to
+    bar i + side <= t, all known at bar t's close.
+
+    NaN: a NaN low in the window, or a NaN close[t] or close[t - fall_period], gives NaN. A close[t] not above 0
+    gives NaN (never on real bars).
+    Building the component raises for side < 1, period < 2 x side + 1, band not above 0, or fall_period < 1.
+    """
+
+    def __init__(self, name="SwingLowTouchNearness", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.band = float(self.parameters.get("band", 1.5))
+        self.fall_period = int(self.parameters.get("fall_period", 5))
+        if self.side < 1:
+            raise ValueError(f"SwingLowTouchNearnessComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"SwingLowTouchNearnessComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.band > 0:
+            raise ValueError(f"SwingLowTouchNearnessComponent: band must be above 0, got {self.band}")
+        if self.fall_period < 1:
+            raise ValueError(
+                f"SwingLowTouchNearnessComponent: fall_period must be >= 1, got {self.fall_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        lows = data['low'].astype(float).iloc[-self.period:].to_numpy()
+        closes = data['close'].astype(float)
+        c_t = float(closes.iloc[-1])
+        c_base = float(closes.iloc[-(self.fall_period + 1)])
+        if np.isnan(lows).any() or np.isnan(c_t) or np.isnan(c_base) or not c_t > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        k = self.side
+        n = len(lows)
+        total = 0.0
+        swings = 0
+        for i in range(k, n - k):
+            neighbours = np.concatenate([lows[i - k:i], lows[i + 1:i + k + 1]])
+            if np.all(lows[i] < neighbours):
+                swings += 1
+                d = abs(c_t - lows[i]) / c_t * 100.0
+                w = 1.0 - d / self.band
+                if w > 0:
+                    total += w
+        gate = 1.0 if c_t < c_base else 0.0
+        self._raw_value = float(gate * total)
+        self.confidence = 1.0
+        self.debug_info = {'swing_lows': swings, 'weighted_touches': total, 'falling': bool(gate)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.fall_period + 1)
+
+
+class ResistanceBreakTouchCountComponent(SubStrategyComponent):
+    """
+    The touch count of the resistance level the close has just broken, times the margin of the break, on every bar:
+
+        W = close[t - period + 1 .. t]                                  (bar t included)
+        swing high: bar i in t - period + 1 + side .. t - side with
+                    close[i] >= close[j] for j = i - side .. i - 1 and
+                    close[i] >  close[j] for j = i + 1 .. i + side        (all inside W)
+        L = the highest swing-high close with close[t - cross_period] <= L < close[t]
+        N = the number of swing highs i with abs(close[i] - L) / L x 100 <= band (L's own included)
+        raw_value = N x (close[t] - L) / L x 100,   0.0 when no swing high satisfies the crossing condition
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 when no level was crossed upward
+    within the last cross_period bars, and it grows with the level's touch count and with the close's percent
+    distance above it.
+    Warm-up: max(period, cross_period + 1) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, cross_period + 1) rows of data,
+    bar t (the last row) included. A swing high at bar i is confirmed by the closes of bars i+1 .. i+side, which all
+    lie at or before bar t.
+
+    NaN: a NaN close in the last max(period, cross_period + 1) rows gives NaN. An L not above 0 gives NaN (never on
+    real bars). A missing `close` column raises.
+    Building the component raises for a side below 1, a period below 2 x side + 1, a band not above 0, or a
+    cross_period below 1.
+    """
+
+    def __init__(self, name="ResistanceBreakTouchCount", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.band = float(self.parameters.get("band", 2.0))
+        self.cross_period = int(self.parameters.get("cross_period", 1))
+        if self.side < 1:
+            raise ValueError(f"ResistanceBreakTouchCountComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"ResistanceBreakTouchCountComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.band > 0:
+            raise ValueError(f"ResistanceBreakTouchCountComponent: band must be above 0, got {self.band}")
+        if self.cross_period < 1:
+            raise ValueError(
+                f"ResistanceBreakTouchCountComponent: cross_period must be >= 1, got {self.cross_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        w = c[-self.period:]
+        s = self.side
+        highs = []
+        for k in range(s, self.period - s):
+            v = w[k]
+            if np.all(v >= w[k - s:k]) and np.all(v > w[k + 1:k + s + 1]):
+                highs.append(float(v))
+        c_now = float(c[-1])
+        c_before = float(c[-1 - self.cross_period])
+        crossed = [h for h in highs if c_before <= h < c_now]
+        if not crossed:
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {'swing_highs': len(highs), 'level': None, 'touches': 0}
+            return
+        level = max(crossed)
+        if not level > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        touches = sum(1 for h in highs if abs(h - level) / level * 100.0 <= self.band)
+        self._raw_value = float(touches * (c_now - level) / level * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {'swing_highs': len(highs), 'level': level, 'touches': touches}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.cross_period + 1)
+
+
+class TouchWeightedSupportBreakDepthComponent(SubStrategyComponent):
+    """
+    How far the close sits under the most-touched support level of the prior bars, weighted by that level's
+    touch count:
+
+        W = bars t-period .. t-1                                   (bar t excluded)
+        swing low: bar i of W, i in t-period+side .. t-1-side, with low[i] < low[i-k] and low[i] < low[i+k]
+                   for k = 1 .. side (strictly lower; all those bars inside W)
+        N_j = #{swing lows i : abs(low[i] - low[j]) / low[j] x 100 <= band}   (j's own included)
+        candidates = swing lows j with low[j] >= close[t]
+        L = low[j] of the candidate with the largest N_j (a tie goes to the lowest low[j]); N = that N_j
+        raw_value = N x (L - close[t]) / L x 100, or 0.0 when there is no candidate
+
+    Range: 0 and up, never negative, below N x 100. It has no direction. It is 0 when the close is above every
+    swing low of W, and it grows with the close's percent depth under the level and with the level's touch count.
+    Graded: continuous in close[t] while the chosen level stays the same, and 0 at the level itself. It jumps where
+    the close crosses another swing low.
+    Warm-up: period + 1 rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads the `low` column of bars t-period .. t-1 and the `close` of bar t (the last row
+    of data), nothing later; a swing low is confirmed only by the side bars after it inside W, all before bar t.
+
+    NaN: a NaN low in W or a NaN close[t] gives NaN; a candidate level not above 0 gives NaN (never on real bars).
+    Building the component raises for a side below 1, a period below 2 x side + 1, or a band not above 0.
+    """
+
+    def __init__(self, name="TouchWeightedSupportBreakDepth", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 90))
+        self.side = int(self.parameters.get("side", 2))
+        self.band = float(self.parameters.get("band", 2.0))
+        if self.side < 1:
+            raise ValueError(f"TouchWeightedSupportBreakDepthComponent: side must be >= 1, got {self.side}")
+        if self.period < 2 * self.side + 1:
+            raise ValueError(
+                f"TouchWeightedSupportBreakDepthComponent: period must be >= 2 x side + 1, got {self.period}")
+        if not self.band > 0:
+            raise ValueError(f"TouchWeightedSupportBreakDepthComponent: band must be above 0, got {self.band}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.period
+        lows = data['low'].astype(float).to_numpy()[-(n + 1):-1]
+        c = float(data['close'].astype(float).iloc[-1])
+        self.confidence = 1.0
+        if np.isnan(lows).any() or np.isnan(c):
+            self._raw_value = float("nan")
+            return
+        swings = []
+        for i in range(self.side, n - self.side):
+            v = lows[i]
+            ok = True
+            for k in range(1, self.side + 1):
+                if not (v < lows[i - k] and v < lows[i + k]):
+                    ok = False
+                    break
+            if ok:
+                swings.append(float(v))
+        best_n = 0
+        best_level = None
+        for level in swings:
+            if level < c:
+                continue
+            if not level > 0:
+                self._raw_value = float("nan")
+                return
+            cnt = sum(1 for p in swings if abs(p - level) / level * 100.0 <= self.band)
+            if cnt > best_n or (cnt == best_n and best_level is not None and level < best_level):
+                best_n = cnt
+                best_level = level
+        if best_level is None:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(best_n * (best_level - c) / best_level * 100.0)
+        self.debug_info = {'level': best_level, 'touches': best_n, 'swing_lows': len(swings)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
