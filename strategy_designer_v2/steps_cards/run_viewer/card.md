@@ -18,22 +18,28 @@ a PC or a phone.
 **A view of a run is the run's purpose, its briefs, and its ideas as a family tree, each tested idea showing its steps
 in order with one result per step, and the run's cost and time.**
 
-- One idea's line in the tree, left to right: step 3 (plan, or refused), step 5 (confirmed, inconclusive, rejected,
-  not observable, with its t), step 6 (pays or not). Tap it: the detail.
+- One idea's card in the tree: its title with its bar size (its backtests' when tested, else the `bar:` line of its file;
+  operator, 2026-11-21), the idea in one sentence (three lines at most), then its results in words:
+  step 3 only when it refused, step 5's verdict with its t, step 6's with its Sharpe (operator, 2026-11-19). Tap it:
+  the detail.
 - The detail of a tested idea: its text; step 3's reason; step 5's measure, t and "decided by"; step 6's measures with the
-  failed ones marked; the step 7 lines with their findings and the ideas they proposed (links into the tree); the book
-  by window; cost and time per step.
+  failed ones marked; under step 7, each line with its findings folded and the ideas it wrote as cards (two generations
+  open); the book by window; cost and time per step, last (operator, 2026-11-19).
 - Ideas not tested are in the tree too, greyed, with their place in the queue when the loop holds one; in the run's tree
   a branch's untested ideas fold into one line; under an idea, two generations show and deeper ones fold.
-- A backtest page: the book of all coins, then one coin at a time (its book and its windows' figures).
+- A backtest page: the idea in one sentence, the book of all coins, then one coin at a time (its book by window and day
+  by day); each coin's button green or red by the Sharpe of its own book.
 - A "?" next to each notion that needs it: a plain-words explanation, written from the step cards and
   `common/measures.md`.
 - What the page never shows: an opinion, a score of its own, a date of its own (dates shown are the record's own:
   journal lines dated in full, the engine's run times).
 
 ## The fields of a view
-1. **Run line** (the list of runs, last updated first): name, first and last commit time of the run's files, ideas,
-   backtested ideas, step 5 and step 6 counts, cost, step time.
+1. **Run line** (the list of runs, last updated first): name and bar size (from its backtests' ids, e.g. `_4h`; with
+   more than one, how many backtests each; operator, 2026-11-21), dates, ideas, backtested ideas, cost, step time; "Is it
+   real": step 5's counts, "Does it pay": step 6's, each in one fixed order (confirmed, inconclusive, rejected,
+   mismatch, not observable; profitable, not profitable) with the best of its key figure (step 5: t; step 6: Sharpe);
+   the depth in one line (field 11).
    - For: choosing which run to open.
    - Used by: the operator.
    - Without it: one opens runs blind.
@@ -46,9 +52,8 @@ in order with one result per step, and the run's cost and time.**
    - For: the theory the ideas come from, and which ideas come from which theory.
    - Used by: the operator.
    - Without it: ideas with no theory.
-4. **Idea tree**: one node per idea, under the idea it came from (its id without the last segment). The line letter
-   (b, d, g...) of the step 7 line that wrote it shown on the node; an idea whose parent is in another run is a root, and
-   says where it came from.
+4. **Idea tree**: one node per idea, under the idea it came from (its id without the last segment); an idea whose
+   parent is in another run is a root. The step 7 line that wrote an idea is named in words on the idea's page.
    - For: how ideas lead to one another.
    - Used by: the operator.
    - Without it: a flat list of 40 ids that look alike.
@@ -79,17 +84,26 @@ in order with one result per step, and the run's cost and time.**
    - For: when a run happened, what is newest.
    - Used by: the operator.
    - Without it: runs with no order in time.
-10. **Backtest page**: per coin and window, from `metrics.json`: net return, trades, win rate, deepest fall, Sharpe,
-   share of bars in a position; the coin's own book by window.
+10. **Backtest page**: per coin, its own book by window (`metrics.json` net returns, chained) and its Sharpe on the
+   coin's button, green above 0, red at or below: step 6's definition (`common/measures.md`: mean of the daily returns
+   over their standard deviation, times the square root of 365) on the coin's own book from the chart files, a day's
+   value being its last bar's; no chart files, no colour. The window-by-window table was removed (operator, 2026-11-19).
    - For: which coins and periods carry or sink the book.
    - Used by: the operator.
    - Without it: one averaged line hides the coin that lost.
    - Day by day, from the backtest's chart files (step 4): the committed `chart_bars.csv.gz` / `chart_trades.csv.gz`
      (backtests confirmed by step 5 or profitable enough by step 6) first, then `chart_*.local.csv.gz` (every other
      backtest; ignored by git, only on the disk where the run happened); neither: "not in the record". Per coin, the price with each trade's entry and
-     exit, the book against holding the coin (each window's values over its first, windows chained in time order, from
-     1), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
+     exit, "1 invested": the strategy against holding the coin (each window's values over its first, windows chained in
+     time order, from 1; log scale, the line at 1 marked "start"; operator, 2026-11-19), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
      dragging, read a day by touching it. The files are fetched when the page opens, never embedded.
+
+11. **Depth**: per level below the brief (1: the brief's own ideas, 2: written from a level 1 idea, and so on; the
+   number of segments in the idea's id), the ideas backtested of the ideas written: "L1 6 of 6 · L2 3 of 24 ...", on
+   the run line.
+   - For: how far each brief was explored, and at which depth what pays was found.
+   - Used by: the operator.
+   - Without it: no way to tell a brief tried once from one followed five generations down.
 
 ## Storage and naming
 ```
@@ -110,8 +124,8 @@ rebuilt in seconds, never edited by hand.
 None: this function reads files and writes one page. No model call.
 
 ## Quality criteria
-- Every figure on the page is a field of a committed file, or a count, sum, mean or product of such fields; the tests
-  check this on a small built-in run.
+- Every figure on the page is a field of a committed file, or a count, sum, mean, product or largest of such fields;
+  the tests check this on a small built-in run.
 - Readable at 390 px width with no horizontal page scroll.
 - Writes nothing but `runs.html`; reads nothing outside `steps_cards/`.
 - A missing or unreadable file shows as "not in the record", never as a failure of the page.

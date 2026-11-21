@@ -218,8 +218,9 @@ def step6(path):
         return None
     ms = [{"label": m.get("label"), "value": m.get("value"), "threshold": m.get("threshold"),
            "comparison": m.get("comparison"), "passed": m.get("passed")} for m in r.get("measures", [])]
+    sharpe = next((m.get("value") for m in r.get("measures", []) if m.get("measure") == "sharpe_min"), None)
     return {"status": r.get("status"), "measures": ms, "failed": [m["label"] for m in ms if m["passed"] is False],
-            "decided_by": r.get("decided_by")}
+            "decided_by": r.get("decided_by"), "sharpe": sharpe}
 
 
 def step7(cards, run, bid):
@@ -317,6 +318,8 @@ def build_run(cards, run, files):
                     "dated": first[0] if first else None,
                     "text": body.strip() or None, "statement": labelled(body, "Idea:"),
                     "backtests": sorted(b for b in backtests if backtests[b]["idea"] == i),
+                    # the bar size: its backtests' (what was run), else the one its file states (what will be run)
+                    "bars": sorted({bar_of(b) for b in mine}) or ([fm["bar"]] if fm.get("bar") else []),
                     "queue": {"status": q.get("status"), "score": q.get("score")} if q else None,
                     "turn": turn_by.get(i)}
     for i in ideas.values():
@@ -350,8 +353,11 @@ def build_run(cards, run, files):
         "briefs": briefs, "ideas": ideas, "roots": roots, "backtests": backtests,
         "dates": run_dates(journal + brief_journal + turns, backtests),
         "totals": {"ideas": len(ideas), "backtests": len(tested), "idea_states": _count(i["state"] for i in ideas.values()),
+                   "bars": _count(bar_of(b["id"]) for b in tested),
                    "step3": _count((b["step3"] or {}).get("outcome") for b in backtests.values() if b["step3"]),
                    "step5": count("step5"), "step6": count("step6"),
+                   "best_t": best(backtests, "step5", "t"), "best_sharpe": best(backtests, "step6", "sharpe"),
+                   "levels": levels(ideas),
                    "usd": round(usd, 2) if lines else None, "seconds": round(secs) if lines else None,
                    "turns": len(turns), "journal_lines": len(lines)},
     }
@@ -366,6 +372,43 @@ def run_dates(lines, backtests):
     return [min(when), max(when)] if when else None
 
 
+def best(backtests, step, key):
+    """Per status of a step, the largest of its key figure (step 5: t; step 6: Sharpe) over the run's backtests."""
+    out = {}
+    for b in backtests.values():
+        s = b[step]
+        if s and isinstance(s.get(key), (int, float)):
+            out[s["status"]] = max(out.get(s["status"], s[key]), s[key])
+    return out
+
+
+def bar_of(bid):
+    """A backtest's bar size, the last part of its id: '..._1d' -> '1d', '..._4h' -> '4h'."""
+    m = re.search(r"_(\d+[smhdw])$", bid)
+    return m.group(1) if m else "bar not in the id"
+
+
+def level_of(idea):
+    """An idea's level below its brief: 1 for the brief's own ideas, 2 for an idea written from one of them, and so on
+    (the id is the lineage: one segment per generation)."""
+    return idea.count(".") + 1
+
+
+def levels(ideas):
+    """Per level: the ideas, and those backtested."""
+    out = {}
+    for iid, i in ideas.items():
+        n = out.setdefault(level_of(iid), {"level": level_of(iid), "ideas": 0, "tested": 0})
+        n["ideas"] += 1
+        n["tested"] += i["state"] == "backtested"
+    return [out[k] for k in sorted(out)]
+
+
+def step7_lines(cards):
+    """The step 7 lines' names, from their folders: 07g_patterns -> {"7.g": "patterns"}."""
+    return {f"7.{p.name[2]}": p.name[4:].replace("_", " ") for p in sorted(cards.glob("07[a-z]_*")) if p.is_dir()}
+
+
 def _count(values):
     out = {}
     for v in values:
@@ -377,16 +420,7 @@ def build(cards):
     files = idea_files(cards)
     runs = [build_run(cards, r, files) for r in run_names(cards)]
     runs.sort(key=lambda r: (r["dates"] or ["", ""])[1], reverse=True)   # last updated first
-    # an idea whose parent sits in another run says which
-    where = {}
-    for r in runs:
-        for i in r["ideas"]:
-            where.setdefault(i, []).append(r["name"])
-    for r in runs:
-        for i in r["ideas"].values():
-            if i["root"] and i["parent"]:
-                i["parent_runs"] = [x for x in where.get(i["parent"], []) if x != r["name"]]
-    return {"runs": runs, "briefs": all_briefs(cards)}
+    return {"runs": runs, "briefs": all_briefs(cards), "lines": step7_lines(cards)}
 
 
 def main():

@@ -1,4 +1,4 @@
-"""Run viewer: every figure on the page is a field of a file, or a count, sum, mean or product of them."""
+"""Run viewer: every figure on the page is a field of a file, or a count, sum, mean, product or largest of them."""
 import json
 import sys
 from pathlib import Path
@@ -37,6 +37,7 @@ def cards(tmp_path):
     w(c / f"03_test_plan/x_run/plans/{CHILD}_1d.md",
       f"---\nidea: {CHILD}\noutcome: missing-components\n---\nFidelity:\n- x\nReason: No component reads volume.\nIt stops here.\n")
     w(c / "03_test_plan/x_run/plans/INDEX.md", "not a plan\n")
+    w(c / f"02_ideation/x_run/ideas/{WAITING}.md", "---\nbrief: 001\nbar: 4h\n---\nIdea: A fall rebounds.\n")
     # two windows, given out of time order on purpose: w1 ends after w2
     window(c, f"{ROOT}_1d", "BTCUSD", 1, 10.0, "2021-04-30 00:00:00")
     window(c, f"{ROOT}_1d", "ETHUSD", 1, 20.0, "2021-04-30 00:00:00")
@@ -47,7 +48,7 @@ def cards(tmp_path):
        "decided_by": "t >= 2", "situation_check": {"agreement": 0.97, "passed": True}, "supporting_check": {"name": "mean > 0", "passed": True}, "counts": {"cases": 300}})
     w(c / f"06_profitability/x_run/checks/{ROOT}_1d/result.json",
       {"status": "not profitable enough", "decided_by": "failed: Calmar",
-       "measures": [{"label": "Sharpe", "value": 0.5, "threshold": 0, "comparison": "above", "passed": True},
+       "measures": [{"measure": "sharpe_min", "label": "Sharpe", "value": 0.5, "threshold": 0, "comparison": "above", "passed": True},
                     {"label": "Calmar", "value": 0.2, "threshold": 0.75, "comparison": "above", "passed": False}]})
     w(c / f"07d_not_profitable/x_run/{ROOT}_1d/result.json",
       {"line": "7.d", "findings": {"F1": "a finding"}, "ideas": [{"name": "Fall rebounds", "idea": "A fall rebounds."}],
@@ -98,6 +99,8 @@ def test_tree_follows_the_ids(cards):
     assert r["ideas"][CHILD]["line"] == "7.b" and r["ideas"][WAITING]["line"] == "7.g"
     assert r["ideas"][WAITING]["queue"] == {"status": "candidate", "score": 0.2} and r["ideas"][WAITING]["backtests"] == []
     assert r["ideas"][ROOT]["statement"] == "A rise continues."
+    # bar size: from the backtest's id when tested, else from the idea file's bar: line
+    assert r["ideas"][ROOT]["bars"] == ["1d"] and r["ideas"][CHILD]["bars"] == ["1d"] and r["ideas"][WAITING]["bars"] == ["4h"]
     assert r["ideas"][ROOT]["turn"] == {"turn": 1, "why": "rank 1"}
 
 
@@ -105,6 +108,7 @@ def test_counts_and_sums(cards):
     t = the_run(cards)["totals"]
     assert t["step3"] == {"plan": 1, "missing-components": 1}
     assert t["step5"] == {"confirmed": 1} and t["step6"] == {"not profitable enough": 1}
+    assert t["bars"] == {"1d": 2}                                          # the bar size from each backtest's id
     assert t["usd"] == pytest.approx(0.39) and t["seconds"] == pytest.approx(72.5, abs=0.5) and t["turns"] == 1
     cost = the_run(cards)["backtests"][f"{ROOT}_1d"]["cost"]
     assert cost == {"step3_plan": {"usd": 0.1, "seconds": 20.0, "ran": True},
@@ -112,6 +116,24 @@ def test_counts_and_sums(cards):
                     "step7_7.a": {"usd": 0.0, "seconds": 0.5, "ran": False}}
     # every idea in exactly one state
     assert t["idea_states"] == {"backtested": 1, "blocked at step 3": 1, "waiting in the queue": 1}
+
+
+def test_key_figures_and_depth(cards):
+    data = bp.build(cards)
+    r = data["runs"][0]
+    t = r["totals"]
+    assert r["backtests"][f"{ROOT}_1d"]["step6"]["sharpe"] == 0.5          # the measure sharpe_min, by its id
+    assert t["best_t"] == {"confirmed": 3.1} and t["best_sharpe"] == {"not profitable enough": 0.5}
+    # level = generations below the brief, from the id; ideas counted once, whatever their backtests
+    assert t["levels"] == [{"level": 1, "ideas": 1, "tested": 1}, {"level": 2, "ideas": 2, "tested": 0}]
+    assert data["lines"] == {"7.d": "not profitable"}                      # from the folder 07d_not_profitable
+
+
+def test_best_is_the_largest_per_status():
+    bts = {"a": {"step5": {"status": "confirmed", "t": 2.5}}, "b": {"step5": {"status": "confirmed", "t": 4.0}},
+           "c": {"step5": {"status": "rejected", "t": -3.0}}, "d": {"step5": {"status": "mismatch", "t": None}},
+           "e": {"step5": None}}
+    assert bp.best(bts, "step5", "t") == {"confirmed": 4.0, "rejected": -3.0}
 
 
 def test_per_coin_rows_and_when_it_ran(cards):
