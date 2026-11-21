@@ -8,5 +8,6 @@
 021-02_below-falling-cloud-continues-down_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-04_thin-cloud-downward-breakdown_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

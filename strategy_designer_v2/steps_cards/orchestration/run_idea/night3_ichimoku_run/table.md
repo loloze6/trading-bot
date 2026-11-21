@@ -16,20 +16,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues | 021-02_below-falling-cloud-continues-down | plan | inconclusive (+0.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b2_gentle-cloud-fall-underperforms; 7.d: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.d1_slow-cloud-fall-shallow-decline, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.d2_collapsed-cloud-rebounds-up, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.d3_slow-fall-still-falling; 7.g: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.g1_next-day-rebound-after-falls, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.g2_next-day-giveback-after-rises | 1.45 | 7.4 |
 | 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins | 021-03_thin-cloud-upward-breakout | plan | inconclusive (+1.59) | not profitable enough (failed: Calmar) | - | 7.b: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.b1_thin-cloud-after-strong-run, 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.b2_exhausted-thick-cloud-breakout; 7.d: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.d1_calm-thin-cloud-upward-breakout, 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.d2_unextended-thin-cloud-breakout; 7.g: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.g1_extended-cloud-breakouts-fade, 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.g2_calm-coins-outrun-drift | 1.69 | 12.5 |
 | 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall | 021-03_thin-cloud-upward-breakout | plan | not observable (+0.69) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per day) | - | 7.a: 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.a1_cloud-breakout-after-fall-all-coins, 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.a2_cloud-breakout-after-fall-4h; 7.d: 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.d1_cloud-cross-not-overextended; 7.g: 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.g1_next-day-rebound-after-sharp-falls | 1.24 | 6.7 |
+| 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold | 021-03_thin-cloud-upward-breakout | plan | inconclusive (+0.14) | not profitable enough (failed: Mean daily return, Trades per day) | - | 7.b: 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold.b1_calm-market-cloud-breakout; 7.d: 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold.d1_fresh-cloud-breakout-persists, 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold.d2_thin-cloud-breakout-strength, 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold.d3_above-rising-cloud-trend; 7.g: 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold.g1_volatile-down-day-next-day-rebound | 1.22 | 7.0 |
 
 ## Consumption
-12 ideas, 20.89 USD, 109.3 minutes in all.
+13 ideas, 22.11 USD, 116.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.26 | 10.7 |
-| step4_backtest | 0.00 | 32.0 |
-| step5_verdict | 1.93 | 8.5 |
+| step3_plan | 2.35 | 11.4 |
+| step4_backtest | 0.00 | 34.1 |
+| step5_verdict | 2.11 | 9.3 |
 | step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.25 | 0.8 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.82 | 12.1 |
-| step7_7.g | 4.64 | 15.4 |
-| step7_7.d | 7.99 | 29.3 |
+| step7_7.b | 4.20 | 13.4 |
+| step7_7.g | 5.02 | 16.7 |
+| step7_7.d | 8.18 | 30.1 |
