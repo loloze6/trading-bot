@@ -42,7 +42,7 @@ Per book, against its reference:
    - Corrected rule: the replay check (the engine against `core/holding_period.py`); the time held against the forecast.
 2. **Economics:** earned per unit before costs; cost per unit; Sharpe; Sharpe minus holding's; mean daily return; Calmar;
    step 6, and which check decides.
-3. **Why (the book's diagnosis, `common/book_diagnosis.md`):**
+3. **Why (the book's diagnosis, `topics/34_review/book_diagnosis.md`):**
    - big enough (the move over the horizon against a round trip);
    - opening time and closing time;
    - holding past the bets;
@@ -168,7 +168,7 @@ expected time (hourly books with more coins first).
 (Sharpe / Calmar after costs.) An idea that pays on daily bars pays about as well on hourly bars when each bet is held
 for its horizon (the operator's premise). Hourly bars add no edge yet: the same idea, about the same result.
 
-**2. The hourly-native ideas (the intraday briefs) do not pay, for 3 reasons the diagnosis shows** (`common/book_diagnosis.md`;
+**2. The hourly-native ideas (the intraday briefs) do not pay, for 3 reasons the diagnosis shows** (`topics/34_review/book_diagnosis.md`;
 move over the horizon after the bot can act, against a round trip of about 21 bps measured):
 | Kind | Books | Move / round trip | Market's share of the gain | Why it does not pay |
 |---|---|---|---|---|

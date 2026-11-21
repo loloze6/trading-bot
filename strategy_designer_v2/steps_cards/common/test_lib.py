@@ -66,3 +66,20 @@ def test_utc_now_is_a_full_utc_timestamp():
     import re
     from lib import utc_now
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", utc_now())
+
+
+def test_a_call_the_service_refused_exits_with_its_own_code(monkeypatch):
+    import json as _json, subprocess as _sp, pytest
+    import lib as _lib
+    class P:
+        def __init__(self, out): self.stdout, self.stderr, self.returncode = out, "", 1
+    for out, code in [(_json.dumps({"is_error": True, "result": "You've hit your limit", "total_cost_usd": 0}), _lib.SERVICE_REFUSED),
+                      ("not json", _lib.SERVICE_REFUSED)]:
+        monkeypatch.setattr(_sp, "run", lambda *a, _o=out, **k: P(_o))
+        with pytest.raises(SystemExit) as e:
+            _lib.call("m", "s", "r")
+        assert e.value.code == code
+    monkeypatch.setattr(_sp, "run", lambda *a, **k: P(_json.dumps({"is_error": True, "result": "bad answer", "total_cost_usd": 0.2})))
+    with pytest.raises(SystemExit) as e:
+        _lib.call("m", "s", "r")
+    assert str(e.value.code).startswith("model call failed")          # a call that ran and failed: as before

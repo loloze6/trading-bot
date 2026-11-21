@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9966612940363804,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean 4-bar unusual move after the 21:00 UTC close, pooled",
+    "value": 0.0008503680755596049,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 5.411166743589297
+    },
+    "threshold": "confirm if t >= 2 with a positive mean; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top minus bottom volatility-third mean unusual move (thirds per coin)",
+    "value": 0.0007805943958134665,
+    "passed": true,
+    "welch_t": 1.9165133119217979
+  },
+  "counts": {
+    "cases in total": 17170,
+    "cases in the top volatility third": 5721,
+    "cases in the bottom volatility third": 5726
+  },
+  "decided_by": "the main t is 2 or more with a positive mean and the top-minus-bottom volatility-third difference is above 0",
+  "reading": "a case is a bar closing at 21:00 UTC (start timestamp plus one bar) whose forecast rises from 0 by at least the 2-point band, its return is close[t+4]/close[t]-1 within the window; thirds are split per coin by forecast rank (stable sort, near-equal parts) and the top and bottom thirds are pooled over coins for the difference, its Welch t and the 30-per-third minimum."
+}

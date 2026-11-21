@@ -12,6 +12,8 @@ DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES
 
 
 TIMEOUT = 900          # seconds; a call still running then is killed
+SERVICE_REFUSED = 75   # a helper's exit code when the model service refused a call (it never ran: a usage limit, an
+                       # outage): not a fault of the idea or the step; run_idea and the loop stop and retry later
 
 
 def call_line(d, seconds):
@@ -39,8 +41,15 @@ def call(model, system, request):
         except subprocess.TimeoutExpired:
             print(f"model call: killed after {TIMEOUT} s; cost unknown", file=sys.stderr, flush=True)
             sys.exit(f"model call killed after {TIMEOUT} s (cost unknown)")
-    d = json.loads(p.stdout)
+    try:
+        d = json.loads(p.stdout)
+    except ValueError:
+        print(f"model call refused by the service: no answer ({(p.stderr or p.stdout)[-300:].strip()})", file=sys.stderr, flush=True)
+        sys.exit(SERVICE_REFUSED)
     print(call_line(d, time.time() - t0), file=sys.stderr, flush=True)
+    if d.get("is_error") and not d.get("total_cost_usd"):
+        print(f"model call refused by the service: {d.get('result')}", file=sys.stderr, flush=True)
+        sys.exit(SERVICE_REFUSED)
     if d.get("is_error"):
         sys.exit(f"model call failed: {d.get('result')}")
     return d["result"], d["total_cost_usd"]

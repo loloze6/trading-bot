@@ -57,6 +57,14 @@ budget is reached. Its cost counts in the run's spend. Each call is one line in 
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.
 
+**A refused model call is not a failure of the idea** (2026-11-21, night 3: the account's usage limit refused every
+call; the loop marked 138 untested ideas failed in minutes, and turned one idea about 4,000 times). A helper whose model
+call the service refused (it never ran: a usage limit, an outage; `common/lib.py`, exit code `SERVICE_REFUSED`) stops
+`run_idea` with that code; the loop then writes "not run: the model service refused a call", marks nothing failed, and
+stops; the idea is picked again when the loop is resumed. The components step refused the same way stops the loop too.
+An idea's **latest** outcome line counts: a "retry" line written after a failure, with its reason, makes it a candidate
+again (used once, for the ideas the usage limit marked failed on night 3).
+
 ## When the loop is stopped mid-idea
 An idea whose turn started but whose `run_idea` call did not finish (the operator stopped the loop, the machine
 restarted) is finished first when the loop resumes: `run_idea` is called on it again and skips the steps already done.

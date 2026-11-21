@@ -1,0 +1,109 @@
+## hourly mean return by start hour (bps)
+     bps     t
+h             
+0   1.45  1.60
+1  -1.47 -1.75
+2  -1.75 -2.29
+3  -2.83 -3.89
+4  -0.45 -0.60
+5   1.41  2.01
+6   0.58  0.83
+7   0.99  1.39
+8  -1.59 -2.01
+9  -0.98 -1.28
+10  0.22  0.28
+11  2.43  3.19
+12  1.13  1.32
+13  2.16  2.33
+14 -3.54 -3.77
+15  2.73  3.01
+16  2.63  2.88
+17  0.00  0.00
+18  0.32  0.43
+19  1.19  1.54
+20  0.51  0.63
+21  5.54  6.87
+22  4.42  5.76
+23 -0.24 -0.30
+
+## hourly mean by weekday (bps/h)
+     bps     t
+wd            
+0   0.01  0.02
+1  -0.23 -0.51
+2   1.28  2.76
+3  -0.76 -1.70
+4   1.51  3.30
+5   2.07  5.57
+6   0.49  1.25
+
+## 72h past -> next 72h: by past-return quintile
+       n      Fz   Fu_bps
+Pq                       
+0   1108  0.0243  21.9881
+1   1108 -0.0467 -38.4150
+2   1107 -0.0945 -83.9156
+3   1108  0.0050   3.3333
+4   1108  0.0656  59.9293
+
+## 72h past -> next 72h: big moves: future in move dir by concentration third
+   split  low3_Fdir     mid  high3_Fdir  hi_minus_lo  welch_t  n_each  low3_bps  high3_bps
+0   conc     0.0424 -0.0138     -0.0014      -0.0438  -0.8391     923   32.6648     1.4085
+1  vconc     0.0339  0.0194     -0.0260      -0.0599  -1.1492     923   35.4008   -25.9395
+
+## 72h past -> next 72h: big moves by side and conc third (raw Fz)
+   side  conc_third    n     Fz      t     bps
+0     1           0  528  0.107  2.191  86.583
+1     1           1  480 -0.026 -0.521  -9.089
+2     1           2  454 -0.009 -0.172  -6.565
+3    -1           0  395  0.044  0.654  39.407
+4    -1           1  443  0.001  0.014   6.970
+5    -1           2  470 -0.006 -0.133  -9.111
+
+## 72h past -> next 72h: by past vol third: future total
+         n   F_bps     Fz
+volt                     
+0     1846  25.511 -0.018
+1     1846  20.522 -0.020
+2     1847  54.827  0.010
+
+## 72h past -> next 24h: by past-return quintile
+       n      Fz   Fu_bps
+Pq                       
+0   3365  0.0167   9.5381
+1   3362 -0.0489 -24.4970
+2   3360 -0.0169 -11.0623
+3   3362  0.0042   1.9113
+4   3365  0.0200  12.2452
+
+## 72h past -> next 24h: big moves: future in move dir by concentration third
+   split  low3_Fdir     mid  high3_Fdir  hi_minus_lo  welch_t  n_each  low3_bps  high3_bps
+0   conc     0.0022  0.0019       0.024       0.0218   0.7042    2803    1.7924    13.1609
+1  vconc     0.0200  0.0022       0.006      -0.0140  -0.4566    2803   10.3311     3.0512
+
+## 72h past -> next 24h: big moves by side and conc third (raw Fz)
+   side  conc_third     n     Fz      t     bps
+0     1           0  1593  0.025  0.924  12.688
+1     1           1  1445 -0.001 -0.048   0.355
+2     1           2  1319  0.022  0.742  14.284
+3    -1           0  1210  0.028  0.725  12.553
+4    -1           1  1355 -0.005 -0.168  -1.158
+5    -1           2  1485 -0.026 -0.874 -12.164
+
+## 72h past -> next 24h: by past vol third: future total
+         n   F_bps     Fz
+volt                     
+0     5604   5.951 -0.017
+1     5603   8.431 -0.009
+2     5607  21.937  0.011
+
+## book daily mean by weekday (bps)
+    book_return  coin_return
+wd                          
+0         -4.79        -0.98
+1         -4.23       -12.35
+2         -4.21        27.59
+3         -4.78       -17.98
+4         -3.88        33.03
+5          1.92        45.41
+6         -7.66         8.75

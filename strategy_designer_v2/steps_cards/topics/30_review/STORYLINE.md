@@ -167,4 +167,4 @@ working branch. Two "positive" hourly books from the defect set aside; the payin
 ## Links
 Runs: `runs/D_LINE_1H_RUN.md`, `runs/D_LINE_1H_V2_RUN.md`, `runs/HOLDING_NIGHT_RUN.md`, `runs/HOLD2_AND_PILOT_RUN.md`.
 Topics: 08, 30 (umbrella), 31, 32, 33, 34, 35, 36, 37. Code: `trading-bot/core/holding_period.py`,
-`common/book_diagnosis.py`.
+`topics/34_review/book_diagnosis.py`.

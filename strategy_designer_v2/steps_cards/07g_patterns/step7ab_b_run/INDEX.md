@@ -1,0 +1,10 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d: 5 ideas (2 explorations)
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d: 1 ideas (2 explorations)
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d3_ten-day-rebound-after-falls_1d: no ideas: Across about 35 angles (the move's size at 5, 10 and 20 days; trend, momentum, volatility, distance from highs, weekday, year; the book's positions, days and trades), no pattern grades the coin's next move clearly enough to stand out from chance. The book's gain is the coins' drift, net of negative timing.
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound_1h: 3 ideas (2 explorations)
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_one-day-fall-next-day-rebound_1h: 3 ideas (3 explorations)
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h: 3 ideas (2 explorations)
+016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising_1h: 2 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d1_extreme-two-hour-move-reverses_1h: 1 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d2_extreme-daily-run-reverses_1h: 2 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d3_midnight-settlement-daily-reversal_1h: 2 ideas (2 explorations)

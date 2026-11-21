@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean (72-bar forward excess return x forecast/10), non-overlapping grid, pooled",
+    "value": 0.009387703160096614,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.552793261550284
+    },
+    "threshold": "confirm t >= 2 with supporting check passing; reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 72-bar return of cells with forecast above median positive forecast minus that of zero-forecast cells",
+    "value": 0.03201135936882241,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 450,
+    "grid cases with a zero forecast": 279,
+    "grid cases in product": 729
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The drift is each coin's mean 72-bar return over the non-overlapping grid of all its windows; the median of positive forecasts is taken over all pooled grid cells with a positive forecast; the plan's 'fewer than 200 cases' rule is treated as a minimum count giving 'not observable'."
+}

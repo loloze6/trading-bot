@@ -110,3 +110,45 @@ B, whether an idea repeats a daily idea already tested (its text against the run
 
 **Limits:** 11 and 9 ideas; a difference of one or two profitable ideas is noise. Read with the sizes against the cost,
 not with the profitable count alone.
+
+## End to end: reading (2026-11-21, 02:50 Paris; B 12.3 USD and 104 minutes here, B′ 7.66 USD and 64 minutes in its own session)
+
+| | B (the information and the sentence) | B′ (the information only) |
+|---|---|---|
+| Ideas | 11 | 9 |
+| Testable (a plan) | 10 (1 missing a component) | 6 (2 missing components, 1 untestable) |
+| Confirmed (step 5) | 7 | 3 |
+| Profitable enough (step 6) | **3** | **0** |
+| Profitable at the costs before topic 38 (rerun, same plans) | 2 | 0 |
+| Held on the unseen dates | 2016-17: 2 of 3; 2026: 1 of 1 daily (hourly data ends in 2025) | - |
+
+Each confirmed idea's size against its record's cost (step 5's `size.json`; the cost from the manifests):
+| Set | Idea | Horizon | Total move per case | Unusual move | Strength | Cost of a buy and a sell | Total / cost | Step 6 |
+|---|---|---|---|---|---|---|---|---|
+| B | one-day reversal against the trend (1d, BTC and ETH) | 1 day | +0.28 % | +0.27 % | 0.069 | 0.11 % | 2.6 | profitable (fails Calmar at the old costs) |
+| B | five-day rise keeps going (1d, BTC and ETH) | 3 days | +0.63 % | +0.25 % | 0.038 | 0.11 % | 6.0 | profitable |
+| B | weekly rise keeps running (1h) | 3 days | +0.36 % | −0.04 % | −0.006 | 0.19 % | 1.9 | profitable |
+| B | one-day fall, next-day rebound (1h) | 1 day | +0.27 % | +0.12 % | 0.025 | 0.19 % | 1.4 | no |
+| B | extreme two-hour move reverses (1h) | 1 day | +0.08 % | +0.08 % | 0.016 | 0.19 % | 0.4 | no |
+| B | extreme daily run reverses (1h) | 1 day | +0.06 % | +0.06 % | 0.013 | 0.19 % | 0.3 | no |
+| B | midnight settlement, daily reversal (1h) | 1 day | +0.13 % | +0.14 % | 0.030 | 0.19 % | 0.7 | no |
+| B′ | four-hour volatile evening rise (1h) | 4 hours | +0.11 % | +0.09 % | 0.043 | 0.19 % | 0.6 | no |
+| B′ | volatile settlement move reverses (1h) | 8 hours | +0.11 % | +0.11 % | 0.038 | 0.19 % | 0.6 | no |
+| B′ | volatile two-hour overreaction reverses (1h) | 8 hours | +0.13 % | +0.13 % | 0.048 | 0.19 % | 0.7 | no |
+
+**Outcome K1: B pays more; keep the sentence.** 3 of B's 11 ideas pay (2 at the old costs), 0 of B′'s 9.
+
+**Why, in the sizes.** B′'s way (a stronger situation at the same horizon) did make its ideas stronger: its 3 confirmed
+ideas have a strength of 0.04 to 0.05, at the level of real ideas (F10), against 0.01 to 0.03 for B's 1-day reversal
+ideas. But at 4 to 8 hours that strength gives a move of 0.6 to 0.7 times the cost: a stronger situation is not enough
+under a day. B's way (a longer horizon) is what makes the move larger than the cost: all 3 paying ideas hold for 1 to
+3 days, at 1.9 to 6 times the cost. The rule F10 states held on both sets.
+
+**What to watch, confirmed.** 2 of B's 3 paying ideas are general momentum (a 5-day rise, a weekly rise, kept for 3
+days), the drift noted in B; one of them (weekly rise, 1h) pays with an unusual move below zero, by being long when
+the coins rise, not by its cases; it still beats holding the coin (step 6's check). The third (a 1-day reversal against
+the trend, BTC and ETH only) is the only new kind, and it depends on the new costs (it fails Calmar at the old ones).
+
+**Proposed for the findings register (operator's go):** F12, "a stronger situation raises an idea's strength to that
+of real ideas (0.04 to 0.05), but under a day the move stays below the cost (0.6 to 0.7 times at 4 to 8 hours); a
+longer horizon is what makes it cover the cost" (this run).
