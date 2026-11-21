@@ -21,13 +21,15 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds | 018-05_hourly-plunge-loss-before-close | missing-components | - | - | - | - | 0.06 | 0.4 |
 | 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound | 018-06_hourly-plunge-multiday-continuation | plan | rejected (-86.92) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c2_deep-plunge-half-day-rebound; 7.d: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.d1_plunge-rebound-in-hot-volatility, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.d2_fast-plunge-next-day-rebound, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.d3_extreme-plunge-sharp-rebound; 7.g: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.g1_extreme-plunge-convex-rebound, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.g2_violent-plunge-stronger-rebound | 1.36 | 12.1 |
 | 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound | 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound | plan | inconclusive (+1.92) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.b1_hourly-plunge-rebound-more-coins, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.b2_overnight-plunge-next-day-rebound, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.b3_dip-in-uptrend-five-day-rebound; 7.d: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.d1_turbulent-week-plunge-rebound, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.d2_calm-week-plunge-continues-falling, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.d3_dip-inside-weekly-surge; 7.g: 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.g1_volatile-spell-plunge-next-day-rebound, 018-06_hourly-plunge-multiday-continuation.d1_hourly-plunge-next-day-rebound.c1_deep-plunge-next-day-rebound.g2_long-scale-plunge-next-day-rebound | 1.44 | 12.4 |
+| 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades | 018-04_hourly-surge-multiday-continuation | missing-components | - | - | - | - | 0.06 | 0.3 |
+| 018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge | 018-05_hourly-plunge-loss-before-close | missing-components | - | - | - | - | 0.06 | 0.5 |
 
 ## Consumption
-17 ideas, 16.35 USD, 154.0 minutes in all.
+19 ideas, 16.47 USD, 154.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.90 | 11.3 |
+| step3_plan | 2.02 | 12.2 |
 | step4_backtest | 0.00 | 83.5 |
 | step5_verdict | 1.75 | 7.8 |
 | step6_check | 0.00 | 1.2 |
