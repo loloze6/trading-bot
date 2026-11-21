@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar unusual move in the short direction per bet case",
+    "value": 0.0011607209057936667,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.527991627966863
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 independent cases; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half",
+    "value": 0.004785066748936757,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 2058
+  },
+  "decided_by": "t of the mean unusual move lies between -2 and 2",
+  "reading": "situation taken as raw component > 0 with a negative forecast; a bet is a rise of |forecast| on the short side of >= 2 points from its lowest size since the last bet (reset to 0 when flat or long); each 5-bar grid cell's case is its first bet; the larger half is |forecast| strictly above the median, the smaller half at or below it"
+}

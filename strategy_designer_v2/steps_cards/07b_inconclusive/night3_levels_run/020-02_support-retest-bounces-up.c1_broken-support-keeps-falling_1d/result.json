@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3270561,
+  "findings": {
+    "F1": "The tested effect is on the predicted side but almost nil. The mean 5-day unusual move in the short direction is +0.12 % per case (t 0.53, 2058 cases), a strength of 0.005 of the coin's usual 10.6 % move. That is a tenth of the about 0.05 that real ideas usually show (F10 of the findings), and 0.6 times the 0.19 % cost of a round trip, so the book could not pay even if the effect were proven (F11).",
+    "F2": "The result is drowned by the market's own yearly direction. The sign of the unusual move per case follows the year. It is positive in 2018 (+1.47 %, t 2.04), 2019 (+1.58 %, t 2.97), 2022 (+1.08 %, t 1.92) and 2025 (+0.80 %, t 1.66). It is negative in 2020 (-1.82 %, t -2.83), 2021 (-1.46 %, t -1.72), 2023 (-0.86 %, t -1.79) and 2024 (-0.67 %, t -1.45). Over 10 days the swing widens, from +4.9 % (t 4.72) in 2018 to -3.3 % (t -2.63) in 2020. The short bet mainly earns the falling years against a drift taken over all windows.",
+    "F3": "The effect is not concentrated in any part of the data that a condition could isolate:",
+    "F4": "The grading is weak and not monotone. The plan's supporting check passes (+0.48 % larger half minus smaller half), but the lowest |forecast| quartile is at -0.48 % (t -1.16) and the higher ones only +0.24 % to +0.34 % (t \u2264 1.10). By quartile of the raw cluster count, the means are 0.01 %, -0.17 %, +0.63 % and -0.01 %, with no ordering.",
+    "F5": "The move grows with the horizon instead of fading. Measured from the same 2058 signal cases, the mean unusual move is -0.01 % at 1 day, -0.08 % at 3 days, +0.12 % at 5 days, +0.69 % at 10 days (t 2.00, 1966 cases) and +0.66 % at 20 days (t 1.17). The 10-day returns overlap on the 5-day grid, so their independent cases are about half that number and their true t is lower. This matches F9 of the findings: moves that outlast the stated horizon."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "broken support, more coins",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ],
+      "idea": "When a coin's daily close sits just below prices where it turned up several times in the past 90 days, it tends to fall over the next 5 days, and the more such past turning-up lows lie just above the close, the larger the fall.",
+      "consequence": "A close just under a support that held several times is a reason to be short or to refuse a long for the next days, because the stops placed under the level drive the move further down.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin's daily close sits just below prices where it turned up several times in the past 90 days, it tends to fall over the next 10 days, and the more such past turning-up lows lie just above the close, the larger the fall.",
+      "consequence": "A close just under a support that held several times is a reason to be short or to refuse a long for the next ten days, not only the next five, because the selling from broken stops takes more than a week to play out.",
+      "name": "broken support, ten-day fall",
+      "from": "F5, F1, F2",
+      "refs": [
+        "F5",
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins",
+    "020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall"
+  ],
+  "no_ideas": null
+}
