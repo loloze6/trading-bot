@@ -7,3 +7,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h
 - Component: PullbackInMeanRangesComponent: max(0, H − close[t]) / B, where H = max(high[t-12..t-1]) and B = mean(high[i] − low[i]) over the last 180 bars including bar t, from the high, low and close columns; 0 at or above the prior high, growing linearly as the close sits deeper below it, in mean bar ranges | measures: situation
+
+## 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend_4h
+- Component: NarrowRangeBreakdownComponent: max(0, L − close[t]) / close[t] x 100 x B / S, from high, low and close, where L = min(low[t-12..t-1]), S = max(high[t-12..t-1]) − L, and B = mean(high − low) over the last 180 bars; 0 at or above the prior low, rising with the depth of the break and with how narrow the stretch is against B (to be negated for the short side) | measures: comparison

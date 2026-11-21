@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins_4h
+idea tested: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.5267 USD
+---
+## Findings
+- **F1:** The tested idea's gain sits only in the largest upward breaks: in a rising week, the top fifth of breaks by size gains +2.71 % unusual over 6 days (t 3.36, 682 cases, strength 0.17, 16 of 19 coins positive), while the other four fifths range from -0.40 % to +0.69 % (all |t| < 1), and the rank correlation of break size with the 6-day move is only 0.05 (p 0.003).
+- **F2:** That top-size gain is mostly from the early years. Up to 2021 the largest breaks gain +3.54 % (t 3.26, 461 cases); from 2022 on they gain +0.46 % (t 1.06, 903 cases). When cases on the same 6-day dates are pooled, the t falls to 1.26, so the effect is shared across coins on a few dates.
+- **F3:** A 4h close below the 2-day low while the 7-day return is positive is followed by a fall when the preceding two days were quiet. After the quietest fifth of ranges the unusual move over 6 days is -2.61 % (t -3.90, 351 cases, strength -0.19, 18 of 19 coins negative), already -1.08 % at 3 days (t -2.75).
+- **F4:** The F3 effect is graded by how wide the preceding ranges were: rank correlation 0.114 (p 1.6e-6, 1752 cases) between range width and the 6-day move.
+- **F5:** At the other end of F3, the same downward breaks after the widest fifth of ranges gain +2.46 % over 6 days (t 3.27, 351 cases, 2 of 19 coins negative).
+- **F6:** The F3 fall holds in both halves of the record for the quietest 40 %: -1.91 % (t -2.17) up to 2021 and -1.43 % (t -3.02) from 2022. Pooled by 6-day date, its t is only -1.52, so it is partly shared across coins.
+- **F7:** The quietness gradient appears only in rising weeks. For downward breaks in falling weeks, the quietness fifths range from -0.74 % to +0.52 % over 6 days (all |t| < 1.6).
+- **F8:** For upward breaks in rising weeks, the brief's quiet-range premise does not show. The quietest fifth gains -0.72 % (t -1.34) and the widest fifth +2.02 % (t 2.48), but the rank correlation is 0.026 (p 0.13), so the pattern is not distinguishable from chance.
+- **F9:** The book's gain rests on a few days: its 10 best days add up to 38 % of the summed daily gain and its 10 worst days remove 36 %. It earned less than holding in 2020, 2021, 2023 and 2024, and more than holding in 2018 (+0.009 % vs -0.35 % a day) and 2022 (-0.15 % vs -0.26 %).
+- **F10:** The 4h bar starting at 16:00 UTC gains an unusual +0.073 % (t 6.6, about 37 200 bars) and the one at 00:00 UTC +0.042 % (t 4.3). Both are a fraction of the 0.22 % round trip, so they cannot pay on their own (findings F2 and F11).
+- **F11:** The verdict's supporting check could not be measured: all 3662 cases fell in the smaller-forecast half, so the forecast is tied at its median. Its gradient by size can only be read from F1.
+
+## Ideas
+- `019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins.g1_quiet-breakdown-in-rising-week` (from F3, F4, F6, F7): When a coin's 4h close falls below the lowest low of its preceding two days while its 7-day return is positive, the coin falls over the next six days. The narrower the preceding two days' 4h ranges are relative to its 30-day average 4h range, the larger the fall.
+- `019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation.b1_two-day-breakout-more-coins.g2_wide-range-dip-rebound` (from F4, F5, F7): When a coin's 4h close falls below the lowest low of its preceding two days while its 7-day return is positive, the coin rises over the next six days. The wider the preceding two days' 4h ranges are relative to its 30-day average 4h range, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
