@@ -1,0 +1,2 @@
+022-01_learned-combined-signal-score_1d: missing-components: Everything the idea needs comes from one coin's own closes: the four signals, and each signal's past relation to the [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+022-02_combination-beats-best-single_1d: missing-components: The four single signals exist in the catalogue (`PriceEvolutionComponent` 28 and 1, `DistanceFromHighComponent` 90 proximity, `VolatilityFromStdDevComponent` 30). Weights learned from [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
