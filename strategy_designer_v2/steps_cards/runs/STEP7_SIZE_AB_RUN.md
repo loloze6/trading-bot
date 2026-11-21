@@ -88,3 +88,25 @@ information is enough and the paragraph goes; like A, the paragraph does the wor
 about 3 times the usual strength; their own evidence claims moves of 20 to 45 bps against a 22 bps round trip,
 close to the cost. One analysis per case and version: the counts of 3-day ideas (6 against 0) are a clear difference,
 one idea more or less is not.
+
+## End to end: do B's or B′'s ideas pay? (2026-11-21, written before the run; operator's go)
+
+**Purpose (the operator):** "tell us whether to keep the sentence. Each set bets on a different way to make the move
+larger: a longer horizon (B) or a stronger situation (B′)." B's 11 ideas and B′'s 9 through steps 3 to 7 with
+`run_idea`, unchanged, on today's engine (the holding period, speed A to D) and today's costs (topic 38: BTC and ETH
+much cheaper than before, XMR dearer). Two runs, side by side: `step7ab_b_run` (this session), `step7ab_bp_run` (a
+session of its own); lists in `runs/step7_size_ab/e2e/`. Both sets meet the same engine and costs.
+
+**Measures, per set:** ideas testable (step 3 gives a plan); confirmed (step 5); the size of each confirmed idea against
+its record's cost (step 5's `size.json`, the manifests); profitable enough (step 6); holds on the unseen dates; and, for
+B, whether an idea repeats a daily idea already tested (its text against the runs' tables). Cost and time per set.
+
+**Expected outcomes:**
+| Outcome | What the counts would show | Meaning |
+|---|---|---|
+| K1. B pays more | clearly more of B's ideas are profitable enough than B′'s | the longer horizon is what makes the move larger: keep the sentence |
+| K2. B′ pays as much or more | B′ has as many profitable ideas as B, or more | the stronger situation is enough, closer to the brief's theory: drop the sentence (simpler) |
+| K3. Neither pays | 0 or 1 profitable idea in each set | this test does not decide; read the sizes of the confirmed ideas: the set whose confirmed ideas cover the cost more often points the way; the lever may be step 1 (the brief) |
+
+**Limits:** 11 and 9 ideas; a difference of one or two profitable ideas is noise. Read with the sizes against the cost,
+not with the profitable count alone.
