@@ -12,6 +12,7 @@
 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall_1d: 2 ideas (1 explorations)
 021-03_thin-cloud-upward-breakout.d1_momentum-backed-breakout-longer-hold_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+021-03_thin-cloud-upward-breakout.d2_calm-breakout-lasts-longer_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-03_thin-cloud-upward-breakout_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 021-04_thin-cloud-downward-breakdown_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
