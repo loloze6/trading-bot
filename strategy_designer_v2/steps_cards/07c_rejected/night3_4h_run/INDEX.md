@@ -8,4 +8,5 @@
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 019-03_upward-breakout-quiet-continuation_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
