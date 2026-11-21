@@ -46,3 +46,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 39 | [The idea's size against the cost, coin by coin](39_size-against-cost-per-coin.md) | research: steps 5, 7 | open (parked: about 2 points of accuracy gained; reopen with topic 31) |
 | 40 | [Repository clean-up, night 3](40_repository-clean-up-night-3.md) | the repository | part done (bets in `common/`, the diagnosis in `34_review/`); 3 changes proposed |
 | 41 | [Does a paying idea add anything beyond the filter it trades under?](41_does-the-idea-add-beyond-its-filter.md) | research: step 6 / unseen test, steps 3, 7 | open (proposed by night 3) |
+| 42 | [Two more measures for step 6: standard deviation and total profit](42_two-more-measures-for-step-6.md) | research: step 6 | open (parked) |
