@@ -18,7 +18,8 @@ a PC or a phone.
 **A view of a run is the run's purpose, its briefs, and its ideas as a family tree, each tested idea showing its steps
 in order with one result per step, and the run's cost and time.**
 
-- One idea's card in the tree: its title, the idea in one sentence (three lines at most), then its results in words:
+- One idea's card in the tree: its title with its bar size (its backtests' when tested, else the `bar:` line of its file;
+  operator, 2026-11-21), the idea in one sentence (three lines at most), then its results in words:
   step 3 only when it refused, step 5's verdict with its t, step 6's with its Sharpe (operator, 2026-11-19). Tap it:
   the detail.
 - The detail of a tested idea: its text; step 3's reason; step 5's measure, t and "decided by"; step 6's measures with the

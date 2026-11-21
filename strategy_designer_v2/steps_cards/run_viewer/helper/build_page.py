@@ -318,6 +318,8 @@ def build_run(cards, run, files):
                     "dated": first[0] if first else None,
                     "text": body.strip() or None, "statement": labelled(body, "Idea:"),
                     "backtests": sorted(b for b in backtests if backtests[b]["idea"] == i),
+                    # the bar size: its backtests' (what was run), else the one its file states (what will be run)
+                    "bars": sorted({bar_of(b) for b in mine}) or ([fm["bar"]] if fm.get("bar") else []),
                     "queue": {"status": q.get("status"), "score": q.get("score")} if q else None,
                     "turn": turn_by.get(i)}
     for i in ideas.values():

@@ -37,6 +37,7 @@ def cards(tmp_path):
     w(c / f"03_test_plan/x_run/plans/{CHILD}_1d.md",
       f"---\nidea: {CHILD}\noutcome: missing-components\n---\nFidelity:\n- x\nReason: No component reads volume.\nIt stops here.\n")
     w(c / "03_test_plan/x_run/plans/INDEX.md", "not a plan\n")
+    w(c / f"02_ideation/x_run/ideas/{WAITING}.md", "---\nbrief: 001\nbar: 4h\n---\nIdea: A fall rebounds.\n")
     # two windows, given out of time order on purpose: w1 ends after w2
     window(c, f"{ROOT}_1d", "BTCUSD", 1, 10.0, "2021-04-30 00:00:00")
     window(c, f"{ROOT}_1d", "ETHUSD", 1, 20.0, "2021-04-30 00:00:00")
@@ -98,6 +99,8 @@ def test_tree_follows_the_ids(cards):
     assert r["ideas"][CHILD]["line"] == "7.b" and r["ideas"][WAITING]["line"] == "7.g"
     assert r["ideas"][WAITING]["queue"] == {"status": "candidate", "score": 0.2} and r["ideas"][WAITING]["backtests"] == []
     assert r["ideas"][ROOT]["statement"] == "A rise continues."
+    # bar size: from the backtest's id when tested, else from the idea file's bar: line
+    assert r["ideas"][ROOT]["bars"] == ["1d"] and r["ideas"][CHILD]["bars"] == ["1d"] and r["ideas"][WAITING]["bars"] == ["4h"]
     assert r["ideas"][ROOT]["turn"] == {"turn": 1, "why": "rank 1"}
 
 

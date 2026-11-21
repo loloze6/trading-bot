@@ -217,7 +217,7 @@ function node(r, id, depth, maxDepth){ const i = r.ideas[id];
     ? `<details><summary>${below(r, id)} more ideas below</summary>${tree(r, i.children, depth + 1, 0)}</details>`
     : tree(r, i.children, depth + 1, maxDepth);
   return `<li><a class="node ${i.backtests.length ? "" : "untested"}" href="${href(r.name, id)}">
-    <div><span class="t">${esc(i.title)}</span></div>${i.statement ? `<div class="small stmt">${esc(i.statement)}</div>` : ""}
+    <div><span class="t">${esc(i.title)}</span> ${(i.bars || []).map(x => `<span class="chip bar">${esc(x)}</span>`).join("")}</div>${i.statement ? `<div class="small stmt">${esc(i.statement)}</div>` : ""}
     <div>${ideaChips(r, i)}</div></a>${kids}</li>`; }
 
 // maxDepth 0: ideas with a test in their branch first, the others folded; maxDepth n: n levels open, deeper folded
