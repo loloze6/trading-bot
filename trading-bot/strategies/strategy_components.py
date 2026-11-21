@@ -3967,3 +3967,59 @@ class HighProximityScaledReturnComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.period, self.window + self.return_period)
+
+
+class MeanAbsScaledReturnComponent(SubStrategyComponent):
+    """
+    The period-bar return in multiples of the coin's usual period-bar move, on every bar:
+
+        r(i) = close[i] / close[i - period] - 1
+        m    = mean(abs(r(i)) for i = t - window + 1 .. t)       (overlapping returns, bar t included)
+        raw_value = r(t) / m        (0.0 when m = 0)
+
+    Graded and signed like the period-bar return: negative after a fall, more negative the deeper the fall in
+    usual moves; positive after a rise. Its size is at most `window`, because r(t) is one of the averaged returns.
+    Warm-up: window + period rows, bar t included (the oldest return needs close[t - window + 1 - period]).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + period rows of data, the last
+    row being bar t; a bar's close is known at that bar's close.
+
+    NaN: a NaN close in the last window + period rows gives NaN, and so does a close not above 0 there (never on
+    real bars). m = 0 (every return flat, never on real bars) gives 0.0; the return is then 0 as well.
+    Building the component raises for a period below 1 or a window below 1.
+    """
+
+    def __init__(self, name="MeanAbsScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 24))
+        if self.period < 1:
+            raise ValueError(f"MeanAbsScaledReturnComponent: period must be >= 1, got {self.period}")
+        self.window = int(self.parameters.get("window", 720))
+        if self.window < 1:
+            raise ValueError(f"MeanAbsScaledReturnComponent: window must be >= 1, got {self.window}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[self.period:] / c[:-self.period] - 1.0
+        m = float(np.mean(np.abs(r)))
+        ret = float(r[-1])
+        self._raw_value = float(ret / m) if m > 0 else 0.0
+        self.confidence = 1.0
+        self.debug_info = {'return': ret, 'mean_abs_return': m}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.window + self.period

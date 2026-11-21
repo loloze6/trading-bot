@@ -27,21 +27,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends | plan | inconclusive (+1.77) | profitable enough | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.b1_monthly-rise-on-more-coins, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.b2_monthly-rise-one-week-continuation; 7.e: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.g1_weekly-rise-two-week-continuation, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.g2_daily-plunge-three-day-rebound | 1.37 | 11.7 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation | plan | confirmed (+2.93) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation.g1_weekend-continues-the-week | 0.84 | 11.3 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation | plan | inconclusive (-0.28) | not profitable enough (failed: Calmar) | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.b1_strong-week-at-monthly-high; 7.d: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.d1_strong-week-in-rising-month, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.d2_strong-week-near-monthly-high, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.d3_breakout-week-on-expanding-volatility; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.g1_sharp-daily-fall-rebounds, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising.g2_volatile-regime-plunge-rebound | 1.68 | 11.0 |
+| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation | plan | inconclusive (+1.27) | profitable enough | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years.b1_monthly-continuation-more-coins, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years.b2_monthly-rise-three-day-continuation; 7.e: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years.e1_one-year-trend-sets-the-month, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years.e2_rebounds-fade-in-falling-years; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years.g1_near-monthly-high-in-up-years | 1.09 | 22.4 |
 
 ## Consumption
-23 ideas, 22.80 USD, 281.3 minutes in all.
+24 ideas, 23.89 USD, 303.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.09 | 83.3 |
-| step4_backtest | 0.00 | 115.0 |
-| step5_verdict | 2.44 | 10.8 |
-| step6_check | 0.00 | 1.5 |
-| chart_files | 0.00 | 2.0 |
+| step3_plan | 3.15 | 83.7 |
+| step4_backtest | 0.00 | 132.7 |
+| step5_verdict | 2.58 | 11.3 |
+| step6_check | 0.00 | 1.6 |
+| chart_files | 0.00 | 2.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.38 | 1.5 |
-| step7_7.e | 0.88 | 3.2 |
-| step7_7.b | 4.01 | 14.0 |
+| step7_7.e | 1.20 | 4.9 |
+| step7_7.b | 4.21 | 14.6 |
 | step7_7.d | 4.56 | 16.2 |
-| step7_7.g | 7.43 | 25.9 |
+| step7_7.g | 7.82 | 27.2 |
 | unseen_test | 0.00 | 7.8 |
