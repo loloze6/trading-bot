@@ -16,6 +16,7 @@
 019-03_upward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
+019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend_4h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]
 019-04_downward-breakout-quiet-continuation_4h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 4h, folds A, B, C, D]

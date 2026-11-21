@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9997204361196533,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar unusual move of long cases (return minus coin drift)",
+    "value": 0.006365716227316642,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.8904133925297817
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passing; reject: mean < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "wider-minus-narrower half mean unusual move (Welch t > 0)",
+    "value": 0.008428358570082421,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 2556,
+    "wider half cases": 1278,
+    "narrower half cases": 1278,
+    "active bars checked": 3577
+  },
+  "decided_by": "Mean unusual move positive with t >= 2 and wider-minus-narrower Welch t > 0: confirm rule met.",
+  "reading": "Situation recomputed per window as close below the min low of the 12 prior bars and close/close[t-180]-1 > 0, agreement taken over active bars where both can be computed inside the window (1057 active bars without 180 bars of in-window history left out); cases are long bets (forecast rise >= 2 points from its low since the last bet), the first per 18-bar grid cell of each window, with an in-window 18-bar return; drift is the coin's mean non-overlapping 18-bar return over all its windows; the wider half is cases with entry forecast above the pooled median, the narrower half those at or below it; fewer than 100 cases gives 'not observable'."
+}

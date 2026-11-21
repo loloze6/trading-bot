@@ -13,6 +13,7 @@
 019-03_upward-breakout-quiet-continuation_4h: not profitable enough [Sharpe 0.8977; Sharpe minus holding's Sharpe 0.3439; Calmar 0.7487]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins.b1_quiet-breakdown-in-downtrend_4h: not profitable enough [Sharpe 0.01978; Sharpe minus holding's Sharpe -0.5874; Calmar -0.07886]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins_4h: not profitable enough [Sharpe -0.3897; Sharpe minus holding's Sharpe -0.9969; Calmar -0.08681]
+019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins_4h: not profitable enough [Sharpe 0.9108; Sharpe minus holding's Sharpe 0.3036; Calmar 0.4849]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend_4h: not profitable enough [Sharpe 0.7567; Sharpe minus holding's Sharpe 0.203; Calmar 0.4721]
 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend_4h: not profitable enough [Sharpe -0.2273; Sharpe minus holding's Sharpe -0.781; Calmar -0.06895]
 019-04_downward-breakout-quiet-continuation_4h: not profitable enough [Sharpe -0.6083; Sharpe minus holding's Sharpe -1.162; Calmar -0.1347]
