@@ -1,0 +1,26 @@
+---
+line: 7.d not profitable
+backtest: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score_1d
+idea tested: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4121 USD
+---
+## Findings
+- **F1:** The book failed on its size, not its sign: it earns 0.00029 a day against the 0.0005 required and has a Calmar of 0.746 against 0.75; its deepest fall is 14.1 %, a slow bleed over 662 days from w4 to w9 (windows 5, 7 and 9 have negative mean book returns), not a crash, while holding earns 0.00118 a day.
+- **F2:** Almost all the gain is timing (3.14 bps per bar out of 3.23; the market's rise gives 0.09) on a small position (mean absolute allocation 0.17). The long bars (8513) earn 6.1 bps each and the short bars (8660) only 0.4 bps, so half the book's exposure carries nothing.
+- **F3:** The equal four-signal score dilutes the effect: its product with the 5-day excess return has t 0.81 on 3419 grid cases. Momentum plus nearness to the 90-day high reaches t 2.10, and 28-day momentum alone t 1.95, while minus volatility gives t -0.17 and the 1-day reversal t -1.47, the wrong sign.
+- **F4:** The forecast's 5-day excess return does not rise steadily with the forecast. It is -0.56 % in the -5 to -2 bin, +0.59 % in the 2 to 5 bin and -0.13 % in the 5 to 10 bin (171 cases), so the largest positions are not on the largest moves.
+- **F5:** Momentum's effect sits in its strongest rises. By 28-day-momentum quintile the 5-day excess return is -0.10 %, -0.32 %, -0.41 %, -0.40 %, then +1.22 % in the top quintile (mean 28-day return +42 %, 684 cases). The long side of momentum alone has t 2.08, its short side t 0.41.
+- **F6:** The book earns in rising states only. With the 28-day return in its top third, per-bar gain is 13.8, 5.7 and 8.4 bps for low, mid and high volatility. In the falling and middle thirds it is -1.8 to 3.3 bps, and longs held there earn 9.2 bps per bar against shorts' 0.5 bps in the falling third.
+- **F7:** The book's worst 40 days average -2.07 % against -0.46 % for the coins on those days, so its worst losses come from its own positions, not from falls the coins share.
+- **F8:** Size is not the binding limit: the measured move is +0.96 % per case over 5 days (strength 0.082), 5.0 times the 0.19 % round-trip cost. The weak mean return comes from diluting the signal (F3) and from the short side's dead weight (F2).
+
+## Ideas
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d1_momentum-and-nearness-score` (from F3, F4, F8): When a coin's 28-day return and its closeness to its 90-day high are combined into one score, each weighted equally in its known direction, the coin's return over the next 5 days is higher the higher that score is.
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising` (from F2, F5, F6): A coin's return over the next 5 days is higher the larger its 28-day rise, and the extra return grows faster than the rise, so its largest 28-day rises are followed by its largest 5-day gains.
+- `022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends` (from F2, F6, F7): When a coin's four signals are combined into one score, the coin's return over the next 5 days is higher the higher that score is, only while its 28-day return is up, and there the rise is larger the stronger the score.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

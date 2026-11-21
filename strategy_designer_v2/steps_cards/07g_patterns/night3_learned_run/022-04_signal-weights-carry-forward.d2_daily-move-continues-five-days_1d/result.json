@@ -1,0 +1,18 @@
+{
+  "line": "7.g",
+  "backtest": "022-04_signal-weights-carry-forward.d2_daily-move-continues-five-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38628759999999995,
+  "findings": {
+    "F1": "The tested continuation is not graded and not stable. On the 5-day grid (3419 cases), the 5-day move after the largest fifth of daily moves is +0.025 of a usual move in the day's direction (t 0.59, 655 cases), below the middle fifths (+0.062 and +0.067, t 1.6 to 1.8), and the slope's t swings from -2.49 (2022) to +3.51 (2019) by year; its size is 0.9 times the 0.19 % round-trip cost.",
+    "F2": "The excess return of a single day differs by weekday. Saturday's is +0.30 % (t 3.76, 2479 days), positive on all 6 coins (t 0.35 to 2.44) and in both halves of the windows (t 3.60 in w1-w12, 1.85 in w13-w24), and Thursday's is -0.30 % (t -2.70). Weekends minus weekdays is +0.19 % (Welch t 2.57, 4957 against 12423 days). It is still not steady by year (Saturday t from -1.01 to +2.67).",
+    "F3": "Neither the volume nor the nearness slope holds across the two halves. The 5-day excess return rises with the last day's volume relative to its 60-day mean (t 2.24, 2843 cases; top fifth minus bottom fifth +1.60 %, Welch t 2.37), but its t is 0.31 in w1-w12 and 3.00 in w13-w24. Nearness to the 30-day range high behaves the same way (overall t 2.22; halves 0.47 and 2.58). With 11 features and their fifths examined, a t near 2.2 does not stand out from chance.",
+    "F4": "Trailing 20-day and 60-day momentum, 20-day volatility, the volatility ratio, the day's range and the close's place in its range all show no slope on the 5-day excess move (t from 0.09 to 1.52). The 60-day momentum turns strongly negative in 2018, 2022 and 2023 (t -3.3 to -4.4).",
+    "F5": "The book's largest moves are not carried by the coins. On its worst 2 % of days the book loses 6.09 % while the coins' mean is -1.76 %; on its best 2 % it gains 6.14 % against +0.74 %. Its daily correlation with the coins' mean is 0.04, so its extremes come from sized positions on single-coin swings, not from the market's direction."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The only pattern that clears the many angles examined is the Saturday premium (F2, t 3.76), but it is a calendar condition with no grading and it is unsteady by year; the graded candidates (volume surprise, nearness, F3) hold in only one half of the windows and do not stand out from chance given how many angles were tried."
+}

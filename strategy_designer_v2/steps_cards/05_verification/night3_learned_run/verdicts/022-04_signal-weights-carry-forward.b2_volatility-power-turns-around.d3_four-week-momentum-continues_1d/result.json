@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of demeaned 5-bar forward return on forecast",
+    "value": 0.0003437355005990761,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 2.074497992935014
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and timing gain > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return before costs minus market-rise gain)",
+    "value": 0.0007885607820645378,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 3419
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing gain is above 0.",
+  "reading": "The regression is ordinary least squares with an intercept on all grid bars (positions 0,5,10,... with close[t+5] in the window), the coin mean is the mean of its grid 5-bar returns over all windows, and the book is the daily mean over coins of postRebalance_current_allocation x next-bar return, per window and day."
+}

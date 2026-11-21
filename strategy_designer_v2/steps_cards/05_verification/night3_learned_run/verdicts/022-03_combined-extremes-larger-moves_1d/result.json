@@ -1,0 +1,39 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed unusual 5-bar move, combined top-10% minus best single top-10%",
+    "value": -0.00941459921119717,
+    "statistic": {
+      "name": "Welch t",
+      "value": -1.012458075519666
+    },
+    "threshold": "Welch t >= 2 (with combined beating every single and slope t >= 2) confirms; Welch t <= -2 or slope t <= -2 rejects",
+    "group_means": {
+      "combined": -0.0038392585974031286,
+      "s_momentum": 0.004180315158453125,
+      "s_reversal": 0.005575340613794042,
+      "s_high": -0.008047532372331268,
+      "s_volatility": -0.004088290277352367
+    },
+    "best_single": "s_reversal"
+  },
+  "supporting_check": {
+    "name": "slope t of signed unusual move on abs(combined post_pipeline_value)",
+    "value": 0.6530858382662471,
+    "passed": false
+  },
+  "counts": {
+    "combined top-10% cells": 326,
+    "s_momentum top-10% cells": 326,
+    "s_reversal top-10% cells": 326,
+    "s_high top-10% cells": 326,
+    "s_volatility top-10% cells": 326,
+    "combined cells in regression": 3254
+  },
+  "decided_by": "Neither rule met: Welch t -1.01 vs best single s_reversal, combined beats all singles: False, slope t 0.65.",
+  "reading": "Cells are rows 0,5,10,... of each window with a 5-bar return inside it; each group's top 10% is abs(last_history_value) at or above its pooled 90th percentile over measured cells, signed by that same component's raw value; the best single is the one with the highest mean signed unusual move; and since the minimum-count rule is stated, a group under 30 cases gives 'not observable'."
+}

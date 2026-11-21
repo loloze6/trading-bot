@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d
+idea tested: 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4379 USD
+---
+## Findings
+- **F1:** The rebound after a daily fall depends on how high volatility is at the time. On next-day excess returns after falls (7,151 bars with a negative 30-day-scaled return), the fall × (30-day volatility / 180-day volatility) interaction has a slope of +208 bps with t 4.4, while the fall's own slope turns negative (-163 bps, t -3.5). After falls larger than one usual move, split into quartiles of that volatility ratio, the next day's excess return is -12, +50, +13 and +160 bps (t 4.12, n 265 in the top quartile).
+- **F2:** The gain sits where volatility is high. Falls in the top quartile of the volatility ratio have a strength of 0.34 of a usual daily move, against -0.03 to 0.09 in the other quartiles. Split by the volatility's rank over the past 180 days instead, the next-day excess is +112 bps (t 3.19, n 168) in high volatility and -1 bps (t -0.05, n 326) in low volatility. The cost of a round trip is 19 bps, so +160 bps is about 8 times it.
+- **F3:** The high-volatility rebound does not hold in every year or coin. It is positive in 2018, 2020, 2023 and 2025 (+70 to +207 bps; t 3.59 only in 2023) but negative or flat in 2019 (-99 bps, n 8) and 2024 (+13 bps). It is strongest on ZEC (+190 bps, t 2.64) and ETH (+247 bps, t 1.76), while XMR's rebound comes from normal-volatility falls (+118 bps, t 2.79).
+- **F4:** The rebound fades with the horizon. On non-overlapping grids, the excess return per usual move of fall is +41 bps over 1 day (t 4.7, n 7,151), +48 over 2 days (t 2.8), +58 over 3 days (t 2.2) and +19 over 5 days (t 0.5). Most of the reversal is in the first day.
+- **F5:** Large daily rises continue over the following days rather than reverting. Over 5 days, the excess return after rises has a slope of +106 bps per usual move (t 2.5, n 1,365). By quartile of the rise it is -42, +19, +54 and +174 bps (strength -0.06, 0.02, 0.06, 0.14). Rises above 1.5 usual moves are followed by +214 bps excess and +275 bps total over 5 days (n 175), 11 to 14 times the cost of a trade.
+- **F6:** That continuation is not stable, and with many angles examined it is only marginal. Over 10 days its slope has t 1.96. Rises above 1.5 usual moves lose -187 bps over 5 days in 2022 and -168 bps in 2025, and no single coin reaches t 2 (XRP +635 bps, t 1.57).
+- **F7:** The book holds its bets longer than one day and loses on the average trade. It made 5,950 trades of mean length 2.1 days (median 1), with a mean net result of -0.45 % per trade and 49.5 % winners. Its 2 % worst days follow a prior-day coin fall of -600 bps and coincide with a further -855 bps fall. Its 2 % best days also follow a prior fall (-732 bps), with a +922 bps rebound. The book's outcome is decided by whether a large fall continues or reverses.
+- **F8:** The coins' returns differ by weekday on all bars: Monday -24 bps (t -2.53), Wednesday -30 bps (t -2.70), Thursday +25 bps (t 2.63), Friday +30 bps (t 3.76). This is not graded, sits among many groupings, and is under the cost of a trade, so I propose no idea from it.
+
+## Ideas
+- `022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls.g1_fall-rebound-scaled-by-volatility` (from F1, F2, F3, F4, F7): The larger a coin's 1-day fall compared with its 30-day volatility, the higher its return over the next 1 day, and the more so the higher its 30-day volatility stands against its own 180-day volatility.
+- `022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls.g2_large-rise-multi-day-continuation` (from F5, F6): The larger a coin's 1-day rise compared with its 30-day volatility, the higher its return over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

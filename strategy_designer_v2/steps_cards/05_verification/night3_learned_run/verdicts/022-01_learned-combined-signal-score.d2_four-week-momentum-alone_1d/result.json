@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (5-day return minus coin's normal drift), non-overlapping 5-bar grid, before costs",
+    "value": 0.004468634343009182,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.952116314111648
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 300 grid cases with a non-zero forecast"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a non-zero forecast": 3419,
+    "grid cases": 3419
+  },
+  "decided_by": "Inconclusive rule met: -2 < t < 2 with at least 300 grid cases with a non-zero forecast.",
+  "reading": "The mean and t are taken over every grid cell (bars 0, 5, 10, ... of each window with a 5-bar return inside it, zero-forecast cells contributing 0), the normal drift is each coin's mean 5-bar return over that grid in all its windows, and the 300 minimum is counted on grid cells with a non-zero forecast."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return on Saturday-signal bars",
+    "value": 0.009803043207577633,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 6.078181625553215
+    },
+    "threshold": "confirm: weighted mean > 0 with t >= 2 and correlation > 0; reject: weighted mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Pearson correlation of forecast and next-day excess return",
+    "value": 0.11832933067851964,
+    "passed": true
+  },
+  "counts": {
+    "Saturday bars with forecast > 0": 1250,
+    "Saturday-signal bars": 2478
+  },
+  "decided_by": "The weighted mean excess return is positive with t >= 2 and the correlation is above 0.",
+  "reading": "Situation bars are those whose next day (timestamp + 1 day) is a Saturday with a positive 7-day return (recorded raw value, else recomputed from closes); the t is the ordinary t of the unweighted mean excess return over Saturday-signal bars with forecast > 0, the correlation uses all Saturday-signal bars (regime mean_reversion) with a next-day return, and the plan's minimum of 300 bars is applied as 'not observable'."
+}

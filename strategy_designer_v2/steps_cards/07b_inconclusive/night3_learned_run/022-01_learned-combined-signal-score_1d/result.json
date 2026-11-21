@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "022-01_learned-combined-signal-score_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.49288990000000005,
+  "findings": {
+    "F1": "The learned score points the wrong way at every horizon up to 10 days, not just at the plan's 5 days. The main measure is -0.0007 at 1 day (t -1.53, 16,661 cases), -0.0040 at 5 days (t -1.83, 3,278 cases) and -0.0064 at 10 days (t -1.40, 1,622 cases). Only 20 days is near zero (+0.0039, t 0.43, 794 cases). So the test did not miss the effect by looking at the wrong horizon.",
+    "F2": "The negative result is spread across the data, not caused by one part of it. At 5 days the measure is negative in 5 of 6 coins (XMR alone is positive, +0.0033, t 0.74) and in 6 of 8 years (2019 -0.0118, t -2.25). Long and short cases are both negative (-0.56 %, t -2.10; -0.49 %, t -1.83).",
+    "F3": "Larger scores do not bring larger moves, so the score is not graded. Across the quartiles of the forecast's size, the move in the forecast's direction is -0.46 %, -1.34 %, +0.18 % and -0.45 % (about 820 cases each).",
+    "F4": "The score is most wrong when the coin is calm, not right somewhere else. In the coin's lowest third of 30-day volatility the move in the forecast's direction is -0.98 % (t -3.21, 819 cases), against +0.12 % and -0.10 % in the two higher thirds. The calm-period loss is negative in all 6 coins and strongest in 2019 (-2.7 %, t -3.12) and 2020 (-4.1 %, t -3.20).",
+    "F5": "What each signal learns does not carry forward, which the brief names as its own falsifier. The yearly 5-day rank correlation of the 28-day return swings from -0.14 to +0.09. Nearness to the 90-day high swings from -0.25 to +0.16, and the 1-day reversal from -0.14 to +0.10. A 365-day weight is therefore often learned with the sign the next period does not have.",
+    "F6": "Over 5 days no single signal predicts clearly either. The rank correlations with the coin's 5-day unusual return are +0.020 for the 28-day return (t 1.01, 2,450 cases), +0.001 for the 1-day reversal (t 0.08), -0.035 for nearness to the 90-day high (t -1.00) and +0.019 for low volatility (t 0.94). The combination had nothing stable to add up.",
+    "F7": "The 1-day reversal is the one clear effect, and it only shows over the next 1 day. Its rank correlation with the next day's unusual return is +0.079 (t 10.2, 16,523 cases), against +0.001 over 5 days.",
+    "F8": "That 1-day rebound comes from falls, and it grows with the size of the fall measured against the coin's 30-day volatility. On down days, from the smallest to the largest fifth of size, the next day's unusual return is +0.03 %, -0.09 %, +0.13 %, +0.23 % and +0.52 % (t 3.18, 1,143 cases). Up days show no such grading (+0.27 % falling to +0.05 %, t 0.35).",
+    "F9": "Only the largest falls are big enough to pay for a trade. In the largest fifth of falls the rebound of +0.52 % per case is about 2.7 times the backtest's round-trip cost of 0.19 %. The smaller fifths sit below that cost, so a book on this idea would pay only on its largest falls (findings F11, F4).",
+    "F10": "Over 5 days the largest up days continue rather than reverse. The coin's unusual 5-day return after them is +1.84 % (t 2.42, 263 cases). This shows only in the top fifth; the third fifth goes the other way (-0.79 %), so it is not graded."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 1-day fall compared with its 30-day volatility, the higher its return over the next 1 day.",
+      "consequence": "After a large daily fall, a trader would buy the coin for one day, and refuse it after small falls whose rebound does not cover the cost of a trade.",
+      "name": "rebound after large daily falls",
+      "from": "F7, F8, F9",
+      "refs": [
+        "F7",
+        "F8",
+        "F9"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends_1d
+idea tested: 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d3_combined-score-in-uptrends
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3150 USD
+---
+## Findings
+- **F1:** The learned four-signal score points the wrong way on every slice. Pooled over the trending grid bars, its slope t is -1.15 on 1662 cases. Five of the six coins have a negative t (-0.31 to -1.38), with only ZEC at +0.15. Six of the eight years are negative too (2019 at -2.19), and only 2022 is clearly positive (+1.08).
+- **F2:** The effect is wrong in size as well as sign. Per case the unusual move is -0.65 % over 5 days (-0.058 of a usual move of 10.60 %) and the total move is -0.74 %. That is -3.4 and -3.8 times the 0.19 % cost of a round trip, so the book lost money (Sharpe -1.10, timing part -0.00053 per day).
+- **F3:** The short side loses the most. On the 961 short cases the coin ends 0.78 % above its drift over 5 days (t 2.03), against the forecast. On the 701 long cases it ends 0.40 % below (t -0.91), also against the forecast.
+- **F4:** The response across the score is not graded. The 5-day excess return by score quintile runs +0.52 %, +1.56 %, +0.44 %, -1.36 %, +0.24 % from most negative to most positive, so the strongest scores carry no more of the move than the weakest.
+- **F5:** Changing the horizon does not rescue the score. Its t is -1.15 at 5 days (1662 cases), -0.77 at 10 days (818) and +0.91 at 20 days (397), never near the bar.
+- **F6:** The combination predicts worse than its best single part, which is the brief's own condition for the theory being wrong. 28-day momentum alone gives +49 bps per standard deviation over 5 days on trending bars (t 1.62, 1290 cases). The other three signals are flat or negative there: 1-day reversal t -1.10, nearness to the 90-day high t 0.54, negative volatility t 0.15.
+- **F7:** Momentum alone is also mixed over time. On all bars it reaches t 2.01 at 5 days (2450 cases) and t 2.21 at 10 days (1208 cases), but its slope is positive in only 4 of 8 years. The score's sign flips on about 13 % of its active bars, so what it learns does not carry forward.
+
+## Ideas
+- No ideas: The score's result lies on the side opposite the forecast, on almost every coin, year and horizon. No part of the data shows the predicted effect clearly: the strongest scores are not graded, and momentum alone holds in only half the years. There is therefore no subset to narrow the idea to, and the brief's own falsification condition (the combination does no better than its best single effect) is met.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

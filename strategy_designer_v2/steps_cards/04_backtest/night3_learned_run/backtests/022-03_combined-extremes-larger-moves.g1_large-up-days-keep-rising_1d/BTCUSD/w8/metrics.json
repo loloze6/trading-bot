@@ -1,0 +1,133 @@
+{
+  "core": {
+    "net_return_pct": 45.484,
+    "sharpe": 3.447,
+    "max_drawdown_pct": -8.439,
+    "trade_count": 41,
+    "win_rate": 58.54,
+    "avg_trade_net_pnl": 11.078723,
+    "fees_paid": 9.693134,
+    "gross_pnl": 463.920766,
+    "net_pnl": 454.227632,
+    "cost_drag_pct": 2.0894,
+    "forecast_return_corr": 0.055106,
+    "forecast_return_corr_pvalue": 0.65291,
+    "forecast_return_corr_pvalue_block_adjusted": 0.654382,
+    "forecast_return_corr_n_eff": 69,
+    "forecast_return_corr_all_bars": -0.025723,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.781747,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 14.88,
+    "sigma_bar_bps": 285.4485,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 60.6776,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 3.2799,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0551, p=0.6544 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 746.2621,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 746.2621,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 74.6262,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0551, p=0.6544 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 120,
+      "avg_forecast": 4.154724,
+      "trade_count": 41,
+      "total_net_pnl": 454.227632
+    }
+  },
+  "forecast_bins": {
+    "5_to_10": {
+      "total_forecasts": 14,
+      "profitable_trades": 9,
+      "success_rate_pct": 64.29,
+      "total_net_pnl_usd": 127.8098,
+      "avg_pnl_per_trade_usd": 9.1293
+    },
+    "10_to_15": {
+      "total_forecasts": 7,
+      "profitable_trades": 3,
+      "success_rate_pct": 42.86,
+      "total_net_pnl_usd": -10.6476,
+      "avg_pnl_per_trade_usd": -1.5211
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 20,
+      "profitable_trades": 12,
+      "success_rate_pct": 60.0,
+      "total_net_pnl_usd": 337.0655,
+      "avg_pnl_per_trade_usd": 16.8533
+    }
+  },
+  "dynamic": {
+    "debug_info.components.scaled_rise.last_history_value": {
+      "unknown": {
+        "mean": 0.135817,
+        "std": 0.889081
+      }
+    },
+    "debug_info.components.scaled_rise.post_pipeline_value": {
+      "unknown": {
+        "mean": 4.154724,
+        "std": 6.019144
+      }
+    },
+    "debug_info.components.scaled_rise.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.scaled_rise.weighted_contribution": {
+      "unknown": {
+        "mean": 4.154724,
+        "std": 6.019144
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00310297,
+      "forward_return_std": 0.02854485,
+      "n_bars": 119,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -12.6352,
+    "sharpe": 1.9883,
+    "sortino": 4.6205,
+    "exposure_pct": 96.6667,
+    "turnover": 17.212929,
+    "n_bars_total": 120,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 50,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
