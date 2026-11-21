@@ -10,6 +10,7 @@
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: confirmed (fit: exact) [main: 0.00665272; OLS slope t 3.23516; cases 1129]
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: inconclusive (fit: adapted) [main: 0.00285348; ordinary t of the mean 1.34087; cases 3937, upper half cases 0, lower half cases 3937]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins_1d: confirmed (fit: adapted) [main: 0.00710522; t of the mean 2.56892; independent cases 2746]
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend_1d: inconclusive (fit: adapted) [main: 0.00436673; t of the mean 1.27789; independent cases 1205]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation_1d: inconclusive (fit: adapted) [main: 0.00347509; t of the mean 0.29652; cases 680, upper half cases 0, lower half cases 680]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d: inconclusive (fit: adapted) [main: 0.00548917; t of the mean 1.75064; cases 1309]
 020-03_resistance-breakout-continues-up_1d: inconclusive (fit: adapted) [main: 0.00314608; ordinary t of the mean 1.20155; cases 1817, top half cases 908, bottom half cases 909, active bars 3207]

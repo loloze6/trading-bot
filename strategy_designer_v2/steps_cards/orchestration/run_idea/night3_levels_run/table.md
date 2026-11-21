@@ -20,21 +20,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run | plan | confirmed (+2.57) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins.g1_breakout-continuation-over-weeks | 0.70 | 9.7 |
 | 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall | 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling | plan | rejected (-2.30) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c1_broken-support-below-average, 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c2_broken-support-in-downtrend; 7.d: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d1_broken-support-without-capitulation, 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d2_clear-of-supports-rises; 7.g: no ideas: Every pattern beyond the market's own direction is either within chance after about 30 looks or changes sign from year to year (best: 10-day momentum at t 2.54, split 4 to 4 across years), so no finding is firm enough to rest a new idea on. | 1.31 | 5.8 |
 | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins | plan | confirmed (+4.05) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d1_false-break-while-month-falls, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d2_monthly-turn-up-continues, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.d3_false-break-fades-within-horizon; 7.g: 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.g1_volatility-scaled-monthly-momentum-continues, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.g2_closes-near-monthly-high-continue, 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend.g3_moderate-monthly-decline-continues | 1.11 | 9.1 |
+| 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend | 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run | plan | inconclusive (+1.28) | not profitable enough (failed: Calmar) | - | 7.b: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins; 7.d: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d1_breakout-above-rising-average, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d2_breakout-after-strong-month, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.d3_breakout-with-expanding-volatility; 7.g: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.g1_volatility-scaled-30-day-momentum, 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.g2_fresh-break-continues-briefly | 1.47 | 6.3 |
 
 ## Consumption
-16 ideas, 22.73 USD, 141.8 minutes in all.
+17 ideas, 24.20 USD, 148.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.18 | 10.3 |
-| step4_backtest | 0.00 | 48.5 |
-| step5_verdict | 2.47 | 9.5 |
+| step3_plan | 2.28 | 11.1 |
+| step4_backtest | 0.00 | 49.5 |
+| step5_verdict | 2.62 | 10.1 |
 | step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.80 | 2.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.85 | 2.9 |
-| step7_7.d | 6.42 | 27.7 |
-| step7_7.b | 3.28 | 10.6 |
-| step7_7.g | 6.73 | 22.2 |
+| step7_7.d | 6.84 | 29.2 |
+| step7_7.b | 3.63 | 11.6 |
+| step7_7.g | 7.19 | 23.7 |
 | unseen_test | 0.00 | 6.5 |

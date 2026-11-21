@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend_1d
+idea tested: 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3483 USD
+---
+## Findings
+- **F1:** The tested effect points the way the idea predicts but is small and noisy. My replication of step 5 gave a mean unusual 5-day move of +0.47 % with t 1.37 over 1,214 cases, against step 5's +0.44 %, t 1.28 over 1,205. Its strength is 0.038 of the coin's usual move, below the 0.05 typical of real ideas. Cost is not what blocks it: the total move per case is 5.3 times a round trip and the unusual move 2.3 times.
+- **F2:** Most of the noise comes from the market's own years, not from the idea's cases.
+- **F3:** The grading on the 10-day run-up holds, so the idea's own gradient is there.
+- **F4:** No single coin carries the effect. ZEC alone reaches t 2.01 (+2.6 %, 182 cases). BTC (+0.6 %, t 1.06) and LTC and ETH (+0.3 %, +0.1 %) are near zero or slightly positive, as are XRP (+0.0 %) and XMR (−0.5 %, t −0.74). This is a weak pooled effect, not one confined to a part of the data that a narrower idea could isolate.
+- **F5:** Changing the horizon does not sharpen the answer. The 1-day move is −0.06 % (t −0.41). Over 3, 5, 10 and 20 days the t is 1.54, 1.37, 1.65 and 2.71 on overlapping cell starts, and 1.37, 1.32 and 1.43 on independent grids for 5, 10 and 20 days. Strength rises to 0.070 at 20 days, but the case count falls to 477.
+- **F6:** The result is positive, short of the bar, and evenly spread over coins. More cases is what it needs, and 13 more coins are available on daily bars in folds A and D and part of B and C. The finding that more coins do not shrink a shared fall (findings F7) warns that bear years like 2018 and 2022 will still weigh on the result.
+
+## Ideas
+- `020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b2_breakout-after-sharp-run-uptrend.b1_resistance-breakout-more-coins` (from F1, F3, F4, F6): When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 5 days, only while its 60-day return is positive, and the larger its 10-day return before the break, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
