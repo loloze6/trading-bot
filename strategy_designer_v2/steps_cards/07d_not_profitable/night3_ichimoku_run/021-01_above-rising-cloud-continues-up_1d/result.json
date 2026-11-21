@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "021-01_above-rising-cloud-continues-up_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.42589980000000005,
+  "findings": {
+    "F1": "The book earns 3.6 bps a day against 11.8 bps for holding the coins (Sharpe 0.45 against 0.55). Its mean position is only 0.25 of the book, although it is long on 76 % of days. Of its 3.6 bps, 2.95 bps come from the market's own rise and only 0.68 bps from timing. The failing gain is mostly the coin's drift taken at a quarter size, with almost no timing edge.",
+    "F2": "Cost does not explain the shortfall. A trade's total move is 33 times its 0.19 % cost and the unusual move 12.9 times. The 900 trades average +13.1 % net per 26-day trade, yet only 48 % of them win.",
+    "F3": "The idea's situation does separate. On the non-overlapping 26-day grid, the 149 cases above a rising cloud return +8.6 % (excess +4.8 %, t of the raw return 2.30). The 427 other grid cases return +2.5 % (excess \u22121.7 %).",
+    "F4": "The idea's grading does not work: a faster-rising cloud does not mean a larger move. The forecast (the cloud's 26-day rise, standardised) has a Spearman rho of \u22120.07 with the excess return. Its quartiles of about 37 cases give +3.6 %, +6.3 %, +7.0 % and +2.5 %, and the verdict's slope t is 0.05. Position size therefore follows a variable that carries no information.",
+    "F5": "Inside the active cases, a thicker cloud comes before larger moves. Cloud thickness relative to price has a rho of +0.11. Its quartiles give an excess of +19.2 %, +4.8 %, +23.0 % and +36.7 %, so the thickest quarter does best. The brief expected thin clouds to move more.",
+    "F6": "The close's signed distance from the cloud top grades the move over all grid bars. Its quintiles of 28 to 29 cases (mean distance \u221237 %, \u221218 %, \u22124 %, +7 %, +36 %) give excess returns of \u22120.8 %, \u221210.3 %, +2.1 %, +10.5 % and +12.8 %. Inside the active cases alone the same distance does not grade (rho \u22120.14).",
+    "F7": "The Calmar fails on one long fall. The book's deepest fall is 60 %, over 702 days from window 15 to window 21, while holding the coins lost only 7.8 % over the same stretch, with a mean position of 0.28. In window 16 the book lost 27 % while the coins rose 36 %. In window 18 the book lost 23 % while the coins fell 22 %. The book was long in rises that reversed, and these losses were not caused by the coins' own fall."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its Ichimoku cloud and the cloud is rising, its return over the next 26 days is positive, and larger the thicker the cloud (the gap between its two spans as a share of the price) rather than the faster the cloud has risen. The cloud is the band between the average of the 9-day and 26-day high-low midpoints and the 52-day high-low midpoint, plotted 26 days ahead.",
+      "consequence": "Inside the above-rising-cloud situation, a trader would put more weight on a coin standing above a thick cloud than above a thin one.",
+      "name": "above thick cloud continues",
+      "from": "F3, F4, F5, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F1"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 26 days is larger the farther its daily close stands above the top of its Ichimoku cloud, and smaller the farther it stands below it. The cloud is the band between the average of the 9-day and 26-day high-low midpoints and the 52-day high-low midpoint, plotted 26 days ahead.",
+      "consequence": "A trader would lean long in proportion to how far a coin trades above its cloud, and lean away from coins trading below it.",
+      "name": "distance from cloud grades",
+      "from": "F6, F3, F7",
+      "refs": [
+        "F6",
+        "F3",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues",
+    "021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades"
+  ],
+  "no_ideas": null
+}

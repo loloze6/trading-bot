@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 26-bar move after the cross (return minus coin's normal drift)",
+    "value": 0.05827711570161929,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.6885985663250248
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-forecast half minus smaller-forecast half, mean unusual move",
+    "value": -0.0791198294685294,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 11
+  },
+  "decided_by": "Only 11 independent cases, fewer than the plan's minimum of 20 over all coins and windows.",
+  "reading": "Cloud recomputed in-window from prices (9/26/52, displaced 26); active bars whose cloud history is not inside the window are left out of the agreement, which also requires a long forecast and a negative raw 26-bar return; cases are bars with forecast >= 2, first one per 26-bar grid cell from each window's first row with 26 bars left; normal drift is the coin's mean non-overlapping 26-bar return over all its windows; the median split puts cases above the median forecast in the larger half and the rest in the smaller half; the plan's 'fewer than 20 independent cases' is applied as the minimum count (not observable)."
+}

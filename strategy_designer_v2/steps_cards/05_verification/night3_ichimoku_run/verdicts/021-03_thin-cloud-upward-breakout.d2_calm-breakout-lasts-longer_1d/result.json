@@ -1,0 +1,29 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean of drift-adjusted 40-bar return / usual 40-bar move",
+    "value": 0.24867254537572134,
+    "statistic": {
+      "name": "t of the forecast-weighted mean",
+      "value": 2.037678622848171
+    },
+    "threshold": "confirm: > 0 with t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "calm minus violent half (median forecast split), mean drift-adjusted 40-bar return",
+    "value": -0.16892322718707323,
+    "passed": false,
+    "welch_t": -1.5009314727581977
+  },
+  "counts": {
+    "cases": 122,
+    "high-forecast half": 61,
+    "low-forecast half": 61
+  },
+  "reading": "Situation agreement is measured on the active bars where the cloud and the last outside side can be recomputed from the window's own prices (falling back to regime 'trending' with a long forecast only if none can); cases are long bets (forecast rise of >= 2 points from its low on the long side) read once per 40-bar grid cell from each window's first row with close[t+40] in the window; drift and usual move are the mean and std of each coin's non-overlapping 40-bar returns over all its windows; the weighted mean's t uses the forecast-weighted variance with effective n = (sum w)^2 / sum w^2; the median split drops cases equal to the median and compares unscaled drift-adjusted returns.",
+  "status": "inconclusive",
+  "decided_by": "The weighted mean meets the confirm rule but the calm-minus-violent difference does not reach > 0 with Welch t >= 2, so the result is inconclusive."
+}
