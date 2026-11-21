@@ -1,3 +1,4 @@
+018-02_hourly-breakout-multiday-continuation_1h: profitable enough [Sharpe 1.086; Sharpe minus holding's Sharpe 0.532; Calmar 1.099]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue_1h: not profitable enough [Sharpe 0.8831; Sharpe minus holding's Sharpe 0.3294; Calmar 0.6024]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h: not profitable enough [Sharpe 0.8831; Sharpe minus holding's Sharpe 0.3294; Calmar 0.6024]
 018-04_hourly-surge-multiday-continuation_1h: not profitable enough [Sharpe 0.7905; Sharpe minus holding's Sharpe 0.2367; Calmar 0.5379]

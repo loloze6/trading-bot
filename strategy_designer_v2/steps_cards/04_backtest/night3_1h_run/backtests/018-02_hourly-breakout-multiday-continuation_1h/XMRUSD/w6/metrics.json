@@ -1,0 +1,129 @@
+{
+  "core": {
+    "net_return_pct": -4.107,
+    "sharpe": -0.307,
+    "max_drawdown_pct": -18.102,
+    "trade_count": 15,
+    "win_rate": 33.33,
+    "avg_trade_net_pnl": -2.902004,
+    "fees_paid": 11.832202,
+    "gross_pnl": -31.697865,
+    "net_pnl": -43.530067,
+    "cost_drag_pct": 37.3281,
+    "forecast_return_corr": -0.328384,
+    "forecast_return_corr_pvalue": 0.041248,
+    "forecast_return_corr_pvalue_block_adjusted": 0.742621,
+    "forecast_return_corr_n_eff": 1,
+    "forecast_return_corr_all_bars": -0.004509,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.960932,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 116.53,
+    "sigma_bar_bps": 45.748,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 162.1709,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 8.766,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -42.4405,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -42.4405,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 4.244,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2928,
+      "avg_forecast": 0.261402,
+      "trade_count": 15,
+      "total_net_pnl": -43.530069
+    }
+  },
+  "forecast_bins": {
+    "15_to_very_positive": {
+      "total_forecasts": 15,
+      "profitable_trades": 5,
+      "success_rate_pct": 33.33,
+      "total_net_pnl_usd": -43.5301,
+      "avg_pnl_per_trade_usd": -2.902
+    }
+  },
+  "dynamic": {
+    "debug_info.components.break.last_history_value": {
+      "unknown": {
+        "mean": 0.003724,
+        "std": 0.048479
+      }
+    },
+    "debug_info.components.break.post_pipeline_value": {
+      "unknown": {
+        "mean": 0.261402,
+        "std": 2.258778
+      }
+    },
+    "debug_info.components.break.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.break.weighted_contribution": {
+      "unknown": {
+        "mean": 0.261402,
+        "std": 2.258778
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 5.71e-05,
+      "forward_return_std": 0.0045748,
+      "n_bars": 2927,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -23.299,
+    "sharpe": -0.2049,
+    "sortino": -0.301,
+    "exposure_pct": 37.3975,
+    "turnover": 22.366021,
+    "n_bars_total": 2928,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 29,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "XMRUSD",
+        "timestamp": "2023-05-07 21:00:00",
+        "previous_timestamp": "2023-05-07 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "core": {
+    "net_return_pct": -2.83,
+    "sharpe": 0.094,
+    "max_drawdown_pct": -20.919,
+    "trade_count": 12,
+    "win_rate": 58.33,
+    "avg_trade_net_pnl": -2.396667,
+    "fees_paid": 6.024265,
+    "gross_pnl": -22.735739,
+    "net_pnl": -28.760004,
+    "cost_drag_pct": 26.4969,
+    "forecast_return_corr": 0.090359,
+    "forecast_return_corr_pvalue": 0.428389,
+    "forecast_return_corr_pvalue_block_adjusted": 0.928002,
+    "forecast_return_corr_n_eff": 3,
+    "forecast_return_corr_all_bars": 0.000963,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.991721,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 152.0,
+    "sigma_bar_bps": 87.7055,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 97.7057,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 5.2814,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=3 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -15.323,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -15.323,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 1.5323,
+      "safety_factor_required": 2.0,
+      "pass": false,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=3 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2880,
+      "avg_forecast": 0.527958,
+      "trade_count": 12,
+      "total_net_pnl": -28.760006
+    }
+  },
+  "forecast_bins": {
+    "15_to_very_positive": {
+      "total_forecasts": 12,
+      "profitable_trades": 7,
+      "success_rate_pct": 58.33,
+      "total_net_pnl_usd": -28.76,
+      "avg_pnl_per_trade_usd": -2.3967
+    }
+  },
+  "dynamic": {
+    "debug_info.components.break.last_history_value": {
+      "unknown": {
+        "mean": 0.005554,
+        "std": 0.052382
+      }
+    },
+    "debug_info.components.break.post_pipeline_value": {
+      "unknown": {
+        "mean": 0.527958,
+        "std": 3.194669
+      }
+    },
+    "debug_info.components.break.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.break.weighted_contribution": {
+      "unknown": {
+        "mean": 0.527958,
+        "std": 3.194669
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00015481,
+      "forward_return_std": 0.00877055,
+      "n_bars": 2879,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -51.6522,
+    "sharpe": 0.2227,
+    "sortino": 0.2666,
+    "exposure_pct": 47.0486,
+    "turnover": 13.712911,
+    "n_bars_total": 2880,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 20,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 8,
+    "events": [
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-09-03 11:00:00",
+        "previous_timestamp": "2016-09-03 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-10-01 09:00:00",
+        "previous_timestamp": "2016-10-01 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-10-01 13:00:00",
+        "previous_timestamp": "2016-10-01 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-10-02 05:00:00",
+        "previous_timestamp": "2016-10-02 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-10-03 05:00:00",
+        "previous_timestamp": "2016-10-03 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-10-16 01:00:00",
+        "previous_timestamp": "2016-10-15 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-10-20 05:00:00",
+        "previous_timestamp": "2016-10-20 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2016-12-18 08:00:00",
+        "previous_timestamp": "2016-12-18 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
