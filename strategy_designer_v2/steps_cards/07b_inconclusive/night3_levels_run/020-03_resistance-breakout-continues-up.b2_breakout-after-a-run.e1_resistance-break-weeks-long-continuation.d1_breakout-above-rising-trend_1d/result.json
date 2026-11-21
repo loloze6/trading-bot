@@ -1,0 +1,33 @@
+{
+  "line": "7.b",
+  "backtest": "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3449376,
+  "findings": {
+    "F1": "The tested result is on the side the idea predicts but far too noisy to show: over 20 days the 507 cases earn a mean unusual move of +1.37 % with t 0.95. The median case loses 2.66 % and only 43 % of cases end above the coin's normal drift, so the positive mean comes from a few large winners against a usual 20-day move of 17 % (BTC) to 46 % (ZEC). With the move per case 7.1 times the cost of a trade, cost is not what stops it (F11 of the runs).",
+    "F2": "The effect is drowned by the market's own moves. Cases in 2018 lose 21.7 % per case (t -7.7, 36 cases) and those in 2022 lose 4.8 % (t -2.2, 53 cases). Cases in 2020 gain 8.3 % (t 2.5, 71 cases) and those in 2021 gain 7.3 % (t 1.5, 68 cases). No year or coin decides the sign alone: by coin the means run from -1.2 % (XMR) to +4.5 % (ZEC), none with |t| above 1.1.",
+    "F3": "The idea's grading is not there, which is why the supporting check fails (upper minus lower half -2.78 %). The top quartile of the break strength (median 7.2) gives -2.2 % (t -1.1), against +1.8 % to +3.4 % in the lower three quartiles. The top quartile of the distance above the 50-day average (median 25 %) gives -0.3 %, against +2.1 % to +4.0 % for the middle quartiles. The largest forecasts are not the best ones (top quartile of forecast +1.6 %, second quartile +5.4 %).",
+    "F4": "The breaks add little beyond the 50-day-average condition itself. Over all 20-day grid cells, a coin above its 50-day average earns +1.70 % beyond its drift (200 cells), against -2.11 % below it (195 cells), and the break cases' +1.37 % is no larger.",
+    "F5": "The test's 20-day horizon is not where the effect shows most clearly, but no horizon reaches the bar. The unusual move is +0.77 % over 5 days (t 1.65), +1.40 % over 10 days (t 1.90), +1.37 % over 20 days (t 0.95), +4.56 % over 40 days (t 1.67, 421 cases) and +6.30 % over 60 days (t 1.25, 315 cases). The 10-day gain is as large as the 20-day one, with half the noise."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "resistance breakout, more coins",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ],
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days, it tends to keep rising over the next 20 days, only while its close is above its 50-day average. The more times the level held, the further the close above it and the further the close above its 50-day average, the larger the rise.",
+      "consequence": "A break through a repeatedly held level is a reason to stay long for weeks only when the coin already trades above its 50-day average, and a reason to stay flat when it trades below it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation.d1_breakout-above-rising-trend.b1_resistance-breakout-more-coins"
+  ],
+  "no_ideas": null
+}

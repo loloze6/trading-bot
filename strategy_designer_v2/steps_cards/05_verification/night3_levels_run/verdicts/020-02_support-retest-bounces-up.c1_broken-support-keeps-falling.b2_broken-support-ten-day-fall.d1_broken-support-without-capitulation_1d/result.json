@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean of forecast/10 x (10-bar return minus coin's mean 10-bar return), before costs",
+    "value": 0.015277236432379751,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.812404136639081
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases (confirm); mean < 0 with t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "mean signed excess return, upper half of |forecast| minus lower half",
+    "value": 0.028573766448187925,
+    "passed": true
+  },
+  "counts": {
+    "non-zero grid cases": 1164,
+    "upper half cases": 582,
+    "lower half cases": 582
+  },
+  "decided_by": "The mean is above 0 with t >= 2 over at least 30 cases, and the upper half of |forecast| earns more than the lower half.",
+  "reading": "The coin's mean 10-bar return is taken over all grid cells (0, 10, 20, ... of each window, return inside the window) of all its windows; the upper half of |forecast| is the cells strictly above its median and the lower half those at or below; the regime side is read from the recorded `regime` column."
+}

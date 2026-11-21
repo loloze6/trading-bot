@@ -1,0 +1,115 @@
+{
+  "run_id": "20261121T064317Z_5a482a67",
+  "created_utc": "2026-11-21T06:43:17.999134+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "support_cluster",
+              "class": "strategies.strategy_components.SwingHighClusterCountComponent",
+              "params": {
+                "period": 90,
+                "side": 2,
+                "band": 2.0,
+                "form": "proximity",
+                "power": 1.0,
+                "level": "above",
+                "pivot": "low",
+                "exclude_current": 0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 90,
+                    "min_periods": 22
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 5
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "5a482a6797e33916f5026661ced1e338a294fe87ac26faa4099425b6e56aa4a1",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2022-09-19 00:00:00",
+    "end": "2023-08-31 00:00:00",
+    "bar_count": 347,
+    "data_sha256": "0d5ccadacf8bdead3c8adc36773434781953073ca987792aaa0a4bb194537504"
+  },
+  "git_sha": "249da2ad6e5ec5af6cc546feeea8ca6de49ae1e4-dirty",
+  "engine": {
+    "lookback": 91,
+    "warmup": 91
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "ordinary t of mean of post_pipeline_value x drift-adjusted 20-bar forward return, positive-forecast 20-bar grid bars",
+    "value": -0.034587008265099285,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -0.13623445753411803
+    },
+    "threshold": "confirm if t >= 2 with >= 30 cases and supporting check passes; reject if t <= -2 with >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half (by forecast) mean drift-adjusted 20-bar return, positive-forecast grid bars",
+    "value": 0.0906844707874501,
+    "passed": true
+  },
+  "counts": {
+    "positive-forecast grid cases": 41
+  },
+  "decided_by": "The main-measure t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Grid = rows 0, 20, 40, ... of each window with a full 20-bar forward return inside the window; the coin's mean 20-bar return is the mean over all its grid bars of all windows; halves split by sorted forecast into the bottom and top n//2 cases (the middle case dropped when n is odd); fewer than 30 cases is reported as 'not observable'."
+}

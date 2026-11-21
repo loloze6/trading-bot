@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-excess 10-bar forward return on forecast (non-overlapping grid)",
+    "value": 0.001012003804308498,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.8193263240038045
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a recorded forecast": 3598
+  },
+  "decided_by": "Confirm rule met: the slope is positive with t >= 2.",
+  "reading": "Grid bars are positions 0, 10, 20, ... of each window with a 10-bar forward return inside the window; the coin's mean is the mean of these grid returns over all its windows; every grid bar with a non-missing forecast (zeros included) enters an OLS regression with an intercept; and the plan's 300-case minimum is applied as 'not observable'."
+}

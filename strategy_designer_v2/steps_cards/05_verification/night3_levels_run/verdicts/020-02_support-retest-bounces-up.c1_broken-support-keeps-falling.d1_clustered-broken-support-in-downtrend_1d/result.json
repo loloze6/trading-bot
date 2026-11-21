@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar short-side move over short bets",
+    "value": 0.0018958298425254417,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6935736843797363
+    },
+    "threshold": "positive with t >= 2 over at least 30 cases to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half, mean unusual short move",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 1355,
+    "larger half": 0,
+    "smaller half": 1355
+  },
+  "decided_by": "Inconclusive: the t of the mean unusual short-side move lies between -2 and 2.",
+  "reading": "Situation = close below its 50-day SMA (recomputed from the window's closes, the recorded regime used on the first 49 bars of a window where the SMA cannot be rebuilt) and a positive raw low_cluster value, expected side short; cases are bets (short forecast magnitude rising >= 2 from its lowest level since the last bet, reset to 0 on flat/long), the first per 5-bar grid cell with a 5-bar return inside the window; the larger half is |forecast| strictly above the cases' median, the smaller half at or below it."
+}

@@ -1,0 +1,165 @@
+{
+  "run_id": "20261121T062319Z_5820649b",
+  "created_utc": "2026-11-21T06:23:19.593171+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "brk",
+          "class": "strategies.strategy_components.ResistanceBreakTouchCountComponent",
+          "params": {
+            "period": 90,
+            "side": 2,
+            "band": 2.0,
+            "cross_period": 1
+          }
+        },
+        {
+          "id": "ret30",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 30
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "brk",
+                "op": "gt",
+                "value": 0.0
+              },
+              {
+                "id": "ret30",
+                "op": "lt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "fall30",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 30
+              },
+              "weight": 2.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                }
+              ]
+            },
+            {
+              "id": "break",
+              "class": "strategies.strategy_components.ResistanceBreakTouchCountComponent",
+              "params": {
+                "period": 90,
+                "side": 2,
+                "band": 2.0,
+                "cross_period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 90,
+                    "min_periods": 22
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 20
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "5820649b583b7669646c94082e24120105dbcb60d1443de9e06e53b2d22d7a50",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2024-01-21 00:00:00",
+    "end": "2024-12-31 00:00:00",
+    "bar_count": 346,
+    "data_sha256": "d37276792f13be59c7947928b24dc251234f2c4c2908f8d1d215edfaaf9a66a2"
+  },
+  "git_sha": "249da2ad6e5ec5af6cc546feeea8ca6de49ae1e4-dirty",
+  "engine": {
+    "lookback": 91,
+    "warmup": 91
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

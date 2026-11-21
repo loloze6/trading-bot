@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c2_broken-support-in-downtrend_1d
+idea tested: 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c2_broken-support-in-downtrend
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3892 USD
+---
+## Findings
+- **F1:** The book lost because a short-only book sits against the coins' rise. The short trades averaged -2.89 % before fees and -2.99 % after fees (2482 trades). The book's mean daily return was negative on 4 of 6 coins (XRP -9.3 bps, ZEC -6.4, LTC -3.1, XMR -0.05), against holding's +6.7 to +15.5 bps. The book earned only in the coins' falling years (2018 +15.6 bps a day with the coins at -34.7, 2022 +11.6 with the coins at -18.0) and lost in every year the coins rose strongly (2020 -17.7, 2024 -14.8).
+- **F2:** The tested idea's cases carry a total move against the short of -0.61 % per case (drift in the short's direction -1.19 %, unusual move +0.58 %, 901 cases). That is -3.2 times the 0.19 % cost of a trade, so the edge cannot pay. Even in the 60-day-decline regime, the coins' mean 10-day return was +0.06 % (404 cases), which leaves nothing for a short to earn before its timing.
+- **F3:** Inside the short cases, the unusual move sits mostly where the coin had already fallen over the past 10 days: +1.48 % per case (420 cases, total move +0.29 %, 1.5 times the cost) against +0.28 % after a 10-day rise (253 cases, total -0.91 %). The difference is about 1.2 % against a standard error of about 1.1 %, so it cannot be told apart from chance.
+- **F4:** The coin's 10-day return scaled by its volatility predicts the next 10 days, but the sign flips between periods. Up to 2021 the Spearman rho is +0.149 (p 0.00008, 702 cases); from 2022 it is -0.059 (p 0.12, 701 cases). Over 20 days the later period reverses at -0.165 (p 0.002, 341 cases). Pooled, the per-coin rhos run from +0.02 to +0.08, none significant (n about 234 each), and the quintiles are not monotone (z +0.05, -0.16, -0.10, +0.07, +0.17).
+- **F5:** No other angle stands out from chance once the number of looks is counted (about 10 variables in quintiles, weekday, year, regime). The 1-, 30- and 60-day returns, 20-day volatility, relative volatility and position in the 60-day range all have per-coin rhos within ±0.12. The extreme quintiles reach |t| 2.0 to 2.2 at most.
+- **F6:** Thursday grid starts show a next-10-day z of +0.167 (235 cases, t about 2.6), with four coins at +0.29 to +0.38. BTC shows -0.006. This is one weekday of seven, at a 10-day horizon where a weekday has little meaning, so it is not counted as a pattern.
+
+## Ideas
+- No ideas: The only measured edges are either too small or move with the market's direction (F1, F2), or flip sign between periods (F4), or are not separable from chance after about a dozen angles (F3, F5, F6), so no pattern supports a new idea.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

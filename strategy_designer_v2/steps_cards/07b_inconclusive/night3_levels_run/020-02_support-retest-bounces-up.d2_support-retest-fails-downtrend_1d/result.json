@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "020-02_support-retest-bounces-up.d2_support-retest-fails-downtrend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.330877,
+  "findings": {
+    "F1": "The result points the way the idea predicts but is too small for this data to show: step 5's mean signed excess 5-day fall is +0.60 % per case with t 1.13 over 271 cases. Across every active grid bar it is +0.74 % (t 1.80, 449 cases), against -0.11 % (t -0.53, 2,970 cases) on inactive bars. Measured from the next day's close it is +0.82 % (t 2.25, 448 cases).",
+    "F2": "The effect is spread thinly across coins, not carried by one. At 5 days the mean excess fall is positive on 5 of 6 coins: XMR +1.43 % (t 1.59), ETH +1.33 % (t 1.13), LTC +0.91 % (t 0.82), ZEC +0.59 %, XRP +0.45 %. BTC is about zero (-0.11 %, t -0.12). No coin reaches t 2 with 51 to 90 cases each, so the shortfall is too few cases rather than one coin driving it.",
+    "F3": "The effect is mixed across periods, and one sharp rebound year weighs heavily against it. At 5 days the excess fall is +2.4 % (t 2.03) in 2018 and +2.6 % (t 2.95) in 2019. In 2020 it is -5.2 % (t -3.54, 24 cases), and in 2025 -1.8 % (t -1.50). The same pattern holds at 10 days: +5.6 % and +5.2 % in 2018 and 2019, -9.4 % in 2020.",
+    "F4": "Short bets often start on the day before a bounce. At the grid bars where a bet starts, the coin rises 1.1 % more than usual over the next day (t -4.08, 137 cases). Their 5-day excess fall is only +0.06 % (t 0.09), against +0.74 % on all active bars. This entry timing is why step 5's main measure is weaker than the situation itself.",
+    "F5": "The grading by depth of the 90-day fall is not there. The deepest tercile of the fall (median standardised -83) gives +0.65 % (t 0.85), the middle tercile +1.30 % (t 2.01), the shallowest +0.26 % (t 0.36). Step 5's larger-forecast half minus smaller half is -0.95 %. Only the strongest forecast tercile stands out, at +1.53 % (t 2.57, 150 cases).",
+    "F6": "Even if the idea were real, the short book would not pay. The coins' normal drift works against a short by 0.58 % per 5 days, so the total move per case is -0.13 %, which is -0.7 times the 0.19 % cost of a round trip. The unusual move of +0.45 % (strength 0.045) is 2.3 times that cost. The book's Sharpe is -0.22, 0.78 below holding."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "failed support retest, more coins",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "idea": "When a coin's price falls back to a price where it turned up several times in the past 90 days while its 90-day return is negative, it tends to fall further over the next 5 days, and the deeper that 90-day fall, the larger the further fall.",
+      "consequence": "In a coin that has fallen over the past 90 days, a retest of old lows would be a reason to sell or stay out rather than to buy.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "020-02_support-retest-bounces-up.d2_support-retest-fails-downtrend.b1_failed-support-retest-more-coins"
+  ],
+  "no_ideas": null
+}

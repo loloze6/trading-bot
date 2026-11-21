@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation_1d
+idea tested: 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6866 USD
+---
+## Findings
+- **F1:** A coin's large down day is followed by a rebound, graded by the size of the fall. On the daily grid (30522 one-day cases), the 1-day excess return has a slope of -0.00331 per usual daily move of the day's fall (t -6.37), and up days have no slope (t 0.16). Over 3 days the down-day slope is -0.00707 (t -4.73, 10024 cases). Over 10 days it is -0.01245 (t -2.24, 2680 cases).
+- **F2:** The rebound after a fall shows in almost every coin and is large enough to trade. The down-day slope is negative in 15 of 19 coins over 1 day and 16 of 19 over 3 days. After falls beyond one usual daily move, the next 3 days give an unusual move of +0.61 % and a total move of +1.08 % per case (strength 0.061, t 2.05, 1193 cases), against a round-trip cost of 0.22 %, so 2.8 to 4.9 times the cost. Over the next day the unusual move is +0.33 % (strength 0.064, t 3.43, 3702 cases).
+- **F3:** The rebound after a fall sits mainly where the 30-day forecast is negative, and mainly in the later windows. Over 3 days the down-day slope is -0.00683 (t -3.85, 2610 cases) when the forecast is negative and -0.00026 (t -0.06, 2195 cases) when it is positive. Over 1 day it is -0.00338 (t -5.17) against -0.00209 (t -1.43). By half, the slope is t -5.40 in windows w13 to w24 and t -1.05 in w1 to w12 (1 day), so it is not stable through time.
+- **F4:** A coin's place in its 30-day range carries the 10-day continuation that the 30-day return was credited with. Regressed together on 2680 grid cases, place in range has a slope of 0.0419 (t 2.60) and the forecast drops to t 0.15. By quintile of place in range, the 10-day excess return is +2.08 % (t 2.80) and +2.25 % (t 2.37) in the top two quintiles, against -2.55 % (t -4.54) in the second-lowest quintile.
+- **F5:** The short side does not pay, because the deepest 30-day falls do not continue. Short trades earn -2.01 % gross on average, with a win share of 0.375 over 6331 trades, against +14.36 % for long trades (median -0.58 %). Among negative forecasts, the deepest quartile (-20 to -13) has a 10-day excess return of +0.64 % (t 0.91), while the two middle quartiles have -2.99 % (t -3.76) and -2.64 % (t -3.39).
+- **F6:** The book's extreme days come from single coins, not from market-wide moves. On the book's worst 2 % of days (58 days) it loses 6.06 % on average while the coins average -1.06 %. On its best 2 % it gains 6.47 % while the coins average +0.12 %. This tail risk is consistent with the failed Calmar of 0.73.
+- **F7:** The 10-day continuation is stronger in volatile coins. The forecast slope is 0.00176 (t 2.89) in the highest tercile of 20-day volatility, against 0.00081 (t 2.03) in the lowest, each tercile about 995 cases.
+
+## Ideas
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation.g1_oversold-day-rebound-in-downtrend` (from F1, F2, F3, F5): In a coin whose 30-day return is negative, the larger its fall over the last day relative to its usual daily move, the larger its rise over the next 3 days.
+- `020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation.g2_place-in-thirty-day-range` (from F4, F7): The closer a coin's close is to the top of its range over the last 30 days, the larger its rise over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

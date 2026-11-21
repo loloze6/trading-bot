@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "020-02_support-retest-bounces-up.d2_support-retest-fails-downtrend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4004199,
+  "findings": {
+    "F1": "The book loses mainly because it is short coins that drift upward. Its mean position is -0.186 and it is short on 30 % of bars. Its gain from the market's own rise is -0.022 % a day, more than its whole mean daily return of -0.011 %, so its timing is slightly positive (+0.011 % a day). Holding the coins earns +0.067 % to +0.155 % a day depending on the coin. Per case the total move is -0.13 % against a cost of 0.19 %, while the unusual move is +0.45 % (2.3 times the cost) but is eaten by a drift of -0.58 % in the short's direction.",
+    "F2": "The forecast's grading runs the wrong way, so the larger shorts do not fall more. The larger-forecast half minus the smaller half is -0.95 %. Active grid cases in the deepest 90-day-fall quartile end +0.16 % over 5 days, against -0.88 % in the second quartile. The four touch-strength quartiles show no order (-0.39 %, -0.14 %, +0.29 %, -0.34 %).",
+    "F3": "Shorts taken after a steep short fall lose the most.",
+    "F4": "Active grid cases fall further the less the coin has fallen over the past 20 days. The 20-day-return quartiles go from +0.69 % (mean -22 %) to -0.80 %, -0.45 % and -1.09 % (mean +6 %). The top quartile's 1.09 % short gain is 5.7 times the cost and above the coin's 5-day drift.",
+    "F5": "The losses sit in the years when the coins rose; the only year shorts paid was a falling one.",
+    "F6": "Trades lose more when the coin is more volatile: the top 20-day-volatility quartile (daily standard deviation 6.2 %) loses 1.84 % per trade (t -3.1), against +0.02 % to -0.76 % in the lower three.",
+    "F7": "The chained book falls 60 % at its deepest and has a fall of 33 % to 60 % in every year, ending 37 % below its start."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's price falls back to a price where it turned up several times in the past 90 days while its 90-day return is negative, it tends to fall further over the next 5 days, and the higher its 20-day return at that retest (a calm return to the lows rather than a crash into them), the larger the further fall.",
+      "consequence": "In a coin that has fallen over 90 days, a slow drift back to old lows would be a reason to sell, and a crash into them would not.",
+      "name": "calm retest of lows fails",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's price falls back to a price where it turned up several times in the past 90 days after a sharp fall over the past 5 days, it tends to rise over the next 5 days, and the steeper that 5-day fall, the larger the rise.",
+      "consequence": "A crash into old lows would be a reason to buy, or at least to close a short, rather than to sell.",
+      "name": "crash into lows rebounds",
+      "from": "F3, F2, F6",
+      "refs": [
+        "F3",
+        "F2",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-02_support-retest-bounces-up.d2_support-retest-fails-downtrend.d1_calm-retest-of-lows-fails",
+    "020-02_support-retest-bounces-up.d2_support-retest-fails-downtrend.d2_crash-into-lows-rebounds"
+  ],
+  "no_ideas": null
+}

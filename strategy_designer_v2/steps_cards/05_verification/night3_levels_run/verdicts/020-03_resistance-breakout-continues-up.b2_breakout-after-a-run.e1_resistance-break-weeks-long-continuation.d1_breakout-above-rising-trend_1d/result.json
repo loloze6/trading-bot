@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 20-bar unusual move of the cases (return minus coin's normal 20-bar drift), before costs",
+    "value": 0.01373212907266941,
+    "statistic": {
+      "name": "one-group t",
+      "value": 0.9475925232921872
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases (confirm); mean < 0 with t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move, split at median entry forecast",
+    "value": -0.027799896126768864,
+    "passed": false
+  },
+  "counts": {
+    "cases": 507
+  },
+  "decided_by": "The t lies between -2 and 2 over at least 30 cases, which the plan calls inconclusive.",
+  "reading": "The situation is read from the recorded raw rb and ma values (both > 0, long side); a case is the first bet (forecast rise of >= 2 points from its lowest level on its side since the last bet, from 0 after a flat or side change) in each 20-bar grid cell counted from each window's first row, dropped if its 20-bar return leaves the window; the median split ranks cases by entry forecast and takes the lower and upper floor(n/2), leaving out the middle case when n is odd."
+}
