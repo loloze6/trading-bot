@@ -5,3 +5,4 @@
 021-02_below-falling-cloud-continues-down.d1_below-gently-falling-calm-cloud_1d: 2 ideas (2 explorations)
 021-02_below-falling-cloud-continues-down_1d: 3 ideas (3 explorations)
 021-03_thin-cloud-upward-breakout_1d: 3 ideas (3 explorations)
+021-04_thin-cloud-downward-breakdown_1d: 4 ideas (2 explorations)

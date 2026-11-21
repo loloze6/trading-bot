@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "021-04_thin-cloud-downward-breakdown_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3698952,
+  "findings": {
+    "F1": "The coin's own 14-day return predicts its next 7 days in the same direction: over 2141 non-overlapping 7-day cases on 6 coins, a case signed by the 14-day return beats the coin's normal drift by 1.08 % (strength 0.080, t 3.80). The most-risen fifth beats it by 2.09 %. The rank slope has t 3.88, with t 1.98 in windows w1\u2013w12 and t 3.31 in w13\u2013w24. Its sign is positive on 6 of 6 coins, with per-coin slope t from 0.15 (LTC) to 2.45 (ZEC). I compared about 25 features and horizons, and this is the one that stands out most.",
+    "F2": "This continuation is about 5.7 times this backtest's 0.19 % round trip from the unusual move alone (1.08 % per case). That fits the earlier finding F11 that ideas large enough to pay cover the cost by about 4 times.",
+    "F3": "The continuation is uneven across years: the 14-day slope t is 3.00 in 2020 and 1.71 in each of 2019, 2022 and 2025, but \u22120.29 in 2018, 0.00 in 2021 and \u22120.59 in 2023.",
+    "F4": "It fades by 14 days: the 14-day return against the next 14 days has slope t \u22120.01 (1001 cases, signed strength \u22120.008).",
+    "F5": "A single large day keeps going for a week. A one-day return measured against the past 14 days' volatility is followed by a 7-day unusual move in its direction of 0.73 % per case (strength 0.057, t 2.64, 1998 cases). The slope t is 1.81 in w1\u2013w12 and 2.55 in w13\u2013w24, and the sign is positive on 5 of 6 coins.",
+    "F6": "Saturdays rise more than the coin's average day: by 0.32 % (t 3.93, 2467 coin-days), positive on 6 of 6 coins (BTC only +0.04 %) and in 6 of 8 years. Thursdays fall below it by 0.30 % (t \u22122.74). Over 7 weekdays these are among many comparisons, and neither is a graded situation.",
+    "F7": "The tested short book lost mostly the coins' rise, not to timing. Its mean daily return was +0.053 % in 2018 and +0.017 % in 2022 (the two years the coins fell, \u22120.34 % and \u22120.18 % a day), but negative in every bull year (\u22120.224 % in 2023). Per case, the normal drift against the short was \u22124.39 % against an unusual move of \u22120.19 %.",
+    "F8": "The tested book's trades lost on every coin. Its 699 trades, held about 23.9 days, had a mean net result of \u22122.2 % (BTC) to \u221217.3 % (XRP) and only 28 to 41 % of them winners. The forecast's size at entry barely relates to the result (correlation 0.079), so cloud thinness did not grade the outcome."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 14-day return, in either direction, the larger its move in the same direction over the next 7 days, beyond its normal drift.",
+      "consequence": "A trader can side with a coin's last two weeks for the following week, holding larger positions behind stronger 14-day moves, and expect the move to be spent by about two weeks.",
+      "name": "two-week momentum, one-week follow-through",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day return relative to its daily volatility over the past 14 days, in either direction, the larger its move in the same direction over the next 7 days, beyond its normal drift.",
+      "consequence": "A daily close that is unusually large for the coin's recent volatility is a reason to trade with it for the following week, not to fade it.",
+      "name": "large-day shock continues weekly",
+      "from": "F5, F2",
+      "refs": [
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "021-04_thin-cloud-downward-breakdown.g1_two-week-momentum-one-week-follow-through",
+    "021-04_thin-cloud-downward-breakdown.g2_large-day-shock-continues-weekly"
+  ],
+  "no_ideas": null
+}
