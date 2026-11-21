@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean 20-bar excess return of long cases over coin drift",
+    "value": 0.003475085236958407,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.29652043078413065
+    },
+    "threshold": "confirm t >= 2 over >= 30 cases with upper-minus-lower > 0; reject t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return (median forecast split)",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 680,
+    "upper half cases": 0,
+    "lower half cases": 680
+  },
+  "decided_by": "t is between -2 and 2 (or undefined) over at least 30 cases.",
+  "reading": "Situation bars are bars with raw res_break value > 0 (a 90-day swing-high level crossed upward) on the long side; a case is the first long bet (forecast rise >= 2 from its lowest long level since the last bet, reset at 0 at each window start and after flat) in each 20-bar grid cell of a window with a full 20-bar return in that window; the median split puts forecasts strictly above the median in the upper half and the rest in the lower half."
+}

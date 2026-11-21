@@ -3,6 +3,7 @@
 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling_1d: inconclusive (fit: adapted) [main: 0.00116072; t of the mean 0.527992; independent cases 2058]
 020-02_support-retest-bounces-up_1d: rejected (fit: adapted) [main: -0.00555971; t of the forecast-weighted mean -2.10274; independent cases 1401]
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins_1d: inconclusive (fit: adapted) [main: 0.00285348; ordinary t of the mean 1.34087; cases 3937, upper half cases 0, lower half cases 3937]
+020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.e1_resistance-break-weeks-long-continuation_1d: inconclusive (fit: adapted) [main: 0.00347509; t of the mean 0.29652; cases 680, upper half cases 0, lower half cases 680]
 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run_1d: inconclusive (fit: adapted) [main: 0.00548917; t of the mean 1.75064; cases 1309]
 020-03_resistance-breakout-continues-up_1d: inconclusive (fit: adapted) [main: 0.00314608; ordinary t of the mean 1.20155; cases 1817, top half cases 908, bottom half cases 909, active bars 3207]
 020-04_support-breakdown-continues-down_1d: inconclusive (fit: adapted) [main: 0.00196303; t of the mean 0.731839; cases pooled across coins 1536, larger half 768, smaller half 768]
