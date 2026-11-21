@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 72-bar move per long case (return minus coin's normal 72-bar drift)",
+    "value": 0.002188679571272852,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.3064244235112731
+    },
+    "threshold": "t >= 2 confirms (with check > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move with rise30_rec above its median minus below",
+    "value": 0.024655727970267733,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 397,
+    "cases above median": 198,
+    "cases below median": 198
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Cases are the first long bet per 72-bar grid cell of each window (cells from the window's first row, cases whose 72-bar return leaves the window dropped), the rise30_rec median is pooled over all cases with cases at the median left out, and fewer than 30 cases is reported as not observable."
+}

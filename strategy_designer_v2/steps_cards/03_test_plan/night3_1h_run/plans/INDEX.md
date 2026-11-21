@@ -3,5 +3,6 @@
 018-03_hourly-surge-gain-before-close_1h: untestable: The idea's horizon is "to the same day's daily close", which lasts from 1 to 23 hourly bars depending on [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-04_hourly-surge-multiday-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-05_hourly-plunge-loss-before-close_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 018-06_hourly-plunge-multiday-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

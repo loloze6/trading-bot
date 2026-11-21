@@ -1,0 +1,1 @@
+018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: inconclusive (fit: adapted) [main: 0.00218868; t of the mean 0.306424; independent cases 397, cases above median 198, cases below median 198]
