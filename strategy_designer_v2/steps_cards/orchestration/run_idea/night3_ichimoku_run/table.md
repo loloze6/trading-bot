@@ -19,20 +19,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise | 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues | plan | confirmed (+3.00) | not profitable enough (failed: Mean daily return) | - | 7.d: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.d1_thin-cloud-ten-day-rise, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.d2_thin-cloud-above-midrange, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.d3_distance-above-26-day-midrange; 7.g: 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.g1_fresh-cloud-breakout-continues, 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise.g2_fresh-breakout-ten-day-rise | 1.23 | 6.7 |
 | 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall | 021-04_thin-cloud-downward-breakdown | plan | inconclusive (+0.30) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.b1_breakdown-under-sliding-kijun; 7.d: 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.d1_cloud-breakdown-in-fresh-slide, 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.d2_cloud-cross-follows-60-day-trend; 7.g: 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.g1_above-cloud-trend-continuation, 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall.g2_short-burst-monthly-continuation | 1.56 | 7.9 |
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues | plan | confirmed (+2.90) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins.d1_slow-cloud-fall-still-sliding, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins.d2_thin-slow-cloud-continues-down, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins.d3_thick-cloud-rebound-up; 7.g: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins.g1_deep-fall-below-cloud-continues, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins.g2_volatility-scaled-monthly-momentum | 1.64 | 10.4 |
+| 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades | 021-01_above-rising-cloud-continues-up | plan | inconclusive (+1.52) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades.b1_cloud-distance-more-coins; 7.d: 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades.d1_just-above-the-cloud, 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades.d2_fresh-cross-above-cloud; 7.g: 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades.g1_saturday-continuation-of-monthly-trend, 021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades.g2_calm-market-momentum-over-a-week | 1.28 | 6.7 |
 
 ## Consumption
-15 ideas, 26.48 USD, 140.7 minutes in all.
+16 ideas, 27.76 USD, 147.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.60 | 13.1 |
-| step4_backtest | 0.00 | 43.2 |
-| step5_verdict | 2.66 | 11.7 |
-| step6_check | 0.00 | 0.3 |
+| step3_plan | 2.65 | 13.5 |
+| step4_backtest | 0.00 | 45.2 |
+| step5_verdict | 2.77 | 12.2 |
+| step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.25 | 0.8 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 4.54 | 14.6 |
-| step7_7.g | 6.85 | 21.9 |
-| step7_7.d | 9.58 | 34.7 |
+| step7_7.b | 4.76 | 15.5 |
+| step7_7.g | 7.39 | 23.5 |
+| step7_7.d | 9.94 | 36.1 |

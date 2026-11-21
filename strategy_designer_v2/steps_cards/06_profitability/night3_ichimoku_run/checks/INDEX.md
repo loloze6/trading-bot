@@ -1,6 +1,7 @@
 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins_1d: not profitable enough [Sharpe 0.5578; Sharpe minus holding's Sharpe -0.02815; Calmar 0.2085]
 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise_1d: not profitable enough [Sharpe 0.9363; Sharpe minus holding's Sharpe 0.3822; Calmar 0.853]
 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues_1d: not profitable enough [Sharpe 0.5081; Sharpe minus holding's Sharpe -0.04603; Calmar 0.2038]
+021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades_1d: not profitable enough [Sharpe 0.02485; Sharpe minus holding's Sharpe -0.5293; Calmar -0.07753]
 021-01_above-rising-cloud-continues-up_1d: not profitable enough [Sharpe 0.4543; Sharpe minus holding's Sharpe -0.09989; Calmar 0.1551]
 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins_1d: not profitable enough [Sharpe 0.1719; Sharpe minus holding's Sharpe -0.4141; Calmar 0.03054]
 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: not profitable enough [Sharpe -0.0008411; Sharpe minus holding's Sharpe -0.555; Calmar -0.02699]

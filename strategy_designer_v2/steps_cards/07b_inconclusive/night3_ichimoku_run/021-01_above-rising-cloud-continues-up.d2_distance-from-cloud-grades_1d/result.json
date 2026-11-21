@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2142417,
+  "findings": {
+    "F1": "The tested slope points the way the idea predicts but falls short of the bar: t 1.52 on 576 non-overlapping 26-day cases. Its size is tiny, an unusual move of +0.22 % per case and a strength of 0.001 of the coin's usual 25.48 % move, far below the 0.05 of real ideas so far (findings F10).",
+    "F2": "The effect comes from which side of the cloud top the close is on, not from how far it is. Closes above the top were followed by +3.7 % excess over 26 days (227 cases); closes below by -2.4 % (349 cases); Welch t about 2.1 from those means and spreads. Within each side the slope on distance is flat or reversed: t -0.01 above, t -1.16 below.",
+    "F3": "The forecast's grades are not monotonic. By forecast quintile, from lowest to highest, the 26-day excess is -0.95 %, -0.89 %, -5.45 %, +4.54 % and +2.77 %. The worst cases sit just below the top, and the farthest above do worse than the nearest above.",
+    "F4": "The plain percent distance from the cloud top, the component's raw value, predicts almost nothing: t 0.41 at 26 days. The rolling standardisation in the forecast lifts it to 1.52, and the two correlate only 0.61. Much of the tested signal comes from the rescaling, not from the cloud.",
+    "F5": "The effect differs in sign across coins and years. By coin, BTC t 2.01 and ZEC t 1.80, against XRP -0.98 and XMR -0.57. By year, 2019 t 1.81 and 2025 t 2.35, against 2020 t -2.39, 2021 t -2.10 and 2023 t -1.97. Each group has 96 or 72 cases, too few to settle any of them.",
+    "F6": "The cloud adds nothing visible beyond a plain trend. The close's distance from its 52-day average gives t 1.72 at 26 days (288 cases), about the same as the forecast's 1.52, and the two correlate 0.81.",
+    "F7": "Shorter horizons show the same weak lean, and the longest none. The slope's t is 2.25 at 5 days (3,419 cases), 2.05 at 10 days (1,691 cases) and -0.39 at 52 days (288 cases).",
+    "F8": "On the few cases where the cloud can be rebuilt from recorded bars, the slope is clearer when the cloud is thin than when it is thick. The thinnest third gives t 2.41 and the thickest t -0.52, on only 48 cases each, too few to stand alone.",
+    "F9": "The book cannot pay at this size. Per case, the total move is -0.65 %, -3.4 times the 0.19 % cost of a buy and a sell. The unusual move is only 1.2 times that cost, and the book's Sharpe of 0.02 is 0.53 below holding's."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "cloud distance, more coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "A coin's return over the next 26 days is larger the farther its daily close stands above the top of its Ichimoku cloud, and smaller the farther it stands below it. The cloud is the band between the average of the 9-day and 26-day high-low midpoints and the 52-day high-low midpoint, plotted 26 days ahead.",
+      "consequence": "A trader would lean long in proportion to how far a coin trades above its cloud, and lean away from coins trading below it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "021-01_above-rising-cloud-continues-up.d2_distance-from-cloud-grades.b1_cloud-distance-more-coins"
+  ],
+  "no_ideas": null
+}
