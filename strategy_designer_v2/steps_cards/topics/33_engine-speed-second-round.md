@@ -1,6 +1,6 @@
 # Topic 33: A second round of engine speed work
 
-Status: built 2026-11-20 (A to D, files identical, `orchestration/duration/14_round2_proof.md`); merged into the working branch on 2026-11-20 (7826ad81); into master: the operator's go  
+Status: built 2026-11-20 (A to D, files identical, `topics/33_review/duration/14_round2_proof.md`); merged into the working branch on 2026-11-20 (7826ad81); into master: the operator's go  
 Where: engine (`trading-bot/`), shared code  
 Opened: 2026-11-19 (operator, during d_line_1h_run)
 
@@ -34,19 +34,19 @@ Recommended: the profiling round, when hourly research is the main track.
 |---|---|---|---|---|
 | 2026-11-19 | Parked | operator | the run's speed is as measured; not needed for this run | - |
 | 2026-11-20 | Unparked: find time for it, maybe in another session | operator | "one backtest per hour is really slowing us down while we are continuously enhancing" | - |
-| 2026-11-20 | A session of its own (`session_012maTgTnbCc9ZEaRY48QDd1`, "Engine speed, round 2"), with the brief `orchestration/duration/10_round2_brief.md`; research-changing options only proposed | operator ("yes; ensure knowledge transfer, especially on the options that would impact our research process (folds etc.)") | the backtest is about 80 % of an idea's time | – |
+| 2026-11-20 | A session of its own (`session_012maTgTnbCc9ZEaRY48QDd1`, "Engine speed, round 2"), with the brief `topics/33_review/duration/10_round2_brief.md`; research-changing options only proposed | operator ("yes; ensure knowledge transfer, especially on the options that would impact our research process (folds etc.)") | the backtest is about 80 % of an idea's time | – |
 
 ## Status and next
 2026-11-20: proposed, a session of its own (its own container, so the running queue is not slowed), on its own branch:
 measure (profile one hourly backtest: one coin, one fold), findings, plan with gain, effort and risk, the operator's go,
-then each change proven by identical files on fixed inputs (as in round 1, `orchestration/duration/`). Nothing is merged
+then each change proven by identical files on fixed inputs (as in round 1, `topics/33_review/duration/`). Nothing is merged
 into the working branch while a run is going, and nothing into master without the operator's go. Meanwhile, without the
 engine: the replay of topic 36 (`36_review/book_sim.py`, 10 s a book, where a component is computed on every bar) and
 rerunning only the books whose step 6 could change.
 
-2026-11-20, round 2 session (branch `engine-speed-round2`): measurement `orchestration/duration/11_round2_measure.md`,
+2026-11-20, round 2 session (branch `engine-speed-round2`): measurement `topics/33_review/duration/11_round2_measure.md`,
 plan `12_round2_plan.md` (A: bootstrap only where read; B: volatility components reuse the previous bar's stds; C: one
 call per coin and fold; D: per-bar glue). Waiting for the operator's go; no engine change made.
 
 ## Links
-Topic 21; `orchestration/duration/`; `runs/D_LINE_1H_RUN.md`.
+Topic 21; `topics/33_review/duration/`; `runs/D_LINE_1H_RUN.md`.

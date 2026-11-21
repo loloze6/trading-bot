@@ -26,8 +26,8 @@ This run asks two questions, and checks a third.
 | Part | Books | Compared with |
 |---|---|---|
 | A. Pilot (`std_time_pilot_run`), `standardise` window 1,440 bars (60 days), minimum history 480 (20 days), corrected rule | grinding-rises (72), volatile evening-fall d2 (24), deep-decline (72), fresh-drop-rebound (72): the long-horizon, one-sided hourly books | the same books held under the old rule (night records). On these books the rule change alone moves positions by 3 to 24 % of bars but earnings before costs by at most about 5 % (replay; deep-decline 5.1 %), so a larger change is the window's effect |
-| B. `hold2_rerun`, list 2 | volatile reversal completes quickly (1d, 3), rsi side predicts next week (1d, 7), and set 3's last 2: nearness to highs more coins (1h, 168), heavy-volume follow-through (1d, 3) | their records without hold, and the 2 two-sided under the old rule |
-| B. `hold2_rerun`, list 3 | the paying books the corrected rule moves by 5 % or more: golden-cross momentum more coins (1h, 240), dual momentum (1h, 72), above-average drift (1d, 20), rsi above streak (1d, 14), nearness more coins (1d, 7), nearness without the short side (1d, 7) | their records without hold, and under the old rule |
+| B. `hold2_rerun_run`, list 2 | volatile reversal completes quickly (1d, 3), rsi side predicts next week (1d, 7), and set 3's last 2: nearness to highs more coins (1h, 168), heavy-volume follow-through (1d, 3) | their records without hold, and the 2 two-sided under the old rule |
+| B. `hold2_rerun_run`, list 3 | the paying books the corrected rule moves by 5 % or more: golden-cross momentum more coins (1h, 240), dual momentum (1h, 72), above-average drift (1d, 20), rsi above streak (1d, 14), nearness more coins (1d, 7), nearness without the short side (1d, 7) | their records without hold, and under the old rule |
 
 Not rerun, by one rule: a book that does not pay is rerun only if, under the corrected rule (replayed), it earns more
 per unit traded before costs than a round trip costs. That excludes the 5 two-sided hourly reversals (they lose even
@@ -108,7 +108,7 @@ state it in time anyway (one rule for every timeframe) is for the operator: no r
 the ideas' edge (topic 34: a move that pays for its trip; topic 35: a horizon in price), and, for volatile evening-fall,
 what makes its deepest fall (its diagnosis by window), before anything is changed.
 
-## Reading, B. the corrected rule on paying books (`hold2_rerun`, 10 books, done 15:56 Paris)
+## Reading, B. the corrected rule on paying books (`hold2_rerun_run`, 10 books, done 15:56 Paris)
 
 The last 9 ran in 3 parts side by side (topic 37, option D: `runs/hold2_parts/`). Sharpe and Calmar after costs; step 6:
 "pro" profitable enough.

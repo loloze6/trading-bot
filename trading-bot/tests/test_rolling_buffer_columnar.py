@@ -1,6 +1,6 @@
 """The history table built from columns (2026-11-18, `strategies/strategy_base.RollingBuffer`): every frame equals
 the one `pd.DataFrame(list of bar dicts)` gives, exactly; any bar outside the columnar kinds switches the buffer back
-to that construction. Measured gain: `strategy_designer_v2/steps_cards/orchestration/duration/`."""
+to that construction. Measured gain: `strategy_designer_v2/steps_cards/topics/33_review/duration/`."""
 import sys
 from pathlib import Path
 

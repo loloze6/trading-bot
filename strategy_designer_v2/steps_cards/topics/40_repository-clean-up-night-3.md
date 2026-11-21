@@ -1,6 +1,6 @@
 # Topic 40: repository clean-up, night 3
 
-Status: open (part done; the rest proposed)  
+Status: closed (2026-11-21: done on the operator's go)  
 Where: the repository's structure (`steps_cards/`)  
 Opened: 2026-11-21, the operator: "cleaning work of the repo, ensuring structure is clean and standard, files on
 correct folders, card for the topic created".
@@ -14,7 +14,7 @@ Is every file in the one place named after what it is, with the same layout in e
 - Topic folders of working files (`topics/30_review/`, `36_review/`) had no rule written for them.
 - Three run folders are named `hold2_rerun` instead of `<name>_run` (in 03, 04, 05, 06 and `orchestration/unseen_test`;
   65 tracked files name them, the records' own run.md and manifests included).
-- `orchestration/duration/` holds the speed work's measures, plans and proofs (topics 21 and 33): working files of
+- `orchestration/duration/` held the speed work's measures, plans and proofs (topics 21 and 33): working files of
   topics, not a function (it has no card; 14 tracked files name the path).
 - `07f_real_and_profitable/` has no `validation/` folder, unlike the other step 7 lines.
 - Three child sessions of 2026-11-20 (hold2 parts B and C, engine speed round 2) were finished, their branches merged.
@@ -41,9 +41,10 @@ Recommended: the second and the third; the first only if a tool needs the `_run`
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
 | 2026-11-21 | Clean-up done as listed above | the session, on the operator's night go | one place per thing; step 5 no longer depends on a temporary tool | renames of records: proposed only |
+| 2026-11-21 | The three proposed changes: `hold2_rerun` renamed `hold2_rerun_run` (5 folders, 64 files naming it; the engine's own window files keep the old name as a trace); `orchestration/duration/` moved to `topics/33_review/duration/` (14 references, 4 of them comments in `trading-bot/`); line 7.f deleted instead of validated | the operator ("yes to all"; "line 7.f should not exist") | one naming rule; `orchestration/` holds only functions | - |
 
 ## Status and next
-The proposed rows wait for the operator's go.
+Done (2026-11-21).
 
 ## Links
 `common/README.md`, `topics/README.md`, topic 34.

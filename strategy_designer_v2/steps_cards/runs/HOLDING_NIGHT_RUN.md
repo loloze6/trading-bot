@@ -147,7 +147,7 @@ floor applies only when a bet is held.
 ## Reading, set 3 (`hold_paying_run`, 11 of 13; stopped 09:30 UTC)
 
 Run on the old rule (events = moves of the sized target). Stopped before its last 2 books (nearness-to-high on more
-coins hourly, heavy-volume follow-through daily), which run on the corrected rule in `hold2_rerun` (wave A). Each book
+coins hourly, heavy-volume follow-through daily), which run on the corrected rule in `hold2_rerun_run` (wave A). Each book
 against its own record without hold; step 6 says "pro" for profitable enough.
 
 | Book (bars held) | Step 5 | Step 6 before → held | Sharpe before → held | Calmar before → held |

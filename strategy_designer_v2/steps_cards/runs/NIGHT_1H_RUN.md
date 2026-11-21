@@ -1,7 +1,7 @@
 # Night run on hourly bars (brief written 2026-11-18, before the run)
 
 ## Purpose
-Do hourly bars give ideas that are real and pay after costs? The engine is now fast enough for hourly ideas (orchestration/duration/
+Do hourly bars give ideas that are real and pay after costs? The engine is now fast enough for hourly ideas (topics/33_review/duration/
 8 and 9), step 4 runs any bar size, step 6 counts trades per day, and the gap rule ignores holes of up to one day on any
 bar size (operator, 2026-11-18). Costs are the main enemy on hourly bars (15 to 25 bps a round trip): an idea must earn
 more than that per trade.
@@ -23,7 +23,7 @@ wait for it (the same step, its checks and proof).
 ## Before the run: the changes it relies on, proven (2026-11-18)
 | Change | Proof |
 |---|---|
-| Speed (data read locally, table by columns, warm-up checked once, record per column) | identical files on 4 reruns each; 1h fold A 329 s -> 135 s alone (`orchestration/duration/9_data_and_table_proof.md`) |
+| Speed (data read locally, table by columns, warm-up checked once, record per column) | identical files on 4 reruns each; 1h fold A 329 s -> 135 s alone (`topics/33_review/duration/9_data_and_table_proof.md`) |
 | Step 4 on any bar size | the 4h probe runs; 4,380 bars equal the hourly data added by hand |
 | Step 6 trades per day | 174 records rerun: 173 identical, the hourly one's trades per day changed, its status not |
 | Gap rule: holes up to one day ignored | daily identical except XRP's 2-day hole of 2022-05 (w2 to w5 of a 19-coin record; w2 net return -0.55% -> 0); ZEC 1h fold A: 0% of hours blocked (was 47%) |

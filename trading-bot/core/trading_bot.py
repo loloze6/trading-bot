@@ -74,7 +74,7 @@ class TradingBot:
         # 2026-07-07: see BacktestEngine.warmup_cutoff_timestamp docstring. Default
         # None preserves exact prior behavior (every candle always trades).
         self.warmup_cutoff_timestamp = warmup_cutoff_timestamp
-        # 2026-11-18 (operator's go; orchestration/duration/8_finer_bars_measure.md, point 2): the warm-up is checked
+        # 2026-11-18 (operator's go; topics/33_review/duration/8_finer_bars_measure.md, point 2): the warm-up is checked
         # once, on a copy of THIS strategy, at the first bar after the cutoff (is_ready() classifies a bar, so the
         # real strategy is not asked). It replaces launcher.run_backtest's throwaway probe, which replayed the whole
         # warm-up a second time. A strategy not ready is recorded here; BacktestEngine stops the run on it.

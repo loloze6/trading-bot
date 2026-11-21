@@ -145,7 +145,7 @@ working branch. Two "positive" hourly books from the defect set aside; the payin
 | Speed changes A to D (bootstrap thrown away; volatility recomputed; coins in two waves; pandas glue), each proven by identical files | **Taken:** waits for the operator's go in the speed session |
 | A shorter warm-up (about 20 % saved; it can change results) | Not now: its own decision after A to D (operator: only if far too long; it is about 1.8 times what is needed) |
 | More cores | Open: not found in the environment's settings |
-| Fewer coins, folds or windows; sampling bars | Rejected as speed changes: they change the research (`orchestration/duration/10_round2_brief.md`) |
+| Fewer coins, folds or windows; sampling bars | Rejected as speed changes: they change the research (`topics/33_review/duration/10_round2_brief.md`) |
 
 **4.3 Cheaper answers before backtests:**
 | Option | Decision |

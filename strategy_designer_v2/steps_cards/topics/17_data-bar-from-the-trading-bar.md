@@ -32,4 +32,4 @@ Recommended: deduced.
 Closed. Lives in step 4's helper and the launcher.
 
 ## Links
-Commit 5a453bc1; `orchestration/duration/8_finer_bars_measure.md`.
+Commit 5a453bc1; `topics/33_review/duration/8_finer_bars_measure.md`.

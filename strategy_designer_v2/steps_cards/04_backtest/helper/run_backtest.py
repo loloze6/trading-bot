@@ -20,7 +20,7 @@ What it does, in order:
      window, each in its own folder (the way every coin ran before 2026-11-16). A coin or window without data does
      not stop the others.
      The calls run at the same time, as many at once as the machine has cores (2026-11-16, change 2 of
-     orchestration/duration/3_plan.md; one call per coin and fold since 2026-11-20, change C of 12_round2_plan.md, so
+     topics/33_review/duration/3_plan.md; one call per coin and fold since 2026-11-20, change C of 12_round2_plan.md, so
      6 coins no longer run in two waves on 4 cores). Each call is a separate process with its own output folder, and
      the wrapper gives each call its own interim trades file (--trades-file-in-out-dir).
   4. Keeps the engine's files per coin and window (metrics.json, manifest.json, forecast_distribution.csv, and
@@ -187,7 +187,7 @@ def cores():
 
 def parts(python, symbol, bar, folds, windows=None):
     """The coin's windows, split into the wrapper calls that run them: one call per fold (2026-11-20, topic 33,
-    `orchestration/duration/12_round2_plan.md`, change C), or one call on the windows of --windows.
+    `topics/33_review/duration/12_round2_plan.md`, change C), or one call on the windows of --windows.
     Returns [(part name, its protocol, the number of the coin's windows before it)]."""
     out, before = [], 0
     for name, fs in ([("windows", folds)] if windows is not None else [(f"fold_{f}", [f]) for f in folds]):

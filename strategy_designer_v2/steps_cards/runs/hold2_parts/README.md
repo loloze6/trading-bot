@@ -1,7 +1,7 @@
 # The books left of the corrected-rule reruns, in 3 parts run side by side (2026-11-20)
 
 The operator's test (topic 37): spread one queue across cloud sessions, each on its own machine (4 cores each), with
-the designer session coordinating. Each part runs `topics/30_review/hold_rerun.py PART --run hold2_rerun` (step 4,
+the designer session coordinating. Each part runs `topics/30_review/hold_rerun.py PART --run hold2_rerun_run` (step 4,
 step 5 with the saved measure, step 6, the unseen-dates test for a confirmed and profitable book). The results are the
 same wherever they run (one engine, one commit). Purpose and expected outcomes: `runs/HOLD2_AND_PILOT_RUN.md`, part B.
 
