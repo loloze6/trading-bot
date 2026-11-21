@@ -62,7 +62,7 @@ What the readings mean (examples, not rules):
   definition, `common/measures.md`), so the two cannot disagree.
 
 ## Before the first comparison
-- The paying books found so far (about 40 in all runs) are rerun once on today's engine and costs (the holding rule, the
+- The paying books found so far (41 records in all runs, 35 distinct ideas: an idea rerun in several runs counts once) are rerun once on today's engine and costs (the holding rule, the
   measured slippage): otherwise a new book is compared with books charged other costs. Steps 4 and 6 only, no model
   call.
 - The register then holds them, with their bar returns.
@@ -72,7 +72,7 @@ What the readings mean (examples, not rules):
 |---|---|---|---|---|
 | 1 | Definitions 1 to 6 in `common/measures.md`; the function's card | one meaning before any code | small | none |
 | 2 | The function, with tests on books whose answer is known by construction (a book equal to another: 100 % explained; the same book one bar later: 100 % with a lag; noise: about 0 %) | the comparison for every new paying book | medium (one helper, the register) | none to the steps: nothing they decide changes |
-| 3 | The paying books so far rerun on today's engine (steps 4 and 6), then added to the register | references on equal terms | CPU only, about 40 backtests | some may no longer pay under today's costs: reported, not hidden |
+| 3 | The paying books so far rerun on today's engine (steps 4 and 6), then added to the register | references on equal terms | CPU only, 35 backtests | some may no longer pay under today's costs: reported, not hidden |
 | 4 | Proof: the comparisons read on night 3's 19 paying books against the hand controls already run (they should read "a profit we already have") and on step 7 A/B's 1-day reversal (it should read differently) | shows the measure says what the controls said, with one rule | small | if they disagree, the definition is wrong: rework it before use |
 | 5 | `run_idea` calls it; line 7.f reads its file | every new paying book compared at once | small | none |
 
