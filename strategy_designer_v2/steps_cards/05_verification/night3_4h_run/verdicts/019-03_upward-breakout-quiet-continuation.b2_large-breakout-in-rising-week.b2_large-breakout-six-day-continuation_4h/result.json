@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 36-bar move of long bets, before costs",
+    "value": 0.005094185045447409,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.678188137633265
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 independent cases; reject: mean < 0 with t <= -2 over >= 30"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above minus below forecast median",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 1743
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean's), so neither rule is met.",
+  "reading": "Situation = recorded break raw value > 0 (or close above the prior 12-bar high from prices) and 42-bar close return > 0 from prices (the regime 'trending' where the window's first 42 bars leave it uncomputable), long side; a case is the first long bet (forecast rise >= 2 points from its lowest long level since the last bet, from 0 after flat) in each 36-bar grid cell from each window's first row, pooled over all coins, with the coin's drift the mean of its grid 36-bar returns over all windows; the median split excludes cases equal to the median."
+}

@@ -4,6 +4,7 @@
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails_4h: not profitable enough [Sharpe 0.1518; Sharpe minus holding's Sharpe -0.4554; Calmar 0.04627]
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h: profitable enough [Sharpe 0.9153; Sharpe minus holding's Sharpe 0.3081; Calmar 0.8579]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h: profitable enough [Sharpe 1.112; Sharpe minus holding's Sharpe 0.5582; Calmar 1.211]
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation_4h: not profitable enough [Sharpe 0.7876; Sharpe minus holding's Sharpe 0.2339; Calmar 0.497]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation_4h: not profitable enough [Sharpe 0.4109; Sharpe minus holding's Sharpe -0.1428; Calmar 0.1444]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h: not profitable enough [Sharpe 0.2682; Sharpe minus holding's Sharpe -0.2855; Calmar 0.023]
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: profitable enough [Sharpe 1.088; Sharpe minus holding's Sharpe 0.5343; Calmar 1.174]

@@ -4,6 +4,7 @@
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails_4h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins_4h: 2 ideas (2 explorations)
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation_4h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week_4h: 3 ideas (2 explorations)
