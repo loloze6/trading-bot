@@ -5,6 +5,7 @@
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-02_combination-beats-best-single_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, 1d, folds A, B, C, D]
+022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-03_combined-extremes-larger-moves_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

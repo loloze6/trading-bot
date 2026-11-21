@@ -5,6 +5,7 @@
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: 1 ideas (2 explorations)
 022-02_combination-beats-best-single_1d: 2 ideas (3 explorations)
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: no ideas: The only strong pattern, the 20-day reversal, vanishes when the grid's starting point changes (mean t -0.88 over 20 offsets), and every other angle stays within what chance gives across the many angles looked at (forecast, 1-day move by horizon, by year, coin and volume level, volatility, range, nearness to highs, weekday, the book's long and short sides).
+022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: 2 ideas (2 explorations)
 022-03_combined-extremes-larger-moves_1d: 2 ideas (3 explorations)
 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: no ideas: I looked at about 35 groupings: six bar variables in quintiles, volatility terciles, weekday, year, coin, side and the book's tails. The only cell beyond t 2.5 is the large-up-day continuation (F6, t 2.66), and it is neither graded nor consistent across coins. That does not stand out from chance given how many angles were tried, so no finding supports a new idea.
 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: 2 ideas (3 explorations)

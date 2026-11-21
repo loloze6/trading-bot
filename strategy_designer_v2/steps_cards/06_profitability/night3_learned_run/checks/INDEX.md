@@ -5,6 +5,7 @@
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends_1d: not profitable enough [Sharpe -0.3522; Sharpe minus holding's Sharpe -0.9065; Calmar -0.1564]
 022-02_combination-beats-best-single_1d: not profitable enough [Sharpe -0.8499; Sharpe minus holding's Sharpe -1.404; Calmar -0.2721]
 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d: not profitable enough [Sharpe -0.4348; Sharpe minus holding's Sharpe -0.9676; Calmar -0.9724]
+022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: profitable enough [Sharpe 1.037; Sharpe minus holding's Sharpe 0.483; Calmar 1.047]
 022-03_combined-extremes-larger-moves_1d: not profitable enough [Sharpe -0.7213; Sharpe minus holding's Sharpe -1.276; Calmar -0.2209]
 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d: not profitable enough [Sharpe 0.9174; Sharpe minus holding's Sharpe 0.3098; Calmar 0.5371]
 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: not profitable enough [Sharpe 0.6773; Sharpe minus holding's Sharpe 0.1231; Calmar 0.2581]

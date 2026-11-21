@@ -1,0 +1,41 @@
+{
+  "line": "7.g",
+  "backtest": "022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3891937,
+  "findings": {
+    "F1": "The day after a coin's largest falls (lowest tenth of the previous day's return over its 20-day volatility), the coin rose 0.56 % more than its normal daily drift (t 3.98, 1596 days), and 0.34 % more after the next tenth (t 2.82). Past the middle tenths the next day turns lower, down to -0.31 % in the eighth tenth (t -2.76). The next-day return falls as the previous day's standardised return grows in five of six coins: XMR t -5.23, ETH t -2.44, LTC t -2.25, BTC t -1.56. The move after the deepest falls is about 3 times the 0.19 % cost of a round trip.",
+    "F2": "The tested forecast predicts only outside high volatility. Its 5-day slope has t 2.73 in the calmest third of 20-day volatility and t 2.56 in the middle third, with 1044 and 1043 cells. In the most volatile third it has t 0.18, and the cases with a positive forecast lost 0.62 % against the drift (485 cases). In the most volatile fifth, positive-forecast cells lost 1.12 % (281 cells).",
+    "F3": "The forecast's 5-day slope changes sign from year to year: t -1.34 in 2018, -2.17 in 2023, +2.35 in 2020, +2.35 in 2024 and +2.88 in 2025, with about 426 cells each. The confirmed effect does not hold steadily through time.",
+    "F4": "The book's gain rests on a few days. Its best 1 % of coin-days sum to 22.8 against a total of 15.0 over all coin-days, and its worst 1 % sum to -16.1.",
+    "F5": "Saturday is the one weekday whose daily return beats the drift in both halves of the data. Over all days it gained 0.29 % (t 3.40, 2280 days), with t 2.48 in <date> and t 2.40 in <date>. The book also earned most on Saturdays (0.25 %, t 5.37). Five of six coins show a positive Saturday, though none reaches t 2.1 alone, and a calendar effect cannot be graded, so it supports no idea here."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall over its last day, measured against its usual daily move over the past 20 days, the more the coin rises over the next day.",
+      "consequence": "A trader would buy a coin after its sharpest one-day falls, sized by how unusual the fall was, and would refuse to sell into them.",
+      "name": "sharp daily falls rebound",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's 20-day volatility is low against its own recent history, the larger its 28-day rise relative to its usual 28-day moves, the more the coin rises over the next 5 days.",
+      "consequence": "A trader would ride a coin's strong month-long rises in calm markets and stand aside from them when the coin is turbulent.",
+      "name": "calm monthly rises continue",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue.g1_sharp-daily-falls-rebound",
+    "022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue.g2_calm-monthly-rises-continue"
+  ],
+  "no_ideas": null
+}
