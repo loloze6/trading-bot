@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5842854,
+  "findings": {
+    "F1": "Saturday's UTC day continues the past week's move: across the 6 coins, the 24 hours from Saturday's 00:00 UTC open gain +84.8 bps beyond the coin's normal daily drift when the coin's 7-day return is in its top third (t 4.65, 770 days), against -13.8 bps in the bottom third (t -1.00). Top minus bottom is +98.6 bps, the largest spread of any weekday; the next largest are Tuesday's +56.8 and Friday's +33.8.",
+    "F2": "The Saturday continuation is graded and belongs to Saturday alone: the correlation of the next day's standardised unusual move with the 7-day return scaled by 7-day volatility is 0.126 on Saturdays (2304 days), against 0.008 on all other days.",
+    "F3": "The Saturday top-third continuation is positive on every coin, from +26 bps on BTC (t 1.21) to +164 bps on XRP (t 2.31), and in 6 of 8 years (2018 -25 bps, 2023 -33 bps; 2020 +126 bps, 2021 +180 bps, 2024 +136 bps). It is positive in only 62.5 % of the 24 windows, so it comes in bursts.",
+    "F4": "The Saturday continuation is far larger than a trade's cost: +85 bps of unusual move per case over 24 hours is about 4.5 times the 19 bps round trip this backtest applied. The tested evening idea's +9 bps over 4 hours is 0.4 times that cost.",
+    "F5": "The tested evening drift is real but small: hourly bars starting at 21:00 and 22:00 UTC gain +5.5 bps (t 6.87) and +4.4 bps (t 5.76) on average. Other hours with |t| above 3 also move only 2 to 4 bps (14:00 -3.5 bps, t -3.77; 03:00 -2.8 bps, t -3.89).",
+    "F6": "The book lost on every weekday except Saturday (-3.9 to -7.7 bps per day; Saturday +1.9 bps). It traded about 0.65 to 1.37 times its value per day, with fees taking 6 to 15 bps of book value per day, which is more than its losses.",
+    "F7": "The brief's grind-versus-jump split does not show in these bars. Among large 72-hour moves, the top third by return concentration minus the bottom third gives a next-72-hour move in the move's direction 0.044 usual moves lower (Welch t -0.84, 923 per third) and 0.022 higher over the next 24 hours (Welch t 0.70). The volume-concentration split is also flat (Welch t -1.15 and -0.46).",
+    "F8": "There is a weaker sign of give-back on the next day: on Sundays after a top-third 7-day rise the coin falls -38.0 bps beyond its drift (t -2.49). Given the many angles looked at, this is not distinguishable from chance on its own."
+  },
+  "ideas": [
+    {
+      "idea": "Over the 24 hours of Saturday (UTC), a coin keeps moving in the direction of its 7-day return, and the larger its 7-day return relative to its 7-day hourly volatility, the larger its rise over that day.",
+      "consequence": "A trader can hold a coin long through Saturday after a strong week, sized up with the strength of that week, and refuse the Saturday long after a weak week; one round trip per week is a small cost against a move several times its size.",
+      "name": "Saturday continuation of weekly rise",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise.g1_saturday-continuation-of-weekly-rise"
+  ],
+  "no_ideas": null
+}

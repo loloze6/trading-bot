@@ -82,16 +82,17 @@ are designed together.
 | 2026-11-20 | Take the night's readings as a draft approach: review it, standardize it, go further, and test it | the operator | the readings tell why a proven idea does not pay | – |
 | 2026-11-20 | A forecast that stays on with no new rise counts as past its bets | the operator | option 2: each rise is the event that asks for a hold | each bar the condition holds is a new prediction |
 | 2026-11-20 | Long term, the diagnosis is part of the analysts' work (step 7), around profitability; the helper in `common/` is temporary, for this test | the operator | the analysts read why a confirmed idea does not pay | a separate stage |
+| 2026-11-20 | The diagnosis is a temporary tool, to find the workflow's improvements; what it found goes into the steps as their own measures (the idea's size in step 5; the size against the recorded cost in step 7), with no duplicate of step 4's record | the operator ("book diagnosis was temporary... only helping us to identify research workflow improvement") | one place for each measure | step 7 reading the diagnosis itself |
 
 ## Status and next
-2026-11-20: step 1 drafted, `common/book_diagnosis.md`, for the operator's review (three open points at its end).
+2026-11-20: step 1 drafted, `topics/34_review/book_diagnosis.md`, for the operator's review (three open points at its end).
 2026-11-20, review 1 (operator): readings worded as what they measure; reading 1 named "big enough"; the idea's closing
 time (does the move end at the horizon) added as its own reading, distinct from the book staying in after its bets.
 Review 2 (operator): opening time and closing time as a pair; the per-bet move against a round trip joins "big
 enough"; "book stays in" renamed "holding past the bets" (the book's real positions, not the coin after a signal).
 Review 3 (operator): "big enough" compares the price move over the horizon with the cost rate of a round trip;
 quantity does not enter (profit and cost both scale with it). The book-level per-unit version is dropped.
-2026-11-20, step 2 built (operator's go): `common/book_diagnosis.py`, next to its definition until the observe-and-advise
+2026-11-20, step 2 built (operator's go): `topics/34_review/book_diagnosis.py`, next to its definition until the observe-and-advise
 stage exists; 8 tests on records whose answers are known by construction (bets, a known fee, a known path, overlap,
 holding past the bets, a book that is all market, the horizon read from the plan); all pass. Proof: a rerun on the same
 record gives an identical `diagnosis.json`. The 3 open points are applied as proposed until decided. First real record
@@ -106,6 +107,11 @@ book's daily gain.
    paying books of set 3 as the control: a diagnosis that does not tell a paying book from a non-paying one is not
    ready.
 4. Then the operator decides how step 7 reads it (through the observe-and-advise stage), and option A.
+
+2026-11-21: what the diagnosis found is now in the steps: the idea's size (step 5, `size.json`, `common/idea_size.py`,
+filled in for 244 past verdicts), the size against the cost of a trade from the record (step 7, every line), the
+findings register (`common/findings.md`, F10 and F11). The bet's definition moved to `common/bets.py`; the diagnosis
+itself, a discovery tool, moved here: `topics/34_review/book_diagnosis.py` and `.md`, with its tests.
 
 ## Links
 `runs/HOLDING_NIGHT_RUN.md` (readings of sets 1 and 2), topic 30, `common/forecast.md` point 7 (the holding period),

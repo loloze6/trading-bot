@@ -8,7 +8,7 @@ Why this can't leak: it reads a finished record after the fact; it changes no de
 import math, pathlib
 import numpy as np
 import pandas as pd
-from book_diagnosis import bets, band_of
+from bets import bets, band_of
 
 
 def size(record, H):

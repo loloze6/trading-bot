@@ -1,0 +1,6 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_rebound-after-outsized-falls_1d: not profitable enough [Sharpe 0.1511; Sharpe minus holding's Sharpe -0.4884; Calmar 0.009193]
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-two-day-rebound_1h: not profitable enough [Sharpe 0.4381; Sharpe minus holding's Sharpe -0.1156; Calmar 0.1819]
+016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_grinding-fall-rebounds-more_1h: not profitable enough [Sharpe 0.7243; Sharpe minus holding's Sharpe 0.1706; Calmar 0.5514]
+016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise_1h: not profitable enough [Sharpe -0.9338; Sharpe minus holding's Sharpe -1.488; Calmar -0.2006]
+017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses_1h: not profitable enough [Sharpe -0.6961; Sharpe minus holding's Sharpe -1.25; Calmar -0.233]
+017-05_settlement-move-reverses-after.d2_volatile-two-hour-overreaction-reverses_1h: not profitable enough [Sharpe -0.9002; Sharpe minus holding's Sharpe -1.454; Calmar -0.2946]

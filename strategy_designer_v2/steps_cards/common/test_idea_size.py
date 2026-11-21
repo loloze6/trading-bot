@@ -5,7 +5,21 @@ import numpy as np
 import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from idea_size import size  # noqa: E402
-from test_book_diagnosis import write_window  # noqa: E402
+import pandas as pd
+
+
+def write_window(path, close, fc, alloc, value=None):
+    """One window of hourly bars. Without a value series, the book's value follows the book without costs."""
+    close = np.asarray(close, float); alloc = np.asarray(alloc, float)
+    if value is None:
+        r = np.append(close[1:] / close[:-1] - 1, 0.0)
+        value = 1000 * np.cumprod(np.concatenate([[1.0], 1 + alloc[:-1] * r[:-1]]))
+    n = len(close)
+    df = pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC").strftime("%Y-%m-%d %H:%M:%S+00:00"),
+                       "close": close, "forecast": fc, "previous_allocation": np.concatenate([[0.0], alloc[:-1]]),
+                       "postRebalance_current_allocation": alloc, "postRebalance_total_value": value})
+    path.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path / "bars.csv.gz", index=False)
 
 
 def test_a_known_idea_size(tmp_path):

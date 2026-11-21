@@ -11,7 +11,7 @@ t += '''
 
 def trade_cost(record):
     """What one trade (a buy and a sell) cost this backtest, as a share of the value traded: twice its cost per unit
-    traded (the book without costs minus the backtest's own book, over the units traded; common/book_diagnosis.md)."""
+    traded (the book without costs minus the backtest's own book, over the units traded; topics/34_review/book_diagnosis.md)."""
     free = real = units = 0.0
     for coin in sorted(p for p in pathlib.Path(record).iterdir() if p.is_dir()):
         for f in sorted(coin.glob("w*/bars.csv.gz")):

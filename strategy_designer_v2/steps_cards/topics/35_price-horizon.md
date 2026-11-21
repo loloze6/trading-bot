@@ -42,5 +42,5 @@ typical size more than a typical duration: peaks at very different bars but of a
 Waits for topic 34's step 3 (the diagnosis on the night's books, set 3 as the control), then the operator's decision.
 
 ## Links
-Topic 34, `common/book_diagnosis.md` (reading 3, closing time; reading 4, holding past the bets), `common/forecast.md` 7,
+Topic 34, `topics/34_review/book_diagnosis.md` (reading 3, closing time; reading 4, holding past the bets), `common/forecast.md` 7,
 `runs/HOLDING_NIGHT_RUN.md`.

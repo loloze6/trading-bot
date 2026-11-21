@@ -112,3 +112,19 @@ def test_an_idea_turned_again_after_its_row_is_unfinished_until_its_row_is_writt
     (d / "table.json").write_text(json.dumps(rows))
     assert loop.unfinished("x_run", tmp_path) == []
 
+
+
+def test_a_retry_line_makes_a_failed_idea_a_candidate_again(tmp_path):
+    loop.log_turn("x_run", {"idea": "c", "outcome": "failed: model call failed"}, tmp_path)
+    assert loop.failed("x_run", tmp_path) == {"c"}
+    loop.log_turn("x_run", {"idea": "c", "outcome": "retry: its failure was the model service's, not the idea's"}, tmp_path)
+    assert loop.failed("x_run", tmp_path) == set()
+
+
+def test_a_refused_call_stops_the_loop_and_marks_nothing_failed(tmp_path):
+    (tmp_path / "run_idea" / "x_run").mkdir(parents=True)
+    (tmp_path / "run_idea" / "x_run" / "table.json").write_text("[]")
+    assert not loop.refused("x_run", "a", 1, ["a bug"], tmp_path)
+    assert loop.refused("x_run", "a", loop.SERVICE_REFUSED, ["model call refused by the service: limit"], tmp_path)
+    t = loop.turns("x_run", tmp_path)
+    assert t[-1]["stop"].startswith(loop.REFUSED) and loop.failed("x_run", tmp_path) == set()

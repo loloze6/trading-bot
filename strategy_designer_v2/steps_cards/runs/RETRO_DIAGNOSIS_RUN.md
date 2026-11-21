@@ -3,7 +3,7 @@
 **Purpose (improvement I1 of `topics/30_review/WORKFLOW_REVIEW.md`; topic 34's step 3):** before redesigning any step
 around "is this effect large enough to trade", check on the records we already have that the notion tells paying books
 from the others. Every backtest record whose bar files are in this container (21 runs, about 250 books, daily and
-hourly) gets the diagnosis (`common/book_diagnosis.py`), next to its step 5 verdict and step 6 status. Code only, no model
+hourly) gets the diagnosis (`topics/34_review/book_diagnosis.py`), next to its step 5 verdict and step 6 status. Code only, no model
 call, no backtest.
 
 **The readings used:** the move per bet over the horizon once the bot can act, net of the coin's drift, divided by the

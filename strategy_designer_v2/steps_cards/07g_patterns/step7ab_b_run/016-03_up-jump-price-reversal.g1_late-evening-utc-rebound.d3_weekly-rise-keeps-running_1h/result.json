@@ -1,0 +1,58 @@
+{
+  "line": "7.g",
+  "backtest": "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4824355,
+  "findings": {
+    "F1": "The past day's return reverses over the next day, and this is the strongest pattern in the record. On the daily grid of non-overlapping 24-hour cells, one standard deviation of the coin's 24-hour return is followed by -45 bps of excess return over the next 24 hours (t -11.3, 15950 cases). It holds on every coin (t -3.5 to -6.6) and in both halves of the windows (t -6.1 and -9.3). It holds in 6 of 8 years with t below -2.",
+    "F2": "The reversal is large enough to cover a trade. After the 20 % largest 24-hour falls (mean size 620 bps), the next day's excess return is +48 bps (t 4.5, 3191 cases). After the 20 % largest 24-hour rises (mean 662 bps) it is -33 bps (t -3.3, 3191 cases). Both are larger than this backtest's round-trip cost of 19 bps, while the middle quintiles show -14 to +1 bps.",
+    "F3": "How the day's move was made adds nothing to its reversal, contrary to the brief's jump mechanism. Adding the largest hour's share of the day's absolute moves leaves the 24-hour reversal at -44 bps (t -10.6). That share scores t -1.5 and its interaction with the 24-hour return scores t -1.1.",
+    "F4": "How the 7-day move was made does carry information about the next 3 days. Holding the 7-day return fixed, the path's efficiency (net 7-day move over the sum of absolute hourly moves) gains +31 bps of 3-day excess per standard deviation (t 2.66, 5251 cases), while the 7-day return itself falls to t 1.1. The straightest third of 7-day rises is followed by +79 bps of 3-day excess (t 2.5, 893 cases), against -20 bps for the least straight third.",
+    "F5": "The grind effect in F4 is not stable. It sits in the later half of the windows (+57 bps per sd, t 3.2) and not the earlier half (+8 bps, t 0.5). It is mostly XRP (t 3.1) and ZEC (t 2.0), with LTC and XMR negative. It is negative in 2022 (t -2.0).",
+    "F6": "The tested 7-day rise alone barely predicts the next 3 days' excess return. Its slope is +16 bps per sd (t 1.4); it is significant only on XRP and ZEC (t 2.2 each) and negative on LTC (t -1.8). Its size is -0.04 % of unusual move per case, so the book's gain comes from the coin's drift (+0.41 %), not timing.",
+    "F7": "A volume burst points the other way from the brief. With the 24-hour return held fixed, a higher ratio of last-24-hour volume to the 7-day average is followed by +17 bps per sd of next-day excess (t 4.2, 15950 cases), not by a reversal.",
+    "F8": "Hour-of-day effects are clear but too small to pay. 21:00 and 22:00 UTC bars average +4.9 and +3.9 bps excess (t 6.1, 5.0), and 14:00 and 03:00 UTC average -4.4 and -3.3 bps (t -4.6). Each is below a round trip, as earlier hourly findings say."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's return over its last 24 hours, the more the coin moves the opposite way over the next day: the deeper its 24-hour fall, the more it rises over the next 24 hours, and the larger its 24-hour rise, the more it falls.",
+      "consequence": "A trader should lean against a coin's last day, buying after a sharp daily fall and refusing to chase a sharp daily rise, with a bet that grows with the size of that day's move.",
+      "name": "one-day move reverses next day",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The straighter a coin's 7-day rise, meaning the larger its net 7-day move compared with the sum of its hourly up and down moves, the more the coin rises over the next 3 days.",
+      "consequence": "A weekly rise built by a steady hourly grind is a reason to stay long for the next days, more so than an equally large but choppy rise.",
+      "name": "straight weekly rise continues",
+      "from": "F4, F5, F6",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The higher a coin's volume over its last 24 hours compared with its average daily volume over the last 7 days, the more the coin rises over the next 24 hours.",
+      "consequence": "A day of unusually heavy trading is a reason to lean long over the next day rather than treat the volume burst as exhausted flow.",
+      "name": "heavy-volume day precedes gains",
+      "from": "F7, F1",
+      "refs": [
+        "F7",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running.g1_one-day-move-reverses-next-day",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running.g2_straight-weekly-rise-continues",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running.g3_heavy-volume-day-precedes-gains"
+  ],
+  "no_ideas": null
+}

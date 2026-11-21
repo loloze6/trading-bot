@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound_1h
+idea tested: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3860 USD
+---
+## Findings
+- **F1:** The higher a coin's hourly volatility over its last 24 hours relative to its last 30 days, the more it rises over the next 72 hours net of its drift. Regressed on the within-coin rank of that ratio, the slope is 0.188 usual moves per unit of rank (t 3.95, 5251 independent cases). The top decile ends +1.33 % above drift (strength 0.153, t 2.97, 529 cases), about 7 times the 0.19 % round trip. The bottom four deciles end -0.17 % to -0.79 %.
+- **F2:** The volatility pattern holds on every coin and in most periods. The rank correlation is positive on all 6 coins (0.020 BTC to 0.105 XRP) and in 19 of 24 windows. The top quintile beats the other four in 7 of 8 years, with 2019 the exception (-0.031 against -0.027). It is strongest on XRP and ZEC, where the top quintile's strength is 0.23 and 0.19 against -0.06 and -0.05 for the rest.
+- **F3:** The volatility pattern is concentrated after 24-hour falls. After a fall, the strength rises steadily from -0.111 in the lowest volatility quintile (t -2.66, 510 cases) to +0.153 in the highest (t 3.39, 537 cases). The highest quintile ends +1.32 % above drift, +1.68 % in total, and is already +1.15 % above drift after 24 hours. After rises the same quintiles go only from +0.022 to +0.058 (t 1.11).
+- **F4:** Volume shows the same pattern. The higher a coin's volume over its last 24 hours relative to its 30-day hourly mean, the more it rises over the next 72 hours: strength -0.075 (t -2.49) in the lowest quintile, +0.112 (t 3.29, +1.04 % above drift) in the highest, about 1050 cases each. The 72-hour volatility ratio gives the same ordering (-0.060 to +0.085, t 2.39), smaller.
+- **F5:** The tested idea's graded relation is not in the bars. The 24-hour return quintiles give strengths of +0.094, -0.081, -0.006, -0.038 and +0.031, so only the deepest-fall quintile is positive (t 2.90). The correlation of the 24-hour return with the next 72 hours is between -0.072 and +0.003 on every coin. Overall the idea's unusual move is +0.06 % per case, 0.3 times the cost.
+- **F6:** The brief's mechanism, grind against jump, shows nothing:
+- **F7:** The book's weak years follow the coins. It lost 0.274 % per day in 2018 and 0.170 % in 2022, against coin returns of -0.347 % and -0.180 %. Its 72-hour excess strength was -0.20 in 2018 and -0.10 in 2022. That is consistent with a long-only book that mostly carries the coins' falls, behind its Calmar of 0.28.
+
+## Ideas
+- `016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound.g1_turbulent-day-multi-day-rise` (from F1, F2): The higher a coin's hourly volatility over its last 24 hours relative to its own last 30 days, the more the coin rises over the next 3 days.
+- `016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound.g2_violent-fall-multi-day-rebound` (from F3, F5): After a coin has fallen over its last 24 hours, the higher its hourly volatility over those 24 hours relative to its last 30 days, the more it rebounds over the next 3 days.
+- `016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_one-day-fall-multi-day-rebound.g3_heavy-volume-multi-day-rise` (from F4, F1): The higher a coin's traded volume over its last 24 hours relative to its average over the last 30 days, the more the coin rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

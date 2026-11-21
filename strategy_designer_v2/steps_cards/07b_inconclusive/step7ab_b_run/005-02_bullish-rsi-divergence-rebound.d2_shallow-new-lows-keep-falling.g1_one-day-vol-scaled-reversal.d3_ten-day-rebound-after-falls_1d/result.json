@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d3_ten-day-rebound-after-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.17695929999999999,
+  "findings": {
+    "F1": "The effect points the way the idea predicts but is too weak to clear the bar. Over 10 days the slope of excess return on the forecast is positive, t 1.57 over 292 independent cells. Excess return rises steadily across the forecast's quartiles: -0.89 %, -0.44 %, +1.54 %, +2.07 % (73 cells each). At 20 days the slope is also positive, t 1.04 over 157 cells.",
+    "F2": "The effect is spread thinly across the data, not confined to one part of it. The slope is positive on both coins that ran: BTC t 0.74 over 145 cells, ETH t 1.44 over 147. It is also positive in 7 of 8 years, with 2019 the only negative year (t -0.96, 34 cells), and no year reaches t 1.3.",
+    "F3": "The market's own moves drown the effect. The mean excess 10-day return over the cells swings by year from -4.3 % (2018) to +6.7 % (2020), against a usual 10-day move of 11.0 % on BTC and 14.7 % on ETH. Step 5's size gives a strength of -0.013 per case (unusual move -0.20 %, 553 cases), while the 292 cells' mean excess is only +0.57 % (t 0.77).",
+    "F4": "The test ran on fewer cases than planned. Only BTC and ETH ran; BNB has no data in this workflow. The test got 292 cells instead of the roughly 400 planned. LTC, XMR, XRP and ZEC have daily data in all four folds, which would about triple the number of cells.",
+    "F5": "The 10-day horizon is the right one for this idea. At shorter horizons the slope is flat or weaker: t 0.89 at 1 day (2,832 cells), -0.35 at 3 days (898), 0.82 at 5 days (584). The book's total move per case is +1.06 %, 10 times the 0.11 % cost of a trade, but most of it is the coins' drift (+1.26 %), not the idea."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D",
+      "name": "ten-day rebound, more coins",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ],
+      "idea": "The larger a coin's 1-day fall relative to its own 20-day daily volatility, the more it rises over the next 10 days.",
+      "consequence": "A trader buying a sharp daily fall should hold the rebound for about ten days rather than one, so that the move per trade is much larger than its cost.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d3_ten-day-rebound-after-falls.b1_ten-day-rebound-more-coins"
+  ],
+  "no_ideas": null
+}

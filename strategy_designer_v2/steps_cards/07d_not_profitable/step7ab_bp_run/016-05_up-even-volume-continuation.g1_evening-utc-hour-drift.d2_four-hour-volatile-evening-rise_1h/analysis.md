@@ -1,0 +1,28 @@
+---
+line: 7.d not profitable
+backtest: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise_1h
+idea tested: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4219 USD
+---
+## Findings
+- **F1:** The evening move is smaller than the cost of a trade. Over the 4 hours from the 21:00 UTC close, the coins rise 10.8 bps on average, against 19 bps for a buy and a sell. On the book itself, the four evening hours earn about 4.9 bps per coin-day (1.96, 2.46, -0.70 and 1.15 bps on hours 20 to 23), while the fees at the open and the close of the bet cost about 8.6 bps (4.39 and 4.25 bps). The book earns 0.21 bps per bar and pays 0.37 bps.
+- **F2:** The evening rise is almost all in the coin's most volatile fifth of evenings. There the 4-hour unusual move is +27.8 bps (total +30.1 bps), against +0.3 to +5.3 bps in the four other fifths (about 3,365 evenings each).
+- **F3:** The volatility sizing undoes the idea's grading. The position held is 0.38 in the most volatile fifth of evenings against 0.60 in the calmest. The book's 4-hour evening gain therefore covers its fees only in the top fifth (11.8 bps of gain against 6.7 bps of fees). In the other four fifths it earns 1.1 to 5.2 bps against 7.9 to 11.1 bps of fees.
+- **F4:** The evening effect does not grow with a longer hold. From the 21:00 close, the 24-hour move is 4 to 26 bps across the volatility fifths, no larger than the 4-hour move. The 72-hour moves (7 to 55 bps, t at most 2.4) are not graded by volatility.
+- **F5:** The brief's grind shows on rises over 3 days. A 3-day rise in the most efficient third is followed by a 3-day unusual move of +86 bps (t 3.03, 1,031 non-overlapping cases), which is 4.5 times the cost of a trade. Efficiency here is the net 3-day move over the sum of its hourly absolute moves. Rises in the least efficient third are followed by -36 bps (t -1.28, 947 cases).
+- **F6:** The grind effect on rises holds in every coin, from +44 bps (ETH) to +197 bps (ZEC) in the most efficient third. It is carried mostly by windows w13 to w24 (+150 bps, against +13 bps in w1 to w12).
+- **F7:** Choppy falls keep falling. A 3-day fall in the least efficient third is followed by a 3-day unusual move of -76 bps (t -2.79, 899 cases). A fall in the most efficient third is followed by -11 bps (t -0.36).
+- **F8:** Volume concentration points the same way as the brief. A 3-day move whose volume is least concentrated in its largest hour continues by +41 bps in its direction over the next 3 days (t 1.82). One whose volume is most concentrated reverses by -17 bps (t -1.00), from about 1,846 cases per third.
+- **F9:** Neither the direction nor the efficiency alone ranks what follows. The Spearman correlation with the next 3-day unusual move is -0.009 for the signed 3-day return and -0.001 for the signed efficiency (5,539 cases). The effect lives in rises that are efficient (F5) and falls that are choppy (F7), not along one signed scale.
+
+## Ideas
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise.d1_evening-rise-in-high-volatility` (from F1, F2, F3): Each day, the coin rises over the four hours after 21:00 UTC by more than over its other four-hour stretches, and the rise is larger the higher its realised hourly volatility over the past 7 days, only while that 7-day volatility stands in the upper part of its own range over the past several weeks.
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise.d2_grinding-rises-keep-rising` (from F5, F6, F9): A coin whose price rose over the past 3 days rises further over the next 3 days, and the more of its hourly movement over those 3 days went into the net rise (net 3-day return over the sum of its hourly absolute moves), the larger the further rise.
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise.d3_choppy-falls-keep-falling` (from F7, F9): A coin whose price fell over the past 3 days keeps falling over the next 3 days, and the less of its hourly movement over those 3 days went into the net fall (the choppier the fall), the larger the further fall.
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise.d4_even-volume-moves-continue` (from F8, F5): A coin's 3-day move continues in its direction over the next 3 days, and the more evenly its volume was spread across the hours of that move, the larger the continuation.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
