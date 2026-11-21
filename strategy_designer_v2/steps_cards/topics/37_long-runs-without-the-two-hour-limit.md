@@ -34,6 +34,7 @@ Recommended: B for long runs from tomorrow, with the queue script made a standar
 |---|---|---|---|---|
 | 2026-11-20 | (Corrected the same day) Relaunch after a cut: the operator asked for "an automatic way" but did not say yes to relaunching without asking; the session recorded it as an OK by mistake. A task stopped at its 2 h limit is relaunched only on the operator's go | the session's correction | the harness asks not to restart a task stopped at its longest timeout without the person's go | – |
 | 2026-11-20 | Test D (parallel sessions) on the books left, coordinated by the designer session; part of this improvement, not a topic of its own | the operator | more throughput now, no result change | – |
+| 2026-11-21 | A task stopped by the 2-hour limit (or a restart) in the middle of a run is relaunched by the session without asking; the run resumes where it stopped | the operator ("you do not need my go to relaunch a task killed mid run") | the run was already approved; relaunching continues it | asking each time (it stopped the paying books rerun for hours) |
 
 **2026-11-20, option D tested** (`runs/HOLD2_AND_PILOT_RUN.md`): 9 books in 3 parts, 72 minutes side by side against about
 149 one after another (about 2 times faster), no result changed; the INDEX files merged row by row, no conflict.
