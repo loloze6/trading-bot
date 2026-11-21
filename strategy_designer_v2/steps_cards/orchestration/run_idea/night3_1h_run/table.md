@@ -13,21 +13,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise | 018-04_hourly-surge-multiday-continuation | plan | inconclusive (+0.52) | not profitable enough (failed: Calmar) | - | 7.b: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue; 7.d: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.d1_surge-within-monthly-uptrend, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.d2_monthly-return-predicts-five-days; 7.g: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.g1_near-month-high-five-day-continuation, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.g2_sharp-hourly-drop-rebound | 1.58 | 12.0 |
 | 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds | 018-05_hourly-plunge-loss-before-close | plan | confirmed (+3.53) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds.g1_volatility-burst-fall-rebounds, 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds.g2_uptrend-plunge-with-vol-spike | 0.72 | 11.1 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | 018-06_hourly-plunge-multiday-continuation | plan | inconclusive (+1.98) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends; 7.d: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.d1_plunge-rebound-in-turbulent-weeks, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.d2_plunge-after-an-extreme-week, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.d3_turbulence-graded-capitulation-rebound; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.g1_turbulent-plunge-one-day-rebound, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.g2_turbulent-plunge-two-day-rebound | 1.29 | 11.2 |
+| 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue | 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise | plan | inconclusive (+0.52) | not profitable enough (failed: Calmar) | - | 7.b: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue.b1_largest-hourly-surges-keep-rising, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue.b2_largest-surges-on-more-coins; 7.d: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue.d1_surge-continuation-above-60-day-average, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue.d2_surge-continuation-in-rising-month; 7.g: 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue.g1_rebound-after-extreme-daily-falls, 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue.g2_two-day-rebound-after-crashes | 1.58 | 11.7 |
 
 ## Consumption
-9 ideas, 7.82 USD, 70.4 minutes in all.
+10 ideas, 9.40 USD, 82.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.75 | 5.5 |
-| step4_backtest | 0.00 | 36.1 |
-| step5_verdict | 0.84 | 3.7 |
+| step3_plan | 0.83 | 6.1 |
+| step4_backtest | 0.00 | 41.9 |
+| step5_verdict | 0.99 | 4.4 |
 | step6_check | 0.00 | 0.6 |
-| chart_files | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.8 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.74 | 6.1 |
-| step7_7.d | 2.04 | 7.3 |
-| step7_7.g | 2.45 | 8.5 |
+| step7_7.b | 2.25 | 7.7 |
+| step7_7.d | 2.46 | 8.9 |
+| step7_7.g | 2.87 | 9.9 |
 | unseen_test | 0.00 | 1.8 |

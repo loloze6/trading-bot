@@ -1,3 +1,4 @@
+018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue_1h: inconclusive (fit: adapted) [main: 0.00116173; t of the mean 0.518562; cases 2455, cases_forecast_ge_10 677, cases_forecast_lt_10 1778]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h: inconclusive (fit: adapted) [main: 0.00116173; t of the mean 0.518562; cases 2455, above-median half 1124, below-median half 1124]
 018-04_hourly-surge-multiday-continuation_1h: inconclusive (fit: adapted) [main: -0.000115334; t of the mean -0.0589495; cases 3205]
 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: confirmed (fit: adapted) [main: 0.00644859; t of the mean 3.53004; independent cases 2442, cases above median 1221, cases below median 1221]

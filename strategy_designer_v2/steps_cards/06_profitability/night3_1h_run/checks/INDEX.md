@@ -1,3 +1,4 @@
+018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise.b1_largest-hourly-surges-continue_1h: not profitable enough [Sharpe 0.8831; Sharpe minus holding's Sharpe 0.3294; Calmar 0.6024]
 018-04_hourly-surge-multiday-continuation.b1_hourly-surge-within-weekly-rise_1h: not profitable enough [Sharpe 0.8831; Sharpe minus holding's Sharpe 0.3294; Calmar 0.6024]
 018-04_hourly-surge-multiday-continuation_1h: not profitable enough [Sharpe 0.7905; Sharpe minus holding's Sharpe 0.2367; Calmar 0.5379]
 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: profitable enough [Sharpe 0.8664; Sharpe minus holding's Sharpe 0.3126; Calmar 0.831]
