@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.b1_sharp-rises-continue-uptrends_1d
+idea tested: 025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.b1_sharp-rises-continue-uptrends
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3969 USD
+---
+## Findings
+- **F1:** Measured over all six coins, a day's fall as a multiple of its 20-day daily volatility goes with a rise the next day. The Spearman correlation of that ratio with the next day's unusual return is -0.078 over 14356 day-cases (p 1e-20). It is negative in every coin (-0.039 to -0.114; p < 0.001 in five of six) and in both 90-day regimes (falling -0.098, rising -0.058).
+- **F2:** The next-day rebound comes from down days, not up days. On z<0 days the Spearman is -0.064 (n 7056, p 7e-8); on z>0 days it is -0.011 (n 7286, p 0.35). The next day's unusual move is +0.48 % (t 3.26, n 1310) after a fall of 1–2 usual daily moves and +0.68 % (t 2.57, n 484) after a fall of more than 2. Both are 2.5–3.5 times the 0.19 % cost of a trade.
+- **F3:** The rebound is short. On a non-overlapping 3-day grid, falls of more than 2 usual moves are followed by only +0.39 % (t 0.67, n 170), and the 3-day Spearman shrinks to -0.035 (p 0.017). It also weakens in later years: Spearman -0.157 in 2018, -0.028 in 2024 and +0.003 in 2025.
+- **F4:** The tested idea's own top cases do carry a move. In the rising-90-day regime, days above 2 usual moves are followed by a 10-day unusual move of +11.6 % (t 2.11, n 36). Grid bars with a forecast of 15–20 are followed by +5.5 % (t 2.27, n 98). Weaker positive forecasts give -0.0 % to -1.5 %, and they dilute the overall mean to -0.16 % (t -0.27, n 930).
+- **F5:** Twenty-day momentum inside the rising regime is not stable. The Spearman of the 20-day vol-scaled return with the 10-day unusual move is 0.085 (p 0.028, n 659) overall, 0.166 (p 0.002) in 2018–21 and -0.048 (p 0.39) in 2022–25. After the many angles looked at, it does not count as a reliable pattern.
+- **F6:** The book's gain rests on a few days. Its best 2 % of days sum to +4.54 and its worst 2 % to -4.43, against a total daily-return sum of +2.48.
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.b1_sharp-rises-continue-uptrends.g1_sharp-falls-rebound-next-day` (from F1, F2, F3): In each coin, the larger the day's fall measured against the standard deviation of its last 20 daily returns, the larger its rise over the next 1 day. Ordinary down days are followed by almost no rebound, and falls of several usual daily moves by the largest.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
