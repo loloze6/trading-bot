@@ -7,4 +7,5 @@
 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-03_weekend-reversal-exceeds-weekday_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
-026-04_thinner-weekend-larger-reversal_1h: missing-components: The idea is an interaction: the size of the reversal bet must grow with weekend thinness. The config can only [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal.b1_thin-weekend-large-moves-reverse_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
