@@ -1,5 +1,7 @@
 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 026-01_weekend-rise-reverses-early-week_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 026-02_weekend-drop-reverses-early-week_1h: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)
 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 026-03_weekend-reversal-exceeds-weekday_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

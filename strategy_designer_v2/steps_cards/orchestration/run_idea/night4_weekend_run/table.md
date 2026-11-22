@@ -11,20 +11,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend | 026-03_weekend-reversal-exceeds-weekday | plan | confirmed (+3.03) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend.d1_midweek-rises-carry-into-weekend, 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend.d2_trend-aligned-midweek-move-continues, 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend.d3_sharp-two-day-falls-rebound; 7.g: 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend.g1_midweek-rises-run-into-weekend, 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend.g2_evening-rebound-after-day-s-fall | 0.97 | 10.8 |
 | 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues | 026-01_weekend-rise-reverses-early-week | plan | confirmed (+3.13) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.d1_weekend-extends-weekly-trend, 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.d2_calm-weekly-rise-continues; 7.g: 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.g1_late-evening-rebound-after-afternoon-fall, 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.g2_turbulent-daily-moves-reverse, 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.g3_calm-mid-week-move-continues | 1.05 | 19.5 |
 | 026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue | 026-02_weekend-drop-reverses-early-week | missing-components | - | - | - | - | 0.09 | 0.6 |
+| 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week | 026-03_weekend-reversal-exceeds-weekday | plan | confirmed (+2.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.d1_sunday-against-saturday-reverses, 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.d2_sunday-reversal-in-turbulence, 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.d3_saturday-s-move-continues, 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.d4_extreme-sundays-reverse-less; 7.g: 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g1_saturday-move-resumes-monday, 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g2_sunday-reverses-saturday, 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g3_sunday-fade-needs-volatility, 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g4_sunday-falls-rebound-early-week | 1.34 | 12.5 |
+| 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks | 026-01_weekend-rise-reverses-early-week | plan | inconclusive (+2.80) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins, 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue; 7.d: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.d1_weekend-rise-against-usual-moves, 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.d2_weekend-reversal-lands-tuesday, 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.d3_reversal-ends-after-tuesday; 7.g: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.g1_calm-weekend-moves-carry-on, 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.g2_strong-weekend-rally-extends | 1.50 | 22.4 |
 
 ## Consumption
-7 ideas, 6.72 USD, 70.1 minutes in all.
+9 ideas, 9.56 USD, 105.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.64 | 4.5 |
-| step4_backtest | 0.00 | 42.2 |
-| step5_verdict | 0.84 | 3.6 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.5 |
+| step3_plan | 0.84 | 5.9 |
+| step4_backtest | 0.00 | 65.1 |
+| step5_verdict | 1.20 | 5.3 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.7 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.57 | 1.8 |
-| step7_7.b | 0.70 | 2.5 |
-| step7_7.g | 1.98 | 7.4 |
-| step7_7.d | 2.00 | 7.2 |
+| step7_7.b | 1.08 | 3.9 |
+| step7_7.g | 3.11 | 11.8 |
+| step7_7.d | 2.77 | 10.2 |

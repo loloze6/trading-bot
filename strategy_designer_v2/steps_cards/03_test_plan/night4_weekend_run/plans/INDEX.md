@@ -1,4 +1,6 @@
 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1h, folds A, B, C, D]
+026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-01_weekend-rise-reverses-early-week_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue_1h: missing-components: The weekend fall is kept, and so are its timing (a weekday and hour regime with a 48-bar hold) and [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-02_weekend-drop-reverses-early-week_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

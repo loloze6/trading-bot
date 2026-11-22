@@ -1,0 +1,160 @@
+{
+  "run_id": "20261122T012856Z_aea6f113",
+  "created_utc": "2026-11-22T01:28:57.064578+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "wd",
+          "class": "strategies.strategy_components.WeekdayComponent",
+          "params": {}
+        },
+        {
+          "id": "hr",
+          "class": "strategies.strategy_components.HourOfDayComponent",
+          "params": {}
+        },
+        {
+          "id": "vp",
+          "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+          "params": {
+            "vol_period": 720,
+            "lookback_period": 4320,
+            "smooth_period": 5
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "wd",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              },
+              {
+                "id": "hr",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              },
+              {
+                "id": "vp",
+                "op": "gte",
+                "value": 0.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "weekend_gain",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 48
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 48
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "aea6f11353d21df5ae41250415391f5cb16595955eae0e4fbe71807aef662b06",
+  "data": {
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2017-03-07 00:00:00",
+    "end": "2018-08-31 23:00:00",
+    "bar_count": 12979,
+    "data_sha256": "e1eaa1e07565dde69caa7754e0a2b7476d561ae3a5915d235c96f0f9b791150d"
+  },
+  "git_sha": "c9f81b724f18e81826c2612db79be498266b5f9c-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}
