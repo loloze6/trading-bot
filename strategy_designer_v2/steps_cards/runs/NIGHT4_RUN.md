@@ -167,3 +167,16 @@ sealed half-year into its pattern, while `holdout_range` had moved on the operat
 `data/data_manager.py` does) and blocks when it cannot read it. Proof: the gate passes on the branch and on master; its
 15 tests pass (13 before, the fixtures given a policy file; 2 new: a made-up window moves the gate, a missing policy
 blocks), the 2 new ones fail on the old script; no unseen-2026 window's data overlaps `holdout_range` (1,011 checked).
+
+## Test 2: 025-03.d2 combined with momentum (2026-11-22, written before the run; the operator's "yes"; 0 USD)
+**Purpose:** what combining the night's most distinct paying book with momentum gives, measured rather than estimated
+from the similarity check. **Method:** A of `runs/COMBINE_TEST_RUN.md` (side by side, half the capital each: each day the
+mean of the two books' daily returns; step 6's measures), on the folds and on both unseen periods (step 4 rerun on
+each plan with `04_backtest/windows/unseen_*.json`). Script `topics/44_review/combine_night4.py`.
+
+| Pair | Books | Share explained | Expected (from the share explained) |
+|---|---|---|---|
+| 1 | 025-03.d2 with 022-03.d1 strong monthly rises continue (1d, the momentum book of the earlier test) | 0.41 | correlation about 0.64; daily swings about 10 % below the two books' average; Sharpe about 1.35 against about 1.25 alone; deepest fall at or below the smaller one |
+| 2 | 025-03.d2 with 018-02 hourly breakout continuation (1h, its nearest relative; compared by the day) | 0.50 | correlation about 0.71; about 8 % smaller swings; a smaller Sharpe gain |
+**If not:** a combination clearly worse than either book alone, or a correlation far from the square root of the share
+explained, means the similarity check does not say how two books combine: read why.
