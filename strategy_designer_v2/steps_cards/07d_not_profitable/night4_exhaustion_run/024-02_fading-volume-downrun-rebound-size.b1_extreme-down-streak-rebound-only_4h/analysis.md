@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only_4h
+idea tested: 024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3935 USD
+---
+## Findings
+- **F1:** The book's Calmar of 0.33 comes from a deepest fall of -58.5 % over 82 days across windows w16–w17, which is deeper than the coins' own chained fall of -43.9 % over the same days; the book's chain lost -56.9 %.
+- **F2:** The book is mostly a leveraged long on the coins rather than a timing book: it is long on 75 % of bars with a mean allocation of 0.70, and of its mean gain of 1.82 bp per bar, 1.54 bp is the coins' own drift and only 0.27 bp is timing.
+- **F3:** The idea's edge is negligible. Per case, the unusual move is +0.02 % over 18 bars, 0.003 of the usual 8.17 % move and 0.1 times the 0.19 % trade cost, over 4334 cases (t 0.14). So the book's falls are the market's falls, which the signal does not avoid.
+- **F4:** Down-streak cases split sharply by the coin's 30-day return, over 643 cases per quintile:
+- **F5:** Cases also split by distance from the 60-day high, over about 790 cases per quintile:
+- **F6:** Cases also split by volatility, comparing 5-day with 30-day volatility, over about 790 cases per quintile:
+- **F7:** Among trades, the most extreme streak losses pay and the middling ones lose, over about 1260 trades per quintile:
+
+## Ideas
+- `024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.d1_down-streak-rebound-in-uptrends` (from F1, F2, F4): When a coin has just fallen in an unbroken streak of four-hour periods, and the volume across the streak has been declining, it rises over the next three days, only while the coin's 30-day return is positive; the larger that 30-day rise, the larger the rebound.
+- `024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.d2_dip-rebound-near-highs` (from F1, F2, F5): When a coin has just fallen in an unbroken streak of four-hour periods, and the volume across the streak has been declining, it rises over the next three days, only while the coin stays close to its 60-day high; the closer to that high, the larger the rise.
+- `024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.d3_rebound-under-volatility-expansion` (from F3, F6, F7): When a coin has just fallen in an unbroken streak of four-hour periods, and the volume across the streak has been declining, it rises over the next three days, only while its 5-day volatility exceeds its 30-day volatility; the larger that ratio, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

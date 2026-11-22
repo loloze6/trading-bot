@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins_4h
+idea tested: 024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5133 USD
+---
+## Findings
+- **F1:** Large one-day falls on heavy volume are followed by a rebound. Score each fall by its 6-bar loss in usual moves times exp(its 6-bar volume z-score). The top quintile of that score shows a mean unusual 18-bar move of +2.00 % (t 7.2, 1092 independent cases, strength 0.21). The lower quintiles read -0.55 %, -0.35 %, -0.24 % and -0.10 %. The effect is positive in 18 of 19 coins and in 7 of 8 years; 2022 is the exception at -0.60 %, t -0.84.
+- **F2:** In the cross of 6-bar direction, size and volume, the cell with the largest falls and the top third of volume gains +1.98 % over 18 bars (t 6.66, n 919). The largest falls on low volume gain only +0.83 % (t 1.70, n 268). The rebound grows with the volume behind the fall.
+- **F3:** Down streaks show the opposite of the brief's fading-volume claim. Among streaks of 3 or more falling bars in the top third of loss in usual moves, those with rising volume gain +3.14 % over 18 bars (t 5.75, n 225). Those with fading volume gain +1.09 % (t 1.24, n 132). Streaks of exactly 4 falling bars gain +2.36 % (t 3.9, n 262), and streaks of 6 or more gain +2.56 % (t 3.5, n 105).
+- **F4:** Up streaks do not continue. The tested measure gave -0.02 % per case (t -0.25, 12162 cases). Among up streaks of 3 or more bars, the unusual move is not graded by size: -1.11 % to +1.32 %, every t below 2.2 in absolute value.
+- **F5:** The bar's volume against its own 30-day norm is graded with the next 18 bars, whatever the bar's direction. Volume quintiles read -0.74 % (t -3.6), -0.53 %, -0.23 %, +0.12 % and +1.16 % (t 4.5). The top volume quartile gains +1.25 % after down bars (t 4.3) and +0.81 % after up bars (t 2.4).
+- **F6:** The bar's high-low range in usual moves is graded the same way. Range quintiles read -0.71 %, -0.89 % (t -5.3), -0.01 %, +0.24 % and +1.15 % (t 4.45); this partly overlaps F5.
+- **F7:** The coin's 30-day return is roughly graded with the next 18 bars, but not at the bottom. Its quintiles read -0.10 %, -1.07 % (t -5.6), -0.34 %, +0.50 % and +0.77 % (t 2.95).
+- **F8:** The book is mostly the coins' own beta. By deciles of the coins' day, the book returns about 0.8 of the coin's move (-6.45 % against -7.97 %; +6.27 % against +7.76 %). On its 2 % best and worst days the book earns +11.1 % and -11.4 %, against the coins' +11.9 % and -12.3 %. This leaves almost no timing, consistent with its failed Calmar of 0.38.
+- **F9:** The 16:00 UTC bar is followed by a next bar of +0.062 usual moves (t 7.5, about 34000 bars). The sign flips in 2022 (t -3.6), and the effect cannot be graded, so it is not turned into an idea.
+
+## Ideas
+- `024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins.g1_heavy-volume-capitulation-rebound` (from F1, F2): After a coin falls over its last day by much more than its usual 4-hour move over the past 30 days, on volume above its own 30-day norm, it rises over the next three days. The larger the fall and the heavier the volume behind it, the larger the rise.
+- `024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins.g2_rising-volume-down-streak-reversal` (from F3, F2): After an unbroken streak of falling 4-hour periods, the coin rises over the next three days. The larger the streak's loss counted in the coin's usual 4-hour moves over the past 30 days, and the more volume rose along the streak, the larger the rise.
+- `024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins.g3_volume-surge-precedes-rise` (from F5, F6): The higher a coin's 4-hour volume against its own 30-day norm, the more the coin rises over the next three days, whichever way that period closed.
+- `024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins.g4_thirty-day-momentum-carries-on` (from F7, F4): The larger a coin's 30-day return, the more it rises over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

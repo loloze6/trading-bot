@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 18-bar return of long bets",
+    "value": 0.0020033479032442437,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 1.8080861206926828
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return (split at median forecast)",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 10265,
+    "active bars": 72934,
+    "upper half cases": 0,
+    "lower half cases": 10265
+  },
+  "decided_by": "The t of the forecast-weighted mean excess return lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation read as the volume ratio above 1 (raw component value > 0) on the long side; bets detected per window from 0 at its start, first bet per 18-bar grid cell (counted from the window's first row) taken as the case; t of the weighted mean is the ordinary t of f*x/mean(f); the median split puts forecasts above the median in the upper half; fewer than 100 cases gives 'not observable' per the workflow."
+}

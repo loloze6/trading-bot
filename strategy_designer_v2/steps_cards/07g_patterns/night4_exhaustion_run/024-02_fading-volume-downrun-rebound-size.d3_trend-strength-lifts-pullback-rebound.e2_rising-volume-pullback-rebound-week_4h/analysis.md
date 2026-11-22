@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week_4h
+idea tested: 024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4113 USD
+---
+## Findings
+- **F1:** The 4h bar opening at 16:00 UTC rises on average +9.9 bp (17,506 bars, t 6.64). It is positive in every coin: BTC +6.9 bp t 2.67, ETH +11.8 t 3.59, LTC +8.0 t 2.24, XMR +9.3 t 2.50, XRP +8.1 t 1.94, ZEC +15.4 t 3.53. It is positive in all 8 years, with t above 2.7 in five of them (2019, 2020, 2021, 2023, 2024).
+- **F2:** This 16:00 UTC rise grows with the coin's 30-day volatility. By volatility tercile it is +5.1 bp (t 2.92), +5.6 bp (t 2.26) and +16.6 bp (t 4.59) on about 5,355 bars each. It is the same whether the 30-day return is positive (+10.6 bp, t 4.60) or not (+9.5 bp, t 4.85).
+- **F3:** The next 4h bar reverses the last one, and more so the larger the fall. Grouped by the last bar's return over the coin's 30-day bar volatility, the next bar returns +16.7 bp after z ≤ -2 (2,641 bars, t 2.43), +11.4 bp after -2 to -1 (7,874, t 4.11), +3.6 bp after -1 to 0 (37,230, t 3.77) and -2.0 bp after 0 to 1 (37,722, t -2.17). After rises above +1 the next bar is not significant: +0.1 bp, t 0.05; +6.9 bp, t 1.23.
+- **F4:** The 4h bar opening at 20:00 UTC falls on average -4.9 bp (17,373 bars, t -3.18). It is negative in five of six coins, but it changes sign by year: 2018 -28.0 bp (t -5.04), 2022 -14.8 bp (t -3.66), 2024 +9.5 bp (t 2.56). It is not stable.
+- **F5:** Of the book's +0.119 % mean daily return, +0.066 % comes from the coins' own rise (mean position 0.56, in the market on 58 % of days). Only +0.053 % a day is timing. This fits the tested idea's unusual move of +0.46 % per 7-day case (strength 0.036, t 1.23 over 1,360 cases).
+- **F6:** On the brief's own angle, up streaks of 3+ bars with rising volume are followed over 3 days by +104 bp (284 cases, t 1.60). With fading volume the figure is +15 bp (263 cases, t 0.29). Neither shows the give-back the brief expects, and neither stands out from chance.
+- **F7:** Over 3 days, a 3-day return above 1.5 of its usual size is followed by +119 bp beyond drift (398 cases, t 2.22). On the 7-day grid, the lowest 3-day-return quintile is followed by -1.63 % (462 cases, t -2.48). This is continuation, not exhaustion, but it is weak given how many angles were looked at.
+
+## Ideas
+- `024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week.g1_afternoon-utc-session-rise` (from F1, F2): A coin's four-hour period from 16:00 to 20:00 UTC rises more than its other four-hour periods. The higher the coin's 30-day volatility, the larger that rise.
+- `024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week.g2_four-hour-drop-rebound` (from F3): After a coin falls over a four-hour period, it rises over the next four hours. The larger the fall relative to the coin's usual four-hour move over the past 30 days, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

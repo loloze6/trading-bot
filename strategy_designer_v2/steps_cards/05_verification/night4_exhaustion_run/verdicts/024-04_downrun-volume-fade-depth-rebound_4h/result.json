@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar excess return of long bets over the coin's normal 18-bar drift",
+    "value": 0.0006014723109777403,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.5413910067816696
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return above-median minus below-median raw volume_fade",
+    "value": -0.0058280429394858176,
+    "passed": false
+  },
+  "counts": {
+    "cases": 5713,
+    "above_median_cases": 1120,
+    "below_median_cases": 1077,
+    "active_bars": 51676
+  },
+  "decided_by": "The t lies between -2 and 2 (or is undefined), meeting neither the confirm nor the reject rule.",
+  "reading": "Situation = bar closing below the previous close with a positive forecast; a case is the first long bet (forecast rise >= 2 from its lowest positive level since the last bet, reset at 0) in each 18-bar cell counted from each window's first row, with its 18-bar return inside the window; drift = mean of the coin's non-overlapping 18-bar returns over all windows; the median split puts cases strictly above vs strictly below the median and drops ties; fewer than 30 cases is reported as not observable per the workflow."
+}

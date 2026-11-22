@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.99657371276292,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar unusual move of long bets (return minus coin's normal 18-bar drift)",
+    "value": 2.730674225366584e-06,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.0022302048540061097
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases (confirm); mean < 0 with t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above-median forecast minus below-median forecast",
+    "value": 0.010714600030541742,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4537,
+    "active bars": 10507
+  },
+  "decided_by": "t between -2 and 2 (inconclusive rule).",
+  "reading": "Down-streak = consecutive bars with close below the previous close within the window, volume fade = least-squares volume slope over the streak's down bars below 0; a bet is a rise of a positive forecast of at least 2 from its lowest level since the last bet (from 0 after flat), the first bet in each 18-bar grid cell from the window's first row is the case, cases without 18 bars left in the window are dropped, and the supporting check compares cases strictly above vs strictly below the median signal-bar forecast."
+}

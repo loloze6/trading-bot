@@ -1,0 +1,279 @@
+{
+  "core": {
+    "net_return_pct": -86.003,
+    "sharpe": -3.117,
+    "max_drawdown_pct": -55.765,
+    "trade_count": 27,
+    "win_rate": 11.11,
+    "avg_trade_net_pnl": -31.856116,
+    "fees_paid": 2.611952,
+    "gross_pnl": -857.503184,
+    "net_pnl": -860.115136,
+    "cost_drag_pct": 0.3046,
+    "forecast_return_corr": 0.004521,
+    "forecast_return_corr_pvalue": 0.930847,
+    "forecast_return_corr_pvalue_block_adjusted": 0.972536,
+    "forecast_return_corr_n_eff": 61,
+    "forecast_return_corr_all_bars": 0.0251,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.786005,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 2,
+    "gap_skipped_pct": 0.2743,
+    "avg_trade_duration_bars": 502.26,
+    "sigma_bar_bps": 185.9655,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 18.8422,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 1.0185,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0045, p=0.9725 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -3286.0249,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -3286.0249,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 328.6025,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0045, p=0.9725 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 730,
+      "avg_forecast": -6.678109,
+      "trade_count": 27,
+      "total_net_pnl": -860.115135
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 27,
+      "profitable_trades": 3,
+      "success_rate_pct": 11.11,
+      "total_net_pnl_usd": -860.1151,
+      "avg_pnl_per_trade_usd": -31.8561
+    }
+  },
+  "dynamic": {
+    "debug_info.components.run_gain.last_history_value": {
+      "unknown": {
+        "mean": 1.091958,
+        "std": 2.133183
+      }
+    },
+    "debug_info.components.run_gain.post_pipeline_value": {
+      "unknown": {
+        "mean": -21.367096,
+        "std": 32.887169
+      }
+    },
+    "debug_info.components.run_gain.weight_normalized": {
+      "unknown": {
+        "mean": 0.666667,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.run_gain.weighted_contribution": {
+      "unknown": {
+        "mean": -14.244731,
+        "std": 21.924779
+      }
+    },
+    "debug_info.components.vol_fade.last_history_value": {
+      "unknown": {
+        "mean": -0.0654,
+        "std": 0.94169
+      }
+    },
+    "debug_info.components.vol_fade.post_pipeline_value": {
+      "unknown": {
+        "mean": -6.012164,
+        "std": 20.407588
+      }
+    },
+    "debug_info.components.vol_fade.weight_normalized": {
+      "unknown": {
+        "mean": 0.333333,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.vol_fade.weighted_contribution": {
+      "unknown": {
+        "mean": -2.004055,
+        "std": 6.802529
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00068403,
+      "forward_return_std": 0.01859277,
+      "n_bars": 729,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -90.8447,
+    "sharpe": -1.2492,
+    "sortino": -1.6292,
+    "exposure_pct": 99.726,
+    "turnover": 16.668495,
+    "n_bars_total": 730,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 70,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 15,
+    "events": [
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-05-12 08:00:00",
+        "previous_timestamp": "2020-05-11 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-05-13 20:00:00",
+        "previous_timestamp": "2020-05-13 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-05-17 08:00:00",
+        "previous_timestamp": "2020-05-17 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-05-25 20:00:00",
+        "previous_timestamp": "2020-05-25 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-05-26 08:00:00",
+        "previous_timestamp": "2020-05-26 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-06-08 08:00:00",
+        "previous_timestamp": "2020-06-08 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-06-10 16:00:00",
+        "previous_timestamp": "2020-06-10 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-06-12 04:00:00",
+        "previous_timestamp": "2020-06-11 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-06-13 08:00:00",
+        "previous_timestamp": "2020-06-12 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-06-26 08:00:00",
+        "previous_timestamp": "2020-06-26 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-07-03 04:00:00",
+        "previous_timestamp": "2020-07-02 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-07-04 16:00:00",
+        "previous_timestamp": "2020-07-04 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-07-06 04:00:00",
+        "previous_timestamp": "2020-07-05 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-10-24 20:00:00",
+        "previous_timestamp": "2020-10-24 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "DOGEUSD",
+        "timestamp": "2020-12-11 16:00:00",
+        "previous_timestamp": "2020-12-11 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

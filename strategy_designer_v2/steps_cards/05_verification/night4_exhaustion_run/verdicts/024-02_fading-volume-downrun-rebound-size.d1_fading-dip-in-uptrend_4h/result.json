@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9982017982017982,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 18-bar excess return over normal drift, per bet, pooled",
+    "value": 0.005313176321063317,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 2.5804930610514467
+    },
+    "threshold": "positive with t >= 2 over at least 30 cases to confirm; negative with t <= -2 over at least 30 cases to reject"
+  },
+  "supporting_check": {
+    "name": "timing gain: mean daily book return minus position x coin mean daily return",
+    "value": 0.00041729959051509916,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2358
+  },
+  "decided_by": "weighted mean excess return positive with t >= 2 over at least 30 cases, and timing gain positive.",
+  "reading": "The down-streak is the run of consecutive closes below the previous close (capped at 180 bars) with the volume slope fitted on those falling bars, the first bet in each 18-bar grid cell is the case, the t of the forecast-weighted mean uses the weighted standard error sqrt(n/(n-1)*sum(w^2(x-m)^2))/sum(w), and the daily position for the market part is the mean allocation held over the bars of that day."
+}

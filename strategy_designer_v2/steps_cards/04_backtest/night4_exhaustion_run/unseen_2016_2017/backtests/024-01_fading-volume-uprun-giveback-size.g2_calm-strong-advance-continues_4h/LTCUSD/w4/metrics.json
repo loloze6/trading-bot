@@ -1,0 +1,1528 @@
+{
+  "core": {
+    "net_return_pct": 40.176,
+    "sharpe": 2.0,
+    "max_drawdown_pct": -19.77,
+    "trade_count": 65,
+    "win_rate": 56.92,
+    "avg_trade_net_pnl": 6.179718,
+    "fees_paid": 5.414974,
+    "gross_pnl": 407.09662,
+    "net_pnl": 401.681646,
+    "cost_drag_pct": 1.3301,
+    "forecast_return_corr": 0.007979,
+    "forecast_return_corr_pvalue": 0.884667,
+    "forecast_return_corr_pvalue_block_adjusted": 0.957791,
+    "forecast_return_corr_n_eff": 47,
+    "forecast_return_corr_all_bars": -0.012705,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.903537,
+    "forecast_return_corr_all_bars_n_eff": 94,
+    "gap_skipped_pairs": 42,
+    "gap_skipped_pct": 6.3444,
+    "avg_trade_duration_bars": 51.54,
+    "sigma_bar_bps": 340.9829,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 19.5323,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 1.0558,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0080, p=0.9578 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 3138.3647,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 3138.3647,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 313.8365,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0080, p=0.9578 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 663,
+      "avg_forecast": 4.690747,
+      "trade_count": 65,
+      "total_net_pnl": 401.681644
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 19,
+      "profitable_trades": 13,
+      "success_rate_pct": 68.42,
+      "total_net_pnl_usd": 163.3696,
+      "avg_pnl_per_trade_usd": 8.5984
+    },
+    "5_to_10": {
+      "total_forecasts": 11,
+      "profitable_trades": 10,
+      "success_rate_pct": 90.91,
+      "total_net_pnl_usd": 139.3633,
+      "avg_pnl_per_trade_usd": 12.6694
+    },
+    "10_to_15": {
+      "total_forecasts": 17,
+      "profitable_trades": 8,
+      "success_rate_pct": 47.06,
+      "total_net_pnl_usd": 153.2186,
+      "avg_pnl_per_trade_usd": 9.0129
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 18,
+      "profitable_trades": 6,
+      "success_rate_pct": 33.33,
+      "total_net_pnl_usd": -54.2698,
+      "avg_pnl_per_trade_usd": -3.015
+    }
+  },
+  "dynamic": {
+    "debug_info.components.scaled_run.last_history_value": {
+      "unknown": {
+        "mean": 0.460807,
+        "std": 2.063955
+      }
+    },
+    "debug_info.components.scaled_run.post_pipeline_value": {
+      "unknown": {
+        "mean": 4.690747,
+        "std": 6.61537
+      }
+    },
+    "debug_info.components.scaled_run.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.scaled_run.weighted_contribution": {
+      "unknown": {
+        "mean": 4.690747,
+        "std": 6.61537
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00242018,
+      "forward_return_std": 0.03326174,
+      "n_bars": 662,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -22.3757,
+    "sharpe": 1.4565,
+    "sortino": 4.2402,
+    "exposure_pct": 90.0452,
+    "turnover": 11.760204,
+    "n_bars_total": 663,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 64,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 154,
+    "events": [
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-02 12:00:00",
+        "previous_timestamp": "2016-09-02 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-02 20:00:00",
+        "previous_timestamp": "2016-09-02 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-03 12:00:00",
+        "previous_timestamp": "2016-09-03 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-04 12:00:00",
+        "previous_timestamp": "2016-09-04 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-05 16:00:00",
+        "previous_timestamp": "2016-09-05 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-06 16:00:00",
+        "previous_timestamp": "2016-09-06 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-07 04:00:00",
+        "previous_timestamp": "2016-09-06 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-08 16:00:00",
+        "previous_timestamp": "2016-09-08 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-09 04:00:00",
+        "previous_timestamp": "2016-09-08 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-09 16:00:00",
+        "previous_timestamp": "2016-09-09 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-11 04:00:00",
+        "previous_timestamp": "2016-09-09 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 129600.0,
+        "bars_missing": 8,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-11 16:00:00",
+        "previous_timestamp": "2016-09-11 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-12 08:00:00",
+        "previous_timestamp": "2016-09-12 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-13 04:00:00",
+        "previous_timestamp": "2016-09-12 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-14 12:00:00",
+        "previous_timestamp": "2016-09-14 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-15 08:00:00",
+        "previous_timestamp": "2016-09-14 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-15 20:00:00",
+        "previous_timestamp": "2016-09-15 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-17 04:00:00",
+        "previous_timestamp": "2016-09-16 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-17 20:00:00",
+        "previous_timestamp": "2016-09-17 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-18 12:00:00",
+        "previous_timestamp": "2016-09-18 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-19 16:00:00",
+        "previous_timestamp": "2016-09-19 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-22 08:00:00",
+        "previous_timestamp": "2016-09-22 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-23 00:00:00",
+        "previous_timestamp": "2016-09-22 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-24 12:00:00",
+        "previous_timestamp": "2016-09-24 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-25 08:00:00",
+        "previous_timestamp": "2016-09-24 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 72000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-25 20:00:00",
+        "previous_timestamp": "2016-09-25 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-26 08:00:00",
+        "previous_timestamp": "2016-09-25 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-29 04:00:00",
+        "previous_timestamp": "2016-09-28 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-01 08:00:00",
+        "previous_timestamp": "2016-09-30 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-01 16:00:00",
+        "previous_timestamp": "2016-10-01 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-02 12:00:00",
+        "previous_timestamp": "2016-10-01 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-02 20:00:00",
+        "previous_timestamp": "2016-10-02 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-03 08:00:00",
+        "previous_timestamp": "2016-10-02 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-07 00:00:00",
+        "previous_timestamp": "2016-10-06 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-08 04:00:00",
+        "previous_timestamp": "2016-10-07 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-08 20:00:00",
+        "previous_timestamp": "2016-10-08 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-09 04:00:00",
+        "previous_timestamp": "2016-10-08 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-09 16:00:00",
+        "previous_timestamp": "2016-10-09 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-10 04:00:00",
+        "previous_timestamp": "2016-10-09 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-10 16:00:00",
+        "previous_timestamp": "2016-10-10 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-12 16:00:00",
+        "previous_timestamp": "2016-10-12 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-13 04:00:00",
+        "previous_timestamp": "2016-10-12 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-14 00:00:00",
+        "previous_timestamp": "2016-10-13 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-15 04:00:00",
+        "previous_timestamp": "2016-10-14 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-15 16:00:00",
+        "previous_timestamp": "2016-10-15 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-16 20:00:00",
+        "previous_timestamp": "2016-10-15 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 86400.0,
+        "bars_missing": 5,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-17 04:00:00",
+        "previous_timestamp": "2016-10-16 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-17 16:00:00",
+        "previous_timestamp": "2016-10-17 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-18 04:00:00",
+        "previous_timestamp": "2016-10-17 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-19 12:00:00",
+        "previous_timestamp": "2016-10-18 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 72000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-20 04:00:00",
+        "previous_timestamp": "2016-10-19 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-20 20:00:00",
+        "previous_timestamp": "2016-10-20 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-21 12:00:00",
+        "previous_timestamp": "2016-10-21 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-22 08:00:00",
+        "previous_timestamp": "2016-10-21 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-23 00:00:00",
+        "previous_timestamp": "2016-10-22 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-26 04:00:00",
+        "previous_timestamp": "2016-10-25 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-26 12:00:00",
+        "previous_timestamp": "2016-10-26 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-28 04:00:00",
+        "previous_timestamp": "2016-10-27 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-29 12:00:00",
+        "previous_timestamp": "2016-10-29 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-30 20:00:00",
+        "previous_timestamp": "2016-10-30 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 72000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-10-31 08:00:00",
+        "previous_timestamp": "2016-10-30 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-02 12:00:00",
+        "previous_timestamp": "2016-11-01 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-03 12:00:00",
+        "previous_timestamp": "2016-11-03 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-05 04:00:00",
+        "previous_timestamp": "2016-11-04 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-05 12:00:00",
+        "previous_timestamp": "2016-11-05 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-05 20:00:00",
+        "previous_timestamp": "2016-11-05 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-07 00:00:00",
+        "previous_timestamp": "2016-11-06 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-07 08:00:00",
+        "previous_timestamp": "2016-11-07 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-08 04:00:00",
+        "previous_timestamp": "2016-11-07 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-08 12:00:00",
+        "previous_timestamp": "2016-11-08 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-08 20:00:00",
+        "previous_timestamp": "2016-11-08 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-10 16:00:00",
+        "previous_timestamp": "2016-11-10 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-11 20:00:00",
+        "previous_timestamp": "2016-11-11 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-13 04:00:00",
+        "previous_timestamp": "2016-11-12 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-13 12:00:00",
+        "previous_timestamp": "2016-11-13 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-14 04:00:00",
+        "previous_timestamp": "2016-11-13 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-15 00:00:00",
+        "previous_timestamp": "2016-11-14 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-15 12:00:00",
+        "previous_timestamp": "2016-11-15 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-16 04:00:00",
+        "previous_timestamp": "2016-11-15 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-17 00:00:00",
+        "previous_timestamp": "2016-11-16 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-18 08:00:00",
+        "previous_timestamp": "2016-11-18 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-19 16:00:00",
+        "previous_timestamp": "2016-11-19 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-20 12:00:00",
+        "previous_timestamp": "2016-11-20 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-21 08:00:00",
+        "previous_timestamp": "2016-11-21 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-22 08:00:00",
+        "previous_timestamp": "2016-11-22 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-28 12:00:00",
+        "previous_timestamp": "2016-11-28 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-29 08:00:00",
+        "previous_timestamp": "2016-11-29 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-11-30 12:00:00",
+        "previous_timestamp": "2016-11-30 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-03 16:00:00",
+        "previous_timestamp": "2016-12-03 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-04 04:00:00",
+        "previous_timestamp": "2016-12-03 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-06 08:00:00",
+        "previous_timestamp": "2016-12-06 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-08 00:00:00",
+        "previous_timestamp": "2016-12-07 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-09 12:00:00",
+        "previous_timestamp": "2016-12-08 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-11 16:00:00",
+        "previous_timestamp": "2016-12-11 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-12 12:00:00",
+        "previous_timestamp": "2016-12-12 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-14 08:00:00",
+        "previous_timestamp": "2016-12-13 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-15 12:00:00",
+        "previous_timestamp": "2016-12-14 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 86400.0,
+        "bars_missing": 5,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-16 12:00:00",
+        "previous_timestamp": "2016-12-15 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-16 20:00:00",
+        "previous_timestamp": "2016-12-16 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-17 08:00:00",
+        "previous_timestamp": "2016-12-17 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-18 20:00:00",
+        "previous_timestamp": "2016-12-18 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 72000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-19 20:00:00",
+        "previous_timestamp": "2016-12-19 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-21 00:00:00",
+        "previous_timestamp": "2016-12-20 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 86400.0,
+        "bars_missing": 5,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-21 16:00:00",
+        "previous_timestamp": "2016-12-21 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-22 00:00:00",
+        "previous_timestamp": "2016-12-21 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-25 00:00:00",
+        "previous_timestamp": "2016-12-24 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-25 16:00:00",
+        "previous_timestamp": "2016-12-25 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-26 12:00:00",
+        "previous_timestamp": "2016-12-26 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-27 00:00:00",
+        "previous_timestamp": "2016-12-26 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-29 04:00:00",
+        "previous_timestamp": "2016-12-28 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-12-31 16:00:00",
+        "previous_timestamp": "2016-12-31 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-01 00:00:00",
+        "previous_timestamp": "2016-12-31 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-03 12:00:00",
+        "previous_timestamp": "2017-01-03 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-09 12:00:00",
+        "previous_timestamp": "2017-01-09 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-14 12:00:00",
+        "previous_timestamp": "2017-01-13 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-15 08:00:00",
+        "previous_timestamp": "2017-01-15 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-15 20:00:00",
+        "previous_timestamp": "2017-01-15 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-16 04:00:00",
+        "previous_timestamp": "2017-01-15 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-18 08:00:00",
+        "previous_timestamp": "2017-01-18 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-19 08:00:00",
+        "previous_timestamp": "2017-01-19 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-20 08:00:00",
+        "previous_timestamp": "2017-01-20 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-20 16:00:00",
+        "previous_timestamp": "2017-01-20 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-23 00:00:00",
+        "previous_timestamp": "2017-01-22 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-24 00:00:00",
+        "previous_timestamp": "2017-01-23 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-25 12:00:00",
+        "previous_timestamp": "2017-01-25 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-25 20:00:00",
+        "previous_timestamp": "2017-01-25 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-27 08:00:00",
+        "previous_timestamp": "2017-01-27 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-28 08:00:00",
+        "previous_timestamp": "2017-01-28 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-28 20:00:00",
+        "previous_timestamp": "2017-01-28 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-29 08:00:00",
+        "previous_timestamp": "2017-01-28 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-29 16:00:00",
+        "previous_timestamp": "2017-01-29 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-01-30 08:00:00",
+        "previous_timestamp": "2017-01-30 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-04 00:00:00",
+        "previous_timestamp": "2017-02-03 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-05 08:00:00",
+        "previous_timestamp": "2017-02-04 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-06 16:00:00",
+        "previous_timestamp": "2017-02-06 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-09 00:00:00",
+        "previous_timestamp": "2017-02-08 16:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-09 12:00:00",
+        "previous_timestamp": "2017-02-09 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-12 04:00:00",
+        "previous_timestamp": "2017-02-11 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-13 00:00:00",
+        "previous_timestamp": "2017-02-12 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-17 12:00:00",
+        "previous_timestamp": "2017-02-17 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-18 04:00:00",
+        "previous_timestamp": "2017-02-17 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 57600.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-18 12:00:00",
+        "previous_timestamp": "2017-02-18 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-18 20:00:00",
+        "previous_timestamp": "2017-02-18 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-19 08:00:00",
+        "previous_timestamp": "2017-02-19 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-20 04:00:00",
+        "previous_timestamp": "2017-02-19 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-23 08:00:00",
+        "previous_timestamp": "2017-02-22 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-25 16:00:00",
+        "previous_timestamp": "2017-02-25 08:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-26 12:00:00",
+        "previous_timestamp": "2017-02-26 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-02-28 08:00:00",
+        "previous_timestamp": "2017-02-28 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-03-05 08:00:00",
+        "previous_timestamp": "2017-03-04 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 43200.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-03-06 04:00:00",
+        "previous_timestamp": "2017-03-05 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-03-08 12:00:00",
+        "previous_timestamp": "2017-03-08 04:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-03-12 04:00:00",
+        "previous_timestamp": "2017-03-11 20:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2017-03-14 08:00:00",
+        "previous_timestamp": "2017-03-14 00:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

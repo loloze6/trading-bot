@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move in the short direction over the short bets",
+    "value": 0.0012793547137342975,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.1475004430784588
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases to confirm; t <= -2 over at least 30 cases to reject"
+  },
+  "supporting_check": {
+    "name": "high-fade minus low-fade mean unusual fall (median split of vol_fade raw)",
+    "value": 0.0015229971531601136,
+    "passed": true
+  },
+  "counts": {
+    "cases": 5709,
+    "high-fade cases": 1200,
+    "low-fade cases": 4509
+  },
+  "decided_by": "The t of the mean unusual fall lies between -2 and 2.",
+  "reading": "The situation is a bar inside a current up-streak (the bar closed above the previous close, or run_gain's raw value is positive) with a short forecast; a case is the first short bet (forecast falling at least 2 points below its highest level on the short side since its last bet, from 0 after a flat or a side change) in each 18-bar grid cell of a window, with a full 18-bar return inside the window; the drift is the coin's mean 18-bar return on the grid of all its windows; the high-fade half is cases with vol_fade raw value above the median and the low-fade half those at or below it."
+}

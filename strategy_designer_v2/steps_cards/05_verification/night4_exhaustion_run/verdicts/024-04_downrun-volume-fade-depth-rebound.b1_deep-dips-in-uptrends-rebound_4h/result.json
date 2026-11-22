@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move after bets (return minus coin's normal 18-bar drift), pooled",
+    "value": 0.004025034951729564,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.605083715212195
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 independent cases and supporting check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper half minus lower half of 180-bar return at signal bar",
+    "value": 0.0009489547555460482,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 3245,
+    "cases with 180-bar return": 2478
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 over at least 30 independent cases and the supporting check passes.",
+  "reading": "A bet is the holding-period bet (long forecast rising >= 2 from its lowest level since the last bet, reset at flat), the first bet per 18-bar cell of each window is kept, cases without 18 bars ahead in the window are dropped, the supporting split puts cases with 180-bar return above the median in the upper half (others lower) and leaves out cases without 180 past bars in the window, and the situation's gate uses the regime column where the 180-bar return cannot be computed."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9998661096829478,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move per case (long), all coins pooled",
+    "value": -0.00024089134283483723,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.2500662240067859
+    },
+    "threshold": "confirm t >= 2 with top-minus-bottom > 0; reject t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half mean unusual move by forecast size",
+    "value": 0.003812375917713987,
+    "passed": true
+  },
+  "counts": {
+    "cases": 12162,
+    "top_half_cases": 6081,
+    "bottom_half_cases": 6081
+  },
+  "decided_by": "the t of the mean unusual move lies between -2 and 2",
+  "reading": "cases are the first bet (long forecast rise >= 2 points from its low since the last bet) in each 18-bar grid cell from each window's first row, with the return dropped if t+18 leaves the window; top/bottom halves are the upper and lower n//2 cases by forecast at the signal bar (middle case dropped when n is odd); fewer than 100 cases is reported as not observable."
+}

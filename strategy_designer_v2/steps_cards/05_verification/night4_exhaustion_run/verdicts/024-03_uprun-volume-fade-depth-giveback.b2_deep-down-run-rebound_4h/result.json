@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move of long cases, pooled over coins",
+    "value": 0.000539466936924547,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.4846162079352513
+    },
+    "threshold": "t >= 2 to confirm, t <= -2 to reject, over at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at median forecast)",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 5709
+  },
+  "decided_by": "t is between -2 and 2 over at least 30 independent cases.",
+  "reading": "A case is the first long bet (forecast rise >= 2 from its lowest long level since the last bet) in each 18-bar grid cell of a window, dropped if its 18-bar return leaves the window; the drift is the coin's mean grid 18-bar return over all windows; the upper half is forecast strictly above the median and the lower half the rest."
+}

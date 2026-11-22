@@ -1,0 +1,22 @@
+---
+line: 7.d not profitable
+backtest: 024-04_downrun-volume-fade-depth-rebound_4h
+idea tested: 024-04_downrun-volume-fade-depth-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3616 USD
+---
+## Findings
+- **F1:** The book is a near-copy of holding the coins, so it carries their falls. It held a long position on 99.4 % of bars, and its mean allocation was 1.015 even on bars where the forecast was 0 (51 % of bars). Its daily returns correlate 0.917 with the coins' daily returns, with a beta of 0.857. Its window sums track holding's (w14 −0.76 against −0.52; w2 −0.48 against −0.46).
+- **F2:** The failing Calmar of 0.35 comes from one long fall of −76 % in the chained book, running from w12 to w16 over 485 days. In those windows the coin's next-bar return averaged only 0.000048 against 0.000269 elsewhere. The coin's 30-day return was negative on 45 % of bars against 35 % elsewhere. The book stayed about 0.82 long and lost 0.000032 per bar.
+- **F3:** The idea's own effect is far below what a trade costs. The unusual move is +0.06 % per case over 3 days (strength 0.008, t 0.54, 5713 cases), or 0.3 times the 0.19 % cost of a trade. The volume-fade split went the wrong way: above-median fade minus below-median was −0.58 %. Nearly all the book's gain is the coin's drift of +0.41 % per 3 days.
+- **F4:** Down-streak cases rebound only when the coin's recent volatility is high against its 30-day level. In the top quarter of 7-day over 30-day volatility (mean ratio 1.35), the 3-day excess return is +1.69 % (t 3.99, 533 cases). In the bottom quarter (ratio 0.61) it is −0.73 % (t −2.32, 534 cases). On long bars, the top fifth of this ratio carries 16.1 of the book's 19.1 summed bar gain.
+- **F5:** The rebound after a deep streak shows inside a rising month and fails inside a falling one. With a positive 30-day return, the deepest quarter of streak losses gives +2.11 % excess over 3 days (t 3.30, 238 cases). With a non-positive 30-day return, the shallowest quarter gives −1.28 % (t −2.40, 276 cases). Cases with a 30-day return between −19 % and −6 % give −1.20 % (t −3.23, 426 cases). That last band is the state that dominated the w12–w16 fall.
+
+## Ideas
+- `024-04_downrun-volume-fade-depth-rebound.d1_rebound-in-expanding-volatility` (from F2, F3, F4): After an unbroken streak of falling four-hour periods whose loss is large relative to the coin's typical four-hour move over the past 30 days, the coin rises over the next three days, only while the coin's 7-day volatility is high relative to its 30-day volatility. The higher that ratio, the larger the rise.
+- `024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend` (from F1, F2, F5): After an unbroken streak of falling four-hour periods whose loss is large relative to the coin's typical four-hour move over the past 30 days, the coin rises over the next three days, only while the coin's 30-day return is positive. The larger the streak's loss in usual moves, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,6 @@
+024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h: inconclusive (fit: exact) [main: 0.00160225; OLS t of the slope 2.38745; grid cases with a forecast above 0 517, low-volatility grid cases with a forecast above 0 196, high-volatility grid cases with a forecast above 0 196, grid cases in the regression 893]
+024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h: inconclusive (fit: adapted) [main: 0.0107908; t of the weighted mean 1.57598; cases 462]
+024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e1_thirty-day-trend-continuation-graded_4h: confirmed (fit: exact) [main: 0.00243338; OLS slope t 4.00837; grid cells with forecast > 0 620, grid cells in total 893]
+024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h: confirmed (fit: exact) [main: 3.46174; OLS slope t 3.46174; grid cells 893, grid cells with forecast > 0 609]
+024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h: inconclusive (fit: exact) [main: 0.00258639; t of the mean 0.478767; independent cases 677, cases with 180-bar return 495]
+024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h: inconclusive (fit: adapted) [main: 0.000278472; t of the mean 0.0520093; cases 664, top half cases 332, bottom half cases 332]

@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h
+idea tested: 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3685 USD
+---
+## Findings
+- **F1:** The tested idea earns almost nothing of its own: its unusual move is -0.03 % per case over 3 days (strength -0.006, 4453 cases). The book's gain comes from the coins' drift: its mean daily return is at or below holding the coin for five of six coins (XMR 0.026 % against 0.107 %, ZEC 0.095 % against 0.155 %, ETH 0.106 % against 0.137 %). Only XRP beats holding (0.179 % against 0.130 %).
+- **F2:** Heavy volume points to a rise. A coin's volume over the past day, as a log ratio to its 30-day average, predicts its 3-day return above drift with slope 0.0094 and t 5.28 (5004 non-overlapping cases). The slope is positive in all six coins (t from 0.96 for XMR to 3.49 for XRP) and in both halves of the windows (w1-12 t 2.68, w13-24 t 4.60).
+- **F3:** The same holds for volume against the day before. Volume over the last 1.5 days against the 1.5 days before also predicts the 3-day return above drift (slope 0.0035, t 2.03, 5580 cases). By quintile it runs from -0.60 % (t -2.34) in the second-lowest to +0.39 % in the highest. This is the opposite of the brief's fading-volume give-back.
+- **F4:** A sharp one-day fall is followed by a rise. After a 1-day fall, scaled by the coin's mean absolute 1-day move over 30 days, the larger the fall, the larger the 3-day return above drift (slope 0.0058, t 3.50, 2373 cases). The lowest quintile of 1-day return ends +0.74 % above drift (t 2.57, 1116 cases). The slope is positive in five of six coins, but it holds only in w13-24 (t 3.78) and not in w1-12 (t 0.50).
+- **F5:** Large 1-day moves are followed by gains on both sides, a U-shape. Scaled 1-day rises are followed by gains too (slope 0.0057, t 3.65, 2479 cases), and the size of the 3-day scaled move predicts the excess return (slope 0.0030, t 2.46). The middle quintiles of the 3-day scaled return lose -0.27 % to -0.50 % above drift, while the top quintile gains +0.74 % (t 2.51).
+- **F6:** Long runs of same-direction 4h bars give no reliable signal. Runs of 4 or more up or down bars are followed by +0.86 % to +1.35 % above drift, but each t is below 1.7 on 91 to 129 cases, which cannot be told from chance. There is no sign of a give-back.
+- **F7:** The book's best weekday is Saturday, at +0.31 % a day (t 3.78, 414 days), with the coins' own mean +0.45 % that day. The other six weekdays all have |t| below 1.7.
+
+## Ideas
+- `024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues.g1_heavy-volume-precedes-rise` (from F2, F3, F1): The higher a coin's traded volume over the past day against its average daily volume over the past 30 days, the more the coin rises over the next three days.
+- `024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues.g2_sharp-daily-drop-rebounds` (from F4, F5): The larger a coin's fall over the past day against its typical one-day move over the past 30 days, the more it rises over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

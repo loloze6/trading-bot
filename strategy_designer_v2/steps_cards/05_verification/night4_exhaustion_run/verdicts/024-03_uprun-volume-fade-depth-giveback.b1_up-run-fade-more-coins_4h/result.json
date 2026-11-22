@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.999874925178455,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted 18-bar return of short cases, sign flipped",
+    "value": 0.0010390750588078002,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.1796186674889253
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS coefficient of vol_fade (raw) in drift-adjusted 18-bar return ~ run_gain + vol_fade",
+    "value": -0.0009097803875798597,
+    "t": -0.6860588557833028,
+    "passed": false
+  },
+  "counts": {
+    "cases overall": 12138,
+    "cases in regression": 12138
+  },
+  "decided_by": "Neither the confirm nor the reject rule is met: a result in between.",
+  "reading": "A case is the workflow's short bet (forecast at least 2 points more negative than its least-negative level since the last bet, reset at flat), first one per 18-bar grid cell of each window; the regression uses the unflipped drift-adjusted return with an intercept and classical OLS t; fewer than 30 cases is reported as not observable; the situation is an up-close bar on the short side."
+}

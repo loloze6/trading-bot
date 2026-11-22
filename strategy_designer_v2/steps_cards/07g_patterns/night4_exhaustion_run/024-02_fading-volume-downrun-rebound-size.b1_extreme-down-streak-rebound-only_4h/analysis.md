@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only_4h
+idea tested: 024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4207 USD
+---
+## Findings
+- **F1:** The 4 hours after 00:00 UTC fall below the coin's average by -0.071 % (t -4.62, 17373 bars), and the fall grows with the size of the rise over the 4 hours before 00:00 UTC: from -0.009 % (t -0.22) in the lowest quintile of that prior move to -0.150 % (t -4.45) and -0.207 % (t -5.08, 3273 bars each) in the top two. It holds in five of six coins (XRP -0.143 %, t -3.66; ZEC -0.117 %, t -2.47; BTC -0.066 %, t -2.58), but it was strongest in 2018 (-0.302 %, t -5.44) and 2022 (-0.171 %, t -4.20) and turned slightly positive in 2023 to 2025 (up to +0.072 %, t 1.96).
+- **F2:** The 4 hours from 20:00 to 00:00 UTC rise above the coin's average by +0.077 % (t 5.15, 17506 bars), with all six coins positive (t from 1.38 to 2.86). The rise is largest after large moves either way in the 4 hours before 20:00 UTC: +0.165 % (t 3.96) after the largest falls and +0.132 % (t 3.58) after the largest rises, against +0.006 % to +0.036 % in the middle three quintiles. It is also largest when the hour's volume is in its top quartile (+0.141 %, t 3.50).
+- **F3:** After the largest one-day falls (the 6-bar move in usual moves), the coin's next 3 days beat its normal drift: +1.43 % (t 2.80, 265 non-overlapping cases) in the bottom 5 %, and +1.11 % (t 3.21, 530 cases) in the bottom 10 %. The middle vigintiles lie between -1.0 % and +0.4 %.
+- **F4:** Inside those bottom-10 % one-day falls, the rebound grows with the volume of the falling day, not with its fading: +2.34 % (t 3.79) in the top volume tercile, +1.21 % (t 2.07) in the middle one and -0.04 % (t -0.07) in the lowest, about 177 cases each. It is positive in five of six coins (LTC +2.18 %, t 2.61; BTC -0.30 %).
+- **F5:** The brief's volume fade adds nothing: among the largest down-streaks, those with rising volume gave back +1.28 % over 3 days (t 2.19, 226 cases) and those with fading volume +1.20 % (t 1.72, 155 cases). The tested idea's own measure was +0.02 % (t 0.14, 4334 cases).
+- **F6:** Fridays' 4-hour bars beat the coin's average by +0.079 % (t 4.83, 14959 bars), most in the bar starting 20:00 UTC (+0.200 %, t 5.64). The effect faded after 2020: +0.249 % (t 7.06) in 2019 against -0.079 % (t -2.05) in 2022 and -0.026 % in 2025.
+- **F7:** The book's tail days follow the coins' own moves almost one for one: its worst 1 % of days average -0.140 % against the coins' -0.134 % on the same days, and its best 1 % +0.156 % against +0.154 %. Its mean daily return was below holding the coin in 2021 (0.0024 vs 0.0041), 2024 and 2025, so its gain is mostly market exposure.
+
+## Ideas
+- `024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.g1_midnight-utc-rise-reversal` (from F1): The more a coin rises over the four hours before 00:00 UTC, measured in its usual four-hour move over the past 30 days, the more it falls over the next four hours.
+- `024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.g2_evening-rise-after-large-moves` (from F2): The larger a coin's move in either direction over the four hours before 20:00 UTC, measured in its usual four-hour move over the past 30 days, the larger its rise over the next four hours.
+- `024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.g3_heavy-volume-one-day-fall-rebound` (from F3, F4, F5): The larger a coin's one-day fall, measured in its usual move over the past 30 days, and the heavier its volume over that day against its 30-day average, the larger its rise over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

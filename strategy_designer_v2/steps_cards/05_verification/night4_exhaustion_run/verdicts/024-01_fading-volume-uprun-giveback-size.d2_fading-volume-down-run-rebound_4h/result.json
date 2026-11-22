@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.99657371276292,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move per case (return minus coin's normal 18-bar drift)",
+    "value": 2.730674225366584e-06,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.0022302048540061097
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and size check difference > 0; reject: mean < 0 with t <= -2; fewer than 30 cases: not observable"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above minus below median case forecast",
+    "value": 0.010714600030541742,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4537,
+    "cases above median": 2268,
+    "cases below median": 2268,
+    "active bars": 10507
+  },
+  "decided_by": "t lies between -2 and 2 (or cannot be computed), so neither the confirm nor the reject rule is met (inconclusive rule).",
+  "reading": "The situation is rebuilt as bar t closing below bar t-1 inside an unbroken down streak (capped at 180 bars) whose down bars' volumes have a negative least-squares slope (at least 2 bars), with the recorded raw streak loss > 0 where present; a case is the first bet (long forecast rise of >= 2 points from its lowest level since the last bet, from 0 after flat) in each 18-bar grid cell of a window, the drift is the coin's mean 18-bar return on the grid of all its windows, and cases at exactly the median forecast are left out of the size check."
+}

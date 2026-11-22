@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of excess 18-bar return on forecast (non-overlapping grid, pooled)",
+    "value": 3.46174182339181,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.46174182339181
+    },
+    "threshold": "confirm if t >= +2 (and positive-forecast cells' mean excess > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 18-bar return of grid cells with forecast > 0",
+    "value": 0.009135566225695023,
+    "passed": true
+  },
+  "counts": {
+    "grid cells": 893,
+    "grid cells with forecast > 0": 609
+  },
+  "decided_by": "The slope's t is +2 or more and the positive-forecast cells' mean excess return is above 0.",
+  "reading": "Grid cells are rows 0, 18, 36, ... of each window with the forecast at the cell's bar; the coin's mean 18-bar return is the mean over its grid cells pooled across all its windows; the plan's 'fewer than 200 positive cells' is reported as not observable."
+}
