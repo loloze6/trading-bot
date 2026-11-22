@@ -119,3 +119,6 @@ night3_1h_run | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-r
 night3_1h_run | 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h | ReturnToMeanAbsReturnRatio | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
 night3_1h_run | 018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h | DailyDropToMeanAbsDailyReturn | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
 intraday_1h_run | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | MeanAbsoluteMoveRankComponent | built: MeanAbsoluteMoveRankComponent {"lookback": 720, "period": 168}
+night4_weekend_run | 026-04_thinner-weekend-larger-reversal_1h | WeekendThinVolumeReversal | built: ThinVolumeScaledReturnComponent {"base_far": 168, "base_near": 49, "period": 48, "volume_period": 48, "window": 720}
+night4_weekend_run | 026-04_thinner-weekend-larger-reversal_1h | LaggedBaseVolumeRatio | built: VolumeRatioComponent {"exclude_current": 49, "period": 120, "short_period": 48}
+night4_weekend_run | 026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue_1h | WeekendVolatilityWeightedReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 48, "base_period": 168, "period": 48, "vol_period": 48}

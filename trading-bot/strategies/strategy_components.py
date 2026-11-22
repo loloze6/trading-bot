@@ -2090,20 +2090,22 @@ class VolumeRatioComponent(SubStrategyComponent):
         R = volume[t - short_period + 1 .. t]                             (bar t included)
         short_statistic = "mean" (default): num = mean(R)
         short_statistic = "median":         num = median(R)  (average of the two middle values for an even count)
-        exclude_current = 0 (default): W = volume[t - period + 1 .. t]
-        exclude_current = 1:           W = volume[t - period .. t - 1]
+        W = volume[t - period - exclude_current + 1 .. t - exclude_current]  (the base ends exclude_current bars before t)
+            exclude_current = 0 (default): W = volume[t - period + 1 .. t]
+            exclude_current = 1:           W = volume[t - period .. t - 1]
+            exclude_current = 49, period 120: W = volume[t - 168 .. t - 49]
         statistic = "mean" (default):  den = mean(W)
         statistic = "median":          den = median(W)  (average of the two middle values for an even count)
         form = "ratio" (default):  raw_value = num / den
         form = "centred":          raw_value = num / den - 1
         form = "log":              raw_value = ln(num / den)
 
-    The defaults (short_period 1, form "ratio", statistic "mean", short_statistic "mean") give
-    volume[t] / mean volume, the original output, unchanged. `statistic` sets the base and `short_statistic` sets
-    the numerator. With period 72, short_period 72 and short_statistic "median" the output is
-    median / mean of the last 72 volumes. That is the evenness of the volume: it runs 0 to 2 (at least half the
-    values are >= the median, so the mean is at least median / 2), sits below 1 when a few heavy bars inflate the
-    mean, and nears 1 as the volume spreads evenly.
+    The defaults (exclude_current 0, short_period 1, form "ratio", statistic "mean", short_statistic "mean") give
+    volume[t] / mean volume, the original output, unchanged; exclude_current 0 and 1 are the original windows.
+    exclude_current above 1 lags the base: with period 120, exclude_current 49 and short_period 48 the output is
+    mean(volume[t-47..t]) / mean(volume[t-168..t-49]), falling as recent volume thins against the earlier base.
+    With period 72, short_period 72 and short_statistic "median" the output is median / mean of the last 72 volumes
+    (0 to 2, nearing 1 as the volume spreads evenly).
     Graded, with no direction. With form "ratio" the value is non-negative and equals 1 when the numerator equals
     the base. With both statistics "mean" and exclude_current 0 it is at most period / short_period. form
     "centred" shifts the value down by 1, and form "log" gives the natural log of the ratio.
@@ -2114,9 +2116,9 @@ class VolumeRatioComponent(SubStrategyComponent):
 
     NaN: a NaN volume in either window, or a base of 0, gives NaN. With form "log", a recent statistic of 0 gives
     NaN (zero volume, never seen on real bars). A missing `volume` column raises.
-    Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
-    below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic or short_statistic
-    other than "mean" or "median".
+    Building the component raises for a period below 2, an exclude_current that is not an integer >= 0, a
+    short_period below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic or
+    short_statistic other than "mean" or "median".
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -2125,9 +2127,15 @@ class VolumeRatioComponent(SubStrategyComponent):
         if self.period < 2:
             raise ValueError(f"VolumeRatioComponent: period must be >= 2, got {self.period}")
         ex = self.parameters.get("exclude_current", 0)
-        if ex not in (0, 1):
-            raise ValueError(f"VolumeRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
-        self.exclude_current = int(ex)
+        if isinstance(ex, bool):
+            ex = int(ex)
+        try:
+            ex_int = int(ex)
+        except (TypeError, ValueError):
+            raise ValueError(f"VolumeRatioComponent: exclude_current must be an integer >= 0, got {ex!r}")
+        if ex_int != ex or ex_int < 0:
+            raise ValueError(f"VolumeRatioComponent: exclude_current must be an integer >= 0, got {ex!r}")
+        self.exclude_current = ex_int
         self.short_period = int(self.parameters.get("short_period", 1))
         if self.short_period < 1 or self.short_period > self.period:
             raise ValueError(
@@ -2159,10 +2167,10 @@ class VolumeRatioComponent(SubStrategyComponent):
             num = float(np.median(recent.to_numpy()))
         else:
             num = float(recent.mean(skipna=False))
-        if self.exclude_current:
-            base = vol.iloc[-(self.period + 1):-1]
-        else:
-            base = vol.iloc[-self.period:]
+        ex = self.exclude_current
+        start = len(vol) - self.period - ex
+        stop = len(vol) - ex
+        base = vol.iloc[start:stop]
         if base.isna().any():
             den = float("nan")
         elif self.statistic == "median":
@@ -2177,7 +2185,7 @@ class VolumeRatioComponent(SubStrategyComponent):
             self._raw_value = float(num / den - (1.0 if self.form == "centred" else 0.0))
         self.confidence = 1.0
         self.debug_info = {'recent_volume': num, 'base_volume': den, 'statistic': self.statistic,
-                           'short_statistic': self.short_statistic}
+                           'short_statistic': self.short_statistic, 'exclude_current': ex}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -5787,3 +5795,157 @@ class MeanAbsoluteMoveRankComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period + self.lookback
+
+
+class ThinVolumeScaledReturnComponent(SubStrategyComponent):
+    """
+    A return in usual moves, weighted by how thin recent volume is against an earlier base:
+
+        r(i)  = close[i] / close[i - period] - 1
+        m     = mean(abs(r(i))) over i = t - window + 1 .. t           (bar t included)
+        Vr    = mean(volume[t - volume_period + 1 .. t])               (bar t included)
+        Vb    = mean(volume[t - base_far .. t - base_near])
+        raw_value = r(t) / m * Vb / Vr      (r(t) / m read as 0 when m = 0)
+
+    Range & sign: unbounded, signed like the period-bar return. Its size grows with the move in usual
+    moves and as recent volume falls below the base (Vb / Vr above 0, 1 when the means are equal).
+    `negate` gives the reading signed against the move.
+    Warm-up: max(window + period, base_far + 1) rows, bar t included (768 at the defaults).
+    NaN: a NaN close in the last window + period rows, or a NaN volume in either volume window, gives NaN.
+    A close not above 0 there gives NaN, and so does Vr not above 0 (neither happens on real bars).
+    Building raises for period < 1, window < 1, volume_period < 1, base_near < volume_period,
+    or base_far < base_near.
+
+    WHY THIS CANNOT LEAK: it reads only the close and volume of the rows up to and including bar t (the last
+    row of data): the closes of the last window + period rows and the volumes of bars t - base_far .. t.
+    """
+
+    def __init__(self, name="ThinVolumeScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 48))
+        self.window = int(self.parameters.get("window", 720))
+        self.volume_period = int(self.parameters.get("volume_period", 48))
+        self.base_near = int(self.parameters.get("base_near", 49))
+        self.base_far = int(self.parameters.get("base_far", 168))
+        if self.period < 1:
+            raise ValueError(f"ThinVolumeScaledReturnComponent: period must be >= 1, got {self.period}")
+        if self.window < 1:
+            raise ValueError(f"ThinVolumeScaledReturnComponent: window must be >= 1, got {self.window}")
+        if self.volume_period < 1:
+            raise ValueError(
+                f"ThinVolumeScaledReturnComponent: volume_period must be >= 1, got {self.volume_period}")
+        if self.base_near < self.volume_period:
+            raise ValueError(
+                f"ThinVolumeScaledReturnComponent: base_near must be >= volume_period, got {self.base_near}")
+        if self.base_far < self.base_near:
+            raise ValueError(
+                f"ThinVolumeScaledReturnComponent: base_far must be >= base_near, got {self.base_far}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data["close"].astype(float).to_numpy()
+        vol = data["volume"].astype(float).to_numpy()
+        n = len(close)
+        c = close[-(self.window + self.period):]
+        recent = vol[-self.volume_period:]
+        base = vol[n - 1 - self.base_far: n - self.base_near]
+        self.confidence = 1.0
+        if np.isnan(c).any() or np.isnan(recent).any() or np.isnan(base).any() or (c <= 0).any():
+            self._raw_value = float("nan")
+            return
+        r = c[self.period:] / c[:-self.period] - 1.0
+        m = float(np.mean(np.abs(r)))
+        vr = float(np.mean(recent))
+        vb = float(np.mean(base))
+        if not vr > 0:
+            self._raw_value = float("nan")
+            return
+        scaled = 0.0 if m == 0 else float(r[-1]) / m
+        self._raw_value = float(scaled * vb / vr)
+        self.debug_info = {"return": float(r[-1]), "mean_abs_return": m,
+                           "recent_volume": vr, "base_volume": vb}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.window + self.period, self.base_far + 1)
+
+
+class RecentToPriorVolatilityWeightedReturnComponent(SubStrategyComponent):
+    """
+    A return weighted by recent volatility against the volatility of an earlier stretch, on every bar:
+
+        R       = (close[t] / close[t - period] - 1) x 100
+        r[j]    = close[j] / close[j-1] - 1
+        s_recent = std (ddof 1) of r[j], j = t - vol_period + 1 .. t
+        s_base   = std (ddof 1) of r[j], j = t - base_lag - base_period + 1 .. t - base_lag
+        raw_value = R x s_recent / s_base
+
+    Range & sign: unbounded, signed like the period-bar return (0 when it is 0). The size grows with the move and
+    with s_recent / s_base (0 and up, 1 when the two volatilities are equal). At the defaults (48, 48, 168, 48)
+    the recent returns are those of bars t-47 .. t and the base those of bars t-215 .. t-48, adjacent and not
+    overlapping.
+    Warm-up: max(period, vol_period, base_lag + base_period) + 1 rows (217 at the defaults), bar t included.
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN; s_base = 0 gives NaN (never on real bars).
+    Building raises for period < 1, vol_period < 2, base_period < 2, base_lag < 0.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, vol_period,
+    base_lag + base_period) + 1 rows of data, the last of which is bar t; no row after bar t is read.
+    """
+
+    def __init__(self, name="RecentToPriorVolWeightedReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 48))
+        self.vol_period = int(self.parameters.get("vol_period", 48))
+        self.base_period = int(self.parameters.get("base_period", 168))
+        self.base_lag = int(self.parameters.get("base_lag", 48))
+        if self.period < 1:
+            raise ValueError(f"RecentToPriorVolatilityWeightedReturnComponent: period must be >= 1, got {self.period}")
+        if self.vol_period < 2:
+            raise ValueError(
+                f"RecentToPriorVolatilityWeightedReturnComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.base_period < 2:
+            raise ValueError(
+                f"RecentToPriorVolatilityWeightedReturnComponent: base_period must be >= 2, got {self.base_period}")
+        if self.base_lag < 0:
+            raise ValueError(
+                f"RecentToPriorVolatilityWeightedReturnComponent: base_lag must be >= 0, got {self.base_lag}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        need = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-need:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[1:] / c[:-1] - 1.0
+        n = len(r)
+        recent = r[n - self.vol_period:]
+        base = r[n - self.base_lag - self.base_period: n - self.base_lag]
+        s_recent = float(np.std(recent, ddof=1))
+        s_base = float(np.std(base, ddof=1))
+        ret = (c[-1] / c[-1 - self.period] - 1.0) * 100.0
+        if not s_base > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(ret * s_recent / s_base)
+        self.confidence = 1.0
+        self.debug_info = {"return_pct": float(ret), "s_recent": s_recent, "s_base": s_base}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period, self.vol_period, self.base_lag + self.base_period) + 1
