@@ -5,6 +5,7 @@
 028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong.b2_large-hourly-rise-continues-daylong_1h: ran: BTCUSD 24/24; ETHUSD 24/24 [1h, folds A, B, C, D]
 028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h: ran: BTCUSD 24/24; ETHUSD 24/24 [1h, folds A, B, C, D]
 028-02_volume-surge-down-continuation.d1_heavy-volume-plunge-rebounds_1h: ran: BTCUSD 24/24; ETHUSD 24/24 [1h, folds A, B, C, D]
+028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward_1h: ran: BTCUSD 24/24; ETHUSD 24/24 [1h, folds A, B, C, D]
 028-02_volume-surge-down-continuation_1h: ran: BTCUSD 24/24; ETHUSD 24/24 [1h, folds A, B, C, D]
 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b1_quiet-large-rise-six-hour-fade_1h: ran: BTCUSD 24/24; ETHUSD 24/24 [1h, folds A, B, C, D]
