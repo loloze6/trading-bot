@@ -1,0 +1,5 @@
+026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: 2 ideas (2 explorations)
+026-01_weekend-rise-reverses-early-week_1h: 2 ideas (3 explorations)
+026-02_weekend-drop-reverses-early-week_1h: 3 ideas (2 explorations)
+026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h: 3 ideas (2 explorations)
+026-03_weekend-reversal-exceeds-weekday_1h: 3 ideas (2 explorations)

@@ -1,0 +1,8 @@
+026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-01_weekend-rise-reverses-early-week_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue_1h: missing-components: The weekend fall is kept, and so are its timing (a weekday and hour regime with a 48-bar hold) and [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-02_weekend-drop-reverses-early-week_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-03_weekend-reversal-exceeds-weekday_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal_1h: missing-components: The idea is an interaction: the size of the reversal bet must grow with weekend thinness. The config can only [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

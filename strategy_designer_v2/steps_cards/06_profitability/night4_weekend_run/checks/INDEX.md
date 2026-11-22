@@ -1,0 +1,5 @@
+026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: not profitable enough [Sharpe 0.4961; Sharpe minus holding's Sharpe -0.05766; Calmar 0.3266]
+026-01_weekend-rise-reverses-early-week_1h: not profitable enough [Sharpe -0.6755; Sharpe minus holding's Sharpe -1.229; Calmar -0.1461]
+026-02_weekend-drop-reverses-early-week_1h: not profitable enough [Sharpe -0.133; Sharpe minus holding's Sharpe -0.6868; Calmar -0.06686]
+026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h: not profitable enough [Sharpe 0.2605; Sharpe minus holding's Sharpe -0.2932; Calmar 0.07746]
+026-03_weekend-reversal-exceeds-weekday_1h: not profitable enough [Sharpe -0.6619; Sharpe minus holding's Sharpe -1.216; Calmar -0.161]

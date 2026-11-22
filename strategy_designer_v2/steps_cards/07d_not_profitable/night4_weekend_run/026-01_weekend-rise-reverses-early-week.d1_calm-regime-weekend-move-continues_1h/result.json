@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35658710000000005,
+  "findings": {
+    "F1": "The idea's move does not grow with the forecast, but the position does: by |forecast| bin (2\u20135, 5\u201310, 10\u201315, 15\u201320) the 48-hour signed move is 0.62 %, 0.86 %, 0.72 % and 0.61 % (n 313/367/243/289), while the mean |allocation| rises from 0.18 to 0.36, 0.61 and 0.96. The largest bets earn no more than the smallest and carry the risk.",
+    "F2": "The worst 60 cases by book gain held a mean |allocation| of 0.92, against 0.51 over all cases, and 58 % of them came after a prior 5-day move against the weekend's direction, against 51 % overall. The book's deepest falls come from full-size bets on weekends that broke from the week before.",
+    "F3": "The continuation lives where the weekend move extends the preceding 5 days (Monday to Friday) in the same direction: 1.22 % per case (t 3.89, n 569) against 0.33 % (t 1.24, n 593) when they disagree.",
+    "F4": "Ranked by that prior 5-day move in the weekend's direction (scaled by 30-day hourly volatility), the book's gain per case grows across the quintiles: 0.11 % (t 0.52), \u22120.14 % (t \u22120.58), 0.46 % (t 2.34), 0.74 % (t 3.01), 0.71 % (t 2.60).",
+    "F5": "Longs carry the effect and shorts barely do:",
+    "F6": "The book is too thin and too shallow to clear its bars:",
+    "F7": "Over the years the effect fades: per case it was 1.09 % (2019), 1.69 % (2020) and 1.29 % (2021), against 0.43 % (2024) and \u22120.03 % (2025). The windows w1, w12, w14 and w23 lost between 6 % and 10 % each."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 30-day hourly volatility is low against its own last 6 months, its move from Saturday 00:00 UTC to Monday 00:00 UTC continues in the same direction over the following two days (Monday and Tuesday), only while the coin's return over the five days before Saturday was in the same direction as the weekend move. The larger that preceding five-day return in the weekend's direction, the larger the continuation.",
+      "consequence": "In calm weeks a trader would follow the weekend's direction into Monday and Tuesday only when the week before had already moved that way, and would stay out when the weekend broke from it.",
+      "name": "weekend extends weekly trend",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's 30-day hourly volatility is low against its own last 6 months, a rise over its 7 days to Monday 00:00 UTC continues over the following two days (Monday and Tuesday). The larger that 7-day rise against the coin's 30-day volatility, the larger the continuation.",
+      "consequence": "In calm weeks a trader would buy at the start of Monday after a rising week, sized by how strong the week's rise was, rather than by the weekend's move alone.",
+      "name": "calm weekly rise continues",
+      "from": "F3, F4, F5, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.d1_weekend-extends-weekly-trend",
+    "026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues.d2_calm-weekly-rise-continues"
+  ],
+  "no_ideas": null
+}

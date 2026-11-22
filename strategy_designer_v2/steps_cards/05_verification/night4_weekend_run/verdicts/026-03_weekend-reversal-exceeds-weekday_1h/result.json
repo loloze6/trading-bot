@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.994724025974026,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean reversal score, weekend (Mon 00:00) minus weekday (Wed/Fri 00:00) cases",
+    "value": 0.03103819527588799,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.8442842076541824
+    },
+    "threshold": "Welch t >= 2 to confirm (with supporting check t >= 2); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "weekend unusual 48-bar move in forecast direction, |forecast|-weighted mean",
+    "value": -0.0009538396569864757,
+    "passed": false
+  },
+  "counts": {
+    "weekend cases": 2387,
+    "weekday cases": 4784,
+    "weekend cases with a forecast": 2369
+  },
+  "decided_by": "Neither the confirm rule (difference t >= 2 with the weekend check passing) nor the reject rule (a t <= -2) is met.",
+  "reading": "Cases are bars whose close (timestamp + 1h) is Monday, Wednesday or Friday 00:00 UTC with 48 bars before and after inside the window (positional close[t\u00b148]); the usual move and drift are the std and mean of the coin's 48-bar returns on a non-overlapping grid of all its windows; the supporting check uses the weekend cases with a non-zero forecast, and its t is the ordinary t of the |forecast|-weighted values; the plan's minimum of 300 cases per group is applied as 'not observable'."
+}
