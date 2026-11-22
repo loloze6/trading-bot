@@ -26,28 +26,22 @@ def call_line(d, seconds):
             f"stop: {d.get('stop_reason')}")
 
 
-ARG_BYTES = 120_000   # under the 131,072-byte cap on one argument (Linux MAX_ARG_STRLEN)
-
-
 def call(model, system, request):
     """One model call, closed book: no tools, no files, no settings; the request on standard input. Returns (text,
     cost in USD). Prints one line per call on standard error (time, tokens, USD); a call killed at the timeout says
     so, its cost unknown, and stops the helper."""
-    # One argument is capped at 128 KB on Linux; step 3's prompt (its component catalogue) passed it on 2026-11-22
-    # ("Argument list too long"). A longer prompt is cut at a line end: the head as the system prompt, the rest
-    # appended to it (a prompt file is not the same: the model read its text as the user's, tested that night).
-    head, rest = system, ""
-    if len(system.encode()) > ARG_BYTES:
-        cut = system.encode()[:ARG_BYTES].decode(errors="ignore").rfind("\n") + 1
-        head, rest = system[:cut], system[cut:]
-    cmd = ["claude", "-p", "--model", model, "--system-prompt", head, "--tools", "",
+    cmd = ["claude", "-p", "--model", model, "--system-prompt-file", None, "--tools", "",
            "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence", "--setting-sources", "",
            "--settings", '{"attribution":{"commit":"","pr":""},"includeCoAuthoredBy":false}', "--output-format", "json"]
-    if rest:
-        cmd += ["--append-system-prompt", rest]
     env = {k: v for k, v in os.environ.items() if k not in DROP_ENV}
     t0 = time.time()
-    with tempfile.TemporaryDirectory() as empty:
+    # The system prompt goes in a file, not on the command line: one argument is capped at 128 KiB on Linux, and step
+    # 3's prompt (with the component catalogue) passed it on 2026-11-22 ("Argument list too long"). Its own folder,
+    # outside the call's empty working folder; the same text.
+    with tempfile.TemporaryDirectory() as empty, tempfile.TemporaryDirectory() as sysdir:
+        sysfile = Path(sysdir) / "system_prompt.md"
+        sysfile.write_text(system, encoding="utf-8")
+        cmd[cmd.index("--system-prompt-file") + 1] = str(sysfile)
         try:
             p = subprocess.run(cmd, input=request, cwd=empty, env=env, capture_output=True, text=True, timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
