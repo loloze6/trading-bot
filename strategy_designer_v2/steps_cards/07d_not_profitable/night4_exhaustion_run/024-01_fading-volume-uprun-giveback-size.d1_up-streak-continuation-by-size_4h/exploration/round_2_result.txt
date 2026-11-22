@@ -1,0 +1,61 @@
+## coin-day by 30d return quartile
+            r30      book      coin     alloc   book_sd     n  share_neg_days
+state                                                                        
+0     -0.269070  0.000628  0.000524  0.895044  0.052346  3266        0.495101
+1     -0.061417  0.000424  0.000635  1.163454  0.045083  3265        0.491577
+2      0.075381  0.001632  0.001051  1.196037  0.042412  3265        0.488515
+3      0.441143  0.002968  0.002748  1.013257  0.050979  3265        0.498622
+
+## coin-day by sign of 30d return
+           book      coin     alloc     n
+up                                       
+False  0.000554  0.000614  1.027065  6411
+True   0.002242  0.001842  1.105373  6650
+
+## diagnostic book all vs only-up-30d
+        mean    sharpe       mdd    calmar
+b   0.001390  0.684246 -0.893505  0.283389
+bu  0.001141  0.911532 -0.571649  0.640298
+
+## ex by ret30 quintile
+        r30        ex    n         t
+q                                   
+0 -0.281600 -0.001785  426 -0.450448
+1 -0.088773  0.000178  426  0.053976
+2  0.021481 -0.000770  426 -0.260580
+3  0.152473  0.000520  426  0.143966
+4  0.572741  0.006448  426  1.140805
+
+## welch up30 minus down30
+diff 0.00426 t 1.20 n 1142/988
+
+## corr ret30 ex (spearman)
+-0.0027
+
+## ex by trend x volume
+                    ex    n         t
+up     vq                            
+down30 vlow  -0.002388  555 -0.781876
+       vhigh -0.000057  433 -0.015563
+up30   vlow   0.004241  510  1.133320
+       vhigh  0.001808  632  0.486141
+
+## ex up30 by coin
+              ex    n
+coin                 
+BTCUSD  0.005410  204
+ETHUSD  0.007590  202
+LTCUSD -0.000767  188
+XMRUSD -0.002882  191
+XRPUSD  0.004588  176
+ZECUSD  0.003074  181
+
+## ex down30 by coin
+              ex    n
+coin                 
+BTCUSD  0.001493  147
+ETHUSD -0.006800  152
+LTCUSD -0.001372  173
+XMRUSD  0.001422  185
+XRPUSD -0.004780  160
+ZECUSD  0.001188  171

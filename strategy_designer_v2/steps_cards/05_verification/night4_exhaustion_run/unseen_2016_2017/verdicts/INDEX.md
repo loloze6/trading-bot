@@ -1,0 +1,2 @@
+024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h: inconclusive (fit: exact) [main: 0.00160225; OLS t of the slope 2.38745; grid cases with a forecast above 0 517, low-volatility grid cases with a forecast above 0 196, high-volatility grid cases with a forecast above 0 196, grid cases in the regression 893]
+024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h: inconclusive (fit: exact) [main: 0.00258639; t of the mean 0.478767; independent cases 677, cases with 180-bar return 495]

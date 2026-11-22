@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size_4h
+idea tested: 024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3789 USD
+---
+## Findings
+- **F1:** The Calmar failed because the book falls with the coin rather than apart from it: its deepest fall is -75.3 % over 276 days (w12–w14), while the coins fell -81.2 %, with a mean position of 0.75. The next falls show the same pattern: -70.2 % over 223 days (w1–w3) against the coins' -66.9 % at a position of 0.96, and -40.0 % (w19–w20) against -30.3 % at 1.19.
+- **F2:** The book is mostly long the coin's drift and adds no timing. Per case, the unusual move is -0.09 % (strength -0.009, 5723 cases) against a cost of 0.19 % a trade. The total move of +0.32 % is almost all normal drift (+0.41 %). Book and coin daily means move together by year, for example 2018 at -0.30 % against -0.35 % and 2022 at -0.21 % against -0.19 %.
+- **F3:** Up-streak cases gain more when the coin's 30-day return is high. The excess 18-bar return is -0.18 % in the lowest 30-day-return quintile (mean -28 %, t -0.45, 426 cases) and +0.64 % in the highest (mean +57 %, t 1.14, 426 cases). Cases with a positive 30-day return beat those with a negative one by 0.43 % (Welch t 1.20, 1142/988 cases). The rank correlation over all cases is only -0.003, so the gain sits mainly in the top quintile.
+- **F4:** The book's coin-days also do better after a higher 30-day return. Its mean daily return is 0.30 % in the top 30-day-return quartile against 0.06 % in the bottom one, where daily risk is highest (sd 5.2 % against 5.1 % and 4.2–4.5 % in the middle quartiles). The book earns 0.22 % a day when the 30-day return is positive and 0.06 % when it is negative.
+- **F5:** As a diagnostic, keeping only the coin-days with a positive 30-day return cuts the deepest fall from -89 % to -57 % and lifts Calmar from 0.28 to 0.64 and Sharpe from 0.68 to 0.91, while the mean daily return goes from 0.14 % to 0.11 %. (The -89 % is measured on the subset of days with a known 30-day return, which is why it differs from the -75 % in F1.)
+- **F6:** Volume points weakly against the brief's fading-volume story. Streaks where volume rose bar by bar (top tercile of the volume slope) were followed by +0.58 % excess, against -0.21 % and -0.19 % for falling or flat volume (about 341 cases each). Inside rising 30-day trends, low-volume streaks did +0.42 % (t 1.13, n 510) and high-volume ones +0.18 % (t 0.49, n 632). Neither split is statistically reliable.
+
+## Ideas
+- `024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.d1_up-streaks-inside-monthly-uptrends` (from F1, F3, F4, F5): When a coin has just risen in an unbroken streak of four-hour periods, it keeps rising over the next three days, and the larger the streak's gain relative to the coin's typical four-hour move over the past 30 days, the larger the further rise, only while the coin's 30-day return is positive, and the more so the larger that 30-day return.
+- `024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.d2_volume-backed-up-streak-continuation` (from F2, F6): When a coin has just risen in an unbroken streak of four-hour periods while the volume of its bars grows from one period to the next, it keeps rising over the next three days, and the faster the volume grows during the streak, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

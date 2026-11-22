@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 18-bar return of bet cases (return minus coin's normal 18-bar drift)",
+    "value": 0.002133951430656224,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.6252708979890635
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast at signal bar, excess 18-bar return) > 0",
+    "value": -0.014391061517336516,
+    "passed": false
+  },
+  "counts": {
+    "cases": 4437,
+    "active bars": 34339
+  },
+  "decided_by": "t is between -2 and 2 (or undefined), which the plan calls inconclusive.",
+  "reading": "Situation is the raw component (volume ratio minus 1) above 0 with a positive forecast; a case is the first bar of each non-overlapping 18-bar grid cell (from each window's first row) where the forecast rises on its side by >= 2 points from its lowest level since its last bet (from 0 after flat or a side change), and the excess is the raw 18-bar return minus the coin's mean non-overlapping 18-bar return over all its windows, not sign-adjusted; the plan's 'fewer than 30 cases' is treated as the minimum count giving 'not observable'."
+}

@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "024-02_fading-volume-downrun-rebound-size.b2_extreme-down-streak-rebound-any-volume_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3749221,
+  "findings": {
+    "F1": "A coin's 3-day (18-bar) return, measured in its usual 3-day moves, predicts the next 3 days' unusual move in the same direction. Across all six coins on the base grid, the slope is 0.037 (t 2.78). It holds on every one of six grid offsets: slopes 0.037 to 0.056, t 2.78 to 4.28, about 882 cases per coin per grid.",
+    "F2": "The continuation sits in the strongest 3-day rises. Among rising 3-day stretches, the top quartile (mean z18 1.84) is followed by +0.149 usual moves (t 3.33, 673 cases), while the three lower quartiles give -0.02 to -0.04. With a usual 3-day move of about 8.2 %, +0.149 is roughly +1.2 % per case, about 6 times the 0.19 % cost of a trade. This is unlike the tested idea's strength of 0.007, which is 0.3 times the cost.",
+    "F3": "The top quintile of 3-day rises is followed by +0.10 usual moves (t 3.02, 1059 cases). It stays positive on all six grid offsets (t 1.91 to 3.02) and is positive in 5 of 6 coins (ZEC +0.198 t 2.40, BTC +0.148 t 1.82, XRP +0.181 t 1.68). It is positive in 6 of 8 years, with 2018 and 2022 the exceptions (-0.047 and -0.153).",
+    "F4": "High recent volume predicts a rise over the next 3 days. Volume is measured as the last day's volume over the 30-day average. Its top quintile (ratio 2.25) is followed by +0.108 usual moves (t 3.04) and its bottom quintile (ratio 0.36) by -0.087 (t -3.07). The slope is positive on all six grid offsets (t 3.04 to 5.12).",
+    "F5": "Volume adds information beyond price. In a joint regression on 5,292 base-grid cases, log of the day's volume ratio has beta 0.096 (t 4.59) next to the 3-day return's beta 0.062 (t 3.69). In the same regression the 1-day return's beta is -0.050 (t -2.98).",
+    "F6": "Contrary to the brief, falls on fading volume keep falling. Over 3-day falls, the lowest tercile of 3-day volume against its 30-day average is followed by -0.109 usual moves (t -3.71, 898 cases). The highest tercile is followed by +0.022 (t 0.57).",
+    "F7": "The tested down-streak idea is tiny. Its unusual move is +0.05 % per case (strength 0.007, t 0.48, 5674 cases). On the bars, the most extreme down streaks (mean -3.4 usual moves) are followed by +0.075 (t 2.28), but the next quintile is followed by -0.089 (t -3.06), so the effect is not graded. A Sunday effect (-0.150, t -4.05 on the base grid) flips sign across grid offsets (+0.115 to -0.150), so it is not a finding."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has risen over the past 3 days by much more than its usual 3-day move, it keeps rising over the next 3 days; the larger the 3-day rise relative to its usual 3-day move over the past 30 days, the larger the further rise.",
+      "consequence": "A trader can buy a coin after an unusually strong 3-day rise rather than fading it, expecting a move several times the cost of a trade.",
+      "name": "strong three-day rise continues",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "When a coin's traded volume over the past day is high relative to its 30-day average volume, it rises over the next 3 days; the higher that ratio, the larger the rise.",
+      "consequence": "A trader can lean long on coins whose volume over the last day has surged against their month's norm, and lean away from those whose volume has dried up.",
+      "name": "volume surge precedes rise",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin has fallen over the past 3 days while its volume over those 3 days was low relative to its 30-day average, it keeps falling over the next 3 days; the lower the volume relative to its average, the larger the further fall.",
+      "consequence": "A trader should refuse to buy a rebound after a quiet, low-volume 3-day fall, and can expect the decline to continue.",
+      "name": "quiet falls keep falling",
+      "from": "F6, F7",
+      "refs": [
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-02_fading-volume-downrun-rebound-size.b2_extreme-down-streak-rebound-any-volume.g1_strong-three-day-rise-continues",
+    "024-02_fading-volume-downrun-rebound-size.b2_extreme-down-streak-rebound-any-volume.g2_volume-surge-precedes-rise",
+    "024-02_fading-volume-downrun-rebound-size.b2_extreme-down-streak-rebound-any-volume.g3_quiet-falls-keep-falling"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38310710000000003,
+  "findings": {
+    "F1": "The test's bets mostly missed the idea's situation. Their median down-streak loss is 1.57 of the coin's mean absolute 4h move over 30 days, only 9.9 % of the 6,727 fading-volume bets exceed 4 such moves and only 3.1 % exceed 6. The bet forecast also sits at its cap of 20 in forecast quintiles 2 to 4, so the \"several times\" condition and the grading never act, and the bets' mean excess 18-bar return is +0.013 % (t 0.10, 4,331 cases).",
+    "F2": "Recomputed on the bars, the idea's own situation shows a large move. Fading-volume down-streaks whose loss exceeds 4 usual 4h moves are followed by an 18-bar excess return of +2.15 % (t 6.16, 846 cases, one per grid cell), a strength of 0.26 of the usual move. That is about 11 times the 0.19 % cost of a trade, against 0.1 times for the test's bets.",
+    "F3": "The rise is graded by the relative loss. By loss band it is +1.48 % (t 3.21) at 4\u20135 usual moves, +1.45 % (t 2.55) at 5\u20136, +3.77 % (t 3.60) at 6\u20138 and +3.45 % (t 3.26) above 10. The slope is +0.34 % per usual move (t 2.06, 846 cases), while ordinary fading streaks of at most 2 moves are followed by \u22120.35 % (t \u22122.54, 3,313 cases).",
+    "F4": "Fading volume adds to the rebound, as the brief claims. At losses of 6\u20138 usual moves, fading streaks give +2.83 % over 18 bars (t 3.08, 229 cases) against +0.04 % (t 0.10, 569 cases) when volume did not fade. Above 8 moves the figures are +1.95 % (t 2.52, 114 cases) against +0.45 % (t 0.89, 395 cases).",
+    "F5": "Above 6 usual moves the rebound is positive in all six coins, from +1.34 % in LTC to +6.88 % in ZEC, and in every year but one. It is strong in 2019, 2020, 2021 and 2025 (+5.0 % to +7.0 %) and weak in 2018, 2022 and 2023 (+0.9 % to +1.1 %, t below 1); 2024 is +0.41 % (strength \u22120.007, t 0.26).",
+    "F6": "Among streaks of more than 4 usual moves, the rebound is concentrated in short, steep streaks. Streaks of 2, 3 and 4 bars give +2.45 %, +3.61 % and +1.88 % (t 3.85, 4.48, 3.15). Streaks of 5 and 6 bars give \u22120.10 % and \u22120.26 % (98 and 49 cases).",
+    "F7": "The test's mostly ordinary bets just follow the market's year. Their mean excess 18-bar return swings from \u22121.56 % in 2018 (t \u22123.63) and \u22121.16 % in 2022 (t \u22123.52) to +1.48 % in 2021 (t 3.36). That is why their overall mean nets to near zero."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has just fallen in an unbroken streak of four-hour periods, and the volume across the streak has been declining, it rises over the next three days, only when the streak's loss is several times the coin's typical four-hour move over the past 30 days. Here the loss is counted directly in that typical move, not against the sizes of the coin's other recent streaks. Beyond that, the larger the loss relative to that typical move, the larger the rise.",
+      "consequence": "A trader buys only the rare fading-volume down-streaks that are several typical moves deep, expecting a rebound of a few percent over three days that clears trading costs many times over, and refuses the common shallow ones.",
+      "name": "deep fading down-streak rebound",
+      "from": "F1, F2, F3, F4, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin has just fallen in an unbroken streak of four-hour periods with declining volume, it rises over the next three days. The larger the streak's loss per four-hour period, counted in the coin's typical four-hour move over the past 30 days, the larger the rise.",
+      "consequence": "A trader favours steep, quick down-streaks on fading volume as rebound buys over long, slow ones of the same depth.",
+      "name": "steep fading down-streak rebound",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.b1_deep-fading-down-streak-rebound",
+    "024-02_fading-volume-downrun-rebound-size.b1_extreme-down-streak-rebound-only.b2_steep-fading-down-streak-rebound"
+  ],
+  "no_ideas": null
+}

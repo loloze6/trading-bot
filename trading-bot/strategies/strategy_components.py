@@ -5787,3 +5787,198 @@ class MeanAbsoluteMoveRankComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period + self.lookback
+
+
+class DownStreakLossInUsualMovesComponent(SubStrategyComponent):
+    """
+    The move of the current one-sided streak of closes, counted in usual one-bar moves:
+
+        side = "down" (default): n = number of consecutive bars i ending at t with close[i] < close[i-1]
+        side = "up":             n = number of consecutive bars i ending at t with close[i] > close[i-1]
+        n is capped at max_bars.
+        base = "start" (default): P = close[t-n]
+        base = "end":             P = close[t]
+        m = mean(abs(close[j] / close[j-1] - 1)) over the last `window` one-bar returns, j = t-window+1 .. t
+        side "down": raw_value = (close[t-n] - close[t]) / P / m
+        side "up":   raw_value = (close[t] - close[t-n]) / P / m
+        raw_value = 0.0 when n = 0 (bar t did not move to the counted side), and 0.0 when m = 0.
+
+    With base "end" and side "down" the output is (close[t-n] / close[t] - 1) / m: the rise needed to recover the
+    streak's loss, in usual one-bar moves. The defaults (side "down", base "start") are the original output,
+    unchanged.
+    Range: 0 and up, unbounded above, never negative; no direction. It is graded and continuous in the closes
+    while the streak lasts.
+    Warm-up: max(window, max_bars) + 1 rows, bar t included.
+
+    NaN: a NaN close in the last max(window, max_bars) + 1 rows gives NaN, and so does a close not above 0 there
+    (never on real bars). m = 0 gives 0.0 (never on real bars).
+    Building the component raises for a window below 1, a max_bars below 1, a side other than "down" or "up", or a
+    base other than "start" or "end".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(window, max_bars) + 1 rows of data, the
+    last of which is bar t; no row after t is read.
+    """
+
+    def __init__(self, name="DownStreakLoss", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.window = int(self.parameters.get("window", 180))
+        if self.window < 1:
+            raise ValueError(f"DownStreakLossInUsualMovesComponent: window must be >= 1, got {self.window}")
+        self.max_bars = int(self.parameters.get("max_bars", 180))
+        if self.max_bars < 1:
+            raise ValueError(f"DownStreakLossInUsualMovesComponent: max_bars must be >= 1, got {self.max_bars}")
+        self.side = self.parameters.get("side", "down")
+        if self.side not in ("down", "up"):
+            raise ValueError(f"DownStreakLossInUsualMovesComponent: side must be 'down' or 'up', got {self.side!r}")
+        self.base = self.parameters.get("base", "start")
+        if self.base not in ("start", "end"):
+            raise ValueError(f"DownStreakLossInUsualMovesComponent: base must be 'start' or 'end', got {self.base!r}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        need = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-need:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        last = len(c) - 1
+        rets = c[last - self.window + 1:] / c[last - self.window:last] - 1.0
+        m = float(np.mean(np.abs(rets)))
+        n = 0
+        i = last
+        while n < self.max_bars:
+            if self.side == "down":
+                moved = c[i] < c[i - 1]
+            else:
+                moved = c[i] > c[i - 1]
+            if not moved:
+                break
+            n += 1
+            i -= 1
+        if n == 0 or m == 0.0:
+            value = 0.0
+        else:
+            start = float(c[last - n])
+            end = float(c[last])
+            diff = (start - end) if self.side == "down" else (end - start)
+            divisor = start if self.base == "start" else end
+            value = diff / divisor / m
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'streak_bars': n, 'mean_abs_return': m, 'side': self.side, 'base': self.base}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.window, self.max_bars) + 1
+
+
+class DownStreakVolumeFadeComponent(SubStrategyComponent):
+    """
+    How volume fades across the current streak of down (or up) closes, on every bar:
+
+        n = the number of consecutive bars i ending at t with close[i] < close[i-1] (side "down")
+            or close[i] > close[i-1] (side "up"), capped at max_bars
+        v = volume[t-n+1 .. t], x = 0 .. n-1
+        n < 2:                          raw_value = 0
+        statistic = "slope" (default):  raw_value = -b / mean(v),  b = sum((x-xm)(v-vm)) / sum((x-xm)^2)
+        statistic = "log_ratio":        raw_value = ln(v[0] / v[n-1])
+        statistic = "log_slope":        raw_value = -c,  c = sum((x-xm)(y-ym)) / sum((x-xm)^2),  y = ln(v)
+
+    The defaults (side "down", statistic "slope") give the original output, unchanged.
+    Graded and signed: positive and growing as volume fades across the streak, negative when it rises.
+    "slope" lies strictly within (-6/(n+1), +6/(n+1)). "log_ratio" and "log_slope" are unbounded.
+    "log_slope" is the per-bar decay rate of the log volume.
+    A flat bar (equal close) ends either streak.
+    Warm-up: max_bars + 1 rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` and `volume` columns of the last max_bars + 1 rows up to and
+    including bar t (the last row of data); a bar's close and volume are known at that bar's close.
+
+    NaN: a NaN close in the last max_bars + 1 rows gives NaN. With "slope", a NaN volume on a streak bar or a mean
+    streak volume not above 0 gives NaN. With "log_ratio", a NaN volume or a volume not above 0 at the streak's
+    first or last bar gives NaN. With "log_slope", a NaN volume or a volume not above 0 on any streak bar gives NaN.
+    Building the component raises for max_bars below 2, a side other than "down" or "up", or a statistic other
+    than "slope", "log_ratio" or "log_slope".
+    """
+
+    def __init__(self, name="DownStreakVolumeFade", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.max_bars = int(self.parameters.get("max_bars", 180))
+        if self.max_bars < 2:
+            raise ValueError(f"DownStreakVolumeFadeComponent: max_bars must be >= 2, got {self.max_bars}")
+        self.side = self.parameters.get("side", "down")
+        if self.side not in ("down", "up"):
+            raise ValueError(f"DownStreakVolumeFadeComponent: side must be 'down' or 'up', got {self.side!r}")
+        self.statistic = self.parameters.get("statistic", "slope")
+        if self.statistic not in ("slope", "log_ratio", "log_slope"):
+            raise ValueError(
+                "DownStreakVolumeFadeComponent: statistic must be 'slope', 'log_ratio' or 'log_slope', "
+                f"got {self.statistic!r}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        m = self.max_bars + 1
+        close = data['close'].astype(float).to_numpy()[-m:]
+        vol = data['volume'].astype(float).to_numpy()[-m:]
+        self.confidence = 1.0
+        if np.isnan(close).any():
+            self._raw_value = float("nan")
+            return
+        n = 0
+        j = len(close) - 1
+        while n < self.max_bars and j >= 1:
+            moved = close[j] < close[j - 1] if self.side == "down" else close[j] > close[j - 1]
+            if not moved:
+                break
+            n += 1
+            j -= 1
+        self.debug_info = {'streak_bars': n, 'side': self.side, 'statistic': self.statistic}
+        if n < 2:
+            self._raw_value = 0.0
+            return
+        v = vol[-n:]
+        x = np.arange(n, dtype=float)
+        xd = x - x.mean()
+        sxx = float(np.sum(xd * xd))
+        if self.statistic == "slope":
+            if np.isnan(v).any():
+                self._raw_value = float("nan")
+                return
+            vm = float(v.mean())
+            if not vm > 0:
+                self._raw_value = float("nan")
+                return
+            b = float(np.sum(xd * (v - vm))) / sxx
+            self._raw_value = float(-b / vm)
+        elif self.statistic == "log_ratio":
+            first, last = float(v[0]), float(v[-1])
+            if np.isnan(first) or np.isnan(last) or not first > 0 or not last > 0:
+                self._raw_value = float("nan")
+                return
+            self._raw_value = float(np.log(first / last))
+        else:
+            if np.isnan(v).any() or not (v > 0).all():
+                self._raw_value = float("nan")
+                return
+            y = np.log(v)
+            c = float(np.sum(xd * (y - y.mean()))) / sxx
+            self._raw_value = float(-c)
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.max_bars + 1

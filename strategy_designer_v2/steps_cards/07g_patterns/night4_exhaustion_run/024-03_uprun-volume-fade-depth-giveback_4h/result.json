@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "024-03_uprun-volume-fade-depth-giveback_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3922236,
+  "findings": {
+    "F1": "The book lost because it was short a rising market, not because of timing: it was short on 99.2 % of bars with a mean allocation of -1.17, its mean daily return was -0.19 % against +0.12 % for holding the coins, and the idea's unusual move of +0.13 % per case is only 0.7 times the 0.19 % cost of a trade.",
+    "F2": "Large 3-day rises continue rather than give back: on the non-overlapping 18-bar grid, bars whose 18-bar return is 1 to 2 of the coin's usual 18-bar moves are followed by an unusual 18-bar move of +0.141 usual moves (t 3.19, 573 cases), and the top decile of the 18-bar return by +0.160 (t 3.13, 530 cases). Five of six coins are positive, BTC +0.223 (t 2.42) and ZEC +0.245 (t 2.43), and XMR is flat at +0.001.",
+    "F3": "Among those large 3-day rises (more than 1 usual move), the third with the highest 18-bar volume against its 180-bar median is followed by +0.217 usual moves (t 2.64, 255 cases), against +0.119 (t 1.74) for the lowest-volume third, so rising volume rather than fading volume goes with the larger move up.",
+    "F4": "A bar whose volume is far above the coin's 30-day median volume (top decile of log volume over its 180-bar median) is followed by an unusual 18-bar move of +0.180 usual moves (t 3.33, 530 cases), against -0.079 (t -2.03) for the lowest-volume decile.",
+    "F5": "The 4-hour bar opening at 16:00 UTC is followed by a next-bar return of +0.050 standard deviations (t 6.71, 17506 bars), positive in all six coins (t 1.94 to 3.59) and in every year (2022 the weakest, +0.012, t 0.59).",
+    "F6": "Up-streaks of 3 or more bars show no give-back that depends on fading volume: with volume faded the unusual move is +0.041 (t 0.69, 261 cases), and with volume risen it is +0.090 (t 1.22, 286 cases). Both are in the up direction, which is the opposite of the tested idea.",
+    "F7": "Other calendar effects were not stable enough to count: the 20:00 UTC bar's next-bar return changes sign by year (2018 -0.139, t -4.98; 2024 +0.047, t 2.61), and Friday's +0.052 (t 6.31) is negative in 2022 (-0.030) and 2025 (-0.003)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 3-day return against its usual 3-day move, and the higher its volume over those 3 days against its usual volume, the more the coin keeps moving the same way over the next 3 days.",
+      "consequence": "After a strong 3-day rise on heavy volume, a trader should lean long or refuse a fade, since such rises tend to extend rather than give back.",
+      "name": "volume-backed run continuation",
+      "from": "F2, F3, F6, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F6",
+        "F1"
+      ]
+    },
+    {
+      "idea": "The further a coin's 4-hour volume rises above its usual volume over the past 30 days, the more the coin rises over the next 3 days.",
+      "consequence": "A volume surge is a reason to hold or take a long and to refuse a short over the following days.",
+      "name": "volume surge precedes rise",
+      "from": "F4, F3",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-03_uprun-volume-fade-depth-giveback.g1_volume-backed-run-continuation",
+    "024-03_uprun-volume-fade-depth-giveback.g2_volume-surge-precedes-rise"
+  ],
+  "no_ideas": null
+}

@@ -119,3 +119,14 @@ night3_1h_run | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-r
 night3_1h_run | 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h | ReturnToMeanAbsReturnRatio | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
 night3_1h_run | 018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h | DailyDropToMeanAbsDailyReturn | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
 intraday_1h_run | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | MeanAbsoluteMoveRankComponent | built: MeanAbsoluteMoveRankComponent {"lookback": 720, "period": 168}
+night4_exhaustion_run | 024-02_fading-volume-downrun-rebound-size_4h | DownStreakLossInUsualMovesComponent | built: DownStreakLossInUsualMovesComponent {"max_bars": 180, "window": 180}
+night4_exhaustion_run | 024-02_fading-volume-downrun-rebound-size_4h | DownStreakVolumeFadeComponent | built: DownStreakVolumeFadeComponent {"max_bars": 180}
+night4_exhaustion_run | 024-03_uprun-volume-fade-depth-giveback_4h | UpStreakScaledGainComponent | built: DownStreakLossInUsualMovesComponent {"max_bars": 180, "side": "up", "window": 180}
+night4_exhaustion_run | 024-03_uprun-volume-fade-depth-giveback_4h | StreakVolumeFadeComponent | built: DownStreakVolumeFadeComponent {"side": "up", "statistic": "log_ratio"}
+night4_exhaustion_run | 024-04_downrun-volume-fade-depth-rebound_4h | DownStreakScaledLossComponent | exists: DownStreakLossInUsualMovesComponent {"max_bars": 180, "side": "down", "window": 180}
+night4_exhaustion_run | 024-04_downrun-volume-fade-depth-rebound_4h | StreakVolumeFadeComponent | exists: DownStreakVolumeFadeComponent {"side": "down", "statistic": "log_ratio"}
+night4_exhaustion_run | 024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size_4h | UpStreakScaledGain | exists: DownStreakLossInUsualMovesComponent {"max_bars": 180, "side": "up", "window": 180}
+night4_exhaustion_run | 024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size_4h | StreakGainOverTypicalMove (the same component's divisor) | exists: DownStreakLossInUsualMovesComponent {"max_bars": 180, "side": "up", "window": 180}
+night4_exhaustion_run | 024-01_fading-volume-uprun-giveback-size.d2_fading-volume-down-run-rebound_4h | DownStreakScaledLoss | built: DownStreakLossInUsualMovesComponent {"base": "end", "max_bars": 180, "side": "down", "window": 180}
+night4_exhaustion_run | 024-01_fading-volume-uprun-giveback-size.d2_fading-volume-down-run-rebound_4h | DownStreakVolumeFade | built: DownStreakVolumeFadeComponent {"side": "down", "statistic": "log_slope"}
+night4_exhaustion_run | 024-01_fading-volume-uprun-giveback-size.g1_long-up-run-continues-rising_4h | UpStreakGainInUsualMovesComponent | exists: DownStreakLossInUsualMovesComponent {"base": "start", "max_bars": 180, "side": "up", "window": 180}
