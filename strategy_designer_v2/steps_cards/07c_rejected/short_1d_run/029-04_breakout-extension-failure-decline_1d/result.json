@@ -1,0 +1,57 @@
+{
+  "line": "7.c",
+  "backtest": "029-04_breakout-extension-failure-decline_1d",
+  "step5": "rejected",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40623850000000006,
+  "findings": {
+    "F1": "The test found the opposite of the idea. Higher peak excursions were followed by higher 5-day returns, not larger falls: slope +0.0027 per excursion point, t 3.3 over 751 non-overlapping cases. The positive slope held at every horizon: t 4.3 at 1 day (1402 cases), 4.3 at 3 days (908), 4.4 at 10 days (578) and 2.1 at 20 days (422).",
+    "F2": "The positive excursion slope is carried partly by its tail. At 5 days its rank correlation is only 0.019 (p 0.60), and the slope falls to t 1.7 once the excursion is cut at its 95th percentile. At 1 day the effect survives on ranks (Spearman 0.081, p 0.002, winsorised t 3.9), and at 10 days it is weaker (Spearman 0.083, p 0.046, winsorised t 2.5).",
+    "F3": "Failed breakouts were followed on average by a small rise, not a fall. The long-signed unusual move was +0.19 % at 5 days (t 0.52, 751 cases) and +0.94 % at 10 days (t 1.29, 578 cases). This was not stable across years: 2019 was \u22122.8 % (t \u22122.7, 83 cases) and 2020 was +2.5 % (t 3.2, 117 cases).",
+    "F4": "Among failed breakouts, the further the close sat below its highest close of the prior 20 days, the higher the return that followed. The slope on that depth was \u22120.15 at 1 day (t \u22125.0, Spearman \u22120.12, p 0.00003, 1190 cases) and \u22120.39 at 3 days (t \u22125.5, Spearman \u22120.11, p 0.002, 766 cases). It faded at 5 and 10 days (Spearman p 0.39\u20130.40).",
+    "F5": "Plain closes above the prior 20-day closing high were followed by rises well above the coin's drift. The unusual move was +0.93 % at 3 days (t 3.4, 1018 cases), +1.34 % at 5 days (t 3.1, 799 cases) and +2.99 % at 10 days (t 3.6, 558 cases). The 10-day total move was +4.2 %, about 22 times the 0.19 % cost of a trade.",
+    "F6": "Those breakout rises grew with how far the close cleared the old high, measured in units of the coin's 20-day daily volatility. At 5 days the quintiles went from +0.23 % (lowest) to +2.1 % and +2.2 % (top two, t 2.4 and 2.0, about 160 cases each). The linear slope was t 1.9 at 5 days and t 2.5 at 10 days, but ranks are weaker (Spearman 0.04\u20130.05, p about 0.28).",
+    "F7": "The failed-breakout 5-day result splits by coin. ETH (+1.28 %, t 1.3, 127 cases) and ZEC (+1.06 %, t 0.8, 113 cases) rose after failures, while BTC fell (\u22120.70 %, t \u22121.2, 143 cases). Failures in the highest third of 20-day volatility rose +1.46 % (t 1.6, 211 cases) against \u22120.69 % in the lowest third (t \u22121.4, 211 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its highest close of the prior 20 days, it rises more than its normal drift over the next 10 days, and the further the close clears that old high, measured in units of the coin's 20-day daily volatility, the larger the rise.",
+      "consequence": "A daily close through the 20-day high is a reason to be long for about ten days rather than to wait for the break to fail, with more conviction the larger the break relative to the coin's volatility.",
+      "name": "breakout extension carries higher",
+      "from": "F5, F6, F3",
+      "refs": [
+        "F5",
+        "F6",
+        "F3"
+      ]
+    },
+    {
+      "idea": "When a coin has closed above its prior 20-day closing high within the last 4 days and now closes back below that old high, it rises over the next 3 days, and the further its close sits below its highest close of the prior 20 days, the larger the rise.",
+      "consequence": "A deep slip back under a fresh breakout is a reason to buy the dip for a few days, not to short the failure.",
+      "name": "failed breakout dip rebounds",
+      "from": "F4, F3, F1",
+      "refs": [
+        "F4",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin closes above its prior 20-day closing high, reaches further above it within the next 3 days, and then closes back below the old high, the coin rises over the next day, and the larger the peak excursion above the old high was, the larger the rise.",
+      "consequence": "A large spike above the old high that slips back signals buyers still in control, a reason to refuse the short and lean long for the next day.",
+      "name": "big excursion failure bounces",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-04_breakout-extension-failure-decline.c1_breakout-extension-carries-higher",
+    "029-04_breakout-extension-failure-decline.c2_failed-breakout-dip-rebounds",
+    "029-04_breakout-extension-failure-decline.c3_big-excursion-failure-bounces"
+  ],
+  "no_ideas": null
+}

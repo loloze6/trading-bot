@@ -1,1 +1,5 @@
 029-01_failed-breakout-depth-decline_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+029-02_breakout-volume-trapped-decline_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+029-03_close-below-breakout-bar-low_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
+029-04_breakout-extension-failure-decline_1d: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)
+029-05_failed-breakout-multiday-drift_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

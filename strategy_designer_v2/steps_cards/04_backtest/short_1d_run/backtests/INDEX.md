@@ -1,1 +1,5 @@
 029-01_failed-breakout-depth-decline_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+029-02_breakout-volume-trapped-decline_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+029-03_close-below-breakout-bar-low_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+029-04_breakout-extension-failure-decline_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+029-05_failed-breakout-multiday-drift_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]

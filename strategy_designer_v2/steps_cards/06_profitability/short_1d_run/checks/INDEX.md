@@ -1,1 +1,5 @@
 029-01_failed-breakout-depth-decline_1d: not profitable enough [Sharpe -0.4476; Sharpe minus holding's Sharpe -1.002; Calmar -0.1672]
+029-02_breakout-volume-trapped-decline_1d: not profitable enough [Sharpe -0.6441; Sharpe minus holding's Sharpe -1.198; Calmar -0.1446]
+029-03_close-below-breakout-bar-low_1d: not profitable enough [Sharpe 0.4997; Sharpe minus holding's Sharpe -0.05443; Calmar 0.2059]
+029-04_breakout-extension-failure-decline_1d: not profitable enough [Sharpe -0.4865; Sharpe minus holding's Sharpe -1.041; Calmar -0.1734]
+029-05_failed-breakout-multiday-drift_1d: not profitable enough [Sharpe -0.4002; Sharpe minus holding's Sharpe -0.9544; Calmar -0.1757]

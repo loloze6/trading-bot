@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar short move (return minus coin drift, short direction)",
+    "value": -0.007735382779211993,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.0324959546397248
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and slope > 0); reject if mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of unusual short move on abs post_pipeline_value of fb_vol",
+    "value": -0.0015138489522700832,
+    "passed": false
+  },
+  "counts": {
+    "cases across all coins and windows": 335
+  },
+  "decided_by": "The t of the mean unusual short move lies between -2 and 2.",
+  "reading": "A short bet is a fall of the forecast of at least 2 points from its least negative level since the last bet (reset to 0 after a flat or long bar), the first bet in each 5-bar grid cell from the window's first row is the case, cases without 5 bars left in the window are dropped, and the plan's 'fewer than 30 cases' rule is reported as not observable."
+}

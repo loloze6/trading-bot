@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 8-bar move per case (before costs)",
+    "value": -0.0035881996098093357,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.5243217736576913
+    },
+    "threshold": "mean > 0 with t >= 2 confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of deeper half minus shallower half (split at median entry forecast size)",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 539,
+    "deeper half": 0,
+    "shallower half": 539
+  },
+  "decided_by": "The t of the main measure lies between -2 and 2.",
+  "reading": "A case is the first short-side bet (forecast falling >= 2 points from its lowest short level since the last bet, reset at flat) in each 8-bar grid cell from each window's first row, needing 8 bars ahead in the window; drift is the coin's mean 8-bar grid return over all windows; the deeper half is entry |forecast| strictly above the median, the shallower half at or below it."
+}

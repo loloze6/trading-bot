@@ -1,0 +1,29 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed unusual 5-bar move of the short bets",
+    "value": -0.0019115013927013943,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.4413148399059866
+    },
+    "threshold": "confirm: > 0 with t >= 2 over at least 30 cases; reject: < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of raw 5-bar forward return on raw excursion among cases",
+    "value": 0.0022145196117931486,
+    "passed": false,
+    "t": 2.5270080764314806,
+    "n": 605
+  },
+  "counts": {
+    "cases": 605,
+    "regression cases": 605
+  },
+  "decided_by": "The excursion slope is positive with t >= 2.",
+  "reading": "A case is the first short bet in each 5-bar grid cell of a window counted from its first row; the excursion regressor is the raw value on that bet bar; the drift is the coin's mean 5-bar return on the same non-overlapping grid over all its windows; the situation is the raw excursion > 0, recomputed from closes where the raw value is missing."
+}

@@ -1,0 +1,20 @@
+{
+  "line": "7.g",
+  "backtest": "029-03_close-below-breakout-bar-low_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34850609999999993,
+  "findings": {
+    "F1": "The tested situation measured more broadly does not show the idea's decline. A close back below a 20-day high that was broken within the prior 3 days was followed by a mean excess 5-day return of -0.53 % (t -0.63, 128 non-overlapping cases), against +0.02 % on all other grid bars (3,291 cases). Depth also ran the wrong way: deeper failures were followed by higher returns (Spearman of depth with excess return +0.125, p 0.16).",
+    "F2": "No coin carries the broad failed-breakout case. Per-coin mean excess 5-day returns run from -2.12 % (XRP, t -1.68, 16 cases) to +1.44 % (ZEC, t 0.55, 22 cases), and no |t| reaches 2.",
+    "F3": "Days that broke above the prior 20-day high were followed by a mean excess 5-day return of +2.46 % (t 2.19, 149 cases, 0.23 of a usual move). That is continuation, not failure. Against the roughly 70 groups examined, a t of 2.19 does not stand out from chance.",
+    "F4": "None of nine bar features ranks the next 5-day excess return across all 3,000-odd grid cases. The features were 1-day, 5-day and 20-day return, 20-day volatility, the 5-day-over-60-day volatility ratio, distance to the 20-day high and low, the day's range and where the close sits in it. Every Spearman |rho| is at most 0.038; the smallest p is 0.058 (volatility ratio).",
+    "F5": "The largest quintile gaps are not graded, so they read as noise. The second 1-day-return quintile has mean -1.48 % (t -3.53, 654 cases) while its neighbours are near 0. The fourth distance-to-20-day-low quintile has +1.64 % (t 3.13, 569 cases) while the fifth is -0.10 %.",
+    "F6": "By weekday, cases starting Monday and Tuesday were followed by +1.43 % and +1.40 % excess over 5 days (t 2.89 and 2.74, about 485 cases each), and Thursday and Sunday by -0.94 % and -1.18 % (t -2.20 and -2.19). The 5-day horizon overlaps the following weekdays, and the pattern has no mechanism behind it, so it cannot be told apart from multiple-testing noise.",
+    "F7": "The book was in a position on only 1.5 % of bars, over 91 trades (median holding 5 days). Its mean daily return was 0.005 % against the coins' 0.118 %, and its daily correlation with holding the coins was -0.18. Its trades were dominated by XMR (24 trades, mean -3.22 % after fees), so there is too little exposure to show any pattern in the book itself."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "Across about 70 groupings and 9 rank tests, the only results above |t| 3 are non-graded single quintiles (F5), and the rest stay within what chance gives on this many looks (F3, F4, F6), so no pattern stands out enough to found an idea."
+}

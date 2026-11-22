@@ -1,1 +1,5 @@
 029-01_failed-breakout-depth-decline_1d: inconclusive (fit: adapted) [main: -0.00125077; t of the mean -0.294981; cases 617]
+029-02_breakout-volume-trapped-decline_1d: inconclusive (fit: adapted) [main: -0.00773538; t of the mean -1.0325; cases across all coins and windows 335]
+029-03_close-below-breakout-bar-low_1d: not observable (fit: exact) [main: -0.0282495; t of the mean -1.61879; cases 18, active bars 63]
+029-04_breakout-extension-failure-decline_1d: rejected (fit: adapted) [main: -0.0019115; t of the mean -0.441315; cases 605, regression cases 605]
+029-05_failed-breakout-multiday-drift_1d: inconclusive (fit: adapted) [main: -0.0035882; t of the mean -0.524322; independent cases 539, deeper half 0, shallower half 539]
