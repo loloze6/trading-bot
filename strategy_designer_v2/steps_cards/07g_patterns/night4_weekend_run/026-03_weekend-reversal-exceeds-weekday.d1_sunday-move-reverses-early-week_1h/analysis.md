@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h
+idea tested: 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6730 USD
+---
+## Findings
+- **F1:** Saturday's 24-hour move, read at the bar that closes Sunday 00:00 UTC, carries on over Monday. Regressed on Saturday's volatility-scaled move, Monday's move has t +7.30 pooled over 1936 coin-weeks, and t +4.25 with one case per week averaged across coins (375 weeks, slope 0.34). No other weekday's move predicts the day after its next day: those t lie between -0.70 and +1.55 on week averages.
+- **F2:** The Saturday continuation into Monday is graded. Monday's mean return rises across Saturday's quintiles: -0.46 %, -0.09 %, +0.12 %, +0.23 %, +0.41 %, from the most negative quintile (z -0.83) to the most positive (z +1.20), with about 387 cases each. It is positive in 6 of 8 years, with t from +1.5 to +8.6. In 2021 and 2025 it reverses, with t -2.2 and -2.0.
+- **F3:** On Sunday itself, Saturday's move is partly reversed. Sunday's move against Saturday's has t -4.17 pooled (1936 cases) and t -2.69 on week averages (375 weeks). Most of it sits in the top quintile: after Saturday's largest rises (z +1.20), Sunday averages -0.53 %, against +0.18 % to +0.34 % in the other quintiles.
+- **F4:** The tested Sunday reversal depends on volatility. Splitting each coin's Sunday cases into thirds by trailing 720-hour volatility, the slope of the 48-hour move on Sunday's scaled move is -0.13 (t -2.70, 671 cases) in the high-volatility third. It is -0.09 (t -1.84) in the middle third and +0.05 (t +0.78) in the low-volatility third. This is marginal given the many angles examined.
+- **F5:** The reversal works after Sunday falls but not after Sunday's largest rises. Over the next 48 hours, the two most negative Sunday quintiles are followed by +1.07 % and +0.69 %, and the fourth quintile by -1.44 %. The largest Sunday rises (z +1.16) are followed by only -0.06 %. In the trades, longs net +0.63 % with a 61 % win rate (1980 trades), while shorts net -0.68 % with a 29 % win rate (2074 trades).
+- **F6:** The book's daily returns are tied to the weekly cycle. Sunday's mean is -0.043 % (t -9.27, 2478 coin-days), which is the fee of entering at Sunday's last bar. Monday's mean is +0.108 % (t 2.10) and Tuesday's +0.036 % (t 0.80), so the gain sits in the first holding day.
+- **F7:** The bar starting 22:00 UTC rises on its own, though it is far too small to pay a trade. Its mean scaled move is +0.065 (t 8.16, 16126 bars), or +4.7 bp. It is positive on every weekday and every coin and in 6 of 8 years. This is against a cost of 19 bp per trade.
+
+## Ideas
+- `026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g1_saturday-move-resumes-monday` (from F1, F2): A coin's 24-hour return over Saturday is followed by a move in the same direction over Monday, the 24 hours from Monday 00:00 UTC: the larger Saturday's rise or fall, the larger Monday's move the same way.
+- `026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g2_sunday-reverses-saturday` (from F3, F1): A coin's 24-hour return over Saturday is followed by an opposite move over the next 24 hours, Sunday: the larger Saturday's rise, the larger Sunday's fall.
+- `026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g3_sunday-fade-needs-volatility` (from F4, F6): The larger a coin's hourly volatility over the past 30 days, the larger the opposite move over Monday and Tuesday that follows each unit of its 24-hour return over Sunday.
+- `026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week.g4_sunday-falls-rebound-early-week` (from F5): A coin's 24-hour fall over Sunday is followed by a rise over the next two days, Monday and Tuesday: the larger Sunday's fall, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

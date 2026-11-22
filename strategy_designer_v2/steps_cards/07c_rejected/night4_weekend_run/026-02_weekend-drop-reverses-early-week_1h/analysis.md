@@ -1,0 +1,26 @@
+---
+line: 7.c rejected
+backtest: 026-02_weekend-drop-reverses-early-week_1h
+idea tested: 026-02_weekend-drop-reverses-early-week
+step 5: rejected
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5664 USD
+---
+## Findings
+- **F1:** Weekend falls were not reversed; they continued: after a fall from Saturday 00:00 to Monday 00:00 UTC, the coin's unusual move over the next 48 hours was -0.65 % (t -2.91, 1112 cases), against -0.22 % (t -1.09, 1200 cases) after a 48-hour fall ending Thursday 00:00, so the rejection is specific to the weekend.
+- **F2:** The continuation sits in the shallow weekend falls, not the deep ones: falls under a quarter of the coin's usual 48-hour move were followed by -1.31 % (t -4.33, 449 cases), while falls deeper than one usual move were followed by +0.79 % (t 1.04, 141 cases); among falls, the unusual move's slope on the weekend return is -0.238 (t -3.71, 1066 cases), so the grading points the idea's way but sits on a negative base.
+- **F3:** Only Sunday's own 24-hour move is reversed over Monday and Tuesday: the slope of the 48-hour strength on the day's return, in usual moves, is -0.155 (t -4.22, 2369 cases) for the day ending Sunday 24:00, while every other day of the week shows |t| ≤ 1.7; Saturday's return has the opposite slope, +0.126 (t 3.37), and the full 48-hour weekend return, which mixes the two, only -0.034 (t -1.27).
+- **F4:** The Sunday reversal is mainly on the short side: after a Sunday rise the coin fell 1.05 % below its drift over the next 48 hours (t 4.88, 1225 cases, strength 0.155), against a +0.32 % rise after a Sunday fall (t 1.51, 1144 cases); in the top quintile of Sunday rises the fall was 1.11 % (t 2.93, 474 cases).
+- **F5:** The Sunday reversal holds across the data: the move against Sunday's direction is positive in all 6 coins (from +0.35 % in BTC to +1.06 % in XMR, t from 1.14 to 3.14) and in 7 of 8 years (2023: -0.02 %, t -0.09).
+- **F6:** The Sunday reversal is specific to the weekend: after the days ending Monday to Thursday, the largest-rise quintile was followed by a 0.40 % further rise above drift (t 2.24 for continuation, 1902 cases), not by a fall.
+- **F7:** The Sunday-rise fall is large next to the cost of a trade: the 1.05 % unusual move is about 5.5 times the 0.19 % cost; with the coins' normal drift of about +0.28 % per 48 hours against a short, the total move is about +0.77 %, about 4 times the cost; the tested idea's total move was -0.22 %, -1.1 times the cost.
+- **F8:** A weekend fall that follows a rising week continues: after a 7-day rise before Saturday, a weekend fall was followed by -0.99 % over 48 hours (t -3.01, 515 cases), against +0.13 % (t 0.38, 478 cases) after a falling week.
+
+## Ideas
+- `026-02_weekend-drop-reverses-early-week.c1_sunday-rally-fades-early-week` (from F3, F4, F5, F6, F7): When a coin's price rises over Sunday (from Sunday 00:00 to Monday 00:00 UTC), it falls over the following two days (Monday and Tuesday); the larger Sunday's rise, the larger the fall.
+- `026-02_weekend-drop-reverses-early-week.c2_sunday-move-reverses-midweek` (from F3, F5, F6): A coin's return over Sunday (its 24-hour return to Monday 00:00 UTC) is followed over Monday and Tuesday by a move in the opposite direction; the larger Sunday's move, the larger the opposite move.
+- `026-02_weekend-drop-reverses-early-week.c3_saturday-move-continues-midweek` (from F3): A coin's return over Saturday (from Saturday 00:00 to Sunday 00:00 UTC) is followed by a move in the same direction over Monday and Tuesday; the larger Saturday's move, the larger the move that follows.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

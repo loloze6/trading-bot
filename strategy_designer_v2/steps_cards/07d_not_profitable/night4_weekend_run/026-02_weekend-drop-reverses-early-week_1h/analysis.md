@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 026-02_weekend-drop-reverses-early-week_1h
+idea tested: 026-02_weekend-drop-reverses-early-week
+step 5: rejected
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3685 USD
+---
+## Findings
+- **F1:** The idea's effect points the wrong way, so the book cannot pay. After a weekend fall, the coin's unusual 48-hour move over Monday and Tuesday is -0.59 % (t -2.37, 911 cases), not a rise. Per case the total move is -0.22 % against a trade cost of 0.19 %. The book's mean daily return is -4.1e-05, against a required 0.0005.
+- **F2:** The shallow weekend falls carry the continuation, and the grading runs against the idea. Weekend falls under a quarter of the coin's usual 2-day move are followed by -1.12 % unusual over Monday and Tuesday (t -3.35, 364 cases). The second quintile of the weekend move (mean -1.3 %) is followed by -1.18 % (t -3.47, 405 cases). Only falls deeper than 1.5 usual moves are followed by a rise, +1.65 % (t 1.14, 52 cases), which is not reliable.
+- **F3:** Weekend falls continue most when the weekend was turbulent. When the weekend's hourly volatility was in the top third relative to the prior week's, the fall is followed by -1.34 % unusual over Monday and Tuesday (t -2.96, 277 cases). In the lowest third it is followed by -0.30 % (t -0.85, 297 cases).
+- **F4:** Weekend falls continue most when they break a rising week. When the five days before the weekend had risen, the weekend fall is followed by -0.96 % unusual (t -2.74, 445 cases). When those five days had fallen, it is followed by -0.15 % (t -0.42, 418 cases).
+- **F5:** Moves into the weekend persist rather than reverse. A 2-day rise into Friday 00:00 UTC is followed by +0.74 % unusual over Friday and Saturday (t 3.63, 989 cases), and the larger the rise, the larger the follow-through (slope 0.0077, correlation 0.13). This holds in 7 of 8 years (for example 2018 +1.7 %, t 2.26, and 2024 +1.6 %, t 2.66). Its move is about 3.9 times the 0.19 % trade cost.
+- **F6:** The direction-signed unusual move after the 2 days ending Friday 00:00 is +0.37 % (t 2.51, 1826 cases), and after the weekend it is +0.29 % (t 1.72, 1893 cases). The weekly structure is continuation, which is the opposite of the brief's reversal.
+
+## Ideas
+- `026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue` (from F1, F3, F2): When a coin falls over the weekend (Saturday 00:00 to Monday 00:00 UTC), it keeps falling over Monday and Tuesday. The fall is larger the more volatile the weekend's hours were compared with the coin's previous week.
+- `026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week` (from F1, F4): When a coin falls over the weekend after rising over the previous five days, it keeps falling over Monday and Tuesday. The fall is larger the larger the preceding five-day rise was.
+- `026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends` (from F5, F6): When a coin rises over the two days before Friday 00:00 UTC, it keeps rising over Friday and Saturday. The larger that two-day rise, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

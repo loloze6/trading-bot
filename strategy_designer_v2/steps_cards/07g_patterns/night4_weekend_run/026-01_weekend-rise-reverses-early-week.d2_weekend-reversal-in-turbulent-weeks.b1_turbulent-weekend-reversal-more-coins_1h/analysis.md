@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins_1h
+idea tested: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5201 USD
+---
+## Findings
+- **F1:** The bars starting at 21:00 and 22:00 UTC gain +0.049 % per hour on average, against +0.003 % in every other hour (Welch t 10.8, about 69 000 bars). The gain is positive on every weekday (t 2.0 to 7.7) and in 7 of 8 years (t 2.3 to 11.3; 2022 is the exception at t −4.6). It is positive in all 19 coins and largest in the more volatile ones (NEAR +0.101 %, DOGE +0.087 %, TRX +0.016 %).
+- **F2:** Take each coin's 48-hour return up to Friday 00:00 UTC, standardised by its usual 48-hour move. That return is followed by a move the same way over Friday and Saturday: slope +0.073, t 5.5, 4 204 cases. After a rise, the unusual move is +0.89 % (t 5.6). The top quintile ends +0.22 of a usual move above drift, against +0.004 for the bottom quintile. The slope is positive in 6 of 8 years (t +4.0 in 2018, +4.0 in 2025).
+- **F3:** In the tested Monday cases (744 with a full 96-hour path), the reversal falls on Tuesday. The Monday 00:00 to Tuesday 00:00 return is +0.11 % (t 0.45), the Tuesday return is −0.62 % (t −2.74), and Wednesday–Thursday gives +0.77 % back (t 1.38).
+- **F4:** The weekend reversal holds only in the high-volatility regime: the slope of the Monday–Tuesday move on the weekend move is −0.125 (t −4.3, 1 666 cases), and the top quintile of weekend rises is followed by −1.38 % unusual. In calm regimes the slope is +0.066 (t 2.25, 2 499 cases), and a weekend fall is followed by a further unusual −0.68 % (t −3.43).
+- **F5:** Early-week reversal is not specific to the weekend. The 48-hour returns ending Tuesday 00:00 and Wednesday 00:00 are reversed over the next 48 hours about as strongly as the weekend move (slopes −0.063 t −3.8 and −0.058 t −3.8, against −0.056 t −2.8 for Monday).
+- **F6:** The book does not hold the idea's 48 hours. Of 1 586 short trades, all entered at Sunday 23:00 UTC, only 623 last 47–49 hours, and those earn +0.80 % gross. The 738 trades shorter than 47 hours lose −1.98 % gross, and the 182 trades longer than 200 hours lose −2.69 %. Overall the trades lose −1.12 % gross and −1.22 % net, while the idea's total move per case is +0.84 %.
+
+## Ideas
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins.g1_midweek-rise-carries-into-weekend` (from F2, F5): A coin's 48-hour return up to Friday 00:00 UTC carries on over Friday and Saturday: the larger its rise over Wednesday and Thursday, the larger its further rise over the next 2 days.
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins.g2_late-evening-utc-drift-up` (from F1): A coin's price rises over the two hours from 21:00 to 23:00 UTC each day, by more the higher the coin's volatility over its last 30 days.
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins.g3_turbulent-weekend-rise-tuesday-fall` (from F3, F4): While a coin's 30-day hourly volatility is high against its last 6 months, a rise from Saturday 00:00 to Monday 00:00 UTC is followed by a fall over Tuesday (Tuesday 00:00 to Wednesday 00:00 UTC): the larger the weekend gain, the larger the Tuesday fall.
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins.g4_calm-weekend-fall-continues` (from F4): While a coin's 30-day hourly volatility is low against its last 6 months, a fall from Saturday 00:00 to Monday 00:00 UTC is followed by a further fall over Monday and Tuesday: the larger the weekend fall, the larger the further fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

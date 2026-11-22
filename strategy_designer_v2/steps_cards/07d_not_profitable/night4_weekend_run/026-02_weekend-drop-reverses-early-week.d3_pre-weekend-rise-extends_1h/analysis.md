@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends_1h
+idea tested: 026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.4730 USD
+---
+## Findings
+- **F1:** The book fails on size, not on edge: its mean daily return is 0.00032 against a 0.0005 floor and against holding's 0.00119, because it is in the market only 21–27 % of bars per coin, at a mean position of 0.34–0.69 when in. Its gain all comes on Friday (+0.00107 a day) and Saturday (+0.00160), while the other weekdays sit between −0.00027 and +0.00002. This is across 1969 trades netting +0.66 % each after fees, so cost is not the problem.
+- **F2:** The Friday rise works only inside a 30-day uptrend. Among Friday 00:00 cases after a 48-hour rise, those with a positive 720-hour return gain +1.64 % over 48 hours (500 cases), and the slope on the two-day rise has t = 4.72. Those with a non-positive 30-day return gain only +0.21 % (345 cases), with a slope t of −0.85.
+- **F3:** The 30-day return predicts the Friday–Saturday move better than the two-day rise does. At Friday 00:00, the slope of the 48-hour return on the 720-hour return has t = 7.76 (1818 cases), against t = 2.57 for the 48-hour rise. By 720-hour-return quintile, the 48-hour return climbs steadily from −0.42 % to +0.09 %, +0.72 %, +0.80 % and +2.08 %.
+- **F4:** This 30-day effect is tied to the weekend days. The slope t of the next 48 hours on the 720-hour return is 7.76 from Friday 00:00 and 5.08 from Saturday 00:00, but between −1.72 and +0.90 from Sunday through Wednesday 00:00.
+- **F5:** Inside the uptrend, the two-day rise still grades the move. Among Friday cases with a positive 720-hour return (918 cases), the slope of the next 48 hours on the 48-hour rise has t = 3.95, and of Saturday's 24 hours t = 5.06.
+- **F6:** The extension shows on Saturday, not Friday. The 48-hour rise into Friday predicts Friday's own 24 hours negatively (slope t = −3.49) and Saturday's 24 hours positively (t = 7.91). Saturday's 24 hours are also predicted by the 48 hours before Friday (t = 7.10), not by Friday's own move (t = −0.01).
+- **F7:** Over four days the gain grows with the two-day rise but is not reversed early in the week. Across past-48h quintiles, the next 96 hours run from +0.15 % to +1.47 %, and Monday–Tuesday after the top quintile is only −0.35 %.
+
+## Ideas
+- `026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends.d1_pre-weekend-rise-in-uptrend` (from F2, F5, F1): When a coin rises over the two days before Friday 00:00 UTC, it keeps rising over Friday and Saturday, only while its 30-day return is positive. The larger that two-day rise and the larger the 30-day return, the larger the further rise.
+- `026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends.d2_monthly-trend-carries-weekend` (from F3, F4, F1): The larger a coin's 30-day return at Friday 00:00 UTC, the more it rises over Friday and Saturday.
+- `026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends.d3_wed-thu-rise-lifts-saturday` (from F6, F1): When a coin rises over the two days before Friday 00:00 UTC, it keeps rising over Saturday, from Saturday 00:00 to Sunday 00:00. The larger that two-day rise, the larger Saturday's rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

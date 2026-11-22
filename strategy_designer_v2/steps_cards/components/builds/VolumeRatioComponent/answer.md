@@ -1,14 +1,14 @@
-# VolumeRatioComponent: slow_1h_run | 016-05_up-even-volume-continuation_1h | VolumeEvenness
+# VolumeRatioComponent: night4_weekend_run | 026-04_thinner-weekend-larger-reversal_1h | LaggedBaseVolumeRatio
 
 ## attempt 1
 
 answer: built
 class: VolumeRatioComponent
-settings: {"period": 72, "short_period": 72, "short_statistic": "median"}
-reason: The median of the last 72 volumes over their mean is `VolumeRatioComponent` with the median as the recent statistic instead of the mean. Today the numerator is always a mean (`short_period` 72 with `statistic` "median" gives only the reciprocal, mean over median, and no config step inverts a value), so I added one setting, `short_statistic` ("mean" by default, which leaves today's output unchanged). On real bars the value is 0 to 2, not 0 to 1. It sits below 1 when volume is right-skewed, as hourly volume usually is, and rises toward 1 as the volume spreads evenly.
+settings: {"period": 120, "exclude_current": 49, "short_period": 48}
+reason: `VolumeRatioComponent` already computes the mean of the recent volume over a base mean. Its only way to move the base back in time is `exclude_current`, which allows 0 or 1 bar, so it cannot place the base at t-168..t-49. Under one setting per purpose, the wished lag of 49 becomes a new value of `exclude_current` (any integer ≥ 0, the base ending `exclude_current` bars before t). Values 0 and 1 give exactly today's windows, so today's output is unchanged.
 
 table: Hedges and filters
-row: | `VolumeRatioComponent` | `period` (30), `exclude_current` (0), `short_period` (1), `form` ("ratio"), `statistic` ("mean"), `short_statistic` ("mean") | r = A / B. A is the `short_statistic` of the volume over the last `short_period` bars, bar t included ("mean": the mean; "median": the median, the average of the two middle values for an even count). B is the `statistic` (same choices) of the volume over the last `period` bars, bar t included (`exclude_current` 0), or over volume[t-period] .. volume[t-1], bar t excluded (`exclude_current` 1). The output is r (`form` "ratio"), r - 1 (`form` "centred"), or ln(r) (`form` "log"). At the defaults it is volume[t] / mean(last `period` volumes). With `period` 72, `short_period` 72 and `short_statistic` "median" it is median / mean of the last 72 volumes, the evenness of volume over the window | "ratio": never negative, 1 when A equals the base. With both statistics "mean" and `exclude_current` 0, it runs 0 to `period` / `short_period`. With `short_period` = `period`, `exclude_current` 0, `short_statistic` "median" and `statistic` "mean", it runs 0 to 2 and nears 1 as the volume spreads evenly. Otherwise it is unbounded above. "centred": the same minus 1, signed. "log": signed, 0 at the base. No direction | graded | ratio ("centred": ratio minus 1; "log": natural log of the ratio) | `period` + `exclude_current` (30) | volume. A NaN volume in either window, or a base of 0, gives NaN. With "log", a recent statistic of 0 (never seen on real bars) gives NaN. These settings raise when the component is built: `period` < 2, `exclude_current` not 0 or 1, `short_period` < 1 or > `period`, `form` other than "ratio", "centred" or "log", `statistic` or `short_statistic` other than "mean" or "median" | stateless. `statistic` sets the base (the denominator) and `short_statistic` sets the numerator. The defaults are the original output, unchanged. `short_statistic` "median" with `short_period` = `period` = 72 gives the volume evenness over the last 72 bars. No `scaling_factor`: scale it with transforms |
+row: | `VolumeRatioComponent` | `period` (30), `exclude_current` (0), `short_period` (1), `form` ("ratio"), `statistic` ("mean"), `short_statistic` ("mean") | r = A / B. A is the `short_statistic` of the volume over the last `short_period` bars, bar t included ("mean": the mean; "median": the median, the average of the two middle values for an even count). B is the `statistic` (same choices) of the volume over the `period` bars volume[t-`period`-`exclude_current`+1 .. t-`exclude_current`], the base ending `exclude_current` bars before t (0: bar t included; 1: volume[t-period] .. volume[t-1]). The output is r (`form` "ratio"), r - 1 (`form` "centred"), or ln(r) (`form` "log"). At the defaults it is volume[t] / mean(last `period` volumes). With `period` 72, `short_period` 72 and `short_statistic` "median" it is median / mean of the last 72 volumes, the evenness of volume over the window. With `period` 120, `exclude_current` 49 and `short_period` 48 it is mean(volume[t-47..t]) / mean(volume[t-168..t-49]) | "ratio": never negative, 1 when A equals the base. With both statistics "mean" and `exclude_current` 0, it runs 0 to `period` / `short_period`. With `short_period` = `period`, `exclude_current` 0, `short_statistic` "median" and `statistic` "mean", it runs 0 to 2 and nears 1 as the volume spreads evenly. Otherwise it is unbounded above; with a lagged base it falls as recent volume thins against the earlier base. "centred": the same minus 1, signed. "log": signed, 0 at the base. No direction | graded | ratio ("centred": ratio minus 1; "log": natural log of the ratio) | `period` + `exclude_current` (30) | volume. A NaN volume in either window, or a base of 0, gives NaN. With "log", a recent statistic of 0 (never seen on real bars) gives NaN. These settings raise when the component is built: `period` < 2, `exclude_current` not an integer ≥ 0, `short_period` < 1 or > `period`, `form` other than "ratio", "centred" or "log", `statistic` or `short_statistic` other than "mean" or "median" | stateless. `statistic` sets the base (the denominator) and `short_statistic` sets the numerator. The defaults and `exclude_current` 0 and 1 are the original outputs, unchanged. `exclude_current` above 1 lags the base: with `exclude_current` ≥ `short_period` the two windows do not overlap (at 120 / 49 / 48, bar t-48 is in neither). This is the inverse of the volume factor of `ThinVolumeScaledReturnComponent` (`volume_period` 48, `base_near` 49, `base_far` 168). No `scaling_factor`: scale it with transforms |
 
 ```python class
 class VolumeRatioComponent(SubStrategyComponent):
@@ -18,20 +18,22 @@ class VolumeRatioComponent(SubStrategyComponent):
         R = volume[t - short_period + 1 .. t]                             (bar t included)
         short_statistic = "mean" (default): num = mean(R)
         short_statistic = "median":         num = median(R)  (average of the two middle values for an even count)
-        exclude_current = 0 (default): W = volume[t - period + 1 .. t]
-        exclude_current = 1:           W = volume[t - period .. t - 1]
+        W = volume[t - period - exclude_current + 1 .. t - exclude_current]  (the base ends exclude_current bars before t)
+            exclude_current = 0 (default): W = volume[t - period + 1 .. t]
+            exclude_current = 1:           W = volume[t - period .. t - 1]
+            exclude_current = 49, period 120: W = volume[t - 168 .. t - 49]
         statistic = "mean" (default):  den = mean(W)
         statistic = "median":          den = median(W)  (average of the two middle values for an even count)
         form = "ratio" (default):  raw_value = num / den
         form = "centred":          raw_value = num / den - 1
         form = "log":              raw_value = ln(num / den)
 
-    The defaults (short_period 1, form "ratio", statistic "mean", short_statistic "mean") give
-    volume[t] / mean volume, the original output, unchanged. `statistic` sets the base and `short_statistic` sets
-    the numerator. With period 72, short_period 72 and short_statistic "median" the output is
-    median / mean of the last 72 volumes. That is the evenness of the volume: it runs 0 to 2 (at least half the
-    values are >= the median, so the mean is at least median / 2), sits below 1 when a few heavy bars inflate the
-    mean, and nears 1 as the volume spreads evenly.
+    The defaults (exclude_current 0, short_period 1, form "ratio", statistic "mean", short_statistic "mean") give
+    volume[t] / mean volume, the original output, unchanged; exclude_current 0 and 1 are the original windows.
+    exclude_current above 1 lags the base: with period 120, exclude_current 49 and short_period 48 the output is
+    mean(volume[t-47..t]) / mean(volume[t-168..t-49]), falling as recent volume thins against the earlier base.
+    With period 72, short_period 72 and short_statistic "median" the output is median / mean of the last 72 volumes
+    (0 to 2, nearing 1 as the volume spreads evenly).
     Graded, with no direction. With form "ratio" the value is non-negative and equals 1 when the numerator equals
     the base. With both statistics "mean" and exclude_current 0 it is at most period / short_period. form
     "centred" shifts the value down by 1, and form "log" gives the natural log of the ratio.
@@ -42,9 +44,9 @@ class VolumeRatioComponent(SubStrategyComponent):
 
     NaN: a NaN volume in either window, or a base of 0, gives NaN. With form "log", a recent statistic of 0 gives
     NaN (zero volume, never seen on real bars). A missing `volume` column raises.
-    Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
-    below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic or short_statistic
-    other than "mean" or "median".
+    Building the component raises for a period below 2, an exclude_current that is not an integer >= 0, a
+    short_period below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic or
+    short_statistic other than "mean" or "median".
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -53,9 +55,15 @@ class VolumeRatioComponent(SubStrategyComponent):
         if self.period < 2:
             raise ValueError(f"VolumeRatioComponent: period must be >= 2, got {self.period}")
         ex = self.parameters.get("exclude_current", 0)
-        if ex not in (0, 1):
-            raise ValueError(f"VolumeRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
-        self.exclude_current = int(ex)
+        if isinstance(ex, bool):
+            ex = int(ex)
+        try:
+            ex_int = int(ex)
+        except (TypeError, ValueError):
+            raise ValueError(f"VolumeRatioComponent: exclude_current must be an integer >= 0, got {ex!r}")
+        if ex_int != ex or ex_int < 0:
+            raise ValueError(f"VolumeRatioComponent: exclude_current must be an integer >= 0, got {ex!r}")
+        self.exclude_current = ex_int
         self.short_period = int(self.parameters.get("short_period", 1))
         if self.short_period < 1 or self.short_period > self.period:
             raise ValueError(
@@ -87,10 +95,10 @@ class VolumeRatioComponent(SubStrategyComponent):
             num = float(np.median(recent.to_numpy()))
         else:
             num = float(recent.mean(skipna=False))
-        if self.exclude_current:
-            base = vol.iloc[-(self.period + 1):-1]
-        else:
-            base = vol.iloc[-self.period:]
+        ex = self.exclude_current
+        start = len(vol) - self.period - ex
+        stop = len(vol) - ex
+        base = vol.iloc[start:stop]
         if base.isna().any():
             den = float("nan")
         elif self.statistic == "median":
@@ -105,7 +113,7 @@ class VolumeRatioComponent(SubStrategyComponent):
             self._raw_value = float(num / den - (1.0 if self.form == "centred" else 0.0))
         self.confidence = 1.0
         self.debug_info = {'recent_volume': num, 'base_volume': den, 'statistic': self.statistic,
-                           'short_statistic': self.short_statistic}
+                           'short_statistic': self.short_statistic, 'exclude_current': ex}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -118,13 +126,13 @@ class VolumeRatioComponent(SubStrategyComponent):
 def hand(df, params):
     import math
     n = int(params.get("period", 30))
-    ex = int(params.get("exclude_current", 0))
+    lag = int(params.get("exclude_current", 0))
     s = int(params.get("short_period", 1))
     form = params.get("form", "ratio")
     st = params.get("statistic", "mean")
     sst = params.get("short_statistic", "mean")
     v = [float(x) for x in list(df["volume"])]
-    last = len(v) - 1
+    t = len(v) - 1
 
     def median_of(xs):
         srt = sorted(xs)
@@ -139,22 +147,14 @@ def hand(df, params):
             total = total + x
         return total / len(xs)
 
+    # recent: bars t-s+1 .. t
     recent = []
-    i = last - s + 1
-    while i <= last:
-        recent.append(v[i])
-        i = i + 1
+    for k in range(s):
+        recent.append(v[t - k])
+    # base: the n bars ending lag bars before t, i.e. t-lag-n+1 .. t-lag
     base = []
-    if ex == 1:
-        i = last - n
-        while i <= last - 1:
-            base.append(v[i])
-            i = i + 1
-    else:
-        i = last - n + 1
-        while i <= last:
-            base.append(v[i])
-            i = i + 1
+    for k in range(n):
+        base.append(v[t - lag - k])
     for x in recent + base:
         if x != x:
             return float("nan")
@@ -167,9 +167,11 @@ def hand(df, params):
         if not ratio > 0:
             return float("nan")
         return math.log(ratio)
-    return ratio - (1.0 if form == "centred" else 0.0)
+    if form == "centred":
+        return ratio - 1.0
+    return ratio
 ```
 
 checks:
 VolumeRatioComponent: every check passed
-proof: 576 files compared, identical but for run ids, times and temporary paths; the bot's suite: ======== 1556 passed, 8 skipped, 74 deselected, 2244 warnings in 47.60s ========
+the bot's suite: == 1610 passed, 16 skipped, 75 deselected, 2244 warnings in 99.17s (0:01:39) ===

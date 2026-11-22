@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9952380952380953,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short-side 48-bar unusual move per weekend case",
+    "value": 0.0032322643177798375,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 1.302375598946889
+    },
+    "threshold": "confirm: weighted mean > 0 with t >= 2 and supporting check passing; reject: weighted mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger half of |forecast| minus smaller half",
+    "value": 0.002408802615645445,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1032
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Situation bars are Sunday 23:00 UTC bars with a positive weekend 48-bar rise (component raw value, else price return) and last-48-bar mean volume below the prior 120 bars' mean (regime used when history is short); drift is the coin's mean 48-bar return on the non-overlapping grid of all its windows; the t is that of the |forecast|-weighted mean (weighted-residual standard error with n/(n-1) correction); the halves split all cases pooled by sorted |forecast| (smaller half gets the extra case when odd) with unweighted half means; fewer than 100 cases is treated as not observable."
+}

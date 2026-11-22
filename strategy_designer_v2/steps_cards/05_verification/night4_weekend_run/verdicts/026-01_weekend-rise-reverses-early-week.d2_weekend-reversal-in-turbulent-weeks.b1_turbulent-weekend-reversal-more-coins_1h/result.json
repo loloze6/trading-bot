@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9979859013091642,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 48-bar unusual move in the short direction after Monday 00:00 short bets",
+    "value": 0.011686783502696942,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.652778302818047
+    },
+    "threshold": "mean unusual short move > 0 with t >= 2 (confirm); < 0 with t <= -2 (reject); at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "correlation of abs(forecast) with the unusual move above 0",
+    "value": 0.039655495091487816,
+    "passed": true
+  },
+  "counts": {
+    "cases over all coins and windows": 853
+  },
+  "decided_by": "Mean unusual short move positive with t >= 2 and correlation of abs(forecast) with it above 0.",
+  "reading": "A case is a bar whose close (timestamp + 1 h) is Monday 00:00 UTC with forecast <= -2 and a full 48-bar forward return in its window; the normal drift is each coin's mean 48-bar return on the non-overlapping grid of all its windows; the situation's volatility condition is read from the recorded regime since the 720/4320-bar ratio cannot be rebuilt inside a window, and the weekend rise from the component's raw 48-bar return (prices where missing)."
+}
