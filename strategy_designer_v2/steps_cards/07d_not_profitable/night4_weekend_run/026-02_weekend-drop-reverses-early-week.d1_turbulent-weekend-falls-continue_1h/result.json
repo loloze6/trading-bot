@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37517389999999995,
+  "findings": {
+    "F1": "The book earns almost nothing against simply holding the coins. Its mean daily return is 5.2e-05 against about 0.0007\u20130.0016 for holding each coin, for example BTC 0.00118 and ZEC 0.00155. Its Sharpe is 0.20 against holding's 0.55. In the rising windows it lags far behind holding: w11 book \u22120.00082 a day against holding +0.01256, and w16 \u22120.00067 against +0.00454.",
+    "F2": "The forecast's grading does not work. Across the five |forecast| quintiles of the 804 short cases, the short excess move runs +0.58 %, +0.53 %, \u22120.06 %, +0.05 %, +0.44 %, with no rise from bottom to top. Meanwhile the position grows from \u22120.02 to \u22120.76 of the book (correlation of forecast with allocation 0.87). The plan's own check of upper minus lower half was \u22120.00106.",
+    "F3": "The size of the weekend fall points the wrong way, so scaling by it puts the largest bets on the cases that reverse.",
+    "F4": "The weekend's volatility against the prior week is what carries the continuation.",
+    "F5": "The same turbulence effect appears after weekend rises.",
+    "F6": "The result rests on a few windows."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin falls over the weekend (Saturday 00:00 to Monday 00:00 UTC), it keeps falling over Monday and Tuesday. The fall grows with how much more volatile the weekend's hours were than the coin's previous week, not with how far the coin fell over the weekend.",
+      "consequence": "A trader leaning short after a weekend fall should size by the weekend's turbulence against the prior week, and lean least on the deepest weekend falls, which tend to bounce.",
+      "name": "turbulence not fall size",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "Over Monday and Tuesday, a coin keeps moving in its weekend's direction (Saturday 00:00 to Monday 00:00 UTC). The more volatile the weekend's hours were compared with the coin's previous week, the larger that continuation.",
+      "consequence": "After a turbulent weekend a trader may follow the weekend's direction for two days, long after a rise as well as short after a fall, and should not fade it.",
+      "name": "turbulent weekends continue both ways",
+      "from": "F1, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.d1_turbulence-not-fall-size",
+    "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.d2_turbulent-weekends-continue-both-ways"
+  ],
+  "no_ideas": null
+}

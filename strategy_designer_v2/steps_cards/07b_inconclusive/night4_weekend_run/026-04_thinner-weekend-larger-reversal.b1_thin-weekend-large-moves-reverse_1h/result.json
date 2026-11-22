@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "026-04_thinner-weekend-larger-reversal.b1_thin-weekend-large-moves-reverse_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4051216,
+  "findings": {
+    "F1": "The test measured the reversal on every weekend with volume below the weekdays', which is 81 % of weekends (0.813 against 0.402 for the Wednesday control). The middle of that set does not reverse: across the weekend-volume octiles o3 to o7 the 48-hour strength runs from -0.012 to -0.118 (t -0.20 to -1.53). That dilution explains the test's zero result: slope t 0.86 and a mean unusual move of -0.00077 over 1,948 cases.",
+    "F2": "The reversal is graded by how thin the weekend was and shows only in the thinnest weekends. In the thinnest octile (weekend mean volume roughly a third or less of the weekdays', log ratio below -1.13) the 48-hour strength is 0.131 (t 2.68, 293 cases), an unusual move of 0.79 % and a total of 0.80 % in the reversal direction, which is 4 times the 0.19 % cost of a trade. Regressing the 48-hour reversal strength on thinness gives a slope t of 3.98.",
+    "F3": "At the other end, weekends heavier than the weekdays continue rather than reverse. The heaviest octile has a 48-hour strength of -0.195 (t -2.71, 293 cases) and an unusual move of -1.42 % against the reversal. The heavy-weekend group as a whole shows -0.151 (t -2.38, 439 cases), and the pattern holds at 72 hours (-0.206, t -3.05).",
+    "F4": "Inside the thinnest weekend quartile, the reversal grows with the move's size. Small moves show a 48-hour strength of -0.017 (t -0.30), mid moves 0.107 (t 1.56) and large moves 0.224 (t 2.84, 196 cases), a 1.38 % unusual move per case, about 7 times the cost.",
+    "F5": "Inside the thinnest weekend quartile, the reversal comes from weekend rises. Up weekends show a 48-hour strength of 0.200 (t 3.55, 291 cases), an unusual move of 1.29 % and a total of 1.01 %. Down weekends show 0.010 (t 0.18, 295 cases).",
+    "F6": "The effect is specific to weekends. Wednesdays with equally thin volume relative to their own preceding five days do not reverse: the thinnest midweek quartile shows a 48-hour strength of 0.029 (t 0.71, 587 cases).",
+    "F7": "Inside the thinnest weekend quartile the reversal is positive in 5 of 6 coins at 48 hours, with ETH at 0.217 (t 2.26) and XRP at 0.172 (t 2.18); ZEC is the exception at -0.130 (t -1.09). It is positive in 6 of 8 years, with 2021 (-0.048) and 2023 (-0.026) the exceptions, so it is broad but not uniform."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's Saturday-Sunday rise is partly reversed over the next 48 hours (Monday and Tuesday), only while its weekend volume is lower than its mean volume over the preceding five weekdays; the larger the weekend rise and the lower the weekend volume against the weekdays, the larger the share reversed.",
+      "consequence": "After a large weekend rise on volume far below the week's, a trader shorts the coin into Tuesday, and refuses that short when the weekend traded nearly as heavily as the week or when the weekend move was a fall.",
+      "name": "thin weekend rises reverse",
+      "from": "F2, F4, F5, F6, F7",
+      "refs": [
+        "F2",
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday-Sunday move continues in its own direction over the next 48 hours (Monday and Tuesday), only while its weekend volume is higher than its mean volume over the preceding five weekdays; the heavier the weekend volume against the weekdays, the further the move continues.",
+      "consequence": "A weekend move made on heavier volume than the week's is a reason to follow it into Tuesday and to refuse any trade that leans against it.",
+      "name": "heavy weekend moves continue",
+      "from": "F3, F1",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-04_thinner-weekend-larger-reversal.b1_thin-weekend-large-moves-reverse.b1_thin-weekend-rises-reverse",
+    "026-04_thinner-weekend-larger-reversal.b1_thin-weekend-large-moves-reverse.b2_heavy-weekend-moves-continue"
+  ],
+  "no_ideas": null
+}
