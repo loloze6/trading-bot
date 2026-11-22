@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9949066213921901,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the OLS slope of excess 48-bar return on forecast, Friday 00:00 cases",
+    "value": 0.0007214886395194836,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.5879038491575725
+    },
+    "threshold": "confirm: t >= 2 with forecast-weighted mean excess > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 48-bar return > 0",
+    "value": 0.010169019627656872,
+    "passed": true
+  },
+  "counts": {
+    "cases across coins and windows": 1161
+  },
+  "decided_by": "The slope's t is 2 or more and the forecast-weighted mean excess return is above 0.",
+  "reading": "Cases are bars whose close (timestamp + 1h) is Friday 00:00 UTC with forecast > 0 and a full 48-row forward return inside the window; the coin's mean 48-bar return is taken on the non-overlapping grid of all its windows pooled; one pooled OLS across all coins."
+}

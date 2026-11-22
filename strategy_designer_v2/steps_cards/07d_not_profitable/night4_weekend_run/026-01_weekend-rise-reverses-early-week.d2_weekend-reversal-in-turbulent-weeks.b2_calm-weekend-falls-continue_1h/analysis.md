@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue_1h
+idea tested: 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3973 USD
+---
+## Findings
+- **F1:** The book captures little of the move it is betting on: across the 593 Monday signal bars the coin's 48-hour move in the short direction averages +0.78 % (t 2.88), but the book's 48-hour gain per signal is only +0.12 %, because the position held averages -0.41 of the book (and -0.32 on the 11 % of bars where it holds any position).
+- **F2:** The losses come from positions held at other times than the signal's 48 hours: the 347 trades lasting 47 to 49 hours earn +0.28 % before fees (+0.18 % after); the 51 trades lasting over 200 hours (up to 2088 hours) lose -3.97 %; and the 422 trades of under 47 hours lose -0.70 % to -1.08 %, so all 884 short trades together average -0.46 % before fees and -0.56 % after.
+- **F3:** The book is short on Monday and Tuesday only (the mean position is -0.45 on about 13,000 bars each day, against -0.13 on the other days), and it is never long, so on its days out it earns nothing while the coins rise; the book's mean daily return is 1.7e-06, below the required 0.0005, and its Sharpe trails holding's by 0.55.
+- **F4:** The continuation depends on the year: the move per signal is +1.5 % to +2.3 % in 2018, 2019 and 2021, and negative in 2020 (-0.75 %, t -1.75), 2024 (-0.46 %) and 2025 (-0.83 %, t -1.36); the book's gain per signal is largest in 2019 (+0.79 %), which explains why one window left out turns the lowest Sharpe to -0.28.
+- **F5:** Across all weekend falls the continuation grows with how calm the coin's 30-day volatility is, step by step from the calmest to the most turbulent quartile of its rank: +0.78 % (t 1.51), +0.29 %, +0.10 %, then -0.79 % (t -1.64), with about 226 cases per quartile.
+- **F6:** Measured against the coin's 30-day volatility, the size of the weekend fall grades the move the wrong way: the smallest falls are followed by a further fall of 1.16 % (t 2.78, 260 cases), and the largest falls by a rise of 0.54 % (t -1.07, 261 cases), with the middle quartiles in between (-0.18 % and +0.63 %).
+- **F7:** In the strategy's own forecast buckets the grading holds only weakly: a forecast at or below -10 gives +0.88 % (t 1.95, 208 cases), -10 to -5 gives +0.53 %, and -5 to -2 gives +0.30 %; weekend rises show no reversal in the short direction in any quartile (-0.88 % to +0.36 %, all |t| < 1.9).
+
+## Ideas
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue.d1_calmer-weeks-stronger-continuation` (from F5, F4, F1): When a coin's price falls from Saturday 00:00 UTC to Monday 00:00 UTC while the coin's 30-day hourly volatility is low against its own last 6 months, it keeps falling over the next two days (Monday and Tuesday), the more so the calmer the coin's 30-day volatility is against its last 6 months.
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue.d2_modest-weekend-falls-continue` (from F6, F7, F2): When a coin's price falls from Saturday 00:00 UTC to Monday 00:00 UTC while the coin's 30-day hourly volatility is low against its own last 6 months, it keeps falling over the next two days (Monday and Tuesday), the more so the smaller the weekend fall is against the coin's 30-day hourly volatility.
+- `026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue.d3_large-weekend-falls-reverse` (from F6, F5): When a coin's price falls from Saturday 00:00 UTC to Monday 00:00 UTC by much against its 30-day hourly volatility, it rises over the next two days (Monday and Tuesday), and the larger the fall against that volatility, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

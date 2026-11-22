@@ -1,0 +1,59 @@
+{
+  "line": "7.g",
+  "backtest": "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.b2_turbulent-weekends-keep-their-direction_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4616869,
+  "findings": {
+    "F1": "Sunday's own 24-hour return, read at Monday 00:00 UTC, is reversed over the next 48 hours (slope \u22120.135 per usual 24-hour move, t \u22124.70, 2,028 cases); on the other weekdays the same last-24-hour return predicts almost nothing over 48 hours (slopes \u22120.035 to +0.023, t \u22121.74 to +1.11).",
+    "F2": "The Sunday reversal is graded and widespread: by quintile of Sunday's return, the next 48 hours go from +0.165 to \u22120.179 usual 48-hour moves; the slope is negative for all six coins (XMR \u22120.258 t \u22123.57, XRP \u22120.171 t \u22122.24, LTC \u22120.143 t \u22122.20, BTC \u22120.063 t \u22120.93) and in 7 of 8 years (2023 the exception, +0.107 t 1.32).",
+    "F3": "Saturday's 24-hour return continues over the 48 hours from Monday 00:00 (slope +0.208, t 4.60, 1,789 cases), while the whole weekend's 48-hour return predicts nothing (\u22120.023, t \u22120.70). The two halves cancel, so the tested idea's whole-weekend signal is weak.",
+    "F4": "The Saturday continuation is less steady than the Sunday reversal: it shows in 4 of 6 coins (t 2.27 to 2.75; LTC and ZEC near 0) and in 5 of 8 years (t 2.7 to 5.0), but 2018, 2021 and 2025 are negative (t \u22120.36 to \u22121.45).",
+    "F5": "When a coin's 168-hour realised volatility is in its top quintile, its 24-hour return is reversed over the next 24 hours (slope \u22120.175, t \u221211.3, 3,248 cases); in the four lower quintiles the slope is \u22120.015 to +0.034 (t \u2264 1.7).",
+    "F6": "The high-volatility 24-hour reversal holds in all six coins (slopes \u22120.103 to \u22120.216, t \u22122.7 to \u22125.6) and in 7 of 8 years (strongest 2021: \u22120.262, t \u22128.3). It is weak in 2023 (44 cases) and 2024 (t \u22120.58).",
+    "F7": "The tested idea's gradation shows only at the top: weekends in the top tercile of volatility ratio continue by +0.109 usual 48-hour moves (t 2.23, 596 cases), against \u22120.037 (t \u22120.91) in the bottom tercile. This matches the inconclusive verdict (t 1.95).",
+    "F8": "The book's gains and risks sit on Monday and Tuesday: mean daily return 0.00135 and 0.00075, against \u22120.00015 to +0.00011 on the other days. 170 of its 176 top-1 % days and 170 of its 174 bottom-1 % days fall on those two days, and the top-1 % days sum to 12.49 against a total of 4.91.",
+    "F9": "Hours 21:00 and 22:00 UTC rise more than usual (mean +0.048 and +0.039 hourly standard deviations, t 6.18 and 5.31). This holds in all six coins (t 2.6 to 4.0), every weekday and 7 of 8 years. At about 0.04 of an hour's move per hour it is far below the 0.19 % cost of a trade, and it is not graded, so no idea is drawn from it."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's return over Sunday (Sunday 00:00 to Monday 00:00 UTC) is partly reversed over the next 2 days. The larger Sunday's move in either direction, the larger the opposite move over Monday and Tuesday.",
+      "consequence": "A trader should fade a coin's Sunday move at Monday's open for two days, more so the larger that move, and refuse to follow it.",
+      "name": "Sunday moves reverse early-week",
+      "from": "F1, F2, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F8"
+      ]
+    },
+    {
+      "idea": "When a coin's hourly volatility over the past 7 days is high, its 24-hour return is partly reversed over the next 24 hours. The reversal is larger the larger that return and the higher that volatility.",
+      "consequence": "In turbulent markets a trader should lean against the coin's last day's move for one day rather than follow it, more so the larger the move.",
+      "name": "Turbulent daily moves reverse",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin's return over Saturday (Saturday 00:00 to Sunday 00:00 UTC) continues in the same direction over the 2 days after Monday 00:00 UTC. The continuation is larger the larger Saturday's move.",
+      "consequence": "A trader may follow Saturday's direction over Monday and Tuesday, sized by how large Saturday's move was, while treating Sunday's move separately.",
+      "name": "Saturday moves carry into week",
+      "from": "F3, F4, F7",
+      "refs": [
+        "F3",
+        "F4",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.b2_turbulent-weekends-keep-their-direction.g1_sunday-moves-reverse-early-week",
+    "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.b2_turbulent-weekends-keep-their-direction.g2_turbulent-daily-moves-reverse",
+    "026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.b2_turbulent-weekends-keep-their-direction.g3_saturday-moves-carry-into-week"
+  ],
+  "no_ideas": null
+}

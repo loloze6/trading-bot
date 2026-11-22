@@ -5949,3 +5949,83 @@ class RecentToPriorVolatilityWeightedReturnComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.period, self.vol_period, self.base_lag + self.base_period) + 1
+
+
+class RecentToPriorVolatilityRatioComponent(SubStrategyComponent):
+    """
+    Recent one-bar return volatility against an earlier base, on every bar:
+
+        r[j] = close[j] / close[j-1] - 1
+        s_recent = std (ddof 1) of r[j], j = t-vol_period+1 .. t
+        s_base   = std (ddof 1) of r[j], j = t-base_lag-base_period+1 .. t-base_lag
+        form "ratio" (default): raw_value = s_recent / s_base
+        form "centred":         raw_value = s_recent / s_base - 1
+
+    Range and sign: "ratio" is 0 and up, unbounded above, never negative, with no direction. It is 1 when the
+    recent bars are as volatile as the base and grows continuously as they get more turbulent. "centred" is -1
+    and up, signed, and 0 at equal volatility.
+    Warm-up: max(vol_period, base_lag + base_period) + 1 rows, bar t included (217 at the defaults).
+    NaN: a NaN close among the rows read gives NaN. A close not above 0 among them gives NaN. s_base = 0 gives NaN.
+    Building raises for vol_period < 2, base_period < 2, base_lag < 0, or a form other than "ratio" or "centred".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(vol_period, base_lag + base_period) + 1
+    rows of data, the last of which is bar t; no row after bar t is read.
+    """
+
+    def __init__(self, name="RecentToPriorVolRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 48))
+        self.base_period = int(self.parameters.get("base_period", 168))
+        self.base_lag = int(self.parameters.get("base_lag", 48))
+        self.form = self.parameters.get("form", "ratio")
+        if self.vol_period < 2:
+            raise ValueError(f"RecentToPriorVolatilityRatioComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.base_period < 2:
+            raise ValueError(f"RecentToPriorVolatilityRatioComponent: base_period must be >= 2, got {self.base_period}")
+        if self.base_lag < 0:
+            raise ValueError(f"RecentToPriorVolatilityRatioComponent: base_lag must be >= 0, got {self.base_lag}")
+        if self.form not in ("ratio", "centred"):
+            raise ValueError(f"RecentToPriorVolatilityRatioComponent: form must be 'ratio' or 'centred', got {self.form!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        last = len(c) - 1  # bar t
+
+        def returns(first_j, last_j):
+            prev = c[first_j - 1:last_j]
+            cur = c[first_j:last_j + 1]
+            if np.isnan(prev).any() or np.isnan(cur).any():
+                return None
+            if not (prev > 0).all() or not (cur > 0).all():
+                return None
+            return cur / prev - 1.0
+
+        r_recent = returns(last - self.vol_period + 1, last)
+        b_end = last - self.base_lag
+        r_base = returns(b_end - self.base_period + 1, b_end)
+        if r_recent is None or r_base is None:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        s_recent = float(np.std(r_recent, ddof=1))
+        s_base = float(np.std(r_base, ddof=1))
+        if not s_base > 0:
+            self._raw_value = float("nan")
+        else:
+            ratio = s_recent / s_base
+            self._raw_value = float(ratio - 1.0) if self.form == "centred" else float(ratio)
+        self.confidence = 1.0
+        self.debug_info = {"s_recent": s_recent, "s_base": s_base, "form": self.form}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.vol_period, self.base_lag + self.base_period) + 1
