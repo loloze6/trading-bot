@@ -1,2 +1,3 @@
 023-01_flat-range-top-reverts-down_1d: missing-components: The condition "small 30-day net move relative to the 30-day high-low range" needs a ratio of two quantities. No catalogue [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 023-02_flat-range-bottom-reverts-up_1d: missing-components: The no-trend condition needs the absolute 30-bar net close change divided by the 30-bar high-low range. The graded signal needs [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+023-03_flatter-range-stronger-reversion_1d: missing-components: The idea is an interaction: the contrarian range-position bet must grow as the 30-bar net move shrinks relative to the [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
