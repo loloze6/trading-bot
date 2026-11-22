@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "025-03_bounce-falling-versus-rising-regime.b2_bounce-fade-over-twenty-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.46358160000000004,
+  "findings": {
+    "F1": "In coins up over 90 days, a one-day rise of at least 2 times the standard deviation of the last 20 daily returns is followed by an unusual move (return minus the coin's normal drift) of +2.56 % over the next 5 days (t 3.05, 274 non-overlapping cases) and +5.97 % over the next 20 days (t 2.41, 193 cases). After the same rises in coins down over 90 days, the unusual move is \u22120.35 % (t \u22120.52, 221 cases) and +0.32 % (t 0.13, 148 cases).",
+    "F2": "In 90-day risers, the 10-day unusual move after a rise grows with the rise's size: +0.54 % (t 0.51, n 361) for 1 to 1.5 usual moves, +4.35 % (t 2.83, n 228) for 1.5 to 2, and +7.04 % (t 3.02, n 115) for 2 to 2.5. It is +2.35 % (t 1.03, n 70) for 2.5 to 3 and +6.30 % (t 2.04, n 103) above 3. The 5-day bins follow the same ordering, +1.29 %, +2.05 %, +3.07 %, \u22120.09 % and +4.43 %.",
+    "F3": "The 20-day continuation after rises of at least 2 usual moves in 90-day risers is positive in all six coins, from +3.4 % to +9.5 % (largest single-coin t 2.62, ETH). It is positive in 6 of the 8 years and negative in 2022 (\u22120.7 %, n 5) and 2023 (\u22122.6 %, n 32).",
+    "F4": "In 90-day fallers, the brief's fade does not appear; the reverse does. Among up days in fallers, the 20-day unusual move rises with the size of the day's rise (slope +3.57 % per usual move, t 2.34, 379 cases). Rises of 2.5 to 3 and above 3 usual moves are followed by +5.9 % and +4.2 % over 20 days (t 0.96 and 1.14).",
+    "F5": "The book's short side lost money:",
+    "F6": "The book's gain rests on one window. The coins' summed daily book returns are +25.5 in w17, against about +24.2 over all 24 windows together. XRP's mean daily book return is 0.54 %, against 0.01 % to 0.10 % for the other five coins.",
+    "F7": "Saturday's own daily return is +0.45 % on the mean over coins per day (t 3.04, 414 days). It is positive with t above 2.1 in each of the six coins, and positive in 7 of the 8 years (2023: 0.00 %). This is a calendar condition with no graded strength, so it gives no idea here."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is positive, a one-day rise of several usual daily moves (the day's return over the standard deviation of its last 20 daily returns) is followed by a further rise over the next 10 days, larger the larger the day's rise.",
+      "consequence": "A trader would treat a sharp up day in a coin up over 90 days as a reason to be long for the following days, more strongly the sharper the day, rather than as a move to fade.",
+      "name": "sharp rises continue in uptrends",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, the larger a one-day rise in usual daily moves (the day's return over the standard deviation of its last 20 daily returns), the higher the coin's return over the next 20 days.",
+      "consequence": "A trader would refuse to short a sharp bounce in a coin down over 90 days, since larger bounces were followed by gains rather than by a resumed fall.",
+      "name": "large bounces in downtrends hold",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-03_bounce-falling-versus-rising-regime.b2_bounce-fade-over-twenty-days.g1_sharp-rises-continue-in-uptrends",
+    "025-03_bounce-falling-versus-rising-regime.b2_bounce-fade-over-twenty-days.g2_large-bounces-in-downtrends-hold"
+  ],
+  "no_ideas": null
+}

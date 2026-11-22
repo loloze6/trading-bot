@@ -5787,3 +5787,74 @@ class MeanAbsoluteMoveRankComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period + self.lookback
+
+
+class LowProximityScaledRiseComponent(SubStrategyComponent):
+    """
+    Today's rise in usual one-bar moves, weighted by the nearness of the close to its recent closing low:
+
+        r(j)  = close[j] / close[j-1] - 1
+        s     = std (ddof 1) of r(j), j = t-vol_period+1 .. t        (bar t's return included)
+        Lo    = min(close[t-period+1 .. t])                          (bar t included)
+        D     = (close[t] - Lo) / Lo x 100                           (>= 0, since Lo includes close[t])
+        raw_value = max(0, r(t) / s) x 1 / (1 + D)                   (first factor 0 when s = 0)
+
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 on down and flat bars and grows with
+    the size of the rise in usual moves and with the nearness of the close to its low. The weight is in (0, 1] and
+    equals 1 at the low.
+    Warm-up: max(vol_period + 1, period) rows, bar t included.
+    NaN: a NaN close in the last max(vol_period + 1, period) rows gives NaN. A Lo or a return base close not above
+    0 gives NaN (never on real bars). s = 0 gives 0.
+    Building raises for vol_period < 2 or period < 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(vol_period + 1, period) rows of data,
+    the last of which is bar t; no later row exists in what it is given.
+    """
+
+    def __init__(self, name="LowProximityScaledRise", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"LowProximityScaledRiseComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.period = int(self.parameters.get("period", 90))
+        if self.period < 2:
+            raise ValueError(f"LowProximityScaledRiseComponent: period must be >= 2, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rc = c[-(self.vol_period + 1):]
+        bases = rc[:-1]
+        if not (bases > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = rc[1:] / bases - 1.0
+        s = float(np.std(rets, ddof=1))
+        lo = float(np.min(c[-self.period:]))
+        if not lo > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        d = (float(c[-1]) - lo) / lo * 100.0
+        w = 1.0 / (1.0 + d)
+        first = max(0.0, float(rets[-1]) / s) if s > 0 else 0.0
+        self._raw_value = float(first * w)
+        self.confidence = 1.0
+        self.debug_info = {"ret": float(rets[-1]), "std": s, "low": lo, "D": d, "weight": w}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.vol_period + 1, self.period)

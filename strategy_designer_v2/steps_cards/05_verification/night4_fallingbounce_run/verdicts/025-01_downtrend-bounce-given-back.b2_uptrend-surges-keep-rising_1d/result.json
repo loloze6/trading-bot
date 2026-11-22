@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 5-bar forward return on forecast, cells with forecast > 0, coins pooled",
+    "value": 0.0021157644644453745,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.8153240950774725
+    },
+    "threshold": "confirm if t >= 2 (with the supporting check), reject if t <= -2, at least 30 cells with forecast above 0"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on cells with forecast >= 5 above 0",
+    "value": 0.024278205425466843,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with forecast above 0": 909,
+    "grid cells with forecast 5 or more": 283
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess 5-bar return on cells with forecast 5 or more is above 0, with at least 30 cells.",
+  "reading": "The 90-day return is recomputed from closes inside each window where 90 prior bars exist, otherwise the recorded regime 'trending' (the detector's ret90 >= 0 decision) is used; the up-day is last_history_value > 0; the coin's mean 5-bar return is the mean over all grid cells of all its windows; the slope and t come from ordinary least squares of excess return on forecast over all pooled cells with forecast > 0; with no cell at forecast 5 or more the supporting check counts as failed."
+}

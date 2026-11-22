@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "025-03_bounce-falling-versus-rising-regime_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40179309999999996,
+  "findings": {
+    "F1": "In coins whose 90-day return is 0 or above, the 5-day excess return after an up day grows with the rise's size in usual 20-day moves: +2.18 % (t 2.25, 149 grid cases) for 1 to 2 moves, +3.67 % (t 2.32, 43) for 2 to 3, and +7.28 % (t 1.85, 27) above 3. The slope of the 5-day excess return on the rise over all up days is +0.0138 per usual move (t 3.08, 751 cases).",
+    "F2": "These rising-market rises of more than one usual move have a strength of 0.267 of the coin's usual 5-day move (t 3.64, 219 cases), about 2.8 % per case, roughly 15 times the 0.19 % cost of a trade. They are positive in all six coins (t from 0.38 for LTC to 2.21 for ZEC) and in 7 of 8 years (only 2022 is negative, with 6 cases).",
+    "F3": "The tested fade in falling markets (90-day return below 0) does not show, which is what sinks the book:",
+    "F4": "Rises of more than one usual move are followed by stronger 5-day excess returns when volatility is quiet:",
+    "F5": "Down days of more than one usual move are followed by a next-day excess rebound:",
+    "F6": "Weekday effects in next-day returns do not hold up as a pattern."
+  },
+  "ideas": [
+    {
+      "idea": "In one coin whose 90-day return is positive, the larger the day's rise measured in usual daily moves of its last 20 days, the higher the coin's return over the next 5 days.",
+      "consequence": "A sharp rise in a rising coin is a reason to buy for the following days rather than to fade it, and more so the sharper the rise.",
+      "name": "sharp rises extend uptrends",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In one coin, after a one-day rise of several usual daily moves, the lower its 20-day volatility relative to its 60-day volatility, the higher its return over the next 5 days.",
+      "consequence": "A sharp rise that breaks out of a quiet stretch is a stronger reason to buy than the same rise in an already agitated market.",
+      "name": "quiet-market breakouts continue",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In one coin, the larger the day's fall measured in usual daily moves of its last 20 days, the higher its return over the next 1 day.",
+      "consequence": "A sharp down day is a reason to take a short-lived long position for the following day, not to chase the fall.",
+      "name": "sharp falls rebound next day",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-03_bounce-falling-versus-rising-regime.g1_sharp-rises-extend-uptrends",
+    "025-03_bounce-falling-versus-rising-regime.g2_quiet-market-breakouts-continue",
+    "025-03_bounce-falling-versus-rising-regime.g3_sharp-falls-rebound-next-day"
+  ],
+  "no_ideas": null
+}

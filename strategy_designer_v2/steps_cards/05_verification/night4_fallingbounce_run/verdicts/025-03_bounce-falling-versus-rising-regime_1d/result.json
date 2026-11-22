@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-day excess return, long cases minus short cases",
+    "value": 0.003816428873669668,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.9463694066481351
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2 and supporting check passes; reject: difference < 0 with Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast|-half gap minus smaller-half gap",
+    "value": 0.004047119623696958,
+    "passed": true
+  },
+  "counts": {
+    "long cases": 1481,
+    "short cases": 1300
+  },
+  "decided_by": "The Welch t lies between -2 and 2.",
+  "reading": "Cases are the first bet (forecast rise of >= 2 points on its side) in each 5-bar grid cell, grouped long/short by the bet's forecast sign; the larger half is |forecast| above the median, the smaller half at or below it; fewer than 30 cases in a group is treated as not observable."
+}
