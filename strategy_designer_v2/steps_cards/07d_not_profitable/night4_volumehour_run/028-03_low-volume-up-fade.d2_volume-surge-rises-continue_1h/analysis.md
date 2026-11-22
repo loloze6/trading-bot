@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 028-03_low-volume-up-fade.d2_volume-surge-rises-continue_1h
+idea tested: 028-03_low-volume-up-fade.d2_volume-surge-rises-continue
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3806 USD
+---
+## Findings
+- **F1:** The idea's effect is missing. After rising hours of more than 2 typical 30-day moves, the next 2 hours move by -0.005 to -0.062 strength across every volume bin (t between -0.03 and -0.52, 134 to 629 cases per bin). At 4 hours, the top decile of return-in-sd times volume ratio (mean 20.6) moves by -0.008 strength (t -0.13, 642 cases). The idea's size is 0.000 of a usual move: a total move of 0.04 % per case against a 0.11 % cost per trade.
+- **F2:** Fees outweigh what the signal captures. On bars with a forecast of 10 to 20 the book's gross gain is 1.65 (summed bar shares) against 2.43 of fees. The 2 to 5 and 5 to 10 bins are also below their fees (0.06 vs 0.20 and 0.08 vs 0.25). Over the whole book, gross is 4.87 against 5.55 of fees, so the mean daily return is -0.016 % and the Sharpe -0.13.
+- **F3:** The book's only gross gain comes from the coin's own drift, not from the signal. On bars with a forecast of zero the book still holds a mean allocation of 0.27 and earns 3.61 gross. Bars with a forecast between 0 and 0.5 lose 0.80. The book trails holding the coin in most years (for example 2020: 0.034 % a day against 0.524 %), so its Sharpe is 0.77 below holding's.
+- **F4:** Large moves on surging volume fade rather than continue. At 2 hours, hours of more than 2 typical moves (either direction) are followed by a move against them of 0.0695 strength (t -2.51, 3542 cases). The same holds on volume above 3 times its average (-0.128 strength, 1667 cases).
+- **F5:** Falling hours on surging volume rebound, and the rebound grows with volume. After a fall of more than 2 typical moves, the 2-hour strength is:
+- **F6:** The rebound is graded along the combined measure. At 4 hours, the two most negative deciles of return-in-sd times volume ratio show strength 0.138 (t 1.83) and 0.130 (t 2.17), 642 cases each. Strength falls to 0.020 in the third decile.
+- **F7:** The rebound is on both coins but not in every year. At 4 hours after a fall of more than 2 typical moves on volume above 3 times its average, strength is 0.166 on BTC (218 cases) and 0.181 on ETH (224 cases). It is positive in 2020 to 2024 (0.23 to 1.24) but negative in 2018 (-0.39) and 2025 (-0.10).
+
+## Ideas
+- `028-03_low-volume-up-fade.d2_volume-surge-rises-continue.d1_volume-surge-drops-rebound` (from F4, F5, F6, F7): After an hour in which the coin falls far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price rises over the next four hours. The higher that hour's volume against its 30-day average, and the deeper the fall in typical moves, the larger the rise.
+- `028-03_low-volume-up-fade.d2_volume-surge-rises-continue.d2_volume-surge-moves-fade` (from F1, F4, F5): After an hour in which the coin moves far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price moves back against that hour's move over the next two hours. The larger the hour's move in typical moves times its volume multiple, the larger the move back.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

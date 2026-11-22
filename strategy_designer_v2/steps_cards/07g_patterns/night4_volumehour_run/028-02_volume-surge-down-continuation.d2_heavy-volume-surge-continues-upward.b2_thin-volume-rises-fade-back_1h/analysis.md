@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back_1h
+idea tested: 028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3639 USD
+---
+## Findings
+- **F1:** When the coin's past 7-day hourly volatility is in its top fifth, hours that move more than twice their typical 30-day hourly move are followed by moves the other way. Against the hour's direction the unusual return is -0.36 % over 2 hours (t -4.98), -0.30 % over 4 hours (t -2.97) and -0.40 % over 6 hours (t -3.53), on 1093 non-overlapping cases. This is about three times the 0.11 % cost of a trade.
+- **F2:** The reversal in F1 is graded and holds only in high volatility. The slope of the unusual 4-hour return on the hour's scaled move is -0.00072 per typical move in the top volatility fifth (t -4.13, n 6420), against slopes between -0.00006 and +0.00016 (all |t| < 1.4) in the other four fifths. The top-fifth slope is negative in all four coin × half splits: BTC w1-12 t -1.98, BTC w13-24 t -3.29, ETH w1-12 t -1.54, ETH w13-24 t -1.73.
+- **F3:** The reversal in F1 shows on both sides. After large falls in high volatility the unusual 4-hour return against the fall is -0.37 % (t -2.28, n 547). After large rises it is -0.22 % (t -1.92, n 546).
+- **F4:** Large hourly falls are followed by rebounds whose size grows with the hour's volume ratio to its 30-day mean, which runs against the brief's continuation. The unusual 4-hour return is -0.08 % at a ratio up to 1, -0.03 % at 1-2, +0.14 % at 2-4, +0.42 % at 4-8 (t 2.14, n 308) and +0.49 % above 8 (n 96).
+- **F5:** A coin's past 24-hour return, scaled by its typical move, is followed by the opposite unusual move over the next 24 hours. The pooled slope is -0.0016 (t -4.30, n 5312 non-overlapping days) and is negative in all four coin × half splits (t from -0.79 to -2.81). The lowest fifth of past returns gains +0.38 % (t 2.48) and the top two fifths lose 0.16-0.22 %.
+- **F6:** The tested idea's situation shows no fade. Large rises (above 2 typical moves) on volume at 0.7-1 times average are followed by an unusual 4-hour return of -0.10 % in their own direction (t -0.88, n 204), and the measured size was 0.003 of a usual move. The book lost 0.22-0.28 % per trade before fees on about 19,500 four-hour trades, so it was mostly paying costs on noise.
+- **F7:** Calendar effects stood out, but they come from 31 calendar groups looked at and none is graded, so they support no idea. The 4 hours after 00:00 UTC have an unusual return of -0.08 % (t -3.53, n 3920). Thursdays have -0.10 % (t -3.73), negative in 7 of 8 years.
+
+## Ideas
+- `028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back.g1_volatile-market-hourly-spikes-revert` (from F1, F2, F3): When a coin's hourly volatility over the past 7 days is high, an hour that moves far more than its typical 30-day hourly move is followed by a move in the opposite direction over the next two to six hours, and the larger the hour's move relative to its typical move, the larger the reversal.
+- `028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back.g2_heavy-volume-selloffs-rebound` (from F4): After an hour in which the coin falls far more than its typical 30-day hourly move, the price rebounds over the next four hours, and the heavier that hour's volume relative to its 30-day average, the larger the rebound.
+- `028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back.g3_daily-moves-revert-next-day` (from F5): A coin's 24-hour return, measured in multiples of its typical 30-day move, is followed by a move in the opposite direction over the next 24 hours, larger the more extreme the past 24-hour return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

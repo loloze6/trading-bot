@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 6-bar move after a long bet (BTC and ETH pooled)",
+    "value": -0.00028487172125762347,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -1.3753266581937584
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, top half minus bottom half by entry forecast",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases in total": 11507,
+    "top half cases": 0,
+    "bottom half cases": 11507
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan reads as inconclusive.",
+  "reading": "A case is the first long bet (forecast rise of >= 2 points from its lowest level since the last bet, from 0 after a flat) in each 6-bar grid cell counted from each window's first row, the drift is the coin's mean non-overlapping 6-bar return over all its windows, the supporting split puts cases above the median entry forecast in the top half and those at or below it in the bottom half, and fewer than 30 cases is read as the plan's minimum count, so not observable."
+}

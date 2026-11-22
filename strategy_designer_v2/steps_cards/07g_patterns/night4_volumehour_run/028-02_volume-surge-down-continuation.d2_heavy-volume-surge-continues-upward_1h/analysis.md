@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward_1h
+idea tested: 028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3382 USD
+---
+## Findings
+- **F1:** Over a day the bars mean-revert, graded: on a non-overlapping 24-hour grid, the slope of the next 24-hour return on the past 24-hour return (scaled by the 720-hour hourly standard deviation) is -22.7 bp per unit (t -4.21, 5312 cases); the same 24-hour horizon after a 12-hour past return gives -13.1 bp (t -2.58), and a 12-hour horizon after a 24-hour past return gives -5.9 bp (t -2.20).
+- **F2:** The reversal is strongest after falls: the lowest quintile of the past 24-hour return is followed by +53.7 bp over the next 24 hours (t 3.52, 1067 cases), about five times the 0.11 % cost of a trade; the two lowest deciles carry unusual moves of +36 bp (t 1.63) and +46 bp (t 2.22), against -30 bp (t -1.79) for the highest decile.
+- **F3:** The 24/24 reversal slope is negative in 12 of 16 coin-years, for example ETH 2021 at -79 bp (t -2.35) and BTC 2020 at -44 bp (t -2.22); it is positive only in 2022 for both coins (+0.3 and +8.4 bp) and in BTC 2023 and ETH 2024.
+- **F4:** Among the 24 UTC hours, the hours whose bars open at 20:00 and 21:00 stand out: their next-hour returns are +5.1 bp (t 4.52) and +4.6 bp (t 4.22) on about 5835 bars each, the only |t| above 3; the pair is positive in 14 of 16 coin-years (t up to 3.03 in ETH 2024) and negative only in 2022.
+- **F5:** That evening rise is graded by the day before: by tercile of the past 24-hour return, the 20:00 to 21:00 next-hour return is +8.1 bp (t 4.65) after the weakest days, +3.1 bp (t 2.84) after middle days and +2.4 bp (t 1.75) after the strongest. Over the two hours this gives about 16 bp after the weakest days, against a cost of 11 bp.
+- **F6:** The tested surge shows no continuation in the bars: 6-hour returns after hours above +3 standard deviations on more than 4 times the usual volume are +15 bp (t 0.48, 89 cases), and +51 bp (t 1.24, 45 cases) for +2 to +3 standard deviations. The same-size rises on below-usual volume give -50 bp (t -2.34, 40 cases), consistent with step 5's -0.03 % per case.
+- **F7:** The weekday 24-hour returns alternate in sign, at +52.6 bp on Wednesday (t 3.37), -40.5 bp on Thursday (t -2.37) and +51.1 bp on Friday (t 3.64), from 7 groups. This pattern has no graded structure and is likely chance across the many angles looked at.
+
+## Ideas
+- `028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.g1_one-day-move-reverses-next-day` (from F1, F2, F3): The further a coin's 24-hour return falls below zero, measured against its typical hourly move over the past 30 days, the more it rises over the next 24 hours, and the further its 24-hour return rises above zero, the more it falls over the next 24 hours.
+- `028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.g2_deep-daily-falls-rebound` (from F2, F3): The further a coin has fallen over the past 24 hours, measured against its typical hourly move over the past 30 days, the larger its rise over the next 24 hours.
+- `028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.g3_evening-rise-after-weak-days` (from F4, F5): A coin rises between 21:00 and 23:00 UTC, and the further it has fallen over the 24 hours before 21:00 UTC, the larger that two-hour rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
