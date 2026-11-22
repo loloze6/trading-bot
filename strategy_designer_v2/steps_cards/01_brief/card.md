@@ -35,7 +35,7 @@ One brief: one theory, with its optional context. Or "not researchable", with th
    - For: the years the theory is meant to hold in.
    - Used by: step 2.
    - Without it: no limit set on period.
-5. **side** (header, optional): long only, or long and short.
+5. **side** (header, optional): long only, short only, or long and short.
    - For: a theory about falling prices means something else if the book cannot go short.
    - Used by: step 2.
    - Without it: no limit set on side.
