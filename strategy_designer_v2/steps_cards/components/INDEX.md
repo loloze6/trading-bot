@@ -171,3 +171,10 @@ short_1d_run | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-smal
 short_1d_run | 029-02_breakout-volume-trapped-decline.d2_failed-breakout-in-calm-volatility_1d | FailedBreakoutDepthTimesCalmRatio | built: FailedBreakoutDepthVolatilityRatioComponent {"base_vol_period": 60, "exclude_current": 1, "fail_window": 3, "period": 20, "vol_period": 20}
 short_1d_run | 029-03_close-below-breakout-bar-low.d2_return-below-old-high-unstretched_1d | FailedBreakoutPriorReturnComponent | built: FailedBreakoutDepthRunUpDiscountComponent {"fail_window": 10, "period": 20, "rise_period": 20, "window": 120}
 short_1d_run | 029-05_failed-breakout-multiday-drift.d2_strong-breakout-failures-recover_1d | FailedBreakoutCloseExcursionComponent | built: FailedBreakoutExcursionComponent {"fail_window": 4, "peak_source": "close", "period": 20}
+brief_absorption_run | 030-01_absorption-close-high-rises_1d | BodyToRangeComponent | built: BarBodySizeComponent {"relative_to": "open"}
+brief_absorption_run | 030-01_absorption-close-high-rises_1d | VolumeWeightedCloseLocationComponent | built: VolumeWeightedCloseLocationComponent {"volume_period": 20}
+brief_absorption_run | 030-02_absorption-close-low-falls_1d | OpenCloseBodyShare | exists: BarBodySizeComponent {"relative_to": "range"}
+brief_absorption_run | 030-02_absorption-close-low-falls_1d | VolumeWeightedCloseLocation | exists: VolumeWeightedCloseLocationComponent {"volume_period": 20}
+brief_absorption_run | 030-03_heavy-flat-high-close-reverses_1d | BodyFlatnessComponent | built: BarBodySizeComponent {"form": "flatness", "relative_to": "range"}
+brief_absorption_run | 030-03_heavy-flat-high-close-reverses_1d | VolumeWeightedCloseLocationComponent | exists: VolumeWeightedCloseLocationComponent {"volume_period": 20}
+brief_absorption_run | 030-04_heavy-flat-low-close-reverses_1d | CloseLocationVolumeRatio | built: VolumeWeightedCloseLocationComponent {"exclude_current": 1, "reference": "high", "volume_period": 20}
