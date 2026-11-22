@@ -15,6 +15,7 @@ return on days in a position; step 3 enforces the brief's side.
 | 1 | `retest_weekend_run` | 026 weekend moves, 1h | 026-03.d3 Saturday move continues early week (0.05; 1.08); 026-04.b2 heavy weekend moves continue (0.07; 0.89) | 35 USD |
 | 2 | `retest_learned_run` | 022 learned combination, 1d | 022-04.b1 nearness power turns around (0.03; 0.92); 022-04.b2 volatility power turns around (0.01; 0.68) | 35 USD |
 | 3 (added 2026-11-23, about 00:15 Paris) | `retest_settlement_run` | 017 settlement-hour moves, 1h | 017-05 settlement move reverses after (0.01); 017-02.g2 hourly reversal in volatile periods (0.01); 017-01.g2 hourly move reversal by volatility (0.01) | 35 USD |
+| 5 (added 2026-11-23, about 00:40 Paris; the operator: quota to use) | `retest_monday_run` | 011 weekend rise reverses on Monday, 1d | 011-01.b2.b1 Sunday move reverses both ways (0.06); 011-01.b2.b2 weekend fall rebounds Monday-Tuesday (0.06) | 35 USD |
 
 Each session: `run_idea` on its two starting ideas (retested under today's rules), then the loop on the run with the
 budget. Night 4's rules: a loop the 2-hour limit cuts is restarted at once; a usage-limit stop resumed after its reset;
