@@ -20,7 +20,6 @@ An idea's latest record counts once.
 | 016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 42fff6652 | 2026-11-20T03:46:01 |
 | 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | d6464ce9c | 2026-11-20T04:15:24 |
 | 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | d6464ce9c | 2026-11-20T04:24:20 |
-| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T05:26:50 |
 | 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a9490e9c5 | 2026-11-20T07:14:33 |
 | 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a402283b0 | 2026-11-20T06:16:31 |
 | 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a9490e9c5 | 2026-11-20T07:24:37 |
@@ -187,6 +186,7 @@ An idea's latest record counts once.
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h | confirmed | retest_1h_run | 1h | 2 | bc98e9119 | 2026-11-19T04:53:40 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h | confirmed | retest_1h_run | 1h | 6 | 06e13143f | 2026-11-19T05:03:42 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
+| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | confirmed | retest_settlement_run | 1h | 6 | ef9a418cc | 2026-11-22T23:31:27 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | confirmed | retest_settlement_run | 1h | 6 | 58071a12b | 2026-11-22T23:18:26 |
 | 017-05_settlement-move-reverses-after_1h | confirmed | retest_settlement_run | 1h | 6 | 8fb48db89 | 2026-11-22T23:07:31 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
