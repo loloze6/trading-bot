@@ -78,9 +78,13 @@ The bar returns are committed (about 1.3 MB per hourly book, 7 significant digit
 new session must find the register whole.
 
 ## Who calls it, and when
-- **Open (topic 41, to be decided with the operator):** whether `run_idea` calls it, after the unseen test, for an idea
-  step 5 confirmed and step 6 found profitable enough, and who reads it besides the operator. Until then it is called
-  by hand.
+- **`run_idea`** (operator, 2026-11-22; topic 41), after step 6 and the chart files, for every idea step 5 confirmed, its
+  book paying or not: the book added and compared (code only, no model call). `select_next` reads the register to order
+  the next ideas (the parent's difference). A failure is recorded in the run's journal and the run goes on.
+- **Parallel sessions** each add their run's books on their own branch. When their branches are merged, `books.json`,
+  `INDEX.md` and `COMPARISONS.md` conflict: `books.json` is resolved as the union of both sides' rows (keys are unique,
+  `<run>__<id>`), then `--all` compares every book again and rewrites `INDEX.md` and `COMPARISONS.md`, so a book added on
+  one branch is compared with those added on the other.
 - **The operator** (or the designer, on the operator's go), with `--all`, to compare every book again (after the
   register is first filled, or a book is rerun).
 
