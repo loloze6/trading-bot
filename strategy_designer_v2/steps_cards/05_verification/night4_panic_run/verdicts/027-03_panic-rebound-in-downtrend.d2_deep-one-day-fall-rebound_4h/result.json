@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 84-bar excess return (return minus coin's normal drift) on forecast",
+    "value": -0.0008630715335607916,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.8706281283445737
+    },
+    "threshold": "slope t >= 2 confirms (with supporting check), t <= -2 rejects, at least 200 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with forecast > 0",
+    "value": -0.007814522521725766,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1152,
+    "cases with forecast above 0": 578
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The 200-case minimum is read as the number of pooled grid samples in the regression. Each coin's normal drift is its mean 84-bar return over the grid samples of all its windows. A grid bar whose 84-bar end falls outside its window is left out."
+}

@@ -8,5 +8,6 @@
 027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h: 2 ideas (1 explorations)
 027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days_4h: 2 ideas (2 explorations)
 027-03_panic-rebound-in-downtrend.d1_graded-sell-off-liquidity-premium_4h: 3 ideas (2 explorations)
+027-03_panic-rebound-in-downtrend.d2_deep-one-day-fall-rebound_4h: 3 ideas (2 explorations)
 027-03_panic-rebound-in-downtrend_4h: 2 ideas (2 explorations)
 027-04_panic-delayed-recovery-drift_4h: 2 ideas (2 explorations)

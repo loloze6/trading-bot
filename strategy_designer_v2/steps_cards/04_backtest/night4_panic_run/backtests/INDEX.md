@@ -8,5 +8,6 @@
 027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [4h, folds A, B, C, D]
 027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days_4h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [4h, folds A, B, C, D]
 027-03_panic-rebound-in-downtrend.d1_graded-sell-off-liquidity-premium_4h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [4h, folds A, B, C, D]
+027-03_panic-rebound-in-downtrend.d2_deep-one-day-fall-rebound_4h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [4h, folds A, B, C, D]
 027-03_panic-rebound-in-downtrend_4h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [4h, folds A, B, C, D]
 027-04_panic-delayed-recovery-drift_4h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [4h, folds A, B, C, D]

@@ -8,5 +8,6 @@
 027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 027-03_panic-rebound-in-downtrend.d1_graded-sell-off-liquidity-premium_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+027-03_panic-rebound-in-downtrend.d2_deep-one-day-fall-rebound_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 027-03_panic-rebound-in-downtrend_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 027-04_panic-delayed-recovery-drift_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
