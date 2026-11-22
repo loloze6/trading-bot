@@ -30,12 +30,18 @@ def call(model, system, request):
     """One model call, closed book: no tools, no files, no settings; the request on standard input. Returns (text,
     cost in USD). Prints one line per call on standard error (time, tokens, USD); a call killed at the timeout says
     so, its cost unknown, and stops the helper."""
-    cmd = ["claude", "-p", "--model", model, "--system-prompt", system, "--tools", "",
+    cmd = ["claude", "-p", "--model", model, "--system-prompt-file", None, "--tools", "",
            "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence", "--setting-sources", "",
            "--settings", '{"attribution":{"commit":"","pr":""},"includeCoAuthoredBy":false}', "--output-format", "json"]
     env = {k: v for k, v in os.environ.items() if k not in DROP_ENV}
     t0 = time.time()
-    with tempfile.TemporaryDirectory() as empty:
+    # The system prompt goes in a file, not on the command line: one argument is capped at 128 KiB on Linux, and step
+    # 3's prompt (with the component catalogue) passed it on 2026-11-22 ("Argument list too long"). Its own folder,
+    # outside the call's empty working folder; the same text.
+    with tempfile.TemporaryDirectory() as empty, tempfile.TemporaryDirectory() as sysdir:
+        sysfile = Path(sysdir) / "system_prompt.md"
+        sysfile.write_text(system, encoding="utf-8")
+        cmd[cmd.index("--system-prompt-file") + 1] = str(sysfile)
         try:
             p = subprocess.run(cmd, input=request, cwd=empty, env=env, capture_output=True, text=True, timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
