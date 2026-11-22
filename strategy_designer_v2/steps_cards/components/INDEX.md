@@ -156,3 +156,11 @@ night4_weekend_run | 026-04_thinner-weekend-larger-reversal_1h | WeekendThinVolu
 night4_weekend_run | 026-04_thinner-weekend-larger-reversal_1h | LaggedBaseVolumeRatio | built: VolumeRatioComponent {"exclude_current": 49, "period": 120, "short_period": 48}
 night4_weekend_run | 026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue_1h | WeekendVolatilityWeightedReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 48, "base_period": 168, "period": 48, "vol_period": 48}
 night4_weekend_run | 026-02_weekend-drop-reverses-early-week.d1_turbulent-weekend-falls-continue.b1_turbulent-weekend-falls-continue_1h | WeekendToPriorWeekVolatilityRatio | built: RecentToPriorVolatilityRatioComponent {"base_lag": 48, "base_period": 168, "vol_period": 48}
+short_1d_run | 029-01_failed-breakout-depth-decline_1d | FailedBreakoutDepthComponent | built: FailedBreakoutDepthComponent {"fail_window": 3, "period": 20}
+short_1d_run | 029-02_breakout-volume-trapped-decline_1d | FailedBreakoutDepth | built: FailedBreakoutDepthComponent {"fail_window": 4, "period": 20, "source": "high"}
+short_1d_run | 029-02_breakout-volume-trapped-decline_1d | FailedBreakoutVolumeRatio | built: FailedBreakoutVolumeRatioComponent {"fail_window": 3, "period": 20, "source": "high", "volume_period": 20}
+short_1d_run | 029-03_close-below-breakout-bar-low_1d | BreakoutBarLowBreakDepth | built: FailedBreakoutDepthComponent {"exclude_current": 1, "fail_window": 10, "period": 20, "reference": "breakout_low", "source": "high"}
+short_1d_run | 029-03_close-below-breakout-bar-low_1d | BreakoutBarLowBreakDepth (same component) | exists: FailedBreakoutDepthComponent {"reference": "breakout_low"}
+short_1d_run | 029-04_breakout-extension-failure-decline_1d | failed-breakout excursion | built: FailedBreakoutExcursionComponent {"fail_window": 4, "period": 20}
+short_1d_run | 029-05_failed-breakout-multiday-drift_1d | FailedBreakoutDepthComponent | built: FailedBreakoutDepthComponent {"exclude_current": 1, "fail_window": 3, "lag": 2, "period": 20, "reference": "prior_high", "source": "close"}
+short_1d_run | 029-05_failed-breakout-multiday-drift_1d | FailedBreakoutDepthComponent (same component) | exists: FailedBreakoutDepthComponent {"fail_window": 3, "lag": 2, "period": 20, "reference": "prior_high", "source": "close"}

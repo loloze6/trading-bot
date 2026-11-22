@@ -1,2 +1,5 @@
-029-01_failed-breakout-depth-decline_1d: missing-components: The data is in each coin's own daily bars, and the config's logic could hold the idea. A regime would [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+029-01_failed-breakout-depth-decline_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 029-02_breakout-volume-trapped-decline_1d: missing-components: The idea needs only the coin's own closes, highs and volumes. A regime veto on a failure gate plus a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+029-03_close-below-breakout-bar-low_1d: missing-components: The idea's situation needs the low of the most recent bar that closed above its prior 20-day high, and the [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+029-04_breakout-extension-failure-decline_1d: missing-components: Every catalogue high, such as DistanceFromHigh, BreakoutInMeanRanges or VolatilityScaledDistanceFromHigh, takes its high over a window ending at bar t or [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+029-05_failed-breakout-multiday-drift_1d: missing-components: The idea needs the 20-day closing high that stood before a breakout 1 to 3 days earlier, and the failure [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

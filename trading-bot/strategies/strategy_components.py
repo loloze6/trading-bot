@@ -7229,3 +7229,303 @@ class RecentToPriorVolatilityRatioComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.vol_period, self.base_lag + self.base_period) + 1
+
+
+class FailedBreakoutDepthComponent(SubStrategyComponent):
+    """
+    Depth of a close below the level of a recent breakout that failed, read at bar e = t - lag:
+
+        e = t - lag                                   (lag 0, the default: e = t)
+        candidates: exclude_current 0 (default): bars e-fail_window+1 .. e   (bar e included)
+                    exclude_current 1:           bars e-fail_window .. e-1   (bar e excluded)
+        H(j) = max(close[j-period] .. close[j-1])     (source "close", default)
+             = max(high[j-period] .. high[j-1])       (source "high")
+        j = the most recent candidate with close[j] > H(j)   (strictly higher: a tie is not a breakout)
+        R = H(j)     (reference "prior_high", default)
+          = low[j]   (reference "breakout_low")
+        raw_value = max(0, R - close[e]) / R x 100,  or 0.0 when no candidate broke out
+
+    Range and sign: 0 and up, below 100, never negative; no direction. It is 0 when no breakout lies in the window
+    or when close[e] is at or above R. It grows linearly as close[e] sinks below the level.
+    The defaults (reference "prior_high", exclude_current 0, lag 0) are the original output, unchanged.
+    lag delays the whole reading: the value at t is the lag-0 value at bar t-lag.
+    Warm-up: period + fail_window + exclude_current + lag rows, bar t included.
+
+    NaN: source "close" reads closes of bars e-period-fail_window-exclude_current+1 .. e. Source "high" reads highs
+    of bars e-period-fail_window-exclude_current+1 .. e-exclude_current-1 and closes of bars
+    e-fail_window-exclude_current+1 .. e. reference "breakout_low" also reads low[j]. A NaN in any value read
+    gives NaN, and so does an R not above 0 (never on real bars).
+    Building the component raises for period < 1, fail_window < 1, a source other than "close" or "high", a
+    reference other than "prior_high" or "breakout_low", an exclude_current other than 0 or 1, or a lag that is
+    not an integer >= 0.
+
+    WHY THIS CANNOT LEAK: it reads only rows up to bar e = t - lag (the last row of data minus lag), so it reads
+    no row after bar t. Every high, low and close it reads is known at that bar's close.
+    """
+
+    def __init__(self, name="FailedBreakoutDepth", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"FailedBreakoutDepthComponent: period must be >= 1, got {self.period}")
+        self.fail_window = int(self.parameters.get("fail_window", 3))
+        if self.fail_window < 1:
+            raise ValueError(f"FailedBreakoutDepthComponent: fail_window must be >= 1, got {self.fail_window}")
+        self.source = self.parameters.get("source", "close")
+        if self.source not in ("close", "high"):
+            raise ValueError(f"FailedBreakoutDepthComponent: source must be 'close' or 'high', got {self.source!r}")
+        self.reference = self.parameters.get("reference", "prior_high")
+        if self.reference not in ("prior_high", "breakout_low"):
+            raise ValueError(
+                f"FailedBreakoutDepthComponent: reference must be 'prior_high' or 'breakout_low', got {self.reference!r}")
+        ex = self.parameters.get("exclude_current", 0)
+        if isinstance(ex, bool):
+            ex = int(ex)
+        if ex not in (0, 1):
+            raise ValueError(f"FailedBreakoutDepthComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        lag = self.parameters.get("lag", 0)
+        if isinstance(lag, bool):
+            lag = int(lag)
+        try:
+            lag_int = int(lag)
+        except (TypeError, ValueError):
+            raise ValueError(f"FailedBreakoutDepthComponent: lag must be an integer >= 0, got {lag!r}")
+        if lag_int != lag or lag_int < 0:
+            raise ValueError(f"FailedBreakoutDepthComponent: lag must be an integer >= 0, got {lag!r}")
+        self.lag = lag_int
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        fw = self.fail_window
+        ex = self.exclude_current
+        n = len(data)
+        e = n - 1 - self.lag
+        close = data["close"].astype(float).to_numpy()
+        first = e - p - fw - ex + 1
+        if self.source == "close":
+            src = close
+            if np.isnan(close[first:e + 1]).any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+        else:
+            src = data["high"].astype(float).to_numpy()
+            if np.isnan(src[first:e - ex]).any() or np.isnan(close[e - fw - ex + 1:e + 1]).any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+        if ex == 0:
+            candidates = range(e, e - fw, -1)
+        else:
+            candidates = range(e - 1, e - fw - 1, -1)
+        found = None
+        level = None
+        for j in candidates:
+            hj = float(np.max(src[j - p:j]))
+            if close[j] > hj:
+                found = j
+                level = hj
+                break
+        if found is None:
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {"breakout_bar": None, "e": e}
+            return
+        if self.reference == "breakout_low":
+            r = float(data["low"].astype(float).iloc[found])
+        else:
+            r = level
+        if np.isnan(r) or not r > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(max(0.0, r - close[e]) / r * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {"breakout_bar": int(found), "e": e, "H": level, "R": r}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.fail_window + self.exclude_current + self.lag
+
+
+class FailedBreakoutVolumeRatioComponent(SubStrategyComponent):
+    """
+    Volume of the most recent failed breakout bar against its own average:
+
+        j = the most recent bar in t-fail_window+1 .. t (bar t included) with close[j] > H(j)
+        H(j) = max(close[j-period] .. close[j-1])   (source "close", default)
+             = max(high[j-period] .. high[j-1])     (source "high")
+        failed: close[t] < H(j)
+        raw_value = volume[j] / mean(volume[j-volume_period+1 .. j])   when a breakout exists and failed
+        raw_value = 0.0                                                otherwise (no breakout in the window,
+                                                                       or close[t] >= H(j), e.g. bar t breaks out)
+
+    Range: 0, or above 0 up to volume_period (the mean includes volume[j]); never negative; no direction.
+    It is 1 when the breakout bar's volume equals its volume_period-bar average and grows with that volume.
+    Graded in the volumes. It jumps between 0 and the ratio where close[t] crosses H(j).
+    Warm-up: max(period + fail_window, volume_period + fail_window - 1) rows, bar t included (23 at the defaults).
+
+    NaN: "close": a NaN close in the last period + fail_window rows gives NaN. "high": a NaN high in bars
+    t-period-fail_window+1 .. t-1, or a NaN close in bars t-fail_window+1 .. t, gives NaN. For a failed breakout,
+    a NaN volume in bars j-volume_period+1 .. j, or a mean volume not above 0, gives NaN.
+    Building raises for period < 1, fail_window < 1, volume_period < 2, or a source other than "close" or "high".
+
+    WHY THIS CANNOT LEAK: it reads only the close, high and volume of rows up to and including bar t (the last row
+    of data). Every bar j tested is at or before t, its H(j) uses bars before j, and its volume window ends at j.
+    """
+
+    def __init__(self, name="FailedBreakoutVolumeRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"FailedBreakoutVolumeRatioComponent: period must be >= 1, got {self.period}")
+        self.fail_window = int(self.parameters.get("fail_window", 3))
+        if self.fail_window < 1:
+            raise ValueError(
+                f"FailedBreakoutVolumeRatioComponent: fail_window must be >= 1, got {self.fail_window}")
+        self.volume_period = int(self.parameters.get("volume_period", 20))
+        if self.volume_period < 2:
+            raise ValueError(
+                f"FailedBreakoutVolumeRatioComponent: volume_period must be >= 2, got {self.volume_period}")
+        self.source = self.parameters.get("source", "close")
+        if self.source not in ("close", "high"):
+            raise ValueError(
+                f"FailedBreakoutVolumeRatioComponent: source must be 'close' or 'high', got {self.source!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data["close"].astype(float).to_numpy()
+        n = len(c)
+        t = n - 1
+        P, F, VP = self.period, self.fail_window, self.volume_period
+        if self.source == "high":
+            ref = data["high"].astype(float).to_numpy()
+            if np.isnan(ref[n - P - F:n - 1]).any() or np.isnan(c[n - F:]).any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+        else:
+            ref = c
+            if np.isnan(c[n - P - F:]).any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+        j_found = None
+        h_old = None
+        for j in range(t, t - F, -1):
+            hj = float(np.max(ref[j - P:j]))
+            if c[j] > hj:
+                j_found = j
+                h_old = hj
+                break
+        if j_found is None or not (c[t] < h_old):
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {"breakout_bar": j_found, "old_high": h_old}
+            return
+        v = data["volume"].astype(float).to_numpy()
+        w = v[j_found - VP + 1:j_found + 1]
+        if np.isnan(w).any():
+            self._raw_value = float("nan")
+        else:
+            m = float(np.mean(w))
+            self._raw_value = float(v[j_found] / m) if m > 0 else float("nan")
+        self.confidence = 1.0
+        self.debug_info = {"breakout_bar": j_found, "old_high": h_old, "bars_ago": t - j_found}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period + self.fail_window, self.volume_period + self.fail_window - 1)
+
+
+class FailedBreakoutExcursionComponent(SubStrategyComponent):
+    """
+    How far a recent breakout pushed above the old closing high before failing back under it:
+
+        j = the most recent bar in t-fail_window+1 .. t (bar t included) with close[j] > H(j),
+            H(j) = max(close[j-period] .. close[j-1])
+        P = max(high[j .. t])
+        raw_value = (P - H(j)) / H(j) x 100   when close[t] < H(j)
+        raw_value = 0.0                        when no bar of the window broke out, or close[t] >= H(j)
+
+    Range: 0, or above 0 and unbounded above. It is never negative and has no direction. When non-zero it is
+    at least (close[j] - H(j)) / H(j) x 100 > 0, because high[j] >= close[j].
+    Units: percent of the old high. Graded: it grows with the size of the failed push above the old high.
+    Warm-up: period + fail_window rows, bar t included.
+
+    NaN: a NaN close in the last period + fail_window rows gives NaN. For a failed breakout, a NaN high in
+    bars j .. t gives NaN, and so does an H(j) not above 0 (never on real bars).
+    Building the component raises for a period below 1 or a fail_window below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the close of the last period + fail_window rows and the high of
+    bars j .. t, all at or before bar t (the last row of data); bar t's high and close are known at its close.
+    """
+
+    def __init__(self, name="FailedBreakoutExcursion", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"FailedBreakoutExcursionComponent: period must be >= 1, got {self.period}")
+        self.fail_window = int(self.parameters.get("fail_window", 4))
+        if self.fail_window < 1:
+            raise ValueError(
+                f"FailedBreakoutExcursionComponent: fail_window must be >= 1, got {self.fail_window}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n_rows = self.get_required_periods()
+        close = data["close"].astype(float).to_numpy()[-n_rows:]
+        high_all = data["high"].astype(float).to_numpy()[-n_rows:]
+        self.confidence = 1.0
+        if np.isnan(close).any():
+            self._raw_value = float("nan")
+            return
+        t = n_rows - 1
+        j = None
+        h_level = None
+        for cand in range(t, t - self.fail_window, -1):
+            h = float(np.max(close[cand - self.period:cand]))
+            if close[cand] > h:
+                j = cand
+                h_level = h
+                break
+        if j is None:
+            self.debug_info = {"breakout": False}
+            return
+        if not close[t] < h_level:
+            self.debug_info = {"breakout": True, "failed": False, "H": h_level}
+            return
+        highs = high_all[j:t + 1]
+        if np.isnan(highs).any() or not h_level > 0:
+            self._raw_value = float("nan")
+            return
+        p = float(np.max(highs))
+        self._raw_value = float((p - h_level) / h_level * 100.0)
+        self.debug_info = {"breakout": True, "failed": True, "H": h_level, "P": p,
+                           "bars_since_breakout": t - j}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.period + self.fail_window
