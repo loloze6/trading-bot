@@ -27,9 +27,9 @@ coins, every short-only family loses (Sharpe −0.1 to −1.4); trend long only 
 | after a rise > 2 usual moves (sell) | 554 | 439 bps | −19 bps | −1.0 |
 Only the crude version (a position against every day's move, changing side on 54 % of days, a full exit and entry each
 time) loses to its costs; the reversal after a large fall has an edge 7.7 times its cost; after a large rise it has none
-(the drift). **Lesson:** a cost is set against the edge per case (the workflow's own measure: the size of an idea,
-`common/measures.md`, against the cost of a trade), never against the size of the move, and with how often the position
-changes side; a quick simulation outside the workflow uses the workflow's definitions or says it does not.
+(the drift). **Lesson (the operator, 2026-11-22):** think logically and challenge what I say before closing a
+point: "costs erase short-term reversal" came from one crude simulation and was stated as a fact without checking the
+edge per trade against the cost (the workflow's own measure, the size of an idea, `common/measures.md`).
 
 **C. Where the short side pays (`diag.py`):** in the two falling years only (2018: Sharpe 0.73; 2022: 0.32 to 0.70), when
 momentum loses (−1.69, −1.39); it loses in the six others. Judged alone over eight years, a short book cannot pass; its
@@ -51,11 +51,19 @@ Not yet tested on the unseen dates (the unseen test runs only on profitable book
 1. **Success is a paying book, not a confirmed idea.** The loop's goal and `select_next`'s record count only an idea
    confirmed and profitable (since 2026-11-19, topic 30). A confirmed idea whose book does not pay counts for nothing:
    190 of 285 confirmed ideas; nothing records them as a result, and only paying books enter the similarity register.
-2. **Step 7's lines run by the verdict, but the line for a real idea whose book does not pay (7.d) works from the
-   failed profit measures, and its proposals add a trend condition.** 022-04.b2 (unrelated to every paying book, share
-   0.01): its 5 children are "volatility reversal with trend", "nearness to 90-day high", "four-week momentum
-   continues", "two-week return continues", "volatility-scaled monthly trend continues"; 022-04.b1 (0.03): "near-high
-   momentum keeps rising". Then the loop tests first the children of the lines whose ideas paid.
+2. **Step 7 turns real ideas into momentum, mostly through ideas of its own** (`topics/45_review`, configs compared,
+   2026-11-22). Lines run by the verdict and the check: line 7.d on every book that does not pay, whatever step 5 said;
+   its prompt allows a repair (the tested idea amended: "..., only while ...") or "an idea of its own", and nothing
+   ties its ideas to the brief's theory. Every child step 3 planned from a confirmed idea, against its parent's config:
+   | What the child did with the parent's real idea | 7.d | 7.g | Adding a trend or momentum part | Paid |
+   |---|---|---|---|---|
+   | kept it whole (a repair) | 8 | 4 | 3 of 12 | 4 of 12 |
+   | kept part of it | 1 | 12 | 6 of 13 | 1 of 13 |
+   | replaced it (an idea of its own) | 7 | 10 | 14 of 17 | 1 of 17 |
+   Example: 022-04.b2 (unrelated to every paying book, share 0.01): its 7.d children "four-week momentum continues" and
+   "nearness to 90-day high" replace it. Then the loop tests first the children of the lines whose ideas paid.
+   Limits: 42 children; "a trend or momentum part" is read from the component classes (one of them,
+   VolatilityScaledReturn, also serves reversal ideas).
 3. **Many confirmed ideas were never followed:** the 50 books rejected only on step 6's mean and Calmar have 31 children
    in all, 18 never tested; three of the five unrelated ones have none (a stopped run's last idea; reruns that run no
    step 7).
@@ -63,7 +71,11 @@ Not yet tested on the unseen dates (the unseen test runs only on profitable book
    reading of 2026-11-22): four of the five unrelated books are in a position on 82 to 100 % of days, so the change is
    small; 026-03.d3 (mean 0.051 %, Calmar 0.76) and 016-03 (0.072 %, 0.76) would pass, 026-04.b2 (on 53 % of days:
    0.024 % to 0.046 %) nearly. The two 022-04 books are always on: their low Calmar (0.54, 0.25) is a real deep fall
-   (41 %, 55 %).
+   (41 %, 55 %). Mathematically: a day out of the market has a return of 0, so the chained value, its peaks and its
+   deepest fall F are unchanged; only the number of days counted falls, from N to s x N (s, the share of days on). The
+   yearly return A = G^(365/N) - 1 becomes (1 + A)^(1/s) - 1 (about A / s), so Calmar becomes ((1 + A)^(1/s) - 1) / F,
+   and the mean daily return is divided by s exactly. It reads "per year in the market": right when the capital is used
+   by other books when this one is off (topic 44), too generous for a book held alone.
 
 ## Options
 | Option | Gain | Risk |
