@@ -1,1 +1,2 @@
+017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: confirmed (fit: adapted) [main: 2.13161e-05; OLS slope t 13.7732; bars in total 416645, bars with high 24h volatility 119877, bars with low 24h volatility 189776]
 017-05_settlement-move-reverses-after_1h: confirmed (fit: exact) [main: 0.000438208; ordinary t of the mean 5.11781; cases 51399, top third cases 17133, bottom third cases 17133]

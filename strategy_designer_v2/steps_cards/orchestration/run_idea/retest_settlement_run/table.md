@@ -5,21 +5,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Unseen dates | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|---|
 | 017-05_settlement-move-reverses-after | - | plan | confirmed (+5.12) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours; 7.g: 017-05_settlement-move-reverses-after.g1_one-day-large-move-reversal, 017-05_settlement-move-reverses-after.g2_reversal-in-volatility-bursts, 017-05_settlement-move-reverses-after.g3_us-open-move-reversal, 017-05_settlement-move-reverses-after.g4_intraday-move-reverses-next-day | 1.22 | 10.4 |
+| 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods | 017-02_presettle-rise-after-downtrend | plan | confirmed (+13.77) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours; 7.g: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g1_daily-fade-in-volatility-spikes, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g2_late-evening-utc-drift | 1.03 | 14.9 |
 
 ## Consumption
-1 ideas, 1.22 USD, 10.4 minutes in all.
+2 ideas, 2.26 USD, 25.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.08 | 0.5 |
-| step4_backtest | 0.00 | 5.3 |
-| step5_verdict | 0.16 | 0.6 |
-| step6_check | 0.00 | 0.2 |
-| chart_files | 0.00 | 0.1 |
-| similarity_check | 0.00 | 0.1 |
+| step3_plan | 0.15 | 1.0 |
+| step4_backtest | 0.00 | 14.4 |
+| step5_verdict | 0.32 | 1.2 |
+| step6_check | 0.00 | 1.2 |
+| chart_files | 0.00 | 0.3 |
+| similarity_check | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.g | 0.42 | 1.5 |
-| step7_7.d | 0.57 | 2.1 |
+| step7_7.g | 0.80 | 3.3 |
+| step7_7.d | 0.98 | 3.7 |
