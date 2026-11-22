@@ -1,0 +1,6 @@
+---
+brief: 023_range-reversion-when-no-trend
+bar: 1d
+---
+Idea: In a coin whose 30-day net move has been small relative to its 30-day high-low range, the further its close sits above the middle of that range, the more it falls over the next 5 days.
+Consequence: In a flat market a push toward the top of the band lacks follow-through and gets sold back toward the middle.
