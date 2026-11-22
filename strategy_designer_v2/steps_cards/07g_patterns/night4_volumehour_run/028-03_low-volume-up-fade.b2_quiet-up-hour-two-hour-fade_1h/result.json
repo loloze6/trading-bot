@@ -1,0 +1,42 @@
+{
+  "line": "7.g",
+  "backtest": "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39772929999999995,
+  "findings": {
+    "F1": "Across all bars, the hours opening at 20:00 and 21:00 UTC end above the coin's normal drift: +3.7 bp an hour on BTC (t 3.81, 5837 hours) and +4.8 bp on ETH (t 3.92, 5837 hours). The effect is positive in 7 of 8 years and larger in the high-volatility years (2020 +7.2 bp, t 2.93; 2021 +7.7 bp, t 3.02) than in the calmer 2023 (+2.8 bp, t 1.93). It is positive on all seven weekdays (+3.4 to +5.3 bp). Over its two hours it is about 9 bp, still below the 0.11 % a trade costs.",
+    "F2": "A large hourly fall on volume more than 3 times its 30-day hourly average reverses over the next 2 hours by +22.6 bp beyond drift (t 3.34, 1167 cases). The same kind of rise does not reverse (+0.8 bp, t 0.14, 1046 cases).",
+    "F3": "Among hours with volume above 3 times average, the 2-hour unusual move falls as the hour's move in 30-day mean-absolute units grows. The slope is -2.3 bp per unit on BTC (t -2.33, 1764 cases) and -3.0 bp on ETH (t -2.44, 1995 cases). This is the opposite of the brief's volume-confirmed continuation. It is concentrated in 2020 (t -3.65) and 2021 (t -2.55) and absent in 2023 to 2025 (slopes +0.6, -0.7, +3.2).",
+    "F4": "The tested quiet-volume rises do not fade more as they get larger, which contradicts the idea's gradient:",
+    "F5": "The book lost every year, by -5 to -19 bp a day, while the coins' own daily returns ranged from -29.6 to +52.4 bp. Its worst fifth of days came with the coins up +274 bp, and its best fifth with the coins down -167 bp. The short-only book is mostly a negative bet on the market, not a capture of fades.",
+    "F6": "The hours opening at 00:00 to 02:00 UTC end below drift: -2.3, -2.3 and -3.2 bp (t -1.97, -2.22, -3.35). This is negative in 2018 to 2022 (-7.4 to -0.6 bp) and gone in 2024 to 2025 (+0.1, +1.3 bp). It is too unstable to stand out after the many angles looked at."
+  },
+  "ideas": [
+    {
+      "idea": "In the two hours that follow 20:00 UTC each day, the coin rises more than its normal drift. The rise is larger the larger the coin's typical hourly move over the past 30 days.",
+      "consequence": "A trader would avoid opening shorts just before 20:00 UTC and favour holding or adding longs through the next two hours, more so in volatile months.",
+      "name": "evening UTC hours drift up",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "After an hour in which the coin falls far more than its typical hourly move over the past 30 days, on volume several times its 30-day average hourly volume, the price rebounds over the next two hours. The larger that hour's fall, the larger the rebound.",
+      "consequence": "A trader would refuse to chase a high-volume hourly sell-off in the next two hours, and could lean long against it.",
+      "name": "high-volume hourly fall rebounds",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.g1_evening-utc-hours-drift-up",
+    "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.g2_high-volume-hourly-fall-rebounds"
+  ],
+  "no_ideas": null
+}

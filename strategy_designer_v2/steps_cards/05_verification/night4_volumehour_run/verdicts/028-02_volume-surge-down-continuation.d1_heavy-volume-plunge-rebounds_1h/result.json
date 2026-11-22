@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 4-bar move after heavy-volume plunge bets (long)",
+    "value": 0.0004230073690575375,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.5181439405775365
+    },
+    "threshold": "confirm t >= 2 over >= 30 cases with slope > 0; reject t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on signal-bar forecast",
+    "value": 2.4660201839549924e-05,
+    "passed": true
+  },
+  "counts": {
+    "cases": 13013
+  },
+  "decided_by": "The mean unusual move has t >= 2 over at least 30 cases and the slope on the forecast is above 0.",
+  "reading": "Situation = bars whose raw volume-weighted scaled return is negative (graded fall), side long; a case is the first long bet (forecast rise >= 2 points from its lowest level since the last bet, reset to 0 after a flat bar) in each 4-bar grid cell counted from each window's first row, with its 4-bar return kept only when it stays inside the window, and the normal drift is each coin's mean non-overlapping 4-bar return over all its windows."
+}

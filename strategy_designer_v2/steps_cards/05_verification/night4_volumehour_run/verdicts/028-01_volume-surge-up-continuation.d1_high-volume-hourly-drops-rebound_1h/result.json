@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 24-bar return after bets, both coins",
+    "value": -0.000931122635066117,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.5622255561739904
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 24-bar return on signal-bar forecast",
+    "value": 2.3722305833818148e-05,
+    "passed": true
+  },
+  "counts": {
+    "cases over both coins": 4990,
+    "cases BTCUSD": 2478,
+    "cases ETHUSD": 2512
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A bet is the first bar in each 24-bar grid cell (from each window's first row) where the positive forecast rises at least 2 points above its lowest level since the last bet (reset to 0 when flat), the drift is each coin's own pooled grid mean, cases of both coins are pooled for the mean, t and slope, and the plan's count below 30 is reported as not observable."
+}

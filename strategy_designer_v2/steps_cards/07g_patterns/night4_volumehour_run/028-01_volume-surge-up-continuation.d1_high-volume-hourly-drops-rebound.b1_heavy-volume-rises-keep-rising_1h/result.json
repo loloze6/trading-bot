@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound.b1_heavy-volume-rises-keep-rising_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40291740000000004,
+  "findings": {
+    "F1": "The two hours from 20:00 to 22:00 UTC carry the coins' clearest hourly drift. Hour 20 averages +5.08 bp with t 4.52 and hour 21 averages +4.62 bp with t 4.21, on about 5,836 non-overlapping 1-hour returns each, while every other hour lies between -2.73 and +2.36 in t, so the pair stands out even after looking at 24 hours. The pair is stronger when US daylight time runs (April to October): BTC +5.52 bp t 2.58 (n 1712) and ETH +10.12 bp t 3.62 (n 1712), against +3.31 bp t 0.94 and +1.08 bp t 0.25 in the other months. That points to the US equity close.",
+    "F2": "The 20:00 to 22:00 UTC rise is graded by the coin's 6-hour return into 19:00 UTC, scaled by its typical move. By quintile of that return, lowest first, the two hours return +9.63 bp (t 2.15), +8.25 bp (t 2.34), +1.45 bp, +6.36 bp and -2.49 bp (t -0.66), with about 1,071 cases per quintile. It is also larger in the highest-volatility tercile, +11.38 bp t 2.95, against +3.43 bp and -0.89 bp. It is positive in 2/3 of coin-windows and in 13 of 16 coin-years.",
+    "F3": "A day's move partly reverses the next day. On non-overlapping 24-hour cells, the lowest quintile of the past 24-hour return (scaled by the typical move) is followed by an unusual 24-hour move of +38.7 bp (t 2.53, n 1063). The fourth and fifth quintiles are followed by -24.1 bp (t -2.09) and -18.6 bp (t -1.59). The correlation of past and next 24-hour move is -0.048 for BTC and -0.066 for ETH (about 2,650 cases each). The lowest quintile's rebound is positive in 7 of 8 years.",
+    "F4": "The tested signal adds little beyond these patterns. Across the 28 hourly-move by volume-ratio cells, only one reaches |t| above 2.5: hours falling more than 3 typical moves on volume above 4 times average, followed by +35.9 bp over 2 hours (t 2.58, n 353). That is a rebound, not a continuation, and at 24 hours no cell passes |t| 2.",
+    "F5": "The book is mostly holding the coins. It is long 87 % of bars with a mean allocation of 0.77, its daily returns correlate 0.82 with the coins', and 0.45 of its 0.58 bp per bar comes from the market's own rise, leaving about 0.14 bp of timing. Its 6,674 trades are all long, last 72 to 77 hours on average and net +0.22 % (BTC) and +0.88 % (ETH).",
+    "F6": "Weekday effects on next-24-hour returns are large pooled, but only Thursday's holds by year. Pooled, Wednesday is +52.6 bp (t 3.37), Thursday -40.5 bp (t -2.37) and Friday +51.1 bp (t 3.64). Thursday is negative in 6 of 8 years; Wednesday and Friday change sign by year. They are not graded situations, so they support no idea."
+  },
+  "ideas": [
+    {
+      "idea": "Over the 2 hours after the 19:00 UTC close, the coin rises, and the more its 6-hour return into that close has fallen against its typical 6-hour move, the larger the rise over those 2 hours.",
+      "consequence": "A trader would buy the coin at the 19:00 UTC close after a weak US session, and refuse to short it into the following two hours.",
+      "name": "post US close rebound",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "Over the next 24 hours the coin moves against its past 24-hour return: the further its 24-hour return has fallen below its typical daily move, the larger its rise over the next 24 hours.",
+      "consequence": "A trader would buy after a coin's day of unusually large fall and refuse to sell into it, expecting a partial rebound the next day.",
+      "name": "daily fall partly reverses",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound.b1_heavy-volume-rises-keep-rising.g1_post-us-close-rebound",
+    "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound.b1_heavy-volume-rises-keep-rising.g2_daily-fall-partly-reverses"
+  ],
+  "no_ideas": null
+}

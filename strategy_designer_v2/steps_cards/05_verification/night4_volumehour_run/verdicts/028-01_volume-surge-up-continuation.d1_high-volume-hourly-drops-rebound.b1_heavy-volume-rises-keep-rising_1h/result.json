@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 24-bar move after each case",
+    "value": 0.0006556860419507431,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.0326991301719612
+    },
+    "threshold": "confirm t >= 2, reject t <= -2, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "top half minus bottom half mean unusual move (by forecast)",
+    "value": 0.0010147463931424825,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4448
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first bet (forecast rise >= 2 from its lowest positive level since the last bet, from 0 after flat) in each 24-bar cell counted from each window's first row, the drift is the coin's mean non-overlapping 24-bar return over all its windows, and the halves are the lower and upper floor(n/2) cases by forecast (stable sort), the middle case dropped when n is odd."
+}

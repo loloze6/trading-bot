@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed unusual 6-bar move of short bets",
+    "value": 0.00019114839708322612,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9119879368164469
+    },
+    "threshold": "positive with t >= 2 to confirm, negative with t <= -2 to reject, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "larger-forecast half minus smaller-forecast half mean unusual move (>= 0)",
+    "value": -0.0002630074266274853,
+    "passed": false
+  },
+  "counts": {
+    "cases": 9180,
+    "larger_half_cases": 4590,
+    "smaller_half_cases": 4590
+  },
+  "decided_by": "t is between -2 and 2 over at least 30 cases.",
+  "reading": "Bets are falls of the forecast of at least 2 points from its lowest short level since the last bet (reset at flat), the first bet in each 6-bar cell counted from each window's first row, the drift is the coin's mean 6-bar return on that grid pooled over all windows, the median split puts cases strictly above the median in the larger half (or at/above it if that leaves a half empty), and the volume band is rebuilt from volume over 720 bars including the current one, falling back to the recorded regime where a window has fewer than 720 bars of history."
+}

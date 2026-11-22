@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 028-04_low-volume-down-fade.d1_quiet-dip-in-rising-day_1h
+idea tested: 028-04_low-volume-down-fade.d1_quiet-dip-in-rising-day
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3611 USD
+---
+## Findings
+- **F1:** Over hours 20 and 21 UTC, the coin's next-hour return beats its average hourly return by +3.7 bp in BTC (t 3.81, 5837 bars) and +4.8 bp in ETH (t 3.92, 5837 bars), against about 0 in the other hours (t -0.13 and -0.11); the effect is positive in 39 of 48 coin-windows (81 %, t over windows 5.90), in 7 of 8 years (2022 is the exception, -3.1 bp, t -1.45), and on all seven weekdays (+3.4 to +5.3 bp).
+- **F2:** Within hours 20 and 21 UTC, the next-hour unusual return is graded by the coin's own prior 6-hour return; from the lowest quintile of that return to the highest it is +13.7 bp (t 5.32), +6.2 (t 4.26), +2.9 (t 2.34), +0.8 (t 0.58) and -2.8 (t -1.33), about 2180 bars each; the lowest quintile alone exceeds the 11 bp cost of a trade.
+- **F3:** Over hours 0 to 2 UTC, the coin's next-hour return falls short of its average by -2.2 bp in BTC (t -3.03) and -2.9 bp in ETH (t -3.06), 8757 bars each; it is negative in 6 of 8 years, most strongly in 2018 (-7.4 bp, t -3.35) and 2021 (-5.9 bp, t -2.74), and fades in 2024 to 2025 (+0.1 and +1.3 bp).
+- **F4:** The book's position gain before costs is concentrated in hours 20 and 21 UTC, +1.64 bp per bar (t 4.52, 11674 bars), against +0.30 bp in the other hours (t 2.57) and -0.52 bp in hours 0 to 2 (t -1.87); the book's gain therefore comes from the time of day, which the idea does not explain.
+- **F5:** Sharp falling hours on low volume recover over the next 6 hours; this is the case the plan excluded. With the volume under 0.67 of its 720-hour mean, the 6-hour unusual move is +27.5 bp after falls of 1.5 to 2.5 typical moves (t 2.23, 285 cases), +48.2 bp after falls of 2.5 to 4 (t 2.01, 31 cases) and +95.9 bp beyond 4 (4 cases). In the plan's own band of 0.67 to 1.5 it is +13.6 bp (t 1.34) and -3.2 bp (t -0.18).
+- **F6:** The low-volume dip recovery holds in BTC at +42.9 bp (t 3.54, 125 cases) and is weaker in ETH at +22.3 bp (t 1.34, 195 cases). It is positive in 6 of 8 years. Because many cells were inspected, this is a weaker finding than F1 and F2.
+- **F7:** Large hourly moves of more than 2.5 typical moves show no continuation over 6 hours at any volume level: -21.8 bp under 0.67 times average volume (t -1.04), +1.6 (t 0.15) from 0.67 to 1.5, -2.5 (t -0.21) from 1.5 to 3 and -0.3 (t -0.02) above 3 times average volume, 1659 cases in all; this is what the brief itself would predict and it is not seen.
+
+## Ideas
+- `028-04_low-volume-down-fade.d1_quiet-dip-in-rising-day.g1_evening-rebound-after-weak-hours` (from F1, F2, F4): During the evening hours around 20:00 to 22:00 UTC, the coin rises over the next hour more than its usual hourly drift, and the more the coin fell over its prior 6 hours, the larger that rise.
+- `028-04_low-volume-down-fade.d1_quiet-dip-in-rising-day.g2_early-hours-giveback-after-evening` (from F3, F1): During the hours from 00:00 to 03:00 UTC, the coin falls over the next hour relative to its usual hourly drift, and the larger the coin's rise over the preceding 20:00 to 24:00 UTC hours, the larger that fall.
+- `028-04_low-volume-down-fade.d1_quiet-dip-in-rising-day.g3_thin-volume-dip-recovers` (from F5, F6, F7): After an hour in which the coin falls far more than its typical hourly move over the past 30 days on volume below its 30-day average hourly volume, the price recovers over the next six hours, and the larger the fall counted in typical hourly moves, the larger the recovery.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
