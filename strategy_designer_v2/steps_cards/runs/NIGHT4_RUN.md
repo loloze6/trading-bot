@@ -41,3 +41,17 @@ of it that relative explains.
 
 **Risk noted:** the account's 7-day usage limit showed a warning on 2026-11-21; five sessions at once can reach the
 5-hour limit again (it stopped every session on night 3).
+
+## The operator's authorization, and the lessons of night 3 applied (2026-11-22, 01:20 Paris)
+**The operator:** "You have all rights to fix and restart if needed. From last nights, take the lesson about what went
+wrong."
+
+| Night 3 | What went wrong | Applied tonight |
+|---|---|---|
+| The account's 5-hour usage limit stopped every session at once (03:56 to 06:10 Paris) | 2.3 hours lost; every session waited for a message | each session schedules its own wake-up at the reset time and resumes; the designer checks at 04:30 Paris |
+| A refused model call failed ideas for good; one idea turned about 4,000 times | 177 untested ideas excluded; MBs of repeated lines | fixed in the loop and `run_idea` (refused call: the loop stops, nothing marked failed; a failed step ends the idea's run) |
+| The designer's fix (retry lines) let resumed ideas run past their budget | about 29 USD over two budgets | fixed (the budget holds before every `run_idea` call). Rule for tonight: a fix sent to a running session is tested first on the state that session is in (its loop file), budget and resume paths included, before it is merged into its branch |
+| A session refused a budget raise sent by another session | 26 ideas left unrun | budgets are set in each session's first message and not changed during the night |
+| Background tasks cut by the 2-hour limit, and a machine restart | runs paused until relaunched | relaunched at once without asking (topic 37); each session commits along the way, so a restart loses nothing finished |
+| Branches touching the same shared files (components) | conflicts at every merge | resolved the tested way in the morning (ours plus each branch's additions, then both test suites) |
+| Paying ideas that were momentum again | counted as discoveries | each paying book goes through the similarity check in the morning before it is called new |
