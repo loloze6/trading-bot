@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues_4h
+idea tested: 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3908 USD
+---
+## Findings
+- **F1:** The book loses because it is short a coin that rises. Its gain per bar is -0.000153, and -0.000157 of that is the market part (being short about 58 % of bars into the coins' own rise), while timing adds only +0.000004. Its daily returns correlate -0.66 with the coins', and in every one of its eight worst windows the coins rose, for example w21 with the book at -0.86 % a day and the coins at +0.57 %.
+- **F2:** Per case, the unusual move in the short direction (+1.04 %, t 1.52, 669 cases) is smaller than the coin's normal drift against the short (about -2 %). The total move is therefore -0.96 % per case, -4.0 times the 0.19 % cost of a trade, so no change of holding or sizing can make this book pay.
+- **F3:** The short edge lives only where the coin had already fallen over the prior 30 days. In the lowest quartile of the prior 30-day return, cases show an unusual move of +3.98 % (t 2.85, 117 cases) and a total of +1.87 %, about 10 times the cost. In the two middle quartiles they show -0.60 % and -0.69 % (totals -2.56 % and -2.67 %).
+- **F4:** The held bars tell the same story. Bars held after a prior 30-day rise above 13.7 % lose -0.001067 per bar against a market part of -0.000371, while bars held after a 30-day fall below -14 % lose only -0.000007 against -0.000187, a timing gain of about +0.00018 per bar.
+- **F5:** The edge follows bear years, not the panic. The cases' unusual move is +9.4 % in 2018 (t 4.86) and +6.0 % in 2022 (t 3.77), against -7.1 % in 2020 (t -3.26) and -3.1 % in 2024 (t -1.53).
+- **F6:** The forecast is not graded in practice. 532 of 669 cases sit at the -20 cap, with an unusual move of only +0.52 % (t 0.71), against +2.05 % for the 85 cases between -15 and -10, so the supporting check failed (-1.16 %).
+- **F7:** The losses are concentrated in one coin. XRP is the only coin with a negative unusual move (-2.66 %, t -1.22, 130 cases), and it carries -12.06 of the book's summed bar gain of about -16.0. Trades last 23 to 33 days against a 13-day horizon, and the first day after a signal loses -0.000518 per bar (t -2.41).
+
+## Ideas
+- `027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues.d1_panic-continues-in-monthly-slide` (from F1, F2, F3, F4, F5): After a 24-hour panic stretch, the coin's return from one day after the stretch ends to 14 days after it is lower than usual, the more so the more extreme the panic, while the coin's 90-day return before the stretch is close to flat, only while the coin's 30-day return before the stretch is negative, and the more so the deeper that 30-day fall.
+- `027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues.d2_monthly-fall-deepens-panic-weakness` (from F3, F4, F5, F6): After a 24-hour panic stretch in a coin whose 30-day return before the stretch is negative, the coin's return over the following 14 days is lower than usual, the more so the deeper that 30-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

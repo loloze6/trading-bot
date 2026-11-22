@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 78-bar unusual move in the short direction, cases forecast <= -10",
+    "value": 0.010384946228186566,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.5245810522750354
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move (forecast <= -15) minus (forecast in (-15, -10])",
+    "value": -0.01155676861973249,
+    "passed": false
+  },
+  "counts": {
+    "cases": 669,
+    "cases forecast <= -15": 584,
+    "cases forecast between -15 and -10": 85
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Situation = regime 'mean_reversion' (the detector's recorded decision for the flat-prior rule) with the panic raw value > 0 and close[t-6] < close[t-12] where computable, expected side short; a case is the first bar of each 78-bar grid cell (positions 0, 78, ... of each window) with forecast <= -10 whose 78-bar forward return lies inside the window, its forecast at that bar sets the supporting-check group, the normal drift is the coin's mean 78-bar return on the same grid over all its windows, and the plan's 'fewer than 30 cases' minimum is reported as not observable."
+}

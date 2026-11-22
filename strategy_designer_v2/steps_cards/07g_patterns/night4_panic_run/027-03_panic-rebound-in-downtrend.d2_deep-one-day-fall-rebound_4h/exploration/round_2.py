@@ -1,69 +1,72 @@
-import numpy as np, pandas as pd
-from scipy import stats
-
 def explore(data):
-    H = {"1d":6, "3d":18, "7d":42}
-    rows = []; hourly = []
-    for coin, wins in data["bars"].items():
-        for w, b in wins.items():
-            b = b.reset_index(drop=True)
-            c = b["close"].astype(float); hi = b["high"].astype(float); lo = b["low"].astype(float)
+    import numpy as np, pandas as pd
+    from scipy import stats
+    bars = data["bars"]
+    rows = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            df = df.reset_index(drop=True)
+            c = df["close"].astype(float)
             r6 = c / c.shift(6) - 1
-            usual = r6.abs().rolling(180, min_periods=45).mean()
-            z = r6 / usual
-            rng = (hi.rolling(6).max() - lo.rolling(6).min()) / c.shift(6)
-            rr = rng / rng.rolling(180, min_periods=45).mean()
-            r42p = c / c.shift(42) - 1
-            ts = pd.to_datetime(b["timestamp"])
-            r1 = c.shift(-1) / c - 1
-            hourly.append(pd.DataFrame({"hour": ts.dt.hour, "wd": ts.dt.weekday, "yr": ts.dt.year, "r1": r1, "coin": coin, "win": w}))
-            for hn, h in H.items():
-                idx = np.arange(0, len(b) - h, h)
-                fwd = (c.shift(-h) / c - 1).iloc[idx]
-                rows.append(pd.DataFrame({"coin": coin, "win": w, "yr": ts.iloc[idx].dt.year.values, "h": hn, "fwd": fwd.values,
-                    "z": z.iloc[idx].values, "rr": rr.iloc[idx].values, "prior7": r42p.iloc[idx].values}))
-    d = pd.concat(rows, ignore_index=True)
-    d["drift"] = d.groupby(["coin", "h"])["fwd"].transform("mean")
-    d["sd"] = d.groupby(["coin", "h"])["fwd"].transform("std")
-    d["ex"] = d["fwd"] - d["drift"]; d["str"] = d["ex"] / d["sd"]
-    d = d.dropna(subset=["z", "rr", "str"])
-    def agg(g):
-        n = len(g); m = g["str"].mean(); s = g["str"].std()
-        return pd.Series({"n": n, "strength": m, "t": m / (s / np.sqrt(n)) if n > 1 else np.nan})
-    out = {}
-    # graded panic score: fall depth x range ratio
-    d["pscore"] = (-d["z"]).clip(lower=0) * d["rr"]
-    pos = d[d.pscore > 0].copy()
-    pos["pbin"] = pos.groupby("h")["pscore"].transform(lambda s: pd.qcut(s, 5, labels=False))
-    out["panic_score_quintiles"] = pos.groupby(["h", "pbin"]).apply(agg).unstack(0).round(3)
+            mabs = r6.abs().rolling(180, min_periods=60).mean()
+            z6 = r6 / mabs
+            r1 = c / c.shift(1) - 1
+            z1 = r1 / r1.abs().rolling(180, min_periods=60).mean()
+            ts = pd.to_datetime(df["timestamp"])
+            out = pd.DataFrame({"coin": coin, "win": w, "wn": int(w[1:]), "pos": np.arange(len(df)), "z6": z6, "z1": z1,
+                                "hour": ts.dt.hour, "wd": ts.dt.weekday, "year": ts.dt.year})
+            for H in [1, 3, 6, 12, 18]:
+                out[f"f{H}"] = c.shift(-H) / c - 1
+            rows.append(out)
+    A = pd.concat(rows, ignore_index=True)
+    res = {}
+    def grid(H):
+        g = A[A["pos"] % H == 0].dropna(subset=[f"f{H}"]).copy()
+        g["ex"] = g[f"f{H}"] - g.groupby("coin")[f"f{H}"].transform("mean")
+        g["exs"] = g["ex"] / g.groupby("coin")[f"f{H}"].transform("std")
+        return g
+    def tt(x):
+        x = x.dropna(); return pd.Series({"n": len(x), "mean": x.mean(), "t": x.mean() / (x.std() / np.sqrt(len(x))) if len(x) > 2 else np.nan})
+    # graded fall depth -> next 6/18 bars, deciles of falls only
+    for H in [3, 6, 12, 18]:
+        g = grid(H).dropna(subset=["z6"])
+        f = g[g.z6 < 0].copy()
+        f["b"] = pd.qcut(f.z6.rank(method="first"), 5, labels=False)
+        t = f.groupby("b").apply(lambda x: pd.concat([pd.Series({"z6_mean": x.z6.mean()}), tt(x.ex)]))
+        res[f"falls only quintiles -> ex {H}"] = t
+        s = stats.linregress(-f.z6, f.exs)
+        res[f"falls only slope exs on depth H{H}"] = pd.Series({"slope": s.slope, "t": s.slope / s.stderr, "n": len(f)})
+    g6 = grid(6).dropna(subset=["z6"])
+    f6 = g6[g6.z6 < 0]
     pc = {}
-    for hn in H:
-        g = d[d.h == hn]
-        r, p = stats.spearmanr(g["pscore"], g["str"]); pc[hn] = (round(r, 4), round(p, 4), len(g))
-    out["spearman_pscore"] = pd.DataFrame(pc, index=["rho", "p", "n"])
-    # range ratio split by direction of 24h move
-    d["dir"] = np.where(d["z"] < 0, "down", "up")
-    d["rrbin"] = d.groupby("h")["rr"].transform(lambda s: pd.qcut(s, 5, labels=False))
-    out["rr_by_dir_3d"] = d[d.h == "3d"].groupby(["dir", "rrbin"]).apply(agg).unstack(0).round(3)
-    out["rr_by_dir_1d"] = d[d.h == "1d"].groupby(["dir", "rrbin"]).apply(agg).unstack(0).round(3)
-    # panic robustness
-    pan = d[(d.z < -1.5) & (d.rr > 1.8)]
-    out["panic_1d_by_coin"] = pan[pan.h == "1d"].groupby("coin").apply(agg).round(3)
-    out["panic_1d_by_year"] = pan[pan.h == "1d"].groupby("yr").apply(agg).round(3)
-    out["panic_3d_by_year"] = pan[pan.h == "3d"].groupby("yr").apply(agg).round(3)
-    # prior 7d momentum robustness on 3d
-    d["p7bin"] = d.groupby("h")["prior7"].transform(lambda s: pd.qcut(s, 5, labels=False))
-    out["mom_3d_by_coin_top_minus_bot"] = d[d.h == "3d"].groupby("coin").apply(
-        lambda g: pd.Series({"top": g[g.p7bin == 4]["str"].mean(), "bot": g[g.p7bin == 0]["str"].mean(),
-                             "t": stats.ttest_ind(g[g.p7bin == 4]["str"], g[g.p7bin == 0]["str"], equal_var=False).statistic})).round(3)
-    # hour 16 / friday robustness
-    hh = pd.concat(hourly).dropna(subset=["r1"])
-    def tt(g):
-        return pd.Series({"mean_bp": g["r1"].mean() * 1e4, "t": g["r1"].mean() / (g["r1"].std() / np.sqrt(len(g))), "n": len(g)})
-    out["h16_by_coin"] = hh[hh.hour == 16].groupby("coin").apply(tt).round(2)
-    out["h16_by_year"] = hh[hh.hour == 16].groupby("yr").apply(tt).round(2)
-    out["h20_by_year"] = hh[hh.hour == 20].groupby("yr").apply(tt).round(2)
-    out["fri_by_year"] = hh[hh.wd == 4].groupby("yr").apply(tt).round(2)
-    out["fri_by_hour"] = hh[hh.wd == 4].groupby("hour").apply(tt).round(2)
-    out["all_by_year"] = hh.groupby("yr").apply(tt).round(2)
-    return out
+    for coin, x in f6.groupby("coin"):
+        s = stats.linregress(-x.z6, x.exs); pc[coin] = {"slope": s.slope, "t": s.slope / s.stderr, "n": len(x)}
+    res["falls H6 slope per coin"] = pd.DataFrame(pc).T
+    py = {}
+    for y, x in f6.groupby("year"):
+        s = stats.linregress(-x.z6, x.exs); py[y] = {"slope": s.slope, "t": s.slope / s.stderr, "n": len(x)}
+    res["falls H6 slope per year"] = pd.DataFrame(py).T
+    # rises symmetric? full z6 slope H6
+    s = stats.linregress(g6.z6, g6.exs)
+    res["all z6 slope H6"] = pd.Series({"slope": s.slope, "t": s.slope / s.stderr, "n": len(g6)})
+    r6 = g6[g6.z6 > 0]; s = stats.linregress(r6.z6, r6.exs)
+    res["rises only slope H6"] = pd.Series({"slope": s.slope, "t": s.slope / s.stderr, "n": len(r6)})
+    # hour effect robustness
+    g1 = grid(1)
+    for hr in [16, 20]:
+        x = g1[g1.hour == hr]
+        res[f"hour {hr} per coin"] = x.groupby("coin")["ex"].apply(tt).unstack()
+        res[f"hour {hr} per year"] = x.groupby("year")["ex"].apply(tt).unstack()
+    # hour 16 bar following 4-bar return: graded?
+    g1 = g1.dropna(subset=["z1"])
+    pr = {}
+    for hr, x in g1.groupby("hour"):
+        s = stats.linregress(x.z1, x.exs); pr[hr] = {"slope": s.slope, "t": s.slope / s.stderr, "n": len(x)}
+    res["next bar on previous bar z1 slope by hour"] = pd.DataFrame(pr).T
+    # Friday
+    g6b = grid(6)
+    x = g6b[g6b.wd == 4]
+    res["friday per coin"] = x.groupby("coin")["ex"].apply(tt).unstack()
+    res["friday per year"] = x.groupby("year")["ex"].apply(tt).unstack()
+    res["friday by start hour"] = x.groupby("hour")["ex"].apply(tt).unstack()
+    return res

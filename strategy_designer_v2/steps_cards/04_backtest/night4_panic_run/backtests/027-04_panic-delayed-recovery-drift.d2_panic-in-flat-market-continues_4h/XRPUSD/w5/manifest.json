@@ -1,0 +1,143 @@
+{
+  "run_id": "20261122T033643Z_143c0698",
+  "created_utc": "2026-11-22T03:36:43.918554+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "prior90",
+          "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+          "params": {
+            "period": 540,
+            "vol_period": 20,
+            "lag": 12,
+            "vol_lookback": 1
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "prior90",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "panic",
+              "class": "strategies.strategy_components.ScaledFallRangeMultipleComponent",
+              "params": {
+                "period": 6,
+                "lag": 6,
+                "window": 180
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 192,
+                    "min_periods": 48
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 3,
+                    "pivot": 10
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 360,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 2190,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 78
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 6,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "143c06986d27678a046b7a8111d66af44454bf4069597ec86b91b228b28d72b9",
+  "data": {
+    "symbols": [
+      "XRPUSD"
+    ],
+    "timeframe": "14400s",
+    "start": "2022-10-28 00:00:00",
+    "end": "2023-08-31 20:00:00",
+    "bar_count": 1848,
+    "data_sha256": "d70484bee6958ec9e5cba24452baf47ccb59e15c66a569f28b89cdaa4bf25598"
+  },
+  "git_sha": "7645c3d3332de126bad3409663cace0b815f75c4-dirty",
+  "engine": {
+    "lookback": 193,
+    "warmup": 193
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

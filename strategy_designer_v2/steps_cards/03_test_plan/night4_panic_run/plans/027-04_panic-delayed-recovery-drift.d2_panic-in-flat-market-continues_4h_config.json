@@ -1,0 +1,82 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "prior90",
+        "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+        "params": {
+          "period": 540,
+          "vol_period": 20,
+          "lag": 12,
+          "vol_lookback": 1
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "prior90",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "panic",
+            "class": "strategies.strategy_components.ScaledFallRangeMultipleComponent",
+            "params": {
+              "period": 6,
+              "lag": 6,
+              "window": 180
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 192,
+                  "min_periods": 48
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 10
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 78
+  }
+}

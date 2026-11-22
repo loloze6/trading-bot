@@ -1,72 +1,72 @@
-import numpy as np, pandas as pd
-from scipy import stats
-
 def explore(data):
-    H = {"1d":6, "3d":18, "7d":42, "14d":84}
+    import numpy as np, pandas as pd
+    from scipy import stats
+    bars = data["bars"]; days = data["days"]
     rows = []
-    hourly = []
-    for coin, wins in data["bars"].items():
-        for w, b in wins.items():
-            b = b.reset_index(drop=True)
-            c = b["close"].astype(float); hi = b["high"].astype(float); lo = b["low"].astype(float)
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            df = df.reset_index(drop=True)
+            c = df["close"].astype(float); h = df["high"].astype(float); l = df["low"].astype(float)
             r6 = c / c.shift(6) - 1
-            usual = r6.abs().rolling(180, min_periods=45).mean()
-            z = r6 / usual
-            rng = (hi.rolling(6).max() - lo.rolling(6).min()) / c.shift(6)
-            rr = rng / rng.rolling(180, min_periods=45).mean()
-            r42p = c / c.shift(42) - 1
-            vlong = r6.abs().rolling(540, min_periods=180).mean()
-            vr = usual / vlong
-            r1 = c.shift(-1) / c - 1
-            ts = pd.to_datetime(b["timestamp"])
-            hourly.append(pd.DataFrame({"hour": ts.dt.hour, "wd": ts.dt.weekday, "r1": r1, "z": z, "coin": coin}))
-            for hn, h in H.items():
-                idx = np.arange(0, len(b) - h, h)
-                fwd = (c.shift(-h) / c - 1).iloc[idx]
-                rows.append(pd.DataFrame({"coin": coin, "win": w, "h": hn, "fwd": fwd.values,
-                    "z": z.iloc[idx].values, "rr": rr.iloc[idx].values, "prior7": r42p.iloc[idx].values,
-                    "vr": vr.iloc[idx].values}))
-    d = pd.concat(rows, ignore_index=True)
-    d["drift"] = d.groupby(["coin", "h"])["fwd"].transform("mean")
-    d["sd"] = d.groupby(["coin", "h"])["fwd"].transform("std")
-    d["ex"] = d["fwd"] - d["drift"]; d["str"] = d["ex"] / d["sd"]
-    d = d.dropna(subset=["z"])
-    d["zbin"] = pd.cut(d["z"], [-np.inf, -3, -2, -1, 0, 1, 2, 3, np.inf])
-    def agg(g):
-        n = len(g); m = g["str"].mean(); s = g["str"].std()
-        return pd.Series({"n": n, "ex_mean": g["ex"].mean(), "strength": m, "t": m / (s / np.sqrt(n)) if n > 1 else np.nan})
-    out = {}
-    out["by_z_horizon"] = d.groupby(["h", "zbin"], observed=True).apply(agg).unstack(0)[["strength", "t", "n"]].round(3)
-    d["panic"] = np.where((d["z"] < -1.5) & (d["rr"] > 1.8), "panic", np.where(d["z"] < -1.5, "fall_norange", "other"))
-    out["panic_vs"] = d.groupby(["h", "panic"]).apply(agg).round(3)
-    d["rrbin"] = pd.qcut(d["rr"], 5, labels=False, duplicates="drop")
-    out["by_rangeratio"] = d.groupby(["h", "rrbin"]).apply(agg)[["strength", "t", "n"]].unstack(0).round(3)
-    d["vrbin"] = pd.qcut(d["vr"], 5, labels=False, duplicates="drop")
-    out["by_volratio"] = d.groupby(["h", "vrbin"]).apply(agg)[["strength", "t", "n"]].unstack(0).round(3)
-    d["p7bin"] = pd.qcut(d["prior7"], 5, labels=False)
-    out["by_prior7d"] = d.groupby(["h", "p7bin"]).apply(agg)[["strength", "t", "n"]].unstack(0).round(3)
-    corr = {}
-    for hn in H:
-        g = d[d.h == hn].dropna(subset=["z", "str"])
-        r, p = stats.pearsonr(g["z"].clip(-6, 6), g["str"]); corr[hn] = (round(r, 4), round(p, 4), len(g))
-    out["corr_z_str"] = pd.DataFrame(corr, index=["r", "p", "n"])
-    hh = pd.concat(hourly).dropna(subset=["r1"])
-    def tt(g):
-        return pd.Series({"mean_bp": g["r1"].mean() * 1e4, "t": g["r1"].mean() / (g["r1"].std() / np.sqrt(len(g))), "n": len(g)})
-    out["by_hour"] = hh.groupby("hour").apply(tt).round(2)
-    out["by_weekday"] = hh.groupby("wd").apply(tt).round(2)
+            mabs = r6.abs().rolling(180, min_periods=60).mean()
+            z6 = r6 / mabs
+            rng = (h.rolling(6).max() - l.rolling(6).min()) / c
+            rngz = rng / rng.rolling(180, min_periods=60).mean()
+            r1 = np.log(c).diff()
+            vol = r1.rolling(180, min_periods=60).std()
+            volz = vol / vol.rolling(540, min_periods=180).mean()
+            tr180 = c / c.shift(180) - 1
+            ts = pd.to_datetime(df["timestamp"])
+            out = pd.DataFrame({"coin": coin, "win": w, "pos": np.arange(len(df)), "z6": z6, "rngz": rngz,
+                                "volz": volz, "tr180": tr180, "fc": df["forecast"],
+                                "hour": ts.dt.hour, "wd": ts.dt.weekday, "year": ts.dt.year})
+            for H in [1, 6, 18, 42, 84]:
+                out[f"f{H}"] = c.shift(-H) / c - 1
+            rows.append(out)
+    A = pd.concat(rows, ignore_index=True)
+    res = {}
+    def grid(H):
+        g = A[A["pos"] % H == 0].dropna(subset=[f"f{H}"]).copy()
+        g["ex"] = g[f"f{H}"] - g.groupby("coin")[f"f{H}"].transform("mean")
+        return g
+    def tab(g, col, q=5):
+        g = g.dropna(subset=[col]).copy()
+        g["b"] = pd.qcut(g[col].rank(method="first"), q, labels=False)
+        t = g.groupby("b").agg(lo=(col, "min"), hi=(col, "max"), n=("ex", "size"), mean_ex=("ex", "mean"), sd=("ex", "std"))
+        t["t"] = t["mean_ex"] / (t["sd"] / np.sqrt(t["n"]))
+        return t.drop(columns="sd")
+    for H in [6, 18, 42, 84]:
+        res[f"z6 quintiles -> ex {H}bars"] = tab(grid(H), "z6")
+    g84 = grid(84); g42 = grid(42)
+    res["range quintiles -> ex 84"] = tab(g84, "rngz")
+    res["range quintiles -> ex 42"] = tab(g42, "rngz")
+    res["vol level quintiles -> ex 84"] = tab(g84, "volz")
+    res["180bar trend quintiles -> ex 84"] = tab(g84, "tr180")
+    res["180bar trend quintiles -> ex 42"] = tab(g42, "tr180")
+    # panic: big range and fall
+    for H, g in [(42, g42), (84, g84)]:
+        p = g[(g.rngz > g.rngz.quantile(0.8)) & (g.z6 < 0)]
+        res[f"panic (top range, fall) ex {H}"] = pd.Series({"n": len(p), "mean": p.ex.mean(), "t": p.ex.mean() / (p.ex.std() / np.sqrt(len(p)))})
+    g1 = grid(1)
+    hr = g1.groupby("hour")["ex"].agg(["size", "mean", "std"]); hr["t"] = hr["mean"] / (hr["std"] / np.sqrt(hr["size"]))
+    res["hour -> next bar ex"] = hr.drop(columns="std")
+    g6 = grid(6)
+    wd = g6.groupby("wd")["ex"].agg(["size", "mean", "std"]); wd["t"] = wd["mean"] / (wd["std"] / np.sqrt(wd["size"]))
+    res["weekday -> next day ex"] = wd.drop(columns="std")
+    # by coin z6 slope 84
+    sl = {}
+    for coin, g in g84.dropna(subset=["z6"]).groupby("coin"):
+        s = stats.linregress(g.z6, g.ex); sl[coin] = {"slope": s.slope, "t": s.slope / s.stderr, "n": len(g)}
+    res["per coin slope ex84 on z6"] = pd.DataFrame(sl).T
     # book
-    dd = []
-    for coin, wins in data["days"].items():
-        for w, x in wins.items():
-            x = x.copy(); x["coin"] = coin; x["win"] = w; x["prev_coin"] = x["coin_return"].shift(1); dd.append(x)
-    dd = pd.concat(dd).dropna(subset=["book_return"])
-    q = dd["book_return"].quantile([0.02, 0.98])
-    out["book_tails"] = pd.DataFrame({
-        "worst2pct": dd[dd.book_return <= q.iloc[0]][["book_return", "coin_return", "prev_coin"]].mean(),
-        "best2pct": dd[dd.book_return >= q.iloc[1]][["book_return", "coin_return", "prev_coin"]].mean(),
-        "all": dd[["book_return", "coin_return", "prev_coin"]].mean()})
-    alloc = pd.concat([b[["postRebalance_current_allocation"]].assign(coin=c) for c, ws in data["bars"].items() for b in ws.values()])
-    out["mean_alloc_by_coin"] = alloc.groupby("coin")["postRebalance_current_allocation"].agg(["mean", lambda s: (s.abs() > 0.01).mean()]).round(3)
-    out["book_by_coin"] = dd.groupby("coin")[["book_return", "coin_return"]].mean().round(5)
-    return out
+    D = []
+    for coin, wins in days.items():
+        for w, d in wins.items():
+            d = d.copy(); d["coin"] = coin; d["win"] = w; D.append(d)
+    D = pd.concat(D)
+    yr = pd.to_datetime(D["day"]).dt.year
+    by = D.groupby(yr).agg(book=("book_return", "mean"), coin=("coin_return", "mean"), n=("book_return", "size"))
+    res["book vs coin daily by year"] = by
+    bw = D.groupby("win").agg(book=("book_return", "mean"), coin=("coin_return", "mean"))
+    res["book vs coin by window"] = bw
+    return res
