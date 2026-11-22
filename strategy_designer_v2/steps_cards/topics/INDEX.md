@@ -48,3 +48,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 41 | [Is a paying book a new source of profit, or one we already have?](41_does-the-idea-add-beyond-its-filter.md) | research: a function next to the unseen test; common | built and proven (`ideas_similarities_check`); its reader and its call by run_idea to decide |
 | 42 | [Two more measures for step 6: standard deviation and total profit](42_two-more-measures-for-step-6.md) | research: step 6 | open (parked) |
 | 43 | [The findings register](43_the-findings-register.md) | research: common, step 7 | closed 2026-11-21: switched off and deleted |
+| 44 | [Combining strategies in one bot](44_combining-strategies-in-one-bot.md) | engine (a portfolio layer); research: which strategies | open: direction decided (a portfolio layer); waits for two unrelated books that hold |
