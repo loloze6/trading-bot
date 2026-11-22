@@ -32,7 +32,6 @@ An idea's latest record counts once.
 | 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a402283b0 | 2026-11-20T06:24:52 |
 | 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 01f82b7d6 | 2026-11-20T07:34:57 |
 | 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a402283b0 | 2026-11-20T06:34:02 |
-| 017-05_settlement-move-reverses-after_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T04:47:25 |
 | 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops_1h | confirmed | hold_ideas_1h_run | 1h | 6 | 15bd748e9 | 2026-11-20T00:53:51 |
 | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day_1h | confirmed | hold_ideas_1h_run | 1h | 6 | 15bd748e9 | 2026-11-20T01:21:10 |
 | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | confirmed | intraday_1h_run | 1h | 6 | 2faf50047 | 2026-11-19T12:17:57 |
@@ -189,6 +188,7 @@ An idea's latest record counts once.
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h | confirmed | retest_1h_run | 1h | 2 | bc98e9119 | 2026-11-19T04:53:40 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h | confirmed | retest_1h_run | 1h | 6 | 06e13143f | 2026-11-19T05:03:42 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
+| 017-05_settlement-move-reverses-after_1h | confirmed | retest_settlement_run | 1h | 6 | 8fb48db89 | 2026-11-22T23:07:31 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
 | 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth_1d | confirmed | short_1d_run | 1d | 6 | 9a768b6d6 | 2026-11-22T13:10:58 |
 | 016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h | confirmed | std_time_pilot_run | 1h | 6 | 57cc6a9c6 | 2026-11-20T10:11:00 |
