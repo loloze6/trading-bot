@@ -31,6 +31,6 @@ against the bars where both hold. If the condition alone earns about as much, it
 repair: leave it out. Give that measure in the finding, with why the condition belongs to the idea's own theory.
 Write no separate claim ("after X the coin falls"): it would be tested alone, as a book of its own, and cannot repair
 this one.
-No ideas only when the effect is too small to pay whatever the way it is traded: its size per case is below the cost of
-a trade, and no stronger case of its own situation and no longer horizon has a larger size. Give those numbers. Otherwise
-there is a repair to find.
+No ideas only when you can show that the effect itself cannot be traded in any version of the idea: its situation, its
+strength, its horizon, its side. A weak case is a reason to look for a stronger one, not to stop. Otherwise there is a
+repair to find.

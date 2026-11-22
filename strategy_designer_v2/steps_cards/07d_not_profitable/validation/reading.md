@@ -86,3 +86,11 @@ cases, a longer horizon.
 
 **Not yet shown:** whether the new repairs pay (steps 3 to 6 on them): the next run reads it, with each repair's book
 against its parent's in the similarity check.
+
+**"No ideas" without the cost (operator, 2026-11-22):** the sentence now says an idea is closed only when the effect itself
+cannot be traded in any version of it (situation, strength, horizon, side); the cost is no longer named. Rerun on 3 of
+the 9 books (013-02.g1, 022-04.b2, 012-01; 1.3 USD): no closure (0, as before), 7 ideas, all repairs (73 to 100 % of the
+parent's words). Findings naming cost or fees: 7 of 22, against 4 of 20 with the previous sentence: the cost focus
+does not come from this sentence; the analyst still receives the cost of a trade, and step 7's shared rules
+(`07_common/helper/common_rules.md`) keep the paragraph on the size against the cost, decided after the step 7 A/B test
+(2026-11-21). Three books, one run each: a small sample.

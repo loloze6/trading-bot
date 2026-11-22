@@ -33,5 +33,7 @@ so its book is the effect traded the wrong way, and the repair trades the same e
   from the idea's own theory or from what its book's falls showed;
 - an added condition is not an effect of its own: if the condition alone could make the book pay, it is a separate idea,
   not a repair.
+- a real idea is closed ("no ideas") only when the effect itself cannot be traded in any version of it (its situation,
+  strength, horizon, side): a weak case is a reason to look for a stronger one.
 The repair's book is compared with its parent's (`orchestration/ideas_similarities_check/`): how much of it the parent
 explains, and how much the nearest paying book explains, show whether it kept the idea or drifted to another effect.
