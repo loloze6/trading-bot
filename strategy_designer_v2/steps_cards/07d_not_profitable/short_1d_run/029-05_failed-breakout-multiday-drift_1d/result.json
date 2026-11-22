@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "029-05_failed-breakout-multiday-drift_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 3.8664264999999998,
+  "findings": {
+    "F1": "The book loses because the coin rises after the bet is placed, and costs are not the reason. Per case the total short-side move over 8 days is -1.42 %, which is -7.3 times the 0.19 % cost of a trade. The unusual move is -0.36 % (t -0.52, 539 cases), and my recomputation gives -0.68 % (t -0.94, 496 cases). Across 1193 trades the mean is -4.29 % before fees and -4.39 % after, with 29.5 % winners.",
+    "F2": "While the book is short (27.0 % of bars, mean position -0.97), the coin's next-bar return is +0.153 %, against +0.119 % on all bars, so each short bar loses 0.090 %. The book is short just before the coin rises more than usual.",
+    "F3": "The tested grading runs backwards. Failures in the shallowest third of depth (mean 0.54 % below the old high) are followed by a rise from day 2 to day 10, with an unusual move of -2.91 % (t -3.03, 157 cases). The deepest third (5.7 % below) is flat over that span (+0.23 %, t 0.20) but rises over days 0 to 2 (-1.18 %, t -2.45).",
+    "F4": "Which way the drift runs is decided by where price stands at day 2. When the coin is already back above the old high at day 2 (31.5 % of failures), it keeps rising over days 2 to 10, with an unusual move of -4.27 % (t -2.37, 148 cases); that is the second, successful break the brief names as its refutation. When it is still below the old high, days 2 to 10 give +0.76 % (t 1.20, 322 cases).",
+    "F5": "The failures of the strongest breakouts are followed by the largest rise. In the top third of breakout extension above the old high, the unusual move over days 0 to 10 is -4.52 % (t -2.39). In the lowest third it is +0.38 % (t 0.39).",
+    "F6": "The loss sits in the bull years and varies by year. The unusual move per case is -3.25 % in 2020 (t -2.43, 87 cases) and -5.60 % in 2021 (t -2.22, 54 cases), against +2.01 % in 2022 and +2.18 % in 2023 (t 2.57). The coin's 60-day return before the case does not separate the cases (-0.37 %, -1.96 % and -1.48 % by tercile)."
+  },
+  "ideas": [
+    {
+      "idea": "After a close back below the old 20-day high within 3 days of a breakout above it, the coin's decline continues across the following 8 days only while its close 2 days after the failure is still below that old high. The further that day-2 close sits below the old high, the larger the fall from day 2 to day 10.",
+      "consequence": "A trader would short a failed breakout only once price has stayed below the old high for two days, sized by the current distance below it, and would refuse the short when price is already back above.",
+      "name": "failure still below high",
+      "from": "F3, F4, F2",
+      "refs": [
+        "F3",
+        "F4",
+        "F2"
+      ]
+    },
+    {
+      "idea": "After a close back below the old 20-day high within 3 days of a breakout above it, the coin rises over the following 10 days. The further the breakout's highest close had extended above the old high, the larger the rise.",
+      "consequence": "A short trader would refuse to short the failure of a strong breakout, because that failure tends to be bought and broken again.",
+      "name": "strong breakout failures recover",
+      "from": "F5, F4, F1",
+      "refs": [
+        "F5",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high",
+    "029-05_failed-breakout-multiday-drift.d2_strong-breakout-failures-recover"
+  ],
+  "no_ideas": null
+}

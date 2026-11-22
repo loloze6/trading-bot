@@ -1,0 +1,52 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "thin_fail",
+            "class": "strategies.strategy_components.FailedBreakoutVolumeRatioComponent",
+            "params": {
+              "period": 20,
+              "fail_window": 4,
+              "source": "high",
+              "volume_period": 20,
+              "form": "thin"
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 5
+  }
+}

@@ -1,0 +1,5 @@
+029-01_failed-breakout-depth-decline: After a close above the 20-day high reverses back inside within 3 days, deeper re-entry closes precede larger 5-day declines. [bar: 1d, side: short only]
+029-02_breakout-volume-trapped-decline: Failed 20-day-high breakouts with higher breakout-day volume relative to 20-day average precede larger declines over the next 5 days. [bar: 1d, side: short only]
+029-03_close-below-breakout-bar-low: Closes below the failed breakout day's low precede larger 5-day declines the further below that low they close. [bar: 1d, side: short only]
+029-04_breakout-extension-failure-decline: Larger peak excursions above the 20-day high before a failed close back inside precede larger 5-day declines. [bar: 1d, side: short only]
+029-05_failed-breakout-multiday-drift: Deeper failed-breakout re-entry closes precede larger declines from day 2 to day 10, showing a drift lasting days. [bar: 1d, side: short only]

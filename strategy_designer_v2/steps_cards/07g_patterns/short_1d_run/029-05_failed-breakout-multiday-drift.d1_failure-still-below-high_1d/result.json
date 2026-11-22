@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.397832,
+  "findings": {
+    "F1": "The coin's own day return, scaled by its prior 20-day volatility, predicts the next 8 days the opposite way. The slope of the unusual 8-day move on that scaled return is -0.0152, t -4.58, over 1691 non-overlapping cases. Bars in the lowest quintile of the scaled return go on to an unusual move of +2.87 % (t 3.21, 342 cases), against -2.21 % in the fourth quintile (t -3.46) and -1.19 % in the top quintile (t -1.57).",
+    "F2": "This reversal is not one coin's or one period's. Its slope is negative in all six coins (t from -0.73 in XRP to -3.06 in ZEC) and in all eight years (strongest in 2022 at t -4.23 and 2018 at t -2.68). It is also negative in every volatility tercile (t -2.63, -3.49, -2.09).",
+    "F3": "The reversal shows at every horizon tried. On the raw day return, the slope's t is -2.45 at 2 days (8506 cases), -3.34 at 4 days, -5.07 at 8 days and -3.18 at 12 days, so it builds to about 8 days.",
+    "F4": "The reversal is carried by down days. On days that closed down, the slope on the scaled return is -0.0151 (t -2.16, 820 cases) and the mean unusual move is +1.44 %. On up days the slope is -0.0036 (t -0.57, 870 cases).",
+    "F5": "Contrary to the brief, the coin tends to rise after a close back below the old 20-day high within 5 days of a breakout. Its unusual 8-day move on the long side is +2.71 % over 196 cases, against -0.28 % on the other bars (Welch t 2.26). Most of this is the day-return reversal: with the scaled day return in the same regression, the failed-breakout term falls to +2.02 % (t 1.83) while the scaled return keeps t -4.24.",
+    "F6": "Among failed breakouts, the deeper the close below the old high, the larger the coin's rise over the next 2 days. The slope of the unusual move on the depth is -0.175 (t -3.61, 895 cases). Over 4 days it is -0.276 (t -2.36, 432 cases), which is the reverse of the tested idea's grading.",
+    "F7": "The book's daily returns are almost the mirror of the coin's moves. On the 4136 active coin-days their correlation is -0.86. The 30 best book days average +18.0 % on coin days of -17.1 %, and the 30 worst average -16.9 % on coin days of +15.1 %.",
+    "F8": "Trades lose money at every forecast size. The mean net result per trade is between -2.84 % and -3.48 % in all four quartiles of the entry forecast, and between -1.78 % and -4.29 % in every coin. A larger forecast brings no gain.",
+    "F9": "A larger move is available than the tested idea's. The lowest-quintile reversal moves +2.87 % beyond the drift over 8 days; on the long side the drift of about +0.5 % to +1.7 % per 8 days adds to it. That is about 15 times the 0.19 % cost of a trade, against the tested idea's total move of -0.21 %."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall measured against its own 20-day volatility of daily returns, the more the coin rises over the next 8 days.",
+      "consequence": "A trader would lean long a coin after an unusually sharp down day for its volatility, more so the sharper the fall, and would refuse to short into such a day.",
+      "name": "sharp down-day eight-day rebound",
+      "from": "F1, F2, F3, F4, F9",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F9"
+      ]
+    },
+    {
+      "idea": "After a coin breaks above its 20-day closing high and within a few days closes back below it, the deeper that close sits below the old high, the more the coin rises over the next 2 days.",
+      "consequence": "A trader would refuse to short a failed breakout that has fallen deep below the old high, because the deeper failures bounce over the following days.",
+      "name": "deep failed-breakout short bounce",
+      "from": "F5, F6, F7, F8",
+      "refs": [
+        "F5",
+        "F6",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high.g1_sharp-down-day-eight-day-rebound",
+    "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high.g2_deep-failed-breakout-short-bounce"
+  ],
+  "no_ideas": null
+}

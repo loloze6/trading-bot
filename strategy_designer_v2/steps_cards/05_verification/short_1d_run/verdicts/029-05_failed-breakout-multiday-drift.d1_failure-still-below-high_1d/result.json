@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 8-bar move per case",
+    "value": 0.008413771325474015,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.4419082677188908
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases; reject: t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": 0.002812763183952356,
+    "passed": true
+  },
+  "counts": {
+    "cases": 436
+  },
+  "decided_by": "t strictly between -2 and 2 over at least 30 cases.",
+  "reading": "Cases are the first short bet (a rise of the short forecast of at least 2 points from its low since the last bet) in each 8-bar grid cell from each window's first row, dropped when 8 bars do not remain in the window; the drift is the coin's mean non-overlapping 8-bar return over all its windows; the situation is recomputed from closes and active bars without enough in-window history are left out of the check."
+}

@@ -27,3 +27,26 @@ register and its correlation with momentum.
 | S4. Not real, or blocked | few confirmed, or ideas waiting for components that cannot be built | recorded |
 
 **Risk:** the account's 7-day usage limit is at its warning level; the run may stop early.
+
+## Reading (2026-11-22, about 14:50 Paris; 35.74 USD; 11:43 to 13:44 UTC, nothing lost)
+**Outcome: S3, real but not paying.**
+
+| Ideas written | Run | Plans tested | Components built | Confirmed | Profitable enough | Unseen dates |
+|---|---|---|---|---|---|---|
+| 66 (5 by step 2, 61 by the step 7 lines) | 17 | 13 (3 waiting for components, 1 untestable) | 7 new classes (and settings added to the first), every check passed | 2 | 0 | not run (no paying book) |
+
+The two real effects, both short only:
+| Idea | Step 5 | Step 6 (what failed) |
+|---|---|---|
+| 029-05.b1 the failed breakout's depth, in usual moves | an 8-day fall beyond usual of 0.0200, t 2.94, 389 cases | Sharpe 0.39 but 0.17 below holding's; mean daily return 0.016 % (needs 0.05 %); Calmar 0.19 |
+| 029-03.d1 a failed breakout after a small run-up | a 5-day fall of 0.0283, t 2.73, 50 cases | Sharpe 0.53 but 0.03 below holding's; mean 0.005 % a day; Calmar 0.22; too few trades |
+
+**What it shows:** the brief's theory is real: after a failed breakout, the coin falls more than usual over the next days. But the
+fall is too small and too rare to pay on the short side against the coins' long rise (holding them earns more, Sharpe for
+Sharpe). The same as test 1's short leg: a short profit on these coins exists, unrelated to momentum, and does not pay on
+its own.
+
+**Short only, checked on the backtests' own files:** every one of the 13 books had 0 bars with a forecast above 0 and 0
+long trades (89 to 1,312 short trades each). It held because every component used is 0 or more, then negated; only 2
+configs add a `clip` with `max` 0. A component that can go below 0 would have let a book go long: step 3 has no rule
+that enforces the brief's side.
