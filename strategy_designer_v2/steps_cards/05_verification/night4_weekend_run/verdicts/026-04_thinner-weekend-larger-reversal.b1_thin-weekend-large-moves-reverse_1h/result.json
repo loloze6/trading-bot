@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9473684210526315,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 48-bar forward return minus normal drift regressed on forecast, pooled",
+    "value": 0.00010397353825790971,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.8636725534438745
+    },
+    "threshold": "confirm if t >= 2 (with positive mean unusual move); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in forecast's direction > 0",
+    "value": -0.0007736366224180182,
+    "passed": false
+  },
+  "counts": {
+    "cases over all coins": 1948,
+    "case bars before forward-return filter": 1985
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Cases are Sunday 23:00 UTC bars (bar start) in regime mean_reversion with nonzero forecast and a full 48-bar forward return inside the window, the regressed variable is the undirected unusual return (OLS with intercept), and the plan's 'fewer than 200 cases' minimum is applied as 'not observable' per the workflow's rule on minimum counts."
+}

@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall_1d
+idea tested: 025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3829 USD
+---
+## Findings
+- **F1:** Step 5's result is on the predicted side but small and mixed. The weighted short-direction 2-day unusual move is +0.094 % with t 0.40 over 833 cases (size +0.22 % per case, strength 0.038), and the supporting check goes the wrong way: the larger-forecast half minus the smaller half is -0.61 %.
+- **F2:** Inside the plan's regime at 2 days, the effect is mixed across bounce sizes. Rises of 1 to 1.5 usual moves were followed by a further rise (short-direction -0.90 %, t -1.65, 127 cases). Larger rises were followed by falls: +0.65 % for 1.5 to 2 moves (55 cases), +1.03 % for 2 to 3 moves (49) and +1.16 % above 3 moves (27). The forecast reaches its full 20 at about 1.6 moves, so the losing middle bucket gets most of the weight while the grading above it is lost.
+- **F3:** With both the 90-day and 30-day returns negative, the 2-day fall grows with the bounce. Rises above 1.5 usual moves gave +1.59 % (t 2.91, 53 cases, strength 0.25) and rises above 2 moves gave +1.98 % (t 3.14, 32 cases). These sets are too small for the plan's pooled test to show the effect over all its weaker cases.
+- **F4:** The effect shows most clearly over the next day and needs only the 90-day fall. In coins with a negative 90-day return, rises above 1 usual move were followed by a 1-day short-direction move of +0.91 % (t 2.86, 255 cases), and above 1.5 moves by +1.28 % (t 2.94, 138 cases, strength 0.28). The graded slope of the 1-day short move on the rise's size is +0.0050 per usual move (t 2.78, 1,051 cases).
+- **F5:** The brief's contrast holds at one day. In coins with a positive 90-day return, the same slope is -0.0032 (t -1.88, 1,146 cases), and rises above 1.5 moves give -0.24 % (t -0.50, 177 cases): bounces in falling coins fade, while rises in rising coins do not.
+- **F6:** Adding the 30-day condition does not help at one day: rises above 1 move give +0.77 % (t 1.86, 156 cases) against +0.91 % (t 2.86) without it. At 2 days the condition does separate cases: +0.55 % with a negative 30-day return (97 cases) against -0.62 % with a positive one (62 cases).
+- **F7:** The 1-day fade after rises above 1.5 moves in 90-day-falling coins is broad across coins but uneven across years.
+- **F8:** The plan's total move per case (-0.02 %) is -0.1 times the 0.19 % cost of a trade. The 1-day fade of rises above 1.5 moves in 90-day-falling coins has a total move of +1.16 % per case, about 6 times that cost.
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.b1_double-fall-fade-more-coins` (from F1, F3): In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, only while its 30-day return is also negative, the larger that one-day rise in usual daily moves, the larger its fall over the next 2 days.
+- `025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.b2_one-day-bounce-fade` (from F4, F5, F6, F7, F8): In a coin whose 90-day return is negative, the larger today's one-day rise measured in usual daily moves, the larger the coin's fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

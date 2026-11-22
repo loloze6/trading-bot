@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.325836,
+  "findings": {
+    "F1": "The main measure is on the side the idea predicts but short of the bar: the forecast-weighted excess 18-bar return is +0.0029, with t 1.21 over 2857 grid cases. The supporting check passed. The size is nil: the unusual move is \u22120.09 % per case (strength \u22120.009), against a cost of 0.19 % per trade.",
+    "F2": "The effect is mixed by forecast size, not graded smoothly. The bottom three forecast quintiles have excess 18-bar returns of \u22120.16 %, \u22120.36 % and \u22120.40 % (t \u22120.50, \u22121.11, \u22121.20). The top two quintiles together have +0.58 % (t 2.04, n 1111). The top 40 % of forecasts carry +0.58 % (t 2.10, n 1143, strength 0.065), while the rest carry \u22120.25 % (t \u22121.34, n 1714).",
+    "F3": "The continuation shows where the volume behind the streak is high against the 30 bars before it. Among the strongest forecasts, the top volume tercile gives +1.27 % over 18 bars (t 2.98, n 573). The low and middle volume terciles give +0.07 % (t 0.12) and \u22120.31 % (t \u22120.67). This is the opposite of the brief's fading-volume give-back.",
+    "F4": "The effect changes sign with the market regime. Excess 18-bar returns after up-streaks are \u22121.73 % in 2018 (t \u22122.97, n 332) and \u22121.07 % in 2022 (t \u22122.66, n 319). They are +0.98 % in 2020 (t 1.97) and +0.66 % in 2024 (t 1.73). For the strongest streaks, the coin's 30-day return matters: +1.20 % in its top tercile (mean 30-day return +42 %, t 1.66), against \u22120.07 % in its bottom tercile (t \u22120.14).",
+    "F5": "The sign is the same across coins but no single coin is clear. Each of the six coins has a positive top-forecast excess, from +0.15 % (BTC) to +1.30 % (XRP), with every t between 0.26 and 1.57 and about 170 to 220 cases per coin.",
+    "F6": "At other horizons the picture changes. Over 6 bars (one day), the weakest streaks reverse: their excess return is \u22120.28 % (t \u22123.21, n 2802), and the all-streak weighted measure is t \u22121.49. Over 12 and 36 bars, the weighted t is 0.20 and 0.63. The plan's 3-day horizon is where the continuation is largest."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D",
+      "name": "up-streak continuation, all coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "When a coin has just risen in an unbroken streak of four-hour periods, it keeps rising over the next three days, and the larger the streak's gain relative to the coin's typical four-hour move over the past 30 days, the larger the further rise.",
+      "consequence": "A strong 4-hour up-run is a reason to join it for three days rather than to fade it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin has just risen in an unbroken streak of four-hour periods while the volume traded during the streak is above its volume of the five days before, it keeps rising over the next three days. The larger the streak's gain relative to the coin's typical four-hour move over the past 30 days, the larger the further rise.",
+      "consequence": "A large 4-hour up-run carried on swelling volume is a reason to join it for three days, and one on thin volume is a reason not to.",
+      "name": "volume-backed up-streak continuation",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b1_up-streak-continuation-all-coins",
+    "024-01_fading-volume-uprun-giveback-size.d1_up-streak-continuation-by-size.b2_volume-backed-up-streak-continuation"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.994724025974026,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 48-bar return minus drift on forecast, signal bars pooled",
+    "value": -2.2939334200641274e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.18935340510562088
+    },
+    "threshold": "t >= 2 confirms (with mean unusual move > 0), t <= -2 rejects, otherwise inconclusive; at least 300 signal bars"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in signal direction > 0",
+    "value": -0.00273382785886261,
+    "passed": false
+  },
+  "counts": {
+    "signal bars with a nonzero forecast": 2411,
+    "signal bars with a nonzero forecast (before return availability)": 2451
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Signal bars are the Sunday bars whose next bar starts on or after Monday 00:00 UTC with a nonzero forecast; the 48-bar return is close[t+48]/close[t]-1 by row inside the window, the drift is the coin's mean 48-bar return on the non-overlapping grid of all its windows, the slope is OLS with an intercept, and the count of 300 is of signal bars with a nonzero forecast and a full 48-bar return."
+}

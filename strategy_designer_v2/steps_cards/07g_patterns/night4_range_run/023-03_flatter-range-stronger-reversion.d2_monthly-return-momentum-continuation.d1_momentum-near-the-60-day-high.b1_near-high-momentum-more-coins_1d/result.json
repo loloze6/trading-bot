@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4777888,
+  "findings": {
+    "F1": "The tested monthly momentum works mainly in calm coins. Split by each coin's own 20-day volatility into terciles, the slope of the 5-day demeaned move (in units of the usual move) on the 30-day return is 0.32 (t 2.86) in the calmest third, 0.25 (t 2.91) in the middle third and 0.08 (t 1.39) in the most volatile third, about 1,790 grid cases each. Split by volatility pooled across coins, the same falloff shows: 0.50 (t 4.01), 0.19 (t 2.07), 0.04 (t 1.04).",
+    "F2": "The 30-day return divided by the coin's 20-day daily volatility (times the square root of 30) predicts the next 5 days better than the raw 30-day return: t 4.22 against 3.45 on the same 5,363 non-overlapping cases. The vol-scaled t also stays higher inside each own-volatility tercile: 3.30, 3.00 and 1.42 against 2.86, 2.91 and 1.39.",
+    "F3": "The book's gain comes from the long side alone. Long bars earn +0.168 % per bar over 20,837 bars and short bars lose 0.021 % over 11,013. Long trades average +10.9 % net with a median of \u22121.0 %; short trades average \u22120.70 %.",
+    "F4": "The gain is carried by long holdings. Trades held over 15 days average +27.8 % net, while trades held 4 days or less average \u22122.37 %, with 2,080 trades in each duration quartile. The gain is uneven across years: the momentum t is negative in 2018 (down to \u22123.00) and 2022 (down to \u22122.55) and positive in 2020 (3.39 and 2.81 in the two calmer terciles).",
+    "F5": "The steepest monthly losers do not keep falling, but the difference does not clear chance after this many angles. The lowest 30-day-return quintile has a 5-day excess of \u22120.39 % (t \u22121.09) against \u22121.28 % (t \u22124.08) for the second quintile. The bottom fifth of the 60-day range has z +0.009 (t 0.17) against \u22120.068 (t \u22123.09) for the next fifth; the quintile gap is t \u2248 1.9.",
+    "F6": "The weekday pattern seen per case (Tuesday z +0.18, t 5.0; Sunday \u22120.14, t \u22123.9) disappears once coins are averaged per date. Next-day excess by weekday then has a largest |t| of 1.91 over 7 weekdays (about 414 dates each), and no weekday keeps its sign across years."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day return measured against its own 20-day daily volatility, the larger its rise over the next 5 days.",
+      "consequence": "A trader ranks monthly strength by how unusual it is for that coin's own volatility, and leans long hardest on steady rises rather than large but noisy ones.",
+      "name": "volatility-scaled monthly momentum",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 30-day return, the larger its rise over the next 5 days, the more so the lower the coin's 20-day volatility stands against its own past.",
+      "consequence": "A trader trusts monthly momentum in a coin while it trades calmly for itself, and discounts the same monthly move when the coin is in a turbulent stretch.",
+      "name": "momentum stronger in calm coins",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins.g1_volatility-scaled-monthly-momentum",
+    "023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins.g2_momentum-stronger-in-calm-coins"
+  ],
+  "no_ideas": null
+}

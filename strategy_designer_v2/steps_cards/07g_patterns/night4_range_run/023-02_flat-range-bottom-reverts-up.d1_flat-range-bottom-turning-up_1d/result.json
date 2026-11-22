@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up_1d",
+  "step5": "mismatch",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.358887,
+  "findings": {
+    "F1": "Saturday is the strongest pattern in the bars, and it does not come from the idea. Saturday's daily return averages +0.45 % (t 5.53, n 2484), or +0.092 of the coin's 20-day volatility (t 5.37, n 2093). That is well above every other weekday: Sunday is +0.060 (t 3.14), Friday +0.048 (t 2.17), and Thursday is the only clearly negative day at \u22120.079 (t \u22123.38).",
+    "F2": "The Saturday rise holds up across coins and years. Its mean is positive in all 6 coins, from +0.06 % in BTC (t 0.50) to +0.53 % in XRP (t 1.76), with XMR at +0.44 % (t 2.39). It is positive in 6 of 8 years, for example 2020 at +1.00 % (t 3.30) and 2025 at +0.71 % (t 3.20). The exceptions are 2018 at \u22120.35 % (t \u22121.33) and 2023 at \u22120.02 % (t \u22120.13).",
+    "F3": "The Saturday return grows with the coin's rise over the 5 days up to Friday's close. Split into quarters of that rise, scaled by volatility, Saturday averages:",
+    "F4": "Daily moves in general do not continue the next day. After a 1-day move of more than 2 volatilities, the next day averages +0.05 of a volatility (n 481); after a move below \u22122 volatilities, +0.03 (n 411). This says the Friday-to-Saturday continuation in F3 is specific to the weekend.",
+    "F5": "The brief's reversion is absent in flat coins (30-day net move at most 0.3 of the 30-day range). The slope of the drift-removed 5-day return on the close's place in the range is \u22120.085 (t \u22120.58, n 835). Flat coins in the lowest fifth of the range gain only +0.71 % over 5 days (t 1.03), and those in the highest fifth lose \u22121.50 % (t \u22121.17).",
+    "F6": "In coins with a moderate trend, the place in the 30-day range points the other way, toward continuation.",
+    "F7": "The book does not use the weekend pattern. Its mean allocation is the same on every weekday, 0.046 to 0.048. It is in a position on only 16\u201330 % of bars depending on the coin, and its Sharpe of 0.57 beats holding's by just 0.016."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin, the larger its rise over the 5 days up to Friday's close, the more it rises over the following day (Saturday), while after a fall over those 5 days Saturday tends to fall.",
+      "consequence": "A trader leans long into the weekend after a strong week and refuses Friday longs after a weak one.",
+      "name": "weekend continuation after strong week",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin whose 30-day net move is moderate against its 30-day high-low range, the higher its close sits in that range, the more it rises over the next 5 days.",
+      "consequence": "In a coin with a moderate trend, a trader buys strength near the top of the monthly range instead of fading it.",
+      "name": "moderate-trend range-position continuation",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up.g1_weekend-continuation-after-strong-week",
+    "023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up.g2_moderate-trend-range-position-continuation"
+  ],
+  "no_ideas": null
+}

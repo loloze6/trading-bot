@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "024-01_fading-volume-uprun-giveback-size.g3_volume-surge-precedes-rise_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3892691,
+  "findings": {
+    "F1": "On the non-overlapping 18-bar (3-day) grid, the top fifth of the volume ratio (4h volume over its 180-bar mean) is followed by an excess 3-day return of +1.03 % (z +0.113, t 3.14, n 1059). The other four fifths are all negative (z \u22120.060 to \u22120.018, n about 1058 each). The rise after a surge is concentrated in the extreme fifth, not graded across the range, which matches the near-zero Spearman of the volume ratio with the excess (0.048, n 5580).",
+    "F2": "The surge pays when it comes on top of a 3-day rise. Coins in the top third of the past 3-day return with the top third of the volume ratio gained +0.95 % excess over the next 3 days (z +0.108, t 2.50, n 730). The same top third of past return with low or middle volume ratio gave nothing (z \u22120.003, t \u22120.08, n 465; z \u22120.008, t \u22120.18, n 569).",
+    "F3": "The brief's exhaustion pattern does not appear. After a 3-day rise in the top third, a fading volume trend (last day's volume against the last 3 days, bottom third) is followed by z \u22120.001 (t \u22120.02, n 548), not a give-back. A rising volume trend is followed by continuation: z +0.105, t 2.42, n 664, +0.95 %.",
+    "F4": "Quiet, directionless stretches are followed by falls. Coins in the middle third of the past 3-day return with the low third of the volume ratio lost \u22120.78 % excess over the next 3 days (z \u22120.077, t \u22122.94, n 761), and with the middle third \u22120.56 % (t \u22122.26, n 595). The 2nd and 3rd fifths of the past 3-day return show z \u22120.053 (t \u22121.98) and \u22120.076 (t \u22122.98), n 1116 each.",
+    "F5": "By count of rising bars in the past 18, the excess rises with persistence: 10\u201312 rising bars give z +0.054 (t 1.73, n 1108) and 13\u201318 give z +0.122 (t 1.61, n 234). The 7\u20138 bucket gives z \u22120.112 (t \u22123.58, n 989), so the effect is not monotone.",
+    "F6": "Grid cells starting on a Sunday are followed by an excess 3-day return of \u22121.23 % (z \u22120.150, t \u22124.05, n 811). The other weekdays lie between z \u22120.036 and +0.080. This is the strongest single cell among roughly 90 examined, but it is a calendar effect with no graded situation, and the book's daily returns by weekday do not show it (Monday +0.014 %, Tuesday +0.042 %).",
+    "F7": "The book's largest days are the coin's: its best 1 % of days average +17.8 % against the coin's +17.2 %, and its worst 1 % average \u221215.2 % against \u221214.5 % (n 174 each). Its tail days carry no timing beyond exposure, which fits the failed Calmar (0.56)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has risen over the past three days and its latest four-hour volume is high against its 30-day average, it keeps rising over the next three days. The larger the 3-day rise and the higher that volume against its average, the larger the further rise.",
+      "consequence": "A 3-day rally confirmed by heavy volume is a reason to stay or lean long for three days rather than fade it, while a volume surge without a prior rise is not.",
+      "name": "volume-confirmed rally continues",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's price has barely moved over the past three days and its four-hour volume is below its 30-day average, it falls relative to its usual drift over the next three days. The further its volume sits below that average, the larger the fall.",
+      "consequence": "A quiet, low-volume sideways coin is a reason to refuse a long and lean lighter over the next three days.",
+      "name": "quiet sideways drift lower",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-01_fading-volume-uprun-giveback-size.g3_volume-surge-precedes-rise.g1_volume-confirmed-rally-continues",
+    "024-01_fading-volume-uprun-giveback-size.g3_volume-surge-precedes-rise.g2_quiet-sideways-drift-lower"
+  ],
+  "no_ideas": null
+}

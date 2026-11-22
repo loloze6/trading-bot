@@ -1,0 +1,47 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "up_streak",
+            "class": "strategies.strategy_components.DownStreakLossInUsualMovesComponent",
+            "params": {
+              "window": 180,
+              "max_bars": 180,
+              "side": "up",
+              "base": "start"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 181,
+                  "min_periods": 45
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}

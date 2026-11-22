@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b1_quiet-large-rise-six-hour-fade_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.385409,
+  "findings": {
+    "F1": "Over the 6-hour grid, quiet-volume hours (0.5\u20131.5\u00d7 the 30-day mean volume) show no grading at all: the slope of the next 6 hours' unusual return on the hour's move in 30-day mean absolute moves is +0.001 % per unit (t 0.06, 7076 cases). Large quiet rises (z 2 to 4) are followed by +0.06 % (t 0.72, 355 cases), so they continue slightly rather than give back. This matches the step-5 verdict of no effect (t 0.91, strength 0.009).",
+    "F2": "The brief's own claim, that surging-volume moves continue, does not stand out either. For |z| > 2 on more than 1.5\u00d7 volume, the move-signed 6-hour unusual return is +0.19 % for BTC (t 1.62, 385 cases) and +0.02 % for ETH (t 0.11, 325 cases) at 1.5\u20133\u00d7 volume, and +0.08 % / +0.20 % (t 0.37 / 0.89) above 3\u00d7. That is not distinguishable from chance.",
+    "F3": "The book lost because it was short into a rising market, not because of timing.",
+    "F4": "A coin's 24-hour return, scaled by its 30-day hourly mean absolute move \u00d7 \u221a24, predicts the next 24 hours in the opposite direction, in both coins, on non-overlapping 24-hour cases.",
+    "F5": "The 24-hour reversal is graded and largest in the tails, with a size above the cost of a trade (0.11 %).",
+    "F6": "The 24-hour reversal holds in most years but not all. Its slope is negative in 2018\u20132021 and 2025 for both coins (for example ETH 2019 \u22120.38 %, t \u22122.41; BTC 2025 \u22120.19 %, t \u22122.05). It is near zero or slightly positive in 2022\u20132024 (BTC +0.01 % to +0.02 %, ETH \u22120.10 % to +0.06 %).",
+    "F7": "The hours opening 21:00 and 22:00 UTC rise more than the coin's average hour."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 24-hour return relative to its typical hourly move over the past 30 days, the more the price moves back the other way over the next 24 hours, after both rises and falls, with the largest give-backs following the most extreme 24-hour moves.",
+      "consequence": "A trader would fade a coin's unusually large one-day move for the next day, sizing up with the move's size in usual units, and would refuse to chase such a move.",
+      "name": "one-day move reverses next day",
+      "from": "F4, F5, F6, F3",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b1_quiet-large-rise-six-hour-fade.g1_one-day-move-reverses-next-day"
+  ],
+  "no_ideas": null
+}

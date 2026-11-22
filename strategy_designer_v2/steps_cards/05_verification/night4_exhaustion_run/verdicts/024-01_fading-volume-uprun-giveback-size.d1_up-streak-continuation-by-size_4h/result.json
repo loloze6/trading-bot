@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean of forecast/10 x excess 18-bar return on grid bars with forecast > 0",
+    "value": 0.0028729464081030543,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.209660930431252
+    },
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half excess 18-bar return, split at median forecast (Welch t)",
+    "value": 0.003937320380609453,
+    "passed": true,
+    "welch_t": 1.2477941503759877
+  },
+  "counts": {
+    "grid cases with forecast above 0": 2857,
+    "top half cases": 1428,
+    "bottom half cases": 1429
+  },
+  "decided_by": "The main t lies between -2 and 2.",
+  "reading": "Grid bars are positions 0, 18, 36, ... of each window with the 18-bar return inside the window; drift is the coin's mean 18-bar return on these grids over all windows; the median split puts forecasts above the median in the top half, the rest in the bottom half."
+}

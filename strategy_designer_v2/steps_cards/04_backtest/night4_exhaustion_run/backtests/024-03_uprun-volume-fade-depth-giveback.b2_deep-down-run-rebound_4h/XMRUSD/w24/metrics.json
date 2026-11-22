@@ -1,0 +1,129 @@
+{
+  "core": {
+    "net_return_pct": 67.559,
+    "sharpe": 2.329,
+    "max_drawdown_pct": -0.0,
+    "trade_count": 7,
+    "win_rate": 85.71,
+    "avg_trade_net_pnl": 96.231217,
+    "fees_paid": 2.117285,
+    "gross_pnl": 675.735802,
+    "net_pnl": 673.618517,
+    "cost_drag_pct": 0.3133,
+    "forecast_return_corr": 0.086536,
+    "forecast_return_corr_pvalue": 0.108086,
+    "forecast_return_corr_pvalue_block_adjusted": 0.524836,
+    "forecast_return_corr_n_eff": 57,
+    "forecast_return_corr_all_bars": 0.029645,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.747434,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.137,
+    "avg_trade_duration_bars": 377.0,
+    "sigma_bar_bps": 187.3727,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 314.8283,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 17.0177,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0865, p=0.5248 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 3408.1961,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 3408.1961,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 340.8196,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0865, p=0.5248 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 731,
+      "avg_forecast": 6.486868,
+      "trade_count": 7,
+      "total_net_pnl": 673.618516
+    }
+  },
+  "forecast_bins": {
+    "15_to_very_positive": {
+      "total_forecasts": 7,
+      "profitable_trades": 6,
+      "success_rate_pct": 85.71,
+      "total_net_pnl_usd": 673.6185,
+      "avg_pnl_per_trade_usd": 96.2312
+    }
+  },
+  "dynamic": {
+    "debug_info.components.down_streak.last_history_value": {
+      "unknown": {
+        "mean": 0.789831,
+        "std": 1.384823
+      }
+    },
+    "debug_info.components.down_streak.post_pipeline_value": {
+      "unknown": {
+        "mean": 19.660637,
+        "std": 31.613994
+      }
+    },
+    "debug_info.components.down_streak.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.down_streak.weighted_contribution": {
+      "unknown": {
+        "mean": 19.660637,
+        "std": 31.613994
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00084852,
+      "forward_return_std": 0.018739,
+      "n_bars": 730,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -29.6623,
+    "sharpe": 2.5631,
+    "sortino": 4.0019,
+    "exposure_pct": 99.4528,
+    "turnover": 2.997315,
+    "n_bars_total": 731,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 56,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "XMRUSD",
+        "timestamp": "2025-11-01 20:00:00",
+        "previous_timestamp": "2025-11-01 12:00:00",
+        "expected_step_seconds": 14400,
+        "actual_delta_seconds": 28800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

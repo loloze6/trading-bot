@@ -1,0 +1,26 @@
+---
+line: 7.d not profitable
+backtest: 025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins_1d
+idea tested: 025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4156 USD
+---
+## Findings
+- **F1:** The book's own gain does not cover what it pays to trade: before fees its positions earned a summed +0.33 over all bars, against −3.48 of fees, and on the signal bars alone +0.61 of gain against −1.90 of fees. Per case the total move (+0.19 %) is only 0.8 times the 0.22 % cost of a trade, so the failing Sharpe (−0.15), mean daily return (−0.00004) and Calmar (−0.07) follow directly from a move too small for its fee.
+- **F2:** The move after a bounce depends on the coin's 30-day return, not on the bounce's size. On cases with forecast ≤ −2, the lowest fifth of 30-day return (below −22 %) gave a next-day unusual move of +0.78 % (t 2.67, 524 cases) and the second fifth +0.68 % (t 3.73, 523). The top two fifths gave −0.06 % (t −0.33) and +0.13 % (t 0.60), and their 3- and 5-day moves were negative (−0.5 % to −0.7 %).
+- **F3:** In coins in the lowest third of 30-day return, the fade grows with the day's volume against its 20-day average. The next-day unusual move rises from +0.26 % (t 0.78, 337 cases) in the low-volume third to +0.81 % (t 2.81, 288) in the middle third and +1.52 % (t 3.62, 247) in the high-volume third. In that high-volume third the total move is +1.38 %, about 6 times the 0.22 % cost.
+- **F4:** Across all cases, the top quartile of relative volume (above 1.57× its 20-day mean) gave +0.89 % (t 4.18, 722 cases), against −0.01 % to +0.30 % in the other quartiles.
+- **F5:** Grading by the bounce score alone does not order the move. By the forecast, the −15 to −10 group lost −0.31 % (t −1.35, 382 cases) between groups that gained, and the larger-|forecast| half trailed the smaller half by −0.20 %. Only the top fifth of the raw volatility-scaled rise (above 1.77 usual moves) stood out, at +0.85 % (t 3.86, 573), while the other fifths sat at +0.16 % to +0.28 %.
+- **F6:** Scoring each case by the 30-day fall times the bounce size (−r30 × z) orders the move cleanly. The next-day unusual move goes from −0.22 % (t −1.21) in the second-lowest fifth to +0.27 %, then +0.58 % (t 3.32), then +0.88 % (t 2.94) in the top fifth, with 523–524 cases each.
+- **F7:** The book keeps positions beyond the 1-day horizon, which costs gain and fees. Trades last 3.4 days on average. Bars where a position was still held with a forecast of 0 or a weak forecast lost −0.17 and −0.10 of summed gain, and the trades out of positions on flat bars cost −1.14 of fees. Gross mean per trade was −1.42 %, with 46.6 % of trades winning after fees.
+- **F8:** The result is uneven across years. The next-day unusual move was +0.65 % (t 1.88) in 2018, +0.77 % (t 3.23) in 2019 and +0.62 % (t 3.70) in 2022. It was −0.06 % in 2020, −0.09 % in 2021 and −0.27 % (t −1.63) in 2023, which drives the failure with one window left out (−0.31).
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins.d1_bounce-fade-in-monthly-decline` (from F1, F2, F6, F8): In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, the larger that rise in usual daily moves, the larger its fall over the next day, only while its 30-day return is negative, the fall growing the deeper that 30-day decline.
+- `025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins.d2_heavy-volume-bounces-fade-harder` (from F1, F3, F4, F5): In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, the larger that rise in usual daily moves, the larger its fall over the next day, the fall growing with that day's volume against its 20-day average volume.
+- `025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins.d3_deep-fall-times-bounce` (from F2, F6, F7): In a coin whose 30-day return is negative, the larger the product of the depth of that 30-day fall and today's rise in usual daily moves, the larger the coin's fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean strength of short-side drift-adjusted 18-bar return",
+    "value": 0.024693867654899768,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 1.5296931907238085
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of drift-adjusted 18-bar return on 30-day return (t)",
+    "value": -2.8383313815783486,
+    "passed": false
+  },
+  "counts": {
+    "cases": 3417,
+    "cases with 30-day return": 2481
+  },
+  "decided_by": "Reject: the supporting slope has t <= -2 over at least 30 cases.",
+  "reading": "The situation is the bar closing below the previous close while the 180-bar return recomputed from closes is below 0 (the recorded regime 'trending' where the 180 prior closes are not in the window), on the short side; cases are the first short bet of each 18-bar grid cell; the slope regresses the unscaled drift-adjusted return on the 30-day return pooled over coins, and its minimum of 30 cases applies to the cases that have a 30-day return."
+}

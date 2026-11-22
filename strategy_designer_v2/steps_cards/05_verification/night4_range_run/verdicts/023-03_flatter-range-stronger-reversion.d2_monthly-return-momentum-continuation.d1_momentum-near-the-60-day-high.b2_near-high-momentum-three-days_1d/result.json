@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-3-bar excess return (vs coin mean 3-bar return) on forecast",
+    "value": 0.0003013600802453244,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.508451402531737
+    },
+    "threshold": "confirm: slope > 0 with t >= 2.0; reject: slope < 0 with t <= -2.0; at least 300 nonzero-forecast grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a nonzero forecast": 5721,
+    "grid cases in regression": 5723
+  },
+  "decided_by": "the slope is positive with t >= 2.0 on at least 300 nonzero-forecast grid cases (confirm rule)",
+  "reading": "the regression is OLS with an intercept on all grid cases with a valid next-3-bar return (zero forecasts included); the coin's mean 3-bar return is the mean of its grid returns over all windows; a shortfall of the plan's 300-case minimum is reported as 'not observable' per the workflow"
+}

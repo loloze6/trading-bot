@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 20-day return minus drift after bounces, up-regime minus down-regime",
+    "value": 0.02166784127773229,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.0833286131058355
+    },
+    "threshold": "Welch t >= 2 with widening gap confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "larger-bounce gap minus smaller-bounce gap",
+    "value": 0.030141568073930473,
+    "passed": true
+  },
+  "counts": {
+    "up-regime cases": 382,
+    "down-regime cases": 362,
+    "up larger": 191,
+    "up smaller": 191,
+    "down larger": 181,
+    "down smaller": 181
+  },
+  "decided_by": "Welch t lies between -2 and 2.",
+  "reading": "A case is the first bet (forecast rise >= 2 points on its side from its lowest level since the last bet) in each 20-bar grid cell of each window, grouped by the forecast's sign (long = 90-day up, short = down), with raw 20-day return minus the coin's mean non-overlapping 20-day return; the median split puts |forecast| above the group median in 'larger' and at or below it in 'smaller'; fewer than 30 cases in a group is reported as not observable."
+}

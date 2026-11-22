@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4642731,
+  "findings": {
+    "F1": "The test came out inconclusive only because the plan's forecast is not graded the way the idea is. Its main measure is on the predicted side (+0.62 % unusual short move per case over 5 days, t 2.81, 2312 cases), but its correlation is \u22120.028. In my recount of the cases, the largest forecasts (8.7 to 20, 1172 cases) give only +0.17 % (t 0.51), while the middle quartile gives +1.30 % (t 3.11).",
+    "F2": "The grading the idea describes does show when the rise is measured raw in usual daily moves, as the idea states, instead of standardised against its own last 60 days. On the 5-day grid of falling coins, rises of 0 to 0.5 usual moves are followed by \u22120.11 % (n 621). Rises of 1.5 to 2 give +1.48 % (n 84), 2.5 to 3 give +5.08 % (t 2.85, n 23), and above 3 give +9.93 % (t 3.04, n 12). The Spearman correlation between the rise and the short move is +0.07 (Pearson +0.09).",
+    "F3": "The forecast fires mostly on ordinary rises. 690 of the cases follow a rise of under one usual daily move and 966 a rise of 1 to 2, against only 34 above 3. So the strongest bounces, where the move is largest, are a small share of the bets.",
+    "F4": "Large rises are followed by opposite moves in falling and in rising coins, as the brief's own test of the theory asks. After rises above one usual daily move, the 5-day short move in falling coins minus that in rising coins is +4.70 % (Welch t 4.06; 368 vs 534 cases). Above two usual moves it is +12.59 % (t 3.50; 78 vs 131).",
+    "F5": "In rising coins, a large rise is followed by further rises, graded. The short-direction unusual move is \u22121.48 % for rises of 1 to 1.5 usual moves (t \u22121.83), \u22122.38 % for 1.5 to 2 (t \u22122.33) and \u22125.69 % for 2 to 2.5 (t \u22122.94). Its Pearson correlation with the rise is \u22120.145 (Spearman \u22120.117).",
+    "F6": "Part of the main measure's gain is the falling regime itself, not the bounce. All 5-day grid bars in falling coins, whatever the day did, give +0.33 % (t 1.85, n 3579). That gain comes from shallow falls (top 90-day-return quartile +2.48 %, t 4.48) and reverses in the deepest falls (\u22121.63 %, t \u22121.79).",
+    "F7": "The effect varies strongly by year, so it is mixed over periods. By year the cases give +2.88 % in 2025 (t 5.74) and +1.21 % in 2022 (t 2.47), but \u22123.49 % in 2020 (t \u22123.86) and \u22121.21 % in 2023 (t \u22122.43). After rises above two usual moves, 2025 alone gives +17.3 % (n 14).",
+    "F8": "No more daily data is available: the test already used all 19 coins over folds A to D. As a book, the 5-day total move per case is \u22120.14 % against a 0.22 % trade cost."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 5 days. The fall grows steeply with the size of the rise in usual daily moves: the largest bounces, of several usual daily moves, are given back the most, and ordinary rises are followed by almost nothing.",
+      "consequence": "A trader would fade only the rare outsized bounces in a falling coin, scaled to how many usual daily moves the bounce covers, and ignore ordinary up days.",
+      "name": "outsized downtrend bounces given back",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is positive, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a further rise over the next 5 days. The larger the rise in usual daily moves, the larger the further rise.",
+      "consequence": "In a rising coin, a sharp up day is a reason to stay long rather than to fade it.",
+      "name": "uptrend surges keep rising",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins.b1_outsized-downtrend-bounces-given-back",
+    "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins.b2_uptrend-surges-keep-rising"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,79 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": {
+        "components": [
+          {
+            "id": "srk",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 28
+            },
+            "weight": 0.5,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
+                }
+              }
+            ]
+          },
+          {
+            "id": "mom",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 28
+            },
+            "weight": 0.5,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 5
+  }
+}

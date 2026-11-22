@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean short-direction 2-bar unusual move",
+    "value": 0.0009413518178646096,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 0.39629524337828187
+    },
+    "threshold": "t >= 2 over at least 30 cases confirms (with supporting check); t <= -2 over at least 30 cases rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger abs(forecast) half minus smaller half",
+    "value": -0.0060950000582865515,
+    "passed": false
+  },
+  "counts": {
+    "cases": 833
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 over at least 30 cases.",
+  "reading": "Regime recomputed from prices where 90 bars of window history exist, else the recorded regime; a rise is a positive raw vol-scaled 1-day return; a case is the first short bet (forecast falling by >= 2 points from its lowest short level since the last bet, from 0 after flat) in each 2-bar grid cell from the window's first row; drift is the coin's mean 2-bar return on that grid over all windows; the t of the weighted mean uses the weighted standard error sqrt(sum w^2 (v-m)^2)/sum w x sqrt(n/(n-1)); the median split puts abs(forecast) >= median in the larger half and < median in the smaller, halves compared by unweighted means."
+}

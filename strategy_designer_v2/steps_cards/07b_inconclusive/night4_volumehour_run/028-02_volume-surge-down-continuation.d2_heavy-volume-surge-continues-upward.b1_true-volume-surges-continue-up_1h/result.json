@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b1_true-volume-surges-continue-up_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37374359999999995,
+  "findings": {
+    "F1": "The tested result sits on the wrong side, at zero. The mean excess 4-hour return after up-surge bets is -0.014 % with t -0.84 over 13,276 cases. The forecast-weighted mean is also negative (-0.0057 %), and the strength is -0.009, against a 0.11 % cost per trade.",
+    "F2": "Heavy-volume up hours show no continuation at 4 hours, even among the largest surges. Ranked by rise-in-usual-moves times volume ratio, the top 10 % give -4.4 bp (t -0.80, 1,611 cases) and the top 3 % give -6.3 bp (t -0.52). Weighted by the score, the means are -19 bp and -26 bp, so larger surges do slightly worse.",
+    "F3": "The idea's own situation shows nothing at any size. Up hours beyond 2.5 usual moves on more than 3 times the usual volume give -0.06 bp (189 cases) at 2.5\u20134 usual moves and -9.9 bp (t -0.32, 104 cases) beyond 4. The ten deciles of the recorded positive component lie between -7.5 and +5.3 bp, with the top decile at -3.75 bp (t -0.71).",
+    "F4": "Other horizons do not rescue the up side. The top 3 % of up surges give -4.1 bp at 2 hours, +20.9 bp (t 1.24) at 6 hours, +7.3 bp (t 0.25) at 12 hours and +9.4 bp (t 0.16) at 24 hours. None reaches t 2, and every score-weighted mean except at 6 hours is negative.",
+    "F5": "The mirror situation is a reversal, not a continuation. The top 10 % of heavy-volume falls by fall-in-usual-moves times volume ratio are followed by rises above drift:",
+    "F6": "That rebound after heavy-volume falls is graded across the strongest cases. Over 4 hours it rises from +15.6 bp at the top 10 % to +30.8 bp (t 2.00, 478 cases) at the top 3 % and +65.5 bp (t 1.97, 160 cases, strength 0.39) at the top 1 %. The top 1 % move is about six times the 0.11 % cost. Within the top 10 %, the rank correlation of score with excess return is only 0.041 (p 0.098).",
+    "F7": "The rebound is present on both coins but uneven across years. At 12 hours, the top 3 % give +81.5 bp on BTC and +105.9 bp on ETH. By year, 2021 carries +532 bp (t 2.75), while 2019, 2022 and 2025 are negative (-45, -32 and -40 bp), so part of the effect is one regime.",
+    "F8": "Large hourly falls on ordinary volume carry on instead of fading, the opposite of the brief's contrast. Falls of 2.5\u20134 usual moves on under 1.5 times the usual volume are followed by -68.9 bp over 4 hours (t -1.92, 37 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "After an hour in which the coin falls far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price rises back over the next four hours. The larger that hour's fall relative to its typical 30-day move times its volume relative to its 30-day average, the larger the rebound.",
+      "consequence": "A heavy-volume hourly plunge is a reason to buy for about four hours, or to refuse a short that chases it, since its strongest cases rebound by several times the cost of a trade.",
+      "name": "heavy-volume plunges rebound",
+      "from": "F5, F6, F7, F2",
+      "refs": [
+        "F5",
+        "F6",
+        "F7",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b1_true-volume-surges-continue-up.b1_heavy-volume-plunges-rebound"
+  ],
+  "no_ideas": null
+}

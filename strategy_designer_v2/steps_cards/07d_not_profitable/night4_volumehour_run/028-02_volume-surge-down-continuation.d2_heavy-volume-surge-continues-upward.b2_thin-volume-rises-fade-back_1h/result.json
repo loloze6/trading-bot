@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36736610000000003,
+  "findings": {
+    "F1": "The tested effect is not in the data. Thin-volume hours (volume at or below its 30-day mean) that rise are not followed by a fall. Rises of 1\u20132 typical moves are followed by +4.4 bp unusual return over 4 hours (t 1.39, n 2156). Rises of 2\u20133 typical moves are followed by \u221210.9 bp (t \u22121.30, n 348). Step 5 measured a strength of only 0.003 over 11108 cases, so there is no fade for a short to capture.",
+    "F2": "Fees cause most of the book's loss. It made 19464 trades, all short, with a median holding of 4 hours. Each trade averaged \u22120.25 % gross and \u22120.35 % net, against a cost of 0.11 % per buy and sell. Per day, turnover was 1.73, fees took \u22120.091 % and the gross gain was only \u22120.016 %. That explains the \u22120.105 % mean daily return and the Sharpe of \u22121.93.",
+    "F3": "Being short against the coins' rise costs the book further. The market part of its gain is \u22120.027 % a day, while its timing part is only +0.011 % a day. Holding the coins earned +0.128 % a day, which leaves the book's Sharpe 2.57 below holding's.",
+    "F4": "Heavy-volume falls are followed by a rebound, not by the continuation the brief expects. After hours falling more than 2 typical moves on volume more than twice the 30-day mean (n 926), the unusual return in the fall's direction was \u221230 bp over 2 hours (t \u22124.22) and \u221265 bp over 24 hours (t \u22123.47). Heavy-volume rises of the same size show nothing comparable: \u22121.4 bp over 4 hours (t \u22120.16) and +24 bp over 24 hours (t 1.48, n 874).",
+    "F5": "The rebound grows with the size of the fall times the log of its volume ratio, but only in the top quintile. That quintile (n 1014, mean score 6.8) is followed by +27 bp over 6 hours (t 2.61, strength 0.14) and +62 bp over 24 hours (t 3.41). The four lower quintiles lie between \u22128 and +8 bp over 6 hours, none with |t| above 1.",
+    "F6": "The rebound is strongest at the extreme and holds in every sub-period of both coins. Falls over 5 typical moves on volume over 4 times the mean are followed by +48 bp over 4 hours (t 1.61) and +130 bp over 24 hours (t 2.41, n 184). After heavy falls, the 24-hour unusual return is positive in all 8 coin \u00d7 window-group cells, from +11 bp (BTC w1\u20136) to +152 bp (BTC w13\u201318). At 24 hours the move is about 5\u201312 times the 0.11 % cost of a trade."
+  },
+  "ideas": [
+    {
+      "idea": "After an hour in which the coin falls far more than its typical hourly move over the past 30 days on volume several times its 30-day average, the price rises back over the next 24 hours, and the larger that hour's fall in typical moves and the higher its volume against its 30-day average, the larger the rise.",
+      "consequence": "A heavy-volume hourly sell-off is a reason to buy, or to close a short, for the next day, and not to follow it down.",
+      "name": "heavy-volume selloffs rebound daily",
+      "from": "F4, F5, F6, F2",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F2"
+      ]
+    },
+    {
+      "idea": "After an hour in which the coin falls far more than its typical hourly move over the past 30 days on volume several times its 30-day average, the price rises over the next six hours, and the larger the fall in typical moves times the log of its volume ratio, the larger the rise.",
+      "consequence": "Shorting into a heavy-volume hourly drop is a reason to refuse the trade, and a long leaning against it can be held for a few hours.",
+      "name": "heavy-volume drops bounce intraday",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back.d1_heavy-volume-selloffs-rebound-daily",
+    "028-02_volume-surge-down-continuation.d2_heavy-volume-surge-continues-upward.b2_thin-volume-rises-fade-back.d2_heavy-volume-drops-bounce-intraday"
+  ],
+  "no_ideas": null
+}

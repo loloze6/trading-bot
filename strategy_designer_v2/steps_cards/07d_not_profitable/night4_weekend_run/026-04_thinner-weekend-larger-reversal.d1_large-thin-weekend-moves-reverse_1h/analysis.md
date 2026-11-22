@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 026-04_thinner-weekend-larger-reversal.d1_large-thin-weekend-moves-reverse_1h
+idea tested: 026-04_thinner-weekend-larger-reversal.d1_large-thin-weekend-moves-reverse
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4045 USD
+---
+## Findings
+- **F1:** The book's loss comes from its short trades and not from fees: 1816 shorts lost a mean 1.42 % per trade before fees, while 1409 longs gained a mean 0.36 %; per case the total move is -0.05 % against a trade cost of 0.19 %, and Sharpe is -0.31.
+- **F2:** How thin the weekend was sets the outcome on a graded scale. Thinness is the five weekdays' mean volume over the weekend's mean volume. In its top quartile the weekend move reverses over the next 48 h: weekend rises reverse by +0.219 of a usual move (t 3.55, n 234, total +1.16 %) and weekend falls by +0.060 (t 0.96, n 219, total +0.61 %). In its bottom quartile the move continues instead: falls by -0.200 (t -2.18, n 187, total -1.15 %) and rises by -0.131 (t -1.73, n 267, total -1.21 %).
+- **F3:** The size of the weekend move carries almost nothing. Across Sunday |move| quintiles the 48 h reversal runs from -0.064 (smallest) to +0.045 (largest, t 0.65), and the slope on the clipped move has t -0.13. The raw move × thinness product predicts reversal (slope t -2.78, n 1813), but the book's forecast keeps only t +1.49: its two top |forecast| quintiles sit at the ±20 cap (+0.040 and +0.085 of a usual move), and its smallest quintile loses -0.153.
+- **F4:** The top-thinness reversal is broad. It is positive in 6 of 8 years (2020 +0.347 with t 2.45, 2024 +0.210 with t 2.11; 2021 -0.031, 2023 -0.077) and in 5 of 6 coins (ETH +0.229 with t 2.24, XRP +0.164 with t 2.06; ZEC -0.051).
+- **F5:** The thinness effect comes from busy weekdays, not from quiet weekends. Measured against 30-day volume, weekday volume in its top quartile gives a reversal of +0.103 (t 1.96, n 453) against -0.075, -0.078 and -0.029 in the other quartiles. The weekend's own volume against 30 days shows no order (+0.023, -0.096, +0.053, -0.060).
+- **F6:** The effect belongs to the weekend. The same thinness measure read at Wednesday's close gives 48 h reversals of only -0.043 to +0.032 across its quartiles (all |t| < 1.3). The mean thinness ratio is 1.95 on Sunday against 1.00 on Wednesday.
+
+## Ideas
+- `026-04_thinner-weekend-larger-reversal.d1_large-thin-weekend-moves-reverse.d1_thinness-alone-drives-reversal` (from F2, F3, F4, F6, F1): The lower a coin's weekend volume is compared with its volume over the preceding five weekdays, the larger the share of its Saturday-Sunday move that is reversed over Monday and Tuesday (the next 2 days). The reversal is graded by the weekend's thinness alone, whatever the move's size, and turns into continuation over those 2 days when the weekend traded close to its weekdays' volume.
+- `026-04_thinner-weekend-larger-reversal.d1_large-thin-weekend-moves-reverse.d2_busy-week-reverses-weekend` (from F5, F2, F6): The busier a coin's five weekdays were compared with its volume over the past 30 days, the larger the share of its Saturday-Sunday move that is reversed over the next 2 days (Monday and Tuesday).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

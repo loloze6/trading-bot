@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "025-02_deeper-fall-bigger-giveback_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36618550000000005,
+  "findings": {
+    "F1": "The book's loss comes from shorts held well past the bounce. Of 330 trades, all short, the mean gross loss is \u22124.30 % and 29 % win. The 43 trades held over 5 days lose \u221216.3 % (21 trades, 6\u201310 days) and \u221227.7 % (22 trades, over 10 days) gross, and the worst 10 trades carry 56 % of the total gross loss. The 160 trades of 4\u20135 days are near flat, at \u22120.23 %.",
+    "F2": "The fade is a one-day effect. After a one-day rise of at least 2 usual moves with a negative 90-day return (66 cases), the coin's unusual move is \u22121.48 % over 1 day (t \u22122.36), \u22120.46 % over 2 days (t \u22120.62), \u22121.32 % over 5 days (t \u22121.10) and +2.28 % over 10 days (t 1.28). The book's short bars match this: +0.56 % gain on the situation's own next bar (t 1.99, 62 bars), then \u22120.33 % the bar after (t \u22121.70).",
+    "F3": "The tested gradient runs the wrong way. Over 5 days, the deepest quartile of 90-day falls gives \u22120.77 % unusual (n 17, t \u22120.29), while the shallowest gives \u22125.40 % (n 17, t \u22122.79). The deepest quartile even rises +8.19 % over 10 days (t 1.94). This matches step 5's slope t of 0.86 and its mean unusual move of \u22120.25 % per case, which is 1.3 times the 0.19 % cost of a trade, in the losing direction.",
+    "F4": "The fade holds when the 30-day return is also negative. In that case (42 cases) the unusual move is \u22122.11 % over 1 day (t \u22122.68), \u22121.75 % over 2 days (t \u22122.12) and \u22122.92 % over 5 days (t \u22122.18). When the 30-day return is positive (24 cases) the coin goes on to rise: \u22120.41 % over 1 day, then +1.83 % over 2 days and +1.56 % over 5 days.",
+    "F5": "The next-day fade grows slightly with the size of the bounce. By tercile of the one-day rise in usual moves, the 1-day unusual move is \u22121.11 % (small), \u22121.61 % (mid) and \u22121.73 % (big), 22 cases each, with t from \u22120.87 to \u22121.78.",
+    "F6": "One-day rises of at least 2 usual moves outside a negative 90-day return are followed by rises, not falls. Over 417 cases, the unusual move is +1.79 % over 5 days (t 2.62) and +3.94 % over 10 days (t 3.38). Most of these cases sit where the 90-day return could not be computed inside the window, so they are not only rising markets."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, only while its 30-day return is also negative, the larger that one-day rise in usual daily moves, the larger its fall over the next 2 days.",
+      "consequence": "A trader would short such a bounce only for a day or two, and only inside a fall that is still going on over the past month, instead of holding the short for a week or more.",
+      "name": "short-lived fade, fresh fall",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, the larger that rise in usual daily moves, the larger its fall over the next day.",
+      "consequence": "The giveback is a next-day event, so the short should cover the day after the bounce rather than ride the old fall.",
+      "name": "next-day bounce giveback",
+      "from": "F2, F3, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is positive, the larger a one-day rise in usual daily moves, the larger its rise over the next 10 days.",
+      "consequence": "A sharp up day in a rising coin is a reason to be long rather than to fade it.",
+      "name": "sharp rises continue uptrends",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall",
+    "025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback",
+    "025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends"
+  ],
+  "no_ideas": null
+}

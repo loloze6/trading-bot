@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 2-bar unusual move (return minus coin's normal 2-bar drift) over long bets",
+    "value": 0.00028102964726813386,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.37573934575117
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on signal-bar forecast",
+    "value": -4.949781407326354e-06,
+    "passed": false
+  },
+  "counts": {
+    "independent cases across both coins": 14913,
+    "cases BTCUSD": 7318,
+    "cases ETHUSD": 7595
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 but the slope on the forecast is zero or negative.",
+  "reading": "Bets are rises of the long forecast of at least 2 points from its lowest long level since the last bet (from 0 after a flat), one case per 2-bar grid cell of each window (the cell's first bet); the drift is each coin's mean non-overlapping 2-bar return over all its windows; the slope is ordinary least squares of the unusual move on the signal bar's forecast; the plan's 30-case minimum, when missed, gives 'not observable' as the workflow requires."
+}

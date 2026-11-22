@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-day return on 90-day return (fall_depth)",
+    "value": -9.927289116686675e-05,
+    "statistic": {
+      "name": "slope t",
+      "value": -0.4729921515030866
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check); reject: slope < 0 with t <= -2; at least 50 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-day return in the short direction",
+    "value": -0.0009793649834289142,
+    "passed": false
+  },
+  "counts": {
+    "cases": 376
+  },
+  "decided_by": "The slope t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Bets are the forecast.md short-side rises of at least 2 points, the first one in each 5-bar grid cell (positions 0,5,10,... of each window) on a mean_reversion bar is the case, the coin's mean 5-day return is over its non-overlapping grid samples of all windows, the slope t is the OLS slope's t of excess return on fall_depth, the plan's 'fewer than 50 cases' is treated as the minimum count (not observable), and in the situation check the bounce (1-day return over the 20-day std of daily returns, counted if any of the ddof 0/1, current-bar-in/out variants is at least 2) and the 90-day return (recorded fall_depth, else from prices) leave out of the share the active bars where they cannot be computed inside the window."
+}

@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "024-03_uprun-volume-fade-depth-giveback.b1_up-run-fade-more-coins_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45527360000000006,
+  "findings": {
+    "F1": "Over the next 3 days (18 bars, non-overlapping grid, coin drift removed), the coin's return rises steadily with its past-1-day volume against its 30-day mean volume. The bottom quintile (0.34\u00d7 usual volume) gives \u22120.83 % (t \u22123.91, 2128 cases) and the top quintile (2.25\u00d7) gives +0.85 % (t +3.73, 2127 cases). In a joint regression with the past 1-day move and the down-streak loss, log relative volume keeps its slope (coefficient +0.0080, t +5.54). The top quintile beats the bottom on every coin (share 1.0) and in 6 of 8 years.",
+    "F2": "The gradient in F1 shows on both sides of the past day's move. After a 1-day fall, the volume quintiles run from \u22120.53 % to +1.39 % (top t +4.39, 995 cases). After a 1-day rise, they run from \u22120.88 % (t \u22123.77) to +0.60 % (t +1.86).",
+    "F3": "The largest down-streak losses are followed by a 3-day rise. The largest quintile of down streaks (mean \u22124.85 usual 4h moves) gives +1.28 % drift-adjusted (t +4.04, 1050 cases), against \u22120.50 % to \u22120.87 % in the three smallest quintiles. The joint regression keeps the slope (\u22120.0029 per usual move of loss, t \u22124.33), and the mean is positive on every coin (share 1.0). It is uneven by year: +4.98 % in 2020 (t 5.52), +4.15 % in 2024 (t 4.69), and negative in 2018 and 2021.",
+    "F4": "The past 1-day move on its own adds nothing once volume and the down-streak loss are in the regression. Alone, its lowest quintile gives +0.94 % (t +4.88), but its joint coefficient is \u22120.0001 (t \u22120.41).",
+    "F5": "The tested short side points the wrong way, and the book is effectively a short on the coin.",
+    "F6": "The 4h bar opening at 16:00 UTC has a drift-adjusted next-bar return of +0.073 % (t +6.67, 37206 bars), positive in 6 of 8 years. It is a fixed time-of-day condition, not a graded situation."
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's traded volume over the past day relative to its average daily volume over the past 30 days, the higher the coin's return over the next 3 days. The lighter the volume, the more it lags its normal drift.",
+      "consequence": "A trader leans long a coin after unusually heavy one-day volume and refuses longs after unusually thin volume.",
+      "name": "heavy volume precedes rises",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "After an unbroken streak of falling four-hour periods, the coin rises over the next 3 days, and the rise grows with the streak's loss measured in the coin's typical four-hour moves over the past 30 days.",
+      "consequence": "A trader buys the coin after a long, deep unbroken four-hour sell-off, sized by how many usual moves it lost, rather than shorting it.",
+      "name": "deep down-streak rebound",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-03_uprun-volume-fade-depth-giveback.b1_up-run-fade-more-coins.g1_heavy-volume-precedes-rises",
+    "024-03_uprun-volume-fade-depth-giveback.b1_up-run-fade-more-coins.g2_deep-down-streak-rebound"
+  ],
+  "no_ideas": null
+}

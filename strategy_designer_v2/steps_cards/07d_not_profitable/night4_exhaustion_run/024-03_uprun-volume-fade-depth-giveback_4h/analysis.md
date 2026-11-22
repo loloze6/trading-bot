@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 024-03_uprun-volume-fade-depth-giveback_4h
+idea tested: 024-03_uprun-volume-fade-depth-giveback
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3834 USD
+---
+## Findings
+- **F1:** The book is short almost all the time, not only after runs: the position is short on 99.2 % of bars, including 99.0 % of the bars where the forecast is 0 (mean position -1.13 there), with a mean position of -1.17 and trades lasting 933 hours on average (2825 trades, 30.7 % winners, gross mean -28.1 %). The run signal is held long after it has passed.
+- **F2:** Most of the book's loss is the coins' own rise paid by a standing short: of the -0.192 % mean daily return, -0.139 % is the market part (position × the coins' mean daily return) and only -0.052 % is timing. This is what drags Sharpe (-0.83), the mean daily return and Calmar (-0.65) below their rules.
+- **F3:** Per case, the give-back is smaller than a trade's cost: the unusual 18-bar fall is +0.13 % (strength 0.014, t 1.15, 5709 cases) against a cost of 0.19 %. Against the coin's upward drift (-0.41 % in the short direction) the total move is -0.28 %, so no change of holding, sizing or threshold can make this signal pay.
+- **F4:** The give-back is concentrated in mid-sized runs and reverses in the largest ones.
+- **F5:** The give-back appears only when the coin is not already far above its 30-day level.
+- **F6:** The effect lives in falling-market years: +1.52 % unusual fall in 2018 (t 3.83, 712 cases) and +0.89 % in 2022 (t 3.02, 711 cases), against -0.82 % in 2020 (t -2.38, 720 cases) and -0.43 % in 2021.
+- **F7:** The fade of volume does not grade the give-back: by vol_fade quintile the unusual fall is -0.00 %, +0.04 %, +0.48 %, -0.01 %, +0.21 %, with no ordering.
+
+## Ideas
+- `024-03_uprun-volume-fade-depth-giveback.d1_up-run-give-back-in-downtrends` (from F2, F3, F5, F6): After an unbroken streak of rising four-hour periods whose gain is large relative to the coin's typical four-hour move over the past 30 days, the coin falls over the next three days, the larger the streak's gain the larger the fall, only while the coin's price is below its average price of the past 30 days (the further below, the larger the fall).
+- `024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues` (from F2, F4, F5): The further a coin's price stands above its average price of the past 30 days, the more it rises over the next three days.
+- `024-03_uprun-volume-fade-depth-giveback.d3_long-up-runs-keep-rising` (from F3, F4): The more four-hour periods in a row a coin has closed higher, and the larger their summed gain relative to its typical four-hour move over the past 30 days, the more the coin rises over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

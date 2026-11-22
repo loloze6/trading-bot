@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 025-01_downtrend-bounce-given-back_1d
+idea tested: 025-01_downtrend-bounce-given-back
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4181 USD
+---
+## Findings
+- **F1:** In coins whose 90-day return is not negative (the regime the strategy left flat), a one-day rise is followed by a 5-day move that grows with its size in usual daily moves. Over 751 non-overlapping up days the Spearman correlation between the scaled rise and the coin's scaled unusual 5-day move is 0.134 (p = 0.0002). Rises of 1.5 to 2.5 usual moves are followed by +2.9 % (t 2.24, n 90), and rises above 2.5 by +6.9 % (t 1.70, n 26).
+- **F2:** That continuation after rises in rising coins has a positive correlation in all six coins: 0.157 BTC, 0.161 ETH, 0.044 LTC, 0.060 XMR, 0.152 XRP and 0.241 ZEC. Rises above 1.5 usual moves are followed by a positive mean unusual 5-day move in every coin, from +0.1 % (LTC) to +10.0 % (XRP).
+- **F3:** Large rises (above 1.5 usual moves) are followed by a 5-day unusual move 5.8 % higher in rising coins than in falling coins (Welch t 3.53; 116 against 68 cases). This is the contrast the brief names as its test.
+- **F4:** Inside falling coins, the fade is not graded. The correlation between the size of the rise and the following 5-day move is -0.005 (p 0.90, n 614). Only the very largest rises fall afterwards: above 2.5 usual moves, -3.3 % (t -2.01, n 14); 1.5 to 2.5 usual moves, -1.6 % (t -1.52, n 54). This matches step 5's failed supporting check (-0.69 %).
+- **F5:** The short book lost in the years the coins rose. In 2020, 2021 and 2023 the book's mean daily return was -0.22 %, -0.09 % and -0.25 %, while the coins' was +0.42 %, +0.41 % and +0.15 %. The trades lost on every coin before fees, from -1.3 % (LTC) to -6.3 % (XRP) per trade, and they were held 8.8 to 10.6 days, not the 5 days the idea measures.
+- **F6:** Weekday returns do not stand out. The best day, Saturday's next-day unusual return, is +0.32 % (t 2.17, n 414 days), and that is only one of the seven weekdays tested. Its yearly t never reaches 2 (highest 1.98, in 2025), so I count it as chance.
+
+## Ideas
+- `025-01_downtrend-bounce-given-back.g1_uptrend-surges-keep-rising` (from F1, F2, F3): In a coin whose 90-day return is positive, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a further rise over the next 5 days, and the larger that rise in units of the usual daily move, the larger the further rise.
+- `025-01_downtrend-bounce-given-back.g2_extreme-downtrend-bounces-fade` (from F3, F4): In a coin whose 90-day return is negative, a one-day rise of the very largest size relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 5 days, and the further that rise lies beyond the coin's ordinary large rises, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

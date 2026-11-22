@@ -1,0 +1,48 @@
+{
+  "line": "7.e",
+  "backtest": "024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week_4h",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 3.687925,
+  "findings": {
+    "F1": "The book earns 0.119 % a day, and 0.0668 % of that (56 %) is the market's own rise, leaving 0.0522 % of timing; on the 9873 coin-days it is in, it holds about 1.00 of the book and earns 0.200 % a day against the coin's 0.167 %, and on the 7508 days it is out it earns 0.013 %.",
+    "F2": "The book is long on 83 % to 89 % of the bars where the 30-day return is positive (regime \"trending\"), depending on the coin, and on only 25 % to 33 % of the other bars, so in practice it is a long position held while the coin's 30-day return is positive.",
+    "F3": "On non-overlapping 3-day stretches, the coin's unusual move is +0.35 % (t 2.08, 2839 cases) when the 30-day return is positive and \u22120.35 % (t \u22122.37, 2885 cases) when it is not; on 7-day stretches it is +0.49 % (t 1.15) against \u22120.48 % (t \u22121.39).",
+    "F4": "By quintile of the 30-day return, the 3-day unusual move rises from \u22120.45 % in the second quintile to +0.20 % in the fourth and +0.62 % in the top one (mean 30-day return +51 %, t 1.70, 857 cases); the 7-day move goes from \u22121.10 % to +1.09 %; the rank correlation over all cases is weak (Spearman 0.010, p 0.51).",
+    "F5": "The tested signal works at 3 days rather than at the plan's 7: its cases give +0.42 % unusual over 3 days (t 2.42, 2387 cases) against +0.52 % over 7 days (t 1.38, 1365 cases); inside the uptrend, 3-day stretches that open on a forecast of at least 2 move +1.60 % (251 cases) against +0.23 % for the others (2588 cases), Welch t 2.35, while at 7 days the gap is 1.19 % against 0.41 %, t 0.52.",
+    "F6": "The profit sits in long holds: the longest quarter of trades (mean 38.6 days) carries 6931 of the 8396 summed net percentage points (83 %), and the top 10 trades carry 3395 (40 %); the median trade is +0.21 % and 52 % of trades win.",
+    "F7": "The gain is spread across coins and does not come from one of them: each coin's daily book mean is positive, from 0.080 % (LTC, t 1.28) to 0.164 % (ETH, t 2.66); XMR's uptrend 3-day move is negative (\u22120.22 %, t \u22120.70); the losing years 2018 (\u22120.15 % a day) and 2022 (\u22120.02 %) lost less than the coins did (\u22120.35 %, \u22120.19 %)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 30-day return is positive, it rises more than its normal drift over the next three days, and the larger that 30-day return, the larger the rise.",
+      "consequence": "A trader holds the coin long while its 30-day return is positive, leans harder the stronger it is, and stands aside when it turns negative.",
+      "name": "thirty-day trend continuation",
+      "from": "F1, F2, F3, F4, F6, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin with a positive 30-day return falls in a streak of four-hour periods on rising volume, it rises over the next three days, and the more the volume rose across the streak, the larger that rise.",
+      "consequence": "A trader buys volume-backed pullbacks inside an uptrend for a few days, not for a week.",
+      "name": "rising-volume pullback three-day rebound",
+      "from": "F5, F3",
+      "refs": [
+        "F5",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week.e1_thirty-day-trend-continuation",
+    "024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e2_rising-volume-pullback-rebound-week.e2_rising-volume-pullback-three-day-rebound"
+  ],
+  "no_ideas": null
+}

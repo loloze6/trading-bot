@@ -1,0 +1,106 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "rise30",
+        "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+        "params": {
+          "comparison_period": 180
+        }
+      },
+      {
+        "id": "fade",
+        "class": "strategies.strategy_components.DownStreakVolumeFadeComponent",
+        "params": {
+          "max_bars": 180,
+          "side": "down",
+          "statistic": "slope"
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "rise30",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "fade",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "streak_loss",
+            "class": "strategies.strategy_components.DownStreakLossInUsualMovesComponent",
+            "params": {
+              "window": 180,
+              "max_bars": 180,
+              "side": "down",
+              "base": "start"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 181,
+                  "min_periods": 45
+                }
+              }
+            ]
+          },
+          {
+            "id": "rise",
+            "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+            "params": {
+              "comparison_period": 180
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 181,
+                  "min_periods": 45
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}

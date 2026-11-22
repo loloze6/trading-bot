@@ -1,0 +1,19 @@
+{
+  "line": "7.a",
+  "backtest": "025-03_bounce-falling-versus-rising-regime.d1_bounce-fade-graded-by-depth_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 3.8150636999999996,
+  "findings": {
+    "F1": "The 90-day return the situation needs can be computed from prices inside a window on only 4,564 of 17,524 bars (26 %), because the windows last 119 to 123 daily bars (mean 121.7), so the first ~90 bars of every one of the 144 coin-windows have no in-window 90-day history.",
+    "F2": "Because of this, 340 of the 483 one-day rises of at least 2 usual daily moves (70 %) have no in-window 90-day return. Only 77 rises fall in a positive 90-day return (group A's situation) and 66 in a negative one.",
+    "F3": "After the non-overlapping 5-bar grid, group A keeps 7 cases (0 to 2 per coin: BTC 1, ETH 0, LTC 1, XMR 2, XRP 1, ZEC 2) and group B 24 (forecast-negative grid bars). The plan's minimum is 30 per group, so group A is the binding shortfall, at about a quarter of what is needed.",
+    "F4": "Group A's cases are spread thinly over the years: 0 in 2018, 2 in 2019, and 1 in each of 2020 to 2025. That is about 0.049 cases per coin-window (7 / 144), with no year giving a concentration that more coins from one fold would multiply.",
+    "F5": "The regime detector marked 236 mean-reversion bars, against only 66 recomputable falling-regime rises. It therefore reads the 90-day return from warm-up history that the in-window measure cannot see, so group A is undercounted by how the measure is built, not only by how rare the situation is.",
+    "F6": "The available data cannot lift group A to 30:"
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The plan needs at least 30 group-A cases (rises in coins with a positive 90-day return, on the 5-day grid), but every available coin over folds A to D gives about 302 coin-windows and so about 15 such cases, because the ~122-day windows leave a computable 90-day return on only about a quarter of their bars on any bar size."
+}

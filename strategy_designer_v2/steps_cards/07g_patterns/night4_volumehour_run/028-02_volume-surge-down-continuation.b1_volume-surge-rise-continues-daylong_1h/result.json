@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37007660000000003,
+  "findings": {
+    "F1": "The coin's z-scored 24-hour return predicts the opposite move over the next 24 hours, on non-overlapping 24-hour cases: the slope is -16.3 bp per unit of z for BTC (t -2.47, Spearman -0.081, 2656 cases) and -29.0 bp per unit for ETH (t -3.41, Spearman -0.076, 2656 cases). Days in the bottom quintile of past return gained +32 bp unusual for BTC (t 1.83) and +52 bp for ETH (t 2.07). At 72 hours the slope is gone (t -0.13 and 0.06).",
+    "F2": "The reversal of F1 holds in most years. The slope is negative for both coins in 2018, 2019, 2020, 2021 and 2025 (-13 to -79 bp per unit, t down to -2.35). It is flat or slightly positive in 2022 and 2024, and mixed in 2023. It is a regime-dependent effect, not one that holds every year.",
+    "F3": "The hours from 20:00 to 22:00 UTC carry an unusual 1-hour rise of +3.7 bp for BTC (t 3.81, 5837 hours) and +4.8 bp for ETH (t 3.92). The hours from 00:00 to 04:00 UTC carry an unusual fall of -2.0 bp (t -3.24) and -2.4 bp (t -3.02). Both stand out among 48 hour-by-coin readings.",
+    "F4": "The 20:00 to 22:00 UTC rise appears in 7 of 8 years (2022 is the exception, at -3.1 bp, t -1.45). It strengthens in later window groups: +0.5 / -0.9 bp in w1\u2013w6, and +4.4 / +6.6 bp (t 3.31 / 3.45) in w19\u2013w24. Its size of about 8 to 10 bp over the two hours is below the 0.11 % cost of a trade.",
+    "F5": "The brief's volume continuation does not appear at the 2 to 6 hour horizons.",
+    "F6": "The book is mostly the coin's own drift."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that has risen over its last 24 hours, measured against its usual 24-hour move, tends to fall over the next 24 hours, and one that has fallen tends to rise. The larger the 24-hour move relative to usual, the larger the opposite move that follows.",
+      "consequence": "A trader would lean against a coin's unusually large one-day move for the following day, and refuse to chase it.",
+      "name": "one-day moves reverse next day",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's price tends to rise over the two hours starting 20:00 UTC, more strongly the larger the coin's usual hourly move over the past 30 days.",
+      "consequence": "A trader would time long entries before 20:00 UTC rather than after, and refuse to open shorts going into those hours.",
+      "name": "evening UTC hours drift up",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong.g1_one-day-moves-reverse-next-day",
+    "028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong.g2_evening-utc-hours-drift-up"
+  ],
+  "no_ideas": null
+}

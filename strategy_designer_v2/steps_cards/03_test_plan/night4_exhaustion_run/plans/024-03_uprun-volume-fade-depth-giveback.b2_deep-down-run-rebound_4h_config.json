@@ -1,0 +1,54 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "down_streak",
+            "class": "strategies.strategy_components.DownStreakLossInUsualMovesComponent",
+            "params": {
+              "window": 180,
+              "max_bars": 180,
+              "side": "down",
+              "base": "start"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 180,
+                  "min_periods": 45
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 10
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}

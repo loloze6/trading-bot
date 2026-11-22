@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9947304418321848,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-24-bar return minus coin drift on the Monday 00:00 forecast",
+    "value": 0.00023809450351460441,
+    "statistic": {
+      "name": "t of the OLS slope",
+      "value": 2.56536717496969
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting mean > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x (next-24-bar return minus drift)",
+    "value": 0.0038428301700600023,
+    "passed": true
+  },
+  "counts": {
+    "Monday cases with a nonzero forecast": 2435
+  },
+  "decided_by": "The slope is positive with t >= 2 and the supporting mean is above 0.",
+  "reading": "Situation bars are the bars starting Sunday 23:00 UTC (closing Monday 00:00), Sunday's return is the recorded raw component value (recomputed from 24-row prices where missing), the regression is ordinary least squares with an intercept, the drift is each coin's mean 24-bar return on the 0, 24, 48, ... row grid of all its windows, and fewer than 300 cases is reported as not observable as the instructions require."
+}

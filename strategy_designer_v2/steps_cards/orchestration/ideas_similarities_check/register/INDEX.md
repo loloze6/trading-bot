@@ -5,6 +5,20 @@ card: `orchestration/ideas_similarities_check/card.md`. An idea's latest record 
 
 | Book | Run | Bar | Coins | Engine (git) | Made (UTC) |
 |---|---|---|---|---|---|
+| 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h | night4_exhaustion_run | 4h | 6 | 0c4942edb | 2026-11-22T00:27:20 |
+| 024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T03:45:46 |
+| 024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e1_thirty-day-trend-continuation-graded_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:28:16 |
+| 024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:11:16 |
+| 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h | night4_exhaustion_run | 4h | 6 | 0c4942edb | 2026-11-22T01:40:27 |
+| 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:17:19 |
+| 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | night4_fallingbounce_run | 1d | 6 | a327ef4b6 | 2026-11-22T01:56:32 |
+| 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T00:50:39 |
+| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T03:48:40 |
+| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d | night4_range_run | 1d | 19 | 3bb3e5a90 | 2026-11-22T01:24:41 |
+| 023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.d1_top-of-range-continuation-only_1d | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:01:27 |
+| 023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.d1_upper-range-continuation-only_1d | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:05:59 |
+| 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins_1d | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T04:17:30 |
+| 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | night4_volumehour_run | 1h | 2 | aedb14b7e | 2026-11-22T01:04:51 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:26:12 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:28:05 |
 | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 15 | 9cf13a6b2 | 2026-11-21T18:29:36 |

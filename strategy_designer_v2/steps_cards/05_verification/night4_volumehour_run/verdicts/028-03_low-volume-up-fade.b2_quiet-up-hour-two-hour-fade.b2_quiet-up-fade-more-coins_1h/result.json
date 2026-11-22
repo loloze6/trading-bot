@@ -1,0 +1,26 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 2-bar excess return of short bets (vs coin's normal 2-bar drift), before costs",
+    "value": 0.00038021048011309026,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.2249313149126557
+    },
+    "threshold": "confirm t >= 2 over >= 30 cases with positive slope; reject t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-direction excess return on forecast size",
+    "value": 1.2564556837659646e-05,
+    "passed": true
+  },
+  "counts": {
+    "cases": 17126
+  },
+  "reading": "A bet is a rise of the short forecast's magnitude of at least 2 points from its lowest short level since the last bet (reset to 0 after flat or long), the first bet bar of each non-overlapping 2-bar cell of a window is the case, cases are pooled over all coins for the mean and its ordinary t, the forecast size is its absolute value, and the volume ratio for the situation check is recomputed within each window with a 720-bar mean including the current bar.",
+  "status": "confirmed",
+  "decided_by": "Mean short-direction excess return has t >= 2 over at least 30 cases and the supporting slope is above 0."
+}

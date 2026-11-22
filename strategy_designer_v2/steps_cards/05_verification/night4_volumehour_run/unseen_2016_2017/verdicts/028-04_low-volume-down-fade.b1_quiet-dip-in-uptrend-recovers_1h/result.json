@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 6-bar move of long bets (return minus coin's mean 6-bar return)",
+    "value": -1.0670112161975574e-05,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.0147853625706878
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2; fewer than 30 cases inconclusive"
+  },
+  "supporting_check": {
+    "name": "correlation of signal forecast with unusual move > 0",
+    "value": 0.015948392010389976,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1283,
+    "cases BTCUSD": 771,
+    "cases ETHUSD": 512
+  },
+  "decided_by": "t between -2 and 2 (inconclusive rule).",
+  "reading": "Situation = regime 'mean_reversion' (volume band) with raw dip_in_rise > 0, a falling close and a positive 168-bar return where computable in the window, on a positive forecast; a case is the first bet (forecast rise >= 2 from its lowest long level since the last bet) in each 6-bar grid cell from each window's first row; drift is the coin's mean 6-bar grid return over all its windows; the plan's 'fewer than 30 cases' is treated as the minimum count giving 'not observable'."
+}

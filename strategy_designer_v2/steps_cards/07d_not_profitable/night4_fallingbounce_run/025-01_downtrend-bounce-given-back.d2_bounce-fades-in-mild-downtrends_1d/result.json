@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3915769,
+  "findings": {
+    "F1": "The book's loss is the coins' own rise working against its shorts, not bad timing: its mean daily return is -0.000237, of which -0.000244 comes from the market's own rise. That leaves about +0.000007 a day of timing, while the book is short on 41.5 % of days at a mean allocation of -0.49.",
+    "F2": "On the bounce cases (982 in my reconstruction), the short's unusual 5-day move is only +0.32 % (t 1.07), while the coins' normal 5-day drift is +0.30 % to +0.91 % upward. The total move a short earns is therefore -0.28 % per case, below zero before the 0.19 % cost of a trade.",
+    "F3": "The fade depends on how deep the 90-day fall is, and not in a straight line. In the deepest fifth of falls (mean 90-day return -51 %), bounces keep rising: unusual move -1.38 % (t -1.64), total -1.97 % against the short. In the middle fifth (mean -22 %), the fade is +1.84 % unusual (t 3.11) and +1.24 % total, the only group whose total move clears the cost. The shallowest fifth (mean -4 %) shows +0.91 % (t 1.54).",
+    "F4": "The cubic grading puts the largest shorts on the bounces that fade least. The largest quarter of one-day rises (mean +10.7 %) is followed by an unusual move of -0.01 % and a total of -0.63 %, while the second quarter (mean +3.8 %) gives +0.74 % unusual and +0.15 % total.",
+    "F5": "The fade grows with the horizon: the unusual move is +0.25 % at 1 day, +0.32 % at 5 days and +0.67 % at 10 days (t 1.49). The total move stays negative at -0.52 % over 10 days, because the drift grows as well.",
+    "F6": "The loss is concentrated in rising-market years. In 2020 the unusual move is -2.02 % (t -2.35, 85 cases) and in 2021 -2.37 % (62 cases), with a book of -0.0016 a day in 2020. In 2025 it is +1.88 % (t 2.76), and in 2018 and 2022 +1.37 % and +0.91 %. By coin, XRP alone loses (-1.13 %), while BTC, ETH and LTC gain +0.83 % to +1.17 %."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 5 days, only while its 90-day fall is moderate rather than a crash. Within that range, the closer the 90-day fall is to its middle depth, the larger the fall that follows.",
+      "consequence": "A trader would fade bounces only in coins in a moderate decline and stop shorting bounces in coins that have crashed, where the short pays the rebound and the drift.",
+      "name": "bounce fades in moderate declines",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is moderate relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 10 days. The larger the rise is within the range of ordinary sharp up days, the larger the fall, while the very largest rises are followed by further gains.",
+      "consequence": "A trader would size bounce fades for mid-sized up days over a 10-day hold and leave the most explosive up days alone.",
+      "name": "mid-sized bounces fade slowly",
+      "from": "F4, F5, F2",
+      "refs": [
+        "F4",
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is among its deepest falls, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a further rise over the next 5 days, and the deeper the 90-day fall, the larger that rise.",
+      "consequence": "A trader would go long on sharp bounces in coins that have already crashed rather than fade them.",
+      "name": "crash bounces keep rising",
+      "from": "F3, F1",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.d1_bounce-fades-in-moderate-declines",
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.d2_mid-sized-bounces-fade-slowly",
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.d3_crash-bounces-keep-rising"
+  ],
+  "no_ideas": null
+}

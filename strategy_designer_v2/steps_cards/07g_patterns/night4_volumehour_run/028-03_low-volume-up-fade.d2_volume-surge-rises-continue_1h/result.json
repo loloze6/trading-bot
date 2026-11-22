@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "028-03_low-volume-up-fade.d2_volume-surge-rises-continue_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3445471,
+  "findings": {
+    "F1": "When the coin's last-24-hour volatility is in its top quartile against its 30-day level, the next 24 hours' unusual move falls as the past 24-hour return rises: slope -35.7 bp per 24-hour z-unit, t -4.55, on 1328 non-overlapping cases. Over 12 hours the slope is -12.8 bp (t -3.15, 2668 cases), and over 48 hours it is -28.0 bp (t -2.00, 661 cases).",
+    "F2": "This high-volatility reversal holds on each coin alone: BTC slope -30.7 bp (t -3.19, 649 cases) and ETH -40.6 bp (t -3.29, 679 cases). It holds in both halves of the windows: w1-12 at -19.6 bp (t -2.04) and w13-24 at -50.7 bp (t -4.16). Its sign is negative in 6 of 8 years.",
+    "F3": "The reversal is graded across quintiles of the past 24-hour z in high volatility. The lowest quintile is followed by an unusual 24-hour move of +101 bp (t 3.03) and the second lowest by +93 bp (t 2.91). The highest quintile is followed by -55 bp (t -2.02). Trading against the past day's sign earns about 55 bp per case on BTC (t 3.28) and 56 bp on ETH (t 2.69), five times the 0.11 % cost of a trade.",
+    "F4": "The reversal comes from the last day's move and not from the last three days'. In the same high-volatility cases, the slope on the 72-hour z is only -10.6 bp (t -1.22).",
+    "F5": "In the lowest quartile of 24-hour volatility the sign is reversed: the past 24-hour return continues. The slope is +37.7 bp per z over the next 12 hours (t 3.46, 2668 cases) and +43.7 bp over 24 hours (t 1.76). By coin over 24 hours it is BTC +19.3 bp (t 0.62) and ETH +70.7 bp (t 1.78), so this pattern is weaker and less consistent than F1.",
+    "F6": "The tested idea's situation shows no continuation. Hours rising more than 3 hourly standard deviations on more than 3 times their 30-day volume are followed by +17.7 bp over 6 hours (t 0.68, 134 cases), and rises of 1.5 to 3 deviations on such volume by +35.7 bp (t 1.53). The book's daily return is driven by the coin's own day: -171 bp in the coin's worst daily quintile and +239 bp in its best.",
+    "F7": "The hour-of-day and weekday splits gave a few |t| near 2 to 3, such as 6-hour unusual moves from hour 0 at -8.1 bp (t -2.84) and 24-hour moves from Thursdays at -56.8 bp (t -3.20). Out of about 30 cells examined, these do not stand apart from chance."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's hourly volatility over the past day is high against its own past month, its 24-hour return reverses over the next 24 hours. The larger that 24-hour rise or fall, measured in the coin's usual daily moves, the larger the opposite move that follows.",
+      "consequence": "After a sharp one-day move in a turbulent market, a trader has a reason to fade it for the next day, more strongly the larger the move, and never to chase it.",
+      "name": "turbulent day move reverses",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's hourly volatility over the past day is low against its own past month, its 24-hour return carries on over the next 12 hours. The larger that 24-hour move, measured in the coin's usual daily moves, the larger the further move in the same direction.",
+      "consequence": "In a calm market, a steady one-day move is a reason to follow it for the next half day rather than fade it.",
+      "name": "calm day move continues",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-03_low-volume-up-fade.d2_volume-surge-rises-continue.g1_turbulent-day-move-reverses",
+    "028-03_low-volume-up-fade.d2_volume-surge-rises-continue.g2_calm-day-move-continues"
+  ],
+  "no_ideas": null
+}

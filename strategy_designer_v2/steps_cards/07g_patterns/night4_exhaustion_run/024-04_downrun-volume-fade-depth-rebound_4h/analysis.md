@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 024-04_downrun-volume-fade-depth-rebound_4h
+idea tested: 024-04_downrun-volume-fade-depth-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4463 USD
+---
+## Findings
+- **F1:** The tested idea's own grading runs the wrong way. Among down-streaks with a loss of more than 3 usual moves, the 18-bar excess return by volume-fade tercile is +0.99 %, +2.10 % and +1.16 % (144–145 cases each), so it does not rise with the fade. Step 5's above-minus-below-median fade difference is -0.58 %. Up-streaks of the same size give +0.96 %, +0.70 % and +0.78 %, so large streaks in either direction are followed by a rise, not a give-back.
+- **F2:** Recent volume grades the next three days. On non-overlapping 18-bar cells, the past day's volume against its 30-day average sorts the excess return from -0.55 % (t -2.27, 1032 cases, bottom quintile) to +0.80 % (t 2.56, 1032 cases, top quintile). Its Spearman with the excess return is +0.056 pooled and positive in all six coins (0.041 to 0.099, 858 cases each) and in 7 of 8 years (2022: -0.003). The top quintile's total move, about +1.2 %, is about six times the 0.19 % cost of a trade.
+- **F3:** The direction of the past day's move changes what heavy volume means. In the top volume tercile, a 6-bar fall (lowest tercile of the vol-scaled 6-bar return) is followed by +1.07 % excess (691 cases), against -1.13 % for a flat day (310 cases). In the bottom volume tercile, a 6-bar rise is followed by -1.06 % (436 cases). Pooled, the lowest 6-bar-return quintile gives +0.84 % (t 3.07) and the Spearman is -0.052.
+- **F4:** Calm periods underperform and turbulent ones outperform. The ratio of 5-day to 30-day volatility sorts the 18-bar excess return from -0.64 % (t -2.66, lowest quintile) to +0.71 % (t 2.32, highest quintile), with a Spearman of +0.040.
+- **F5:** The 4h bar opening at 20:00 UTC returns +0.099 % on average (t 6.65, 17517 bars). It is positive in every coin (t 1.96 to 3.58; against the other hours, Welch t 1.54 to 3.11) and in every year 2018–2025 (t 0.62 to 4.03). The 00:00 bar returns -0.050 % (t -3.20). The edge per bar is about half of a 0.19 % trade cost, and it is an on/off condition, not a graded one.
+- **F6:** The book is mostly the market. Its mean position is 1.01 and it is held above 0.01 on 104445 of 104931 bars. It earns 0.138 % a day against 0.118 % for holding its coins. Its top and bottom 2 % of days (+11.5 % and -12.1 %) match the coins' own days (+10.6 % and -11.9 %), which leaves it with holding's falls: Calmar 0.35.
+
+## Ideas
+- `024-04_downrun-volume-fade-depth-rebound.g1_heavy-volume-precedes-rises` (from F2, F3): The higher a coin's volume over the past day relative to its 30-day average volume, the higher its return over the next three days.
+- `024-04_downrun-volume-fade-depth-rebound.g2_heavy-volume-selloff-rebound` (from F3, F2, F1): When a coin's volume over the past day is high relative to its 30-day average, the larger its 1-day fall relative to its usual daily move, the larger its rise over the next three days.
+- `024-04_downrun-volume-fade-depth-rebound.g3_volatility-surge-precedes-rises` (from F4, F2): The more a coin's volatility over the past 5 days exceeds its volatility over the past 30 days, the higher its return over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

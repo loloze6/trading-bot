@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 026-01_weekend-rise-reverses-early-week_1h
+idea tested: 026-01_weekend-rise-reverses-early-week
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3376 USD
+---
+## Findings
+- **F1:** The test's own result is zero, not short of the bar. After a weekend gain, the 48-hour move beyond the coin's drift, signed in the short direction, is -0.02 % per case with t -0.10 over 1123 cases. That is -0.000 of the coin's usual 6.56 % move and -0.1 times the 0.19 % cost of a trade, so more of the same data would not move it toward confirmation.
+- **F2:** No horizon shows the reversal after a weekend gain. Measured from Monday 00:00, the reversal beyond drift is +0.008 % over 24 h (t 0.05, 1304 cases), +0.14 % over 48 h (t 0.67, 1289), +0.03 % over 72 h (t 0.11, 1279) and +0.07 % over 120 h (t 0.21, 1254).
+- **F3:** Weekend gains are treated no differently from midweek gains. After a Tuesday-to-Wednesday 48-hour rise, the 48-hour reversal is +0.04 % (t 0.17, 1142 cases), against +0.14 % (t 0.67) after a weekend rise. This is the comparison the brief names as refuting its theory.
+- **F4:** The effect is not graded with the size of the weekend move. Across all weekend cases, the slope of the 48-hour unusual move on the standardised weekend return is -0.0014 (t -0.73, 2387 cases). By size tercile of the weekend gain, the reversal is -0.28 % (t -0.81), +0.01 % (t 0.03) and +0.15 % (t 0.32), all indistinguishable from zero.
+- **F5:** The effect changes sign from year to year and from coin to coin, so no part of the data holds it steadily.
+- **F6:** No regime isolates the reversal.
+- **F7:** Weekend falls show the opposite of the theory, but the pattern is not graded either.
+
+## Ideas
+- No ideas: The tested result is zero (t -0.10) and there is nothing to narrow it to. No horizon, side, size, coin, year or regime shows a steady reversal after a weekend gain that is graded with the gain (F2, F4, F5, F6). Weekend gains behave like midweek gains (F3), and the one significant pattern, the continuation of small weekend falls, shrinks as the fall grows (F7).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

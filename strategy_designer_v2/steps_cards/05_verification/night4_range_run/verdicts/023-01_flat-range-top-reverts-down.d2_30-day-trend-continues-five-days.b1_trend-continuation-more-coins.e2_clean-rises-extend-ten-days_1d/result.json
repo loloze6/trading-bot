@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9855799373040752,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar excess return of rise-sized long bets over the coin's normal 10-bar drift",
+    "value": 0.016837105577146974,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.6933404241801027
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess above median forecast minus below median",
+    "value": 0.005816318993325929,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1095
+  },
+  "decided_by": "Mean excess return positive with t >= 2 over at least 30 cases and the supporting check above 0.",
+  "reading": "Situation = recomputed NMR (|close[t]-close[t-30]| over the high-low range of bars t-30..t) >= 0.5 (regime column where history is short) with a positive 30-day rise, long side; a case is the first long bet (forecast rise >= 2 from its lowest level since the last bet, reset to 0 when flat) in each 10-bar grid cell counted from each window's first row; the drift is the coin's mean non-overlapping 10-bar return pooled over its windows; the median split uses cases strictly above and strictly below the median forecast."
+}

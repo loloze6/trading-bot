@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 4-bar return per bet case (coin drift removed)",
+    "value": -0.00013674169446103489,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.8374525617253907
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 4-bar return > 0",
+    "value": -5.7469504072659855e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 13276
+  },
+  "decided_by": "-2 < t < 2 over at least 30 cases: neither the confirm nor the reject rule is met.",
+  "reading": "Situation bars are those whose raw component value is positive (an up hour on traded volume), long side; a bet is a rise of a positive forecast of at least 2 points from its lowest positive level since the last bet (from 0 after a flat), the first bet bar of each non-overlapping 4-bar cell counted from each window's first row is the case, cells whose signal bar lacks 4 later bars in the window are left out, and the coin's drift is the mean 4-bar return on the same grid over all its windows."
+}

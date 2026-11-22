@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9001560062402496,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 84-bar excess return on raw 24h bounce, pooled over coins and windows",
+    "value": 0.0006135914814971303,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4732657085000942
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 463
+  },
+  "decided_by": "t = 1.47 lies between -2 and 2 on 463 cases (inconclusive rule).",
+  "reading": "Panic recomputed as the 6-bar high-low range over its 180-bar mean (min 30 bars where history is short) for bars t-11..t-6 with close[t-6] < close[t-12], long side, on active bars where it is computable; cases are the first regime == 'mean_reversion' bar in each 84-bar grid cell from each window's first row, the coin's mean 84-bar return is taken on the non-overlapping grid of all its windows, the slope and its t are from ordinary least squares, and fewer than 30 cases is read as 'not observable'."
+}

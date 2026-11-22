@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-demeaned 10-bar forward return on forecast, pooled",
+    "value": 0.000737895650862634,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.172070314958131
+    },
+    "threshold": "confirm if t >= 2 (with positive timing part); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus gain from market rise (timing part)",
+    "value": 0.0004363024710922668,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 1691
+  },
+  "decided_by": "The slope t is 2 or more and the timing part is positive.",
+  "reading": "All grid bars (0, 10, 20, ... with a full 10-bar return inside the window) enter the regression including zero forecasts, the coin mean 10-bar return is taken on those same grid samples over all windows, each coin's book is its own value series with the position held into a day taken from the previous bar's post-rebalance allocation, and the plan's 'fewer than 300 cases' is reported as 'not observable' per the workflow."
+}

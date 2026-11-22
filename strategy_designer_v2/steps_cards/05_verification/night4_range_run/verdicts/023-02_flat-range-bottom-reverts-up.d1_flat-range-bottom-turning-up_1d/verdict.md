@@ -1,0 +1,12 @@
+---
+plan: 023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up_1d
+idea: 023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up
+fit: adapted
+status: mismatch
+---
+Situation check: 87 % of the active bars are bars of the plan's situation on its side (90 % needed).
+- Decided by: Fewer than 90% of the bars with a non-zero forecast are long bars where the 30-bar net-move/range ratio is 0.3 or less and the close is below the 30-bar range middle.
+- Reading: Net move is |close[t] - close[t-29]| over the 30-bar high-low range and the middle is (30-bar high + low)/2 (all Ichimoku spans coincide at period 30), with the recorded regime used on the first 29 bars of a window where the 30-bar history is not recorded; the coin's mean 5-bar return is the mean over its grid returns of all windows; the slope's t is from one OLS regression pooling all coins' cases; and the plan's 'fewer than 30 grid cases' minimum is reported as not observable.
+Plan: `steps_cards/03_test_plan/night4_range_run/plans/023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up_1d.md`
+Record: `steps_cards/04_backtest/night4_range_run/backtests/023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up_1d`
+Measure: `measure.py`

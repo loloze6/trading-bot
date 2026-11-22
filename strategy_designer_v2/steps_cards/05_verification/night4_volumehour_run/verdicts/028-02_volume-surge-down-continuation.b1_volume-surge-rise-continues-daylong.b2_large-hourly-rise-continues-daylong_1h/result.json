@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 24-bar excess return of forecast-rise cases (one per 24-bar grid cell)",
+    "value": 0.0009495230824890891,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.4870816358436354
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return above-median forecast minus at-or-below-median",
+    "value": 6.837739305498103e-06,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4454,
+    "active bars": 21568
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "Situation = positive hourly return (raw 'rise' value, else close-to-close) on volume >= mean of prior 720 bars recomputed in-window (recorded regime used where 720 prior bars are absent), side long; a case is the first forecast rise of >= 2 points (from its lowest long level since the last bet, 0 after flat) in each 24-bar cell of each window, cases whose 24-bar return leaves the window are dropped, both coins pooled, each coin's drift from its non-overlapping 24-bar grid returns over all windows, and the plan's 'fewer than 30 cases' is reported as not observable."
+}

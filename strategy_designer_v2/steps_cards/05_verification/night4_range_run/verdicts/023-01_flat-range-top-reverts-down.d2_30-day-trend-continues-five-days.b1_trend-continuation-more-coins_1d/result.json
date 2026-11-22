@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 5-bar forward return on forecast/10",
+    "value": 0.003137078371812245,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.8556206555310815
+    },
+    "threshold": "confirm at t >= 2 (with supporting mean > 0), reject at t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move in the forecast's direction",
+    "value": 0.007123129951737427,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in the regime": 3120
+  },
+  "decided_by": "The slope's t is strictly between -2 and 2.",
+  "reading": "Situation recomputed as |close[t]-close[t-30]| over the high-low range of the last 30 or 31 bars (either accepted), using the recorded regime where a window's early bars cannot be recomputed, with the expected side the sign of the 30-day return; the coin's drift is the mean 5-bar return over all grid bars of all its windows; the slope t is the ordinary OLS t with an intercept; and the plan's 'fewer than 100 grid cases' rule is applied as a minimum count giving 'not observable'."
+}

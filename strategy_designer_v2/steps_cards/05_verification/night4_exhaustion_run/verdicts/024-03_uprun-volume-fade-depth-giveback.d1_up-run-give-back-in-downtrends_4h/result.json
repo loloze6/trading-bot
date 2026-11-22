@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move of short cases (signed for the short), pooled",
+    "value": 0.005549390639380128,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.739850441319249
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with |forecast| above median minus the others",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 2891,
+    "cases above median |forecast|": 0,
+    "cases at or below median |forecast|": 2891
+  },
+  "decided_by": "A confirming t (>= 2, positive mean) whose supporting check is not above 0.",
+  "reading": "A case is the first short bet (forecast falling >= 2 points below its highest short level since the last bet, reset at flat or side change) in each 18-bar grid cell counted from each window's first row, the drift is the coin's mean non-overlapping 18-bar return over all its windows, and cases at the median |forecast| go to the smaller group."
+}

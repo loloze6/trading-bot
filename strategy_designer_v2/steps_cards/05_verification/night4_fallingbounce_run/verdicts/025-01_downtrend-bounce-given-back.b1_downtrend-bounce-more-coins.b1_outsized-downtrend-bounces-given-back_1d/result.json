@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of short cases, in the short direction",
+    "value": 0.006156111369803289,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.8101089598170494
+    },
+    "threshold": "positive with t >= 2 (and supporting check) confirms; negative with t <= -2 rejects; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move at forecast <= -10 minus that at forecast between -2 and -10",
+    "value": -0.006317883281030773,
+    "passed": false
+  },
+  "counts": {
+    "cases": 2312,
+    "cases at forecast -10 or below": 1078,
+    "cases with forecast between -2 and -10": 1234
+  },
+  "decided_by": "A confirming t with a failed supporting check is inconclusive.",
+  "reading": "A case is the first short bet (|forecast| rising >= 2 from its lowest short level since the last bet, reset at flat) in each 5-bar grid cell of a window, judged on close[t+5]/close[t]-1 minus the coin's mean non-overlapping 5-bar return over all windows; 'between -2 and -10' is read as -10 < forecast <= -2."
+}

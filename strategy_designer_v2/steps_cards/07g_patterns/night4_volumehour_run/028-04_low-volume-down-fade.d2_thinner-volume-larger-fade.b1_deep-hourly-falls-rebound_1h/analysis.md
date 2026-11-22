@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 028-04_low-volume-down-fade.d2_thinner-volume-larger-fade.b1_deep-hourly-falls-rebound_1h
+idea tested: 028-04_low-volume-down-fade.d2_thinner-volume-larger-fade.b1_deep-hourly-falls-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5715 USD
+---
+## Findings
+- **F1:** The coins rise in the two hours from 21:00 to 23:00 UTC (from the close of the bar that opens at 20:00 to two bars later). The mean is +9.61 bp with t 6.54 over 5834 day-cases. That is the largest of the twelve two-hour slots of the day; the next largest are +3.72 bp (t 2.59) and -3.46 bp (t -2.34). It holds on each coin: BTC +8.40 bp (t 4.67) and ETH +10.82 bp (t 4.65). It is positive in 81 % of the 48 coin-windows, in 7 of the 8 years (2022 is the exception at -5.11 bp, t -1.17), and on all seven weekdays (+8.0 to +11.8 bp).
+- **F2:** The book's own gain is concentrated in the same hours. Its mean bar gain is +3.68 bp (t 4.37) on bars opening at 20:00 and +3.50 bp (t 4.88) at 21:00, against near zero on most other hours. Part of its gross gain therefore comes from the clock rather than from the fall-rebound idea.
+- **F3:** The 21:00–23:00 UTC rise grows with the coin's recent volatility. By quintile of the 30-day mean absolute hourly return it is +7.78, +5.97, +7.18, +11.43 and +16.71 bp (top quintile t 3.40). It is largest when the 20:00 bar's volume is high against its 30-day average: the top volume quintile gives +20.96 bp (t 4.61), against +4.75 to +9.75 bp in the other four. The evening rise is unrelated to the prior 20-hour return (correlation -0.005, n 5594).
+- **F4:** After an hourly fall of more than 1.5 typical moves, the 3-hour return grows with that hour's volume against its 30-day average. By volume quintile it is +8.93, +6.65, +7.85, +19.85 and +31.06 bp; the top quintile has a median volume ratio of 4.4 and t 3.47, n about 858 per quintile. The pattern holds on both coins: BTC +23.76 bp in the top volume tercile against +8.60 in the bottom, ETH +26.81 against +7.19. In the top quintile the return is about three times the 0.11 % cost of a trade.
+- **F5:** The heavy-volume fall rebound is short-lived and rests on the early years. Over 6 hours the top volume tercile gives only +8.91 bp (t 0.67). By year its 3-hour return is +49.7, +48.6 and +107.5 bp in 2018, 2020 and 2021, but -1.9, -6.9, +8.9 and -5.4 bp in 2022 to 2025.
+- **F6:** The brief's continuation after volume-confirmed moves does not show. After hourly rises above 1.5 typical moves, the 3-hour return by volume quintile ranges from -3.17 to +11.68 bp, all with |t| ≤ 1.5. Large falls on high volume reverse rather than continue (F4).
+- **F7:** The book loses through its strongest signals. Trades entered with a forecast above 7.9 average -0.022 % gross and -0.122 % net over 37061 trades. Trades entered with a forecast of 1.6 to 7.9 average +0.191 % gross and +0.091 % net over 12355 trades. Overall the book makes -10.8 bp a day on BTC and -9.8 bp on ETH, while holding the coins makes +11.8 bp and +13.7 bp.
+
+## Ideas
+- `028-04_low-volume-down-fade.d2_thinner-volume-larger-fade.b1_deep-hourly-falls-rebound.g1_late-utc-evening-rise` (from F1, F2, F3): Each coin rises over the two hours from 21:00 to 23:00 UTC, and the rise is larger the larger the coin's typical hourly move over the past 30 days.
+- `028-04_low-volume-down-fade.d2_thinner-volume-larger-fade.b1_deep-hourly-falls-rebound.g2_busy-evening-hour-lifts` (from F1, F3): Each coin rises over the two hours from 21:00 to 23:00 UTC, and the rise is larger the higher the volume of the hour from 20:00 to 21:00 UTC compared with the coin's average hourly volume over the past 30 days.
+- `028-04_low-volume-down-fade.d2_thinner-volume-larger-fade.b1_deep-hourly-falls-rebound.g3_heavy-volume-falls-rebound` (from F4, F5, F6): After an hour in which the coin falls far more than its typical hourly move over the past 30 days, the price recovers over the next three hours, and the recovery is larger the higher that hour's volume compared with the coin's average hourly volume over the past 30 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

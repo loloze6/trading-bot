@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of the short bets, short direction",
+    "value": 0.005428947260179478,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.779430973996678
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and slope > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of unusual move (short) on |forecast|",
+    "value": 0.000204429116138477,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2913
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 over at least 30 cases and the slope on |forecast| is above 0.",
+  "reading": "The 90-bar return is recomputed from closes inside the window where 90 prior bars exist and taken from the recorded regime otherwise; a case is the first short bet (forecast falling >= 2 points below its least negative level since the last bet, from 0 after flat or a side change) in each 5-bar grid cell from each window's first row, cases whose 5-bar return leaves the window are dropped, and the drift is the coin's mean non-overlapping 5-bar return over all its windows."
+}

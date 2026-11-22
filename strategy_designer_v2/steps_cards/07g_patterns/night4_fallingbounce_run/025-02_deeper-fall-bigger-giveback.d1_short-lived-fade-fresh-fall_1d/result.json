@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4258465,
+  "findings": {
+    "F1": "In coins whose 30-day return is positive, a one-day rise of more than 2 usual daily moves is followed by a 2-day move of +1.77 % beyond the coin's drift (t 3.16, 173 non-overlapping cases) and a 5-day move of +4.74 % (t 2.37, 62 cases). This is about 9 times the 0.19 % cost of a trade. It is positive in all six coins (ETH +2.50 % t 2.84, LTC +2.51 % t 2.04, XRP +2.63 %, BTC +1.03 %, ZEC +0.99 %, XMR +0.60 %) and in both halves of the windows (w1\u2013w12 +0.88 % t 1.53, w13\u2013w24 +2.65 % t 2.78).",
+    "F2": "The continuation in F1 grows only weakly with the size of the rise. Over all rises above 0.3 usual moves in rising months, the Spearman correlation between the rise and the 2-day unusual move is 0.063 over 1344 cases (t about 2.3). The buckets are not monotone: 0.3\u20131 moves give \u22120.17 %, 1\u20131.5 give +0.50 %, 1.5\u20132 give \u22120.30 %, 2\u20133 give +1.92 % (t 2.87) and above 3 give +1.26 %.",
+    "F3": "In coins whose 30-day return is negative, the bounces the tested forecast ignored are the ones that fade. A small one-day rise of 0.3 to 1 usual moves is followed by a 2-day unusual move of \u22120.80 % (t \u22123.37, 705 cases). It is negative in all six coins (XMR \u22121.47 % t \u22122.93, LTC \u22121.21 % t \u22122.51, ETH \u22120.68 %, XRP \u22120.87 %, BTC \u22120.23 %, ZEC \u22120.22 %) and in both halves (w1\u2013w12 \u22120.36 % t \u22121.31, w13\u2013w24 \u22121.18 % t \u22123.16).",
+    "F4": "In falling months the fade is not graded by the size of the rise, which is why the steep forecast found nothing:",
+    "F5": "Sharp rises are followed by opposite moves depending on the 30-day sign. Above 2 usual moves, the 2-day unusual move is \u22121.83 % (t \u22122.81, 78 cases) when the 30-day return is negative and +1.77 % (t 3.16, 173 cases) when it is positive. In the 5-day grid, rises of 1\u20132 moves give +0.89 % in falling months against +2.07 % (t 2.30) in rising months.",
+    "F6": "The book lost 0.0077 % a day (standard deviation 0.47 %, 2898 days). Its daily returns correlate \u22120.33 with the coins' returns, so its loss is mostly the short exposure paying the coins' rises. The largest 5 % of days by size sum to \u22126.9 % of a \u221222.2 % total.",
+    "F7": "The day of the week shows a pattern, but it is a condition, not a graded situation, so no idea is drawn from it. Thursday and Friday bars have unusual 1-day returns of +0.25 % (t 2.63) and +0.30 % (t 3.76); Monday has \u22120.24 % (t \u22122.53) and Wednesday \u22120.30 % (t \u22122.70). Thursday and Friday beat the other days in all six coins (LTC +0.54 % against \u22120.22 %)."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 30-day return is positive, a one-day rise of several usual daily moves is followed by a further rise over the next 2 days, and the larger the one-day rise in usual daily moves, the larger the rise that follows.",
+      "consequence": "A trader would buy, not short, a sharp up-day in a coin that is rising over the past month, and would refuse to fade it.",
+      "name": "sharp rises continue uptrends",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a coin whose 30-day return is negative, a modest one-day rise is followed by a fall over the next 2 days, and the more negative the 30-day return, the larger that fall.",
+      "consequence": "A trader would short the ordinary small up-days of a coin falling over the past month for two days, rather than waiting for a violent bounce.",
+      "name": "small bounces fade downtrends",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.g1_sharp-rises-continue-uptrends",
+    "025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.g2_small-bounces-fade-downtrends"
+  ],
+  "no_ideas": null
+}

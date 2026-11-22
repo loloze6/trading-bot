@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40481910000000004,
+  "findings": {
+    "F1": "The Calmar of 0.51 fails because one fall is far deeper than the rest: the chain of daily returns falls 51.6 % over 888 days (w1 to w11, book \u221250.7 % while the coins fell \u221259.6 %), against a yearly return of 26.3 %; the next deepest falls are \u221233.0 % (w12\u2013w16), \u221219.1 % (w19\u2013w21) and \u221218.5 % (w21\u2013w23).",
+    "F2": "The short side earns nothing and deepens the falls. Over 4698 short bars the position's gain is a mean of \u22120.013 % (t \u22120.45, sum \u22120.61), against +0.18 % (t 5.08, sum +15.2) over 8325 long bars. In the deepest fall, shorts lost \u22122.67 against \u22120.67 for longs, and every coin's short side lost (LTC \u22120.74, XRP \u22120.64, ZEC \u22120.57).",
+    "F3": "The shorts lose most after the largest monthly falls. The short bars in the lowest 30-day-return quintile (mean \u221236 %) average \u22120.12 % per bar (sum \u22120.94), against +0.02 % to +0.06 % in the middle quintiles. A coin far below its high after a big monthly drop did not keep falling.",
+    "F4": "The long gain is hump-shaped in the 30-day return. Long bars in the 30-day-return quintiles at +14 % and +27 % earn +0.29 % and +0.45 % per bar. The top quintile, at +63 %, earns only +0.06 % per bar with the widest spread (std 3.98 %).",
+    "F5": "The book's worst bars are longs taken after an extended rally at the high. The worst 5 % of active bars include 512 longs summing \u221232.2, with a mean 30-day return of +36 %, a mean distance of only 4.2 % below the 60-day high, and a mean 5-day return of +11 %. These are the bars the forecast sizes largest (mean |allocation| 1.12 in the nearest-to-high quintile).",
+    "F6": "Longs inside the deep falls (the book more than 10 % below its peak) earn +0.12 % per bar over 5638 bars, against +0.31 % outside them. Inside those falls their mean 30-day return is lower (+14 % vs +31 %) and they stand further from the high (12.3 % vs 8.4 %). The longs taken in the falls ride weaker, older rallies.",
+    "F7": "The losses are not a problem of size against cost. Per case the total move is +1.13 % and the unusual move +0.95 % (strength 0.087), 5.8 and 4.9 times the 0.19 % cost of a trade. The failure is the depth of the falls, carried by the shorts and by over-extended longs."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day return, the larger its rise over the next 5 days, the more so the closer the coin's close stands to its highest close of the past 60 days, only while the 30-day return is positive.",
+      "consequence": "A trader leans long on monthly strength near the 2-month high and does not short monthly weakness, which removed nothing but losses in the deepest falls.",
+      "name": "momentum near high, long side",
+      "from": "F1, F2, F3, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 30-day return, the larger its rise over the next 5 days, the more so the closer the coin's close stands to its highest close of the past 60 days, except when the 30-day return is large against the coin's own usual 30-day move: there, the larger that excess, the smaller the rise that follows.",
+      "consequence": "A trader leans long hardest on moderate monthly strength at the high and cuts the long as the rally becomes extended, where the book's worst bars came from.",
+      "name": "momentum fades when overextended",
+      "from": "F1, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.d1_momentum-near-high-long-side",
+    "023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.d2_momentum-fades-when-overextended"
+  ],
+  "no_ideas": null
+}

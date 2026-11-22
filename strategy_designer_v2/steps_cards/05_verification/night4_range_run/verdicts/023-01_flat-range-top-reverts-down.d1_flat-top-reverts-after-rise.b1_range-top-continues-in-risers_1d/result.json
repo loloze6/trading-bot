@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of demeaned 5-bar forward return on forecast, trending grid bars, pooled",
+    "value": 0.0009849636499294609,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.7740575394195672
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 200 independent grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "independent trending-regime grid cases": 1766
+  },
+  "decided_by": "The slope is positive with t >= 2 on at least 200 independent grid cases.",
+  "reading": "The situation check takes the 90-bar return from the prices where 90 past closes exist in the window and the recorded regime otherwise, and the side from the close's position in its last 30 closes (or the sign of the recorded raw value before 30 closes exist); the main measure uses the recorded regime == 'trending' on the grid bars 0,5,10,... of each window, trending grid bars with forecast 0 included, an OLS with intercept pooled over all coins, and the coin's mean 5-bar return from the same non-overlapping grid of all its windows; fewer than 200 cases is reported as 'not observable'."
+}

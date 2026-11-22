@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back_1d
+idea tested: 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3891 USD
+---
+## Findings
+- **F1:** The book's falls and its edge over holding are what failed: its mean daily return is 0.0118 % against holding's 0.118 %, its market part is 0.0171 % a day and its timing is -0.0012 % a day, so none of its gain comes from timing, and its chained yearly return of 2.0 % sits against a deepest fall of -41.8 % (Calmar 0.048), running from w14 to w16, with w14 alone at -28.5 % (holding -52.2 %) and w2 at -17.2 % (holding -45.9 %).
+- **F2:** The idea's effect lives only in its deepest falls: on the 5-day grid, active cells in the two lower forecast quartiles (mean forecast 2.7 and 6.9, 10-day fall -3.2 % and -9.3 %, n 283) have excess returns of -1.78 % and -2.15 %, while the two upper quartiles (forecast 12.6 and 19.4, fall -15.3 % and -22.9 %, n 282) have +2.28 % and +1.99 %; cells with forecast of at least 10 average +2.77 % excess (t 2.52, n 141).
+- **F3:** Per bar, the book loses where the forecast is moderate: bars with forecast 5-10 sum to -1.17 in bar gains (mean -0.17 %, n 707) and bars with forecast 10-15 sum to -0.19, while bars with forecast 15-20 earn +4.17 (mean +0.48 %, n 877).
+- **F4:** Measured against the coin's own volatility, the 10-day fall grades the rebound cleanly: across quartiles of the fall over its 60-day usual 10-day move (z -1.87, -1.01, -0.58, -0.24; n 69 each), the excess 5-day returns are +3.31 %, +1.58 %, -1.87 % and -3.24 %.
+- **F5:** Deep falls rebound mainly when the month is strongly one-way: deep falls with a net-move-to-range ratio above the median give +5.19 % excess (n 71), against +0.32 % (n 70) below it; shallow falls lose -3.20 % and -2.81 % either way.
+- **F6:** A sharp last leg carries the rebound: active cells whose 3-day return is in the lowest tercile (-11.4 %) have +2.14 % excess, against -1.37 % and -0.93 % in the other two (n 92 each); the same holds for the lowest range position (-0.43: +1.54 %, against -0.21: -1.71 %) and the highest 20-day volatility tercile (+1.84 %, against -0.47 % and -0.80 %).
+- **F7:** The step-5 size shows a total move per case of +0.23 % against a trade cost of 0.19 % (1.2 times), with an unusual move of -0.37 % (strength -0.030), because the shallow-fall cases cancel the deep ones: the effect is large only in the steep, volatility-scaled falls of F2 and F4.
+
+## Ideas
+- `023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back.d1_vol-scaled-slide-snaps-back` (from F2, F3, F4, F7, F1): In a coin whose 30-day net move has been large relative to its 30-day high-low range and whose close sits below the middle of that range, the larger its fall over the past 10 days measured in units of its usual 10-day move over the past 60 days, the more it rises over the next 5 days.
+- `023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back.d2_sharp-last-leg-rebounds` (from F6, F2, F1): In a coin whose 30-day net move has been large relative to its 30-day high-low range and whose close sits below the middle of that range, the larger its fall over the past 3 days, the more it rises over the next 5 days.
+- `023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back.d3_one-way-month-slide-reverts` (from F5, F2): In a coin whose close sits below the middle of its 30-day high-low range after a deep 10-day fall, the larger its 30-day net move relative to that range, the more it rises over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

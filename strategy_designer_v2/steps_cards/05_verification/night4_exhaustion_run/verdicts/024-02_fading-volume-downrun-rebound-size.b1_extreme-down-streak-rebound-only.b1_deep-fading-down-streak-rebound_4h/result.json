@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.99657371276292,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar excess return (return minus the coin's normal 18-bar drift) over bet cases",
+    "value": 0.0004906712155747867,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.3739148275216259
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 30 cases and correlation > 0; reject: mean < 0 with t <= -2 on >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast at signal bar with 18-bar excess return",
+    "value": 0.05769572917791647,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4039
+  },
+  "decided_by": "The t-statistic of the mean excess return lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "Down-streak = consecutive closes below the previous close inside the window, volume slope = OLS slope of the streak's down bars' volumes; a bet is a rise of the forecast of >= 2 points above its lowest long level since the last bet (reset to 0 when flat), the first bet of each 18-bar grid cell (from the window's first row) is the case, cases without 18 bars ahead in the window are dropped, and the drift is the coin's mean return over non-overlapping 18-bar grid stretches of all its windows."
+}

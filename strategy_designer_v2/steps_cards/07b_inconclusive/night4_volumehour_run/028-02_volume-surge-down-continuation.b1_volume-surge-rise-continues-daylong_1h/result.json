@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5922315,
+  "findings": {
+    "F1": "The test's cases are diluted by modest hours. Its forecast \u2265 2 cases give +0.05 % unusual over 24 hours (t 0.82, 5014 cases), and their forecast quartiles are flat (+0.04 %, +0.17 %, \u22120.07 %, +0.05 %). The first hour in each 24-hour cell that rises at least 2 typical 30-day hourly moves gives +0.30 % (t 2.97, 1988 cases; total +0.45 %), and 1975 of those 1988 hours carry a forecast \u2265 2. The roughly 3000 other test cases are therefore smaller rises that contribute about nothing.",
+    "F2": "Among those large rises, the 24-hour unusual move grows with the size of the rise. Rises of 2\u20133 typical moves give +0.12 % (t 1.02, n 1315), 3\u20135 give +0.69 % (t 3.34, n 526) and above 5 give +0.54 % (t 1.12, n 147). The top quartile of rise \u00d7 relative volume gives +0.64 % (t 2.66) against +0.08 % (t 0.45) for the bottom quartile.",
+    "F3": "Volume adds only a weak, unclean grading. By relative volume the 24-hour unusual move is +0.20 % below 1\u00d7 (n 204), +0.12 % at 1\u20132\u00d7 (n 592), +0.40 % at 2\u20134\u00d7 (t 2.31, n 713) and +0.43 % above 4\u00d7 (t 1.81, n 479). The top half of rise \u00d7 volume minus the bottom half is +0.18 % (Welch t 0.87).",
+    "F4": "The brief's 2\u20136 hour horizon shows no continuation, and the move appears only at a day.",
+    "F5": "The short side is absent. After a hour falling at least 2 typical moves, the further fall is \u22120.06 % over 24 hours (t \u22120.58, 1973 cases) and +0.03 % over 6 hours (t 0.60).",
+    "F6": "The large-rise continuation over 24 hours is positive in every year from 2018 to 2025, between +0.02 % and +0.58 % (best t 1.96 in 2023, 1.73 in 2020). It is stronger in ETH (+0.48 %, t 2.95, n 1005) than in BTC (+0.13 %, t 1.01, n 983).",
+    "F7": "The test's cases do not cover the cost of a trade beyond holding, but the large rises do."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1h; period: folds A, B, C, D",
+      "name": "volume-surge rise, more coins",
+      "from": "F1, F6",
+      "refs": [
+        "F1",
+        "F6"
+      ],
+      "idea": "After an hour in which the coin rises far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price keeps rising over the next 24 hours. The larger that hour's rise times its volume relative to usual, the larger the further rise.",
+      "consequence": "A trader would buy after a large hourly rise on surging volume and hold for about a day, and refuse to short such hours.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "After an hour in which the coin rises far more than its typical hourly move over the past 30 days, on volume above its average hourly volume over the past 30 days, the price keeps rising over the next 24 hours. The larger that hour's rise measured in typical 30-day hourly moves, the larger the further rise.",
+      "consequence": "A trader would buy after an hourly rise of several typical moves and hold for about a day, leaning more on the larger rises, and refuse to short such hours.",
+      "name": "large hourly rise continues daylong",
+      "from": "F1, F2, F3, F4, F6, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong.b1_volume-surge-rise-more-coins",
+    "028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong.b2_large-hourly-rise-continues-daylong"
+  ],
+  "no_ideas": null
+}

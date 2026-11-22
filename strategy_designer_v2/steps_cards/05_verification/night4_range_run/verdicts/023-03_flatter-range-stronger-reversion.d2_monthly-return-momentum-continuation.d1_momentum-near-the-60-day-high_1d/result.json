@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of 5-bar excess forward return on post_pipeline_value, pooled",
+    "value": 0.0002725208931589977,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.3044393896421498
+    },
+    "threshold": "confirm: t >= +2.0 with timing gain > 0; reject: t <= -2.0; at least 300 grid cases with non-zero forecast"
+  },
+  "supporting_check": {
+    "name": "mean daily timing gain of the book",
+    "value": 0.0005627589066270573,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 3418,
+    "grid cases in regression": 3419,
+    "book days": 2898
+  },
+  "decided_by": "Slope t is between -2.0 and +2.0.",
+  "reading": "Expected side = sign of the 30-day return (raw component sign); the regression uses all grid bars (zero forecasts included) with the coin's drift as the mean 5-bar grid return over all its windows; 'non-zero forecast' counted on post_pipeline_value; book daily returns from postRebalance_total_value with the previous day's position for the market part; a minimum count not reached is reported as 'not observable'."
+}

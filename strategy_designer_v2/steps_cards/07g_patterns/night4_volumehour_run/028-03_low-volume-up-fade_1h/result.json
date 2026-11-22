@@ -1,0 +1,31 @@
+{
+  "line": "7.g",
+  "backtest": "028-03_low-volume-up-fade_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3719161,
+  "findings": {
+    "F1": "Two UTC hours stand out in every hourly bar of both coins. Excess one-hour returns are +4.49 bp (t 4.00) on the 20:00 bar and +4.04 bp (t 3.69) on the 21:00 bar, about 5,836 bars each. No other hour of the 24 reaches |t| 3.4. Measured from the 19:00 close over those two bars, the stretch is +3.55 bp (t 1.85, 2,918 days) on BTC and +5.12 bp (t 2.09, 2,918 days) on ETH. It is positive in 32 of 48 coin-windows (0.67) and in 6 of 8 years, with 2020 at +15.89 bp (t 3.95) and 2021 at +12.12 bp (t 2.28).",
+    "F2": "The evening rise is graded by the coin's own 24-hour return up to the 19:00 close, scaled by its usual hourly move. From the weakest to the strongest quintile it falls steadily: +16.70 bp (t 3.22, n 1,072), +7.26 bp (t 2.05), \u22120.86 bp, \u22123.48 bp and \u22122.22 bp. So the evening lift belongs to days that had been falling.",
+    "F3": "The tested fade does not show at any size of the hour inside its volume band (0.5 to 1.5 times the 720-bar mean). The signed 6-bar move per bucket of the hour's size in usual moves is +2.16 bp (t 0.83, n 5,443) for 0\u20131, +0.09 bp for 1\u20132, \u22122.20 bp (t \u22120.28) for 2\u20133 and \u221225.92 bp (t \u22121.62, n 208) for 3\u20135. This matches step 5's strength of 0.011 and its failed size check (\u22120.0018 %).",
+    "F4": "The book lost from timing and costs, not just from shorting a rising market. It averaged \u221219.75 bp a day on BTC and \u221216.72 bp on ETH, while the coins rose +11.83 and +13.68 bp. The average position of \u22120.46 accounts for only \u22126.26 and \u22125.32 bp a day. Its 19,983 trades, all short and lasting 8.7 hours on average, lost \u22120.33 % each before fees and \u22120.43 % after. Its daily returns correlate \u22120.65 with the coin's.",
+    "F5": "Two more patterns are not strong enough to count after this many angles. The early UTC hours are weak: 00:00 to 02:00 show \u22122.25 bp, \u22122.31 bp and \u22123.18 bp (t \u22123.35). Yet the 3-hour stretch from the 23:00 close is only \u22123.36 bp (t \u22121.50) on BTC and \u22123.45 bp (t \u22121.12) on ETH, with no steady sign across years. Small down-hours (under one usual move) are followed by a further 6-bar fall of 6.16 bp (t 2.90, n 7,199). That is one cell out of about twenty tested and has no grading."
+  },
+  "ideas": [
+    {
+      "idea": "Over the two hours from 20:00 to 22:00 UTC, the coin rises more than its normal drift. The further it has fallen over the past 24 hours, measured in its usual hourly moves, the larger that evening rise.",
+      "consequence": "A trader could be long into the 20:00\u201322:00 UTC evening after a falling day, more so the deeper the fall, and should refuse evening shorts on such days.",
+      "name": "evening rebound after down days",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-03_low-volume-up-fade.g1_evening-rebound-after-down-days"
+  ],
+  "no_ideas": null
+}

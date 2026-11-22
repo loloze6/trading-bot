@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move after short bets (fall positive)",
+    "value": 0.0022534027065053506,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.7792623048800332
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on depth90 raw 90-day return (t = 2.942)",
+    "value": 0.0005004227170341849,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1045,
+    "coins with cases": 6,
+    "cases in regression": 1045
+  },
+  "decided_by": "Inconclusive rule: the mean unusual move t lies between -2 and 2 (or is not positive at t >= 2) and no reject rule holds.",
+  "reading": "A case is the first short bet (|forecast| rising >= 2 from its lowest level on the short side since the last bet, reset at flat or side change) in each 5-bar grid cell counted from each window's first row, cases whose 5-bar return would leave the window are dropped, the coins counted are those with at least one case, the slope t is the OLS slope over its standard error on cases with a recorded depth90 value, and too few cases gives 'not observable' as the workflow requires."
+}

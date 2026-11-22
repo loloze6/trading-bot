@@ -1,0 +1,55 @@
+{
+  "line": "7.d",
+  "backtest": "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4551872,
+  "findings": {
+    "F1": "The fade is real against the coin's drift but not in price: over the 2419 short cases the coin's 5-day move in the short direction is \u22120.19 % in total (t \u22120.84) and +0.55 % unusual (t 2.50). The book pays the total move, and that sits below zero before the 0.22 % cost of a trade, so the book loses (Sharpe \u22120.32, mean daily return \u22120.0002).",
+    "F2": "The losses come from years when the coins were rising. Short cases lost \u22124.10 % over 5 days in 2020 (t \u22124.50, n 141), \u22122.25 % in 2021 (t \u22122.24) and \u22122.03 % in 2023 (t \u22124.12). The coin's mean daily return in those years was +0.44 %, +0.54 % and +0.32 %. The cases gained in 2018, 2022 and 2025 (+0.74 %, +0.46 %, +2.19 % with t 4.37), when the coin's mean daily return was \u22120.35 %, \u22120.24 % and \u22120.03 %.",
+    "F3": "The fade grows with the 90-day fall only up to a point, then turns. In the deepest 90-day-fall quintile (\u221280 % to \u221243 %) the cases lost \u22121.17 % over 5 days (t \u22122.02) and \u22122.85 % over 10 days. The middle quintile (\u221228 % to \u221219 %) gave +0.57 % in total and +1.33 % unusual (t 2.93).",
+    "F4": "Net trades average \u22122.72 % (median \u22121.19 %, 4228 trades). Their mean length is 9.4 days against the 5-day horizon, and the cases' total short move worsens from \u22120.19 % at 5 days to \u22120.35 % at 10 days. Holding past the horizon adds loss.",
+    "F5": "In coins outside the falling regime, a one-day rise of more than 2 usual daily moves is followed by a further rise of +5.25 % over 5 days (t 4.84, n 495), or +4.46 % beyond drift (t 4.13). That is about 24 times the cost of a trade, and it is the opposite of what follows bounces in falling coins.",
+    "F6": "The size of the rise does not grade the fade cleanly. Total 5-day short moves by quartile of the day's scaled rise are +0.45 %, +0.46 %, \u22120.77 % and +0.72 %, so only the largest rises carry a fade (+1.50 % unusual, t 2.72)."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a fall over the next 5 days. The more negative the coin's 365-day return, the larger the fall that follows.",
+      "consequence": "A trader would fade bounces in coins whose fall extends over the past year, and refuse to fade bounces in coins that are only dipping inside a rising year.",
+      "name": "fade bounces in yearly downtrends",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a fall over the next 5 days. The fall is largest where the 90-day fall is moderate, and it shrinks as the 90-day fall deepens into a crash.",
+      "consequence": "A trader would fade bounces in moderately falling coins, and refuse to fade them in coins that have already crashed, where bounces are followed by further rises.",
+      "name": "fade shrinks in crashed coins",
+      "from": "F3, F1",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is positive, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a further rise over the next 5 days. The larger the rise against its usual daily move, the larger the rise that follows.",
+      "consequence": "A trader would buy sharp up-days in rising coins rather than fade them.",
+      "name": "bounces extend in uptrends",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins.d1_fade-bounces-in-yearly-downtrends",
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins.d2_fade-shrinks-in-crashed-coins",
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins.d3_bounces-extend-in-uptrends"
+  ],
+  "no_ideas": null
+}

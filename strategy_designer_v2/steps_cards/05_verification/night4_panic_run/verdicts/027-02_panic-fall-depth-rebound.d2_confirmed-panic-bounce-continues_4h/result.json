@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.979135863315262,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 84-bar forward return minus normal drift on the forecast at the case bar",
+    "value": 0.0006552965147405045,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.23788117768636
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 over >= 30 independent cases; reject: slope < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 84-bar return of positive-forecast cases above 0",
+    "value": 0.007233869270914751,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 797,
+    "cases with positive forecast": 471
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (or its sign disagrees with its t threshold), which the plan calls inconclusive.",
+  "reading": "The expected side is the sign of the 24h bounce (the Fidelity's graded comparison: larger bounce, higher return), the panic value is rebuilt from prices as (fall / mean |6-bar return| over 180 bars) x (6-bar range / its 180-bar mean) for the stretch ending 6 bars back, using the recorded regime where the window's history is too short; a case is the first bet of each 84-bar grid cell of a window, pooled over all coins, with the normal drift being the coin's mean non-overlapping 84-bar return over all its windows."
+}

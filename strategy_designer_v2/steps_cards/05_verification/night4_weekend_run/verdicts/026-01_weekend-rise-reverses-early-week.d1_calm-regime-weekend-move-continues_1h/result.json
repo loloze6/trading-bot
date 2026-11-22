@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9926470588235294,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (48-bar return minus coin's mean 48-bar return) over the bets",
+    "value": 0.006943929758889399,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.1264821000676744
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 cases; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "bets (trending, |forecast| >= 2)": 1263,
+    "cases with a full 48 bars left inside their window": 1238
+  },
+  "decided_by": "The mean is positive with t = 3.13 >= 2 over 1238 >= 100 cases (confirm rule).",
+  "reading": "The bar 'closing at Monday 00:00 UTC' is the bar whose start timestamp plus one hour is Monday 00:00; the calm-volatility part of the situation is taken from the recorded regime ('trending') because the 720/4320-bar volatility ratio cannot be rebuilt inside one window; the side is the sign of the recorded 48-bar raw return (prices where missing); the coin's mean 48-bar return is taken on the non-overlapping grid of all its windows; cases are all trending bars with |forecast| >= 2 having 48 bars left in their window, each counted once."
+}

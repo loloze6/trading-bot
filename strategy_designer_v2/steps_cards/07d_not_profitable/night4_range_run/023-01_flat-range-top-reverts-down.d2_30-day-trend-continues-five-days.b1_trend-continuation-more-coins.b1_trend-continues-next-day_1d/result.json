@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b1_trend-continues-next-day_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4286327,
+  "findings": {
+    "F1": "The short side is what keeps the book from paying. On 7,684 active short bars the mean move in the position's direction is \u22120.080 %, against +0.368 % on 7,918 long bars. Rebuilt with the shorts set flat, the book (an approximation: allocation \u00d7 next-day return, minus 0.11 % per unit of turnover) clears both failed measures: mean daily return 0.000617 against 0.000488 for all bars, Calmar 1.25 against 0.49, Sharpe 1.02 against 0.60, deepest fall \u221217.8 % against \u221229.2 %. The shorts alone have a mean of \u22120.000082, a Sharpe of \u22120.15 and a deepest fall of \u221250.1 %.",
+    "F2": "Short losses come from falling coins whose volatility is high. Shorts in the top quartile of 30-day daily volatility move \u22120.517 % per day in their direction (t \u22123.12, n 1,452). Shorts in the three lower quartiles move between +0.09 % and +0.14 % (t about 0.9 each).",
+    "F3": "The same reversal grows with volatility against the coin's own recent level, measured as 30-day volatility over its 60-day median. In falling coins the next-day move in the short's direction falls steadily across the quartiles: +0.329 % (t 2.70, n 1,363), \u22120.070 %, \u22120.003 %, then \u22120.773 % in the top quartile (t \u22123.38, n 718).",
+    "F4": "Rising coins keep rising at every volatility level, and most strongly when volatility is high against its own past. Longs in the top relative-volatility quartile move +0.724 % (t 4.06, n 1,659), and longs in the top absolute-volatility quartile move +0.507 % (t 2.80).",
+    "F5": "The book's worst periods are years with a large short share. In 2018 longs were 17 % of active bars and the move in the position's direction was \u22120.155 %. In 2025 longs were 37 % and the move was \u22120.005 %. In 2020 longs were 75 % and the move was +0.307 %.",
+    "F6": "Costs are not the main problem."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 30-day net move has been large relative to its 30-day high-low range, the larger its 30-day return, the further the coin moves in that same direction over the next day, only while that 30-day return is a rise.",
+      "consequence": "A trader would follow a coin's 30-day trend upward for the next day, scaled by the size of the rise, and would not short a coin's 30-day fall.",
+      "name": "uptrend continues next day",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a coin whose 30-day net move has been large relative to its 30-day high-low range, the larger its 30-day return, the further the coin moves in that same direction over the next day, except after a 30-day fall, where the higher its 30-day volatility against its own last 60 days, the more the coin rises over the next day.",
+      "consequence": "A trader would follow a coin's 30-day rise, and would buy rather than short a coin that is falling while volatile against its own past, more so the higher that volatility.",
+      "name": "volatile downtrends rebound next day",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin whose 30-day net move has been a large fall relative to its 30-day high-low range, the higher its 30-day daily volatility against its own median of the last 60 days, the more the coin rises over the next day.",
+      "consequence": "A trader would buy a steadily falling coin whose volatility has jumped against its own past, sized by how far it has jumped, expecting a rebound the next day.",
+      "name": "volatile selloff next-day rebound",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b1_trend-continues-next-day.d1_uptrend-continues-next-day",
+    "023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b1_trend-continues-next-day.d2_volatile-downtrends-rebound-next-day",
+    "023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b1_trend-continues-next-day.d3_volatile-selloff-next-day-rebound"
+  ],
+  "no_ideas": null
+}

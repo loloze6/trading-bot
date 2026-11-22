@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.6598837209302325,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean 18-bar excess return per case (over coin's normal drift)",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm t >= 2 with slope > 0; reject t <= -2 or slope t <= -2"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 147,
+    "active bars": 344
+  },
+  "decided_by": "Fewer than 90% of the bars with a non-zero forecast are long bars of the plan's panic situation (24h range >= 3x its 30-day mean, 24h fall, prior 30-day rise).",
+  "reading": "Situation computed from prices with bar range = (high-low)/close and the ratio = 180-bar mean / 6-bar mean (<= 0.3333), using the recorded raw fall/rise values for the return signs where present, bars where it cannot be computed (window start) left out of the agreement; cases are long bets (rise >= 2 from the lowest long level since the last bet), the first per 18-bar cell of each window, and fewer than 30 cases is 'not observable'."
+}

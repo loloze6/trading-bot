@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "024-04_downrun-volume-fade-depth-rebound_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34810430000000003,
+  "findings": {
+    "F1": "The tested effect is close to zero rather than small but real: step 5's mean excess return is +0.06 % over 18 bars (t 0.54, 5713 cases, strength 0.008). My recount gives \u22120.06 % (t \u22120.52, n 5017), and at the other horizons it stays at zero or below: 6 bars \u22120.04 % (t \u22120.70), 12 bars \u22120.07 % (t \u22120.75), 36 bars \u22120.32 % (t \u22121.88).",
+    "F2": "The volume fade works against the idea instead of for it. The highest fifth of raw volume_fade has a mean excess return of \u22120.38 % (t \u22121.57, n 996) against +0.01 % for the lowest fifth. The Spearman correlation of fade with the 18-bar excess return is \u22120.037, and step 5's above-minus-below-median check is \u22120.58 %.",
+    "F3": "The rebound exists only in the deepest streaks. By fifth of streak loss in usual moves, the first four fifths are \u22120.08 % to \u22120.26 % (|t| \u2264 1.0) and the top fifth is +0.52 % (t 1.89, n 1000). Inside that fifth, the 9th decile is \u22120.40 % (t \u22121.10, n 497) and the 10th decile +1.43 % (t 3.46, n 503), still +1.42 % at 36 bars (t 2.79).",
+    "F4": "The rebound appears when the coin is in a 30-day rise and reverses in a 30-day fall. Cases with a positive 30-day return average +0.42 % (t 2.36, n 1873); cases with a negative one average \u22120.35 % (t \u22121.92, n 1881). The same split on 7-day returns gives +0.28 % (t 1.68) against \u22120.44 % (t \u22122.71).",
+    "F5": "Inside a 30-day rise the effect is graded by streak loss: +0.05 %, +0.31 %, +0.17 %, +0.76 % (t 1.80), +1.10 % (t 2.29, n 323) from the lowest to the highest fifth. Inside a 30-day fall there is no such order, and the middle fifth is \u22121.07 % (t \u22122.38).",
+    "F6": "The effect also rises with the strength of the 30-day trend itself. By fifth of 30-day return, the strongest-rise fifth (median +35.6 %) averages +0.82 % (t 2.51, n 759); the second-weakest fifth (median \u221211.3 %) averages \u22120.63 % (t \u22122.33).",
+    "F7": "The market regime shows in the years. The rising years 2020 and 2021 are +0.83 % (t 2.59) and +1.11 % (t 2.69); the falling years 2018 and 2022 are \u22121.84 % (t \u22124.44) and \u22120.92 % (t \u22123.01). These opposite years cancel in the pooled mean.",
+    "F8": "The forecast fires early in short streaks, so the test barely measured \"long runs\". Almost every case sits on a 2-bar streak (4650 of 5017; mean length about 2.06 to 2.09 in every loss fifth). The forecast is capped at 20 from its second fifth onward, so \"the largest forecasts\" cannot be told apart, and its lowest fifth is \u22120.61 % (t \u22122.54)."
+  },
+  "ideas": [
+    {
+      "idea": "After an unbroken streak of falling four-hour periods whose loss is large relative to the coin's typical four-hour move over the past 30 days, the coin rises over the next three days, only while the coin's 30-day return is positive. The larger the streak's loss in typical moves, and the stronger the coin's 30-day rise, the larger the rebound.",
+      "consequence": "A trader buys sharp multi-period drops in coins that are rising over the month, more the deeper the drop, and refuses the same drops in coins falling over the month.",
+      "name": "deep dips in uptrends rebound",
+      "from": "F3, F4, F5, F6, F7",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "After an unbroken streak of falling four-hour periods whose loss is large relative to the coin's typical four-hour move over the past 30 days, the coin keeps falling over the next three days, only while the coin's 30-day return is negative. The more negative the 30-day return, the larger the further fall.",
+      "consequence": "A trader refuses to buy sharp drops in a coin falling over the month and treats them as a reason to stay out or lean short.",
+      "name": "dips in downtrends keep falling",
+      "from": "F4, F6, F7",
+      "refs": [
+        "F4",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound",
+    "024-04_downrun-volume-fade-depth-rebound.b2_dips-in-downtrends-keep-falling"
+  ],
+  "no_ideas": null
+}

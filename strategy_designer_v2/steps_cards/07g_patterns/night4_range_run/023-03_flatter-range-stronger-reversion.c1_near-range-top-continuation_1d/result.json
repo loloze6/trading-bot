@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5636831,
+  "findings": {
+    "F1": "Over the next 10 days, a coin's 10-day return scaled by its 20-day daily volatility predicts its excess return better than the range position does. Pooled, the slope is 0.094 of the coin's usual 10-day move per unit of z, with t 3.62 over 1403 non-overlapping cases. Fitted together with the 30-day range position and the 30-day z, the 10-day z keeps a coefficient of 0.155 (t 3.70), while the range position falls to \u22120.104 (t \u22121.27) and the 30-day z to 0.011 (t 0.27).",
+    "F2": "After a large one-day move in a high-volatility coin, the next day tends to go the other way. In the top third of each coin's 20-day volatility, the next-day excess return has a slope of \u22120.134 standard deviations per unit of the one-day z, with t \u22127.39 over 4830 days. The same slope is +0.020 (t 1.89) in the low-volatility third, and \u22120.038 (t \u22124.61) pooled over 14500 days.",
+    "F3": "The one-day reversal is strongest after the largest falls. The bottom fifth of one-day z is followed by +0.39 % next-day excess return (t 4.04, 2900 days), which is twice the 0.19 % cost of a trade. It is negative in all eight years, with t \u2264 \u22123 in 2018, 2020 and 2023, and negative in all six coins, ranging from \u22120.006 for ZEC to \u22120.093 for XMR (t \u22124.67).",
+    "F4": "The 10-day continuation does not come from the last day. With the last day split out, the prior 9-day z has a coefficient of 0.088 (t 3.30) against 0.019 (t 0.76) for the last day's z. Measured from one day after the signal, the 9-day z still has 0.058 (t 2.17).",
+    "F5": "The 10-day continuation is uneven across years and coins, so it is not settled. Across years the slope ranges from \u22120.059 in 2022 to +0.266 (t 3.45) in 2020 and +0.151 (t 2.51) in 2024, and it is positive in all six coins (XRP 0.183, t 2.96; LTC 0.009). Across quintiles of the 10-day z, the next 10 days' excess return is \u22122.0 % in the second and third quintiles against +2.4 % (t 2.23) in the top quintile.",
+    "F6": "The brief's reversion does not show in flat coins. In the flat half of the 30-day trend measure, the next 10 days' excess return is \u22120.39 % (t \u22120.39) at the bottom third of the range and +0.11 % (t 0.09) at the top third. The tested continuation also shows only in trending coins: +1.33 % (t 1.16) at the top third.",
+    "F7": "The book's gain sits in a few large days, and the longs carry it.",
+    "F8": "There is a weekday pattern in the next-day excess return, but it is not stable enough to act on. Next-day excess return after Thursday and Friday closes exceeds that after Monday and Wednesday closes by 1.76 % in 2019 (t 7.0), 0.77 % in 2024 (t 3.05) and 0.51 % in 2025 (t 2.0), but it turns negative in 2022 (\u22120.42 %, t \u22121.57). No idea is drawn from it, because a weekday is not a graded situation."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 10-day return relative to its own recent daily volatility, the more the coin rises over the following 10 days.",
+      "consequence": "A coin that has risen strongly over 10 days for its volatility is a reason to be long for the next 10 days, and one that has fallen strongly is a reason not to buy it.",
+      "name": "volatility-scaled ten-day momentum",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's past 20 days have been highly volatile, the larger its one-day move relative to that volatility, the more the coin moves back the other way over the next day.",
+      "consequence": "In a volatile coin, a sharp one-day fall is a reason to buy for the following day, and a sharp one-day rise is a reason not to chase it.",
+      "name": "high-volatility one-day reversal",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.g1_volatility-scaled-ten-day-momentum",
+    "023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.g2_high-volatility-one-day-reversal"
+  ],
+  "no_ideas": null
+}

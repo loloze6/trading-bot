@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade_1h
+idea tested: 028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3707 USD
+---
+## Findings
+- **F1:** The book loses on costs and on gross. Its mean daily return is -0.140 % against +0.127 % for holding, with a Sharpe of -2.34, over 2898 days. Its 16844 trades, all short and with a median length of 120 minutes, average -0.173 % before fees (t -15.6) and -0.273 % after. Fees cost 0.178 %/day on BTC and 0.138 %/day on ETH, against bar gains before costs of only 0.026 % and 0.005 %/day, at a turnover of 3.5 and 2.5 times the book per day.
+- **F2:** The forecast's per-case move is far too small to pay. The unusual move per case is +0.03 % over 2 hours (strength 0.026), against a trade cost of 0.11 %: 0.3 times that cost, with a total move of only 0.2 times it.
+- **F3:** Large rises on quiet volume do not fade. Rises above 2 times the 30-day mean absolute hourly move, with volume 0.67–1.5 times its 30-day average, return only +0.019 % in the short direction over 2 hours (t 0.67, n 2388) and -0.021 % over 24 hours (t -0.24). The grading is not monotone: rises of 2–3 times give -0.009 %, 3–4 times +0.103 %, 4–6 times +0.104 %, over 6 times -0.273 % (n 10).
+- **F4:** Most of the book's short exposure sits on ordinary hours, not on large rises. Only 14 % of bars are short, but the mean scaled rise on short bars is 1.04. 10572 of the 18268 short bars have a rise below 1 times the usual hourly move, and their 2-hour moves of +0.027 % and +0.050 % are too small to cover the fees.
+- **F5:** The brief's own side is present at a horizon long enough to pay. On a non-overlapping grid, rises above 2 times the usual hourly move with volume over 3 times its 30-day average carry on upward:
+- **F6:** Within high-volume rises the effect is concentrated, and partly graded. The rise size times log volume ratio, in quintiles, gives 24-hour total moves of +0.13, +0.02, +0.04, +0.28 and +0.44 % (top quintile t 1.81). By volume ratio, the effect sits at 3–5 times volume (+0.64 %, t 3.29); at 5–8 and over 8 times it is weaker (t 0.61 and 0.45).
+- **F7:** The effect holds in both coins but not in every period. Over 24 hours it is BTC t 1.78 (+0.42 %) and ETH t 2.39 (+0.68 %). It is weak in windows w1–w8 (t 0.57) and stronger in w9–w16 (t 1.85) and w17–w24 (t 2.96).
+- **F8:** The continuation is one-sided. High-volume falls do not carry on downward: their 24-hour strength in the fall's direction is -0.025 (t -0.79), and -0.035 over 6 hours.
+
+## Ideas
+- `028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.d1_volume-surge-rise-continues-daily` (from F5, F6, F7, F3, F2, F1): After an hour in which the coin rises far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price keeps rising over the next 24 hours. The larger that hour's rise relative to its typical move, the larger the further rise.
+- `028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.d2_volume-rise-two-day-continuation` (from F5, F6, F4, F1): After an hour in which the coin rises far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price keeps rising over the next two days. The larger that hour's rise times its volume surge, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
