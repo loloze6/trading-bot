@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of drift-adjusted 5-bar forward return on the case's forecast, pooled over coins",
+    "value": 0.8644610055063556,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.8644610055063556
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check passes); reject: slope < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move in the short direction",
+    "value": -0.002518394596420175,
+    "passed": false
+  },
+  "counts": {
+    "cases": 186
+  },
+  "decided_by": "Inconclusive: the slope's t is between -2 and 2.",
+  "reading": "Situation bars are recomputed from prices (90-bar return from the recorded fall_depth raw value where present, 1-bar return over the rolling 20-bar std of daily returns including the bar), falling back to the recorded regime 'mean_reversion' where the window lacks the history; a case is the first short bet (forecast fall of >= 2 points from its least negative level since the last bet, from 0 after a flat) in each 5-bar grid cell of a window with a full 5-bar forward return in that window; the minimum of 30 cases is treated as a minimum count (not observable)."
+}

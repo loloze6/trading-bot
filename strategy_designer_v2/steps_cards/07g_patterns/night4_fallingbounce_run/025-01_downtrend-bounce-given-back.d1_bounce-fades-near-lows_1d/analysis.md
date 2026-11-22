@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows_1d
+idea tested: 025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4218 USD
+---
+## Findings
+- **F1:** In coins whose 90-day return is not negative (regime `unknown`), a large one-day rise is followed by a further rise rather than a giveback. Over the next 5 days the unusual move is +5.5 % (0.48 usual moves, t 2.81, n 59) after rises above 2 of the 20-day standard deviation. It is +1.8 % (0.15, t 2.07, n 170) after rises of 1 to 2. Among up days, the slope of the 5-day move on the rise is +0.185 usual moves per standard deviation (t 3.58, n 781), and the 3-day slope is +0.137 (t 3.64, n 1358).
+- **F2:** Rises above one standard deviation are followed over 5 days by moves 0.225 usual moves larger in rising coins than in falling ones (t 2.28; 229 cases in rising coins, 162 in falling). Across all regimes, the 5-day unusual move after such rises grows with the coin's 20-day return: 0.084, then 0.150, then 0.217 usual moves by tercile (the top tercile t 2.00, n 127).
+- **F3:** In falling coins (90-day return negative), the fade the brief describes shows at 3 days, not at 5. Among up days, the slope of the 3-day move on the rise is −0.099 usual moves per standard deviation (t −2.67, n 1243). At 5 days it is −0.025 (t −0.45, n 641), which is why the tested 5-day measure stayed inconclusive (t 1.08).
+- **F4:** In falling coins, the next day's move runs against the day's move. The slope of the 1-day unusual move on the day's move in standard deviations is −0.065 (t −6.05, n 7335). On up days alone it is −0.031 (t −1.34, n 3519), so the effect is carried mostly by down days that rebound. In rising coins the same slope is −0.019 (t −1.65, n 7885).
+- **F5:** The book lost because its shorts were wrong-footed and held too long. Shorts entered at the full forecast (|forecast| ≈ 20) returned a mean of −4.39 % per trade before fees (n 1490), against −2.14 % (n 497) for weaker entries. Trades held 12 to 14 days lost 7 % to 12 % on average. The book was negative in 17 of 24 windows.
+- **F6:** Saturday is the one weekday with a positive mean coin return in every coin, with t from 2.15 to 2.92 per coin. On coin-averaged days it is +0.45 % (t 3.04, n 414), and it is positive in 7 of 8 years. It is not graded, so no idea is written from it.
+
+## Ideas
+- `025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.g1_rising-market-bounces-keep-going` (from F1, F2): In a coin whose 90-day return is positive, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a further rise over the next 5 days, and the larger the rise in standard deviations, the larger the rise that follows.
+- `025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.g2_falling-market-bounce-fades-fast` (from F3, F5): In a coin whose 90-day return is negative, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a fall over the next 3 days, and the larger the rise in standard deviations, the larger the fall.
+- `025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.g3_falling-market-drops-rebound-overnight` (from F4): In a coin whose 90-day return is negative, a one-day fall that is large relative to its 20-day standard deviation of daily returns is followed by a rise over the next day, and the larger the fall in standard deviations, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 025-02_deeper-fall-bigger-giveback_1d
+idea tested: 025-02_deeper-fall-bigger-giveback
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3665 USD
+---
+## Findings
+- **F1:** A sharp one-day fall is followed by a graded rebound the next day. On days with a fall (z<0, where z is the day's return over the 20-day standard deviation), the regression of the next day's standardised unusual return on z has slope -0.078 with t -4.4 over 7529 days. The slope is negative in all six coins (XMR t -3.9, XRP t -2.3, ZEC t -2.0, ETH t -1.6, BTC t -0.6, LTC t -0.4) and in 7 of 8 years, with 2020 and 2021 strongest (t -4.5 and -3.9). The next-day unusual move is +0.53 % (t 3.9, 1511 days) after falls of 1 to 2 usual moves and +0.72 % (t 2.3, 425 days) after falls beyond 2 usual moves. Both are well above the 0.19 % a trade costs.
+- **F2:** The rebound after falls weakens but is still there over 2 days. On the non-overlapping 2-day grid, the pooled slope on z (z<0) is -0.059 with t -2.4 over 3673 cases, and every coin's slope is negative.
+- **F3:** A one-day rise is followed by continuation over the next 5 days, not by a give-back. On the 5-day grid, the slope of the standardised unusual return on z for up days is +0.108 with t 2.9 over 1422 cases, positive in all six coins and in 7 of 8 years. The unusual 5-day move is +1.47 % (t 2.3, 295 cases) after rises of 1 to 2 usual moves and +2.59 % (t 1.8, 96 cases) after rises beyond 2. The next day after a rise is flat (-0.11 % and -0.04 %), so the continuation shows over days 2 to 5.
+- **F4:** The tested situation shows no give-back. The idea's 186 short cases have an unusual move of -0.25 % against the short (strength -0.023), and the trades' mean net result is negative in every coin (BTC -1.5 %, XRP -11.6 %). After rises beyond 2 usual moves with a negative 90-day return, the slope on z is +0.02 (t 0.2, 183 cases), against +0.13 (t 1.0, 203 cases) with a positive 90-day return.
+- **F5:** The 30-day return looks like momentum when pooled, but the pattern is not stable. The pooled slope is +0.117 with t 2.2 over 2555 cases, but it flips sign by coin (XMR -0.31, ZEC +0.21) and by year (2018 -1.26 with t -4.1, 2022 -0.52 with t -2.3, 2025 +0.26 with t 3.0). The range quintiles show no pattern (all |t| under 1.1) and neither do the volatility terciles (all |t| under 0.8). Friday's next-day unusual move of +0.30 % (t 3.8) holds in all six coins but only in 5 of 8 years. None of these is a finding.
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.g1_sharp-drops-rebound-next-day` (from F1, F2): The larger a coin's one-day fall, measured in its usual daily moves over the past 20 days, the larger its rise over the next day.
+- `025-02_deeper-fall-bigger-giveback.g2_sharp-rises-keep-going` (from F3, F4): The larger a coin's one-day rise, measured in its usual daily moves over the past 20 days, the larger its further rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

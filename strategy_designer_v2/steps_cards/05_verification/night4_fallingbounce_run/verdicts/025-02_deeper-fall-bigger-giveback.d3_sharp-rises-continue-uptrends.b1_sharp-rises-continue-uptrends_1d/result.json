@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar unusual move over cases (before costs)",
+    "value": -0.0015771576454186578,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.2654398327160099
+    },
+    "threshold": "confirm t >= 2 over at least 30 cases; reject t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (median forecast split)",
+    "value": 0.02842242732775502,
+    "passed": true
+  },
+  "counts": {
+    "cases": 930,
+    "upper half cases": 465,
+    "lower half cases": 465
+  },
+  "decided_by": "t between -2 and 2 over at least 30 cases (inconclusive rule).",
+  "reading": "Regime ret90>0 recomputed from closes where the window holds 90 prior bars, else the recorded regime=='trending'; the rise is last_history_value>0 (day's return>0 if missing); cases are long bets per the holding rule (forecast rise >=2 from its lowest level since the last bet, from 0 after a flat), the first per 10-bar grid cell from each window's first row; drift is the coin's mean 10-bar grid return over all windows; the median split puts cases above the median in the upper half and at or below it in the lower half."
+}

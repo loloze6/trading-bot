@@ -1,0 +1,58 @@
+{
+  "line": "7.d",
+  "backtest": "025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b1_bounce-fade-all-coins_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.46610399999999996,
+  "findings": {
+    "F1": "Before any cost, the book's short bets lose money. Over 5 days the cases' total move in the short direction is \u22120.21 % (t \u22121.05, 2989 cases), against a trade cost of 0.22 %. Over 3 days it is \u22120.33 % (t \u22122.22) and over 10 days \u22120.57 % (t \u22121.99). The 4260 short trades, held 11.1 days on average, lose 3.69 % gross and 3.79 % net each. The failure therefore comes from the move the book captures, not from fees.",
+    "F2": "The book is short on 49 % of bars. On those bars it loses 0.042 % a day. Shorting coins whose drift is upward costs 0.100 % a day, and timing gains back only 0.058 %. The idea's unusual move (+0.54 % per case, strength 0.040) is too small to cover a normal drift of \u22120.75 % in the short direction.",
+    "F3": "The fade reverses with the depth of the 90-day fall, against the brief's reading.",
+    "F4": "Bounces far above the 90-day low lose, in the direction the idea predicts.",
+    "F5": "The book loses when the coin is already rising over 30 days. Short bars with a positive 30-day return lose 0.11 % a day (t \u22122.31, summed \u22125.35). Cases in that quartile fall \u22120.95 % over 5 days (t \u22122.14) in the short direction. Cases with a 30-day return between \u221223 % and \u221212 % gain +1.71 % (t 4.17).",
+    "F6": "The losses cluster in recovery years."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 5 days, and the smaller the coin's 90-day fall (the closer its 90-day return to zero), the larger the fall.",
+      "consequence": "A trader would short sharp bounces in coins that are only mildly down over 90 days, and refuse to short bounces in coins that have already fallen deeply.",
+      "name": "bounces fade in shallow downtrends",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move is followed by a further rise over the next 10 days, and the deeper the coin's 90-day fall, the larger that rise.",
+      "consequence": "A trader would buy, not short, sharp bounces in coins that have lost the most over 90 days, since those bounces start recoveries.",
+      "name": "deep-fall bounces keep rising",
+      "from": "F1, F3, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move is followed by a rise over the next 5 days, and the larger the coin's 30-day return before that day, the larger the rise.",
+      "consequence": "A trader would refuse to short bounces in falling coins that have already turned up over the past month, and would lean long on them instead.",
+      "name": "bounces after monthly upturn continue",
+      "from": "F4, F5, F6",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b1_bounce-fade-all-coins.d1_bounces-fade-in-shallow-downtrends",
+    "025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b1_bounce-fade-all-coins.d2_deep-fall-bounces-keep-rising",
+    "025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b1_bounce-fade-all-coins.d3_bounces-after-monthly-upturn-continue"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.b1_double-fall-fade-more-coins_1d
+idea tested: 025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.b1_double-fall-fade-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4446 USD
+---
+## Findings
+- **F1:** The book loses its gain in shorts held past the 2-day horizon: the 972 trades held over 2.5 days lose 2.73 % each before fees (2,658 points summed), while the 2,103 shorter trades lose only 0.11 % each; the 1,384 trades held about 2 days earn +0.94 % each. The mean trade lasts 4.98 days against a median of 2.
+- **F2:** After a short entry, the fade comes on the first day only. The next-day short return is +0.50 % (t 3.25, 1,081 entries). The second day alone gives -0.07 % (t -0.49), so the 2-day return falls back to +0.44 % (t 2.13).
+- **F3:** The fade appears only when the coin fell over the 7 days before the bounce. On the non-overlapping 2-day grid (421 cases), the two lowest quartiles of that 7-day return give +1.34 % (t 1.77) and +1.02 % (t 2.50) beyond drift over 2 days. The two highest quartiles give -0.24 % and -0.09 %.
+- **F4:** The trades show the same split by the 7-day return at entry. Shorts entered after the highest quartile of 7-day returns lose 1.79 % each before fees, against 0.37 % and 0.34 % in the two lowest quartiles.
+- **F5:** Inside the falling-week half, the effect becomes graded by the size of the bounce. The 2-day short return beyond drift rises from -0.26 % for the smallest-bounce tercile, to +0.94 %, to +2.86 % for the largest (70 cases each). In the largest tercile the total move is +2.59 %, about 12 times the 0.22 % cost of a trade.
+- **F6:** Over all cases the idea's total move is +0.22 %, 1.0 times the cost of a trade. The book's mean daily return in position is -0.0021 % at a mean absolute allocation of 0.26, and the losses cluster in 2023 and 2024 (-2.78 % and -2.07 % per trade before fees). The result is a Sharpe of -0.12 and a Calmar of -0.05.
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.b1_double-fall-fade-more-coins.d1_bounce-fades-after-falling-week` (from F3, F4, F5, F6): In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, only while its 30-day return is also negative, the larger that one-day rise in usual daily moves and the deeper the coin's fall over the 7 days before that rise, the larger its fall over the next 2 days.
+- `025-02_deeper-fall-bigger-giveback.d1_short-lived-fade-fresh-fall.b1_double-fall-fade-more-coins.d2_one-day-bounce-giveback` (from F1, F2): In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, only while its 30-day return is also negative, the larger that one-day rise in usual daily moves, the larger its fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

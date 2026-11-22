@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move in the short direction",
+    "value": 0.002927698624770931,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.0821805816422334
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-|forecast| half minus smaller half",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1337,
+    "larger half": 0,
+    "smaller half": 1337
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The 90-day return is recomputed from in-window closes where 90 prior bars exist and taken from the recorded regime otherwise; a case is the first short bet (a rise of the short forecast's size of at least 2 points from its lowest size since the last bet, reset at flat or side change) in each 5-bar grid cell of its window, with its 5-bar return inside the window; the larger half is abs forecast above the median and the smaller half at or below it."
+}

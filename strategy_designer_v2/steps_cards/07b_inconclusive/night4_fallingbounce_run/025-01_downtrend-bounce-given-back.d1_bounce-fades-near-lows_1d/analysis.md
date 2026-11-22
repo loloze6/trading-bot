@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows_1d
+idea tested: 025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3489 USD
+---
+## Findings
+- **F1:** The main measure is on the side the idea predicts but too small to show: the mean unusual 5-day move in the short direction is +0.29 % per case (t 1.08, 1,337 cases, strength 0.029). That is about half the 0.05 strength of real ideas measured so far, and after the coins' normal drift of -0.59 % the total move is -0.30 % per case, against a trade cost of 0.19 %.
+- **F2:** The effect changes sign across years, so the market's own phases drown it. It is positive in 2018 (+2.05 %, t 2.41, 252 cases) and 2019 (+1.04 %, t 1.81, 186 cases) and reversed in 2020 (-2.57 %, t -2.58, 98 cases) and 2021 (-2.22 %, t -1.85, 102 cases).
+- **F3:** The effect is mixed across coins and none of the six shows it clearly. ETH (+1.13 %, t 1.55), LTC (+0.85 %, t 1.56) and ZEC (+0.73 %, t 1.10) lean toward a fall, while XRP (-0.94 %, t -1.15) and XMR (-0.38 %, t -0.59) lean the other way.
+- **F4:** The supporting check could not be measured, and the forecast's size does not grade the move. 65.7 % of cases sit at the forecast's cap of 20, so the median is 20 and the larger half holds 0 cases. By forecast tercile the unusual move is +0.00 % (low), +0.78 % (mid) and +0.09 % (high).
+- **F5:** The bounce's size does not grade the move either. By quartile of the day's rise in 20-day standard deviations, the unusual move is +0.46 %, +1.47 %, -0.47 % and +0.47 %, and the correlation of the rise with the 5-day unusual move is -0.02.
+- **F6:** The idea's own comparison, nearness to the 90-day low, points the predicted way but is weak. Bounces in the quartile nearest the low are followed by +1.53 % (t 1.70, 165 cases), against -1.39 % (t -1.46, 159 cases) in the farthest quartile, with a correlation of -0.09 between distance above the low and the 5-day unusual move.
+- **F7:** The fall shows after bounces in coins only mildly down over 90 days and reverses in the deepest falls, more clearly over 10 days than over 5. By tercile of the 90-day return (cases with 90 in-window days before them), the 10-day unusual move is -4.79 % in the deepest (t -2.28, 96 cases), +1.36 % in the middle (t 1.33, 72 cases) and +2.76 % in the mildest (t 3.68, 87 cases). Over 5 days the same terciles give -1.34 %, +0.51 % and +1.04 %.
+- **F8:** The fade shows sharpest on the day after the bounce, not over the plan's 5 days. The 1-day unusual move is +0.24 % (t 2.04, 1,395 cases, strength 0.051), against -0.04 % over 3 days and +0.16 % over 10 days.
+
+## Ideas
+- `025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b1_bounce-fade-all-coins` (from F1, F3): In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 5 days, and the closer the coin's close on that day to its lowest close of the past 90 days, the larger the fall.
+- `025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b2_bounces-fade-in-mild-declines` (from F7, F2, F6): In a coin whose 90-day return is negative, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a fall over the next 10 days, and the shallower the coin's 90-day fall, the larger that fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

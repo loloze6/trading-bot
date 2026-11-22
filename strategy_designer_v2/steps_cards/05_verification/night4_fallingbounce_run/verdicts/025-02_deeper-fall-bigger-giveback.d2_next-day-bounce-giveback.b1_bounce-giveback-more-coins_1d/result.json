@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move (short direction), next 1 bar, on bars with forecast <= -2",
+    "value": 0.0026997854698802204,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.2682607784566335
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and larger-|forecast| half ahead; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger |forecast| half minus smaller half",
+    "value": -0.002036837300026265,
+    "passed": false
+  },
+  "counts": {
+    "cases": 3535,
+    "larger half": 1767,
+    "smaller half": 1768
+  },
+  "decided_by": "t >= 2 with a positive mean, but the larger half is not ahead of the smaller half.",
+  "reading": "The 90-bar return is recomputed from closes where 90 prior bars exist in the window and taken from the recorded regime otherwise, the rise is the raw bounce value > 0, and the median split puts cases with |forecast| strictly above the median in the larger half and the rest in the smaller half."
+}

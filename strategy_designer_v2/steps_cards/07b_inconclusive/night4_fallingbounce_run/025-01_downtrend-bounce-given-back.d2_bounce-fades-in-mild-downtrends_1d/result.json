@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3545657,
+  "findings": {
+    "F1": "The main measure is on the side the idea predicts but too small to show: the mean unusual 5-day move after the short bets is +0.23 % (t 0.78, 1,045 cases, 6 coins), only 0.026 of the coin's usual 5-day move of 10.6 %. My recount gives the same, +0.22 % (t 0.74, 1,045 cases).",
+    "F2": "The idea's grading by depth holds while its mean does not. Step 5's depth slope is positive (t 2.94). By depth quartile, the deepest-fall quarter of cases gives back nothing: its unusual 5-day move is \u22121.18 % (t \u22121.58, 263 cases). The other three quarters all fade: +0.92 % (t 1.78), +0.73 % (t 1.50) and +0.41 % (t 0.79, shallowest).",
+    "F3": "Over 10 days the fade in the three shallower quarters is larger: +2.21 % (t 2.75, 242 cases), +0.06 % (t 0.06) and +1.76 % (t 2.14, shallowest). The deepest quarter loses \u22121.75 % (t \u22121.78, 259 cases). Over all cases, the 10-day move is +0.55 % (t 1.21) against the plan's 5-day +0.22 % (t 0.74).",
+    "F4": "The effect is mixed across periods and coins, and the market's own moves drown it. By year, the 5-day move is positive in 2018 (+1.23 %, t 1.30), 2019 (+0.90 %, t 1.77), 2022 (+0.83 %, t 1.35) and 2025 (+1.94 %, t 2.94). It is strongly negative in the bull years 2020 (\u22122.90 %, t \u22122.84, 92 cases) and 2021 (\u22122.99 %, t \u22122.16, 70 cases). By coin, BTC, ETH, LTC and ZEC are each about +0.6 % to +1.0 % (t 0.9 to 1.2), while XRP is \u22121.40 % (t \u22121.57) and XMR \u22120.08 %.",
+    "F5": "The size of the bounce does not grade the outcome. By forecast-size quartile, the strongest bets give +0.13 % (t 0.20), against +0.29 %, +0.78 % and \u22120.33 % for the other three.",
+    "F6": "The book cannot pay at this size. Per case the unusual move (+0.23 %) is 1.2 times the 0.19 % cost of a trade. The total move is \u22120.37 %, \u22121.9 times the cost, because shorting works against the coins' normal drift of \u22120.59 % in the short's direction. The book's Sharpe is \u22120.40."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "bounce fade, all coins",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ],
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 5 days, and the shallower the coin's 90-day fall, the larger the fall that follows.",
+      "consequence": "A trader would fade bounces in coins drifting gently lower, and refuse to fade bounces in coins that have already crashed, where bounces hold.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise that is large relative to its usual daily move (its 20-day standard deviation of daily returns) is followed by a fall over the next 10 days, and the shallower the coin's 90-day fall, the larger the fall that follows.",
+      "consequence": "A trader would fade sharp bounces in gently falling coins over about two weeks, not one, and would refuse to fade them in coins that have already crashed.",
+      "name": "mild-downtrend bounce fades slowly",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins",
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b2_mild-downtrend-bounce-fades-slowly"
+  ],
+  "no_ideas": null
+}

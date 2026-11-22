@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends_1d
+idea tested: 025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5591 USD
+---
+## Findings
+- **F1:** Outside the rising regime (90-day return not positive), a one-day move in usual daily moves is partly reversed the next day: the regression of the next day's unusual return on the day's z gives slope -0.00319 with t -6.07 over 7,337 days, against slope -0.00072 with t -1.26 over 7,883 days in the rising regime.
+- **F2:** That reversal is graded and occurs on both sides; outside the rising regime, days above +2 usual moves are followed by -0.67 % the next day (t -2.05, n 202, strength -0.138), days of +1 to +2 by -0.39 % (t -2.43, n 680), and days of -1 to -2 by +0.67 % (t 3.76, n 783, strength +0.137).
+- **F3:** The F1 reversal holds in every coin, with slopes from -0.00175 to -0.00577 and t from -1.63 to -4.28, but it is concentrated in early years: t -3.45 in 2018, -8.53 in 2020 and -3.37 in 2021, against t between -0.38 and -1.31 from 2022 to 2025.
+- **F4:** In the rising regime, closeness of the close to its 20-day high predicts the next 10 days. The slope of the 10-day unusual move on the distance from the 20-day high is 0.214 with t 3.44 over 808 cases, against -0.030 with t -0.63 outside the regime. Over all regimes, closes at their 20-day high are followed by +4.52 % unusual over 10 days (t 2.88, n 194), against -0.55 % (t -1.39, n 1,353) elsewhere.
+- **F5:** F4 is not stable across years: its slope over all regimes has t 3.35 in 2019 and 4.38 in 2020, but t -3.08 in 2022 and -1.87 in 2023, and it is significant in no single coin (t 0.07 to 1.87).
+- **F6:** In the rising regime, the 5-day return in usual moves predicts the 10-day unusual move, but the evidence is weak. The slope is 0.0226 with t 3.45 over 734 non-overlapping cases. The quintiles are not monotone (strength -0.06, +0.06, +0.24, -0.10, +0.22). Only XRP (t 2.46) and ZEC (t 2.59) carry it, and 2023 runs the other way (t -3.57).
+- **F7:** The tested idea's own sharpest cases are few and noisy: rising-regime days above +2 usual moves were followed by +10.9 % unusual over 10 days, but with t 1.85 on only 34 cases. The tested idea's overall size was -0.30 % per case (t -0.54, 996 cases).
+- **F8:** The book is mostly the coins' own drift, not timing. It earned 0.087 % a day against the coins' 0.118 %, with correlation 0.78 to the coins over 2,898 days. On its best 2 % of days it made +8.27 % while the coins made +9.13 %, and on its worst 2 % it lost -8.56 % while the coins fell -9.96 %.
+- **F9:** Weekday effects on the next day did not stand out among the seven groups tested (Friday +0.24 % t 2.77, Wednesday -0.25 % t -2.08, Monday -0.19 % t -1.93), so no idea rests on them.
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.g1_one-day-reversal-outside-uptrends` (from F1, F2, F3): In a coin whose 90-day return is not positive, the larger a one-day move measured in usual daily moves, the larger the move in the opposite direction over the next day.
+- `025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.g2_falling-coin-bounces-fade-overnight` (from F1, F2): In a coin whose 90-day return is negative, the larger a one-day rise measured in usual daily moves, the larger its fall over the next day.
+- `025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.g3_uptrend-highs-keep-rising` (from F4, F5): In a coin whose 90-day return is positive, the closer its close is to its highest close of the past 20 days, the larger its rise over the next 10 days.
+- `025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.g4_uptrend-weekly-momentum-continues` (from F6, F7): In a coin whose 90-day return is positive, the larger its 5-day return measured in usual daily moves, the larger its rise over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,57 @@
+{
+  "line": "7.g",
+  "backtest": "025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.46067840000000004,
+  "findings": {
+    "F1": "In coins whose 90-day return is 0 or above, the size of today's rise predicts the next 5 days, the reverse of the falling-market fade. On up days, the 5-day unusual move rises by 2.30 % for each usual daily move of the rise (t 5.65, 1571 non-overlapping cases, Spearman 0.12). The same slope over 10 days is 3.08 % (t 4.36, 754 cases).",
+    "F2": "That continuation in rising coins is graded and broad. The 5-day unusual move after a rise of 1\u20132 usual moves is +1.99 % (t 2.89, n 365), after 2\u20133 moves +4.35 % (t 2.98, n 95), and after more than 3 moves +12.1 % (t 1.90, n 65). Rises above 1 usual move are followed by positive means in 7 of 8 years (2025 is the exception, \u22120.90 %) and in 79 % of the 19 coins.",
+    "F3": "In coins with a negative 90-day return, the bounce fade lasts beyond the single day the book held. The 3-day unusual move is \u22121.03 % after rises of 1\u20132 usual moves (t \u22123.09, n 477) and \u22121.87 % after 2\u20133 moves (t \u22122.75, n 129). The 5-day unusual move is \u22122.38 % after 2\u20133 moves (t \u22121.64, n 70) and \u22127.43 % after more than 3 moves (t \u22123.65, n 27). These are many times the 1-day sizes the test captured: \u22120.66 % and \u22121.28 % next day, against a cost of 0.22 % per trade.",
+    "F4": "The one-day fade is graded and is opposite in the two regimes. Among up days, the next-day unusual move slopes \u22120.25 % per usual move in falling coins (t \u22123.81, n 7482) and +0.20 % per usual move in rising coins (t 4.38, n 8337). The next-day mean after rises above 2 moves runs from \u22121.62 % (t \u22122.45) in the lowest 30-day-return quintile to +0.68 % in the highest.",
+    "F5": "Over the same holding periods, a coin's 30-day return measured in its usual moves predicts its next 10 days. The slope is 1.26 % per unit (t 4.13, 2645 cases) and the 5-day slope is 0.66 % (t 4.24, 5363 cases). It reverses in 2018 (t \u22124.69) and 2022 (t \u22123.33), so it is less steady than F1.",
+    "F6": "The tested book earned nothing, \u22120.004 % a day on average, with window means scattered from \u22120.116 % to +0.088 % a day. Its 1-day total move per case of +0.19 % is below the 0.22 % cost of a trade.",
+    "F7": "Next-day unusual moves alternate by weekday: positive on Tuesday, Thursday and Friday (t 3.3, 2.9, 4.2), negative on Monday, Wednesday and Sunday (t \u22122.8, \u22122.5, \u22122.4). The alternating shape is implausible and many angles were examined, so I treat this pattern as not distinguishable from chance and base no idea on it."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is positive, the larger today's one-day rise measured in usual daily moves, the larger the coin's further rise over the next 5 days.",
+      "consequence": "A large up day in a rising coin is a reason to go long for several days rather than fade it, and a reason to refuse shorts against it.",
+      "name": "Breakouts continue in uptrends",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, the larger today's one-day rise measured in usual daily moves, the larger the coin's fall over the next 5 days.",
+      "consequence": "A short against a bounce in a falling coin should be held for several days, where the giveback is many times the cost of a trade, rather than covered after one day.",
+      "name": "Bounce giveback over days",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 30-day return measured in its usual daily moves, the larger its move in the same direction over the next 10 days.",
+      "consequence": "A strong 30-day move scaled by its volatility is a reason to trade with that move for the following ten days.",
+      "name": "Volatility-scaled monthly momentum",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins.g1_breakouts-continue-in-uptrends",
+    "025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins.g2_bounce-giveback-over-days",
+    "025-02_deeper-fall-bigger-giveback.d2_next-day-bounce-giveback.b1_bounce-giveback-more-coins.g3_volatility-scaled-monthly-momentum"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move in the short direction after short bets",
+    "value": 0.006156111369803289,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.8101089598170494
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and correlation > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Pearson correlation of forecast size with the unusual short move",
+    "value": -0.027858082009528176,
+    "passed": false
+  },
+  "counts": {
+    "cases over all coins and windows": 2312
+  },
+  "decided_by": "The mean unusual short move is positive with t >= 2 but the correlation is 0 or below.",
+  "reading": "The 90-day fall is recomputed as close[t]/close[t-90]-1 inside the window where 90 prior bars exist and taken from regime == 'mean_reversion' elsewhere, the rise is the bounce component's raw value > 0; a short bet is a fall of the forecast of at least 2 points from its least-short level on the short side since the last bet (from 0 after flat or long), the case of a grid cell is its first bet with a full 5-bar return inside the window, and the forecast's size is its absolute value."
+}

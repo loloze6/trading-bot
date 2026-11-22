@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Welch t of 5-day return, rising-coin rises (A) minus forecast-negative bars (B)",
+    "value": 0.06134917983234611,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.9603850013056627
+    },
+    "threshold": "confirm if t >= 2 with supporting slope > 0; reject if t <= -2; at least 30 cases per group"
+  },
+  "supporting_check": {
+    "name": "slope of short-signed 5-day return minus drift on |forecast|, group B",
+    "value": -0.004824320785941778,
+    "passed": false
+  },
+  "counts": {
+    "group A (rise bars with positive 90-day return)": 7,
+    "group B (bars with negative forecast)": 24
+  },
+  "decided_by": "A group has fewer than 30 cases (A: 7, B: 24), the plan's minimum.",
+  "reading": "Situation recomputed from prices (1-day return over the std of the last 20 daily returns including the bar, 90-day close-to-close return inside the window), falling back to the recorded regime where the 90-day history is not inside the window; group B is the grid bars with forecast < 0; the supporting y is -(5-day return - coin's mean non-overlapping 5-day return over all windows); a group under 30 cases is 'not observable'."
+}

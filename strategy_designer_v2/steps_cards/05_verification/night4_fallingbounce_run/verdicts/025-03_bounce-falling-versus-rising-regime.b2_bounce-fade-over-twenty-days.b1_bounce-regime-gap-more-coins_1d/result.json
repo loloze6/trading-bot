@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 20-bar move, trending minus mean_reversion",
+    "value": 0.04420806608048182,
+    "statistic": {
+      "name": "Welch t",
+      "value": 2.6192220752403945
+    },
+    "threshold": "gap > 0 with Welch t >= 2 (confirm, with supporting check); gap < 0 with Welch t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "gap among larger-rise minus gap among smaller-rise cases (median |forecast| split)",
+    "value": 0.005115631254289349,
+    "passed": true
+  },
+  "counts": {
+    "trending cases": 792,
+    "mean_reversion cases": 779,
+    "larger-rise cases": 785,
+    "smaller-rise cases": 786
+  },
+  "decided_by": "The gap is positive with Welch t >= 2 and the larger-rise gap exceeds the smaller-rise gap.",
+  "reading": "A case is the first bet (forecast rise of >= 2 points on its side from its lowest level since the last bet) in each 20-bar cell of a window counted from its first row, grouped by the bar's recorded regime, its move is the raw 20-bar return minus the coin's drift (not signed by direction, as the main measure states), and the median split puts cases with |forecast| above the median in the larger-rise half."
+}

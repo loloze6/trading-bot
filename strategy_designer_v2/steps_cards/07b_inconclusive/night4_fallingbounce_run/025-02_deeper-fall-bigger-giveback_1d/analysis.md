@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 025-02_deeper-fall-bigger-giveback_1d
+idea tested: 025-02_deeper-fall-bigger-giveback
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3372 USD
+---
+## Findings
+- **F1:** The test's main measure is on the side the idea predicts but well short of the bar. The slope t is 0.86 on 186 cases, and the threshold is 2. The supporting check points the other way: the mean unusual 5-day move in the short direction is -0.25 % per case, a strength of -0.023, against a coin's usual 5-day move of 10.60 %.
+- **F2:** After sharp one-day rises in coins with a negative 90-day return, prices did not fall on average. Across 229 to 235 rises, the mean move is -0.34 % over 1 day (t -1.11), +0.82 % over 5 days (t 1.01), +2.80 % over 10 days (t 2.33) and +4.39 % over 20 days (t 2.11).
+- **F3:** Bounces in falling markets are not followed by different moves than bounces in rising markets. The unusual 5-day move is -0.25 % after 191 falling-market rises and +1.09 % after 63 rising-market rises (Welch t -0.78). Over 10 days it is +1.39 % against +1.04 % (t 0.11).
+- **F4:** Measured on the raw 90-day return rather than the standardised forecast, the depth gradient runs against the idea. The slope of the unusual 5-day move on the 90-day return is -0.000186 (t -0.79, 236 cases). The deepest third (mean 90-day return -88 %) is followed by +1.7 % over 5 days (t 1.05) and +5.4 % over 10 days (t 2.42, 59 cases). The shallowest third is followed by -1.4 % (t -0.96) and -0.2 %.
+- **F5:** The effect is mixed by period rather than steady. The unusual 5-day move is -4.2 % in 2022 (t -2.54, 49 cases), +5.2 % in 2021 (t 2.80, 21 cases), and small with |t| < 1.9 in the other years.
+- **F6:** The effect is also mixed by coin. The unusual 5-day move ranges from -1.6 % in LTC to +3.2 % in XRP, with every |t| below 1.3. The 10-day rebound comes mostly from XRP (+12.6 %, t 2.50, 31 cases), while the other five coins sit between -2.5 % and 0.0 %.
+- **F7:** The test used only 6 of the 19 coins. Ten more coins have daily bars in folds A and D, and partly in B and C, so many more cases could be gathered.
+
+## Ideas
+- `025-02_deeper-fall-bigger-giveback.b1_deeper-fall-bigger-giveback-more-coins` (from F1, F5, F6, F7): In a coin whose 90-day return is negative and that has just had a one-day rise of several usual daily moves, the deeper its 90-day fall, the larger its fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

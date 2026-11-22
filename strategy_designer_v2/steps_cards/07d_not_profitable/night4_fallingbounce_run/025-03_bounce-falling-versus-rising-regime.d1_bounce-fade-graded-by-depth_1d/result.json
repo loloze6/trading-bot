@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "025-03_bounce-falling-versus-rising-regime.d1_bounce-fade-graded-by-depth_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3635435,
+  "findings": {
+    "F1": "The fade the book bets on is not in the bars. On the non-overlapping 5-day grid, a one-day rise of at least 1 usual daily move while the 30-day return is negative is followed by an unusual 5-day move of +0.29 % (t 0.33, 116 cases). At 2 or more usual daily moves it is -1.43 % (t -0.83, 30 cases). Neither is distinguishable from zero.",
+    "F2": "The same rises in a coin whose 30-day return is positive keep going, and the larger the rise, the larger the follow-through. The unusual 5-day move is +2.77 % at 1 or more usual moves (t 3.27, 236 cases), +2.92 % at 1.5 or more (t 2.25, 123 cases) and +4.74 % at 2 or more (t 2.37, 62 cases). The 20-day return splits the rises the same way (+2.39 %, t 2.89, 245 cases).",
+    "F3": "Inside the falling case, the 30-day depth does not grade the outcome. Among rises of at least 1 usual move with a negative 30-day return, the z30 terciles show unusual moves of +1.41 %, -1.02 % and +0.45 %, and the slope of the unusual move on z30 is -0.0064 (p 0.75, 116 cases).",
+    "F4": "The book trades too rarely because its situation is rarely knowable. Windows are only about 122 daily bars, so the 90-day return exists on just 26 % of bars and the regime fires on 236 of 17,524 bars. The book holds a position on 2.7 % to 5.6 % of bars per coin and makes 161 trades, or 0.0085 trades a day.",
+    "F5": "The book's gain is lost on the shorts. The 161 short trades average -3.06 % after fees (median -1.39 %), from +0.57 % on BTC to -7.27 % on XRP. The 15 trades held beyond 7 days average -27.6 % each, against -0.54 % for the 145 shorter ones. Daily book returns are negative in 13 of 24 windows (for example w18 -4.8 %, w20 -2.6 %), which leaves a mean daily return of 1.985e-05 and a Calmar of 0.055.",
+    "F6": "The cost is not what blocks the book. Per trade the gap between gross and net is about 0.10 %, small next to the 5-day usual move of 7.9 % to 13.9 %. The loss comes from the direction of the bet: shorting rises that F1 shows do not fade, in coins whose rises (F2) tend to continue."
+  },
+  "ideas": [
+    {
+      "idea": "In one coin, a one-day rise of several usual daily moves is followed over the next 5 days by a further rise when its 30-day return is positive, and the larger the rise in usual daily moves, the larger that further rise.",
+      "consequence": "A trader would buy sharp up-days in coins up over the last month, larger the sharper the day, instead of fading bounces, which carry no edge in falling coins.",
+      "name": "sharp rises continue in uptrends",
+      "from": "F2, F1, F4, F6",
+      "refs": [
+        "F2",
+        "F1",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In one coin, a one-day rise of several usual daily moves is followed over the next 5 days by a further rise when its 20-day return is positive, and the higher that 20-day return in usual daily moves, the larger the further rise.",
+      "consequence": "A trader would add to a sharp up-day the more the coin has already risen over the past 20 days, using a lookback short enough to be known on most bars.",
+      "name": "rise continuation graded by trend",
+      "from": "F2, F4, F5",
+      "refs": [
+        "F2",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-03_bounce-falling-versus-rising-regime.d1_bounce-fade-graded-by-depth.d1_sharp-rises-continue-in-uptrends",
+    "025-03_bounce-falling-versus-rising-regime.d1_bounce-fade-graded-by-depth.d2_rise-continuation-graded-by-trend"
+  ],
+  "no_ideas": null
+}
