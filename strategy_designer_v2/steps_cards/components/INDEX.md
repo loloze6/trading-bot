@@ -125,3 +125,6 @@ night4_range_run | 023-02_flat-range-bottom-reverts-up_1d | NetMoveToRangeRatio 
 night4_range_run | 023-02_flat-range-bottom-reverts-up_1d | HighLowRangeMidpointPosition | built: DonchianBreakoutComponent {"period": 30, "scaling_factor": 1.0, "source": "high_low"}
 night4_range_run | 023-03_flatter-range-stronger-reversion_1d | FlatnessWeightedRangeReversion | built: FlatnessWeightedRangePositionComponent {"period": 30}
 night4_range_run | 023-03_flatter-range-stronger-reversion_1d | NetMoveToRangeRatio | built: NetMoveToRangeRatioComponent {"period": 30, "source": "close"}
+night4_range_run | 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 30, "scaling_factor": 1.0, "source": "high_low"}
+night4_range_run | 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b2_moderate-flat-range-slide-continues.b1_moderate-flat-range-slide-more-coins_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 30, "scaling_factor": 1.0, "source": "high_low"}
+night4_range_run | 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d | ShareHumpWeightedMomentum | built: RangeShareHumpWeightedReturnComponent {"period": 30}

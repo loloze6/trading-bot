@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 5-bar forward return on forecast, pooled",
+    "value": 0.00038556592189981017,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.353995861311008
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 200 non-overlapping grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping grid cases with a recorded forecast": 3419
+  },
+  "decided_by": "The slope is positive with t >= 2 over at least 200 grid cases (confirm rule).",
+  "reading": "Cases are grid bars 0,5,10,... of each window with t+5 in the window and a non-missing forecast (zero forecasts included); each coin's drift is the mean of its grid 5-bar returns over all its windows; the slope and its t come from a pooled OLS with an intercept."
+}

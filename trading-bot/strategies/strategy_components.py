@@ -526,22 +526,23 @@ class DonchianBreakoutComponent(SubStrategyComponent):
     """
     Where the close sits inside its recent range, on every bar:
 
-        W = bars t - period + 1 .. t                     (bar t included)
-        source = "close" (default): H = max(close[W]), L = min(close[W])
-        source = "high_low":        H = max(high[W]),  L = min(low[W])
-        pos = (close[t] - L) / (H - L), pos = 0.5 when H = L
+        window = bars t - period + 1 .. t                    (bar t included)
+        source = "close" (default): H = max(close[window]), L = min(close[window])
+        source = "high_low":        H = max(high[window]),  L = min(low[window])
+        pos = (close[t] - L) / (H - L)    (pos = 0.5 when H = L)
         raw_value = (2 x pos - 1) x scaling_factor
 
-    With source "high_low" and scaling_factor 1 this equals
-    (close[t] - (H + L) / 2) / ((H - L) / 2).
-    Range and sign: -sf to +sf. It is +sf at the top of the range, -sf at the bottom and 0 at the middle (or for a
-    zero range). Graded and continuous. It is not a breakout event. source "close" is the original output, unchanged.
+    With source "high_low" and scaling_factor 1 this is (close[t] - (H + L) / 2) / ((H - L) / 2).
+    Range: -scaling_factor to +scaling_factor, bounded on real bars because the close lies inside [L, H].
+    Signed: positive above the window's middle, negative below it, 0 at the middle or for a zero range.
+    Graded, not a breakout event. The default source "close" is the original output, unchanged.
     Warm-up: period rows, bar t included.
-    NaN: a NaN close[t], or a NaN in the window's values read (closes, or highs and lows), gives NaN.
+    NaN: a NaN in any value read (the closes of the window for "close"; the highs and lows of the window and
+    close[t] for "high_low") gives NaN. A zero range gives 0.0.
     Building the component raises for a period below 1 or a source other than "close" or "high_low".
 
-    WHY THIS CANNOT LEAK: it reads only the last `period` rows of data (close, and high and low with "high_low"),
-    the last of which is bar t; every value is known at bar t's close.
+    WHY THIS CANNOT LEAK: it reads only the close (and, with "high_low", the high and low) of the last `period`
+    rows of data, the last row being bar t; every value is known at bar t's close.
     """
 
     def __init__(self, name="DonchianBreakout", weight=1.0, parameters=None):
@@ -562,25 +563,29 @@ class DonchianBreakoutComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        close = data['close'].astype(float)
+        close = data['close'].astype(float).iloc[-self.period:]
         c = float(close.iloc[-1])
         if self.source == "high_low":
-            hi_w = data['high'].astype(float).iloc[-self.period:]
-            lo_w = data['low'].astype(float).iloc[-self.period:]
+            highs = data['high'].astype(float).iloc[-self.period:]
+            lows = data['low'].astype(float).iloc[-self.period:]
+            if highs.isna().any() or lows.isna().any() or np.isnan(c):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            h = float(highs.max())
+            l = float(lows.min())
         else:
-            hi_w = close.iloc[-self.period:]
-            lo_w = hi_w
-        if np.isnan(c) or hi_w.isna().any() or lo_w.isna().any():
-            self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        H = float(hi_w.max())
-        L = float(lo_w.min())
-        rng = H - L
-        pos = 0.5 if rng == 0 else (c - L) / rng
+            if close.isna().any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            h = float(close.max())
+            l = float(close.min())
+        rng = h - l
+        pos = 0.5 if rng == 0 else (c - l) / rng
         self._raw_value = float((2.0 * pos - 1.0) * self.scaling_factor)
         self.confidence = 1.0
-        self.debug_info = {'high': H, 'low': L, 'pos': pos, 'source': self.source}
+        self.debug_info = {'high': h, 'low': l, 'pos': pos, 'source': self.source}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -5944,6 +5949,68 @@ class FlatnessWeightedRangePositionComponent(SubStrategyComponent):
             self._raw_value = float((2.0 * pos - 1.0) * flat)
         self.confidence = 1.0
         self.debug_info = {'high': hi, 'low': lo, 'base_close': float(c[0])}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
+
+
+class RangeShareHumpWeightedReturnComponent(SubStrategyComponent):
+    """
+    The period-bar return weighted by a hump of the net move's share of the window's high-low range:
+
+        R = close[t] / close[t - period] - 1
+        H = max(high[t - period + 1 .. t]),  L = min(low[t - period + 1 .. t])
+        s = min(1, abs(close[t] - close[t - period]) / (H - L)),  s = 0 when H - L = 0
+        raw_value = R x s x (1 - s)
+
+    Range and sign: -0.25 and up, unbounded above. It is signed like the period-bar return, and its size is
+    at most 0.25 x abs(R). It is 0 when the net move is 0, when the net move spans the whole range (s = 1),
+    or for a zero range. For a given return it is largest at s = 0.5. Graded and continuous in the prices.
+    Warm-up: period + 1 rows, bar t included.
+    NaN: a NaN close at bar t or t - period, or a NaN high or low in the last period rows, gives NaN.
+    A close[t - period] not above 0 gives NaN (never on real bars). Building the component raises for a
+    period below 1.
+
+    WHY THIS CANNOT LEAK: it reads close of bars t and t - period and high and low of bars
+    t - period + 1 .. t, all at or before the last row of data (bar t), and every one of them is known at bar
+    t's close.
+    """
+
+    def __init__(self, name="RangeShareHumpReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 30))
+        if self.period < 1:
+            raise ValueError(f"RangeShareHumpWeightedReturnComponent: period must be >= 1, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        close = data['close'].astype(float)
+        high = data['high'].astype(float).iloc[-p:]
+        low = data['low'].astype(float).iloc[-p:]
+        c_t = float(close.iloc[-1])
+        c_b = float(close.iloc[-(p + 1)])
+        if np.isnan(c_t) or np.isnan(c_b) or high.isna().any() or low.isna().any() or not c_b > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rng = float(high.max()) - float(low.min())
+        r = c_t / c_b - 1.0
+        if rng > 0:
+            s = min(1.0, max(0.0, abs(c_t - c_b) / rng))
+        else:
+            s = 0.0
+        self._raw_value = float(r * s * (1.0 - s))
+        self.confidence = 1.0
+        self.debug_info = {'return': r, 'share': s, 'range': rng}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()

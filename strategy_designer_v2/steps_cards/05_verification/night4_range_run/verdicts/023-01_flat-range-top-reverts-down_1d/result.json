@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.8857053877296792,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (5-bar forward return minus coin's mean 5-bar return), non-overlapping grid, non-zero forecast",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm: mean > 0 with t >= 2 on at least 30 cases; reject: mean < 0 with t <= -2 on at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 6422,
+    "agreeing bars": 5688
+  },
+  "decided_by": "Fewer than 90% of non-zero-forecast bars are flat-range bars (30-bar net move <= 0.33 of the range) with the forecast on the side opposite to the close's distance from the range middle.",
+  "reading": "Net move taken as |close[t] - close[t-29]| over the 30-bar high-low range of rows t-29..t (falling back to the recorded regime on bars with under 30 recorded bars), expected side short when the raw mid distance is above 0 and long below; the coin's mean 5-bar return is taken on the same non-overlapping grid over all its windows; the plan's 'fewer than 30 cases' is reported as not observable per the workflow's minimum-count rule."
+}

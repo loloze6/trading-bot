@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "023-02_flat-range-bottom-reverts-up_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3802236,
+  "findings": {
+    "F1": "The tested idea runs the wrong way. In flat coins (30-day net move at most 0.3 of the 30-day range), closes in the lower range quintiles show 5-day excess returns of \u22120.02 % (n 105, t \u22120.03) and \u22120.70 % (n 197, t \u22121.20). The flat and trending cases look alike: trending quintile 1 is \u22121.06 % (n 314, t \u22121.99). So being below the middle in a flat month predicts no rebound, and the step-5 size (\u22120.61 % per case, \u22123.2\u00d7 the 0.19 % cost) confirms it.",
+    "F2": "The 30-day return scaled by 30-day volatility predicts the next 5 days in its own direction. Its correlation with the 5-day excess move, in units of the usual move, is 0.056 (2,555 non-overlapping cases, t 2.84). Ranked by coin, the top 30-day-return quintile earns +1.18 % excess (n 510, t 1.99, strength 0.10) and the second-lowest \u22121.07 % (n 510, t \u22122.76, strength \u22120.10).",
+    "F3": "The continuation holds inside flat coins too, the regime the brief says should revert. Flat cases in the highest scaled 30-day-return group gain +2.33 % excess over 5 days (n 114, t 2.57, strength 0.22). Trending cases in the top quintile gain +1.09 % (n 511, t 1.93). The highest range-position quintile in trending coins gains +1.32 % (n 433, t 2.11, strength 0.11).",
+    "F4": "Measured in the direction of the past 30-day move, continuation grows from the smallest scaled moves to the larger ones. By size quartile it is \u22120.19 % (t \u22120.54), then +0.94 % (t 2.52), +0.80 % (t 1.90) and +0.63 % (t 1.25), with 639 cases each.",
+    "F5": "The continuation in F4 is positive in 5 of 6 coins, with ETH strongest at +1.11 % (t 2.42) and XMR the exception at \u22120.18 % (t \u22120.41). It is uneven across years: it is concentrated in 2020 (+1.76 %, t 2.67) and 2021 (+2.53 %, t 3.59), and negative in 2022 (\u22120.97 %, t \u22121.88). Its reliability outside the 2020\u20132021 bull years is therefore weak.",
+    "F6": "The book barely tracks a diluted version of holding. Its mean daily return is 0.017 % against 0.118 % for holding, its Sharpe is 0.40 and its correlation with holding is 0.66. On its 20 worst days the book loses 4.7 % while the coins lose 13.0 %, so most of the book's swings are the coins' own.",
+    "F7": "A calendar pattern stands out but cannot be written as a graded idea, so it gets no idea below. Pooled Friday and Saturday coin returns average +0.39 % a day (828 days, t 3.21) against +0.009 % on the other days (2,070 days, t 0.09). The Friday/Saturday minus other-day difference is positive in all 6 coins and in 6 of 8 years."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day return relative to its own 30-day daily volatility, the more its price continues in that same direction over the next 5 days. This holds even when the past month looks flat next to its high-low range.",
+      "consequence": "A trader should trade with a coin's volatility-scaled 30-day move rather than fade it toward the middle of the range. Recent strength is a reason to be long and recent weakness a reason to refuse a long.",
+      "name": "volatility-scaled monthly momentum continuation",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-02_flat-range-bottom-reverts-up.g1_volatility-scaled-monthly-momentum-continuation"
+  ],
+  "no_ideas": null
+}

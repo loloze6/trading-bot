@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of 10-bar forward return minus coin mean on forecast",
+    "value": 0.000737895650862634,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.172070314958131
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; over at least 200 grid cases"
+  },
+  "supporting_check": {
+    "name": "timing gain (book mean daily return minus market-rise gain) above 0",
+    "value": 0.0004363024710922668,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1691
+  },
+  "decided_by": "The slope is positive with t >= 2 over at least 200 grid cases and the timing gain is above 0.",
+  "reading": "The situation is read as the graded range position: a bar is on the plan's side when the forecast's sign equals the sign of the raw 30-close range position (above the middle long, below short, as 'more the closer to the top' implies); the regression uses every grid bar including zero forecasts, the coin mean is the mean of its grid 10-bar returns over all windows, and the book's daily returns are bar-to-bar postRebalance_total_value changes averaged over coins per timestamp."
+}

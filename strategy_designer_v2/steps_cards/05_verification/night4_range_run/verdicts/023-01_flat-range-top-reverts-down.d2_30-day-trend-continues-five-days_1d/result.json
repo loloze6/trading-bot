@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Pearson correlation of forecast with next 5-bar return minus normal drift",
+    "value": 0.03368863117598527,
+    "statistic": {
+      "name": "correlation t",
+      "value": 1.2941323468899946
+    },
+    "threshold": "confirm: r > 0 with t >= 2 and timing part > 0; reject: r < 0 with t <= -2; at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus market-rise gain (timing part)",
+    "value": 0.0006268921868749661,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 1476
+  },
+  "decided_by": "The correlation's t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The situation is rebuilt as |close[t]-close[t-30]| over the max high minus min low of the last 30 bars (the recorded regime stands in where a window has under 30 bars of history) with the side the sign of the raw 30-bar return; the normal drift is each coin's mean 5-bar return on the non-overlapping grid of all its windows; 'before costs' is the position after each bar's trade times the next bar's return, averaged over coins per day, with the market part the same position times the coin's mean daily return."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted 5-bar move in the short direction",
+    "value": 0.009231428198268363,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.014436292183679
+    },
+    "threshold": "t >= 2 confirms, t <= -2 rejects, over at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "slope of drift-adjusted 5-bar return on forecast (grid bars, forecast < 0)",
+    "value": 0.0005365429808506258,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 2049,
+    "supporting grid bars": 1857
+  },
+  "decided_by": "Mean unusual short move has t >= 2 over at least 30 cases and the supporting slope is positive.",
+  "reading": "Situation = 30-bar close return < 0 computed inside each window (falling back to the recorded regime 'mean_reversion' on the first 30 bars, where it cannot be computed) with a short forecast; a case is the first bar in each 5-bar grid cell (positions 0,5,10,... of each window) where the short forecast's size rises by >= 2 points from its smallest size since the last bet (reset to 0 at each window start, flat or side change), cases with no 5-bar return inside the window are dropped, drift is the coin's mean grid 5-bar return over all its windows, and fewer than 30 cases is reported as 'not observable'."
+}

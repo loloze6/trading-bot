@@ -1,0 +1,30 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (5-day return minus coin's normal drift) on the 5-bar grid",
+    "value": -0.006797483254419184,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -3.3903846908706936
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting difference > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "flatter-half minus less-flat-half mean reversion return per unit distance",
+    "value": -0.20223677569307652,
+    "passed": false,
+    "welch_t": -1.5884483429002665
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 3418,
+    "grid cases in main measure": 3419,
+    "supporting flatter half": 1277,
+    "supporting less-flat half": 1278
+  },
+  "decided_by": "Main mean is negative with t <= -2.",
+  "reading": "Main mean is over all grid bars (zero forecasts contribute zero) with drift as the coin's mean grid 5-day return over all windows; the supporting check recomputes pos and flatness from prices (range of closes t-29..t, net move close[t]-close[t-30]), so grid bars with fewer than 30 prior bars in the window or at the exact middle are left out, and the flatter half is flatness above the median, the less-flat half at or below it."
+}

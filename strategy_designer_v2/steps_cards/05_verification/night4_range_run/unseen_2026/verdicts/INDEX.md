@@ -1,0 +1,2 @@
+023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d: not observable (fit: exact) [main: 0.00184615; OLS slope t 2.51081; independent trending-regime grid cases 153]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d: inconclusive (fit: adapted) [main: 0.00739287; t of the mean 0.725559; cases 175]

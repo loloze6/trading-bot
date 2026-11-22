@@ -1,0 +1,17 @@
+023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d: confirmed (fit: exact) [main: 0.000984964; OLS slope t 3.77406; independent trending-regime grid cases 1766]
+023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise_1d: inconclusive (fit: adapted) [main: -0.00767388; t of the mean -1.85497; cases 895, stronger half 448, weaker half 447]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b1_trend-continues-next-day_1d: confirmed (fit: exact) [main: 7.7577e-05; OLS t of slope 2.61674; trending bars with a non-zero forecast 15635]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e1_choppy-declines-keep-falling_1d: confirmed (fit: adapted) [main: 0.00923143; t of the mean 4.01444; independent cases 2049, supporting grid bars 1857]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d: confirmed (fit: adapted) [main: 0.0168371; t of the mean 2.69334; cases 1095]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins_1d: inconclusive (fit: exact) [main: 0.00313708; OLS slope t 1.85562; grid cases in the regime 3120]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days_1d: inconclusive (fit: exact) [main: 0.0336886; correlation t 1.29413; independent cases 1476]
+023-01_flat-range-top-reverts-down_1d: mismatch: the test does not match its plan (agreement 0.885705) (fit: exact)
+023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up_1d: mismatch: the test does not match its plan (agreement 0.870013) (fit: adapted)
+023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b2_moderate-flat-range-slide-continues_1d: inconclusive (fit: exact) [main: 0.0109337; t of the mean 2.31835; cases 436]
+023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues_1d: inconclusive (fit: exact) [main: -1.06379e-05; OLS slope t -0.0215345; grid bars with forecast < 0 793, mean_reversion grid bars 1085, cases (grid bars with forecast <= -2) 698]
+023-02_flat-range-bottom-reverts-up_1d: inconclusive (fit: exact) [main: -0.0049706; t of the mean -1.25258; independent cases 628, active bars 3238]
+023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation_1d: confirmed (fit: exact) [main: 0.000737896; OLS slope t 2.17207; grid cases 1691]
+023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days_1d: confirmed (fit: exact) [main: 0.000737896; OLS slope t 2.17207; non-overlapping cases 1691]
+023-03_flatter-range-stronger-reversion.d1_flat-range-breakout-continuation_1d: confirmed (fit: exact) [main: 0.000544755; OLS slope t 3.22385; grid cases 3419]
+023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation_1d: confirmed (fit: exact) [main: 0.000385566; OLS slope t 2.354; non-overlapping grid cases with a recorded forecast 3419]
+023-03_flatter-range-stronger-reversion_1d: rejected (fit: adapted) [main: -0.00679748; t of the mean -3.39038; grid cases with a nonzero forecast 3418, grid cases in main measure 3419, supporting flatter half 1277, supporting less-flat half 1278]

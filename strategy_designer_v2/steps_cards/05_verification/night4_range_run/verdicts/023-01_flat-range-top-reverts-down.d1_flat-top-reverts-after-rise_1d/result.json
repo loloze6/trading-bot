@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move in the short direction",
+    "value": -0.007673875833897512,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.854971710142129
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "stronger-half minus weaker-half mean unusual move",
+    "value": -0.0004424682279379078,
+    "passed": false
+  },
+  "counts": {
+    "cases": 895,
+    "stronger half": 448,
+    "weaker half": 447
+  },
+  "decided_by": "t between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are the bars at positions 0, 5, 10, ... of each window with a 5-bar return inside the window and forecast <= -2; the drift is the coin's mean 5-bar return on that grid over all its windows; the stronger half is the cases with forecast at or below the median forecast, the weaker half those above it."
+}
