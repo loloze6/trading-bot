@@ -62,6 +62,8 @@ Not yet tested on the unseen dates (the unseen test runs only on profitable book
    | replaced it (an idea of its own) | 7 | 10 | 14 of 17 | 1 of 17 |
    Example: 022-04.b2 (unrelated to every paying book, share 0.01): its 7.d children "four-week momentum continues" and
    "nearness to 90-day high" replace it. Then the loop tests first the children of the lines whose ideas paid.
+   Line 7.d on ideas not confirmed: 100 children planned, 7 confirmed and profitable, all momentum: 6 near copies of
+   paying books (0.75 to 0.99 explained) and 025-03.d2 (0.50, the calmer momentum book of `runs/NIGHT4_RUN.md`).
    Limits: 42 children; "a trend or momentum part" is read from the component classes (one of them,
    VolatilityScaledReturn, also serves reversal ideas).
 3. **Many confirmed ideas were never followed:** the 50 books rejected only on step 6's mean and Calmar have 31 children
@@ -90,6 +92,7 @@ Recommended: A, then B and C; D after reading A.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-22 | No unseen test on the five unrelated books (option A) | the operator | not the question: what blocks real non-momentum ideas is how the workflow treats them | - |
 
 ## Links
 `topics/45_review/`, `06_profitability/card.md`, topics 41, 42, 44, `runs/NIGHT4_RUN.md`, `runs/SHORT_1D_RUN.md`.
