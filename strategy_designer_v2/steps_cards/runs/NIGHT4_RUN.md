@@ -180,3 +180,29 @@ each plan with `04_backtest/windows/unseen_*.json`). Script `topics/44_review/co
 | 2 | 025-03.d2 with 018-02 hourly breakout continuation (1h, its nearest relative; compared by the day) | 0.50 | correlation about 0.71; about 8 % smaller swings; a smaller Sharpe gain |
 **If not:** a combination clearly worse than either book alone, or a correlation far from the square root of the share
 explained, means the similarity check does not say how two books combine: read why.
+
+### Test 2, reading (2026-11-22; 0 USD; `topics/44_review/combine_night4.json`)
+Method A, half the capital each; each day on the coins both books hold. Sharpe / deepest fall:
+| Pair | Period | Correlation | 025-03.d2 alone | Momentum alone | A: half each | Equal risk (weights set on the folds) |
+|---|---|---|---|---|---|---|
+| 1, with 022-03 (1d) | folds | +0.64 | 1.24 / 18.2 % | 1.04 / 35.4 % | 1.21 / 22.2 % | 1.26 / 20.7 % (0.66 / 0.34) |
+| 1 | unseen 2016-17 | +0.67 | 1.96 / 20.3 % | 3.44 / 24.1 % | 3.13 / 20.9 % | 2.87 / 20.4 % |
+| 1 | unseen 2026 | +0.47 | 1.02 / 5.7 % | 0.90 / 14.4 % | 1.06 / 7.8 % | 1.11 / 6.3 % |
+| 2, with 018-02 (1h, by the day) | folds | +0.71 | 1.24 / 18.2 % | 1.09 / 28.5 % | 1.23 / 22.5 % | 1.26 / 21.0 % (0.65 / 0.35) |
+| 2 | unseen 2016-17 | +0.82 | 1.72 / 30.2 % | 2.96 / 23.3 % | 2.52 / 23.3 % | 2.32 / 23.3 % |
+| 2 | unseen 2026 | - | - | no 2026 hourly data | - | - |
+(2016-17 differs between pairs: each day on the coins both books ran; the hourly book's engine stopped on some ETH and
+LTC windows.)
+
+**Against the expected:** the correlations are what the share explained said (0.64 and 0.71 on the folds). The Sharpe
+gain is not: about 1.21 to 1.26, against 1.24 for 025-03.d2 alone, not the 1.35 expected. The expectation assumed books
+of equal swings; momentum swings twice as much (daily sd 1.59 % against 0.81 %), so with half the capital each it carries
+most of the risk. Weighted to equal risk, the gain is still small (+0.02 Sharpe on the folds): at a correlation of 0.64
+to 0.71 two books are mostly one bet. Out of sample the combination sits between the two books: below momentum in
+2016-17 (momentum's best years), above both in 2026.
+
+**What it shows:** 025-03.d2 behaves as a calmer momentum book (half the swings, half the deepest fall, a similar
+Sharpe), not a second source of profit; combining it with momentum smooths little. The similarity check's share explained
+did say how the two would combine (its correlation is the one that sets the gain); a share explained of 0.4 to 0.5 is
+already too related for a real gain. For topic 44, what is worth combining needs a correlation near 0 (the earlier test:
++0.05 gave 1.66 against 1.26).
