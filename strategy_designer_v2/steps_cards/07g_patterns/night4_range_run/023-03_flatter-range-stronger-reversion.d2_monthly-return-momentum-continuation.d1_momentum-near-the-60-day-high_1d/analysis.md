@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high_1d
+idea tested: 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3882 USD
+---
+## Findings
+- **F1:** Where the close sits in its own 20-day closing range predicts the next 5 days' excess return. The pooled slope t is between 3.18 and 4.34 across all five 5-day grid offsets (about 3,300 to 3,400 independent cases each), 3.05 to 4.87 at a 3-day horizon and 1.61 to 3.33 at 10 days. It is stronger than the 60-day range position (t 1.90 to 3.19) and stronger than the 30-day return (t 1.70 to 2.90) on every grid.
+- **F2:** Inside a joint regression the 60-day range position keeps its effect (t 2.05), while the 30-day return loses it (t -0.09, 3,419 cases). The idea's monthly-return signal adds nothing once nearness to the top of the range is known.
+- **F3:** The 60-day range-position effect is a continuation, not the reversion the brief expects. The top quintile is +1.49 % in excess over 5 days (t 2.37, 341 cases) and the second quintile -1.40 % (t -3.08). At 10 days the top quintile is +2.56 % (t 2.33, 168 cases). The effect shows in the narrow and middle terciles of 60-day range width (slope t 2.71 and 3.44) and vanishes in the widest tercile (t -0.51).
+- **F4:** The range-position effect is not stable over time. Its pooled slope t is 4.67 in 2018–2021 and -1.98 in 2022–2025. Per coin it is positive everywhere but significant only for XRP (t 2.28), with ETH at t 1.93 and BTC, LTC, XMR and ZEC between 0.15 and 1.02.
+- **F5:** The coin's own 1-day return is followed by a reversal the next day. The slope t of the next 1-day excess return on the past 1-day return is -8.80 over 17,380 non-overlapping one-day cases. On the 3- and 5-day grids this reversal fades to t between -2.08 and +2.17.
+- **F6:** The book's gain is concentrated in a few days and in the long side. Its top 5 % of days carry 277 % of its summed daily return, with the coins up +3.53 % on those days. Long trades average +6.03 % net (2,705 trades), short trades -0.45 % (1,451), and ZEC longs alone average +14.97 %.
+- **F7:** The other angles tested showed nothing that stands out from chance given how many I looked at. These were weekday (grid means between -0.105 and +0.135 of a usual move, a few hundred cases each), 20-day volatility level and the 20-day/60-day volatility ratio (no quintile with |t| above 1.41), and the 5-day past return (|t| at most 1.07).
+
+## Ideas
+- `023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.g1_top-of-range-continuation` (from F1, F2, F3, F4): The higher a coin's close stands within the range of its closes over the past 20 days, the larger its rise over the next 5 days. This is most pronounced when its 60-day range is narrow rather than wide.
+- `023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.g2_one-day-move-reversal` (from F5): The larger a coin's 1-day return, the larger its move the opposite way over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

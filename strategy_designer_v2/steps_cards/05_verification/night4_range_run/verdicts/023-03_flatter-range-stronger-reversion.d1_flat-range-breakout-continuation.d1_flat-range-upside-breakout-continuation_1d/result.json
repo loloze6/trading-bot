@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-day forward return minus coin mean 5-day return on recorded forecast, non-overlapping 5-bar grid",
+    "value": 0.0007172426937207864,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.3411028827332356
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with forecast > 0": 1646,
+    "grid cases": 3419
+  },
+  "decided_by": "The slope is positive with t = 2.34 >= 2 (confirm rule); no supporting check.",
+  "reading": "Situation taken as raw component > 0 (close above the range middle with a nonzero flatness factor, 'far above' having no stated cut-off) on the long side; the coin's mean 5-day return is the mean of its non-overlapping grid returns over all windows; the slope is from OLS with an intercept; the plan's 'fewer than 200 grid cases with forecast > 0' is treated as the minimum count giving 'not observable'."
+}

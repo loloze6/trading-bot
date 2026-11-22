@@ -1,46 +1,43 @@
-# DonchianBreakoutComponent: night4_range_run | 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b2_moderate-flat-range-slide-continues.b1_moderate-flat-range-slide-more-coins_1d | HighLowRangePosition
+# DonchianBreakoutComponent: night4_range_run | 023-02_flat-range-bottom-reverts-up.d1_flat-range-bottom-turning-up.d1_flat-range-turn-nearing-middle_1d | RangeMidpointProximity
 
 ## attempt 1
 
-answer: exists
-class: DonchianBreakoutComponent
-settings: {"period": 30, "source": "high_low", "scaling_factor": 1.0}
-reason: With `source` "high_low" and `sf` 1, DonchianBreakoutComponent outputs (2 x pos − 1), where pos = (close[t] − L) / (H − L), H = max(high) and L = min(low) over the last `period` bars with bar t included. That equals (close[t] − (H + L) / 2) / ((H − L) / 2) and reads 0 when H = L, exactly the wished measure at `period` 30.
-
-refused: DonchianBreakoutComponent does not take the settings ['source']
-
-## attempt 2
-
 answer: built
 class: DonchianBreakoutComponent
-settings: {"period": 30, "source": "high_low", "scaling_factor": 1.0}
-reason: The wished measure is where the close sits in the window's range. That is the measure `DonchianBreakoutComponent` computes, but today it reads only the closes, and the refused answer shows that the class does not accept `source`. This rewrite of the whole class adds `source` "high_low" (H = max(high), L = min(low)); the default "close" keeps today's output exactly, and at `scaling_factor` 1 the output equals (close[t] − (H + L) / 2) / ((H − L) / 2).
+settings: {"period": 30, "source": "high_low", "form": "below_proximity"}
+reason: The wish measures where the close sits against the middle of its 30-bar high–low channel, which is the measure `DonchianBreakoutComponent` (`source` "high_low") already computes, here counted in percent of the mid instead of half-ranges and in a bounded below-the-middle proximity form that no config step gives. The class is rewritten whole with a new `form` setting. Its default "position" keeps today's output exactly.
 
 table: Directional components
-row: | `DonchianBreakoutComponent` | `period` (48), `scaling_factor` (20.0), `source` ("close") | (2 x pos − 1) x `sf`, pos = (close[t] − L) / (H − L) over bars t-`period`+1 .. t (bar t included). `source` "close": H, L = highest and lowest close. `source` "high_low": H = max(high), L = min(low). pos = 0.5 when H = L. With `source` "high_low" and `sf` 1 it equals (close[t] − (H + L) / 2) / ((H − L) / 2) | −`sf` to +`sf` (−20 to +20 at the default; −1 to +1 at `sf` 1). Bounded on real bars because the close lies inside [L, H]. Signed: positive above the window's middle, negative below it, 0 at the middle or for a zero range | graded | forecast units (x `sf`) | `period` (48) | "close": closes only. "high_low": high and low (last `period` rows) and close[t]. A NaN in any value read gives NaN; a zero range gives 0.0. These settings raise when the component is built: `period` < 1, `source` other than "close" or "high_low" | stateless. `source` "close" (default) is the original output, unchanged. "high_low" is where the close sits in the window's full high–low range, the Donchian channel proper. It is not a breakout event. A negative `sf` or `negate` gives the fade-the-top reading |
+row: | `DonchianBreakoutComponent` | `period` (48), `scaling_factor` (20.0), `source` ("close"), `form` ("position") | H, L over bars t-`period`+1 .. t (bar t included). `source` "close": H, L = highest and lowest close. `source` "high_low": H = max(high), L = min(low). `form` "position": (2 x pos − 1) x `sf`, pos = (close[t] − L) / (H − L), pos = 0.5 when H = L. `form` "below_proximity": mid = (H + L) / 2, D = (mid − close[t]) / mid x 100; 1 / (1 + D) when close[t] < mid, 0 when close[t] >= mid (`sf` not used) | "position": −`sf` to +`sf`, signed, positive above the window's middle, 0 at the middle or for a zero range. "below_proximity": 0 to below 1, never negative, no direction; 0 at or above the middle (and for a zero range), above 0 below it, rising toward 1 as the close climbs back to the middle from below; it jumps from near 1 to 0 where the close crosses the middle | graded | "position": forecast units (x `sf`). "below_proximity": dimensionless (0 to 1) | `period` (48) | "close": closes only. "high_low": high and low (last `period` rows) and close[t]. A NaN in any value read gives NaN. With "below_proximity", a mid not above 0 gives NaN (never on real bars). These settings raise when the component is built: `period` < 1, `source` other than "close" or "high_low", `form` other than "position" or "below_proximity" | stateless. `form` "position" (default) is the original output, unchanged. "below_proximity" is the nearness of a close below the channel middle to that middle, in percent of the mid; `sf` is ignored there. It is not a breakout event. No config step gives this bounded form, hence the setting |
 
 ```python class
 class DonchianBreakoutComponent(SubStrategyComponent):
     """
-    Where the close sits inside its recent range, on every bar:
+    Where the close sits against its window's channel, on every bar:
 
-        window = bars t - period + 1 .. t                    (bar t included)
-        source = "close" (default): H = max(close[window]), L = min(close[window])
-        source = "high_low":        H = max(high[window]),  L = min(low[window])
-        pos = (close[t] - L) / (H - L)    (pos = 0.5 when H = L)
-        raw_value = (2 x pos - 1) x scaling_factor
+        W = bars t-period+1 .. t (bar t included)
+        source = "close" (default): H = max(close[W]), L = min(close[W])
+        source = "high_low":        H = max(high[W]),  L = min(low[W])
+        form = "position" (default):
+            pos = (close[t] - L) / (H - L)   (pos = 0.5 when H = L)
+            raw_value = (2 x pos - 1) x scaling_factor
+        form = "below_proximity":
+            mid = (H + L) / 2
+            D = (mid - close[t]) / mid x 100
+            raw_value = 1 / (1 + D) if close[t] < mid, else 0.0     (scaling_factor not used)
 
-    With source "high_low" and scaling_factor 1 this is (close[t] - (H + L) / 2) / ((H - L) / 2).
-    Range: -scaling_factor to +scaling_factor, bounded on real bars because the close lies inside [L, H].
-    Signed: positive above the window's middle, negative below it, 0 at the middle or for a zero range.
-    Graded, not a breakout event. The default source "close" is the original output, unchanged.
+    Range and sign: "position" is -sf to +sf, signed, positive above the middle of the window, 0 at the middle
+    or for a zero range. "below_proximity" is 0 to below 1, never negative, with no direction. It is 0 at or above
+    the middle (a zero range puts the close on the middle) and rises toward 1 as a close below the middle
+    climbs back to it. It jumps from near 1 to 0 where the close crosses the middle.
+    The default form "position" is the original output, unchanged.
     Warm-up: period rows, bar t included.
-    NaN: a NaN in any value read (the closes of the window for "close"; the highs and lows of the window and
-    close[t] for "high_low") gives NaN. A zero range gives 0.0.
-    Building the component raises for a period below 1 or a source other than "close" or "high_low".
+    NaN: a NaN in any value read gives NaN. With "below_proximity", a mid not above 0 gives NaN (never on real bars).
+    Building the component raises for a period below 1, a source other than "close" or "high_low", or a
+    form other than "position" or "below_proximity".
 
-    WHY THIS CANNOT LEAK: it reads only the close (and, with "high_low", the high and low) of the last `period`
-    rows of data, the last row being bar t; every value is known at bar t's close.
+    WHY THIS CANNOT LEAK: it reads only the last `period` rows of data (bar t is the last row): the closes, or the
+    highs and lows plus close[t]; all of them are known at bar t's close.
     """
 
     def __init__(self, name="DonchianBreakout", weight=1.0, parameters=None):
@@ -53,6 +50,10 @@ class DonchianBreakoutComponent(SubStrategyComponent):
         if self.source not in ("close", "high_low"):
             raise ValueError(
                 f"DonchianBreakoutComponent: source must be 'close' or 'high_low', got {self.source!r}")
+        self.form = self.parameters.get("form", "position")
+        if self.form not in ("position", "below_proximity"):
+            raise ValueError(
+                f"DonchianBreakoutComponent: form must be 'position' or 'below_proximity', got {self.form!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -61,29 +62,41 @@ class DonchianBreakoutComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        close = data['close'].astype(float).iloc[-self.period:]
+        n = self.period
+        close = data['close'].astype(float)
         c = float(close.iloc[-1])
         if self.source == "high_low":
-            highs = data['high'].astype(float).iloc[-self.period:]
-            lows = data['low'].astype(float).iloc[-self.period:]
-            if highs.isna().any() or lows.isna().any() or np.isnan(c):
+            hi = data['high'].astype(float).iloc[-n:]
+            lo = data['low'].astype(float).iloc[-n:]
+            if hi.isna().any() or lo.isna().any() or np.isnan(c):
                 self._raw_value = float("nan")
                 self.confidence = 1.0
                 return
-            h = float(highs.max())
-            l = float(lows.min())
+            H = float(hi.max())
+            L = float(lo.min())
         else:
-            if close.isna().any():
+            win = close.iloc[-n:]
+            if win.isna().any():
                 self._raw_value = float("nan")
                 self.confidence = 1.0
                 return
-            h = float(close.max())
-            l = float(close.min())
-        rng = h - l
-        pos = 0.5 if rng == 0 else (c - l) / rng
-        self._raw_value = float((2.0 * pos - 1.0) * self.scaling_factor)
+            H = float(win.max())
+            L = float(win.min())
+        if self.form == "position":
+            rng = H - L
+            pos = 0.5 if rng == 0 else (c - L) / rng
+            self._raw_value = float((2.0 * pos - 1.0) * self.scaling_factor)
+        else:
+            mid = (H + L) / 2.0
+            if not mid > 0:
+                self._raw_value = float("nan")
+            elif c < mid:
+                d = (mid - c) / mid * 100.0
+                self._raw_value = float(1.0 / (1.0 + d))
+            else:
+                self._raw_value = 0.0
         self.confidence = 1.0
-        self.debug_info = {'high': h, 'low': l, 'pos': pos, 'source': self.source}
+        self.debug_info = {'high': H, 'low': L, 'close': c, 'form': self.form, 'source': self.source}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -96,46 +109,52 @@ class DonchianBreakoutComponent(SubStrategyComponent):
 def hand(df, params):
     n = int(params.get("period", 48))
     sf = float(params.get("scaling_factor", 20.0))
-    src = params.get("source", "close")
+    source = params.get("source", "close")
+    form = params.get("form", "position")
     closes = [float(x) for x in list(df["close"])]
     last = len(closes) - 1
-    first = last - n + 1
     c = closes[last]
-    if src == "high_low":
-        highs = [float(x) for x in list(df["high"])]
-        lows = [float(x) for x in list(df["low"])]
-        hs = highs[first:last + 1]
-        ls = lows[first:last + 1]
-        for x in hs + ls + [c]:
+    if source == "high_low":
+        highs = [float(x) for x in list(df["high"])][last - n + 1:last + 1]
+        lows = [float(x) for x in list(df["low"])][last - n + 1:last + 1]
+        for x in highs + lows + [c]:
             if x != x:
                 return float("nan")
-        top = hs[0]
-        for x in hs:
+        top = highs[0]
+        for x in highs:
             if x > top:
                 top = x
-        bot = ls[0]
-        for x in ls:
+        bot = lows[0]
+        for x in lows:
             if x < bot:
                 bot = x
     else:
-        cs = closes[first:last + 1]
-        for x in cs:
+        win = closes[last - n + 1:last + 1]
+        for x in win:
             if x != x:
                 return float("nan")
-        top = cs[0]
-        bot = cs[0]
-        for x in cs:
+        top = win[0]
+        bot = win[0]
+        for x in win:
             if x > top:
                 top = x
             if x < bot:
                 bot = x
-    if top == bot:
+    if form == "position":
+        if top == bot:
+            pos = 0.5
+        else:
+            pos = (c - bot) / (top - bot)
+        return (2.0 * pos - 1.0) * sf
+    middle = (top + bot) / 2.0
+    if not middle > 0:
+        return float("nan")
+    if c >= middle:
         return 0.0
-    mid = (top + bot) / 2.0
-    half = (top - bot) / 2.0
-    return (c - mid) / half * sf
+    dist_pct = (middle - c) / middle * 100.0
+    return 1.0 / (1.0 + dist_pct)
 ```
 
 checks:
 DonchianBreakoutComponent: every check passed
-the bot's suite: == 1612 passed, 16 skipped, 75 deselected, 2244 warnings in 101.84s (0:01:41) ==
+the bot's suite: == 1614 passed, 16 skipped, 75 deselected, 2244 warnings in 102.09s (0:01:42) ==

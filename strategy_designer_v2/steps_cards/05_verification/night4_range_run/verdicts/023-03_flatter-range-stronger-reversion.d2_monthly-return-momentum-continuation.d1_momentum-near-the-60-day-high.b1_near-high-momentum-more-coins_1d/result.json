@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of demeaned 5-day grid return on forecast",
+    "value": 0.0005970658116434565,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.3756798754346797
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus position x coin mean daily return",
+    "value": 0.0007120421002801411,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 7173,
+    "grid cases": 7175
+  },
+  "decided_by": "The slope is positive with t >= 2 and the book's timing gain before costs is above 0.",
+  "reading": "The regression uses all grid cases (zero forecasts included) with an intercept and the ordinary OLS slope t, the coin's mean 5-day return is the mean of its grid returns over all its windows, the check's before-cost book uses the held position times the next bar's close-to-close return, averaged over coins each day, and the minimum of 200 non-zero cases is applied as 'not observable'."
+}

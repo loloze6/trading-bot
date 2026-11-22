@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of 5-bar excess return on forecast, cells with forecast > 0",
+    "value": 0.0028001066495957692,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.7870661903920615
+    },
+    "threshold": "confirm if slope t >= 2 (with mean excess > 0), reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return over those cells",
+    "value": 0.0008477191216162881,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with a forecast above 0, pooled over coins": 565
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess return is above 0.",
+  "reading": "Net move to range taken as |close[t]-close[t-30]| over the 30-bar high-low range, the Ichimoku position as close minus the 30-bar high-low midpoint, the 10-day fall from fall10's raw value (else recomputed from closes), active bars whose 30-bar history is not inside the window left out of the agreement; the coin's mean 5-bar return is the mean over all grid cells of all its windows, and the slope t is the OLS slope t of the pooled regression of excess return on forecast."
+}

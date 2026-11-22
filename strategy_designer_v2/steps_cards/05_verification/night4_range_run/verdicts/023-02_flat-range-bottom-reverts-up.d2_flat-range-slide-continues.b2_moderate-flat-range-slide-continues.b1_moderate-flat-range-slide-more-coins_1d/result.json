@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 5-bar move / coin's usual 5-bar move, forecast < 0 grid bars",
+    "value": 0.07483166061608329,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.674627593004408
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases (and supporting check passes); reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "|forecast|-weighted mean of the same unusual move > 0",
+    "value": 0.06870323799659081,
+    "passed": true
+  },
+  "counts": {
+    "cases": 928,
+    "active bars": 4872
+  },
+  "decided_by": "Mean above 0 with t >= 2 over at least 30 cases, and the |forecast|-weighted mean is above 0.",
+  "reading": "Situation recomputed per window from prices (net move = |close[t]-close[t-30]| over the 30-bar high-low range, close below the 30-bar high-low midpoint), falling back on the recorded regime where a window lacks 30 bars of history, with the fall read from the sign of fall_lin's raw value; the coin's normal drift and usual move are the mean and standard deviation of its 5-bar returns on the non-overlapping grid of all its windows, and cases are grid bars with forecast < 0 and a close 5 bars later in the same window."
+}

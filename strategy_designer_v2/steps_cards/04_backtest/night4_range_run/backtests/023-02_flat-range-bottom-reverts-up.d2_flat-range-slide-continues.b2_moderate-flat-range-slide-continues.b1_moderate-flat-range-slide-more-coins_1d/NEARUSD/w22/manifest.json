@@ -1,0 +1,182 @@
+{
+  "run_id": "20261122T034421Z_007e0836",
+  "created_utc": "2026-11-22T03:44:21.773210+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "flat",
+          "class": "strategies.strategy_components.NetMoveToRangeRatioComponent",
+          "params": {
+            "period": 30,
+            "source": "high_low"
+          }
+        },
+        {
+          "id": "mid",
+          "class": "strategies.strategy_components.IchimokuCloudPositionComponent",
+          "params": {
+            "tenkan_period": 30,
+            "kijun_period": 30,
+            "senkou_period": 30,
+            "displacement": 0,
+            "edge": "top",
+            "base": "close"
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "flat",
+                "op": "lte",
+                "value": 0.3
+              },
+              {
+                "id": "mid",
+                "op": "lt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "fall_lin",
+              "class": "strategies.strategy_components.MeanAbsScaledReturnComponent",
+              "params": {
+                "period": 10,
+                "window": 60
+              },
+              "weight": 2.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 70,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "fall_sq",
+              "class": "strategies.strategy_components.MeanAbsScaledReturnComponent",
+              "params": {
+                "period": 10,
+                "window": 60
+              },
+              "weight": -1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 70,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0.0
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 2
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 5
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "007e0836e636d4cb8cd2fd0079b46ff42152899098d9ae0ab1deec72fb185f09",
+  "data": {
+    "symbols": [
+      "NEARUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2024-07-05 00:00:00",
+    "end": "2025-04-30 00:00:00",
+    "bar_count": 300,
+    "data_sha256": "e4b147b59ba9dc46a7f7c2f0493df03bb333482f770e1885e9d0439807858730"
+  },
+  "git_sha": "781d00503c40982391676546773177a412ab18a2-dirty",
+  "engine": {
+    "lookback": 71,
+    "warmup": 71
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

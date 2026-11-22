@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of 10-day excess return on forecast (non-overlapping grid, forecast > 0)",
+    "value": 0.583852785648009,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.583852785648009
+    },
+    "threshold": "confirm if t >= 2 (with weighted mean excess > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 10-day return",
+    "value": 0.03287185762316438,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with a forecast above 0": 81
+  },
+  "decided_by": "Only 81 grid cells have a forecast above 0, fewer than the plan's minimum of 100.",
+  "reading": "The normal drift is each coin's mean 10-day return over all non-overlapping grid cells of all its windows; the regression pools all coins and windows; the plan's '<100 cells is inconclusive' is applied as the minimum count, giving 'not observable'."
+}

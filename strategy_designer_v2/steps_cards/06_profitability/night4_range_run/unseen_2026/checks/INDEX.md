@@ -1,2 +1,6 @@
 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d: profitable enough [Sharpe 2.367; Sharpe minus holding's Sharpe 2.269; Calmar 8.773]
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d: profitable enough [Sharpe 1.469; Sharpe minus holding's Sharpe 1.403; Calmar 4.232]
 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d: profitable enough [Sharpe 0.956; Sharpe minus holding's Sharpe 0.8896; Calmar 1.927]
+023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.d1_top-of-range-continuation-only_1d: profitable enough [Sharpe 0.8282; Sharpe minus holding's Sharpe 0.7302; Calmar 1.316]
+023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.d1_upper-range-continuation-only_1d: not profitable enough [Sharpe 0.8042; Sharpe minus holding's Sharpe 0.7062; Calmar 1.174]
+023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins_1d: not profitable enough [Sharpe 0.2349; Sharpe minus holding's Sharpe 0.1685; Calmar 0.2195]
