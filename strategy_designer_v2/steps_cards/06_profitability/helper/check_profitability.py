@@ -13,6 +13,8 @@ Definitions (the same for every backtest):
 - Sharpe: mean over standard deviation of all the daily returns of all windows, times sqrt(365).
 - Calmar: the annualised return of all the daily returns chained in window order, divided by the deepest fall of
   that chained curve. No fall and a positive return passes.
+- Informative measures (common/measures.md: computed and shown, in no rule; operator, 2026-11-22): the daily standard deviation (ddof 1) of all the daily returns, the one
+  inside the Sharpe; the yearly return, the numerator of Calmar: the chained curve's end, compounded to one year.
 - Leave one window out: the Sharpe without the days of one window (the same window number for every coin, so the
   same period); the lowest over all windows.
 - Trades per day: the backtest's trades, without those closed on a window's last bar (a forced close), divided by
@@ -102,7 +104,8 @@ def check(record, rule):
         rows.append({"measure": key, "label": label, "value": v[key], "threshold": rule[key], "comparison": cmp, "passed": bool(ok)})
     facts = {"coins": coins, "windows": len(windows), "days": int(len(r)), "years": round(years, 2), "bars": bars,
              "trades": trades, "holding_sharpe": sharpe(h), "annualised_return": float(ann), "deepest_fall": fall,
-             "worst_window_left_out": f"w{min(loo, key=loo.get)}"}
+             "worst_window_left_out": f"w{min(loo, key=loo.get)}",
+             "daily_standard_deviation": float(r.std(ddof=1)) if len(r) > 1 else 0.0}
     return rows, facts
 
 
@@ -142,11 +145,16 @@ def main():
     status = "profitable enough" if ok else "not profitable enough"
     d = out_dir / rid
     d.mkdir(parents=True, exist_ok=True)
-    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "decided_by": decided},
+    informative = {"daily_standard_deviation": facts["daily_standard_deviation"], "yearly_return": facts["annualised_return"],
+             "years": facts["years"]}
+    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "decided_by": decided, "informative": informative},
                                                indent=2, default=str) + "\n")
     lines = ["---", f"backtest: {rid}", f"data: {data}", f"status: {status}", "---",
              "| Measure | Value | Rule | Passed |", "|---|---|---|---|"]
     lines += [f"| {x['label']} | {fmt(x['value'])} | {x['comparison']} {fmt(x['threshold'])} | {'yes' if x['passed'] else 'no'} |" for x in rows]
+    lines += ["", "| Informative measure | Value |", "|---|---|",
+              f"| Daily standard deviation | {100 * informative['daily_standard_deviation']:.3f} % |",
+              f"| Yearly return | {100 * informative['yearly_return']:+.1f} % (over {informative['years']} years) |"]
     lines += ["", f"- Decided by: {decided}",
               f"Record: `steps_cards/{os.path.relpath(record, STEPS)}`", "Rule: `steps_cards/06_profitability/helper/rule.yaml`"]
     write_atomic(d / "check.md", "\n".join(lines) + "\n")

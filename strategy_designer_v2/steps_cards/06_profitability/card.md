@@ -40,12 +40,19 @@ One profitability check per backtest: **profitable enough** or **not profitable 
    - For: the evidence, measure by measure.
    - Used by: the rule, the operator.
    - Without it: a bare word nobody can check.
-4. **Decided by:** "every measure passed", or the measures that failed.
+4. **Informative measures** (operator, 2026-11-22; `common/measures.md`): the **daily standard deviation** (how much the book's value
+   typically moves in a day; the one inside the Sharpe) and the **yearly return** (how much it makes a year, compounded;
+   Calmar's numerator), with the number of years it covers.
+   - For: two books with the same Sharpe can differ in size; the yearly return is what an investor reads first, and per
+     year it compares books tested over different lengths (a total over the period would not).
+   - Used by: the operator, and the combining of books (topic 44).
+   - Without it: the size of a book's moves and its yearly gain are hidden inside the Sharpe and the Calmar.
+5. **Decided by:** "every measure passed", or the measures that failed.
    - For: the answer can be challenged.
    - Used by: the operator.
    - Without it: no way to see what failed.
 
-**Next to it:** `result.json` (the status, the six measures and "decided by", for code), and the **index line** (`INDEX.md`): `<backtest>: profitable enough | not profitable enough [Sharpe; Sharpe minus holding's; Calmar]`, or `<backtest>: not checked: the record holds no window that ran`.
+**Next to it:** `result.json` (the status, the six measures, "decided by" and the informative measures, for code), and the **index line** (`INDEX.md`): `<backtest>: profitable enough | not profitable enough [Sharpe; Sharpe minus holding's; Calmar]`, or `<backtest>: not checked: the record holds no window that ran`.
 
 ## The rule (`helper/rule.yaml`)
 **Profitable enough** when all six measures pass; otherwise **not profitable enough**. The values are those of the old pipeline's profit bars, without its deflated Sharpe and its drawdown ceiling.
@@ -64,6 +71,8 @@ One profitability check per backtest: **profitable enough** or **not profitable 
 - **The backtest's book:** all its coins together, equal weight: each day, the mean of the coins' daily returns. **Holding:** the same, from the coins' closing prices.
 - **Sharpe:** the mean of all daily returns over their standard deviation, times √365.
 - **Calmar:** the yearly return of the daily returns chained in window order, over the deepest fall of that chain.
+- **Daily standard deviation** and **yearly return** (informative measures): the standard deviation (ddof 1) of the daily returns; the
+  same chain as Calmar, compounded to one year.
 - **Trades:** the backtest's trades, minus those closed on a window's last bar (forced closes), per bar of the record.
 
 ## Storage and naming

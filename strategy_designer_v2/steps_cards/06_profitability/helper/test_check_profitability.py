@@ -106,3 +106,17 @@ def test_trades_are_counted_per_day_on_any_bar_size(tmp_path):
     rows, facts = m.check(tmp_path, RULE)
     v = {x["measure"]: x["value"] for x in rows}
     assert v["trade_frequency_min"] == pytest.approx(10 / 20) and facts["bars"] == 480
+
+
+def test_the_shown_values_follow_their_definitions_and_change_no_status(tmp_path):
+    """Daily standard deviation: of all the daily returns (ddof 1). Yearly return: the chained curve compounded to a year.
+    Neither enters the rule."""
+    rng = np.random.default_rng(4)
+    books = {c: [1000 * np.cumprod(1 + 0.001 + rng.normal(0, 0.01, 90)) for _ in range(3)] for c in ("AAA", "BBB")}
+    closes = {c: [100 * np.cumprod(1 + rng.normal(0, 0.03, 90)) for _ in range(3)] for c in ("AAA", "BBB")}
+    write_record(tmp_path / "rec", books, closes)
+    rows, facts = m.check(tmp_path / "rec", RULE)
+    r, _, _ = independent(books, closes)
+    assert facts["daily_standard_deviation"] == pytest.approx(np.std(r, ddof=1))
+    assert facts["annualised_return"] == pytest.approx(np.prod(1 + r) ** (365 / len(r)) - 1)
+    assert {x["measure"] for x in rows} == {k for k, _, _ in m.MEASURES}     # still the six measures, nothing added to the rule

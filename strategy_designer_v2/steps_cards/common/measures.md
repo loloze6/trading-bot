@@ -17,6 +17,13 @@ the book the same way). A plan's own words come first; these apply wherever it s
   averaged like the book; the rest of the book's mean gain is timing (being in when the coin rises more than usual).
 - Sharpe: the mean of the daily returns over their standard deviation, times the square root of 365. Calmar: the yearly
   return of the daily returns chained in window order, over the deepest fall of that chain.
+- **An informative measure** (operator, 2026-11-22): a measure a step computes and shows, that enters no rule and decides
+  nothing; it is there to be read. A step's card lists its informative measures apart from the measures its rule uses.
+- The book's daily standard deviation: the standard deviation (ddof 1) of its daily returns, the one inside the
+  Sharpe: how much the book's value typically moves in a day. The yearly return: the daily returns chained in window
+  order (Calmar's chain), compounded to one year: (value at the end / value at the start) ^ (365 / days) - 1; with the
+  number of years it covers, the total over the period follows (operator, 2026-11-22: per year, so books tested over
+  different lengths compare).
 - A t-statistic not named: for a difference between two groups, Welch's two-sample t; for one group's mean, the
   ordinary t of the mean (mean / (standard deviation / square root of n)).
 - A difference is "A minus B" in the order named, so its sign keeps its meaning. A mean "weighted by" X is
