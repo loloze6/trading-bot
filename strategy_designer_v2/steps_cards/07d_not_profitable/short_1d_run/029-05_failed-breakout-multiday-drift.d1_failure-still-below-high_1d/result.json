@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34308469999999996,
+  "findings": {
+    "F1": "The book loses because the move it captures is smaller than its cost. Per case over 8 days the short earned a total of -0.14 % (489 cases; unusual move +0.91 %), against a cost of 0.19 % per trade. The coin's normal drift (-1.05 % in the short's direction) cancels the small unusual move. The result is a mean daily book return of -0.0091 % and a Sharpe of -0.14.",
+    "F2": "The book's 995 trades lost 2.94 % each before fees and 3.04 % after (29 % winners, held 6.4 days on average). That is far worse than the -0.14 % per case. The book does more than miss a small edge: the trades it actually holds lose heavily.",
+    "F3": "The cases split by the coin's 30-day volatility, and the gain falls as volatility rises. The total short move per case was +1.45 % (t 1.58, 103 cases) in the calmest quarter, then -0.41 % and -0.54 % in the middle quarters, and -1.93 % (t -1.31, 103 cases) in the most volatile quarter.",
+    "F4": "The cases also split by the coin's prior 20-day return. Shorts after a 20-day return under 2.3 % earned +1.64 % per case (t 1.41, 103 cases). Shorts after a 9.7 %-19.5 % rise lost 2.74 % (t -2.83, 102 cases). Shorts when the coin stood 8.6 %-23.7 % above its 100-day mean lost 3.85 % (t -2.46, 61 cases).",
+    "F5": "The shallowest failures lose. Cases whose close sat 0 % to 1.7 % below the old high lost 2.67 % per case (t -2.22, 123 cases), while deeper cases earned +0.36 % to +1.64 %. Yet the standardised forecast sat at its cap of 20 in at least three quarters of the cases, so the book gave shallow and deep failures the same size.",
+    "F6": "The loss is spread over the years rather than sitting in one. 2020 lost 4.11 % per case (80 cases) and 2018 gained 7.48 % (40 cases); the other years ranged from -0.64 % to +0.77 %."
+  },
+  "ideas": [
+    {
+      "idea": "After a close back below the old 20-day high within 3 days of a breakout above it, the coin's decline continues across the following 8 days only while its close 2 days after the failure is still below that old high. The calmer the coin's past 30 days, the larger the fall from day 2 to day 10.",
+      "consequence": "A trader would short a failed breakout that stays below the old high mainly when the coin has been quiet, and would refuse the short when its recent volatility is high.",
+      "name": "failed breakout calm regime",
+      "from": "F1, F3, F2",
+      "refs": [
+        "F1",
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "After a close back below the old 20-day high within 3 days of a breakout above it, the coin's decline continues across the following 8 days only while its close 2 days after the failure is still below that old high. The smaller the coin's 20-day return before the breakout, the larger the fall from day 2 to day 10.",
+      "consequence": "A trader would short a failed breakout that follows a flat month, and would refuse it when the breakout came on top of a strong 20-day rise, which tends to be bought again.",
+      "name": "failed breakout without prior run",
+      "from": "F1, F4, F2",
+      "refs": [
+        "F1",
+        "F4",
+        "F2"
+      ]
+    },
+    {
+      "idea": "After a close back below the old 20-day high within 3 days of a breakout above it, the coin's decline continues across the following 8 days only while its close 2 days after the failure is still below that old high. The further that day-2 close sits below the old high, in percent of price and not against its own recent history, the larger the fall from day 2 to day 10.",
+      "consequence": "A trader would size the short by the raw depth below the old high and would barely short a failure sitting just under it.",
+      "name": "raw depth of failure",
+      "from": "F5, F2",
+      "refs": [
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high.d1_failed-breakout-calm-regime",
+    "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high.d2_failed-breakout-without-prior-run",
+    "029-05_failed-breakout-multiday-drift.d1_failure-still-below-high.d3_raw-depth-of-failure"
+  ],
+  "no_ideas": null
+}

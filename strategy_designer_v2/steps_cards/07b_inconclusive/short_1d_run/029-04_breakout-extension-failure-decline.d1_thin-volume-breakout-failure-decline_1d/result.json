@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35259760000000007,
+  "findings": {
+    "F1": "The test's result is on the side the idea predicts but short of the bar: the 70 short cases show a mean short-signed unusual move of +1.75 % over 5 days with t 1.54. The median is only +0.49 % and the hit rate 51 %, so a few larger falls carry the mean, which drops to +1.43 % without the top 3 cases.",
+    "F2": "The effect is mixed across coins and years, each with too few cases to show alone. By coin, ETH is +4.33 % (t 1.21, 14 cases) and LTC +3.78 % (t 1.39, 12), against XMR at +0.97 % (13) and ZEC at \u22120.79 % (16); XRP gave no case at all. By year, 2018, 2021, 2022 and 2025 are positive (2025 +5.59 %, t 2.40, 9 cases) while 2020, 2023 and 2024 are negative (2024 \u22121.68 %, 16 cases).",
+    "F3": "The effect shows in downtrends and is absent in uptrends. Cases where the coin's 60-day return was negative gave +2.97 % with t 2.17 over 48 cases; cases after a positive 60-day return gave \u22120.93 % with t \u22120.47 over 22.",
+    "F4": "The idea's grading by thinness is barely there. Across terciles of thinness the cases gave +1.57 % (low), +1.66 % (mid) and +2.00 % (high), all with t under 1.2, and the plan's Spearman is only 0.045.",
+    "F5": "Recomputed from prices, all failed 20-day breakouts together (321 cases) do not fall; they rise slightly more than usual (short-signed \u22121.19 % over 5 days, t \u22121.62; \u22122.66 % over 10 days, t \u22122.41). The heavy-volume quartile carries that rise (\u22124.29 %, t \u22122.01 over 5 days; \u22127.83 %, t \u22122.96 over 10 days) while the thinnest quartile is flat (+0.37 %, t 0.35). This supports the idea's consequence of refusing heavily traded failures.",
+    "F6": "Lengthening the horizon does not sharpen the test's own cases: the short-signed unusual move is \u22120.18 % (t \u22120.43) over 1 day, +1.29 % (t 1.36) over 3, +1.75 % (t 1.54) over 5 and +2.29 % (t 1.34) over 10, over 68\u201371 cases. The plan's 5-day horizon is where it reads best."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "thin failed breakouts, more coins",
+      "from": "F1, F2, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F6"
+      ],
+      "idea": "When a coin closes above its prior 20-day high, reaches further above it within the next 3 days, and then closes back below the old high, the coin falls over the next 5 days, only when the breakout day's volume was low against its 20-day average volume, and the lower that volume ratio was, the larger the fall.",
+      "consequence": "Short failed breakouts whose breakout day traded thinly, and refuse those whose breakout day traded heavily, because heavy-volume breakouts that slip back below the old high tend to recover.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin closes above its prior 20-day high, reaches further above it within the next 3 days, and then closes back below the old high, the coin falls over the next 5 days, only while its 60-day return is negative, and the lower the breakout day's volume was against its 20-day average volume, the larger the fall.",
+      "consequence": "Short thinly traded failed breakouts that come inside a coin's 60-day decline, and refuse those that come during a 60-day rise.",
+      "name": "thin failed breakout downtrend",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline.b1_thin-failed-breakouts-more-coins",
+    "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline.b2_thin-failed-breakout-downtrend"
+  ],
+  "no_ideas": null
+}

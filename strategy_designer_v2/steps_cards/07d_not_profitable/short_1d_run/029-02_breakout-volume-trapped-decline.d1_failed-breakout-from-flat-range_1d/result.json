@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "029-02_breakout-volume-trapped-decline.d1_failed-breakout-from-flat-range_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3666655,
+  "findings": {
+    "F1": "The idea's effect is not in the data. On my own non-overlapping recount of failed breakouts, the unusual short-direction move over 5 days is -0.26 % per case (t -0.36, 245 cases), and step 5 measured -0.36 % (t -0.85, 641 cases). Failed breakouts are therefore followed by slightly more rise than the coin's normal drift, not by a fall.",
+    "F2": "The book loses because it is short against a rising market. Its mean gain is -0.000323 per bar, and -0.000247 of that comes from being short while the coins drift up; timing adds only -0.000077. It holds a position on 21 % of bars, at a mean allocation of -0.93.",
+    "F3": "Costs are not the cause. The 1312 trades lose -3.16 % each before fees and -3.26 % after, with a 27.5 % win rate over about 4.5 days. A trade costs 0.19 %, so fees take about 0.1 % of a loss of about 3.2 %.",
+    "F4": "The fall appears only in calm coins and grows as volatility falls. By quintile of the coin's 30-day daily volatility, the unusual 5-day short move runs +2.05 % (t 1.87, 49 cases) in the calmest fifth, then +0.84 %, -0.07 %, -0.74 %, and -3.40 % (t -1.39) in the most volatile fifth. The slope on volatility is -0.62 (t -1.79, Spearman -0.12, p 0.057).",
+    "F5": "The book loses most in the volatile states, despite vol-target sizing.",
+    "F6": "The calm-coin fall is not carried by one period. Among cases below the median volatility, the unusual move is positive in 65 % of the 23 windows that have such cases, and positive or flat on five of six coins (XMR +3.40 %, ZEC +2.96 %, BTC +0.98 %; ETH -0.25 %).",
+    "F7": "Forceful breakouts recover rather than fail.",
+    "F8": "The tested grading by the pre-breakout run-up does not hold. By quartile of the 20-day pre-breakout return, the unusual move is -0.79 %, -0.34 %, +0.22 % and -0.13 %, with no ordering. Step 5's slope t is -1.49."
+  },
+  "ideas": [
+    {
+      "idea": "After a daily close above the prior 20-day high is followed within 3 days by a close back below that high, the coin falls over the next 5 days, only while the coin is calm: the lower its 30-day daily volatility at the failure, the larger the fall.",
+      "consequence": "A trader would short failed breakouts in quiet markets and refuse them when the coin is volatile, where the failure is usually followed by a rebound.",
+      "name": "failed breakout in calm coins",
+      "from": "F1, F2, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "After a daily close above the prior 20-day high is followed within 3 days by a close back below that high, the coin falls over the next 5 days, and the smaller the breakout close's excess above the old high, the larger the fall.",
+      "consequence": "A trader would short failures of hesitant breakouts that barely cleared the high and refuse failures of forceful, high-volume breakouts, which tend to resume upward.",
+      "name": "hesitant breakout failure decline",
+      "from": "F1, F7, F8",
+      "refs": [
+        "F1",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-02_breakout-volume-trapped-decline.d1_failed-breakout-from-flat-range.d1_failed-breakout-in-calm-coins",
+    "029-02_breakout-volume-trapped-decline.d1_failed-breakout-from-flat-range.d2_hesitant-breakout-failure-decline"
+  ],
+  "no_ideas": null
+}

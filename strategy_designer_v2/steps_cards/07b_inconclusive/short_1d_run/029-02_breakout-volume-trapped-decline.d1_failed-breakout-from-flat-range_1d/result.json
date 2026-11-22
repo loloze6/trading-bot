@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "029-02_breakout-volume-trapped-decline.d1_failed-breakout-from-flat-range_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34407409999999994,
+  "findings": {
+    "F1": "The tested short is on the wrong side. After a failed 20-day breakout, the coin rises more than its normal drift. The verdict's main measure is -0.36 % per case over 5 days in the short direction, t -0.85 on 641 cases. My recomputation gives -0.53 % at 5 days (t -1.16, n 509) and -1.74 % at 10 days (t -1.96, n 427).",
+    "F2": "The rise is concentrated in the first day after the close back under the old high. The unusual next-day move is +0.55 % (t 3.08, n 573), a strength of 0.117 (t 3.12). From day 2 onward the strength falls to about 0.04\u20130.05 (t 1.0\u20131.3). The plan's 5-day horizon dilutes the effect, which is why the result reads unclear.",
+    "F3": "The next-day rise is graded by how deep the close sits under the old high.",
+    "F4": "The next-day rise is broad, not confined to one part of the data.",
+    "F5": "No part of the data clearly shows the short the idea predicts.",
+    "F6": "On this data a short on failed breakouts has no move to capture before costs. The total move in the short direction is -0.93 % per case, -4.8 times the 0.19 % cost of a trade. Its unusual part is -1.8 times that cost, so no change of holding or sizing could make the short book pay."
+  },
+  "ideas": [
+    {
+      "idea": "After a daily close above the prior 20-day closing high is followed within 3 days by a close back below that high, the coin rises over the next day, and the deeper that close sits under the old high, the larger the rise.",
+      "consequence": "A trader would refuse to short a fresh failed breakout on the day it closes back inside the range, and the deeper the close under the old high, the stronger the reason to refuse.",
+      "name": "failed breakout next-day rebound",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-02_breakout-volume-trapped-decline.d1_failed-breakout-from-flat-range.b1_failed-breakout-next-day-rebound"
+  ],
+  "no_ideas": null
+}
