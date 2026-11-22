@@ -9,23 +9,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 029-03_close-below-breakout-bar-low | - | plan | not observable (-1.62) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per day) | - | 7.a: 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins; 7.d: 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up, 029-03_close-below-breakout-bar-low.d2_return-below-old-high-unstretched, 029-03_close-below-breakout-bar-low.d3_failed-breakout-in-calm-coin; 7.g: no ideas: Across about 70 groupings and 9 rank tests, the only results above |t| 3 are non-graded single quintiles (F5), and the rest stay within what chance gives on this many looks (F3, F4, F6), so no pattern stands out enough to found an idea. | 1.17 | 5.8 |
 | 029-04_breakout-extension-failure-decline | - | plan | rejected (-0.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 029-04_breakout-extension-failure-decline.c1_breakout-extension-carries-higher, 029-04_breakout-extension-failure-decline.c2_failed-breakout-dip-rebounds, 029-04_breakout-extension-failure-decline.c3_big-excursion-failure-bounces; 7.d: 029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline; 7.g: 029-04_breakout-extension-failure-decline.g1_breakout-extension-momentum-continuation | 1.49 | 6.9 |
 | 029-05_failed-breakout-multiday-drift | - | plan | inconclusive (-0.52) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth; 7.d: 029-05_failed-breakout-multiday-drift.d1_failure-still-below-high, 029-05_failed-breakout-multiday-drift.d2_strong-breakout-failures-recover; 7.g: 029-05_failed-breakout-multiday-drift.g1_volatility-scaled-daily-return-reversal, 029-05_failed-breakout-multiday-drift.g2_failed-breakout-rebound-bounce, 029-05_failed-breakout-multiday-drift.g3_heavy-volume-selloff-rebound | 4.97 | 20.8 |
-| 029-01_failed-breakout-depth-decline.b1_calm-market-failed-breakout-decline | 029-01_failed-breakout-depth-decline | missing-components | - | - | - | - | 0.10 | 0.8 |
 | 029-02_breakout-volume-trapped-decline.b1_high-volume-failed-breakout-recovers | 029-02_breakout-volume-trapped-decline | untestable | - | - | - | - | 0.05 | 0.4 |
-| 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth | 029-05_failed-breakout-multiday-drift | missing-components | - | - | - | - | 0.07 | 0.4 |
+| 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins | 029-03_close-below-breakout-bar-low | plan | inconclusive (+1.09) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per day) | - | 7.b: 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins.b1_failed-breakout-in-downtrend; 7.d: 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins.d1_failed-breakout-without-rally, 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins.d2_rally-failure-resumes-upward; 7.g: 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins.g1_breakout-closes-keep-rising | 1.51 | 11.1 |
+| 029-01_failed-breakout-depth-decline.b1_calm-market-failed-breakout-decline | 029-01_failed-breakout-depth-decline | plan | inconclusive (-0.27) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The main measure is zero (t -0.27 on 615 cases), and the only split that shows the effect (F4) depends on each coin's full-history volatility level and on 2023–2024. It disappears under every measure known at the bar's close (F5, F6), and the raw grading (F3) has no clearly positive part, so no amended or new idea rests on a clear finding.; 7.d: 029-01_failed-breakout-depth-decline.b1_calm-market-failed-breakout-decline.d1_calm-failed-breakout-ten-days, 029-01_failed-breakout-depth-decline.b1_calm-market-failed-breakout-decline.d2_calm-failed-breakout-after-rise; 7.g: 029-01_failed-breakout-depth-decline.b1_calm-market-failed-breakout-decline.g1_strong-up-day-continues, 029-01_failed-breakout-depth-decline.b1_calm-market-failed-breakout-decline.g2_large-down-day-rebounds | 2.23 | 7.9 |
+| 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth | 029-05_failed-breakout-multiday-drift | plan | confirmed (+2.94) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth.d1_failed-breakout-in-downtrend, 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth.d2_failure-without-prior-run-up, 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth.d3_failed-breakout-in-calm-coins; 7.g: 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth.g1_volatility-scaled-down-day-rebound, 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth.g2_week-long-rebound-after-selloffs, 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth.g3_failed-breakout-rebound | 1.17 | 6.0 |
+| 029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls | 029-01_failed-breakout-depth-decline | plan | inconclusive (+1.06) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.b: 029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.b1_thin-failed-breakout-more-coins; 7.d: 029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.d1_thin-failure-above-trend, 029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.d2_thin-failure-after-extension; 7.g: 029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.g1_breakout-margin-predicts-continuation, 029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.g2_strong-up-day-follow-through | 1.43 | 6.8 |
 
 ## Consumption
-8 ideas, 15.56 USD, 62.4 minutes in all.
+10 ideas, 21.73 USD, 92.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.28 | 7.5 |
-| step4_backtest | 0.00 | 6.7 |
-| step5_verdict | 0.81 | 3.1 |
-| step6_check | 0.00 | 0.1 |
+| step3_plan | 3.33 | 10.5 |
+| step4_backtest | 0.00 | 16.7 |
+| step5_verdict | 1.48 | 5.8 |
+| step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.23 | 0.8 |
 | step7_7.c | 0.41 | 1.2 |
-| step7_7.b | 1.07 | 3.6 |
-| step7_7.g | 2.17 | 6.8 |
-| step7_7.d | 8.58 | 32.7 |
+| step7_7.b | 2.32 | 7.5 |
+| step7_7.g | 3.82 | 12.3 |
+| step7_7.d | 10.15 | 37.9 |
