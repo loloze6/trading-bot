@@ -1,6 +1,6 @@
 # Topic 45: why the research finds almost only long momentum, and what the workflow misses
 
-Status: open (investigated 2026-11-22; changes for the operator's go)  
+Status: open (investigated 2026-11-22; four changes built and proven the same day; the next run reads their effect)  
 Where: research: step 6's rule (`06_profitability/helper/rule.yaml`), the books judged alone (topic 44), the one-coin rule
 (`common/idea_definition.md`), step 7's lines  
 Opened: 2026-11-22, the operator: "really surprised that we are struggling to find non-momentum and non-long-only
@@ -93,6 +93,10 @@ Recommended: A, then B and C; D after reading A.
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
 | 2026-11-22 | No unseen test on the five unrelated books (option A) | the operator | not the question: what blocks real non-momentum ideas is how the workflow treats them | - |
+| 2026-11-22 | Line 7.d runs on a confirmed idea whose book does not pay only, and writes repairs that keep the idea (the self-check measured; "no ideas" only on the size against the cost) | the operator | a real idea's book that loses trades the effect the wrong way; 7.d on unconfirmed ideas wrote momentum (7 paying children, all momentum) | 7.d on every book that does not pay; a self-check naming momentum (it would bias the analyst) |
+| 2026-11-22 | Confirmed books in the similarity register, compared with the paying books, a repair with its parent | the operator | the idea's verdict was forgotten; 37 of 156 confirmed books are explained under 0.1 by every paying book | paying books only |
+| 2026-11-22 | Step 6's mean daily return on the days in a position; Calmar unchanged | the operator, on the designer's advice for Calmar | a day off is not counted; Calmar on days in a position would reward time out of the market (about Calmar divided by the share of days on) | Calmar on days in a position |
+| 2026-11-22 | Step 3 enforces the brief's side by code | the operator | brief 029's books sold only by chance (2 of 13 configs capped) | the side left to the model |
 
 ## Links
 `topics/45_review/`, `06_profitability/card.md`, topics 41, 42, 44, `runs/NIGHT4_RUN.md`, `runs/SHORT_1D_RUN.md`.
