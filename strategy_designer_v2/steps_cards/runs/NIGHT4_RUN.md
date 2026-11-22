@@ -129,3 +129,11 @@ briefs found momentum, and the reversal effects that are real do not pay their c
 each: (1) 025-03.d2, the long-and-short book, against momentum held long only: is the short side the profit of its own
 (the similarity check on its two legs)? (2) If it is, topic 44's portfolio layer has its two books: momentum and
 025-03.d2's short side. Recommended: (1), at no model cost.
+
+## The operator's decisions on the reading (2026-11-22, morning)
+| # | Proposal | Decision |
+|---|---|---|
+| 1 | Test 025-03.d2's short side: the book split into its buying and its selling part, each through the similarity check (no model cost) | go |
+| 2 | Stop writing reversal briefs on these coins and bars | **no**: reversal briefs stay allowed |
+| 3 | Merge the night's shared code (18 new components, 3 in-place settings, with their build records and proofs) into master | go |
+| 4 | Delete the merged GitHub branches (refused to the designer, 403) | go, done by the operator |
