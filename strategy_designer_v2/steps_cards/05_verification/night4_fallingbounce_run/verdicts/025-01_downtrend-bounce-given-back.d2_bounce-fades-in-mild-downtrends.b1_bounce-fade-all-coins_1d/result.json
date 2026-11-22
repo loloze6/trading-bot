@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 5-day move over short-bet cases",
+    "value": 0.006119280921155958,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.7879459893592005
+    },
+    "threshold": "mean > 0 with t >= 2 confirms (with slope t >= 2); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "slope t of unusual move on fall90 raw 90-day return",
+    "value": 2.2704140549027376,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2303,
+    "cases with fall90 recorded": 2303
+  },
+  "decided_by": "Confirm rule met: mean unusual short move positive with t >= 2 and slope t >= 2.",
+  "reading": "A case is the first bar in each non-overlapping 5-bar grid cell of a window where the forecast falls at least 2 points below its least-negative level since the last short bet (from 0 after flat), its move is -(close[t+5]/close[t]-1 - the coin's mean grid 5-bar return over all windows), the slope's t is the OLS slope over its standard error on fall90's raw last_history_value, and the plan's 30-case minimum is reported as not observable."
+}

@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins_1d
+idea tested: 025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4921 USD
+---
+## Findings
+- **F1:** In coins whose 90-day return is positive, a one-day rise that is large against the 20-day standard deviation (top quintile, mean 1.66 usual moves) is followed by a 5-day move 3.28 % above the coin's normal drift (t 3.76, 591 non-overlapping cases). The same top quintile in falling coins is followed by -1.14 % (t -2.36, 595 cases), so the bounce fades only where the 90-day trend is down.
+- **F2:** In rising coins, the 20-day return scaled by its usual move predicts the next 5 days in the same direction (slope +0.0070, t 2.64, 2953 cases). Grouped by grid date across coins, the top quintile earns +2.07 % (t 2.06) and the bottom quintile -1.05 % (t -1.16), rising steadily from bottom to top. In falling coins the slope reverses (-0.0053, t -2.54), but its date-grouped quintiles are not ordered.
+- **F3:** A day's volume against its 20-day mean predicts a higher 5-day unusual move. The slope on log volume ratio is +0.0159 (t 3.49) in rising coins, where the top quintile earns +2.30 % (t 2.62), and +0.0057 (t 2.01) in falling coins, where the quietest quintile is followed by -1.67 % (t -4.73, 595 cases).
+- **F4:** The book lost because it shorted against the coins' normal drift, which is -0.74 % per case in the short direction, and its largest bets lost most. Short trades entered at the strongest forecasts (mean -19.5) lost -3.96 % gross on average over 2114 trades, against -0.44 % for the weakest. Its worst years were the rising ones: Sharpe -2.47 in 2020 and -1.99 in 2023, while holding earned +0.45 % and +0.32 % a day.
+- **F5:** Across coins, daily returns are higher on Wednesdays, Fridays and Saturdays: +0.32 %, +0.41 % and +0.45 % (t 1.32, 1.98, 2.86, about 414 days each). Their lead over the other days is positive in 7 of 8 years and in all 19 coins. This weekday angle was one of many I looked at, and the effect is ungraded, so I note it and draw no idea from it.
+- **F6:** Within falling coins, the deepest 90-day fall quintile (mean -54 %) is followed by +1.19 % above drift (t 2.38, 713 cases), while the shallower quintiles lie between -0.43 % and -0.82 %. This matches the tested idea's slope and is not new.
+
+## Ideas
+- `025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins.g1_breakouts-continue-in-uptrends` (from F1, F4): In a coin whose 90-day return is positive, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a further rise over the next 5 days, and the larger the rise against that usual move, the larger the rise that follows.
+- `025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins.g2_uptrend-momentum-persists` (from F2, F4): In a coin whose 90-day return is positive, its 20-day return measured in usual 20-day moves is followed over the next 5 days by a move in the same direction, larger the further that 20-day return sits from zero.
+- `025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins.g3_heavy-volume-precedes-gains` (from F3): A day whose volume is high relative to the coin's 20-day mean volume is followed by a higher return over the next 5 days, and the higher that volume ratio, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

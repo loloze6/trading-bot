@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move over cases",
+    "value": -0.003048331031718585,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.5381765150980033
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and positive slope); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of unusual move on case forecast",
+    "value": 0.002078600633053,
+    "passed": true
+  },
+  "counts": {
+    "cases": 996
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "A case is the first bet (forecast rise of >= 2 points from its lowest level on its side since the last bet) in each 10-bar grid cell of a window, its size in the regression is the forecast on the signal bar, the drift is the mean of the coin's non-overlapping 10-bar grid returns over all windows, and the 90-day return is recomputed from closes where 90 prior bars exist in the window, else read from the recorded regime."
+}

@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37593410000000005,
+  "findings": {
+    "F1": "The book fails on Calmar alone (0.39 = a yearly return of 23.0 % over a deepest fall of 58.5 %, Sharpe 0.68). The deepest fall ran 747 days across w15 to w21 while the coins rose 31 %. The next two falls were 46.9 % over w1 to w10 (coins \u221262 %) and 44.7 % over w12 to w15 (coins \u221255 %).",
+    "F2": "Over 10 days, the cases sort steadily by the coin's distance below its 60-day high (correlation of unusual move with that distance 0.124, 819 cases).",
+    "F3": "The size of the rise works in opposite directions depending on the distance from the 60-day high.",
+    "F4": "The book's held bars earn more, steadily, the closer the coin sits to its 60-day high.",
+    "F5": "Over all cases, the idea's unusual move is \u22120.30 % per case (\u22120.025 of a usual 10-day move of 14.5 %, 996 cases), against a trade cost of 0.19 %. The book's +0.87 % total move per case is the coins' drift, not the signal, so sizing or thresholds alone cannot lift its return against its falls.",
+    "F6": "The book's worst 5 % of days fall slightly nearer the high than its average held bar (distance below the 60-day high \u221210.9 % against \u221214.9 %; 24.5 % of those days below \u221216 % against 35.4 % of all held bars). The falls are not confined to deep drawdowns, and removing far-from-high exposure is a gain-per-risk repair rather than a certain fix of the deepest fall."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is positive, the larger a one-day rise in usual daily moves, the larger its rise over the next 10 days, and the closer the coin closes to its highest close of the past 60 days, the larger that continuation.",
+      "consequence": "A sharp up day is a reason to be long when the coin is near its 60-day high, and gives less reason the further below that high it closes.",
+      "name": "sharp rises near highs continue",
+      "from": "F2, F3, F4, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a coin closing far below its highest close of the past 60 days, the larger a one-day rise in usual daily moves, the larger its fall over the next 10 days.",
+      "consequence": "A sharp bounce in a coin deep below its 60-day high is a reason to be short, or to refuse a long.",
+      "name": "bounces fade below highs",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.d1_sharp-rises-near-highs-continue",
+    "025-02_deeper-fall-bigger-giveback.d3_sharp-rises-continue-uptrends.d2_bounces-fade-below-highs"
+  ],
+  "no_ideas": null
+}

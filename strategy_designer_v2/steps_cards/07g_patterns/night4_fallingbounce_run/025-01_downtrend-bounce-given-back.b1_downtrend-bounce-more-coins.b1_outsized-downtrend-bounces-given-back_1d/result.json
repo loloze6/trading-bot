@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins.b1_outsized-downtrend-bounces-given-back_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.48725609999999997,
+  "findings": {
+    "F1": "In coins whose 90-day return is positive, a large one-day rise is followed by a further rise over the next 5 days, not a fall. On days above 2 usual daily moves the winsorised unusual move is +5.06 % (t 3.96, 103 independent cases, 68 % of cases up). Between 1.5 and 2 moves it is +1.99 % (t 2.21, 163 cases). The link is graded across up days (Spearman 0.124, p < 0.0001, 1,636 cases).",
+    "F2": "The answer to a large up day depends on the 90-day trend. Up days above 2 moves end 5 days later lower in falling coins than in rising ones (Welch t \u22124.68). Up days above 1 move average +1.76 % in rising coins against \u22122.30 % in falling ones. That mean is positive in 84 % of the 19 coins when rising and in only 21 % when falling. In rising coins it is positive in 7 of 8 years, missing only 2025.",
+    "F3": "In falling coins, the 3-day return measured in usual moves predicts the next 5 days better than the one-day bounce the tested idea uses. The winsorised unusual move falls steadily across 3-day quintiles: +0.11 %, \u22120.44 %, \u22120.46 %, \u22121.02 %, then \u22121.70 % in the top quintile (t \u22123.69, 509 cases). The one-day measure is weaker: Spearman \u22120.065 (p 0.015, 1,414 cases), and its 1.5 to 3 move buckets have t of only \u22121.7.",
+    "F4": "In rising coins, the 30-day return measured in usual moves (its 20-day standard deviation times \u221a30) predicts the next 5 days in the same direction. The winsorised unusual move climbs steadily from \u22122.51 % in the lowest quintile (t \u22123.01, 181 cases) to +1.25 % in the highest (t 3.07, 894 cases).",
+    "F5": "The book's losses come from squeezes while it is short.",
+    "F6": "The one-day result reported in step 5 does not come from the bounce size the forecast grades on. In the falling regime, the 5-day unusual move barely changes by forecast bucket: \u22121.31 % at forecast \u221210 or below, \u22121.00 % between \u22122 and \u221210, and \u22120.53 % when flat (t \u22121.96, \u22121.64 and \u22122.34). The falling regime as a whole drifts below the coins' normal drift."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is positive, a one-day rise that is large relative to its 20-day standard deviation of daily returns is followed by a further rise over the next 5 days, and the more usual daily moves the rise covers, the larger the further rise.",
+      "consequence": "A trader would buy outsized up days in rising coins, scaled by the rise in usual moves, rather than fade them.",
+      "name": "outsized up days continue uptrend",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is negative, the larger its 3-day return measured in units of its 20-day standard deviation of daily returns, the larger its fall over the next 5 days.",
+      "consequence": "A trader would short falling coins after multi-day rallies, scaled by the 3-day rally in usual moves, instead of reacting to a single day's bounce.",
+      "name": "three-day rallies fade downtrends",
+      "from": "F3, F6",
+      "refs": [
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is positive, the higher its 30-day return measured in units of its 20-day standard deviation of daily returns scaled to 30 days, the higher its return over the next 5 days.",
+      "consequence": "A trader would lean long in rising coins whose last month was strong in usual moves, and lean short in those whose last month was weak.",
+      "name": "monthly strength persists uptrend",
+      "from": "F4, F2",
+      "refs": [
+        "F4",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins.b1_outsized-downtrend-bounces-given-back.g1_outsized-up-days-continue-uptrend",
+    "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins.b1_outsized-downtrend-bounces-given-back.g2_three-day-rallies-fade-downtrends",
+    "025-01_downtrend-bounce-given-back.b1_downtrend-bounce-more-coins.b1_outsized-downtrend-bounces-given-back.g3_monthly-strength-persists-uptrend"
+  ],
+  "no_ideas": null
+}

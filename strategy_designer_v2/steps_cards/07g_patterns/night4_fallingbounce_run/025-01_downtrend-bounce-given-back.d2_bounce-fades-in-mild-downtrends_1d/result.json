@@ -1,0 +1,31 @@
+{
+  "line": "7.g",
+  "backtest": "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.369488,
+  "findings": {
+    "F1": "In coins whose 90-day return is negative, the next day's return falls steadily as the day's rise grows against its 20-day standard deviation. After a rise of 0.5 to 1 usual moves the next day averages +0.08 % (n 306, t 0.28). After 1 to 2 usual moves it averages \u22120.64 % (n 191, t \u22121.89). After more than 2 it averages \u22121.36 % (n 65, t \u22122.16). In coins whose 90-day return is positive, the same rises are followed by gains: +0.27 % (n 250, t 0.80) and +0.42 % (n 76, t 0.56).",
+    "F2": "The fade does not last to the tested 5-day horizon. On the non-overlapping 5-day grid, rises of more than 2 usual moves in falling coins are followed by an unusual move of +0.058 usual 5-day moves (n 17, t 0.32), which is upward, not a fall. In the backtest, the 1045 short cases gave back only 0.026 of a usual move (t 0.78) against a cost of 0.19 % per trade. So the short held 5 days keeps the one-day giveback of F1 and then carries 4 more days of noise.",
+    "F3": "The book's loss sits mostly in XRP, at a mean of \u22120.126 % a day (n 2895), against \u22120.03 % to +0.02 % for the other five coins. It also sits in windows w16 to w18, at \u22120.17 % to \u22120.28 % a day.",
+    "F4": "The pattern that stands out most across the bars is the return over the day after a Friday's bar: +0.42 % (n 2479 coin-days, t 5.2), positive in 7 of 8 years and flat in 2023. The book loses on that bar (position gain \u22120.15 %, t \u22124.0), because it is short while the coins rise. The six coins share each day, so the t overstates the number of independent cases, and the effect has no graded form.",
+    "F5": "Sharp down days are followed by recoveries over the next 2 days, but not in a graded way."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is negative, a one-day rise is followed by a fall over the next day, and the larger that rise against the coin's 20-day standard deviation of daily returns, the larger the next day's fall.",
+      "consequence": "A trader would fade sharp bounces in falling coins for one day only, and refuse to hold the fade for several days or to fade bounces in coins rising over 90 days.",
+      "name": "one-day bounce giveback downtrend",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.g1_one-day-bounce-giveback-downtrend"
+  ],
+  "no_ideas": null
+}

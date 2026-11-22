@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the pooled slope of 5-day excess return on month_move forecast",
+    "value": 3.7802535960244787,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.7802535960244787
+    },
+    "threshold": "confirm: slope > 0 with t >= 2.0; reject: slope < 0 with t <= -2.0; at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 513
+  },
+  "decided_by": "The slope is positive with t >= 2.0 on at least 30 cases (confirm rule).",
+  "reading": "A case is the first bar in each 5-bar grid cell (positions 0,5,10,... from each window's first row) with regime 'trending' and non-zero forecast, its return taken from that bar's close over 5 bars inside the window; the coin's normal 5-day drift is the mean of its 5-bar returns at the grid positions over all windows; the slope's t is the ordinary OLS t; day_rise is recomputed as the 1-bar return over the 20-bar rolling std of 1-bar returns (current bar included), using the regime column where that std is not yet computable in the window; and a case count under 30 is reported as not observable."
+}

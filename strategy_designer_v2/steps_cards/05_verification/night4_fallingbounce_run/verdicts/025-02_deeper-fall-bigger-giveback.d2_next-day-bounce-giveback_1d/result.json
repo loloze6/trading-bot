@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day fall over short bets (sign flipped, minus coin mean daily return)",
+    "value": 0.002685449263784682,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.399178116201226
+    },
+    "threshold": "confirm t >= 2, reject t <= -2, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half |forecast| mean excess fall, Welch t > 0",
+    "value": -0.5293238298885865,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1428,
+    "top-half cases": 714,
+    "bottom-half cases": 714
+  },
+  "decided_by": "Main t >= 2 but the size check fails (top-half minus bottom-half Welch t not > 0).",
+  "reading": "A case is a bet as in the workflow's holding-period rule (the short forecast deepening by >= 2 points from its lowest short level since its last bet, reset to 0 after a flat or side change), the situation is a 90-day return below 0 (recomputed from closes inside the window where 90 prior bars exist, else the recorded regime) with a positive raw scaled one-day return, and the top half is the n//2 cases with the largest |forecast| (ties by time order), the rest the bottom half."
+}
