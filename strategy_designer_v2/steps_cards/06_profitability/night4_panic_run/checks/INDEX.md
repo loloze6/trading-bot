@@ -12,5 +12,6 @@
 027-03_panic-rebound-in-downtrend.d1_graded-sell-off-liquidity-premium_4h: not profitable enough [Sharpe 0.7019; Sharpe minus holding's Sharpe 0.1482; Calmar 0.3666]
 027-03_panic-rebound-in-downtrend.d2_deep-one-day-fall-rebound_4h: not profitable enough [Sharpe 0.6597; Sharpe minus holding's Sharpe 0.106; Calmar 0.2849]
 027-03_panic-rebound-in-downtrend_4h: not profitable enough [Sharpe 0.1517; Sharpe minus holding's Sharpe -0.402; Calmar 0.0335]
+027-04_panic-delayed-recovery-drift.d1_panic-premium-after-capitulation_4h: not profitable enough [Sharpe 0.4436; Sharpe minus holding's Sharpe -0.1102; Calmar 0.1331]
 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues_4h: not profitable enough [Sharpe -0.4307; Sharpe minus holding's Sharpe -0.9845; Calmar -0.3646]
 027-04_panic-delayed-recovery-drift_4h: not profitable enough [Sharpe 0.7259; Sharpe minus holding's Sharpe 0.1722; Calmar 0.4104]

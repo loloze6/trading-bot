@@ -12,5 +12,6 @@
 027-03_panic-rebound-in-downtrend.d1_graded-sell-off-liquidity-premium_4h: inconclusive (fit: adapted) [main: 0.000537206; t of the mean 0.0851178; non-overlapping cases 1050]
 027-03_panic-rebound-in-downtrend.d2_deep-one-day-fall-rebound_4h: inconclusive (fit: exact) [main: -0.000863072; OLS slope t -0.870628; cases 1152, cases with forecast above 0 578]
 027-03_panic-rebound-in-downtrend_4h: inconclusive (fit: adapted) [main: 0.0223027; t of the mean 0.985277; independent cases 40, active bars 187]
+027-04_panic-delayed-recovery-drift.d1_panic-premium-after-capitulation_4h: inconclusive (fit: adapted) [main: -0.00534129; ordinary t of the mean -0.805532; cases 692]
 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues_4h: inconclusive (fit: adapted) [main: 0.0103849; t of the mean 1.52458; cases 669, cases forecast <= -15 584, cases forecast between -15 and -10 85]
 027-04_panic-delayed-recovery-drift_4h: inconclusive (fit: adapted) [main: -0.00410336; t of the mean -0.704723; cases 1266, upper half cases 633, lower half cases 633]

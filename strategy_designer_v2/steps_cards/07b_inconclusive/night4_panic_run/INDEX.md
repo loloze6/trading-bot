@@ -12,5 +12,6 @@
 027-03_panic-rebound-in-downtrend.d1_graded-sell-off-liquidity-premium_4h: no ideas: The panic rebound is zero at every horizon (F1). It does not grow with the fall or the range expansion (F2, F3), and its sign follows the year's market (F4). The only positive part is a borderline 3-day bounce in coins that were already rising (F6), which is the brief's own condition for the theory being wrong, so the clear answer is that this data shows no panic premium to amend toward.
 027-03_panic-rebound-in-downtrend.d2_deep-one-day-fall-rebound_4h: 2 ideas (2 explorations)
 027-03_panic-rebound-in-downtrend_4h: 2 ideas (1 explorations)
+027-04_panic-delayed-recovery-drift.d1_panic-premium-after-capitulation_4h: 1 ideas (2 explorations)
 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues_4h: 1 ideas (2 explorations)
 027-04_panic-delayed-recovery-drift_4h: no ideas: The tested result is on the wrong side of zero (-0.41 %, t -0.70), and no coin, prior-trend group, drawdown group, panic-strength group or horizon shows a clear premium (F1, F3, F4, F5). Only calendar years differ strongly (F2), and a trader cannot know the year's outcome at a bar's close, so there is no supported amendment to propose.
