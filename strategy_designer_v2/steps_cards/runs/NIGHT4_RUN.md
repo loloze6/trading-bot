@@ -55,3 +55,17 @@ wrong."
 | Background tasks cut by the 2-hour limit, and a machine restart | runs paused until relaunched | relaunched at once without asking (topic 37); each session commits along the way, so a restart loses nothing finished |
 | Branches touching the same shared files (components) | conflicts at every merge | resolved the tested way in the morning (ours plus each branch's additions, then both test suites) |
 | Paying ideas that were momentum again | counted as discoveries | each paying book goes through the similarity check in the morning before it is called new |
+
+## During the night
+- **01:09 Paris, a blocking defect, found by session 3:** every step 3 call failed with "OSError: Argument list too
+  long". Step 3's system prompt (its instructions 8 KB, the config guide 40 KB, the component catalogue 99 KB) reached
+  about 147 KB with the night-3 builds; `common/lib.py` passed it as one command-line argument, capped at 128 KiB on
+  Linux. The loop counted it as a failed step (as it should: the call never reached the model) and stopped on "no
+  candidate left" after 0.04 USD.
+- **01:25 Paris, fixed** (commit 2df2b7da): the system prompt goes through a file (`--system-prompt-file`), the same
+  text. Proof: a tiny call with a prompt file; step 3 on a real idea with the full prompt (its plan written, 0.55 USD);
+  workflow tests 116 pass. The resume tested first on session 3's own state (clean merge; 3 retry lines re-admit its
+  ideas; the budget checked), then sent to the six sessions: merge, one retry line per idea failed this way, resume
+  with the budget unchanged.
+- **To watch (for the operator):** the catalogue grows with every component built (99 KB today), and with it the cost of
+  each step 3 call: 64,000 tokens written to the cache, 0.55 USD per plan.
