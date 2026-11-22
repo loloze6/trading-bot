@@ -1,12 +1,14 @@
-# Step card 7.d: Not profitable (2026-11-12)
+# Step card 7.d: Confirmed, not profitable (2026-11-12; entry and proposals changed 2026-11-22)
 
 ## Business objective
-**Establish why a backtest's book does not pay, starting from the measures that failed, and propose ideas about the market that would remove the cause, or say that none would.**
+**Establish why the book of an idea confirmed real does not pay, starting from the measures that failed, and propose repairs: the same idea traded another way so that it pays (`../common/idea_created_from.md`, "A repair of a confirmed idea"), or, rarely, say that none would.**
 
 The parts every line shares (input, output, how the data is read, the model, storage, quality criteria) are in `../07_common/card.md`.
 
 ## Entry condition
-Step 6's check is **not profitable enough**. Otherwise the line does not run, and its index line says so (`helper/line.yaml`).
+Step 5's verdict is **confirmed** and step 6's check is **not profitable enough** (operator, 2026-11-22). Otherwise the line does not run, and its index line says so (`helper/line.yaml`). A book whose idea is not confirmed is read by the verdict's line (7.a, 7.b, 7.c) and by 7.g: why the idea is unclear or wrong comes before how its book could pay.
+
+Why (topic 45, measured 2026-11-22): of the ideas line 7.d wrote from books not confirmed, 100 were planned and 7 paid, all momentum (6 near copies of paying books, 0.75 to 0.99 explained, and one half explained). Of the ideas written from confirmed books (lines 7.d and 7.g), those that kept the confirmed idea whole paid 4 times in 12; those that replaced it paid once in 17, and 14 of those 17 added a trend or momentum condition: the observed drift of this line toward momentum.
 
 ## Input
 The shared input: the backtest record, its plan and brief, step 5's verdict and step 6's check.
@@ -24,16 +26,18 @@ One analysis per backtest that meets the entry condition: findings, then ideas i
 Then the rest, only as far as it explains what failed.
 
 ## What it proposes
-Ideas that change what failed. An idea that adds gain but leaves the failing measure where it is does not answer.
+Repairs that change what failed. An idea that adds gain but leaves the failing measure where it is does not answer.
+- A repair keeps the confirmed idea's situation and its signal, in its own words, and changes how the book uses them (`../common/idea_created_from.md`). Written in full ("..., only while ...", "..., except when ...", "..., held for ...").
 - A way of trading can become an idea about the market: a stop that would have saved the book says that after a given fall the coin keeps falling; a signal that trades too often says its information is in its slow part.
-- A repair is the tested idea amended, written in full ("..., only while ...", "..., except when ..."). A separate claim would be tested alone and cannot repair this book. An idea of its own is written like any idea, without a label (its text is what step 3 reads).
-- If no idea about the market removes the cause (the effect the book bets on is not in the data), the answer is "no ideas", with that cause.
+- **The self-check (operator, 2026-11-22):** a condition the repair adds must not be an effect of its own: if the condition alone could make the book pay, it is a separate idea and is left out. The analyst measures it in its exploration (the bars where the condition holds without the idea's signal, against those where both hold) and gives the measure in the finding, with why the condition belongs to the idea's own theory (a sentence alone was not applied: in the proof's first pass, 3 of 14 repairs added a trend condition and none measured it). Momentum is not named in the prompt (a named effect would bias the analyst against a trend condition the idea's theory calls for); the drift is measured instead: each repair's book against its parent's and against the paying books (the similarity check).
+- No separate claim: it would be tested alone and cannot repair this book.
+- **No ideas, rarely:** only when the effect is too small to pay however it is traded: its size per case below the cost of a trade, and no stronger case of its own situation and no longer horizon with a larger size, the numbers given. Otherwise the book trades a real effect the wrong way, and there is a repair to find (a one-day reversal traded against every day's move has an edge 0.76 times its cost; the same reversal after a fall of more than 2 usual moves, 7.7 times: topic 45).
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
 
 ## Fixed inputs for the iterations
-The full-data run's 002-01 and 002-03 (they fail on their falls and against holding) and 002-04 (it loses money: its gain fails), backtested with the current steps. No book of the workflow fails on too few trades yet: that branch has no fixed input.
+Since 2026-11-22, confirmed books that do not pay (the earlier inputs, 002-01, 002-03 and 002-04 of the full-data run, are inconclusive and no longer enter this line): the set of the proof of 2026-11-22 (`validation/reading.md`).
 
 ## Variants compared
 One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).

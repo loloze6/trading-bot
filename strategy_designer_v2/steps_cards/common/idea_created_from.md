@@ -23,3 +23,15 @@ The track follows by reading the id from left to right:
 - **Ideas written together:** the ideas of one analysis.
 - **Generation:** the number of analyses between the idea and its brief: the number of `.<letter><number>_` parts in
   its id (0 for an idea created from a brief).
+
+**A repair of a confirmed idea** (operator, 2026-11-22; `topics/45_why-the-research-finds-only-long-momentum.md`): an
+idea line 7.d writes from an idea step 5 confirmed and whose book step 6 found not profitable enough. The effect is real,
+so its book is the effect traded the wrong way, and the repair trades the same effect another way:
+- it keeps the confirmed idea's situation and its signal, in the idea's own words;
+- it changes only how the book uses them: when to be out of the market, the exit or the holding, the size, the side
+  (the side that loses left out), a stronger case of the same situation or a longer horizon, or a condition that comes
+  from the idea's own theory or from what its book's falls showed;
+- an added condition is not an effect of its own: if the condition alone could make the book pay, it is a separate idea,
+  not a repair.
+The repair's book is compared with its parent's (`orchestration/ideas_similarities_check/`): how much of it the parent
+explains, and how much the nearest paying book explains, show whether it kept the idea or drifted to another effect.
