@@ -87,3 +87,33 @@ def test_a_brief_s_own_ideas_come_first(tmp_path):
     idea(lines, "003-01_x.g1_child", "three")
     cands = [r["idea"] for r in s.rank(run, tmp_path) if r["status"] == "candidate"]
     assert cands == ["003-02_y", "003-01_x.g1_child"]                       # the brief's idea before a better-scored child
+
+
+def register_book(root, run, iid, kind, share):
+    reg = root / "orchestration" / "ideas_similarities_check" / "register"
+    (reg / "comparisons").mkdir(parents=True, exist_ok=True)
+    f = reg / "books.json"; rows = json.loads(f.read_text()) if f.exists() else []
+    key = f"{run}__{iid}_1d"; rows.append({"key": key, "run": run, "id": f"{iid}_1d", "kind": kind})
+    f.write_text(json.dumps(rows))
+    (reg / "comparisons" / f"{key}.json").write_text(json.dumps({"nearest_relative": {"share_explained": share}}))
+
+
+def test_real_ideas_unlike_what_we_earn_come_first_and_those_we_already_earn_last(tmp_path):
+    """Operator, 2026-11-22: after a brief's own ideas, the ideas written from a confirmed idea whose book the paying books
+    explain little; then the unproven ones; an idea written from a confirmed idea we already earn after them."""
+    run = "t_run"; ideas = tmp_path / "02_ideation" / run / "ideas"
+    for iid in ("003-01_unrelated", "003-02_earned", "003-03_unclear"):
+        idea(ideas, iid, f"parent {iid}")
+    mark_tested(tmp_path, run, "003-01_unrelated", "confirmed", "not profitable enough")
+    mark_tested(tmp_path, run, "003-02_earned", "confirmed", "profitable enough")
+    mark_tested(tmp_path, run, "003-03_unclear", "inconclusive", "not profitable enough")
+    register_book(tmp_path, run, "003-01_unrelated", "confirmed", 0.05)       # difference 0.95
+    register_book(tmp_path, run, "003-02_earned", "paying", 0.90)             # difference 0.10
+    idea(ideas, "003-04_brief-idea", "a brief idea not yet tested")
+    for parent in ("003-01_unrelated", "003-02_earned", "003-03_unclear"):
+        idea(ideas, f"{parent}.g1_child", f"a child of {parent}")
+    order = [r["idea"] for r in s.rank(run, root=tmp_path) if r["status"] == "candidate"]
+    assert order == ["003-04_brief-idea", "003-01_unrelated.g1_child", "003-03_unclear.g1_child", "003-02_earned.g1_child"]
+    rows = {r["idea"]: r for r in s.rank(run, root=tmp_path)}
+    assert rows["003-01_unrelated.g1_child"]["group"] == 2 and rows["003-02_earned.g1_child"]["group"] == 3
+    assert rows["003-03_unclear.g1_child"]["difference"] is None                # no evidence: w 0.5
