@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 84-bar move per case (return minus coin's normal 84-bar drift)",
+    "value": 0.022302693482338896,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9852768673633687
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 20 independent cases and supporting check passes; reject: mean < 0 with t <= -2 on >= 20 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted case mean minus unweighted mean (>= 0 passes)",
+    "value": 0.0,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 40,
+    "active bars": 187
+  },
+  "decided_by": "The t lies between -2 and 2 on at least 20 cases.",
+  "reading": "Situation recomputed per window from prices (prior return close[t-6]/close[t-186]-1 < 0, bar range (high-low)/close with 180-bar mean / 6-bar mean <= 0.3333, and a fall: the recorded raw 'fall' value, else the 6-bar return, < 0), using the recorded regime for the prior/range rules on bars too early in a window to recompute them; cases are the first long bet (forecast rise >= 2 from its low since the last bet) in each 84-bar grid cell of a window, with a full 84-bar forward return, and the normal drift is the coin's mean 84-bar grid return over all its windows."
+}

@@ -1,0 +1,7 @@
+027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins_4h: not profitable enough [Sharpe 0.9024; Sharpe minus holding's Sharpe 0.3183; Calmar 0.748]
+027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends_4h: not profitable enough [Sharpe 1.008; Sharpe minus holding's Sharpe 0.4545; Calmar 1.13]
+027-02_panic-fall-depth-rebound_4h: not profitable enough [Sharpe 0.6436; Sharpe minus holding's Sharpe 0.08987; Calmar 0.2906]
+027-03_panic-rebound-in-downtrend.b1_downtrend-panic-rebound-more-coins_4h: not profitable enough [Sharpe 0.3337; Sharpe minus holding's Sharpe -0.2735; Calmar 0.0588]
+027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h: not profitable enough [Sharpe 1.091; Sharpe minus holding's Sharpe 0.5375; Calmar 0.9264]
+027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days_4h: not profitable enough [Sharpe 0.6244; Sharpe minus holding's Sharpe 0.07065; Calmar 0.3376]
+027-03_panic-rebound-in-downtrend_4h: not profitable enough [Sharpe 0.1517; Sharpe minus holding's Sharpe -0.402; Calmar 0.0335]

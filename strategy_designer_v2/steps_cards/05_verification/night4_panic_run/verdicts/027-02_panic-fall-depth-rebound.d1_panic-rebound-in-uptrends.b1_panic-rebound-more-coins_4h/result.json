@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 84-bar move per long case",
+    "value": 0.044656333778851344,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.561917307783413
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and upper-minus-lower half > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at median forecast)",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 256,
+    "upper half cases": 0,
+    "lower half cases": 256
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 but the upper-half-minus-lower-half difference is not above 0.",
+  "reading": "The panic stretch is the 6-bar high-low width over the mean high-low of the last 180 bars (current bar included) >= 7.5, taken from the regime column where 180 bars are not available, the fall with a positive 90-day return is a positive raw panic value, and the side is long; a case is the first long bet in each 84-bar grid cell of its window (positions counted from the window's first row) whose 84-bar return lies inside the window, the normal drift is the mean of the coin's non-overlapping 84-bar returns over all its windows, the halves are forecast > median versus <= median, and fewer than 30 cases is reported as not observable."
+}

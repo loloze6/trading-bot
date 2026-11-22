@@ -1,0 +1,7 @@
+027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins_4h: 2 ideas (2 explorations)
+027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends_4h: 1 ideas (2 explorations)
+027-02_panic-fall-depth-rebound_4h: 2 ideas (2 explorations)
+027-03_panic-rebound-in-downtrend.b1_downtrend-panic-rebound-more-coins_4h: 2 ideas (2 explorations)
+027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h: 4 ideas (2 explorations)
+027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days_4h: 3 ideas (2 explorations)
+027-03_panic-rebound-in-downtrend_4h: 3 ideas (2 explorations)

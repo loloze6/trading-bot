@@ -1,0 +1,7 @@
+027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+027-02_panic-fall-depth-rebound_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+027-03_panic-rebound-in-downtrend.b1_downtrend-panic-rebound-more-coins_4h: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)
+027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+027-03_panic-rebound-in-downtrend_4h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

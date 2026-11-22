@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 84-bar excess return (in usual moves) on 6-bar fall depth",
+    "value": 0.005867366194860372,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.49354709653733925
+    },
+    "threshold": "confirm: slope > 0 with t >= 2, mean excess > 0, >= 30 cases; reject: slope < 0 with t <= -2, >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return of the cases above 0",
+    "value": 0.15129385916931135,
+    "passed": true
+  },
+  "counts": {
+    "cases": 142
+  },
+  "decided_by": "The slope t lies between -2 and 2.",
+  "reading": "Situation recomputed as mean(high-low) over the last 6 bars >= 3x its 180-bar mean within each window (the regime column where history is too short), side long on a negative 6-bar change; a case is a holding-period bet (forecast rise >= 2 points) in the mean_reversion regime, the first per 84-bar grid cell counted from each window's first row, cases without close[t+84] in the window dropped; the coin's drift and usual move are the mean and standard deviation of its 84-bar returns on that grid over all windows; the slope's t is the ordinary OLS t; fewer than 30 cases gives 'not observable'."
+}

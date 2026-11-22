@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "027-03_panic-rebound-in-downtrend_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2153949,
+  "findings": {
+    "F1": "The tested result points the way the idea predicts but is far too noisy for 40 cases. Step 5 gives +2.23 % per case with t 0.99. My rebuild of the cases gives +0.62 % with a spread of 15.6 % per case, t 0.23 on 35 cases, and 51 % of cases end above the drift. At that spread, a +2.23 % mean needs about 196 cases to reach t 2, five times what the six default coins provide.",
+    "F2": "The 84-bar outcome swings by period and by coin, so a few cases decide the sign. In 2018 the 6 cases average \u221222.2 %, while in 2020 the 6 cases average +20.7 %. BTC averages \u22125.3 % on 7 cases and ZEC +9.9 % on 3.",
+    "F3": "Widening the same situation to more cases makes the 14-day premium show. Falls with a 24-hour range at least 2x the 30-day average, in coins with a negative 30-day return, give +3.71 % over 84 bars, t 2.15 on 161 cases. The same falls in all coins give +3.13 %, t 2.47 on 335 cases.",
+    "F4": "The premium is clearest over the next 3 days (18 bars), and it grows with how far the range exceeds its average. Falls with a range of at least 3x give +4.07 % over 18 bars, t 3.98 on 109 cases. Falls with a range of at least 2x give only +1.72 %, t 3.17 on 335 cases.",
+    "F5": "Grading by depth of fall did not work in the test, because the forecast saturates. Deep and mid terciles both sit at the forecast cap of 20, so the forecast-weighted check reads exactly 0. The 84-bar returns do not rise with depth: \u22122.6 % for deep, +7.4 % for mid, \u22121.2 % for shallow.",
+    "F6": "Within the falling coins, the deeper the prior 30-day fall, the larger the rebound. Cases with a very negative prior return give +7.5 % over 84 bars (16 cases); those with a mildly negative one give \u22125.9 % (17 cases)."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D",
+      "name": "downtrend panic rebound, more coins",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "idea": "In coins whose 30-day return before the panic was negative, a 24-hour stretch with a range several times its 30-day average and a hard fall is still followed by higher than usual returns over the next 14 days, and the more extreme the panic, the higher the return.",
+      "consequence": "The premium pays for providing liquidity, not for following a trend, so it appears even in coins that were already falling.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "A 24-hour stretch in which the coin falls hard while its range is several times its 30-day average is followed by higher than usual returns over the next 3 days, and the further the range exceeds its 30-day average, the higher the return.",
+      "consequence": "A trader providing liquidity into a panic should expect the premium to be paid mostly in the first few days, and more so in the most violent panics.",
+      "name": "panic premium over three days",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "027-03_panic-rebound-in-downtrend.b1_downtrend-panic-rebound-more-coins",
+    "027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days"
+  ],
+  "no_ideas": null
+}

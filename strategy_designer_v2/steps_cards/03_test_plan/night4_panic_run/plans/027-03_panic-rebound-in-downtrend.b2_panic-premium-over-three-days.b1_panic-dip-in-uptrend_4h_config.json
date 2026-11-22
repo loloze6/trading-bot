@@ -1,0 +1,138 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "rr",
+        "class": "strategies.strategy_components.MeanBarRangeRatioComponent",
+        "params": {
+          "long_period": 180,
+          "short_period": 6
+        }
+      },
+      {
+        "id": "fall24",
+        "class": "strategies.strategy_components.MeanAbsScaledReturnComponent",
+        "params": {
+          "period": 6,
+          "window": 180
+        }
+      },
+      {
+        "id": "prior",
+        "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+        "params": {
+          "period": 180,
+          "vol_period": 20,
+          "lag": 6,
+          "vol_lookback": 180
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "rr",
+              "op": "lte",
+              "value": 0.3333
+            },
+            {
+              "id": "fall24",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "prior",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "fall",
+            "class": "strategies.strategy_components.MeanAbsScaledReturnComponent",
+            "params": {
+              "period": 6,
+              "window": 180
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 186,
+                  "min_periods": 46
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              }
+            ]
+          },
+          {
+            "id": "rise",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 180,
+              "vol_period": 20,
+              "lag": 6,
+              "vol_lookback": 180
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 206,
+                  "min_periods": 51
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "trending": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}

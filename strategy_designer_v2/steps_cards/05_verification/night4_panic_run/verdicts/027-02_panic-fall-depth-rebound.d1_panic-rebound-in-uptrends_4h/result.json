@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 84-bar return of long bets (one per 84-bar grid cell)",
+    "value": 0.0441515624421554,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.2576939403197154
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases (and supporting check passes); reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual return, forecast above cases' median minus at or below",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 90,
+    "cases above median": 0,
+    "cases at or below median": 90,
+    "active bars": 403
+  },
+  "decided_by": "t between -2 and 2 over at least 30 cases",
+  "reading": "A case is the first long bet (forecast rise >= 2 from its lowest positive level since the last bet, from 0 after flat) in each 84-bar grid cell counted from each window's first row, with a full 84-bar return inside the window; drift is each coin's mean non-overlapping 84-bar return over all its windows; panic taken from the recorded regime or the recomputed high-low range ratio."
+}
