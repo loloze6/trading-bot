@@ -1,0 +1,136 @@
+{
+  "run_id": "20261122T040057Z_7fac378f",
+  "created_utc": "2026-11-22T04:00:57.412671+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "panic",
+          "class": "strategies.strategy_components.FallGatedRangeMultipleComponent",
+          "params": {
+            "period": 6,
+            "base_period": 180,
+            "fall_period": 6,
+            "lag": 6
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "panic",
+                "op": "gte",
+                "value": 3.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "bounce",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 6
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 360,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 2190,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 84
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 6,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "7fac378f71408003b4facb8adc84e93efd9d20dced2c4a7bbefe667bdbc41992",
+  "data": {
+    "symbols": [
+      "TRXUSD"
+    ],
+    "timeframe": "14400s",
+    "start": "2021-12-31 00:00:00",
+    "end": "2022-08-31 20:00:00",
+    "bar_count": 1464,
+    "data_sha256": "824e62c7ada4cc0bb23788803fc3d26b6708fa7cf3022f319c3cf95a6870d6f3"
+  },
+  "git_sha": "7645c3d3332de126bad3409663cace0b815f75c4-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

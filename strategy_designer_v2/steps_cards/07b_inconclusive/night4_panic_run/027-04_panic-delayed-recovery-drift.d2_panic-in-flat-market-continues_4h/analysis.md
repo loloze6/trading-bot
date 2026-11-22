@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues_4h
+idea tested: 027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3410 USD
+---
+## Findings
+- **F1:** The main measure is on the side the idea predicts but short of the bar: the cases forecast at or below -10 have a mean 78-bar unusual move in the short direction of +1.04 % (t 1.52, 669 cases, 58.7 % positive), and the 84-bar horizon reads +1.22 % (t 1.72, 666 cases).
+- **F2:** A few large losing cases drag the mean down: the skew is -1.90, and the median (+2.64 %) and 5 % trimmed mean (+2.24 %) are about twice the mean (+1.04 %).
+- **F3:** The effect is real in some periods and reversed in others: by year it is +9.37 % (t 4.86, 77 cases) in 2018 and +5.98 % (t 3.77, 89) in 2022, but -7.05 % (t -3.26, 83) in 2020 and -3.13 % (t -1.53, 103) in 2024. Windows range from +15.0 % (w2, t 6.14) to -12.3 % (w17, t -2.10).
+- **F4:** Five of the six coins lean the predicted way, each with too few cases to show it: BTC +1.48 % (t 1.16, 89), ETH +2.44 % (t 1.44, 86), LTC +2.15 % (t 1.70, 109), XMR +1.60 % (t 1.53, 130) and ZEC +2.06 % (t 1.10, 125). XRP goes the other way, -2.66 % (t -1.22, 130).
+- **F5:** The grading fails, because the forecast saturates. 531 of 669 cases sit at the -20 cap, with only +0.53 % (t 0.72). The (-20, -15] group has +4.52 % (t 2.12, 53) and the (-15, -10] group +2.05 % (t 0.84, 85). By the raw panic value, the lowest quartile is the strongest (+3.20 %, t 2.40) and the highest is about zero (-0.23 %, t -0.19).
+- **F6:** The coins' normal upward drift is what makes the move "unusual". In absolute terms the short loses 0.96 % per case over 78 bars (t -1.41), with a normal drift of -2.01 % in the short direction. A short book pays only if the unusual move exceeds that drift plus the 0.19 % cost, so the book's Sharpe is -0.43.
+- **F7:** Neither the prior 30-day return nor the size of the stretch's fall grades the move: Spearman with the 78-bar unusual move is -0.014 (452 cases) and -0.052 (639 cases). The only quartile with a clear effect is the deepest prior 10-day fall, +3.70 % (t 2.73, 148).
+
+## Ideas
+- `027-04_panic-delayed-recovery-drift.d2_panic-in-flat-market-continues.b1_flat-prior-panic-weakness-more-coins` (from F1, F2, F4): After a 24-hour panic stretch, the coin's return from one day after the stretch ends to 14 days after it is lower than usual, the more so the more extreme the panic, while the coin's 90-day return before the stretch is close to flat.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

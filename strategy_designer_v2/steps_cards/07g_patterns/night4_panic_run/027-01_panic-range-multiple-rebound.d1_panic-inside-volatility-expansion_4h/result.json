@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "027-01_panic-range-multiple-rebound.d1_panic-inside-volatility-expansion_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4106434,
+  "findings": {
+    "F1": "The panic premium is real but short. The bottom quintile of 24-hour return (mean fall -6.1 %) was followed by a strength of +0.118 of a usual move over the next 24 hours (t 5.88, 3450 non-overlapping cases) and +0.084 over the next 3 days (t 2.45, 1116 cases). It was gone by 7 days (-0.010, t -0.20, 462 cases) and reversed at 14 days (-0.117, t -2.09, 204 cases). So the tested 14-day horizon sits where the premium has already disappeared.",
+    "F2": "The 24-hour reversal holds everywhere. The rank correlation between the 24-hour return and the next 24 hours' strength was negative in all 6 coins (-0.070 to -0.148) and in all 8 years (-0.037 to -0.178). Top-minus-bottom quintile ranged from -0.05 to -0.31, with Welch t as low as -4.54 (XMR) and -4.96 (2018).",
+    "F3": "Among 24-hour falls, only the largest range multiples were followed by a premium over the next 3 days. The top quintile (range 2.26 times the 30-day mean) had a strength of +0.210 (t 4.01, 399 cases), while the other four quintiles lay between -0.057 and +0.007. Over 14 days the same top quintile gave +0.003 (t 0.03, 73 cases), with no grading across quintiles.",
+    "F4": "The range-multiple grading among falls is robust over 24 hours and mostly holds over 3 days. Over 24 hours its rank correlation with strength was positive in all 6 coins (0.056 to 0.137) and all 8 years (0.069 to 0.117). Over 3 days it was positive in 6 of 6 coins (0.022 to 0.130) and 6 of 8 years, with 2020 top-minus-bottom +0.608 (t 3.63).",
+    "F5": "Volatility expansion adds little at the tested horizon. The top quintile of the 7-day/60-day volatility ratio gave +0.161 over 14 days (t 1.37, 90 cases) and +0.093 over 3 days (t 1.96, 570 cases). This matches the verdict's -0.012 strength over 84 bars, despite a passed top-minus-bottom check (+1.25 %).",
+    "F6": "The 7-day trend effect on the next 14 days does not hold across years. Top-minus-bottom 7-day return quintile gave +0.35 strength (top +0.183 t 2.04, bottom -0.170 t -2.41). But it came almost entirely from 2020 (+1.61, Welch t 8.06), and 5 of 8 years were near zero or negative.",
+    "F7": "There is a clock effect, not explained by the idea. The 4-hour move after the bar opening at 16:00 UTC averaged +0.099 % (t 6.64, about 17500 cases), above the rest in all 6 coins (Welch t 1.52 to 3.12) and 7 of 8 years. The move after the 20:00 bar was -0.049 % (t -3.18). Being a fixed hour, it cannot be written as a graded idea.",
+    "F8": "The Friday premium has decayed. Friday bars averaged +0.101 % per 4 hours (t 6.20), but most of this came from 2018 to 2020 (Welch t 3.93, 7.78, 2.60), while 2021, 2022 and 2025 were negative.",
+    "F9": "The book's window returns tracked holding the coins, so its Calmar failure is market exposure. For example, w14 was -0.64 against -0.52 for the coins, w2 -0.51 against -0.46, and w7 -0.41 against -0.58, all as summed daily returns. This fits the verdict's total move of +1.87 % per case, made of +2.10 % normal drift and -0.24 % unusual move."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has fallen over the past 24 hours, the larger its 24-hour high-low range as a multiple of its average 24-hour range over the past 30 days, the more it earns above its usual return over the next 3 days.",
+      "consequence": "A trader would buy the widest-range panics for a few days and not hold them for two weeks, since the premium is spent within days.",
+      "name": "Panic range short rebound",
+      "from": "F1, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The deeper a coin's fall over the past 24 hours, the more it earns above its usual return over the next 24 hours.",
+      "consequence": "A trader would lean into sharp one-day drops for a one-day rebound; at about 0.12 of a usual daily move, this should be enough to clear the 0.19 % cost of a trade.",
+      "name": "One-day fall reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "027-01_panic-range-multiple-rebound.d1_panic-inside-volatility-expansion.g1_panic-range-short-rebound",
+    "027-01_panic-range-multiple-rebound.d1_panic-inside-volatility-expansion.g2_one-day-fall-reversal"
+  ],
+  "no_ideas": null
+}

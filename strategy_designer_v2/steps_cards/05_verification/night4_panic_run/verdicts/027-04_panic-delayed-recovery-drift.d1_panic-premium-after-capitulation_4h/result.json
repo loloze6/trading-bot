@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 78-bar move per long case (return minus coin's normal 78-bar drift)",
+    "value": -0.005341287924956862,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -0.8055319439713877
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and weighted check > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean unusual move > 0",
+    "value": -0.0017780713571182414,
+    "passed": false
+  },
+  "counts": {
+    "cases": 692
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "The situation is read as bars where the component's raw value is positive (prior 540-bar return and stretch return both negative), the side long; a case is the first bet (forecast rise of >= 2 points from its lowest positive level since the last bet, reset to 0 when flat) in each 78-bar grid cell counted from each window's first row, the normal drift is the mean of the coin's non-overlapping 78-bar returns over all its windows, and cases whose 78-bar return leaves the window are dropped."
+}

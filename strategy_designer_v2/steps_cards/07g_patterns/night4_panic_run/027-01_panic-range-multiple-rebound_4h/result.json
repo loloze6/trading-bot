@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "027-01_panic-range-multiple-rebound_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3931559,
+  "findings": {
+    "F1": "Within 24-hour falls, panic severity (the fall's depth in usual 24h moves times the 24h range multiple) predicts the next 3 days in a graded way: the strength runs from -0.035 (t -0.84, 506 cases) in the mildest quintile to +0.052 (t 1.02) in the fourth and +0.209 (t 4.62, 505 cases) in the most severe. Over the next 1 day it runs from -0.025 to +0.152 (t 4.93, 1543 cases).",
+    "F2": "The same panic premium is gone by 14 days, which explains the tested idea's null result: among falls, the 24h fall depth has no link to the 14-day excess (Spearman -0.014, p 0.76, 489 cases), and the tested cases' unusual move over 84 bars was -0.13 % (t -0.21, 1144 cases).",
+    "F3": "The top quintile of the 24h range multiple is followed by a 3-day strength of +0.172 (t 4.93, 1032 cases). It is +0.236 (t 4.94, 560 cases) after falls against +0.097 (t 1.89, 472 cases) after rises, holds when clustered by time (t 2.52 over 460 distinct times), and is positive in all 6 coins (0.055 to 0.314) and all 8 years (0.035 to 0.383).",
+    "F4": "The deepest quintile of 24h moves in usual-move units is followed by a 1-day strength of +0.105 (t 5.30, 3190 cases), against -0.039 to -0.050 in the top two quintiles (Spearman -0.090, p 4e-30). It is positive in all 6 coins (t 1.23 to 2.74) and all 8 years (0.040 to 0.259), and holds when clustered by time (t 2.05 over 1210 times).",
+    "F5": "The book is the coin held with leverage, not the panic signal: it is in a position on 98.5 % of bars (103483 of 105075), with a mean allocation of 1.06. Its allocation correlates only 0.02 with the forecast, so its Sharpe edge over holding (+0.14) is not timing, and its Calmar of 0.33 failed.",
+    "F6": "7-day momentum against the 14-day excess (top quintile +0.178, t 2.10; bottom -0.163, t -2.81; Spearman 0.091, p 0.004) does not stand out among the many angles looked at. Clustered by time it falls to t 1.23 over 87 times, and its top quintile changes sign across years (2020 +0.53, 2022 -0.57).",
+    "F7": "Calendar effects in the next 4h bar are strong but not graded: the bar after the 16:00 UTC close earns +0.048 vol units (t 5.98; clustered t 2.85; negative only in 2022), and Fridays earn +0.053 (t 6.28; clustered t 3.00; negative in 2022 and 2025)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin falls over a 24-hour stretch, it earns more than its usual return over the next 3 days. The deeper the fall in usual 24-hour moves, and the larger the stretch's high-low range as a multiple of its 30-day average 24-hour range, the larger that excess return.",
+      "consequence": "The forced-selling discount is earned back within days, not weeks, so a panic rebound should be held for about 3 days rather than 14.",
+      "name": "short panic rebound three days",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The more a coin's 24-hour return falls below zero, measured in its usual 24-hour moves over the past 30 days, the more it earns above its usual return over the next 24 hours.",
+      "consequence": "A sharp 24-hour drop is a reason to buy for a one-day reversal, and the deeper the drop, the larger the expected bounce.",
+      "name": "one day fall reversal",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "027-01_panic-range-multiple-rebound.g1_short-panic-rebound-three-days",
+    "027-01_panic-range-multiple-rebound.g2_one-day-fall-reversal"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,199 @@
+{
+  "run_id": "20261122T004747Z_d4b95c46",
+  "created_utc": "2026-11-22T00:47:47.481338+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "rr",
+          "class": "strategies.strategy_components.MeanBarRangeRatioComponent",
+          "params": {
+            "long_period": 180,
+            "short_period": 6
+          }
+        },
+        {
+          "id": "fall24",
+          "class": "strategies.strategy_components.MeanAbsScaledReturnComponent",
+          "params": {
+            "period": 6,
+            "window": 180
+          }
+        },
+        {
+          "id": "prior",
+          "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+          "params": {
+            "period": 180,
+            "vol_period": 20,
+            "lag": 6,
+            "vol_lookback": 180
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "rr",
+                "op": "lte",
+                "value": 0.3333
+              },
+              {
+                "id": "fall24",
+                "op": "lt",
+                "value": 0.0
+              },
+              {
+                "id": "prior",
+                "op": "gt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "fall",
+              "class": "strategies.strategy_components.MeanAbsScaledReturnComponent",
+              "params": {
+                "period": 6,
+                "window": 180
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 186,
+                    "min_periods": 46
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 3,
+                    "pivot": 20
+                  }
+                }
+              ]
+            },
+            {
+              "id": "rise",
+              "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+              "params": {
+                "period": 180,
+                "vol_period": 20,
+                "lag": 6,
+                "vol_lookback": 180
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 206,
+                    "min_periods": 51
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "unknown": null,
+        "trending": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 360,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 2190,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 18
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 6,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "d4b95c46d7e5d18a6ad72ee8d23f0215b46f777e1ba79cbdaba94957e938599c",
+  "data": {
+    "symbols": [
+      "LTCUSD"
+    ],
+    "timeframe": "14400s",
+    "start": "2017-09-02 00:00:00",
+    "end": "2018-04-30 20:00:00",
+    "bar_count": 1434,
+    "data_sha256": "d069e0697f3b21f7cfd4dd934a61d2b983fc7a9500b8f5b2866467513a83051d"
+  },
+  "git_sha": "d2cfa87aa4163709f9daa33ddf69d65cea00fe22-dirty",
+  "engine": {
+    "lookback": 207,
+    "warmup": 207
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

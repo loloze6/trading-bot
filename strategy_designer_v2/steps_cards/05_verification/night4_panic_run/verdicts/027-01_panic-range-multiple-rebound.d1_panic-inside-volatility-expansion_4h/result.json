@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 84-bar move per case (return minus coin's normal 84-bar drift)",
+    "value": -0.002353842981478489,
+    "statistic": {
+      "name": "ordinary t",
+      "value": -0.3899704363168941
+    },
+    "threshold": "mean > 0 with t >= 2 (confirm, with supporting check); mean < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half forecast size mean unusual move",
+    "value": 0.012479353317163537,
+    "passed": true
+  },
+  "counts": {
+    "cases in total": 1146
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first long bet (forecast rise of at least 2 points from its lowest level since the last bet, from 0 after flat) in each 84-bar grid cell of a window, its return taken from that bar's close if 84 bars remain in the window; cases of all coins are pooled into one mean; the halves of forecast size are split by rank at the signal bar (the middle case left out when the count is odd); the plan's fewer-than-30-cases rule is treated as the minimum count."
+}

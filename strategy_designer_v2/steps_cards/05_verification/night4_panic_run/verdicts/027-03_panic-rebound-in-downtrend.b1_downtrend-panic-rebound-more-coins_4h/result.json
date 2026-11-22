@@ -1,0 +1,29 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 84-bar return of bets over the coin's mean 84-bar return",
+    "value": -0.023501988612820088,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -5.285459835904096
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and top-minus-bottom third > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third excess return by entry forecast",
+    "value": 0.001838866517767282,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1724,
+    "active_bars": 75645,
+    "top_third_cases": 574,
+    "bottom_third_cases": 574
+  },
+  "decided_by": "Mean excess return below 0 with t <= -2 over at least 30 cases.",
+  "reading": "Situation = 180-bar close return ending 6 bars ago below 0 (recomputed from prices inside each window, active bars in a window's first 186 bars left out of the agreement as not computable) and close below the prior 24h high (raw component > 0), side long; a case is the first long bet (forecast rise >= 2 from its lowest positive level since the last bet, reset at flat) in each 84-bar grid cell from each window's first row; the coin's mean 84-bar return uses the same non-overlapping grid over all its windows; terciles are the n//3 highest and n//3 lowest forecasts at entry after a stable sort."
+}

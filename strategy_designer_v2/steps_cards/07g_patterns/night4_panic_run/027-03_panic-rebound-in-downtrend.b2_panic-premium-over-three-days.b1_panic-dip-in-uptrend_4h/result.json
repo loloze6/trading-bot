@@ -1,0 +1,66 @@
+{
+  "line": "7.g",
+  "backtest": "027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend_4h",
+  "step5": "mismatch",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.42477560000000003,
+  "findings": {
+    "F1": "Over 3 days, a 24h fall on wide bars is followed by an excess return that grows with how wide the bars are against their 30-day mean. On the 18-bar grid, falls whose 24h bar range is 1.5 to 2 times its 30-day mean returned +2.1 % above the coin's drift (t 2.48, n 156). At 2 to 3 times it was +3.4 % (t 3.45, n 58). Below 1 times it was \u22120.5 % to \u22120.1 % (t \u22121.24 and \u22120.35). The plan's own 3x-and-above level gave only +1.1 % (t 1.09, n 34). Rises on the same widths showed nothing (all |t| < 1.7).",
+    "F2": "The fall's depth matters only once the bars are wide. With bars over 1.5 times their usual width, a 24h fall of 1 to 2 usual 24h moves returned +4.7 % over 3 days (t 3.51, n 60), and a fall beyond 2 usual moves returned +2.4 % (t 3.40, n 134). The same falls on bars of normal width returned +0.4 % (t 0.80, n 239) and +0.3 % (t 0.30, n 16). Shallow falls under 1 usual move returned \u22120.7 % (t \u22120.50).",
+    "F3": "The rebound after a panic comes almost entirely from coins that were rising beforehand.",
+    "F4": "The wide-bar fall effect sits in the smaller coins and is uneven across years.",
+    "F5": "The 4h bar from 20:00 to 24:00 UTC returns more than the coin's mean 4h return, consistently across coins and years.",
+    "F6": "The 4h bar from 00:00 to 04:00 UTC returns less than the coin's mean.",
+    "F7": "The tested book's problem is too few trades, not the size of the move."
+  },
+  "ideas": [
+    {
+      "idea": "A 24-hour fall in which the coin's bars are wider than their 30-day average is followed by higher than usual returns over the next 3 days. The wider the bars against their 30-day average, the higher the return, already from moderately widened ranges, well below several times the usual size.",
+      "consequence": "A trader should buy 24-hour falls on unusually wide bars even when the range has not reached panic size, more so the wider the bars, and refuse falls on bars of normal width.",
+      "name": "wide-range falls rebound",
+      "from": "F1, F2, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F7"
+      ]
+    },
+    {
+      "idea": "Among 24-hour falls on unusually wide bars, the higher the coin's 30-day return before the fall, the higher its return over the next 3 days. Falls that interrupt a 30-day rise give the largest rebound.",
+      "consequence": "A trader should take wide-range dips in a coin that was rising over the past 30 days, more so the stronger the rise, and refuse them in a coin already falling.",
+      "name": "wide-range dip in uptrend",
+      "from": "F3, F1, F4",
+      "refs": [
+        "F3",
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "Over the 4 hours from 20:00 to 24:00 UTC, the coin returns more than its usual 4-hour return. The larger the coin's 24-hour move up to 20:00 UTC, in either direction, the larger that excess.",
+      "consequence": "A trader who is already deciding to buy should time the purchase before 20:00 UTC, more so after a large 24-hour move, and avoid selling into that hour.",
+      "name": "late-UTC evening bid",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    },
+    {
+      "idea": "Over the 4 hours from 00:00 to 04:00 UTC, the coin returns less than its usual 4-hour return. The larger the coin's absolute 24-hour return up to midnight UTC, the larger that shortfall.",
+      "consequence": "A trader who is already deciding to buy should prefer to wait until after 04:00 UTC rather than buy at midnight UTC, more so after a large 24-hour move.",
+      "name": "post-midnight UTC weakness",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend.g1_wide-range-falls-rebound",
+    "027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend.g2_wide-range-dip-in-uptrend",
+    "027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend.g3_late-utc-evening-bid",
+    "027-03_panic-rebound-in-downtrend.b2_panic-premium-over-three-days.b1_panic-dip-in-uptrend.g4_post-midnight-utc-weakness"
+  ],
+  "no_ideas": null
+}

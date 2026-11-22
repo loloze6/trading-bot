@@ -5863,3 +5863,449 @@ class LowProximityScaledRiseComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.vol_period + 1, self.period)
+
+
+
+
+class FallGatedRangeMultipleComponent(SubStrategyComponent):
+    """
+    The range of a fall stretch, in multiples of its own average, read at e = t - lag:
+
+        e = t - lag                                          (lag 0, the default: e = t)
+        S(i) = max(high[i-period+1 .. i]) - min(low[i-period+1 .. i])
+        M = mean(S(e-base_period+1) .. S(e))
+        G = 1 when close[e] < close[e-fall_period], else 0
+        raw_value = G x S(e) / M        (0.0 when M is 0)
+
+    Range & sign: 0 and up, at most base_period (M includes S(e)), never negative, no direction. It is 1 when
+    the stretch's range equals its mean and 0 when close[e] is not below close[e-fall_period]. lag 0 is the
+    original output, unchanged.
+    Warm-up: max(base_period + period - 1, fall_period + 1) + lag rows, bar t included.
+    NaN: a NaN high or low in bars e-base_period-period+2 .. e, or a NaN close[e] or close[e-fall_period],
+    gives NaN, whatever the gate. A mean of 0 gives 0.0 (S(e) is then 0 too).
+    Building the component raises for period < 1, base_period < 1, fall_period < 1 or lag < 0.
+
+    WHY THIS CANNOT LEAK: it reads only the rows up to and including bar t (the last row of data), and of them
+    only bars up to e = t - lag: high and low of bars e-base_period-period+2 .. e, and close of bars
+    e-fall_period and e. Each is known at its bar's close.
+    """
+
+    def __init__(self, name="FallGatedRangeMultiple", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 6))
+        self.base_period = int(self.parameters.get("base_period", 180))
+        self.fall_period = int(self.parameters.get("fall_period", 6))
+        self.lag = int(self.parameters.get("lag", 0))
+        if self.period < 1:
+            raise ValueError(f"FallGatedRangeMultipleComponent: period must be >= 1, got {self.period}")
+        if self.base_period < 1:
+            raise ValueError(f"FallGatedRangeMultipleComponent: base_period must be >= 1, got {self.base_period}")
+        if self.fall_period < 1:
+            raise ValueError(f"FallGatedRangeMultipleComponent: fall_period must be >= 1, got {self.fall_period}")
+        if self.lag < 0:
+            raise ValueError(f"FallGatedRangeMultipleComponent: lag must be >= 0, got {self.lag}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = len(data)
+        e = n - 1 - self.lag
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        close = data['close'].astype(float).to_numpy()
+        start = e - self.base_period - self.period + 2
+        h = high[start:e + 1]
+        lo = low[start:e + 1]
+        c_e = close[e]
+        c_b = close[e - self.fall_period]
+        if np.isnan(h).any() or np.isnan(lo).any() or np.isnan(c_e) or np.isnan(c_b):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        hmax = pd.Series(h).rolling(self.period).max().to_numpy()[self.period - 1:]
+        lmin = pd.Series(lo).rolling(self.period).min().to_numpy()[self.period - 1:]
+        s = hmax - lmin
+        s_e = float(s[-1])
+        mean_s = float(np.mean(s))
+        gate = 1.0 if c_e < c_b else 0.0
+        if mean_s == 0:
+            value = 0.0
+        else:
+            value = gate * s_e / mean_s
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'gate': gate, 'stretch_range': s_e, 'mean_range': mean_s, 'lag': self.lag}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period + self.period - 1, self.fall_period + 1) + self.lag
+
+
+class ScaledFallRangeMultipleComponent(SubStrategyComponent):
+    """
+    The fall of a stretch in usual moves, times its range in usual ranges, for the stretch ending `lag` bars back:
+
+        e    = t - lag
+        R    = close[e] / close[e - period] - 1
+        m    = mean over i = e-window+1 .. e of abs(close[i] / close[i - period] - 1)
+        S(i) = max(high[i-period+1 .. i]) - min(low[i-period+1 .. i])
+        B    = mean over i = e-window+1 .. e of S(i)
+        raw_value = max(0, -R / m) x S(e) / B      (0 when m = 0 or B = 0)
+
+    Range: 0 and up, unbounded in practice, never negative; no direction. It is 0 when the stretch did not fall.
+    It grows with the depth of the fall in usual period-bar moves and with how many usual period-bar ranges the
+    stretch spanned. Each factor is at most `window`.
+    Warm-up: window + period + lag rows, bar t included.
+    NaN: a NaN close among closes[e-window-period+1 .. e], or a NaN high or low among bars e-window-period+2 .. e,
+    gives NaN. A close not above 0 there also gives NaN. m = 0 or B = 0 gives 0.0, because the fall or the range is
+    then 0 too.
+    Building it raises for period < 1, lag < 0 or window < 1.
+
+    WHY THIS CANNOT LEAK: it reads only close, high and low of rows up to and including bar t - lag. These are at or
+    before bar t, the last row of data, and each is known at that bar's close.
+    """
+
+    def __init__(self, name="ScaledFallRangeMultiple", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 6))
+        if self.period < 1:
+            raise ValueError(f"ScaledFallRangeMultipleComponent: period must be >= 1, got {self.period}")
+        self.lag = int(self.parameters.get("lag", 6))
+        if self.lag < 0:
+            raise ValueError(f"ScaledFallRangeMultipleComponent: lag must be >= 0, got {self.lag}")
+        self.window = int(self.parameters.get("window", 180))
+        if self.window < 1:
+            raise ValueError(f"ScaledFallRangeMultipleComponent: window must be >= 1, got {self.window}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p, w = self.period, self.window
+        c = data['close'].astype(float).to_numpy()
+        h = data['high'].astype(float).to_numpy()
+        lo = data['low'].astype(float).to_numpy()
+        e = len(c) - 1 - self.lag
+        cs = c[e - w - p + 1: e + 1]
+        hs = h[e - w - p + 2: e + 1]
+        ls = lo[e - w - p + 2: e + 1]
+        self.confidence = 1.0
+        if np.isnan(cs).any() or np.isnan(hs).any() or np.isnan(ls).any() or not (cs > 0).all():
+            self._raw_value = float("nan")
+            return
+        rets = cs[p:] / cs[:-p] - 1.0
+        m = float(np.mean(np.abs(rets)))
+        hw = np.lib.stride_tricks.sliding_window_view(hs, p).max(axis=1)
+        lw = np.lib.stride_tricks.sliding_window_view(ls, p).min(axis=1)
+        ranges = hw - lw
+        b = float(np.mean(ranges))
+        r = float(rets[-1])
+        s = float(ranges[-1])
+        if m == 0 or b == 0:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(max(0.0, -r / m) * s / b)
+        self.debug_info = {'stretch_return': r, 'usual_move': m, 'stretch_range': s, 'usual_range': b}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.window + self.period + self.lag
+
+
+class FallGatedRangeMultipleVolatilityRatioComponent(SubStrategyComponent):
+    """
+    A fall-gated range multiple times a volatility ratio, on bar t:
+
+        S(i) = max(high[i-period+1 .. i]) - min(low[i-period+1 .. i])
+        range_multiple = S(t) / mean(S(t-base_period+1) .. S(t))      (0.0 when that mean is 0)
+        r[j] = close[j] / close[j-1] - 1
+        s(i) = std (ddof 1) of r[i-vol_period+1 .. i]
+        vol_ratio = s(t) / mean(s(t-vol_lookback+1) .. s(t))
+        G = 1 if close[t] < close[t-fall_period] else 0
+        raw_value = G x range_multiple x vol_ratio
+
+    Range: 0 and up, at most base_period x vol_lookback, never negative; no direction. It is 0 when there is no
+    fall over fall_period bars. While the fall lasts it grows continuously with the range multiple and with the
+    volatility ratio. Graded inside the gate, and it jumps to 0 at the gate.
+
+    Warm-up: max(base_period + period - 1, fall_period + 1, vol_lookback + vol_period) rows, bar t included
+    (402 at the defaults).
+
+    NaN: a NaN high or low in the last base_period + period - 1 rows, or a NaN close in the last
+    vol_lookback + vol_period rows or at bar t-fall_period, gives NaN whatever the gate. A close not above 0
+    among those rows gives NaN, and so does a mean of s equal to 0 (neither is ever seen on real bars).
+    A mean range of 0 gives a range factor of 0.0.
+    Building the component raises for period < 1, base_period < 1, fall_period < 1, vol_period < 2,
+    or vol_lookback < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close of the last get_required_periods() rows of data,
+    ending at bar t (the last row), which are all known at bar t's close.
+    """
+
+    def __init__(self, name="FallGatedRangeVolRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 6))
+        self.base_period = int(self.parameters.get("base_period", 180))
+        self.fall_period = int(self.parameters.get("fall_period", 6))
+        self.vol_period = int(self.parameters.get("vol_period", 42))
+        self.vol_lookback = int(self.parameters.get("vol_lookback", 360))
+        if self.period < 1:
+            raise ValueError(f"FallGatedRangeMultipleVolatilityRatioComponent: period must be >= 1, got {self.period}")
+        if self.base_period < 1:
+            raise ValueError(
+                f"FallGatedRangeMultipleVolatilityRatioComponent: base_period must be >= 1, got {self.base_period}")
+        if self.fall_period < 1:
+            raise ValueError(
+                f"FallGatedRangeMultipleVolatilityRatioComponent: fall_period must be >= 1, got {self.fall_period}")
+        if self.vol_period < 2:
+            raise ValueError(
+                f"FallGatedRangeMultipleVolatilityRatioComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.vol_lookback < 1:
+            raise ValueError(
+                f"FallGatedRangeMultipleVolatilityRatioComponent: vol_lookback must be >= 1, got {self.vol_lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        tail = data.iloc[-n:]
+        high = tail["high"].astype(float).to_numpy()
+        low = tail["low"].astype(float).to_numpy()
+        close = tail["close"].astype(float).to_numpy()
+        last = n - 1
+        p, b, f = self.period, self.base_period, self.fall_period
+        v, L = self.vol_period, self.vol_lookback
+
+        hl_start = last - b - p + 2
+        cl_start = last - L - v + 1
+        if (np.isnan(high[hl_start:]).any() or np.isnan(low[hl_start:]).any()
+                or np.isnan(close[cl_start:]).any() or np.isnan(close[last - f])):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        if not (close[cl_start:] > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+
+        ranges = np.empty(b)
+        for k, i in enumerate(range(last - b + 1, last + 1)):
+            ranges[k] = high[i - p + 1:i + 1].max() - low[i - p + 1:i + 1].min()
+        mean_range = float(ranges.mean())
+        range_multiple = float(ranges[-1] / mean_range) if mean_range != 0 else 0.0
+
+        stds = np.empty(L)
+        for k, i in enumerate(range(last - L + 1, last + 1)):
+            rets = close[i - v + 1:i + 1] / close[i - v:i] - 1.0
+            stds[k] = np.std(rets, ddof=1)
+        mean_std = float(stds.mean())
+        if not mean_std > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        vol_ratio = float(stds[-1] / mean_std)
+
+        gate = 1.0 if close[last] < close[last - f] else 0.0
+        self._raw_value = float(gate * range_multiple * vol_ratio)
+        self.confidence = 1.0
+        self.debug_info = {"gate": gate, "range_multiple": range_multiple, "vol_ratio": vol_ratio}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.base_period + self.period - 1, self.fall_period + 1, self.vol_lookback + self.vol_period)
+
+
+class PriorFallTimesScaledFallRangeMultipleComponent(SubStrategyComponent):
+    """
+    The prior long fall that ended at the stretch's start, times the scaled fall and range multiple of the stretch:
+
+        e = t - lag
+        P = max(0, -(close[e-period] / close[e-period-prior_period] - 1)) x 100
+        r(i) = close[i] / close[i-period] - 1
+        m = mean(abs(r(i)), i = e-window+1 .. e)
+        S(i) = max(high[i-period+1 .. i]) - min(low[i-period+1 .. i])
+        B = mean(S(i), i = e-window+1 .. e)
+        F = max(0, -r(e) / m) x S(e) / B          (F = 0 when m = 0 or B = 0)
+        raw_value = P x F
+
+    F is ScaledFallRangeMultipleComponent(period, lag, window). The output is graded, 0 and up, never negative,
+    with no direction. P is 0 to 100, and each multiple in F is at most window. It is 0 unless both the prior
+    prior_period-bar return and the stretch's return are negative.
+    Warm-up: max(lag + window + period, lag + period + prior_period + 1) rows, bar t included (553 at the defaults).
+    NaN: a NaN close, high or low in any row read gives NaN, and so does a close not above 0 (never on real bars).
+    m = 0 or B = 0 gives 0.
+    Building the component raises for period < 1, lag < 0, window < 1, or prior_period < 1.
+
+    WHY THIS CANNOT LEAK: it reads close at bars t-lag-window-period+1 .. t-lag and at bar
+    t-lag-period-prior_period, and high and low at bars t-lag-window-period+2 .. t-lag. All of these are rows
+    at or before bar t (the last row of data).
+    """
+
+    def __init__(self, name="PriorFallScaledFallRange", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 6))
+        self.lag = int(self.parameters.get("lag", 6))
+        self.window = int(self.parameters.get("window", 180))
+        self.prior_period = int(self.parameters.get("prior_period", 540))
+        if self.period < 1:
+            raise ValueError(f"PriorFallTimesScaledFallRangeMultipleComponent: period must be >= 1, got {self.period}")
+        if self.lag < 0:
+            raise ValueError(f"PriorFallTimesScaledFallRangeMultipleComponent: lag must be >= 0, got {self.lag}")
+        if self.window < 1:
+            raise ValueError(f"PriorFallTimesScaledFallRangeMultipleComponent: window must be >= 1, got {self.window}")
+        if self.prior_period < 1:
+            raise ValueError(
+                f"PriorFallTimesScaledFallRangeMultipleComponent: prior_period must be >= 1, got {self.prior_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data["close"].astype(float).to_numpy()
+        h = data["high"].astype(float).to_numpy()
+        lo = data["low"].astype(float).to_numpy()
+        n = len(c)
+        t = n - 1
+        p, w = self.period, self.window
+        e = t - self.lag
+        cw = c[e - w - p + 1: e + 1]
+        hw = h[e - w - p + 2: e + 1]
+        lw = lo[e - w - p + 2: e + 1]
+        p0 = c[e - p - self.prior_period]
+        p1 = c[e - p]
+        if (np.isnan(cw).any() or np.isnan(hw).any() or np.isnan(lw).any() or np.isnan(p0)
+                or (cw <= 0).any() or not p0 > 0):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = cw[p:] / cw[:-p] - 1.0
+        m = float(np.mean(np.abs(r)))
+        hmax = np.lib.stride_tricks.sliding_window_view(hw, p).max(axis=1)
+        lmin = np.lib.stride_tricks.sliding_window_view(lw, p).min(axis=1)
+        s = hmax - lmin
+        b = float(np.mean(s))
+        fall = max(0.0, -float(r[-1]))
+        if m == 0 or b == 0:
+            f = 0.0
+        else:
+            f = fall / m * float(s[-1]) / b
+        prior = max(0.0, -(float(p1) / float(p0) - 1.0)) * 100.0
+        self._raw_value = float(prior * f)
+        self.confidence = 1.0
+        self.debug_info = {"prior_fall_pct": prior, "scaled_fall_range_multiple": f, "m": m, "B": b}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.lag + self.window + self.period, self.lag + self.period + self.prior_period + 1)
+
+
+class PriorSlideDiscountedScaledFallRangeMultipleComponent(SubStrategyComponent):
+    """
+    A delayed panic reading, discounted by the slide that came before it. With e = t - lag:
+
+        m    = mean_{i=e-window+1..e} abs(close[i] / close[i-period] - 1)
+        S(i) = max(high[i-period+1 .. i]) - min(low[i-period+1 .. i])
+        B    = mean_{i=e-window+1..e} S(i)
+        F    = max(0, -(close[e] / close[e-period] - 1) / m) * S(e) / B     (0 when m = 0 or B = 0)
+        R    = close[e] / close[e-prior_period] - 1
+        u    = mean_{i=e-window+1..e} abs(close[i] / close[i-prior_period] - 1)
+        Q    = 1 + min(0, R / u)                                            (1 when u = 0)
+        raw_value = F * Q                                                   (0.0 when F = 0)
+
+    F is ScaledFallRangeMultipleComponent(period, lag, window). Q is 1 when the prior return is 0 or above.
+    Q falls by one for each usual prior_period-bar move of slide, so it is 0 at one usual move and negative
+    beyond. Q >= 1 - window, because abs(R) is one of the averaged terms.
+    Range: signed. 0 when the stretch ending at e did not fall. During a fall: positive while the prior slide
+    is shallower than one usual move, negative when deeper. F is at most window * window.
+    Warm-up: lag + window + max(period, prior_period) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads close over bars e-window+1-max(period, prior_period) .. e, and high and low
+    over bars e-window-period+2 .. e, with e = t - lag <= t. Every row read is at or before bar t.
+
+    NaN: a NaN close, high or low among the rows read gives NaN, and so does a close not above 0 there
+    (never on real bars).
+    Building the component raises for a period below 1, a lag below 0, a window below 1, or a prior_period
+    below 1.
+    """
+
+    def __init__(self, name="PriorSlideDiscountedPanic", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 6))
+        self.lag = int(self.parameters.get("lag", 6))
+        self.window = int(self.parameters.get("window", 180))
+        self.prior_period = int(self.parameters.get("prior_period", 42))
+        if self.period < 1:
+            raise ValueError(f"PriorSlideDiscountedScaledFallRangeMultipleComponent: period must be >= 1, got {self.period}")
+        if self.lag < 0:
+            raise ValueError(f"PriorSlideDiscountedScaledFallRangeMultipleComponent: lag must be >= 0, got {self.lag}")
+        if self.window < 1:
+            raise ValueError(f"PriorSlideDiscountedScaledFallRangeMultipleComponent: window must be >= 1, got {self.window}")
+        if self.prior_period < 1:
+            raise ValueError(
+                f"PriorSlideDiscountedScaledFallRangeMultipleComponent: prior_period must be >= 1, got {self.prior_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data["close"].astype(float).to_numpy()
+        high = data["high"].astype(float).to_numpy()
+        low = data["low"].astype(float).to_numpy()
+        p, q, w = self.period, self.prior_period, self.window
+        e = len(close) - 1 - self.lag
+        c_lo = e - w + 1 - max(p, q)
+        hl_lo = e - w - p + 2
+        cw = close[c_lo:e + 1]
+        hw = high[hl_lo:e + 1]
+        lw = low[hl_lo:e + 1]
+        if np.isnan(cw).any() or np.isnan(hw).any() or np.isnan(lw).any() or not (cw > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        idx = np.arange(e - w + 1, e + 1)
+        m = float(np.mean(np.abs(close[idx] / close[idx - p] - 1.0)))
+        s_vals = np.array([np.max(high[i - p + 1:i + 1]) - np.min(low[i - p + 1:i + 1]) for i in idx])
+        b = float(np.mean(s_vals))
+        r_fall = close[e] / close[e - p] - 1.0
+        if m == 0 or b == 0:
+            f = 0.0
+        else:
+            f = max(0.0, -r_fall / m) * float(s_vals[-1]) / b
+        r_prior = close[e] / close[e - q] - 1.0
+        u = float(np.mean(np.abs(close[idx] / close[idx - q] - 1.0)))
+        factor = 1.0 if u == 0 else 1.0 + min(0.0, r_prior / u)
+        self._raw_value = float(f * factor) if f > 0 else 0.0
+        self.confidence = 1.0
+        self.debug_info = {"fall_range_multiple": f, "prior_return": float(r_prior),
+                           "prior_usual_move": u, "prior_factor": factor}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.lag + self.window + max(self.period, self.prior_period)
