@@ -46,6 +46,7 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 39 | [The idea's size against the cost, coin by coin](39_size-against-cost-per-coin.md) | research: steps 5, 7 | open (parked: about 2 points of accuracy gained; reopen with topic 31) |
 | 40 | [Repository clean-up, night 3](40_repository-clean-up-night-3.md) | the repository | closed 2026-11-21 (all done) |
 | 41 | [Is a paying book a new source of profit, or one we already have?](41_does-the-idea-add-beyond-its-filter.md) | research: a function next to the unseen test; common | built and proven (`ideas_similarities_check`); its reader and its call by run_idea to decide |
-| 42 | [Two more measures for step 6: standard deviation and total profit](42_two-more-measures-for-step-6.md) | research: step 6 | open (parked) |
+| 42 | [Two more measures for step 6: standard deviation and total profit](42_two-more-measures-for-step-6.md) | research: step 6 | built 2026-11-22 (two informative measures) |
 | 43 | [The findings register](43_the-findings-register.md) | research: common, step 7 | closed 2026-11-21: switched off and deleted |
 | 44 | [Combining strategies in one bot](44_combining-strategies-in-one-bot.md) | engine (a portfolio layer); research: which strategies | open: direction decided (a portfolio layer); waits for two unrelated books that hold |
+| 45 | [Why the research finds almost only long momentum](45_why-the-research-finds-only-long-momentum.md) | research: step 6's rule, books judged alone, one coin at a time | open: investigated; changes for the operator's go |
