@@ -28,6 +28,9 @@ by side, and which strategies are worth combining?
 - **The long-and-short book 025-03.d2 split into its legs (`runs/NIGHT4_RUN.md`, test 1, 2026-11-22):** its short leg
   is unrelated to every paying book (at most 0.10 explained) but small and not reliable (+0.006 % a day, t 1.25); its long
   leg is momentum (0.58). Not yet the second book.
+- **025-03.d2 combined with momentum (`runs/NIGHT4_RUN.md`, test 2):** correlation 0.64 and 0.71 on the folds; Sharpe 1.21 to
+  1.26 combined (half each, or equal risk) against 1.24 alone. At a share explained of 0.4 to 0.5 two books are mostly one
+  bet; a real gain needs a correlation near 0.
 
 ## Why it matters
 Combining unrelated books is the cheapest gain in risk the research can find (a higher Sharpe and a smaller deepest fall
