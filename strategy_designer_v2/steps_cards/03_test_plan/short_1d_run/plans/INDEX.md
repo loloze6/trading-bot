@@ -1,0 +1,2 @@
+029-01_failed-breakout-depth-decline_1d: missing-components: The data is in each coin's own daily bars, and the config's logic could hold the idea. A regime would [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+029-02_breakout-volume-trapped-decline_1d: missing-components: The idea needs only the coin's own closes, highs and volumes. A regime veto on a failure gate plus a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
