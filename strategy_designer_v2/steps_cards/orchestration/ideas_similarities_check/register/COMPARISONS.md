@@ -2,6 +2,8 @@
 
 | Book | Run | Bar | Nearest relative | Share explained | Who leads | What is left per period (t) | Against holding: share explained |
 |---|---|---|---|---|---|---|---|
+| 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | night4_fallingbounce_run | 1d | 018-02_hourly-breakout-multiday-continuation_1h (1h) | 0.50 | same period | +0.0198 % (1.88) | 0.08 |
+| 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | night4_volumehour_run | 1h | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d (1d) | 0.49 | same period | +0.0104 % (0.53) | 0.22 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (1d) | 0.94 | same period | +0.0043 % (0.70) | 0.28 |
 | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d (1d) | 0.42 | same period | +0.0172 % (1.07) | 0.00 |

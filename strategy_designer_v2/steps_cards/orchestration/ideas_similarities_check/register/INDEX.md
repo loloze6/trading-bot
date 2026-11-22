@@ -5,6 +5,8 @@ card: `orchestration/ideas_similarities_check/card.md`. An idea's latest record 
 
 | Book | Run | Bar | Coins | Engine (git) | Made (UTC) |
 |---|---|---|---|---|---|
+| 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | night4_fallingbounce_run | 1d | 6 | a327ef4b6 | 2026-11-22T01:56:32 |
+| 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | night4_volumehour_run | 1h | 2 | aedb14b7e | 2026-11-22T01:04:51 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:26:12 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:28:05 |
 | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 15 | 9cf13a6b2 | 2026-11-21T18:29:36 |
