@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 027-04_panic-delayed-recovery-drift_4h
+idea tested: 027-04_panic-delayed-recovery-drift
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3070 USD
+---
+## Findings
+- **F1:** Over the plan's 13-day horizon, the 1,270 panic cases end 0.51 % below the coin's normal drift (t -0.91); step 5 measured -0.41 % (t -0.70, 1,266 cases), and no shorter horizon shows a clear premium either: +0.17 % after 1 day (t 1.26), -0.18 % after 3 days (t -0.72), -0.65 % after 7 days (t -1.74).
+- **F2:** The sign of the 13-day unusual move depends on the year rather than on the panic: it is strongly negative in the bear years 2018 (-6.8 %, t -4.48, 153 cases) and 2022 (-4.1 %, t -3.33, 161 cases), positive in 2020 (+3.4 %, t 2.22, 157 cases), and between t -1.2 and +1.3 in the other five years, so the market's own year-long moves drown any premium.
+- **F3:** The grading is not visible, because the forecast's cube and dead zone pile the cases at the cap. Quintiles 3 and 4 both have a mean forecast of about 20, yet they end at -0.82 % (t -0.92) and +2.43 % (t 1.35), while the three lower quintiles are all negative (-1.67 %, -0.49 %, -1.99 %).
+- **F4:** No coin shows the premium: the six coins range from -1.60 % (LTC, t -1.50) to +0.54 % (XRP, t 0.33), each with about 210 cases.
+- **F5:** The trend before the panic does not sort the outcome. By prior 30-day return, the low, mid and high thirds give -0.64 % (t -0.63), -1.13 % (t -1.17) and -0.07 % (t -0.06). By fall from the 90-day high, the deep, mid and shallow thirds give -0.43 %, -1.66 % and +0.56 % (all |t| < 1.5), so no condition known at the bar's close isolates a part of the data where the effect shows clearly.
+
+## Ideas
+- No ideas: The tested result is on the wrong side of zero (-0.41 %, t -0.70), and no coin, prior-trend group, drawdown group, panic-strength group or horizon shows a clear premium (F1, F3, F4, F5). Only calendar years differ strongly (F2), and a trader cannot know the year's outcome at a bar's close, so there is no supported amendment to propose.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

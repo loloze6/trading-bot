@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 84-bar move of long cases (return minus coin's normal drift)",
+    "value": -0.001260509614957281,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.20876623781255096
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and upper-minus-lower gradient > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-minus-lower half (median forecast at entry) mean unusual move, Welch t (Welch t 1.052)",
+    "value": 0.012703134761767782,
+    "passed": true
+  },
+  "counts": {
+    "cases over all coins and windows": 1144,
+    "upper half cases": 572,
+    "lower half cases": 572
+  },
+  "decided_by": "the t of the mean unusual move is between -2 and 2, which the plan calls inconclusive",
+  "reading": "a case is the first long bet (forecast rise >= 2 from its lowest positive level since the last bet, from 0 after a flat) in each 84-bar grid cell from each window's first row, kept only if its 84-bar return stays inside the window; the median split sorts cases by entry forecast (ties in case order) into equal lower and upper halves, dropping the middle case when odd; the plan's fewer-than-30-cases rule is reported as not observable."
+}

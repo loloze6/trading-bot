@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "027-02_panic-fall-depth-rebound.d2_confirmed-panic-bounce-continues_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2133225,
+  "findings": {
+    "F1": "Step 5's main measure is on the side the idea predicts but short of the bar: slope +0.000655 with t 1.24 over 797 independent cases, and the supporting check passed (+0.72 % mean excess for the 471 positive-forecast cases). My rebuild agrees: slope +0.000688, t 1.28, 814 cases, Spearman 0.04. The effect is small: its strength is 0.057 of a usual 14-day move of 17.66 %.",
+    "F2": "The test measured the idea where it is still forming. The slope on the forecast turns from negative to positive as the horizon lengthens: \u22120.000736 (t \u22124.43, 921 cases) over 1 day, \u22120.000371 (t \u22121.83) over 2 days, +0.000213 (t 0.62) over 7 days, +0.000688 (t 1.28) over 14 days, and +0.00245 (t 2.84, 756 cases) over 21 days.",
+    "F3": "Over 21 days the excess return rises with the bounce across the four upper forecast quintiles: \u22126.8 %, \u22122.6 %, +2.9 % and +5.2 % (mean forecasts \u22126.0, +2.2, +8.0, +17.0). The exception is the deepest continued-fall quintile (forecast \u221217.7), at \u22122.0 %.",
+    "F4": "Over 14 days the effect is mixed in its form.",
+    "F5": "Over 14 days the effect is also uneven across coins and years, which leaves the six default coins too few to show it clearly.",
+    "F6": "The slope is clearer when the coin was rising over the 30 days before (t 2.45, 302 cases) than when it was falling (t 0.35, 279 cases). This is the pattern the brief names as refuting its theory, so I build no idea on it."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D",
+      "name": "panic bounce, more coins",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ],
+      "idea": "Among 24-hour stretches where a coin's range is several times its 30-day average and the coin fell, the larger the coin's rise over the 24 hours after the stretch, the higher its return over the following 14 days.",
+      "consequence": "A trader waits one day after a panic and buys in proportion to the first bounce, which shows that the forced selling is over.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 4h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "Among 24-hour stretches where a coin's range is several times its 30-day average and the coin fell, the larger the coin's rise over the 24 hours after the stretch, the higher its return over the following 21 days.",
+      "consequence": "A trader who buys in proportion to the first-day bounce after a panic holds about three weeks, because the premium keeps building after two weeks rather than paying out within them.",
+      "name": "panic bounce, three-week horizon",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "027-02_panic-fall-depth-rebound.d2_confirmed-panic-bounce-continues.b1_panic-bounce-more-coins",
+    "027-02_panic-fall-depth-rebound.d2_confirmed-panic-bounce-continues.b2_panic-bounce-three-week-horizon"
+  ],
+  "no_ideas": null
+}

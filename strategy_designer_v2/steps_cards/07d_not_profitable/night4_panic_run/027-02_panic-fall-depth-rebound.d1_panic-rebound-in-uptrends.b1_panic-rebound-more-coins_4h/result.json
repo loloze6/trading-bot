@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins_4h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 3.9403108,
+  "findings": {
+    "F1": "The book's deepest fall, -20.3 % over 364 days from window w12 to window w15, falls in windows w12\u2013w18, where the book's 141 trades lost on average (-0.72 % with the 30-day return down, 80 trades; -1.93 % with it up, 61 trades), while the 396 trades in the other windows earned +10.9 % and +11.2 %; this is the stretch that holds Calmar at 0.748, just under its 0.75 bar.",
+    "F2": "The idea's grading by fall depth runs backwards: on 24-hour stretches with a range of at least 4 usual bar ranges and a fall, the shallowest quarter of falls (depth up to 1.05 usual 24-hour moves) is followed by a +3.06 % unusual 14-day move (t 2.76, 402 cases), and the two deepest quarters by -2.10 % (t -2.38, 401) and -1.96 % (t -1.52, 401); the book's trades show the same, +11.2 % for the shallowest quarter of 24-hour falls against +5.9 % for the deepest.",
+    "F3": "The coin's 7-day return before the stretch sorts the outcome sharply: in panic stretches the top quarter of 7-day returns (above +9 %) is followed by a +6.54 % unusual 14-day move (t 3.59, 410 cases), the two falling quarters by -3.37 % (t -4.52, 410) and -2.35 % (t -2.80, 411); the book's trades in the top quarter of 7-day return (above +23.8 %) earned +20.0 %, against +3.3 % to +7.1 % in the other three quarters.",
+    "F4": "The rebound comes with a rising 30-day trend at every range level: with a 30-day rise, stretches of range 4 to 5.5 usual bar ranges give +2.56 % (t 2.20, 459 cases) and 5.5 to 7.5 give +6.25 % (t 1.77, 149); with a 30-day fall, the same stretches give -2.48 % (t -4.06, 744) and -0.56 % (t -0.38, 156), and inside windows w12\u2013w18 the 30-day-falling cases lose -4.97 % (t -3.39, 167).",
+    "F5": "The book misses the mean daily return bar (0.000428 against 0.0005) mainly because it is rarely in: it is long on only 10.6 % of bars, at a mean allocation of 0.94, because its trigger of 7.5 usual bar ranges leaves out the stretches of range 4 to 7.5 in rising coins (608 cases, F4), which carry the same rebound.",
+    "F6": "Across the book's trades, the size of the 90-day rise grades the gain strongly: the top quarter of 90-day returns (above +110 %) earned +17.96 % per trade, against +2.3 % to +3.9 % in the three lower quarters (about 30 trades each), so the uptrend part of the idea carries the profit and the fall-depth part does not."
+  },
+  "ideas": [
+    {
+      "idea": "Among 24-hour stretches where a coin's range is several times its 30-day average and the coin falls, the larger the coin's 7-day return ending at that stretch, the higher its return over the next 14 days, only while the coin's 90-day return is positive.",
+      "consequence": "A trader buys a sharp shakeout that interrupts a fresh 7-day rise in a coin trending up over three months, and refuses one that follows a falling week.",
+      "name": "shakeout inside a fresh rally",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "Among 24-hour stretches where a coin's range is several times its 30-day average, the deeper the coin's fall over that stretch, the higher its return over the next 14 days, only while the coin's 90-day return is positive and the more so the larger that 90-day rise, and only while the coin's 30-day return is also positive, the more so the larger that 30-day rise.",
+      "consequence": "A trader buys panics only when the coin's last month as well as its last three months rose, and refuses them once the month has turned down, which is where the book's year-long fall came from.",
+      "name": "panic rebound in monthly uptrend",
+      "from": "F1, F4, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "Among 24-hour stretches where a coin's range is two or more times its 30-day average and the coin falls, the larger the coin's 30-day return before that stretch, the higher its return over the next 14 days.",
+      "consequence": "A trader buys the milder and more frequent volatility shakeouts in coins rising over the last month, which gives many more trades than buying extreme panics only.",
+      "name": "frequent shakeouts in uptrends",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins.d1_shakeout-inside-a-fresh-rally",
+    "027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins.d2_panic-rebound-in-monthly-uptrend",
+    "027-02_panic-fall-depth-rebound.d1_panic-rebound-in-uptrends.b1_panic-rebound-more-coins.d3_frequent-shakeouts-in-uptrends"
+  ],
+  "no_ideas": null
+}

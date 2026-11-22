@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 6-bar excess return (return minus coin's normal 6-bar drift) over bet cases",
+    "value": 0.0019406388961832632,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.0871450417071338
+    },
+    "threshold": "t >= 2 over at least 30 cases pooled (confirm, with positive slope); t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "slope of excess 6-bar return on forecast, grid bars with forecast > 0",
+    "value": 0.0003278191900872705,
+    "passed": true
+  },
+  "counts": {
+    "cases": 6548,
+    "supporting grid bars with forecast > 0": 8411
+  },
+  "decided_by": "Mean excess return t >= 2 over at least 30 pooled cases and the supporting slope is positive.",
+  "reading": "A case is the first long bet (forecast rise >= 2 from its low since the last bet, reset at flat) in each 6-bar grid cell counted from each window's first row, the drift is each coin's mean non-overlapping 6-bar return over all its windows, and the slope is an ordinary least-squares slope on the grid bars with forecast > 0 and a full 6-bar return inside the window."
+}

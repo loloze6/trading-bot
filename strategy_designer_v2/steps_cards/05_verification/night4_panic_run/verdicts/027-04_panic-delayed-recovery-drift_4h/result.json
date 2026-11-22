@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 78-bar unusual move (return minus coin's normal drift) over cases, before costs",
+    "value": -0.004103361419619861,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.7047226191584375
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting check passes; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of upper half minus lower half (median forecast split) > 0",
+    "value": 0.0052440057790972905,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1266,
+    "upper half cases": 633,
+    "lower half cases": 633
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first long bet (forecast rise of >= 2 points from its lowest level since the last bet, from 0 after a flat) in each non-overlapping 78-bar cell from each window's first row, cases without a full 78-bar return inside the window are dropped, the drift is the coin's mean 78-bar return on that grid over all windows, and the median split puts forecasts above the median in the upper half and the rest in the lower half."
+}
