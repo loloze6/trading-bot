@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of trending-grid 7-bar forward return minus coin mean on forecast",
+    "value": 0.005818643720346525,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.2106378756573117
+    },
+    "threshold": "t >= 2 confirms (with positive timing), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus market-rise gain (timing part) > 0",
+    "value": 0.0007078999246576717,
+    "passed": true
+  },
+  "counts": {
+    "trending grid cases": 177
+  },
+  "decided_by": "The slope's t is 2 or more and the timing part is positive.",
+  "reading": "Situation = 30-bar return > 0, read from the recorded mom30 raw value (recomputed from closes inside the window where it is missing). The expected side of this graded long idea is a forecast whose sign follows the equal-weight mean of the three standardised terms, so higher readings give a higher forecast. Each coin's mean 7-bar return is taken over its non-overlapping grid bars in all windows and all regimes. The slope t is the ordinary OLS t. The plan's 'fewer than 100 trending grid cases' is treated as a minimum count, so it gives 'not observable'."
+}

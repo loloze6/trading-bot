@@ -1,0 +1,29 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess next-bar return on forecast > 0 bars",
+    "value": -0.0022052879912036814,
+    "statistic": {
+      "name": "ordinary t of forecast/10 x excess return",
+      "value": -0.38411438168227857
+    },
+    "threshold": "weighted mean > 0 with ordinary t of (forecast/10 x excess) >= 2 to confirm; t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean excess next-bar return, high-volume-ratio half minus low half (Welch t)",
+    "value": 0.00972011357851783,
+    "passed": true,
+    "welch_t": 1.0009083318099148
+  },
+  "counts": {
+    "active bars": 159,
+    "high volume half": 79,
+    "low volume half": 79
+  },
+  "reading": "Volume halves split active bars sorted by the recorded vol.last_history_value into the lower n//2 and upper n//2 (middle bar dropped when n is odd); the supporting check passes when high minus low > 0; the plan's 'fewer is inconclusive' minimum is reported as 'not observable' per the workflow; the situation check uses recorded component values where present and recomputes them from prices otherwise.",
+  "status": "inconclusive",
+  "decided_by": "The main measure's t lies between -2 and 2 (inconclusive rule)."
+}

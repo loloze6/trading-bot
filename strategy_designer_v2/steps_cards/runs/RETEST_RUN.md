@@ -54,3 +54,12 @@ Step 6 counted on days in a position (2026-11-22) turned two confirmed books pro
 `night_013_run`'s 013-01.d2 nearness with rising month (57 %). Neither went through the unseen test. Expected: if
 011-01.g2 holds on both unseen periods, it is a candidate for the second family (R1's measure: under 0.25 is not met,
 0.25 exactly: read with its parent and its family).
+
+**Read (2026-11-23, about 00:30 Paris; 0 USD):**
+| Book | Nearest paying book (share) | Unseen 2016-17 | Unseen 2026 |
+|---|---|---|---|
+| 011-01.g2 heavy-volume falls reverse | 005-02...g2 volatile reversal completes quickly (0.25) | holds (Sharpe 1.11; step 5 inconclusive, t 2.37) | does not hold (Sharpe −0.86, t −0.38) |
+| 013-01.d2 nearness with rising month | 001-01...c1 high-RSI continuation (0.74) | holds | holds |
+Not a second family: the reversal book fails 2026, as the daily reversal book of `runs/COMBINE_TEST_RUN.md` did; the
+book that holds is momentum (0.74 explained). Their in-sample checks stay as recorded (written under step 6 before
+2026-11-22).
