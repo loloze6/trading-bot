@@ -25,3 +25,4 @@
 027_panic-days-are-followed-by-a-premium: After a panic with a range several times usual, the coin earns more than usual over one to two weeks. [bar 4h]
 028_volume-confirmed-hourly-moves-continue: An hourly move far above usual on surging volume carries on over the next two to six hours; on ordinary volume it does not. [instruments BTC, ETH; bar 1h; long and short]
 029_failed-breakout-traps-late-buyers: A daily close back inside the range after a break above the recent high leads to days of decline, as trapped breakout buyers sell. [bar: 1d, side: short only]
+030_absorption-day-close-location: Question: on heavy-volume, flat days, does the close's place in the daily range show who absorbed the order and the next direction? [bar: 1d]
