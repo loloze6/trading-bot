@@ -5536,41 +5536,42 @@ class MeanAbsReturnComponent(SubStrategyComponent):
 
 class MeanAbsScaledFallTimesRiseComponent(SubStrategyComponent):
     """
-    The depth of a recent fall in usual moves, times the size of a longer rise, on every bar:
+    A fall in usual moves times a prior rise, on every bar:
 
-        r(i) = close[i] / close[i - fall_period] - 1
-        m    = mean(abs(r(i)) for i = t - window + 1 .. t)          (bar t included)
-        F    = max(0, -r(t) / m)                                     (0 when m = 0)
-        R    = max(0, close[t] / close[t - rise_period] - 1)
-        raw_value = F x R x 100
+        F = close[t] / close[t - fall_period] - 1
+        m = mean over i = t-window+1 .. t of abs(close[i] / close[i - fall_period] - 1)   (bar t included)
+        R = close[t - rise_lag] / close[t - rise_lag - rise_period] - 1
+        raw_value = max(0, -F / m) x max(0, R) x 100      (first factor 0 when m = 0)
 
-    Range: 0 and up, unbounded above, never negative; no direction. It is 0 when the last fall_period bars did not
-    fall or when the rise_period-bar return is not positive. It grows continuously with the depth of the fall in
-    usual fall_period-bar moves and with the percent rise over rise_period bars.
-    Warm-up: max(window + fall_period, rise_period + 1) rows, bar t included (744 at the defaults).
+    rise_lag 0 (default) ends the rise at bar t: this is the original output, unchanged. rise_lag 1 ends it at bar t-1,
+    so it is the rise before the falling bar.
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 unless the fall_period-bar return is negative
+    and R is positive, and it grows with both.
+    Warm-up: max(window + fall_period, rise_period + rise_lag + 1) rows, bar t included (744 at the defaults).
+    NaN: a NaN close in those rows gives NaN; a close not above 0 there gives NaN (never on real bars). m = 0 gives 0.
+    Building the component raises for fall_period < 1, window < 1, rise_period < 1 or rise_lag < 0.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(window + fall_period, rise_period + 1)
-    rows of data, the last row being bar t; a bar's close is known at that bar's close.
-
-    NaN: a NaN close in those rows gives NaN. A close not above 0 there gives NaN (never on real bars). m = 0
-    (every fall_period-bar return of the window flat, never on real bars) gives a first factor of 0.
-    Building the component raises for fall_period < 1, window < 1 or rise_period < 1.
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(window + fall_period,
+    rise_period + rise_lag + 1) rows of data, the last of which is bar t; no later row exists in data.
     """
 
     def __init__(self, name="MeanAbsScaledFallTimesRise", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.fall_period = int(self.parameters.get("fall_period", 24))
+        self.window = int(self.parameters.get("window", 720))
+        self.rise_period = int(self.parameters.get("rise_period", 720))
+        self.rise_lag = int(self.parameters.get("rise_lag", 0))
         if self.fall_period < 1:
             raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: fall_period must be >= 1, got {self.fall_period}")
-        self.window = int(self.parameters.get("window", 720))
         if self.window < 1:
             raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: window must be >= 1, got {self.window}")
-        self.rise_period = int(self.parameters.get("rise_period", 720))
         if self.rise_period < 1:
             raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: rise_period must be >= 1, got {self.rise_period}")
+        if self.rise_lag < 0:
+            raise ValueError(f"MeanAbsScaledFallTimesRiseComponent: rise_lag must be >= 0, got {self.rise_lag}")
         self._raw_value = 0.0
 
-    def update(self, data: pd.DataFrame):
+    def update(self, data):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
@@ -5582,22 +5583,24 @@ class MeanAbsScaledFallTimesRiseComponent(SubStrategyComponent):
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
-        p = self.fall_period
-        rets = c[p:] / c[:-p] - 1.0
-        rets = rets[-self.window:]
-        m = float(np.mean(np.abs(rets)))
-        r = float(c[-1] / c[-1 - p] - 1.0)
-        fall = 0.0 if m == 0 else max(0.0, -r / m)
-        rise = max(0.0, float(c[-1] / c[-1 - self.rise_period] - 1.0))
-        self._raw_value = float(fall * rise * 100.0)
+        last = len(c) - 1
+        fp = self.fall_period
+        fall = c[last] / c[last - fp] - 1.0
+        cur = c[len(c) - self.window:]
+        prev = c[len(c) - self.window - fp:len(c) - fp]
+        m = float(np.mean(np.abs(cur / prev - 1.0)))
+        first = 0.0 if m == 0 else max(0.0, -fall / m)
+        rise = c[last - self.rise_lag] / c[last - self.rise_lag - self.rise_period] - 1.0
+        second = max(0.0, rise)
+        self._raw_value = float(first * second * 100.0)
         self.confidence = 1.0
-        self.debug_info = {'fall_return': r, 'mean_abs_return': m, 'scaled_fall': fall, 'rise': rise}
+        self.debug_info = {'fall': float(fall), 'mean_abs_move': m, 'rise': float(rise)}
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self) -> int:
-        return max(self.window + self.fall_period, self.rise_period + 1)
+    def get_required_periods(self):
+        return max(self.window + self.fall_period, self.rise_period + self.rise_lag + 1)
 
 
 class HighProximityScaledReturnComponent(SubStrategyComponent):

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9599417546414271,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 6-bar unusual move after long bets (return minus coin's normal 6-bar drift), before costs",
+    "value": 0.0003344534897775116,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.090082859830667
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and thin-minus-heavy > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, thinner-volume half minus heavier-volume half",
+    "value": -0.00022252823973349377,
+    "passed": false
+  },
+  "counts": {
+    "long cases pooled over both coins and all windows": 16868,
+    "thinner-volume half": 8434,
+    "heavier-volume half": 8434
+  },
+  "decided_by": "t >= 2 but the thin-minus-heavy difference is <= 0 (or not measurable), which the plan calls inconclusive.",
+  "reading": "Situation taken as a down hour (raw fall < 0, or the price return where unrecorded) with a positive forecast; bets per the holding-period rule with one case per 6-bar cell; volume halves split as v <= median (thinner) versus v > median (heavier), cases without a valid v left out of the split."
+}

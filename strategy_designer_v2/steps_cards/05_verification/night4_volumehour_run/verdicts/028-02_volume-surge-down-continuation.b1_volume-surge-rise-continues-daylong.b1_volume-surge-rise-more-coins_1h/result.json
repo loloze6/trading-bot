@@ -1,0 +1,34 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 24-bar move after a forecast rise of at least 2 points",
+    "value": 9.135953607158639e-05,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.2145488781293585
+    },
+    "threshold": "positive with t >= 2 on at least 30 cases to confirm; negative with t <= -2 on at least 30 cases to reject"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half mean unusual move, split at median forecast",
+    "value": -2.1967190414089893e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 14681,
+    "top half cases": 7340,
+    "bottom half cases": 7341,
+    "cases BTCUSD": 2495,
+    "cases ETHUSD": 2513,
+    "cases LTCUSD": 2458,
+    "cases XMRUSD": 2573,
+    "cases XRPUSD": 2342,
+    "cases ZECUSD": 2300
+  },
+  "decided_by": "The t of the mean unusual move is between -2 and 2.",
+  "reading": "Cases are the first bet bar (forecast rise >= 2 from its lowest positive level since the last bet, reset at 0) in each 24-bar cell counted from each window's first row, with returns only inside the window; drift is the coin's mean non-overlapping 24-bar return over all its windows; the median split puts cases above the median forecast in the top half and the rest in the bottom half."
+}

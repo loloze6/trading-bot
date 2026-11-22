@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 6-bar move of long signals (return minus coin's normal 6-bar drift)",
+    "value": 3.558254520663352e-05,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.1432961956172625
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of upper forecast half minus lower half",
+    "value": 0.0002059527582069914,
+    "passed": true
+  },
+  "counts": {
+    "cases in total": 8827,
+    "upper half cases": 4413,
+    "lower half cases": 4414
+  },
+  "decided_by": "The t of the mean unusual 6-bar move lies between -2 and 2.",
+  "reading": "A case is the first bet bar (long forecast rising >= 2 points from its lowest level since the last bet, reset to 0 when flat) in each 6-bar grid cell counted from each window's first row, cases whose 6-bar return would leave the window are dropped, the drift is the coin's mean 6-bar return on the same grid over all windows, and the median split puts forecasts above the median in the upper half and those at or below it in the lower half."
+}

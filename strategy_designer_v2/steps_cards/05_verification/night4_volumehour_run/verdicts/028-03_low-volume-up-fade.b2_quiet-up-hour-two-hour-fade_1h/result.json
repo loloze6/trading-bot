@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-bar move in the short direction on short bets",
+    "value": 0.00029965951994179754,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.603880105654349
+    },
+    "threshold": "positive with t >= 2 to confirm, negative with t <= -2 to reject, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": -1.3238500001352925e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 11338
+  },
+  "decided_by": "t >= 2 but the supporting slope is not above 0.",
+  "reading": "Situation bars are bars with regime 'mean_reversion' (the recorded detector decision for the 720-bar volume ratio between 0.67 and 1.5) whose raw 'rise' value is above 0, expected side short; a case is the first short bet (forecast falling at least 2 points below its least-negative level since the last bet, reset at flat or side change) in each 2-bar grid cell from each window's first row, and the unusual move is -(r - drift) with drift the coin's mean non-overlapping 2-bar return pooled over all its windows, following the workflow's 'minus drift, in the signal direction' and the reject rule's 'beyond drift'."
+}

@@ -1,0 +1,4 @@
+028-01_volume-surge-up-continuation: A large up-hour on volume several times usual is followed by further rise over 2–6 hours, larger as the volume surge grows. [instruments: BTC, ETH, bar: 1h, side: long and short]
+028-02_volume-surge-down-continuation: A large down-hour on volume several times usual is followed by further fall over 2–6 hours, larger as the volume surge grows. [instruments: BTC, ETH, bar: 1h, side: long and short]
+028-03_low-volume-up-fade: A large up-hour on ordinary volume is partly reversed over the next 2–6 hours, more so the larger the rise. [instruments: BTC, ETH, bar: 1h, side: long and short]
+028-04_low-volume-down-fade: A large down-hour on ordinary volume is partly recovered over the next 2–6 hours, more so the larger the fall. [instruments: BTC, ETH, bar: 1h, side: long and short]

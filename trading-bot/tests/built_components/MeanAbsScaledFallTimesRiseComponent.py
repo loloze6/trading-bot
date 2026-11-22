@@ -1,39 +1,35 @@
 """Spec of MeanAbsScaledFallTimesRiseComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'MeanAbsScaledFallTimesRiseComponent'
-SETTINGS = [{}, {"fall_period": 24, "window": 720, "rise_period": 720}]
+SETTINGS = [{}, {"fall_period": 24, "window": 720, "rise_period": 720}, {"fall_period": 1, "window": 720, "rise_period": 24, "rise_lag": 1}]
 
 
 def hand(df, params):
-    p = int(params.get("fall_period", 24))
+    fp = int(params.get("fall_period", 24))
     w = int(params.get("window", 720))
-    q = int(params.get("rise_period", 720))
+    rp = int(params.get("rise_period", 720))
+    lag = int(params.get("rise_lag", 0))
     c = [float(x) for x in list(df["close"])]
-    last = len(c) - 1
-    need = max(w + p, q + 1)
-    first = last - need + 1
-    j = first
-    while j <= last:
-        x = c[j]
+    need = max(w + fp, rp + lag + 1)
+    used = c[len(c) - need:]
+    for x in used:
         if x != x or not x > 0:
             return float("nan")
-        j = j + 1
+    t = len(c) - 1
+    fall = c[t] / c[t - fp] - 1.0
     total = 0.0
-    i = last - w + 1
-    while i <= last:
-        ret = c[i] / c[i - p] - 1.0
-        if ret < 0:
-            ret = -ret
-        total = total + ret
+    i = t - w + 1
+    while i <= t:
+        r = c[i] / c[i - fp] - 1.0
+        total = total + (r if r >= 0 else -r)
         i = i + 1
     m = total / w
-    today = c[last] / c[last - p] - 1.0
     if m == 0:
-        fall = 0.0
+        first = 0.0
     else:
-        fall = -today / m
-        if fall < 0:
-            fall = 0.0
-    rise = c[last] / c[last - q] - 1.0
+        first = -fall / m
+        if first < 0:
+            first = 0.0
+    rise = c[t - lag] / c[t - lag - rp] - 1.0
     if rise < 0:
         rise = 0.0
-    return fall * rise * 100.0
+    return first * rise * 100.0

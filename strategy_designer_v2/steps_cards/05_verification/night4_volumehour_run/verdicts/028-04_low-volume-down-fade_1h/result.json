@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 6-bar move after forecast rises >= 2 (long)",
+    "value": 0.0003529639524541738,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.3955688635539742
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, cases at/above median forecast minus below",
+    "value": -0.00021625183883446352,
+    "passed": false
+  },
+  "counts": {
+    "cases over both coins": 6854,
+    "cases at or above median": 3427,
+    "cases below median": 3427
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Volume ratio recomputed from the window's volume over the prior 720 bars (the recorded regime used where fewer than 720 prior bars exist in the window), the fall is the raw component < 0; cases are bets (forecast rise >= 2 from its lowest long level since the last bet, from 0 after flat), the first per 6-bar grid cell of each window, both coins pooled, drift per coin from grid 6-bar returns over all its windows; the plan's 'fewer than 30 cases' minimum is applied as not observable; a supporting check with an empty half counts as failed."
+}

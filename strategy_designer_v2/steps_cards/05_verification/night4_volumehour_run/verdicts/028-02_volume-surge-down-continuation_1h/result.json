@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 6-bar unusual fall after a short bet (drift removed, sign flipped)",
+    "value": -0.00023967373884271475,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.1304216652168986
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 pooled cases to confirm; t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of signal-hour volume ratio with unusual fall",
+    "value": 0.006020017011011562,
+    "passed": true
+  },
+  "counts": {
+    "cases": 11303,
+    "cases_with_volume_ratio": 8416
+  },
+  "decided_by": "t lies between -2 and 2 over at least 30 cases.",
+  "reading": "A case is the first short bet (forecast more negative by >= 2 from its least-short level since the last bet, reset at flat) in each 6-bar grid cell of a window, the drift is the coin's mean 6-bar grid return over all its windows, and the volume ratio is recomputed as volume over its trailing 720-bar mean including the bar, within the window, with cases lacking 720 bars of history left out of the correlation only."
+}

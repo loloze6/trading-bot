@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 6-bar return over long-bet cases",
+    "value": 3.558254520663352e-05,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.1432961956172625
+    },
+    "threshold": "t >= 2 confirms, t <= -2 rejects, with at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess return on volume ratio (cases at bar >= 720)",
+    "value": 8.218294619838473e-05,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8827,
+    "cases at or after bar 720": 6539
+  },
+  "decided_by": "Inconclusive rule: the main t lies between -2 and 2.",
+  "reading": "A bet is a forecast rise of at least 2 from its lowest positive level since the last bet (reset to 0 when flat), each 6-bar grid cell counts once at its first bet, the reject rule is checked before the confirm rule, and fewer than 100 cases is reported as not observable per the workflow's minimum-count rule."
+}

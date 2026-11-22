@@ -1,0 +1,42 @@
+{
+  "line": "7.g",
+  "backtest": "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38693560000000005,
+  "findings": {
+    "F1": "Down hours on heavy volume (fall of at least 2.5 typical hourly moves over 30 days, volume at least 2 times its 30-day mean) are not followed by a rebound: the mean excess 24-hour return is -0.07 % (t -0.41, 963 non-overlapping cases). This matches the verdict's unusual move of -0.09 % per case (strength -0.022, t -1.56, 4990 cases), so the tested idea has nothing to capture.",
+    "F2": "Up hours on heavy volume (rise of at least 2.5 typical hourly moves, volume at least 2 times its mean) are followed by a further rise over the next 24 hours in both halves of the windows: +0.47 % (t 2.16, 446 cases) in w1\u2013w12 and +0.40 % (t 1.71, 463 cases) in w13\u2013w24, about +0.44 % over 909 cases. Adding the coin's normal long drift of about +0.15 %, the total move is about 0.59 %, roughly 5 times the 0.11 % cost of a trade. The effect is stronger in ETH (+0.70 %, t 2.72, 424 cases) than in BTC (+0.21 %, t 1.03, 485 cases), and it is positive in all 8 years (from +0.02 % in 2018 to +1.63 % in 2021).",
+    "F3": "Among up hours of 3 to 5 typical moves, the 24-hour continuation grows with the hour's volume ratio: +0.39 % (t 1.11, 124 cases) at 1\u20132 times the mean volume, +0.61 % (t 2.08, 323) at 2\u20134 times and +0.97 % (t 3.27, 294) above 4 times. It does not grow with the size of the move times the log of volume: the strength quartiles give +0.12 %, +0.60 %, +0.78 % and +0.25 %, the slope is negative and the correlation is -0.025. The cell above 4 times volume is one of about 38 cells examined, so it is only marginal against chance.",
+    "F4": "A coin's standardised 24-hour return is followed by a 24-hour move against it. On the daily grid, the correlation is -0.058 over 5312 non-overlapping cases (t about -4.2). The bottom quintile (largest past falls) is followed by +0.39 % excess (t 2.53, 1063 cases), and the upper two quintiles by -0.24 % (t -2.09) and -0.19 % (t -1.59). The rebound after the largest falls holds in both coins (BTC +0.31 %, t 1.72; ETH +0.46 %, t 1.89) and in both window halves (+0.35 %, t 1.91; +0.42 %, t 1.73).",
+    "F5": "The hours that open at 20:00 and 21:00 UTC are followed by a next-hour return of +4.1 bp (t 3.42) and +3.8 bp (t 3.33). This holds in both coins (BTC t 3.80, ETH t 3.98) and in 7 of 8 years (all except 2022). The hours that open at 00:00\u201303:00 UTC are negative, from -2.1 to -3.4 bp (t -1.9 to -3.5). These moves are far smaller than the 0.11 % cost of a trade.",
+    "F6": "The book is in practice a leveraged long holding of the coins. It is in a position on 91 % of bars with a mean allocation of 0.93, and its worst 2 % of days (-12.8 %) and best 2 % of days (+13.1 %) are larger versions of the coins' moves on the same days (-10.7 % and +10.4 %). This fits its Sharpe falling 0.15 below holding's."
+  },
+  "ideas": [
+    {
+      "idea": "After an hour in which the coin rises far more than its typical hourly move over the past 30 days, the price keeps rising over the next 24 hours, and the heavier that hour's volume against its 30-day average hourly volume, the larger the further rise.",
+      "consequence": "A trader would buy into a sharp hourly rise that comes on surging volume rather than fade it, and refuse to chase one that comes on ordinary volume.",
+      "name": "heavy-volume rises keep rising",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The further a coin has fallen over the past 24 hours relative to its typical move over the past 30 days, the more it rises over the next 24 hours; the further it has risen, the more it falls.",
+      "consequence": "A trader would lean against the coin's last day of move, buying after the largest 24-hour falls and selling after the largest 24-hour rises.",
+      "name": "one-day moves revert next day",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound.g1_heavy-volume-rises-keep-rising",
+    "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound.g2_one-day-moves-revert-next-day"
+  ],
+  "no_ideas": null
+}

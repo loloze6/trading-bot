@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b3_surge-volume-crash-rebound_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37977,
+  "findings": {
+    "F1": "Over 24 hours, a coin's 24-hour return scaled by its 30-day hourly volatility predicts its next 24 hours in the opposite direction, on non-overlapping 24-hour cells. The slope is \u221216.3 bp per unit for BTC (t \u22122.47, 2656 cases) and \u221229.0 bp for ETH (t \u22123.41, 2656 cases). Its top quintile of 24-hour return is followed by \u221230.6 bp (BTC, t \u22122.01) and \u221243.4 bp (ETH, t \u22122.23), and its bottom quintile by +30.0 bp and +48.5 bp.",
+    "F2": "This 24-hour reversal sits in heavy-volume days. The slope is \u221227.4 bp (t \u22123.86, 1771 cases) in the top tercile of 24-hour volume against its 30-day mean, \u221223.4 bp (t \u22121.83) in the middle tercile and +29.8 bp (t 1.68) in the bottom tercile.",
+    "F3": "The reversal is not one period's artefact. Its yearly slope is negative in 6 of 8 years, with t below \u22122 in 2018 (\u22122.41), 2020 (\u22122.91), 2021 (\u22122.76) and 2025 (\u22122.20). It is flat in 2022 to 2024 (t +0.29, \u22120.73, +0.50).",
+    "F4": "The reversal is specific to a 24-hour look-back and a 24-hour horizon. With a 12-hour look-back over 12 hours, the slope is positive (BTC +7.1 bp, t 2.13). Look-backs of 48 and 72 hours show no reversal at any horizon (all |t| < 1.5).",
+    "F5": "The tested heavy-volume fall rebound is not graded. Over 2 hours, falls of 1.5 to 3 standard deviations on volume above 2.5 times its mean are followed by +20.7 bp (t 2.81, 812 cases), and falls beyond 3 standard deviations by about the same, +20.3 bp (t 1.93, 507 cases). Over 6 hours, the deepest falls give \u22125.8 bp (t \u22120.15), consistent with the step 5 slope of \u22124.9e-6.",
+    "F6": "The book gives back its 2-hour edge by holding past it. Trades lasting 1 hour or less gross +0.44 % (6724 trades) and those of 1 to 2 hours +0.27 % (10501). Trades of 2 to 5 hours gross \u22120.81 % (3912). The book's mean daily return is negative in 6 of 8 years (for example \u221230.5 bp in 2022 and \u221220.5 bp in 2025).",
+    "F7": "Hour-of-day effects stand out across both coins, but each move is far below the 0.11 % cost of a trade. Hours 20\u201321 UTC are followed by about +4 bp per hour (BTC t 3.81, ETH t 3.92). Hours 0\u20133 UTC are followed by about \u22122 bp (BTC t \u22123.24, ETH t \u22123.02). They are ungraded calendar effects, so no idea is written from them."
+  },
+  "ideas": [
+    {
+      "idea": "After a coin's 24-hour return is large relative to its typical hourly move over the past 30 days, it moves back the opposite way over the next 24 hours. The larger that 24-hour move in units of its usual daily move, and the heavier the 24 hours' volume against its 30-day average, the larger the reversal.",
+      "consequence": "A trader would fade a coin's heavy-volume 24-hour run for the next day rather than chase it, sizing the fade by how stretched the run is.",
+      "name": "heavy-volume daily move reverses",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "After an hour in which the coin falls more than its typical hourly move over the past 30 days on volume well above its 30-day hourly average, it rises over the next one to two hours. The rebound grows with that hour's volume against its 30-day average rather than with the depth of the fall.",
+      "consequence": "A trader would take only the first two hours of the bounce after a heavy-volume hourly fall, sized by the volume surge, and not hold it longer.",
+      "name": "volume-sized short crash bounce",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b3_surge-volume-crash-rebound.g1_heavy-volume-daily-move-reverses",
+    "028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b3_surge-volume-crash-rebound.g2_volume-sized-short-crash-bounce"
+  ],
+  "no_ideas": null
+}
