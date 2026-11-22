@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 023-02_flat-range-bottom-reverts-up_1d
+idea tested: 023-02_flat-range-bottom-reverts-up
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3008 USD
+---
+## Findings
+- **F1:** The main measure falls on the opposite side from the idea's prediction: flat-regime closes below the 30-day middle are followed by a mean 5-day excess return of -0.50 % (t -1.25, 628 independent cases), a strength of -0.057 of the coin's usual 10.60 % move, and the total move is -0.02 % per case against a 0.19 % cost per trade.
+- **F2:** The negative sign holds at every horizon tested on the active cases, so no other horizon shows the predicted rise: 1 day -0.12 % (t -1.43, n 3208), 3 days -0.29 % (t -1.15, n 1051), 10 days -0.99 % (t -1.18, n 299) and 20 days -1.84 % (t -1.11, n 145).
+- **F3:** The rise is not graded with distance below the middle. The forecast quartiles give +0.02 %, -1.68 %, -0.46 % and +0.13 % (n 157 each, no order). The raw-distance terciles in flat coins give +0.48 %, -0.31 % and -0.58 % from nearest to farthest (n about 156 each), and the Spearman correlation between distance below and the 5-day return is -0.03 (n 467).
+- **F4:** The flat condition does not separate reversion from its absence. Below-middle closes outside the flat regime give a similar 5-day excess of -0.55 % (t -1.51, n 868). Above-middle closes in flat coins do not fall back by more than drift: -0.24 % (t -0.46, n 368). The flatness terciles give -0.93 %, +0.56 % and -0.05 % with no order.
+- **F5:** No coin, regime or sign split shows a clear positive effect:
+
+## Ideas
+- No ideas: The tested result is negative rather than short of the bar. No horizon, coin, regime, side or forecast strength shows the predicted graded rise clearly (F1–F5), so this data's clear answer is that below-middle closes in flat coins do not revert upward.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

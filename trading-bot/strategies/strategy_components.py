@@ -524,37 +524,93 @@ class MovingAverageDistanceComponent(SubStrategyComponent):
 
 class DonchianBreakoutComponent(SubStrategyComponent):
     """
-    TRENDING REGIME - Primary Directional Alpha.
-    Measures where the current close sits within the recent N-period High-Low range.
-    Zero-lag breakout detection that naturally neutralizes during pullbacks.
+    Where the close sits against its window's channel, on every bar:
+
+        W = bars t-period+1 .. t (bar t included)
+        source = "close" (default): H = max(close[W]), L = min(close[W])
+        source = "high_low":        H = max(high[W]),  L = min(low[W])
+        form = "position" (default):
+            pos = (close[t] - L) / (H - L)   (pos = 0.5 when H = L)
+            raw_value = (2 x pos - 1) x scaling_factor
+        form = "below_proximity":
+            mid = (H + L) / 2
+            D = (mid - close[t]) / mid x 100
+            raw_value = 1 / (1 + D) if close[t] < mid, else 0.0     (scaling_factor not used)
+
+    Range and sign: "position" is -sf to +sf, signed, positive above the middle of the window, 0 at the middle
+    or for a zero range. "below_proximity" is 0 to below 1, never negative, with no direction. It is 0 at or above
+    the middle (a zero range puts the close on the middle) and rises toward 1 as a close below the middle
+    climbs back to it. It jumps from near 1 to 0 where the close crosses the middle.
+    The default form "position" is the original output, unchanged.
+    Warm-up: period rows, bar t included.
+    NaN: a NaN in any value read gives NaN. With "below_proximity", a mid not above 0 gives NaN (never on real bars).
+    Building the component raises for a period below 1, a source other than "close" or "high_low", or a
+    form other than "position" or "below_proximity".
+
+    WHY THIS CANNOT LEAK: it reads only the last `period` rows of data (bar t is the last row): the closes, or the
+    highs and lows plus close[t]; all of them are known at bar t's close.
     """
-    def __init__(self, name: str = "DonchianBreakout", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
+
+    def __init__(self, name="DonchianBreakout", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 48)
-        self.scaling_factor = self.parameters.get('scaling_factor', 20.0)
+        self.period = int(self.parameters.get("period", 48))
+        if self.period < 1:
+            raise ValueError(f"DonchianBreakoutComponent: period must be >= 1, got {self.period}")
+        self.scaling_factor = float(self.parameters.get("scaling_factor", 20.0))
+        self.source = self.parameters.get("source", "close")
+        if self.source not in ("close", "high_low"):
+            raise ValueError(
+                f"DonchianBreakoutComponent: source must be 'close' or 'high_low', got {self.source!r}")
+        self.form = self.parameters.get("form", "position")
+        if self.form not in ("position", "below_proximity"):
+            raise ValueError(
+                f"DonchianBreakoutComponent: form must be 'position' or 'below_proximity', got {self.form!r}")
+        self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
         self.data = data
-        if self.is_ready():
-            close = data['close']
-            recent_high = close.rolling(window=self.period).max().iloc[-1]
-            recent_low = close.rolling(window=self.period).min().iloc[-1]
-            current_price = close.iloc[-1]
-            if recent_high == recent_low:
-                normalized_pos = 0.5
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.period
+        close = data['close'].astype(float)
+        c = float(close.iloc[-1])
+        if self.source == "high_low":
+            hi = data['high'].astype(float).iloc[-n:]
+            lo = data['low'].astype(float).iloc[-n:]
+            if hi.isna().any() or lo.isna().any() or np.isnan(c):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            H = float(hi.max())
+            L = float(lo.min())
+        else:
+            win = close.iloc[-n:]
+            if win.isna().any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            H = float(win.max())
+            L = float(win.min())
+        if self.form == "position":
+            rng = H - L
+            pos = 0.5 if rng == 0 else (c - L) / rng
+            self._raw_value = float((2.0 * pos - 1.0) * self.scaling_factor)
+        else:
+            mid = (H + L) / 2.0
+            if not mid > 0:
+                self._raw_value = float("nan")
+            elif c < mid:
+                d = (mid - c) / mid * 100.0
+                self._raw_value = float(1.0 / (1.0 + d))
             else:
-                normalized_pos = (current_price - recent_low) / (recent_high - recent_low)
-            oscillator = (normalized_pos * 2.0) - 1.0
-            self._raw_value = float(oscillator * self.scaling_factor)
-            self.confidence = 1.0
-            self.debug_info = {
-                'recent_high': float(recent_high),
-                'recent_low': float(recent_low),
-                'oscillator': float(oscillator),
-            }
+                self._raw_value = 0.0
+        self.confidence = 1.0
+        self.debug_info = {'high': H, 'low': L, 'close': c, 'form': self.form, 'source': self.source}
 
     def is_ready(self) -> bool:
-        return self.data is not None and len(self.data) >= self.period
+        return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
         return self.period
@@ -6309,3 +6365,355 @@ class PriorSlideDiscountedScaledFallRangeMultipleComponent(SubStrategyComponent)
 
     def get_required_periods(self):
         return self.lag + self.window + max(self.period, self.prior_period)
+
+
+class NetMoveToRangeRatioComponent(SubStrategyComponent):
+    """
+    The net move over `period` bars per the range of the window, on every bar:
+
+        move = abs(close[t] - close[t - period])
+        source = "high_low" (default): H = max(high[t-period+1 .. t]), L = min(low[t-period+1 .. t])
+        source = "close":              H = max(close[t-period+1 .. t]), L = min(close[t-period+1 .. t])
+        raw_value = move / (H - L), and 0.0 when H - L = 0
+
+    Range & sign: 0 and up, never negative, no direction. It is at most 1 whenever close[t-period] lies inside
+    [L, H], as on almost every real bar, and can exceed 1 only when close[t-period] lies outside the window's
+    range. Small for a flat market, 1 when the net move spans the whole range. Graded and continuous while the
+    range is above 0.
+    The default source "high_low" is the original output, unchanged. "close" divides by the closing range instead.
+    Warm-up: period + 1 rows, bar t included.
+
+    NaN: a NaN close[t] or close[t-period], or a NaN in the range window (high and low for "high_low", closes for
+    "close"), gives NaN. A range of 0 reads 0.0.
+    Building the component raises for a period below 1 or a source other than "high_low" or "close".
+
+    WHY THIS CANNOT LEAK: it reads only the rows t-period .. t of the data it is given (the last period + 1 rows,
+    bar t being the last row): close[t-period] and close[t], and the high/low or close of the last period rows.
+    All of them are known at bar t's close.
+    """
+
+    def __init__(self, name="NetMoveToRange", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 30))
+        if self.period < 1:
+            raise ValueError(f"NetMoveToRangeRatioComponent: period must be >= 1, got {self.period}")
+        self.source = self.parameters.get("source", "high_low")
+        if self.source not in ("high_low", "close"):
+            raise ValueError(
+                f"NetMoveToRangeRatioComponent: source must be 'high_low' or 'close', got {self.source!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data["close"].astype(float)
+        c_now = float(close.iloc[-1])
+        c_base = float(close.iloc[-(self.period + 1)])
+        if self.source == "close":
+            win = close.iloc[-self.period:]
+            highs = win
+            lows = win
+        else:
+            highs = data["high"].astype(float).iloc[-self.period:]
+            lows = data["low"].astype(float).iloc[-self.period:]
+        if np.isnan(c_now) or np.isnan(c_base) or highs.isna().any() or lows.isna().any():
+            self._raw_value = float("nan")
+        else:
+            h = float(highs.max())
+            l = float(lows.min())
+            rng = h - l
+            if rng == 0:
+                self._raw_value = 0.0
+            else:
+                self._raw_value = float(abs(c_now - c_base) / rng)
+            self.debug_info = {"net_move": abs(c_now - c_base), "range_high": h, "range_low": l,
+                               "source": self.source}
+        self.confidence = 1.0
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.period + 1
+
+
+class FlatnessWeightedRangePositionComponent(SubStrategyComponent):
+    """
+    Where the close sits in its recent range, weighted by how flat the window's net move is:
+
+        p = period, window = bars t-p+1 .. t (bar t included)
+        source = "close" (default): H = max(close[window]), L = min(close[window])
+        source = "high_low":        H = max(high[window]),  L = min(low[window])
+        pos  = (close[t] - L) / (H - L)
+        flat = 1 - abs(close[t] - close[t-p]) / (H - L)
+        raw_value = (2 x pos - 1) x flat          (0.0 when H = L)
+
+    The default source "close" is the original output, unchanged. "high_low" measures the position and the
+    flatness against the window's full high-low range (the Donchian channel proper).
+    Range & sign: signed. It is positive above the window's middle, negative below it, and 0 at the middle or
+    for a zero range. It is at most 1 in size whenever close[t-p] lies inside [L, H]. It is unbounded below,
+    because flat turns negative when close[t-p] lies outside [L, H] by more than the range allows.
+    Graded and continuous in the prices while the range is above 0.
+    Warm-up: period + 1 rows, bar t included.
+    NaN: a NaN in any value read gives NaN. For "close" that is the last period + 1 closes. For "high_low"
+    that is the high and low of the last period rows, close[t] and close[t-p]. A zero range gives 0.0.
+    Building the component raises for a period below 2 or a source other than "close" or "high_low".
+
+    WHY THIS CANNOT LEAK: it reads only the last period + 1 rows of data (bar t is the last row): the close of
+    bar t-p, and the close (or high and low) of bars t-p+1 .. t, all known at bar t's close.
+    """
+
+    def __init__(self, name="FlatnessWeightedRangePosition", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 30))
+        if self.period < 2:
+            raise ValueError(f"FlatnessWeightedRangePositionComponent: period must be >= 2, got {self.period}")
+        self.source = self.parameters.get("source", "close")
+        if self.source not in ("close", "high_low"):
+            raise ValueError(
+                f"FlatnessWeightedRangePositionComponent: source must be 'close' or 'high_low', got {self.source!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        close = data["close"].astype(float).to_numpy()
+        c_t = float(close[-1])
+        c_b = float(close[-(p + 1)])
+        if self.source == "close":
+            win = close[-p:]
+            if np.isnan(win).any() or np.isnan(c_b):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            H = float(win.max())
+            L = float(win.min())
+        else:
+            hi = data["high"].astype(float).to_numpy()[-p:]
+            lo = data["low"].astype(float).to_numpy()[-p:]
+            if np.isnan(hi).any() or np.isnan(lo).any() or np.isnan(c_t) or np.isnan(c_b):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            H = float(hi.max())
+            L = float(lo.min())
+        rng = H - L
+        if rng == 0:
+            value = 0.0
+        else:
+            pos = (c_t - L) / rng
+            flat = 1.0 - abs(c_t - c_b) / rng
+            value = (2.0 * pos - 1.0) * flat
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {"H": H, "L": L, "source": self.source}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.period + 1
+
+
+class RangeShareHumpWeightedReturnComponent(SubStrategyComponent):
+    """
+    The period-bar return weighted by a hump of the net move's share of the window's high-low range:
+
+        R = close[t] / close[t - period] - 1
+        H = max(high[t - period + 1 .. t]),  L = min(low[t - period + 1 .. t])
+        s = min(1, abs(close[t] - close[t - period]) / (H - L)),  s = 0 when H - L = 0
+        raw_value = R x s x (1 - s)
+
+    Range and sign: -0.25 and up, unbounded above. It is signed like the period-bar return, and its size is
+    at most 0.25 x abs(R). It is 0 when the net move is 0, when the net move spans the whole range (s = 1),
+    or for a zero range. For a given return it is largest at s = 0.5. Graded and continuous in the prices.
+    Warm-up: period + 1 rows, bar t included.
+    NaN: a NaN close at bar t or t - period, or a NaN high or low in the last period rows, gives NaN.
+    A close[t - period] not above 0 gives NaN (never on real bars). Building the component raises for a
+    period below 1.
+
+    WHY THIS CANNOT LEAK: it reads close of bars t and t - period and high and low of bars
+    t - period + 1 .. t, all at or before the last row of data (bar t), and every one of them is known at bar
+    t's close.
+    """
+
+    def __init__(self, name="RangeShareHumpReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 30))
+        if self.period < 1:
+            raise ValueError(f"RangeShareHumpWeightedReturnComponent: period must be >= 1, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        close = data['close'].astype(float)
+        high = data['high'].astype(float).iloc[-p:]
+        low = data['low'].astype(float).iloc[-p:]
+        c_t = float(close.iloc[-1])
+        c_b = float(close.iloc[-(p + 1)])
+        if np.isnan(c_t) or np.isnan(c_b) or high.isna().any() or low.isna().any() or not c_b > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rng = float(high.max()) - float(low.min())
+        r = c_t / c_b - 1.0
+        if rng > 0:
+            s = min(1.0, max(0.0, abs(c_t - c_b) / rng))
+        else:
+            s = 0.0
+        self._raw_value = float(r * s * (1.0 - s))
+        self.confidence = 1.0
+        self.debug_info = {'return': r, 'share': s, 'range': rng}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
+
+
+class NetMoveRangeAgeComponent(SubStrategyComponent):
+    """
+    How long the net move has held a large share of the window's high-low range, signed by the move:
+
+        r(i) = abs(close[i] - close[i - period]) / (max(high[i-period+1 .. i]) - min(low[i-period+1 .. i]))
+               (r(i) = 0.0 when that range is 0)
+        n    = number of consecutive bars i ending at t (bar t included) with r(i) >= level, capped at max_bars
+        raw_value = sign(close[t] - close[t - period]) * n
+
+    Range: -max_bars .. +max_bars, integers. Positive while the period-bar return is up, negative while it is
+    down. It is 0 when r(t) < level (and when the return is 0, since r(t) is then 0). Its size grows by one for
+    each further bar on which the ratio holds at or above level.
+    Warm-up: max_bars + period rows, bar t included.
+    NaN: a NaN close in the last max_bars + period rows, or a NaN high or low in the last max_bars + period - 1
+    rows, gives NaN.
+    Building the component raises for period < 1, max_bars < 1, or level not above 0.
+
+    WHY THIS CANNOT LEAK: it reads only the close, high and low of the last max_bars + period rows of data, the
+    last of which is bar t; every value is known at bar t's close.
+    """
+
+    def __init__(self, name="NetMoveRangeAge", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 30))
+        if self.period < 1:
+            raise ValueError(f"NetMoveRangeAgeComponent: period must be >= 1, got {self.period}")
+        self.level = float(self.parameters.get("level", 0.5))
+        if not self.level > 0:
+            raise ValueError(f"NetMoveRangeAgeComponent: level must be above 0, got {self.level}")
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(f"NetMoveRangeAgeComponent: max_bars must be >= 1, got {self.max_bars}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        m = self.max_bars
+        need = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-need:]
+        h = data['high'].astype(float).to_numpy()[-need:]
+        lo = data['low'].astype(float).to_numpy()[-need:]
+        if np.isnan(c).any() or np.isnan(h[1:]).any() or np.isnan(lo[1:]).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = 0
+        for k in range(m):
+            i = need - 1 - k
+            rng = float(np.max(h[i - p + 1:i + 1]) - np.min(lo[i - p + 1:i + 1]))
+            move = abs(float(c[i] - c[i - p]))
+            r = move / rng if rng > 0 else 0.0
+            if r >= self.level:
+                n += 1
+            else:
+                break
+        ret = float(c[-1] - c[-1 - p])
+        sign = 1.0 if ret > 0 else (-1.0 if ret < 0 else 0.0)
+        self._raw_value = float(sign * n)
+        self.confidence = 1.0
+        self.debug_info = {'run_length': n, 'net_move': ret}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.max_bars + self.period
+
+
+class FallTimesFallComponent(SubStrategyComponent):
+    """
+    The product of two falls over two horizons, on every bar:
+
+        F_s = max(0, -(close[t] / close[t - short_period] - 1))
+        F_l = max(0, -(close[t] / close[t - long_period] - 1))
+        raw_value = F_s x F_l x 100
+
+    Range: 0 to below 100, never negative, no direction. It is 0 unless both returns are negative, and it
+    grows with the size of each fall. It is graded and continuous in the closes, because the clips at 0 meet
+    the product at 0.
+    Warm-up: long_period + 1 rows, bar t included.
+
+    NaN: a NaN close at t, t - short_period or t - long_period gives NaN. A base close not above 0 gives NaN
+    (never on real bars).
+    Building the component raises for a short_period below 1, a long_period below 1, or a short_period at
+    or above long_period.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the rows up to and including bar t (the last
+    row of data): close[t], close[t - short_period] and close[t - long_period].
+    """
+
+    def __init__(self, name="FallTimesFall", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.short_period = int(self.parameters.get("short_period", 10))
+        self.long_period = int(self.parameters.get("long_period", 60))
+        if self.short_period < 1:
+            raise ValueError(f"FallTimesFallComponent: short_period must be >= 1, got {self.short_period}")
+        if self.long_period < 1:
+            raise ValueError(f"FallTimesFallComponent: long_period must be >= 1, got {self.long_period}")
+        if self.short_period >= self.long_period:
+            raise ValueError(
+                f"FallTimesFallComponent: short_period must be below long_period, got "
+                f"{self.short_period} and {self.long_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data["close"].astype(float)
+        c_t = float(close.iloc[-1])
+        c_s = float(close.iloc[-(self.short_period + 1)])
+        c_l = float(close.iloc[-(self.long_period + 1)])
+        if np.isnan(c_t) or np.isnan(c_s) or np.isnan(c_l) or not c_s > 0 or not c_l > 0:
+            self._raw_value = float("nan")
+        else:
+            f_s = max(0.0, -(c_t / c_s - 1.0))
+            f_l = max(0.0, -(c_t / c_l - 1.0))
+            self._raw_value = float(f_s * f_l * 100.0)
+            self.debug_info = {"short_fall": f_s, "long_fall": f_l}
+        self.confidence = 1.0
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.long_period + 1

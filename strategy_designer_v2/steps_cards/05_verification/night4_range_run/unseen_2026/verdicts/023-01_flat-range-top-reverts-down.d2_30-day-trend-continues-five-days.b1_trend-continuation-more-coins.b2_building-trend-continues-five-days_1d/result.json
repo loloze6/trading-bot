@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9991799245530589,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-excess 5-bar return on forecast, non-overlapping grid, pooled",
+    "value": 0.0007003454608801512,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.7818025618278805
+    },
+    "threshold": "slope t >= 2 (confirm, with timing gain > 0) or <= -2 (reject), on >= 300 grid cases with non-zero forecast"
+  },
+  "supporting_check": {
+    "name": "timing gain (mean daily gain before costs minus market-rise gain)",
+    "value": 0.0014586316007465987,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 1176,
+    "grid cases": 1178
+  },
+  "decided_by": "The slope's t is 2 or more on at least 300 grid cases with a non-zero forecast, and the timing gain is above 0.",
+  "reading": "The regression uses every grid case of each window (bars 0, 5, 10, ... from its first row), including those with a zero forecast, with an intercept, and the drift is each coin's mean of those grid returns over all its windows; the timing gain uses the position held after each bar times the next bar's coin return, with the market part being that position times the coin's mean daily return over all its windows, both averaged over coins each day and then over days."
+}

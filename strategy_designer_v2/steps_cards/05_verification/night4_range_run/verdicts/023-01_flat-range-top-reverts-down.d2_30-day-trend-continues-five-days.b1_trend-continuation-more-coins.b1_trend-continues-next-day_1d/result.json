@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (trending, non-zero forecast bars, pooled)",
+    "value": 7.757695889188076e-05,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 2.616735113174403
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive; at least 300 bars"
+  },
+  "supporting_check": null,
+  "counts": {
+    "trending bars with a non-zero forecast": 15635
+  },
+  "decided_by": "Confirm rule: the slope is positive with t = 2.62 >= 2.",
+  "reading": "Situation computed from prices as |close[t]-close[t-30]| over the 30-bar high-low range (detector's recorded regime used where a window lacks 30 bars of history), side from the sign of the 30-bar return; the plan's 'fewer than 300 bars' minimum is treated as a minimum count (not observable); the coin's mean daily return is the mean of all its in-window next-day returns; OLS with intercept, every bar used since the horizon is 1 bar."
+}

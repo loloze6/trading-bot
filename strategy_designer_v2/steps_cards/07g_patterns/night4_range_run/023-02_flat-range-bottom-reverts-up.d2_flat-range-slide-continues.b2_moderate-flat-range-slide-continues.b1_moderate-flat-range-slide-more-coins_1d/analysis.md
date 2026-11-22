@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b2_moderate-flat-range-slide-continues.b1_moderate-flat-range-slide-more-coins_1d
+idea tested: 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b2_moderate-flat-range-slide-continues.b1_moderate-flat-range-slide-more-coins
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4698 USD
+---
+## Findings
+- **F1:** On the 5-day non-overlapping grid, cases with a short forecast were followed by a coin move of -0.075 usual moves (928 cases, naive t -2.67). Counted once per date, the t drops to -1.90 over 309 dates, and only 26 % of the 19 coins had a positive mean, so most of the confirmed edge is a common move across coins on the same dates.
+- **F2:** The edge is fading. Active cases had negative mean forward z from 2018 to 2022 (-0.18, -0.27, -0.11, -0.24, -0.14; 2019 t -3.05, 2022 t -2.21) and turned positive in 2023 (+0.059, t 1.39) and 2024 (+0.046, t 0.69), with -0.020 (t -0.33) in 2025.
+- **F3:** The book loses because of the coin's drift, not because the timing fails. On the 14,316 days in position the coin averaged -0.057 %, against +0.146 % over all days, and book and coin returns correlated at -0.72. Yet the book still averaged -0.025 % a day, and the 3,358 shorts lost 3.14 % gross each with a 36 % win rate.
+- **F4:** Trades held longest lost most. The quartile averaging 23.0 days lost 7.44 % gross, the 1.3-day quartile lost 4.18 %, and the 4.5- and 7.5-day quartiles lost only 1.05 % and 0.60 %. The weakest-forecast quartile lost 9.38 % gross, against 0.63 to 1.55 % for the other three.
+- **F5:** Among the trend half of cases (30-day net move to range above the median), those closing in the top fifth of the 30-day range rose next by +0.139 usual moves (815 cases, naive t 3.15). Counted once per date this falls to t 1.81 over 215 dates, with 74 % of coins positive.
+- **F6:** Several other angles looked strong naively but did not survive clustering by date. Tuesday showed +0.179 z (naive t 5.02, date t 1.06), Sunday -0.136 (naive t -3.89, date t -0.70), and the top 30-day-return quintile +0.112 (naive t 3.08, date t 1.21).
+- **F7:** Inside the flat half, the two lowest fifths of range position were followed by falls of -0.096 and -0.109 usual moves (date t -2.15 and -2.82; 42 % and 11 % of coins positive). The upper fifths were near zero (-0.004 and -0.033). This is the tested idea's own pattern, not a new one.
+
+## Ideas
+- No ideas: Across roughly a dozen angles (range position by flatness, past 1-, 5-, 10- and 30-day returns, volatility ratio, weekday, year, trade length and forecast size), every pattern beyond the tested idea fell below a date-clustered t of 2: the strongest, trend-continuation near the top of the range, reached only 1.81. None stands out enough from chance to found a new idea.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

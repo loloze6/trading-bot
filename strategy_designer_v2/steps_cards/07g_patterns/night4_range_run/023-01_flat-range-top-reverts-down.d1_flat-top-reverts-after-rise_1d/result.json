@@ -1,0 +1,59 @@
+{
+  "line": "7.g",
+  "backtest": "023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.317987,
+  "findings": {
+    "F1": "Among bars where the 90-day return was positive (the `mean_reversion` regime), the close's position in its 30-day closing range predicts the next 5 days' unusual move upward, not downward: the slope is +0.018 per unit of position, t 3.70 over 1313 non-overlapping cases. Among bars with a negative 90-day return the slope is -0.001, t -0.27 over 1242 cases.",
+    "F2": "The 90-day-rise effect is graded by quintile of range position. The bottom quintile's unusual 5-day move is -2.09 % (t -1.90, n 126), rising to +1.73 % in the top quintile (t 2.42, n 372). Top minus bottom is +2.85 %, Welch t 2.56 (263 vs 263 cases). The top-quintile move is about 9 times the 0.19 % cost of a trade.",
+    "F3": "The same 90-day-rise slope holds over 10 days: +0.031, t 3.09 over 659 cases, against -0.009, t -1.03 over 600 cases after a 90-day fall.",
+    "F4": "The slope is positive in both halves of the windows and in 5 of 6 coins:",
+    "F5": "The slope is uneven over time. It is concentrated in 2020 (+0.056, t 4.80) and 2021 (+0.030, t 2.01) and near zero in 2022-2025, with every |t| at or below 0.53. It is strongest in the middle tercile of flatness (+0.036, t 4.54) and absent in the flattest tercile (-0.002, t -0.24).",
+    "F6": "Across all cases, the 10-day past return shows a weaker version of the same continuation. Its top quintile is followed by a +1.03 % unusual 5-day move, t 2.14 (n 626). The 30-day past return's top quintile gives +1.04 %, t 1.82.",
+    "F7": "The book lost because it shorted the very bars that kept rising. Its daily returns correlate -0.52 with the coins' daily returns over 17380 coin-days, with a mean of -0.058 % a day."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 90-day return is positive, the higher its close sits within its 30-day closing range, the more it rises over the next 5 days beyond its normal drift, and the lower it sits, the more it falls.",
+      "consequence": "After a 90-day rise, a trader would buy a coin near the top of its month's range rather than short it, and would refuse to buy one near the bottom.",
+      "name": "range-top continuation after rise",
+      "from": "F1, F2, F4, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a coin whose 90-day return is positive, the higher its close sits within its 30-day closing range, the more it rises over the next 10 days beyond its normal drift.",
+      "consequence": "A trader who goes with a coin's position in its month's range after a 90-day rise could hold for about 10 days instead of 5, which spreads the cost of a trade over a larger move.",
+      "name": "ten-day range-top continuation",
+      "from": "F3, F1, F2",
+      "refs": [
+        "F3",
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 10-day return, the more it rises over the next 5 days beyond its normal drift.",
+      "consequence": "A trader would lean with a coin's recent 10-day move rather than fade it.",
+      "name": "ten-day return continuation",
+      "from": "F6, F1",
+      "refs": [
+        "F6",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.g1_range-top-continuation-after-rise",
+    "023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.g2_ten-day-range-top-continuation",
+    "023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.g3_ten-day-return-continuation"
+  ],
+  "no_ideas": null
+}

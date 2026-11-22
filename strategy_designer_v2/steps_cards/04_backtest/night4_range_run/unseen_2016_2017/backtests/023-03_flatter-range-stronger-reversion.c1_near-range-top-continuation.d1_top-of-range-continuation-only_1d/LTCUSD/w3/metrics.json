@@ -1,0 +1,143 @@
+{
+  "core": {
+    "net_return_pct": -22.489,
+    "sharpe": -3.075,
+    "max_drawdown_pct": -22.22,
+    "trade_count": 16,
+    "win_rate": 6.25,
+    "avg_trade_net_pnl": -14.111042,
+    "fees_paid": 6.008337,
+    "gross_pnl": -219.768332,
+    "net_pnl": -225.776669,
+    "cost_drag_pct": 2.7339,
+    "forecast_return_corr": -0.258263,
+    "forecast_return_corr_pvalue": 0.067276,
+    "forecast_return_corr_pvalue_block_adjusted": 0.070631,
+    "forecast_return_corr_n_eff": 52,
+    "forecast_return_corr_all_bars": -0.202852,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.028222,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.8333,
+    "avg_trade_duration_bars": 12.81,
+    "sigma_bar_bps": 309.7584,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 286.3253,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 15.477,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "refine_inverted_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.2583 (negative, significant at p=0.0706). Signal direction is inverted -- flip polarity.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -313.2759,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -313.2759,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 31.3276,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "refine_inverted_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=-0.2583 (negative, significant at p=0.0706). Signal direction is inverted -- flip polarity.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 121,
+      "avg_forecast": 4.935499,
+      "trade_count": 16,
+      "total_net_pnl": -225.776668
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 2,
+      "profitable_trades": 1,
+      "success_rate_pct": 50.0,
+      "total_net_pnl_usd": 4.7948,
+      "avg_pnl_per_trade_usd": 2.3974
+    },
+    "5_to_10": {
+      "total_forecasts": 2,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -3.2433,
+      "avg_pnl_per_trade_usd": -1.6216
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 12,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -227.3282,
+      "avg_pnl_per_trade_usd": -18.944
+    }
+  },
+  "dynamic": {
+    "debug_info.components.range_top.last_history_value": {
+      "unknown": {
+        "mean": 1.51873,
+        "std": 10.397434
+      }
+    },
+    "debug_info.components.range_top.post_pipeline_value": {
+      "unknown": {
+        "mean": 7.78925,
+        "std": 14.03022
+      }
+    },
+    "debug_info.components.range_top.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.range_top.weighted_contribution": {
+      "unknown": {
+        "mean": 7.78925,
+        "std": 14.03022
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00148386,
+      "forward_return_std": 0.03085032,
+      "n_bars": 120,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -29.5426,
+    "sharpe": -1.2607,
+    "sortino": -1.5207,
+    "exposure_pct": 52.8926,
+    "turnover": 13.131935,
+    "n_bars_total": 121,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 37,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-11 00:00:00",
+        "previous_timestamp": "2016-09-09 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

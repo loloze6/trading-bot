@@ -1,0 +1,60 @@
+{
+  "line": "7.g",
+  "backtest": "023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5637976,
+  "findings": {
+    "F1": "The tested relation sits almost entirely at the top of the 30-day range. Closes in the top fifth of the range (position 0.78 to 1) were followed by +3.03 % over 10 days beyond the coin's mean (t 2.36, 252 non-overlapping cases). Every other fifth was below the mean, from -0.38 % (t -0.43) at the bottom to -0.96 % (t -1.04) in the middle. Coins near their 30-day low did not keep falling.",
+    "F2": "Closes within 1.8 % of the 30-day closing high were followed by +3.58 % over 10 days beyond the mean (t 2.44, 210 cases). The next five sixths of distance from the high ranged from -1.33 % to +0.66 %, all with |t| < 1.6. The same top sixth measured in the coin's daily-volatility units gave +3.14 % (t 2.12). For the 60-day high it gave +3.23 % (t 2.43, 138 cases).",
+    "F3": "Bars that closed on a new 30-day closing high were followed by +4.69 % over 10 days (t 2.28, 137 cases). The effect fades within days: one to two days after the high it was -0.84 % (t -0.81), and from 5 to 30 days after it was -1.23 % to -0.20 %. This finding is partly carried by one coin: XRP contributed +22.9 % (t 2.24, 18 cases), against BTC's +2.9 % (t 1.66) and +1.2 % to +2.9 % in the other coins.",
+    "F4": "The idea's slope (10-day excess return on range position) depends on the coin's own 60-day return. It was 0.0387 (t 2.88, 423 cases) when the 60-day return was positive and -0.0043 (t -0.38, 404 cases) when it was negative. By size of the 30-day move it was 0.0182 (t 1.51) in the trending third and 0.0073 (t 0.73) in the flattest third.",
+    "F5": "The brief's mean reversion does not show in flat coins either. In the flattest third of 30-day moves the slope is +0.0073 (t 0.73), and in the narrowest third of 30-day ranges it is -0.0015 (t -0.16). So neither the tested continuation nor the brief's reversion holds there.",
+    "F6": "The relation is unstable across years. The slope was positive in 2020 (t 2.67) and 2019/2021 (t 1.22/1.56), and negative in 2018 (t -2.26), 2022 (t -1.96) and 2023 (t -2.16). By coin, only XRP (t 2.08) and ETH (t 1.73) carry it, while BTC, LTC and XMR have |t| < 0.3.",
+    "F7": "Coins rose more on Saturdays: +0.454 % a day (t 5.53, 2484 days) against +0.01 % on the other days excluding Friday. Saturday minus the rest gives a Welch t of 4.26. This held in all six coins (t 1.40 to 2.92) and in six of eight years (2022: t 0.42, 2023: t -0.01).",
+    "F8": "The book is not a disguised market bet. Its daily returns correlate -0.047 with the coins'. On its worst 5 % of days (-4.28 %) the coins moved +0.04 %, and on its best 5 % (+4.53 %) the coins moved -0.34 %. Its Saturday mean of +0.167 % is its largest weekday.",
+    "F9": "The tested cost of a trade is 0.19 %. The move per case in the top fifth of the range (+3.03 %, F1) and at new highs (+4.69 %, F3) is 15 to 25 times that cost. The tested idea's average over all cases is only 0.33 %."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's daily close is to its 30-day closing high, the more the coin rises over the next 10 days, with the largest rise following closes at the high itself.",
+      "consequence": "A trader can buy coins closing at or just under their monthly high and should refuse to short them, rather than spread bets across the whole range.",
+      "name": "near-high continuation over ten days",
+      "from": "F1, F2, F3, F9",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F9"
+      ]
+    },
+    {
+      "idea": "When a coin's 60-day return is positive, the higher its daily close sits above the middle of its 30-day closing range, the more it keeps rising over the next 10 days. The larger the 60-day rise, the stronger this effect.",
+      "consequence": "A trader can lean with range position only in coins that are up over two months, and should ignore range position in coins that are down.",
+      "name": "range continuation in uptrending coins",
+      "from": "F4, F1, F6",
+      "refs": [
+        "F4",
+        "F1",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The higher a coin has closed above its 30-day closing high on a given day, the larger its rise over the next 10 days, with the effect fading over the days after the high.",
+      "consequence": "A trader can act on a fresh monthly breakout on its own day, and should not chase a high already a few days old.",
+      "name": "fresh breakout fading follow-through",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.g1_near-high-continuation-over-ten-days",
+    "023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.g2_range-continuation-in-uptrending-coins",
+    "023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.g3_fresh-breakout-fading-follow-through"
+  ],
+  "no_ideas": null
+}

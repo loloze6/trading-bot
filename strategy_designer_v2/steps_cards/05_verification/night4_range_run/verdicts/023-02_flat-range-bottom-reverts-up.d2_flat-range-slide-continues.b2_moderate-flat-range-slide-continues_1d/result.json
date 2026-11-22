@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 5-bar move",
+    "value": 0.010933744543573019,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.318349588953533
+    },
+    "threshold": "t >= 2 over at least 30 cases to confirm, t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half mean unusual move",
+    "value": -0.007680642905116477,
+    "passed": false
+  },
+  "counts": {
+    "cases": 436
+  },
+  "decided_by": "A confirming t with a supporting difference at or below 0.",
+  "reading": "Situation recomputed per window from prices (NMR = |close[t]-close[t-30]| over the 30-bar high-low range, midpoint of the 30-bar high and low, veto = 10-day return over the mean absolute 10-day return of the last 60 bars including t), with the 10-day return sign from the recorded ret10 value; active bars whose situation cannot be computed inside the window are left out of the agreement; the coin's mean 5-bar return is over its non-overlapping grid returns of all windows; for the supporting check cases are sorted by absolute forecast and split into two halves of n//2 (the middle case left out when n is odd)."
+}
