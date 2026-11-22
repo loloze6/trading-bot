@@ -1,2 +1,6 @@
 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h: not profitable enough [Sharpe 3.297; Sharpe minus holding's Sharpe -0.5411; Calmar 10.42]
+024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h: not profitable enough [Sharpe 3.373; Sharpe minus holding's Sharpe -0.4649; Calmar 7.741]
+024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e1_thirty-day-trend-continuation-graded_4h: not profitable enough [Sharpe 3.481; Sharpe minus holding's Sharpe -0.3577; Calmar 10.78]
+024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h: not profitable enough [Sharpe 3.632; Sharpe minus holding's Sharpe -0.2065; Calmar 14.51]
 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h: not profitable enough [Sharpe 3.224; Sharpe minus holding's Sharpe -0.6141; Calmar 11.25]
+024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h: not profitable enough [Sharpe 3.183; Sharpe minus holding's Sharpe -0.6552; Calmar 10.47]

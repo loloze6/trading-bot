@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.99657371276292,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar excess return of long bets over the coin's normal drift",
+    "value": -0.00014730073688258127,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.12086552047711362
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting check passes; reject: negative with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return of upper forecast half minus lower half",
+    "value": 0.00993952151812116,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4559,
+    "upper half cases": 2279,
+    "lower half cases": 2280
+  },
+  "decided_by": "t lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "cases pooled over all coins, the first bet in each non-overlapping 18-bar cell per window, dropping cells whose 18-bar return leaves the window; the median split puts forecasts above the median in the upper half and the rest in the lower half; the situation's streak is consecutive lower closes ending on the bar with the volume least-squares slope over those bars below 0."
+}

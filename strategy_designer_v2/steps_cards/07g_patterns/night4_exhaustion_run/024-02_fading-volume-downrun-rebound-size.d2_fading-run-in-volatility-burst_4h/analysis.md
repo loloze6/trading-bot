@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 024-02_fading-volume-downrun-rebound-size.d2_fading-run-in-volatility-burst_4h
+idea tested: 024-02_fading-volume-downrun-rebound-size.d2_fading-run-in-volatility-burst
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4194 USD
+---
+## Findings
+- **F1:** The coin's 1-day move, measured against its usual 1-day move over the past 30 days, predicts the next 3 days far better than the tested forecast does. In the top quintile of the move's size, falls are followed by a 3-day excess return of +1.27 % (t 3.50, 490 independent cases, strength 0.145), and the response is graded across the whole down side (Spearman 0.113, p 1.9e-8, n 2450). The tested forecast's active cases earn +0.24 % (t 0.73, 638 cases), and step 5 found -0.01 % per case.
+- **F2:** The tested idea's streak and volume-fade conditions add nothing. Down-streaks of at least two bars earn +0.16 % over 3 days with fading volume (t 0.47, 628 cases) and +0.37 % with rising volume (t 1.07, 589 cases). The lowest decile of the 1-day move earns +1.23 % (t 3.43, 501 cases).
+- **F3:** Among the largest 1-day falls (lowest decile), the 3-day rebound is larger when 5-day volatility is high against its 30-day average. The upper volatility half earns +1.99 % (t 3.60, 234 cases, strength 0.23) and the lower half +0.86 % (t 1.80, 234 cases).
+- **F4:** The rebound after the largest 1-day falls holds across coins and years. It is positive in 5 of 6 coins (LTC +2.13 % t 2.50, ZEC +2.12 %, XRP +1.66 %, XMR +1.17 %, ETH +1.12 %; BTC -0.20 %). It is positive in 7 of 8 years (2020 +4.20 % t 4.85, 2025 +1.74 % t 2.10; 2019 -1.00 %). This move is about 1.2 % plus the 0.4 % drift, roughly 8 times the 0.19 % cost of a trade.
+- **F5:** Large 1-day rises are followed by a further rise rather than a give-back. The top size quintile on the up side earns +1.00 % over 3 days (t 2.25, 511 cases, strength 0.116), and the top decile +0.98 % (t 2.19, 501 cases). This is positive in 7 of 8 years.
+- **F6:** The book is mostly the market's own move, not timing. Its daily returns correlate 0.86 with the coins' daily returns. On its worst-decile days it loses -3.97 % while the coins lose -6.76 %. Its Sharpe by window swings from -2.43 to +4.74, tracking the windows' 3-day excess returns (w14 -1.56 %, w21 +1.37 %).
+- **F7:** Time of day carries a strong per-bar effect, but it is too small to trade alone. The 4h bar opening at 16 UTC earns +0.077 % excess (t 5.15, 17506 bars, positive in all 6 coins and 7 of 8 years). The bar opening at 20 UTC earns -0.071 % (t -4.62), but that effect is concentrated in 2018–2022. Both are under half the 0.19 % cost of a trade.
+
+## Ideas
+- `024-02_fading-volume-downrun-rebound-size.d2_fading-run-in-volatility-burst.g1_rebound-after-outsized-daily-fall` (from F1, F2, F4): When a coin falls over one day by much more than its usual 1-day move over the past 30 days, it rises over the next three days, and the larger that 1-day fall relative to its usual move, the larger the rise.
+- `024-02_fading-volume-downrun-rebound-size.d2_fading-run-in-volatility-burst.g2_volatility-burst-amplifies-rebound` (from F3, F1): After a coin's 1-day fall that is large relative to its usual 1-day move over the past 30 days, the 3-day rebound that follows is larger the higher the coin's 5-day volatility against its 30-day volatility.
+- `024-02_fading-volume-downrun-rebound-size.d2_fading-run-in-volatility-burst.g3_outsized-daily-rise-continues` (from F5, F1): When a coin rises over one day by much more than its usual 1-day move over the past 30 days, it keeps rising over the next three days, and the larger that 1-day rise relative to its usual move, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
