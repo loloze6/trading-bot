@@ -1,4 +1,4 @@
-# Night 4 (2026-11-22): five briefs aimed at the days momentum does not trade or loses (written before the runs)
+# Night 4 (2026-11-22): five briefs aimed at the days momentum does not trade or loses, and one short-horizon brief (written before the runs)
 
 **The operator's go (2026-11-22, about 01:00 Paris):** "go for tonight's briefs", as on night 3: several sessions,
 several briefs across 1h, 4h and 1d. **Why these briefs:** on night 3 and in the similarity register, 33 of 35 paying
@@ -18,6 +18,7 @@ resume), line 7.f deleted, the findings register removed.
 | 3 | 025, bounces fade in falling markets (long and short) | 1d | `night4_fallingbounce_run` | 35 USD |
 | 4 | 026, weekend moves reverse in the week | 1h | `night4_weekend_run` | 35 USD |
 | 5 | 027, panic stretches are followed by a premium | 4h | `night4_panic_run` | 35 USD |
+| 6 (added 01:15 Paris, the operator: "try also a brief at short horizon") | 028, volume-confirmed hourly moves continue over 2 to 6 hours; BTC and ETH only (a buy and a sell about 0.10 %) | 1h | `night4_volumehour_run` | 35 USD |
 | designer | the morning: merges, the similarity check on the new paying books, the reading | - | - | 25 USD |
 
 Each session: `run_brief` with its brief and budget on its own branch (`night4-<name>`). A background task cut by the
@@ -40,3 +41,17 @@ of it that relative explains.
 
 **Risk noted:** the account's 7-day usage limit showed a warning on 2026-11-21; five sessions at once can reach the
 5-hour limit again (it stopped every session on night 3).
+
+## The operator's authorization, and the lessons of night 3 applied (2026-11-22, 01:20 Paris)
+**The operator:** "You have all rights to fix and restart if needed. From last nights, take the lesson about what went
+wrong."
+
+| Night 3 | What went wrong | Applied tonight |
+|---|---|---|
+| The account's 5-hour usage limit stopped every session at once (03:56 to 06:10 Paris) | 2.3 hours lost; every session waited for a message | each session schedules its own wake-up at the reset time and resumes; the designer checks at 04:30 Paris |
+| A refused model call failed ideas for good; one idea turned about 4,000 times | 177 untested ideas excluded; MBs of repeated lines | fixed in the loop and `run_idea` (refused call: the loop stops, nothing marked failed; a failed step ends the idea's run) |
+| The designer's fix (retry lines) let resumed ideas run past their budget | about 29 USD over two budgets | fixed (the budget holds before every `run_idea` call). Rule for tonight: a fix sent to a running session is tested first on the state that session is in (its loop file), budget and resume paths included, before it is merged into its branch |
+| A session refused a budget raise sent by another session | 26 ideas left unrun | budgets are set in each session's first message and not changed during the night |
+| Background tasks cut by the 2-hour limit, and a machine restart | runs paused until relaunched | relaunched at once without asking (topic 37); each session commits along the way, so a restart loses nothing finished |
+| Branches touching the same shared files (components) | conflicts at every merge | resolved the tested way in the morning (ours plus each branch's additions, then both test suites) |
+| Paying ideas that were momentum again | counted as discoveries | each paying book goes through the similarity check in the morning before it is called new |
