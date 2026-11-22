@@ -76,10 +76,12 @@ cd "$REPO_ROOT" || exit 1
 
 REGISTRY="strategy-research/config/holdout_gate_exemptions.txt"
 
-# The sealed window, 2026-01-01..2026-06-30. Months 01-06 of 2026 are wholly inside it,
-# so a month-level match IS the range — no day arithmetic, nothing to get off by one.
-# 2026-07-01 onward and 2025-12-31 and earlier cannot match by construction.
-PATTERN='2026-0[1-6]-[0-3][0-9]'
+# The sealed window is read from trading-bot/config/campaign_data_policy.yaml:holdout_range at every run
+# (section 0 below), never written here: the seal moves with the policy (operator, 2026-11-22; the data guard,
+# trading-bot/data/data_manager.py:_holdout_bounds, reads the same key). PATTERN, and the four self-test dates,
+# are derived from it.
+POLICY="trading-bot/config/campaign_data_policy.yaml"
+PATTERN=""
 
 # Closed list of provenance keys (see THE EXEMPTION PROBLEM above). Deliberately
 # anchored to the key, so a market-data value can never inherit an exemption merely by
@@ -93,6 +95,35 @@ fail() { echo ""; echo "HOLDOUT GATE: COMMIT BLOCKED — $1" >&2; exit 1; }
 # All progress output goes to stderr so that --report-residual emits ONLY machine-
 # readable "path<TAB>count" on stdout (the registry format).
 info() { echo "$@" >&2; }
+
+# ---------------------------------------------------------------------------
+# 0. The sealed window, from the policy. A full month inside it is matched as YYYY-MM-[0-3][0-9], a partial month
+#    day by day; both ends inclusive. Any failure to read it blocks (deny by default).
+# ---------------------------------------------------------------------------
+PY=${HOLDOUT_GATE_PY:-$(command -v python3 || command -v python)}
+[ -r "$POLICY" ] || fail "$POLICY missing or unreadable — cannot locate the seal (deny by default)."
+WINDOW=$("$PY" - "$POLICY" <<'PYEOF'
+import calendar, datetime as dt, re, sys
+txt = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(r"^holdout_range:\s*\[\s*[\"']?(\d{4}-\d{2}-\d{2})[\"']?\s*,\s*[\"']?(\d{4}-\d{2}-\d{2})[\"']?\s*\]", txt, re.M)
+lo, hi = (dt.date.fromisoformat(x) for x in m.groups())
+assert lo <= hi
+one, parts, d = dt.timedelta(days=1), [], lo.replace(day=1)
+while d <= hi:
+    end = d.replace(day=calendar.monthrange(d.year, d.month)[1])
+    a, b = max(lo, d), min(hi, end)
+    if a == d and b == end:
+        parts.append(d.strftime("%Y-%m") + "-[0-3][0-9]")
+    else:
+        parts += [(a + n * one).isoformat() for n in range((b - a).days + 1)]
+    d = end + one
+print("|".join(parts)); print(lo); print(lo - one); print(hi); print(hi + one)
+PYEOF
+) || fail "cannot read holdout_range from $POLICY with $PY — cannot locate the seal (deny by default)."
+PATTERN=$(echo "$WINDOW" | sed -n 1p)
+SEAL_FIRST=$(echo "$WINDOW" | sed -n 2p); BEFORE_SEAL=$(echo "$WINDOW" | sed -n 3p)
+SEAL_LAST=$(echo "$WINDOW" | sed -n 4p); AFTER_SEAL=$(echo "$WINDOW" | sed -n 5p)
+[ -n "$PATTERN" ] && [ -n "$AFTER_SEAL" ] || fail "empty sealed window from $POLICY (deny by default)."
 
 # ---------------------------------------------------------------------------
 # 1. Scanner self-test. Runs on EVERY invocation, before any real scanning.
@@ -110,30 +141,30 @@ self_test() {
     st_dir=$(mktemp -d 2>/dev/null) || { echo "  self-test: mktemp failed" >&2; return 1; }
 
     # Positive control: first day of the holdout. MUST match.
-    printf 'ts,open\n2026-01-01 00:00:00,1\n' > "$st_dir/positive.csv"
+    printf 'ts,open\n%s 00:00:00,1\n' "$SEAL_FIRST" > "$st_dir/positive.csv"
     # Negative control: the day before the seal. MUST NOT match.
-    printf 'ts,open\n2025-12-31 23:00:00,1\n' > "$st_dir/negative.csv"
+    printf 'ts,open\n%s 23:00:00,1\n' "$BEFORE_SEAL" > "$st_dir/negative.csv"
     # Boundary controls: last sealed day must match, first day after must not.
-    printf '2026-06-30\n' > "$st_dir/last_sealed.csv"
-    printf '2026-07-01\n' > "$st_dir/first_free.csv"
+    printf '%s\n' "$SEAL_LAST" > "$st_dir/last_sealed.csv"
+    printf '%s\n' "$AFTER_SEAL" > "$st_dir/first_free.csv"
 
     st_rc=0
     "$GREP" -q -E "$PATTERN" "$st_dir/positive.csv" 2>/dev/null || {
-        echo "  self-test: POSITIVE CONTROL FAILED — 2026-01-01 not detected" >&2; st_rc=1; }
+        echo "  self-test: POSITIVE CONTROL FAILED — $SEAL_FIRST not detected" >&2; st_rc=1; }
     "$GREP" -q -E "$PATTERN" "$st_dir/negative.csv" 2>/dev/null && {
-        echo "  self-test: NEGATIVE CONTROL FAILED — 2025-12-31 wrongly detected" >&2; st_rc=1; }
+        echo "  self-test: NEGATIVE CONTROL FAILED — $BEFORE_SEAL wrongly detected" >&2; st_rc=1; }
     "$GREP" -q -E "$PATTERN" "$st_dir/last_sealed.csv" 2>/dev/null || {
-        echo "  self-test: BOUNDARY FAILED — 2026-06-30 (last sealed day) not detected" >&2; st_rc=1; }
+        echo "  self-test: BOUNDARY FAILED — $SEAL_LAST (last sealed day) not detected" >&2; st_rc=1; }
     "$GREP" -q -E "$PATTERN" "$st_dir/first_free.csv" 2>/dev/null && {
-        echo "  self-test: BOUNDARY FAILED — 2026-07-01 (outside seal) wrongly detected" >&2; st_rc=1; }
+        echo "  self-test: BOUNDARY FAILED — $AFTER_SEAL (outside seal) wrongly detected" >&2; st_rc=1; }
 
     rm -rf "$st_dir"
     return $st_rc
 }
 
-info "HOLDOUT GATE: sealed window 2026-01-01..2026-06-30 (campaign_data_policy.yaml:holdout_range)"
+info "HOLDOUT GATE: sealed window $SEAL_FIRST..$SEAL_LAST (campaign_data_policy.yaml:holdout_range)"
 if self_test; then
-    info "  self-test: PASS (+2026-01-01 +2026-06-30 / -2025-12-31 -2026-07-01)"
+    info "  self-test: PASS (+$SEAL_FIRST +$SEAL_LAST / -$BEFORE_SEAL -$AFTER_SEAL)"
 else
     fail "scanner self-test failed — cannot trust a clean result (deny by default)."
 fi

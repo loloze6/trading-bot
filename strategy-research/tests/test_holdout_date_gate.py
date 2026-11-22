@@ -58,6 +58,17 @@ def _gate_self_count():
     return n
 
 
+FIXTURE_WINDOW = ("2026-01-01", "2026-06-30")   # the window these fixtures were written for (the gate reads the
+# window from the policy file, so each fixture repo carries one; the real policy is never read here)
+POLICY_REL = "trading-bot/config/campaign_data_policy.yaml"
+
+
+def _write_policy(repo, window=FIXTURE_WINDOW):
+    p = repo / POLICY_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text('holdout_range: ["%s", "%s"]\n' % window, encoding="utf-8")
+
+
 def _make_repo(tmp_path, files, registry_lines=""):
     """Build a git repo with `files` staged, plus the gate + its exemption registry."""
     repo = tmp_path / "repo"
@@ -65,9 +76,10 @@ def _make_repo(tmp_path, files, registry_lines=""):
     (repo / "strategy-research" / "tools").mkdir(parents=True)
 
     shutil.copy(GATE, repo / "strategy-research" / "tools" / "holdout_date_gate.sh")
+    _write_policy(repo)
     gate_entry = "strategy-research/tools/holdout_date_gate.sh\t%d\n" % _gate_self_count()
     (repo / "strategy-research" / "config" / "holdout_gate_exemptions.txt").write_text(
-        "# test registry\n" + gate_entry + registry_lines, encoding="utf-8"
+        "# test registry\n" + POLICY_REL + "\t1\n" + gate_entry + registry_lines, encoding="utf-8"
     )
 
     for rel, content in files.items():
@@ -268,3 +280,30 @@ def test_self_test_only_mode(tmp_path):
     out = r.stdout + r.stderr
     assert r.returncode == 0, out
     assert "self-test: PASS" in out
+
+
+# --------------------------------------------------------------------------- the window comes from the policy
+
+
+def test_window_follows_the_policy(tmp_path):
+    """The gate reads holdout_range from the policy (operator, 2026-11-22): moving it moves the gate. A made-up window
+    with partial months on both ends: its first and last days block, the days just outside pass, and a date of the
+    fixtures' own window passes once the policy no longer seals it."""
+    window = ("2031-03-10", "2031-04-20")
+    cases = {"2031-03-10": 1, "2031-04-20": 1, "2031-03-31": 1, "2031-03-09": 0, "2031-04-21": 0, FIXTURE_WINDOW[0]: 0}
+    for i, (day, blocked) in enumerate(cases.items()):
+        repo = _make_repo(tmp_path / str(i), {"d.csv": "ts\n%s 00:00:00\n" % day})
+        _write_policy(repo, window)
+        _git(repo, "add", "-A")
+        res = _run_gate(repo)
+        assert res.returncode == blocked, (day, res.stdout + res.stderr)
+
+
+def test_missing_policy_blocks(tmp_path):
+    """No policy file: the gate cannot locate the seal and blocks (deny by default)."""
+    repo = _make_repo(tmp_path, {"d.csv": "ts\n2031-01-01 00:00:00\n"})
+    _git(repo, "rm", "-q", "--cached", POLICY_REL)
+    (repo / POLICY_REL).unlink()
+    res = _run_gate(repo)
+    assert res.returncode == 1
+    assert "cannot locate the seal" in res.stdout + res.stderr

@@ -65,6 +65,17 @@ def _gate_self_count() -> int:
     return n
 
 
+FIXTURE_WINDOW = ("2026-01-01", "2026-06-30")   # the window these fixtures were written for (the gate reads the
+# window from the policy file, so each fixture repo carries one; the real policy is never read here)
+POLICY_REL = "trading-bot/config/campaign_data_policy.yaml"
+
+
+def _write_policy(repo, window=FIXTURE_WINDOW):
+    p = repo / POLICY_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text('holdout_range: ["%s", "%s"]\n' % window, encoding="utf-8")
+
+
 def _make_repo_with_hook(tmp_path: Path, name: str, baseline_files: dict) -> Path:
     """Build a repo with the tracked pre-commit hook installed, after a clean
     baseline commit (made BEFORE the hook exists, so a baseline that includes a
@@ -75,9 +86,10 @@ def _make_repo_with_hook(tmp_path: Path, name: str, baseline_files: dict) -> Pat
 
     # Gate 1 must trivially pass here so every assertion below is about gate 0 only.
     shutil.copy(GATE, repo / "strategy-research" / "tools" / "holdout_date_gate.sh")
+    _write_policy(repo)
     gate_entry = "strategy-research/tools/holdout_date_gate.sh\t%d\n" % _gate_self_count()
     (repo / "strategy-research" / "config" / "holdout_gate_exemptions.txt").write_text(
-        "# test registry\n" + gate_entry, encoding="utf-8"
+        "# test registry\n" + POLICY_REL + "\t1\n" + gate_entry, encoding="utf-8"
     )
 
     for rel, content in baseline_files.items():

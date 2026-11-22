@@ -137,3 +137,33 @@ each: (1) 025-03.d2, the long-and-short book, against momentum held long only: i
 | 2 | Stop writing reversal briefs on these coins and bars | **no**: reversal briefs stay allowed |
 | 3 | Merge the night's shared code (18 new components, 3 in-place settings, with their build records and proofs) into master | go |
 | 4 | Delete the merged GitHub branches (refused to the designer, 403) | go, done by the operator |
+
+## Test 1: 025-03.d2 split into its long leg and its short leg (2026-11-22, morning; 0 USD)
+**Purpose:** is the short side (selling coins whose month fell) a profit of its own, unrelated to momentum? If so, it is
+the second book topic 44 waits for. **Expected:** either the short leg earns reliably (t of 2 or more) and no paying book
+explains it, or it does not. **Rule:** per coin, each bar's return goes to the side held coming into the bar; a bar
+entered from flat goes to the side entered (its cost). The legs sum to the book on 17,522 of 17,524 bars (the other 2:
+a position opened and closed within the bar, 0.002 % of the book's movement). Script `topics/44_review/split_legs.py`
+(the similarity check's own functions; folds only).
+
+| | Book | Long leg | Short leg |
+|---|---|---|---|
+| Mean return a day | +0.052 % | +0.047 % | +0.006 % |
+| t (2 or more: reliable) | 3.50 | 3.20 | 1.25 |
+| Sharpe | 1.24 | 1.14 | 0.44 |
+| Share of the book's total return | 1.00 | 0.89 | 0.11 |
+| Days in a position | - | 54 % | 31 % |
+| Nearest paying book, share explained | 0.50 | 0.58 (018-02, momentum) | 0.10 (024-01) |
+| Holding its coins, share explained | 0.08 | 0.15 | 0.10 (against) |
+
+**Found:** the second outcome. The short leg is unrelated to every paying book and to the long leg (0.01), but small and
+not reliable (t 1.25 over 8 years). The book read as half new because it mixes a momentum long leg with a small
+unrelated short leg. Topic 44 stays waiting for a second unrelated book that pays on its own.
+
+## The seal gate made to follow the policy (2026-11-22, the operator's go)
+CI's "Holdout seal gate" failed on PR 578 and on master: `strategy-research/tools/holdout_date_gate.sh` wrote the old
+sealed half-year into its pattern, while `holdout_range` had moved on the operator's go for the unseen run
+(`runs/UNSEEN_RUN.md`). The gate now builds its pattern and its four self-test dates from `holdout_range` (as
+`data/data_manager.py` does) and blocks when it cannot read it. Proof: the gate passes on the branch and on master; its
+15 tests pass (13 before, the fixtures given a policy file; 2 new: a made-up window moves the gate, a missing policy
+blocks), the 2 new ones fail on the old script; no unseen-2026 window's data overlaps `holdout_range` (1,011 checked).

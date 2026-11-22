@@ -25,6 +25,10 @@ by side, and which strategies are worth combining?
   2026) and together falls less than either alone; but the reversal book loses on both periods, so the combination
   earns less than momentum alone. Unrelated makes a combination smoother; it pays only if each book holds on its own.
 
+- **The long-and-short book 025-03.d2 split into its legs (`runs/NIGHT4_RUN.md`, test 1, 2026-11-22):** its short leg
+  is unrelated to every paying book (at most 0.10 explained) but small and not reliable (+0.006 % a day, t 1.25); its long
+  leg is momentum (0.58). Not yet the second book.
+
 ## Why it matters
 Combining unrelated books is the cheapest gain in risk the research can find (a higher Sharpe and a smaller deepest fall
 from books already proven); combining near copies only adds the same bet twice.
