@@ -34,6 +34,21 @@ def coin_windows(record):
     return out
 
 
+def coin_window_frames(record):
+    """(coin, window number, DataFrame of timestamp, close, postRebalance_total_value) for every window that ran: from the
+    bars (kept local) when they are on this machine, else from the record's committed chart file (`chart_bars.csv.gz`:
+    the same value column, 6 significant digits; on the 114 records with both, the measures read from either agree to
+    0.0002 points of %, operator 2026-11-22)."""
+    files = coin_windows(record)
+    if files:
+        return [(c, w, pd.read_csv(f, usecols=["timestamp", "close", "postRebalance_total_value"])) for c, w, f in files]
+    chart = Path(record) / "chart_bars.csv.gz"
+    if not chart.exists():
+        return []
+    d = pd.read_csv(chart, usecols=["coin", "window", "timestamp", "close", "value"]).rename(columns={"value": "postRebalance_total_value"})
+    return [(c, int(w[1:]), g[["timestamp", "close", "postRebalance_total_value"]]) for (c, w), g in d.groupby(["coin", "window"], sort=True)]
+
+
 def period_returns(series, ts, timeframe):
     """Returns between UTC periods from a per-bar series: its value at the last bar of each period."""
     s = pd.Series(series.to_numpy(float), index=pd.to_datetime(ts, utc=True))
@@ -44,11 +59,10 @@ def period_returns(series, ts, timeframe):
 def book_returns(record, timeframe):
     """DataFrame (window, period, book, hold): the book's and holding's equal-weight returns per period."""
     parts = {}
-    files = coin_windows(record)
+    files = coin_window_frames(record)
     if not files:
-        raise FileNotFoundError(f"{Path(record).name}: bars not found: rerun step 4 on the plan")
-    for coin, w, f in files:
-        d = pd.read_csv(f, usecols=["timestamp", "close", "postRebalance_total_value"])
+        raise FileNotFoundError(f"{Path(record).name}: bars not found (nor a chart file): rerun step 4 on the plan")
+    for coin, w, d in files:
         b = period_returns(d["postRebalance_total_value"], d["timestamp"], timeframe).rename(coin)
         h = period_returns(d["close"], d["timestamp"], timeframe).rename(coin)
         parts.setdefault(w, ([], []))

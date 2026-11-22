@@ -1,56 +1,213 @@
-# The register of paying books
+# The register of books
 
-One line per paying book (step 5 confirmed, step 6 profitable enough): definitions in `common/measures.md`;
-card: `orchestration/ideas_similarities_check/card.md`. An idea's latest record counts once.
+One line per paying book (step 5 confirmed, step 6 profitable enough) and per confirmed book whose book does not pay
+(operator, 2026-11-22): definitions in `common/measures.md`; card: `orchestration/ideas_similarities_check/card.md`.
+An idea's latest record counts once.
 
-| Book | Run | Bar | Coins | Engine (git) | Made (UTC) |
-|---|---|---|---|---|---|
-| 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h | night4_exhaustion_run | 4h | 6 | 0c4942edb | 2026-11-22T00:27:20 |
-| 024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T03:45:46 |
-| 024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e1_thirty-day-trend-continuation-graded_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:28:16 |
-| 024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:11:16 |
-| 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h | night4_exhaustion_run | 4h | 6 | 0c4942edb | 2026-11-22T01:40:27 |
-| 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:17:19 |
-| 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | night4_fallingbounce_run | 1d | 6 | a327ef4b6 | 2026-11-22T01:56:32 |
-| 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T00:50:39 |
-| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T03:48:40 |
-| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d | night4_range_run | 1d | 19 | 3bb3e5a90 | 2026-11-22T01:24:41 |
-| 023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.d1_top-of-range-continuation-only_1d | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:01:27 |
-| 023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.d1_upper-range-continuation-only_1d | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:05:59 |
-| 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins_1d | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T04:17:30 |
-| 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | night4_volumehour_run | 1h | 2 | aedb14b7e | 2026-11-22T01:04:51 |
-| 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:26:12 |
-| 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:28:05 |
-| 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 15 | 9cf13a6b2 | 2026-11-21T18:29:36 |
-| 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h | paying_rerun_run | 1h | 15 | 9cf13a6b2 | 2026-11-21T18:42:23 |
-| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d | paying_rerun_run | 1d | 6 | a431cdf0a | 2026-11-21T19:07:14 |
-| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d | paying_rerun_run | 1d | 2 | a431cdf0a | 2026-11-21T19:08:36 |
-| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d | paying_rerun_run | 1d | 2 | a431cdf0a | 2026-11-21T19:09:26 |
-| 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d | paying_rerun_run | 1d | 2 | 6e717a2da | 2026-11-21T19:10:21 |
-| 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d | paying_rerun_run | 1d | 6 | c9357842c | 2026-11-21T19:11:37 |
-| 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying_rerun_run | 1d | 2 | c9357842c | 2026-11-21T19:12:37 |
-| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1d | paying_rerun_run | 1d | 6 | c9357842c | 2026-11-21T19:14:04 |
-| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d | paying_rerun_run | 1d | 18 | f4b86aa78 | 2026-11-21T19:16:04 |
-| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h | paying_rerun_run | 1h | 19 | f4b86aa78 | 2026-11-21T19:38:11 |
-| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d | paying_rerun_run | 1d | 6 | ad7818410 | 2026-11-21T20:17:32 |
-| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d | paying_rerun_run | 1d | 6 | ad7818410 | 2026-11-21T20:19:01 |
-| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:31:26 |
-| 018-02_hourly-breakout-multiday-continuation_1h | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:39:23 |
-| 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:47:35 |
-| 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:54:56 |
-| 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T21:11:52 |
-| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h | paying_rerun_run | 1h | 6 | d102e5d02 | 2026-11-21T21:29:00 |
-| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation_1h | paying_rerun_run | 1h | 6 | d102e5d02 | 2026-11-21T21:37:04 |
-| 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins_4h | paying_rerun_run | 4h | 19 | d102e5d02 | 2026-11-21T21:42:28 |
-| 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h | paying_rerun_run | 4h | 19 | d102e5d02 | 2026-11-21T21:52:44 |
-| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h | paying_rerun_run | 4h | 6 | a7ba63911 | 2026-11-21T22:02:29 |
-| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h | paying_rerun_run | 4h | 6 | a7ba63911 | 2026-11-21T22:06:09 |
-| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d | paying_rerun_run | 1d | 19 | 5c05023a4 | 2026-11-21T22:08:55 |
-| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d | paying_rerun_run | 1d | 19 | 27e68b83e | 2026-11-21T22:16:28 |
-| 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins_1d | paying_rerun_run | 1d | 19 | 1a6a52eb4 | 2026-11-21T22:27:43 |
-| 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d | paying_rerun_run | 1d | 6 | 1a6a52eb4 | 2026-11-21T22:34:32 |
-| 022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d | paying_rerun_run | 1d | 19 | 1a6a52eb4 | 2026-11-21T22:36:08 |
-| 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:42:55 |
-| 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:44:24 |
-| 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:46:00 |
-| N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:47:35 |
+| Book | Kind | Run | Bar | Coins | Engine (git) | Made (UTC) |
+|---|---|---|---|---|---|---|
+| 016-03_up-jump-price-reversal.d2_jump-rises-continue-less_1h | confirmed | d_line_1h_run | 1h | 6 | a3a36abca | 2026-11-19T20:17:14 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.g1_volatility-scaled-momentum-above-average_1d | confirmed | demo_run | 1d | 6 | 5da01ad3f | 2026-11-16T13:09:45 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days_1d | confirmed | demo_run | 1d | 6 | 2e1bea586 | 2026-11-16T09:58:46 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs.g1_range-low-weakness-above-trend_1d | confirmed | demo_run | 1d | 6 | 5da01ad3f | 2026-11-16T13:22:41 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs_1d | confirmed | demo_run | 1d | 6 | 2e1bea586 | 2026-11-16T10:11:04 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal.b1_one-day-fall-rebound_1d | confirmed | demo_run | 1d | 6 | 0594a784b | 2026-11-16T11:56:27 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal.b2_large-rise-continues-five-days_1d | confirmed | demo_run | 1d | 6 | 5da01ad3f | 2026-11-16T12:07:14 |
+| 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 42fff6652 | 2026-11-20T03:15:53 |
+| 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | d6464ce9c | 2026-11-20T04:32:48 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 42fff6652 | 2026-11-20T03:24:51 |
+| 016-03_up-jump-price-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 42fff6652 | 2026-11-20T03:05:57 |
+| 016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 42fff6652 | 2026-11-20T03:46:01 |
+| 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | d6464ce9c | 2026-11-20T04:15:24 |
+| 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | d6464ce9c | 2026-11-20T04:24:20 |
+| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T05:26:50 |
+| 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T05:49:32 |
+| 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a9490e9c5 | 2026-11-20T07:14:33 |
+| 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a402283b0 | 2026-11-20T06:16:31 |
+| 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a9490e9c5 | 2026-11-20T07:24:37 |
+| 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 2ba6ae4c9 | 2026-11-20T07:44:46 |
+| 017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T04:56:34 |
+| 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T05:06:52 |
+| 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T05:16:56 |
+| 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a402283b0 | 2026-11-20T06:24:52 |
+| 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 01f82b7d6 | 2026-11-20T07:34:57 |
+| 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | a402283b0 | 2026-11-20T06:34:02 |
+| 017-05_settlement-move-reverses-after_1h | confirmed | hold_confirmed_1h_run | 1h | 6 | 3f72c544e | 2026-11-20T04:47:25 |
+| 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops_1h | confirmed | hold_ideas_1h_run | 1h | 6 | 15bd748e9 | 2026-11-20T00:53:51 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day_1h | confirmed | hold_ideas_1h_run | 1h | 6 | 15bd748e9 | 2026-11-20T01:21:10 |
+| 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | confirmed | intraday_1h_run | 1h | 6 | 2faf50047 | 2026-11-19T12:17:57 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound.b1_volatile-evening-fall-more-coins_1h | confirmed | more_coins_1h_run | 1h | 19 | 42ce8a105 | 2026-11-20T18:07:38 |
+| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins_1h | confirmed | night3_1h_run | 1h | 19 | a0eaa494f | 2026-11-21T01:56:41 |
+| 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation_4h | confirmed | night3_4h_run | 4h | 19 | 1172c9814 | 2026-11-21T01:06:54 |
+| 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e2_breakout-in-falling-week-fails_4h | confirmed | night3_4h_run | 4h | 19 | 6a34a7710 | 2026-11-21T01:15:49 |
+| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation_4h | confirmed | night3_4h_run | 4h | 6 | a25184376 | 2026-11-21T02:00:33 |
+| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days_4h | confirmed | night3_4h_run | 4h | 6 | 8c99d997c | 2026-11-21T02:05:08 |
+| 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week.b1_quiet-breakout-more-coins.e2_breakout-fails-in-downtrend_4h | confirmed | night3_4h_run | 4h | 19 | 079fcf7fc | 2026-11-21T06:06:58 |
+| 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend.b1_breakdown-rebound-more-coins_4h | confirmed | night3_4h_run | 4h | 19 | bed451618 | 2026-11-21T05:28:09 |
+| 021-01_above-rising-cloud-continues-up.d1_above-thick-cloud-continues.b1_thin-cloud-short-rise_1d | confirmed | night3_ichimoku_run | 1d | 6 | ad7a10b86 | 2026-11-21T02:21:23 |
+| 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins_1d | confirmed | night3_ichimoku_run | 1d | 19 | 8d031c54e | 2026-11-21T02:31:04 |
+| 022-01_learned-combined-signal-score.b1_rebound-after-large-daily-falls_1d | confirmed | night3_learned_run | 1d | 6 | 20a119d66 | 2026-11-21T01:56:47 |
+| 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b1_fixed-weight-score-all-coins_1d | confirmed | night3_learned_run | 1d | 19 | 362293a75 | 2026-11-21T05:51:04 |
+| 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.b2_momentum-near-highs-ten-days_1d | confirmed | night3_learned_run | 1d | 6 | 362293a75 | 2026-11-21T06:10:20 |
+| 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d1_momentum-and-nearness-score_1d | confirmed | night3_learned_run | 1d | 6 | 362293a75 | 2026-11-21T06:14:35 |
+| 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days_1d | confirmed | night3_learned_run | 1d | 6 | 719ef5043 | 2026-11-21T02:01:49 |
+| 022-02_combination-beats-best-single.g1_weekend-continuation-after-strong-week_1d | confirmed | night3_learned_run | 1d | 6 | 362293a75 | 2026-11-21T07:22:49 |
+| 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d | confirmed | night3_learned_run | 1d | 15 | 749f8f9ed | 2026-11-21T02:06:51 |
+| 022-03_combined-extremes-larger-moves.g1_large-up-days-keep-rising_1d | confirmed | night3_learned_run | 1d | 6 | 362293a75 | 2026-11-21T07:26:56 |
+| 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d | confirmed | night3_learned_run | 1d | 6 | 7dbb77e10 | 2026-11-21T02:33:34 |
+| 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d2_nearness-to-90-day-high_1d | confirmed | night3_learned_run | 1d | 6 | 362293a75 | 2026-11-21T07:01:32 |
+| 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.d3_four-week-momentum-continues_1d | confirmed | night3_learned_run | 1d | 6 | 362293a75 | 2026-11-21T07:19:17 |
+| 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d | confirmed | night3_learned_run | 1d | 6 | 27896a18a | 2026-11-21T02:17:04 |
+| 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation_1d | confirmed | night3_levels_run | 1d | 19 | 249da2ad6 | 2026-11-21T06:13:46 |
+| 020-01_resistance-retest-turns-down.d2_thirty-day-momentum-continues_1d | confirmed | night3_levels_run | 1d | 6 | 249da2ad6 | 2026-11-21T05:28:43 |
+| 020-01_resistance-retest-turns-down.d3_nearness-to-90-day-high_1d | confirmed | night3_levels_run | 1d | 6 | 249da2ad6 | 2026-11-21T05:52:11 |
+| 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins.d1_broken-support-without-collapse_1d | confirmed | night3_levels_run | 1d | 19 | 249da2ad6 | 2026-11-21T06:54:35 |
+| 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b1_broken-support-more-coins_1d | confirmed | night3_levels_run | 1d | 19 | fc2d78510 | 2026-11-21T02:04:23 |
+| 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.c2_broken-support-in-downtrend_1d | confirmed | night3_levels_run | 1d | 6 | 249da2ad6 | 2026-11-21T06:30:30 |
+| 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d1_broken-support-without-capitulation_1d | confirmed | night3_levels_run | 1d | 6 | 249da2ad6 | 2026-11-21T07:03:04 |
+| 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.d2_tight-cluster-of-broken-lows_1d | confirmed | night3_levels_run | 1d | 6 | 249da2ad6 | 2026-11-21T06:43:14 |
+| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b2_false-breakout-in-downtrend_1d | confirmed | night3_levels_run | 1d | 19 | f6abdc5d2 | 2026-11-21T02:35:33 |
+| 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h | paying | night4_exhaustion_run | 4h | 6 | 0c4942edb | 2026-11-22T00:27:20 |
+| 024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h | paying | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T03:45:46 |
+| 024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e1_thirty-day-trend-continuation-graded_4h | paying | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:28:16 |
+| 024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h | paying | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:11:16 |
+| 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h | paying | night4_exhaustion_run | 4h | 6 | 0c4942edb | 2026-11-22T01:40:27 |
+| 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h | paying | night4_exhaustion_run | 4h | 6 | 33ab9ca25 | 2026-11-22T04:17:19 |
+| 025-01_downtrend-bounce-given-back.b2_uptrend-surges-keep-rising_1d | confirmed | night4_fallingbounce_run | 1d | 6 | e9c4d3e35 | 2026-11-22T00:55:34 |
+| 025-01_downtrend-bounce-given-back.d1_bounce-fades-near-lows.b1_bounce-fade-all-coins_1d | confirmed | night4_fallingbounce_run | 1d | 19 | a327ef4b6 | 2026-11-22T01:39:52 |
+| 025-01_downtrend-bounce-given-back.d2_bounce-fades-in-mild-downtrends.b1_bounce-fade-all-coins_1d | confirmed | night4_fallingbounce_run | 1d | 19 | a327ef4b6 | 2026-11-22T02:05:42 |
+| 025-02_deeper-fall-bigger-giveback.b1_deeper-fall-bigger-giveback-more-coins.b1_bounce-fades-in-monthly-fall_1d | confirmed | night4_fallingbounce_run | 1d | 19 | 00ddce94c | 2026-11-22T03:34:02 |
+| 025-03_bounce-falling-versus-rising-regime.b1_falling-regime-bounce-all-coins_1d | confirmed | night4_fallingbounce_run | 1d | 19 | e9c4d3e35 | 2026-11-22T00:47:23 |
+| 025-03_bounce-falling-versus-rising-regime.b2_bounce-fade-over-twenty-days.b1_bounce-regime-gap-more-coins_1d | confirmed | night4_fallingbounce_run | 1d | 19 | 00ddce94c | 2026-11-22T04:04:04 |
+| 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | paying | night4_fallingbounce_run | 1d | 6 | a327ef4b6 | 2026-11-22T01:56:32 |
+| 027-01_panic-range-multiple-rebound.b1_panic-rebound-within-a-day_4h | confirmed | night4_panic_run | 4h | 6 | 80a58cfe5 | 2026-11-22T02:00:53 |
+| 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d | paying | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T00:50:39 |
+| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b1_trend-continues-next-day_1d | confirmed | night4_range_run | 1d | 19 | 3bb3e5a90 | 2026-11-22T02:01:39 |
+| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d | paying | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T03:48:40 |
+| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e1_choppy-declines-keep-falling_1d | confirmed | night4_range_run | 1d | 19 | 3bb3e5a90 | 2026-11-22T01:16:08 |
+| 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d | paying | night4_range_run | 1d | 19 | 3bb3e5a90 | 2026-11-22T01:24:41 |
+| 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b1_trending-range-bottom-snaps-back_1d | confirmed | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T03:35:55 |
+| 023-02_flat-range-bottom-reverts-up.d2_flat-range-slide-continues.b2_moderate-flat-range-slide-continues.b1_moderate-flat-range-slide-more-coins_1d | confirmed | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T03:40:52 |
+| 023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.d1_top-of-range-continuation-only_1d | paying | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:01:27 |
+| 023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation_1d | confirmed | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T01:53:10 |
+| 023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days.d1_upper-range-continuation-only_1d | paying | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:05:59 |
+| 023-03_flatter-range-stronger-reversion.c2_range-distance-continuation-ten-days_1d | confirmed | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T01:57:29 |
+| 023-03_flatter-range-stronger-reversion.d1_flat-range-breakout-continuation.d1_flat-range-upside-breakout-continuation_1d | confirmed | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:10:14 |
+| 023-03_flatter-range-stronger-reversion.d1_flat-range-breakout-continuation_1d | confirmed | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T00:59:41 |
+| 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins_1d | paying | night4_range_run | 1d | 19 | 781d00503 | 2026-11-22T04:17:30 |
+| 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b2_near-high-momentum-three-days_1d | confirmed | night4_range_run | 1d | 6 | 781d00503 | 2026-11-22T04:27:56 |
+| 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation_1d | confirmed | night4_range_run | 1d | 6 | 3bb3e5a90 | 2026-11-22T01:49:20 |
+| 028-02_volume-surge-down-continuation.d1_heavy-volume-plunge-rebounds_1h | confirmed | night4_volumehour_run | 1h | 2 | 703771ef2 | 2026-11-22T01:38:48 |
+| 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h | confirmed | night4_volumehour_run | 1h | 6 | aedb14b7e | 2026-11-22T00:58:07 |
+| 028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade.b2_quiet-up-fade-more-coins_1h | confirmed | night4_volumehour_run | 1h | 6 | 703771ef2 | 2026-11-22T01:50:42 |
+| 028-03_low-volume-up-fade.d1_high-volume-drop-rebounds_1h | confirmed | night4_volumehour_run | 1h | 2 | 703771ef2 | 2026-11-22T02:02:18 |
+| 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | paying | night4_volumehour_run | 1h | 2 | aedb14b7e | 2026-11-22T01:04:51 |
+| 028-04_low-volume-down-fade.d1_quiet-dip-in-rising-day_1h | confirmed | night4_volumehour_run | 1h | 2 | 703771ef2 | 2026-11-22T02:10:02 |
+| 028-04_low-volume-down-fade.d2_thinner-volume-larger-fade.b1_deep-hourly-falls-rebound_1h | confirmed | night4_volumehour_run | 1h | 2 | 0abdadb14 | 2026-11-22T04:02:45 |
+| 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h | confirmed | night4_weekend_run | 1h | 6 | 54a2cf3b0 | 2026-11-22T01:06:27 |
+| 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b1_turbulent-weekend-reversal-more-coins_1h | confirmed | night4_weekend_run | 1h | 19 | c5040b8a6 | 2026-11-22T03:41:24 |
+| 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T05:42:23 |
+| 026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:19:10 |
+| 026-02_weekend-drop-reverses-early-week.d3_pre-weekend-rise-extends_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:45:59 |
+| 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h | confirmed | night4_weekend_run | 1h | 6 | 54a2cf3b0 | 2026-11-22T00:52:26 |
+| 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | c9f81b724 | 2026-11-22T01:21:05 |
+| 026-03_weekend-reversal-exceeds-weekday.d2_sunday-move-fades-monday_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:35:49 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:56:19 |
+| 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h | confirmed | night4_weekend_run | 1h | 6 | 26cc1e9f5 | 2026-11-22T04:48:31 |
+| 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
+| 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
+| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | 5cec10e5f | 2026-11-18T03:17:55 |
+| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal_1d | confirmed | night_005_run | 1d | 2 | 2afbd9082 | 2026-11-18T02:44:52 |
+| 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.g1_calm-up-day-continuation_1d | confirmed | night_005_run | 1d | 2 | d21849ebe | 2026-11-18T03:22:04 |
+| 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d | confirmed | night_005_run | 1d | 2 | 059761ced | 2026-11-18T03:05:25 |
+| 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound_1d | confirmed | night_005_run | 1d | 2 | f3b4d61cd | 2026-11-18T03:25:05 |
+| 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d | confirmed | night_005_run | 1d | 2 | b4aec1f7b | 2026-11-18T01:25:26 |
+| 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound_1d | confirmed | night_006_run | 1d | 6 | 67fe0c370 | 2026-11-18T03:35:48 |
+| 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation_1d | confirmed | night_006_run | 1d | 6 | 324f03c38 | 2026-11-18T03:45:59 |
+| 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d | confirmed | night_006_run | 1d | 6 | 34c6ea8dc | 2026-11-18T00:41:13 |
+| 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling_1d | confirmed | night_006_run | 1d | 6 | f27e56c29 | 2026-11-18T03:50:00 |
+| 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d | confirmed | night_006_run | 1d | 6 | af2b61256 | 2026-11-18T00:45:31 |
+| 012-02_volume-burst-fall-reversal_1d | confirmed | night_012_run | 1d | 6 | 90896c7f5 | 2026-11-18T00:22:25 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends_1d | confirmed | night_013_run | 1d | 6 | d36a9c2ff | 2026-11-17T04:31:23 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends_1d | confirmed | night_013_run | 1d | 6 | efb685d4d | 2026-11-17T03:45:37 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week_1d | confirmed | night_013_run | 1d | 6 | efb685d4d | 2026-11-17T03:32:05 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls_1d | confirmed | night_013_run | 1d | 6 | 5c0cd81b0 | 2026-11-17T04:08:25 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation_1d | confirmed | night_013_run | 1d | 6 | efb685d4d | 2026-11-17T03:16:12 |
+| 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d | confirmed | night_013_run | 1d | 6 | 0e8719990 | 2026-11-17T19:34:38 |
+| 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d | confirmed | night_013_run | 1d | 6 | b4ede44a4 | 2026-11-17T19:37:59 |
+| 013-06_breakout-volume-drives-continuation_1d | confirmed | night_013_run | 1d | 6 | adc46d959 | 2026-11-17T19:30:20 |
+| 003-03_heavy-volume-rise-continues_1d | confirmed | night_run | 1d | 6 | 0f5efb0db | 2026-11-18T02:27:23 |
+| 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways.g1_large-daily-fall-rebounds_1d | confirmed | night_run | 1d | 6 | c156cbef9 | 2026-11-17T02:07:07 |
+| 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d | confirmed | night_run | 1d | 6 | 7f4b77735 | 2026-11-17T00:44:29 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal_1d | confirmed | night_run | 1d | 19 | c156cbef9 | 2026-11-17T02:10:47 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d | confirmed | night_run | 1d | 19 | 000f00318 | 2026-11-17T01:32:08 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises_1d | confirmed | night_run | 1d | 19 | c156cbef9 | 2026-11-17T02:19:35 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday_1d | confirmed | night_run | 1d | 19 | 000f00318 | 2026-11-17T01:41:30 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal_1d | confirmed | night_run | 1d | 19 | 7f4b77735 | 2026-11-17T01:01:50 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded_1d | confirmed | night_run | 1d | 19 | 94b1c1868 | 2026-11-17T02:30:24 |
+| 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week.g1_high-volatility-one-day-reversal_1d | confirmed | night_run | 1d | 6 | c156cbef9 | 2026-11-17T01:56:46 |
+| 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week.g2_two-week-trend-continues-weekly_1d | confirmed | night_run | 1d | 6 | c156cbef9 | 2026-11-17T01:59:54 |
+| 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week_1d | confirmed | night_run | 1d | 6 | c156cbef9 | 2026-11-17T01:53:11 |
+| 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d | confirmed | night_run | 1d | 6 | 7f4b77735 | 2026-11-17T00:25:48 |
+| 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:26:12 |
+| 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying | paying_rerun_run | 1d | 6 | 9cf13a6b2 | 2026-11-21T18:28:05 |
+| 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying | paying_rerun_run | 1d | 15 | 9cf13a6b2 | 2026-11-21T18:29:36 |
+| 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h | paying | paying_rerun_run | 1h | 15 | 9cf13a6b2 | 2026-11-21T18:42:23 |
+| 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d | paying | paying_rerun_run | 1d | 6 | a431cdf0a | 2026-11-21T19:07:14 |
+| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d | paying | paying_rerun_run | 1d | 2 | a431cdf0a | 2026-11-21T19:08:36 |
+| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d | paying | paying_rerun_run | 1d | 2 | a431cdf0a | 2026-11-21T19:09:26 |
+| 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d | paying | paying_rerun_run | 1d | 2 | 6e717a2da | 2026-11-21T19:10:21 |
+| 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d | paying | paying_rerun_run | 1d | 6 | c9357842c | 2026-11-21T19:11:37 |
+| 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying | paying_rerun_run | 1d | 2 | c9357842c | 2026-11-21T19:12:37 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1d | paying | paying_rerun_run | 1d | 6 | c9357842c | 2026-11-21T19:14:04 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d | paying | paying_rerun_run | 1d | 18 | f4b86aa78 | 2026-11-21T19:16:04 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h | paying | paying_rerun_run | 1h | 19 | f4b86aa78 | 2026-11-21T19:38:11 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d | paying | paying_rerun_run | 1d | 6 | ad7818410 | 2026-11-21T20:17:32 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d | paying | paying_rerun_run | 1d | 6 | ad7818410 | 2026-11-21T20:19:01 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h | paying | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:31:26 |
+| 018-02_hourly-breakout-multiday-continuation_1h | paying | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:39:23 |
+| 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h | paying | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:47:35 |
+| 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h | paying | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T20:54:56 |
+| 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h | paying | paying_rerun_run | 1h | 6 | 839012f9f | 2026-11-21T21:11:52 |
+| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h | paying | paying_rerun_run | 1h | 6 | d102e5d02 | 2026-11-21T21:29:00 |
+| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation_1h | paying | paying_rerun_run | 1h | 6 | d102e5d02 | 2026-11-21T21:37:04 |
+| 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b1_large-breakouts-in-rising-coins_4h | paying | paying_rerun_run | 4h | 19 | d102e5d02 | 2026-11-21T21:42:28 |
+| 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h | paying | paying_rerun_run | 4h | 19 | d102e5d02 | 2026-11-21T21:52:44 |
+| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h | paying | paying_rerun_run | 4h | 6 | a7ba63911 | 2026-11-21T22:02:29 |
+| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h | paying | paying_rerun_run | 4h | 6 | a7ba63911 | 2026-11-21T22:06:09 |
+| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d | paying | paying_rerun_run | 1d | 19 | 5c05023a4 | 2026-11-21T22:08:55 |
+| 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d | paying | paying_rerun_run | 1d | 19 | 27e68b83e | 2026-11-21T22:16:28 |
+| 020-03_resistance-breakout-continues-up.b2_breakout-after-a-run.b1_resistance-breakout-all-coins_1d | paying | paying_rerun_run | 1d | 19 | 1a6a52eb4 | 2026-11-21T22:27:43 |
+| 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d | paying | paying_rerun_run | 1d | 6 | 1a6a52eb4 | 2026-11-21T22:34:32 |
+| 022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d | paying | paying_rerun_run | 1d | 19 | 1a6a52eb4 | 2026-11-21T22:36:08 |
+| 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d | paying | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:42:55 |
+| 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d | paying | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:44:24 |
+| 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d | paying | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:46:00 |
+| N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d | paying | paying_rerun_run | 1d | 6 | 99c0dd8a6 | 2026-11-21T22:47:35 |
+| 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1h | confirmed | retest_1h_run | 1h | 6 | 5569aa230 | 2026-11-19T01:58:52 |
+| 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1h | confirmed | retest_1h_run | 1h | 6 | 1b7976a55 | 2026-11-19T04:36:16 |
+| 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h | confirmed | retest_1h_run | 1h | 2 | bc98e9119 | 2026-11-19T04:53:40 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h | confirmed | retest_1h_run | 1h | 6 | 06e13143f | 2026-11-19T05:03:42 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
+| 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
+| 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth_1d | confirmed | short_1d_run | 1d | 6 | 9a768b6d6 | 2026-11-22T13:10:58 |
+| 016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h | confirmed | std_time_pilot_run | 1h | 6 | 57cc6a9c6 | 2026-11-20T10:11:00 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound_1h | confirmed | std_time_pilot_run | 1h | 6 | 60aa7528b | 2026-11-20T10:50:11 |
+| 016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h | confirmed | std_time_pilot_run | 1h | 6 | 41f5085c6 | 2026-11-20T11:43:42 |
+| 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h | confirmed | std_time_pilot_run | 1h | 6 | 41f5085c6 | 2026-11-20T11:56:25 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_one-day-fall-next-day-rebound_1h | confirmed | step7ab_b_run | 1h | 6 | 091506199 | 2026-11-21T00:42:38 |
+| 017-05_settlement-move-reverses-after.d1_extreme-two-hour-move-reverses_1h | confirmed | step7ab_b_run | 1h | 6 | 091506199 | 2026-11-21T01:15:11 |
+| 017-05_settlement-move-reverses-after.d2_extreme-daily-run-reverses_1h | confirmed | step7ab_b_run | 1h | 6 | 091506199 | 2026-11-21T01:25:23 |
+| 017-05_settlement-move-reverses-after.d3_midnight-settlement-daily-reversal_1h | confirmed | step7ab_b_run | 1h | 6 | 091506199 | 2026-11-21T01:35:40 |
+| 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise_1h | confirmed | step7ab_bp_run | 1h | 6 | 54bb0652c | 2026-11-21T00:46:19 |
+| 017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses_1h | confirmed | step7ab_bp_run | 1h | 6 | 54bb0652c | 2026-11-21T00:56:38 |
+| 017-05_settlement-move-reverses-after.d2_volatile-two-hour-overreaction-reverses_1h | confirmed | step7ab_bp_run | 1h | 6 | 54bb0652c | 2026-11-21T01:06:34 |
+| 002-03_price-cross-above-long-sma.b1_distance-above-200-day-more-coins_1d | confirmed | validation_run | 1d | 15 | 0e3ee75cd | 2026-11-15T14:20:04 |
+| 002-03_price-cross-above-long-sma.g1_calm-regime-daily-move-continuation_1d | confirmed | validation_run | 1d | 6 | 346a5cef9 | 2026-11-15T17:01:58 |
+| 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d | confirmed | volume_run | 1d | 6 | a999f385f | 2026-11-18T01:56:47 |
+| 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d | confirmed | volume_run | 1d | 6 | d089312c1 | 2026-11-18T02:00:32 |
+| 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d | confirmed | volume_run | 1d | 6 | 38bc58ada | 2026-11-17T12:15:41 |
+| 012-01_liquidation-flush-rebound_1d | confirmed | volume_run | 1d | 6 | 4d023abd1 | 2026-11-18T01:33:29 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d | confirmed | volume_run | 1d | 6 | 4fa09c054 | 2026-11-17T11:51:37 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d | confirmed | volume_run | 1d | 6 | 240d747f1 | 2026-11-17T11:58:36 |
+| 013-04_heavy-volume-below-high-breakout_1d | confirmed | volume_run | 1d | 6 | 09f55b658 | 2026-11-18T01:52:02 |

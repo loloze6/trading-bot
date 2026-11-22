@@ -7,7 +7,7 @@ books we have"). Code only, no model call. It records; it decides nothing.
 
 Why this can't leak: it reads finished records after the fact; it changes no decision of any step.
 """
-import argparse, json, math, sys
+import argparse, json, math, re, sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -32,6 +32,22 @@ def paying(run, rid, steps=STEPS):
     if not (v.exists() and c.exists()):
         return False
     return json.loads(v.read_text()).get("status") == "confirmed" and json.loads(c.read_text()).get("status", "").startswith("profitable")
+
+
+def kind_of(run, rid, steps=STEPS):
+    """The kind of book (operator, 2026-11-22): "paying" (step 5 confirmed, step 6 profitable enough), "confirmed" (step 5
+    confirmed, step 6 not profitable enough: a real idea whose book does not pay), or None (not a book of the register)."""
+    v = steps / "05_verification" / run / "verdicts" / rid / "result.json"
+    c = steps / "06_profitability" / run / "checks" / rid / "result.json"
+    if not (v.exists() and c.exists()) or json.loads(v.read_text()).get("status") != "confirmed":
+        return None
+    return "paying" if json.loads(c.read_text()).get("status", "").startswith("profitable") else "confirmed"
+
+
+def parent_of(rid):
+    """The idea a repair was written from (line 7.d: `<parent>.d<n>_<name>_<bar>`), as a record id, or None."""
+    m = re.fullmatch(r"(.+)\.d\d+_[a-z0-9-]+_(1h|4h|1d)", rid)
+    return f"{m.group(1)}_{m.group(2)}" if m else None
 
 
 def key(run, rid):
@@ -83,10 +99,16 @@ def compare(new, other, hours):
 
 
 def returns_file(k, root=REGISTER):
-    return root / "returns" / f"{k}.csv.gz"
+    """A paying book's returns are committed (`returns/`); a confirmed book's are kept local (`returns/confirmed/`, ignored by
+    git: 89 hourly confirmed books would weigh about 90 MB) and rebuilt from its record when missing."""
+    f = root / "returns" / f"{k}.csv.gz"
+    return f if f.exists() else root / "returns" / "confirmed" / f"{k}.csv.gz"
 
 
 def series(k, timeframe, root=REGISTER, column="book"):
+    if not returns_file(k, root).exists():
+        r = next(r for r in books(root) if r["key"] == k)
+        write_returns(STEPS / "04_backtest" / r["run"] / "backtests" / r["id"], r["bar"], returns_file(k, root))
     d = pd.read_csv(returns_file(k, root))
     d = d[d["timeframe"] == timeframe]
     return pd.Series(d[column].to_numpy(float), index=pd.to_datetime(d["period"], unit="s", utc=True)).sort_index().dropna()
@@ -94,46 +116,56 @@ def series(k, timeframe, root=REGISTER, column="book"):
 
 def books(root=REGISTER):
     f = root / "books.json"
-    return json.loads(f.read_text()) if f.exists() else []
+    rows = json.loads(f.read_text()) if f.exists() else []
+    return [{**r, "kind": r.get("kind", "paying")} for r in rows]
 
 
-def write_books(rows, root=REGISTER):
-    root.mkdir(parents=True, exist_ok=True)
-    rows = sorted(rows, key=lambda r: r["key"])
-    write_atomic(root / "books.json", json.dumps(rows, indent=2) + "\n")
-    lines = ["# The register of paying books", "",
-             "One line per paying book (step 5 confirmed, step 6 profitable enough): definitions in `common/measures.md`;",
-             "card: `orchestration/ideas_similarities_check/card.md`. An idea's latest record counts once.", "",
-             "| Book | Run | Bar | Coins | Engine (git) | Made (UTC) |", "|---|---|---|---|---|---|"]
-    lines += [f"| {r['id']} | {r['run']} | {r['bar']} | {len(r['coins'])} | {r['git_sha'][:9]} | {r['made_utc']} |" for r in rows]
-    write_atomic(root / "INDEX.md", "\n".join(lines) + "\n")
-
-
-def add(record, run, root=REGISTER, steps=STEPS):
-    """Add a paying book: its period returns on every timeframe it can be compared on, and its line. An idea already in
-    the register (the same record id, in another run) is replaced by the record made last."""
-    record = Path(record); rid = record.name
-    if not paying(run, rid, steps):
-        sys.exit(f"{rid}: not a paying book in {run} (step 5 confirmed and step 6 profitable enough are both needed)")
-    bar = bar_of(record)
+def write_returns(record, bar, f):
+    """The book's period returns on every timeframe it can be compared on (holding on its own bar size only)."""
     frames = []
     for tf in timeframes_from(bar):
         d = book_returns(record, tf); d.insert(0, "timeframe", tf)
         if tf != bar:
             d["hold"] = float("nan")          # holding is compared on the book's own bar size only
         frames.append(d)
+    out = pd.concat(frames, ignore_index=True)
+    out["period"] = pd.to_datetime(out["period"], utc=True).astype("int64") // 10**9   # UTC seconds
+    f.parent.mkdir(parents=True, exist_ok=True)
+    out.to_csv(f, index=False, float_format="%.7g", compression="gzip")   # 7 digits: far below what a share explained shows
+
+
+def write_books(rows, root=REGISTER):
+    root.mkdir(parents=True, exist_ok=True)
+    rows = sorted(rows, key=lambda r: r["key"])
+    write_atomic(root / "books.json", json.dumps(rows, indent=2) + "\n")
+    lines = ["# The register of books", "",
+             "One line per paying book (step 5 confirmed, step 6 profitable enough) and per confirmed book whose book does not pay",
+             "(operator, 2026-11-22): definitions in `common/measures.md`; card: `orchestration/ideas_similarities_check/card.md`.",
+             "An idea's latest record counts once.", "",
+             "| Book | Kind | Run | Bar | Coins | Engine (git) | Made (UTC) |", "|---|---|---|---|---|---|---|"]
+    lines += [f"| {r['id']} | {r.get('kind', 'paying')} | {r['run']} | {r['bar']} | {len(r['coins'])} | {r['git_sha'][:9]} | {r['made_utc']} |" for r in rows]
+    write_atomic(root / "INDEX.md", "\n".join(lines) + "\n")
+
+
+def add(record, run, root=REGISTER, steps=STEPS):
+    """Add a book of the register: a paying book, or a confirmed book whose book does not pay (operator, 2026-11-22): its
+    period returns on every timeframe it can be compared on, and its line. An idea already in the register (the same
+    record id, in another run) is replaced by the record made last."""
+    record = Path(record); rid = record.name
+    kind = kind_of(run, rid, steps)
+    if kind is None:
+        sys.exit(f"{rid}: not a book of the register in {run} (step 5 confirmed is needed)")
+    bar = bar_of(record)
     m = json.loads(next(record.glob("*/w*/manifest.json")).read_text())
-    row = {"key": key(run, rid), "run": run, "id": rid, "bar": bar,
+    row = {"key": key(run, rid), "run": run, "id": rid, "bar": bar, "kind": kind,
            "coins": sorted(p.name for p in record.iterdir() if p.is_dir()),
            "git_sha": m.get("git_sha", ""), "made_utc": m.get("created_utc", "")[:19], "added_utc": utc_now()}
     rows = [r for r in books(root) if r["id"] != rid or r["made_utc"] > row["made_utc"]]
     if any(r["id"] == rid for r in rows):
         print(f"{rid}: a later record of this idea is already in the register; not added")
         return None
-    (root / "returns").mkdir(parents=True, exist_ok=True)
-    out = pd.concat(frames, ignore_index=True)
-    out["period"] = pd.to_datetime(out["period"], utc=True).astype("int64") // 10**9   # UTC seconds
-    out.to_csv(returns_file(row["key"], root), index=False, float_format="%.7g", compression="gzip")   # 7 digits: far below what a share explained shows
+    f = root / "returns" / (f"{row['key']}.csv.gz" if kind == "paying" else f"confirmed/{row['key']}.csv.gz")
+    write_returns(record, bar, f)
     write_books(rows + [row], root)
     return row
 
@@ -143,17 +175,20 @@ def comparison(k, root=REGISTER):
     rows = {r["key"]: r for r in books(root)}
     me = rows[k]
     out = {"book": me, "made_utc": utc_now(), "others": []}
+    parent = parent_of(me["id"])
     for o in sorted(rows.values(), key=lambda r: r["key"]):
-        if o["key"] == k:
-            continue
+        if o["key"] == k or (o["kind"] != "paying" and not (o["run"] == me["run"] and o["id"] == parent)):
+            continue        # every book is compared with the paying books; a repair also with its parent
         tf = larger(me["bar"], o["bar"])
         c = compare(series(k, tf, root), series(o["key"], tf, root), HOURS[tf])
-        out["others"].append({"other": {"key": o["key"], "id": o["id"], "run": o["run"], "bar": o["bar"], "coins": len(o["coins"])},
+        out["others"].append({"other": {"key": o["key"], "id": o["id"], "run": o["run"], "bar": o["bar"], "kind": o["kind"], "coins": len(o["coins"])},
                               "comparison_timeframe": tf, **c})
     tf = me["bar"]
     out["against_holding"] = {"comparison_timeframe": tf, **compare(series(k, tf, root), series(k, tf, root, "hold"), HOURS[tf])}
-    comp = [o for o in out["others"] if o.get("comparable")]
+    comp = [o for o in out["others"] if o.get("comparable") and rows[o["other"]["key"]]["kind"] == "paying"]
     out["nearest_relative"] = max(comp, key=lambda o: o["share_explained"]) if comp else None
+    par = [o for o in out["others"] if rows[o["other"]["key"]]["kind"] != "paying" or (rows[o["other"]["key"]]["id"] == parent and o["other"]["run"] == me["run"])]
+    out["parent"] = par[0] if par and parent else None
     return out
 
 
@@ -171,9 +206,10 @@ def write_comparison(k, root=REGISTER):
     d = root / "comparisons"; d.mkdir(parents=True, exist_ok=True)
     write_atomic(d / f"{k}.json", json.dumps(c, indent=2, default=str) + "\n")
     n = c["nearest_relative"]
-    lines = [f"# {c['book']['id']} ({c['book']['run']}, {c['book']['bar']}): what it shares with the books we have", "",
+    lines = [f"# {c['book']['id']} ({c['book']['run']}, {c['book']['bar']}, {c['book']['kind']}): what it shares with the paying books", "",
              f"- Nearest relative: " + (f"{n['other']['id']} ({n['other']['run']}, {n['other']['bar']}): {fmt(n)}" if n else "none comparable"),
-             f"- Against holding its coins: {fmt(c['against_holding'])}", "",
+             f"- Against holding its coins: {fmt(c['against_holding'])}",
+             *([f"- Against its parent (the idea it repairs), {c['parent']['other']['id']}: {fmt(c['parent'])}"] if c.get("parent") else []), "",
              "| Other paying book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |",
              "|---|---|---|---|---|---|---|---|---|"]
     for o in sorted(c["others"], key=lambda o: -(o.get("share_explained") or -1)):
@@ -189,20 +225,24 @@ def write_comparison(k, root=REGISTER):
 
 
 def write_summary(root=REGISTER):
-    lines = ["# Comparisons: each paying book's nearest relative", "",
-             "| Book | Run | Bar | Nearest relative | Share explained | Who leads | What is left per period (t) | Against holding: share explained |",
-             "|---|---|---|---|---|---|---|---|"]
-    for r in sorted(books(root), key=lambda r: r["key"]):
+    def row_of(r):
         f = root / "comparisons" / f"{r['key']}.json"
         if not f.exists():
-            continue
+            return None
         c = json.loads(f.read_text()); n = c["nearest_relative"]; h = c["against_holding"]
         hs = f"{h['share_explained']:.2f}" if h.get("comparable") else "not comparable"
-        if n:
-            lines.append(f"| {r['id']} | {r['run']} | {r['bar']} | {n['other']['id']} ({n['other']['bar']}) | {n['share_explained']:.2f} | "
-                         f"{n['who_leads']} | {100 * n['what_is_left']:+.4f} % ({n['what_is_left_t']:.2f}) | {hs} |")
-        else:
-            lines.append(f"| {r['id']} | {r['run']} | {r['bar']} | none comparable | | | | {hs} |")
+        if not n:
+            return (9, f"| {r['id']} | {r['run']} | {r['bar']} | none comparable | | | | {hs} |")
+        return (n["share_explained"], f"| {r['id']} | {r['run']} | {r['bar']} | {n['other']['id']} ({n['other']['bar']}) | {n['share_explained']:.2f} | "
+                f"{n['who_leads']} | {100 * n['what_is_left']:+.4f} % ({n['what_is_left_t']:.2f}) | {hs} |")
+    head = ["| Book | Run | Bar | Nearest paying book | Share explained | Who leads | What is left per period (t) | Against holding: share explained |",
+            "|---|---|---|---|---|---|---|---|"]
+    rs = books(root)
+    pay = [x for x in (row_of(r) for r in sorted(rs, key=lambda r: r["key"]) if r["kind"] == "paying") if x]
+    con = sorted(x for x in (row_of(r) for r in rs if r["kind"] == "confirmed") if x)
+    lines = ["# Comparisons: each book's nearest paying book", "", "## Paying books", ""] + head + [l for _, l in pay]
+    lines += ["", "## Confirmed books whose book does not pay, the least explained by the paying books first",
+              "(real ideas that are not yet a profit; the least explained are the variations the research has found)", ""] + head + [l for _, l in con]
     write_atomic(root / "COMPARISONS.md", "\n".join(lines) + "\n")
 
 

@@ -91,3 +91,47 @@ def test_book_returns_per_period_inside_each_window(tmp_path):
 def test_a_record_that_is_not_paying_is_refused(tmp_path):
     with pytest.raises(SystemExit):
         pb.add(tmp_path / "x_1d", "nope_run", root=tmp_path / "register", steps=tmp_path)
+
+
+def test_the_chart_file_stands_in_for_bars_that_are_not_on_this_machine(tmp_path):
+    ts = pd.date_range("2024-01-01", periods=72, freq="h", tz="UTC")
+    value = 1000 * np.cumprod(1 + rng.normal(0, 0.002, 72)); close = 100 * np.cumprod(1 + rng.normal(0, 0.01, 72))
+    a = tmp_path / "a_1h"; write_window(a / "BTCUSD" / "w1", ts, close, value)
+    b = tmp_path / "b_1h"; b.mkdir()
+    pd.DataFrame({"coin": "BTCUSD", "window": "w1", "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S+00:00"), "close": close,
+                  "forecast": 0.0, "position": 0.0, "value": value}).to_csv(b / "chart_bars.csv.gz", index=False)
+    pd.testing.assert_frame_equal(br.book_returns(a, "4h"), br.book_returns(b, "4h"))
+
+
+def make_book(steps, run, rid, s5, s6, value):
+    rec = steps / "04_backtest" / run / "backtests" / rid
+    ts = pd.date_range("2020-01-01", periods=len(value), freq="D", tz="UTC")
+    write_window(rec / "BTCUSD" / "w1", ts, np.full(len(value), 100.0), value)
+    (rec / "BTCUSD" / "w1" / "manifest.json").write_text(json.dumps({"git_sha": "abc", "created_utc": "2026-11-22T00:00:00"}))
+    for step, folder, st in ((5, "05_verification/{}/verdicts", s5), (6, "06_profitability/{}/checks", s6)):
+        d = steps / folder.format(run) / rid; d.mkdir(parents=True, exist_ok=True)
+        (d / "result.json").write_text(json.dumps({"status": st}))
+    return rec
+
+
+def test_confirmed_books_are_compared_with_the_paying_books_and_a_repair_with_its_parent(tmp_path):
+    """Operator, 2026-11-22: the register holds paying and confirmed books; a book's nearest relative is a paying book; a
+    repair (line 7.d's idea) is also compared with the idea it repairs; a paying book is not compared with confirmed ones."""
+    steps, reg = tmp_path / "steps", tmp_path / "register"
+    n = 500; x, y = rng.normal(0, 0.01, n), rng.normal(0, 0.01, n)
+    curve = lambda r: 1000 * np.cumprod(1 + r)
+    run = "t_run"
+    pb.add(make_book(steps, run, "p-01_pay_1d", "confirmed", "profitable enough", curve(x)), run, root=reg, steps=steps)
+    pb.add(make_book(steps, run, "c-01_real_1d", "confirmed", "not profitable enough", curve(y)), run, root=reg, steps=steps)
+    pb.add(make_book(steps, run, "c-01_real.d1_repair_1d", "confirmed", "not profitable enough", curve(0.9 * y + 0.1 * x)), run, root=reg, steps=steps)
+    with pytest.raises(SystemExit):
+        pb.add(make_book(steps, run, "q-01_unclear_1d", "inconclusive", "not profitable enough", curve(x)), run, root=reg, steps=steps)
+    kinds = {r["id"]: r["kind"] for r in pb.books(reg)}
+    assert kinds == {"p-01_pay_1d": "paying", "c-01_real_1d": "confirmed", "c-01_real.d1_repair_1d": "confirmed"}
+    assert (reg / "returns" / "t_run__p-01_pay_1d.csv.gz").exists() and (reg / "returns" / "confirmed" / "t_run__c-01_real_1d.csv.gz").exists()
+    p = pb.comparison("t_run__p-01_pay_1d", reg)
+    assert [o["other"]["id"] for o in p["others"]] == [] and p["parent"] is None        # paying books compare with paying books only
+    r = pb.comparison("t_run__c-01_real.d1_repair_1d", reg)
+    assert sorted(o["other"]["id"] for o in r["others"]) == ["c-01_real_1d", "p-01_pay_1d"]
+    assert r["nearest_relative"]["other"]["id"] == "p-01_pay_1d"                      # the nearest relative is a paying book
+    assert r["parent"]["other"]["id"] == "c-01_real_1d" and r["parent"]["share_explained"] > 0.9   # it kept its parent's idea

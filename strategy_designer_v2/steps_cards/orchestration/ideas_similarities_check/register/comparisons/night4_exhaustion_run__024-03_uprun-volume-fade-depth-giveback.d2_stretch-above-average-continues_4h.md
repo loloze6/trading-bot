@@ -1,4 +1,4 @@
-# 024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h (night4_exhaustion_run, 4h): what it shares with the books we have
+# 024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h (night4_exhaustion_run, 4h, paying): what it shares with the paying books
 
 - Nearest relative: 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (paying_rerun_run, 1d): share explained 0.90, same period, direction +, what is left +0.0245 % per period (t 2.57), on 1d, 2898 days in common
 - Against holding its coins: share explained 0.39, same period, direction +, what is left +0.0126 % per period (t 3.28), on 4h, 2916 days in common
@@ -25,6 +25,8 @@
 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges_4h | paying_rerun_run | 4h | 4h | 2916 | 0.74 | same period | + | +0.0046 % (1.82) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h | paying_rerun_run | 1h | 4h | 2916 | 0.73 | same period | + | +0.0027 % (1.07) |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d | paying_rerun_run | 1d | 1d | 2898 | 0.72 | same period | + | +0.0393 % (2.51) |
+| 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.72 | same period | + | +0.0053 % (2.07) |
+| 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.72 | same period | + | +0.0052 % (1.99) |
 | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d | paying_rerun_run | 1d | 1d | 2898 | 0.71 | same period | + | +0.0386 % (2.40) |
 | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h | paying_rerun_run | 1h | 4h | 2916 | 0.71 | same period | + | +0.0071 % (2.68) |
 | 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.70 | same period | + | +0.0067 % (2.47) |

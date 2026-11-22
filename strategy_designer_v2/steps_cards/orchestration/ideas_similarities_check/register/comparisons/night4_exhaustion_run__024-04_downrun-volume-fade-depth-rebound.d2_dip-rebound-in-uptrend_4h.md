@@ -1,4 +1,4 @@
-# 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h (night4_exhaustion_run, 4h): what it shares with the books we have
+# 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h (night4_exhaustion_run, 4h, paying): what it shares with the paying books
 
 - Nearest relative: 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h (night4_exhaustion_run, 4h): share explained 0.99, same period, direction +, what is left -0.0002 % per period (t -0.23), on 4h, 2916 days in common
 - Against holding its coins: share explained 0.53, same period, direction +, what is left +0.0128 % per period (t 2.54), on 4h, 2916 days in common

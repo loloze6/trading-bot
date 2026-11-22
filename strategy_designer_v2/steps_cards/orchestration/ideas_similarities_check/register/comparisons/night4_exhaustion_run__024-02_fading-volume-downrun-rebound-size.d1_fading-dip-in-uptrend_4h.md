@@ -1,12 +1,15 @@
-# 024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h (night4_exhaustion_run, 4h): what it shares with the books we have
+# 024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h (night4_exhaustion_run, 4h, paying): what it shares with the paying books
 
-- Nearest relative: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h (paying_rerun_run, 1h): share explained 0.83, same period, direction +, what is left +0.0011 % per period (t 0.61), on 4h, 2916 days in common
+- Nearest relative: 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h (night4_exhaustion_run, 4h): share explained 0.86, same period, direction +, what is left +0.0005 % per period (t 0.29), on 4h, 2916 days in common
 - Against holding its coins: share explained 0.42, same period, direction +, what is left +0.0079 % per period (t 2.33), on 4h, 2916 days in common
 
 | Other paying book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
+| 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.86 | same period | + | +0.0005 % (0.29) |
+| 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.85 | same period | + | +0.0004 % (0.21) |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h | paying_rerun_run | 1h | 4h | 2916 | 0.83 | same period | + | +0.0011 % (0.61) |
 | 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d | paying_rerun_run | 1d | 1d | 2898 | 0.80 | same period | + | +0.0096 % (0.80) |
+| 024-02_fading-volume-downrun-rebound-size.d3_trend-strength-lifts-pullback-rebound.e1_thirty-day-trend-continuation-graded_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.80 | same period | + | -0.0009 % (-0.44) |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation_1h | paying_rerun_run | 1h | 4h | 2916 | 0.79 | same period | + | -0.0001 % (-0.07) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h | paying_rerun_run | 1h | 4h | 2916 | 0.79 | same period | + | +0.0020 % (0.98) |
 | 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d | paying_rerun_run | 1d | 1d | 2898 | 0.78 | same period | + | +0.0088 % (0.69) |
@@ -18,6 +21,7 @@
 | 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h | paying_rerun_run | 1h | 4h | 2916 | 0.70 | same period | + | +0.0039 % (1.59) |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d | paying_rerun_run | 1d | 1d | 2898 | 0.69 | same period | + | +0.0010 % (0.06) |
 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h | paying_rerun_run | 4h | 4h | 2916 | 0.69 | same period | + | +0.0027 % (1.06) |
+| 024-03_uprun-volume-fade-depth-giveback.d2_stretch-above-average-continues_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.68 | same period | + | -0.0005 % (-0.21) |
 | 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d | night4_range_run | 1d | 1d | 2898 | 0.68 | same period | + | +0.0134 % (0.89) |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d | paying_rerun_run | 1d | 1d | 2898 | 0.67 | same period | + | +0.0052 % (0.33) |
 | N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d | paying_rerun_run | 1d | 1d | 2898 | 0.66 | same period | + | +0.0123 % (0.79) |

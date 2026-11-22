@@ -1,10 +1,11 @@
-# 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h (night4_exhaustion_run, 4h): what it shares with the books we have
+# 024-04_downrun-volume-fade-depth-rebound.b1_deep-dips-in-uptrends-rebound_4h (night4_exhaustion_run, 4h, paying): what it shares with the paying books
 
-- Nearest relative: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h (paying_rerun_run, 1h): share explained 0.94, same period, direction +, what is left +0.0018 % per period (t 1.00), on 4h, 2916 days in common
+- Nearest relative: 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h (night4_exhaustion_run, 4h): share explained 0.99, same period, direction +, what is left +0.0005 % per period (t 0.59), on 4h, 2916 days in common
 - Against holding its coins: share explained 0.55, same period, direction +, what is left +0.0136 % per period (t 2.64), on 4h, 2916 days in common
 
 | Other paying book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
+| 024-04_downrun-volume-fade-depth-rebound.d2_dip-rebound-in-uptrend_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.99 | same period | + | +0.0005 % (0.59) |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h | paying_rerun_run | 1h | 4h | 2916 | 0.94 | same period | + | +0.0018 % (1.00) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h | paying_rerun_run | 1h | 4h | 2916 | 0.91 | same period | + | +0.0034 % (1.43) |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation_1h | paying_rerun_run | 1h | 4h | 2916 | 0.87 | same period | + | -0.0000 % (-0.02) |
