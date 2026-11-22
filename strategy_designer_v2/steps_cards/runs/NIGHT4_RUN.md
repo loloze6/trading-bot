@@ -1,4 +1,4 @@
-# Night 4 (2026-11-22): five briefs aimed at the days momentum does not trade or loses (written before the runs)
+# Night 4 (2026-11-22): five briefs aimed at the days momentum does not trade or loses, and one short-horizon brief (written before the runs)
 
 **The operator's go (2026-11-22, about 01:00 Paris):** "go for tonight's briefs", as on night 3: several sessions,
 several briefs across 1h, 4h and 1d. **Why these briefs:** on night 3 and in the similarity register, 33 of 35 paying
@@ -18,6 +18,7 @@ resume), line 7.f deleted, the findings register removed.
 | 3 | 025, bounces fade in falling markets (long and short) | 1d | `night4_fallingbounce_run` | 35 USD |
 | 4 | 026, weekend moves reverse in the week | 1h | `night4_weekend_run` | 35 USD |
 | 5 | 027, panic stretches are followed by a premium | 4h | `night4_panic_run` | 35 USD |
+| 6 (added 01:15 Paris, the operator: "try also a brief at short horizon") | 028, volume-confirmed hourly moves continue over 2 to 6 hours; BTC and ETH only (a buy and a sell about 0.10 %) | 1h | `night4_volumehour_run` | 35 USD |
 | designer | the morning: merges, the similarity check on the new paying books, the reading | - | - | 25 USD |
 
 Each session: `run_brief` with its brief and budget on its own branch (`night4-<name>`). A background task cut by the
