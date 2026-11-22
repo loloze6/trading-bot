@@ -2,6 +2,7 @@
 028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h: inconclusive (fit: adapted) [main: 0.000551886; t of the mean 0.928377; cases 5008, cases above median forecast 2504, cases at or below median forecast 2504]
 028-02_volume-surge-down-continuation_1h: inconclusive (fit: adapted) [main: -0.000239674; t of the mean -1.13042; cases 11303, cases_with_volume_ratio 8416]
 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h: confirmed (fit: exact) [main: 0.000390256; ordinary t of the mean 2.13603; cases 19299]
+028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade_1h: inconclusive (fit: adapted) [main: 0.00029966; t of the mean 2.60388; cases 11338]
 028-03_low-volume-up-fade_1h: inconclusive (fit: adapted) [main: 0.000217718; t of the mean 1.20715; independent cases across both coins 12052, cases BTCUSD 6219, cases ETHUSD 5833]
 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h: confirmed (fit: adapted) [main: 0.00126412; t of the mean 4.59169; cases 4986, cases BTCUSD 2534, cases ETHUSD 2452]
 028-04_low-volume-down-fade_1h: inconclusive (fit: adapted) [main: 0.000352964; t of the mean 1.39557; cases over both coins 6854, cases at or above median 3427, cases below median 3427]
