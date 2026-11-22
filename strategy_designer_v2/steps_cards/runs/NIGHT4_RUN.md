@@ -75,3 +75,57 @@ wrong."
   use: the probe "reply PONG-7731" gives PONG-7731 through the file 3 of 3 times (claude-haiku-5-5), as through the
   argument; a conflict probe (system: always APPLE; user: BANANA) gives APPLE through the file 2 of 2 (claude-opus-5-5,
   step 3's model), as through the argument. Kept: the file, one rule with no size limit; session 1 asked to take it.
+
+## Reading (2026-11-22, about 08:20 Paris)
+All six sessions ended (five on their 35 USD budget, session 4 at 07:00 UTC); every branch merged into the working
+branch; the night's 14 paying books added to the similarity register and compared. Model calls: about 212 USD
+(36.3 + 39.3 + 36.0 + 28.7 + 35.6 + 35.9; the overruns are the idea already started and the components step, as the
+cards allow).
+
+| Brief | Bar | Ideas tested | Confirmed | Profitable enough | Confirmed and profitable | Holding on the unseen dates | Components built | Outcome |
+|---|---|---|---|---|---|---|---|---|
+| 023 range reversion | 1d | 30 | 16 | 7 | 6 | 6 of 6, both periods | 6 | M2 |
+| 024 exhaustion after a run | 4h | 27 | 6 | 8 | 6 | 6 of 6 on 2016-17 (no 2026 data at 4h) | 3 | M2 |
+| 025 bounces fade in falling markets | 1d | 23 | 7 | 1 | 1 | 1 of 1, both periods | 1 | M1 at the line (below) |
+| 026 weekend moves reverse | 1h | 21 | 9 | 0 | 0 | - | 4 | M3 |
+| 027 panic premium | 4h | 18 | 1 | 0 | 0 | - | 5 | M3 (mostly inconclusive) |
+| 028 volume-confirmed hourly moves | 1h | 26 | 7 | 1 | 1 | 0 of 1 (fails 2016-17) | 1 | M3 |
+
+**No brief's own theory paid.** The reversion, exhaustion, weekend-reversal and panic ideas were inconclusive, rejected
+or too small; the step 7 lines moved each brief back to continuation (trends, dips in uptrends) and those books pay.
+
+**The similarity check on the 14 paying books** (share explained by the nearest paying book; what is left, and its t):
+| Book | Nearest relative | Share explained | Left (t) | Explained by holding its coins |
+|---|---|---|---|---|
+| 023, six books | momentum books (022-01, 022-02, 019-03), and each other | 0.61 to 0.98 | none reliable (t −1.79 to 1.51) | 0.00 to 0.52 |
+| 024, four books | 019-03, 018-06 (dips in uptrends), and each other | 0.79 to 0.99 | none reliable (t −0.23 to 1.00) | 0.42 to 0.58 |
+| 024-02.d3.e1 thirty-day trend, graded | 022-03 strong monthly rises | 0.91 | +0.019 % a day (2.09) | 0.42 |
+| 024-03.d2 stretch above average continues | 001-01 high-RSI trend continuation | 0.90 | +0.025 % a day (2.57) | 0.39 |
+| 025-03.d2 sharp rises follow the monthly trend (long and short) | 018-02 hourly breakout continuation | **0.50** | +0.020 % a day (1.88) | **0.08** |
+| 028-04.b1 quiet dip in an uptrend recovers | 005-02 five-day rise keeps going | 0.49 | none (0.53) | 0.22 |
+
+- **M2 for 12 of 14:** the night's paying books are momentum we already have; two of them add a little on top of
+  their relative (t above 2 with 0.90 explained: a known profit, improved timing).
+- **025-03.d2 is the only candidate for M1, exactly at its line** (M1 asks for less than half explained; 0.50): it
+  holds on both unseen periods, holding its coins explains 8 % of it, every other paying book explains at most 0.50,
+  and the night's other books explain 0.20 to 0.41 of it. It is the only long-and-short book of the night; what it
+  adds is probably the short side in falling coins. Not called a second family: half of it is momentum.
+- **028-04.b1** reads unrelated (0.49) but adds nothing reliable and fails the unseen dates.
+
+**Incidents:** step 3 blocked at the start for every session ("Argument list too long", fixed 2df2b7da, above); the
+account's 5-hour limit stopped sessions 1 and 5 at 02:16 to 02:17 UTC, the 2-hour task limit cut sessions 2, 3, 4 and 6
+at about the same time; all resumed at 03:32 UTC after the designer's check-in: about 1.3 h lost per session.
+Session 6 sat idle about 75 minutes: a session whose loop the 2-hour limit cuts does not always restart it alone.
+Session 4's stop at 07:00 UTC ended its last idea mid-way (026-03...d3, step 3 done): a later resume finishes it.
+
+**Merges and shared code (the operator's go for master):** 23 components built and three earlier components given a
+setting in place (`DonchianBreakout` forms, `VolumeRatio` lag, `MeanAbsScaledFallTimesRise` rise_lag). Each in-place
+change proven by old against new on real bars (4 coins, 1h, 4h and 1d, the earlier settings): 82,409, 137,980 and
+82,788 bars, 0 differ; the 14 paying books' step 4 reruns here (on the merged engine) reproduce their records file by
+file. Tests: the cards' 116 and the bot's 1,635 pass.
+
+**What a practitioner would do next:** stop writing briefs that aim at reversal on these coins and bars: four nights of
+briefs found momentum, and the reversal effects that are real do not pay their costs. Two readings are worth one test
+each: (1) 025-03.d2, the long-and-short book, against momentum held long only: is the short side the profit of its own
+(the similarity check on its two legs)? (2) If it is, topic 44's portfolio layer has its two books: momentum and
+025-03.d2's short side. Recommended: (1), at no model cost.
