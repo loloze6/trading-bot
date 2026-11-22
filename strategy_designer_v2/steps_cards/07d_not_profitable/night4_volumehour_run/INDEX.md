@@ -1,0 +1,7 @@
+028-01_volume-surge-up-continuation_1h: 2 ideas (2 explorations)
+028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h: 3 ideas (2 explorations)
+028-02_volume-surge-down-continuation_1h: 2 ideas (2 explorations)
+028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h: 3 ideas (2 explorations)
+028-03_low-volume-up-fade_1h: 2 ideas (2 explorations)
+028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+028-04_low-volume-down-fade_1h: 2 ideas (2 explorations)

@@ -1,0 +1,17 @@
+---
+brief: 028_volume-confirmed-hourly-moves-continue
+source-idea: 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider
+line: 7.g patterns
+backtest: 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC
+bar: 1h
+period: folds A, B, C, D
+---
+Idea: When a coin's hourly moves over the past day have been wider than its typical hourly move over the past 30 days, the further it has fallen over the past 24 hours, measured in its typical moves, the more it rises over the next 12 to 24 hours.
+Consequence: A trader can buy a coin after a deep 24-hour fall in a turbulent day, sized by the depth of the fall, and refuse to buy the same fall in a calm day.
+Why:
+- F1: Large 24-hour falls bounce back only when the past day's hourly moves were wide. When the past day's mean absolute hourly move was above 1.189 times the 30-day one, 24-hour falls of more than 1.5 typical-scaled units were followed by an unusual 24-hour rise of +1.29 % (t 6.31, 1066 non-overlapping cases). After the same falls in calmer days it was +0.002 % (t 0.01, 810 cases).
+- F2: In wide-moving days the bounce grows with the fall. The unusual 24-hour move after falls of -0.5 to -1.5, -1.5 to -3 and beyond -3 scaled units was +0.77 % (t 3.56, 661 cases), +0.90 % (t 3.94, 693) and +2.00 % (t 5.05, 373). The 24-hour scaled return correlates with the next 24-hour scaled move at -0.111 in wide-moving days and -0.005 in calm ones.
+- F3: The bounce in wide-moving days already shows over 12 hours and holds for 48 hours, though it is less clean there. Over 12 hours it was +0.50 % (t 3.85, 1368 cases) after falls of -1.5 to -3 and +0.93 % (t 4.14, 732 cases) after falls beyond -3. Over 48 hours it was +2.42 % (t 3.82, 169 cases) after falls beyond -3.
+- F4: After falls beyond 1.5 scaled units (all volatility levels) the 24-hour bounce is positive in every coin and year. It is strongest in less liquid coins: ZEC +1.39 % (t 3.21), XRP +1.12 % (t 3.11), XMR +0.94 % (t 2.35), against BTC +0.19 % (t 0.84). It is concentrated in 2018 (+1.71 %, t 4.04) and 2021 (+2.55 %, t 4.19), with 2022 at +0.05 % (t 0.14).
+- F7: The tested fade is far too small to pay.

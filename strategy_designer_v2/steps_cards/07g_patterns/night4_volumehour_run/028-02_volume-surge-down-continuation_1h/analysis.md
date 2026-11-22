@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 028-02_volume-surge-down-continuation_1h
+idea tested: 028-02_volume-surge-down-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3669 USD
+---
+## Findings
+- **F1:** Over 24 hours the coin moves against its own past day: across 5312 non-overlapping 24-hour cases, the rank correlation of the past 24-hour return (in units of its 30-day hourly volatility scaled to a day) with the next 24-hour drift-removed return is -0.079 (p 1e-8; slope -22.7 bp per unit). The effect holds on each coin (BTC -0.081, ETH -0.076), in w1-12 (-0.095) and in w13-24 (-0.067).
+- **F2:** The 24-hour reversal is graded and is largest at the extremes. After the bottom quintile of past-day moves, the next day ends +31 bp (BTC) and +46 bp (ETH) above drift; after the top quintile, -21 bp and -16 bp. After past-day falls beyond 2 units it ends +146 bp (t 2.64, 133 cases). This spread is several times the 0.11 % cost of a trade.
+- **F3:** The reversal does not reach 72 hours. The past 72-hour move against the next 72 hours gives a rank correlation of -0.006 (p 0.79, 1716 cases). The past 24-hour move against the next 72 hours gives -0.025 (p 0.30).
+- **F4:** The tested situation shows no continuation; it leans toward a rebound instead. The 6-hour drift-removed return after hours falling more than 3 standard deviations is -10.8 bp in the idea's short direction terms, a rise of +10.8 bp (t 0.32, 177 cases). On volume above 4 times the average it is +27.6 bp (93 cases). The volume ratio's rank correlation with the outcome is 0.006 over 8416 cases.
+- **F5:** About half the book's loss comes from being short in a rising market. The book is short on 57 % of BTC bars and 59 % of ETH bars. Its hourly gain is -0.50 bp (BTC) and -0.44 bp (ETH), of which -0.26 bp and -0.26 bp is the market's own rise. Its daily mean is positive mainly in windows where the coins fell (w1, w2, w14, w20, w22, w24).
+- **F6:** The hours opening at 20:00 and 21:00 UTC rise more than usual: +4.5 bp (t 4.0) and +4.0 bp (t 3.7) per hour over about 5835 cases each. The effect appears on both coins (t 2.6 to 2.9), is positive in 7 of 8 years and is stronger in w13-24 (+6.6 bp, t 5.35). Its roughly 9 bp over the two hours is still below the 0.11 % cost of a trade.
+- **F7:** The hours opening at 00:00 to 02:00 UTC fall more than usual: -2.2 bp to -3.2 bp per hour, with t from -2.0 to -3.3. This effect fades to zero or turns positive in 2024 and 2025. Thursday's hourly drift (-2.4 bp, t -3.9) is significant in only 2 of 8 years, so neither pattern stands out among the many angles examined.
+
+## Ideas
+- `028-02_volume-surge-down-continuation.g1_one-day-move-reverses-next-day` (from F1, F2, F3, F4): After a day in which the coin has moved far more than its usual daily move, measured as its 24-hour return over its 30-day hourly volatility scaled to a day, the coin moves back the opposite way over the next 24 hours. The larger that 24-hour move relative to its usual size, the larger the move back.
+- `028-02_volume-surge-down-continuation.g2_deep-daily-fall-rebounds` (from F2, F4, F5): After a day in which the coin has fallen far more than its usual daily move, it rises over the next 24 hours more than its normal drift. The deeper the 24-hour fall relative to its 30-day hourly volatility, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

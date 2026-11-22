@@ -1,0 +1,8 @@
+028-01_volume-surge-up-continuation_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]
+028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]
+028-02_volume-surge-down-continuation_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]
+028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+028-03_low-volume-up-fade.b2_quiet-up-hour-two-hour-fade_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]
+028-03_low-volume-up-fade_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]
+028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]
+028-04_low-volume-down-fade_1h: plan (fit: adapted) [BTC, ETH, 1h, folds A, B, C, D]

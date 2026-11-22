@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "028-01_volume-surge-up-continuation_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3547385,
+  "findings": {
+    "F1": "The idea has no edge to pay for its trades: per case over 6 hours the unusual move is +0.00 % and the total move +0.04 %, against a cost of 0.11 % per trade (8827 cases); on hours sampled once per 6-hour cell, the top 1 % of up-scores is followed by an excess 6-hour return of \u22120.143 % (t \u22120.64, n 214) and the next 4 % by +0.056 % (t 0.70, n 856).",
+    "F2": "Volume adds nothing to up-hours: after hours rising more than 3 usual hourly moves, the excess 6-hour return is about zero at every volume ratio (ratio 2\u20133: +0.002 %, t 0.01, n 144; ratio above 5: \u22120.013 %, t \u22120.08, n 345); on all up-hours sampled every 6 hours, the regression slope on the score has t 0.93.",
+    "F3": "The book is mostly a costly part-time holding of the coin: it is long on 70 % of BTC bars and 67 % of ETH bars (mean allocation 0.37 and 0.30); it gains 0.29 and 0.40 bp per bar before fees, of which the market's own rise is 0.20 and 0.19 bp; it makes 2.88 trades a day and ends at a mean daily return of \u22120.016 %, with a Sharpe 0.77 below holding.",
+    "F4": "Large down-hours rebound instead. After hours falling more than 3 usual hourly moves, the excess 3-hour return is +0.397 % (t 3.02, n 143) at volume ratio 2\u20133 and +0.278 % (t 2.69, n 433) at ratio above 5, and the 24-hour excess return is +0.757 % (t 2.67). That rebound is larger than the 0.11 % cost; its 6-hour t is only 1.1\u20131.5. These samples take the largest-score hour of each 6-hour cell.",
+    "F5": "Among the top 5 % of up-scores, the hours that follow the highest quartile of the prior 24-hour return are followed by an excess 6-hour return of \u22120.417 % (t \u22122.67, n 268). Those in the second quartile are followed by +0.231 % (t 2.35, n 267). On all up-hours the prior 24-hour return's slope is negative (t \u22121.47).",
+    "F6": "On a fixed 6-hour grid, there is no steady continuation or reversal after hourly moves of any size: by size quintile every |t| is below 1.4, and by year t runs from \u22121.81 to 0.74 with no year significant."
+  },
+  "ideas": [
+    {
+      "idea": "After an hour in which the coin falls far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price rises over the next three to twenty-four hours; the larger that hour's fall relative to its typical hourly move, the larger the rebound.",
+      "consequence": "A trader would buy into a sharp high-volume hourly drop instead of chasing a sharp high-volume rise, because only the drop is followed by a move larger than the cost of a trade.",
+      "name": "high-volume hourly drops rebound",
+      "from": "F4, F2, F1",
+      "refs": [
+        "F4",
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "After an hour in which the coin rises far more than its typical hourly move over the past 30 days, on volume several times its average hourly volume over the past 30 days, the price keeps rising over the next two to six hours, only while the coin's 24-hour return before that hour is modest; the larger the coin's rise over the previous 24 hours, the weaker the further rise, turning into a fall after the largest prior rises.",
+      "consequence": "A trader would take a high-volume up-hour as a reason to buy only when it starts a move, and refuse it when it caps a day that has already risen strongly.",
+      "name": "volume surge after quiet day",
+      "from": "F5, F1, F3",
+      "refs": [
+        "F5",
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "028-01_volume-surge-up-continuation.d1_high-volume-hourly-drops-rebound",
+    "028-01_volume-surge-up-continuation.d2_volume-surge-after-quiet-day"
+  ],
+  "no_ideas": null
+}

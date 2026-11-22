@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h
+idea tested: 028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3764 USD
+---
+## Findings
+- **F1:** Large 24-hour falls bounce back only when the past day's hourly moves were wide. When the past day's mean absolute hourly move was above 1.189 times the 30-day one, 24-hour falls of more than 1.5 typical-scaled units were followed by an unusual 24-hour rise of +1.29 % (t 6.31, 1066 non-overlapping cases). After the same falls in calmer days it was +0.002 % (t 0.01, 810 cases).
+- **F2:** In wide-moving days the bounce grows with the fall. The unusual 24-hour move after falls of -0.5 to -1.5, -1.5 to -3 and beyond -3 scaled units was +0.77 % (t 3.56, 661 cases), +0.90 % (t 3.94, 693) and +2.00 % (t 5.05, 373). The 24-hour scaled return correlates with the next 24-hour scaled move at -0.111 in wide-moving days and -0.005 in calm ones.
+- **F3:** The bounce in wide-moving days already shows over 12 hours and holds for 48 hours, though it is less clean there. Over 12 hours it was +0.50 % (t 3.85, 1368 cases) after falls of -1.5 to -3 and +0.93 % (t 4.14, 732 cases) after falls beyond -3. Over 48 hours it was +2.42 % (t 3.82, 169 cases) after falls beyond -3.
+- **F4:** After falls beyond 1.5 scaled units (all volatility levels) the 24-hour bounce is positive in every coin and year. It is strongest in less liquid coins: ZEC +1.39 % (t 3.21), XRP +1.12 % (t 3.11), XMR +0.94 % (t 2.35), against BTC +0.19 % (t 0.84). It is concentrated in 2018 (+1.71 %, t 4.04) and 2021 (+2.55 %, t 4.19), with 2022 at +0.05 % (t 0.14).
+- **F5:** The hours opening at 20:00 and 21:00 UTC rise more than usual, by 0.037 % to 0.048 % per hour in every one of the six coins (t 2.54 to 3.92). The effect has a positive mean in seven of eight years (2022 -0.028 %, t -1.85). By contrast, the hour opening at 13:00 UTC falls more than usual (t -4.60), mostly in 2018 and 2021.
+- **F6:** The brief's own pattern does not stand out. Hourly rises of 1 to 2 typical moves on volume above 3 times average were followed by +0.12 standard units over 6 hours (t 1.85, 433 cases). Rises of more than 4 typical moves on such volume were followed by +0.08 (t 1.01, 456 cases).
+- **F7:** The tested fade is far too small to pay.
+
+## Ideas
+- `028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider.g1_turbulent-day-fall-rebound` (from F1, F2, F3, F4, F7): When a coin's hourly moves over the past day have been wider than its typical hourly move over the past 30 days, the further it has fallen over the past 24 hours, measured in its typical moves, the more it rises over the next 12 to 24 hours.
+- `028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider.g2_turbulence-scales-fall-rebounds` (from F1, F2): The wider a coin's hourly moves over the past day relative to its past 30 days, the larger its rise over the next 24 hours after a 24-hour fall of a given size in its typical moves.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

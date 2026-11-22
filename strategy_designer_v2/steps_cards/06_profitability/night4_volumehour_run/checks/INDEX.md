@@ -1,0 +1,7 @@
+028-01_volume-surge-up-continuation_1h: not profitable enough [Sharpe -0.1323; Sharpe minus holding's Sharpe -0.7685; Calmar -0.1821]
+028-02_volume-surge-down-continuation.b1_volume-surge-rise-continues-daylong_1h: not profitable enough [Sharpe 0.596; Sharpe minus holding's Sharpe -0.04016; Calmar 0.2496]
+028-02_volume-surge-down-continuation_1h: not profitable enough [Sharpe -1.586; Sharpe minus holding's Sharpe -2.222; Calmar -0.6155]
+028-03_low-volume-up-fade.b1_quiet-up-hour-fade-wider_1h: not profitable enough [Sharpe -2.046; Sharpe minus holding's Sharpe -2.6; Calmar -0.3429]
+028-03_low-volume-up-fade_1h: not profitable enough [Sharpe -1.633; Sharpe minus holding's Sharpe -2.269; Calmar -0.5283]
+028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h: profitable enough [Sharpe 0.9822; Sharpe minus holding's Sharpe 0.346; Calmar 0.968]
+028-04_low-volume-down-fade_1h: not profitable enough [Sharpe -0.3412; Sharpe minus holding's Sharpe -0.9774; Calmar -0.1764]
