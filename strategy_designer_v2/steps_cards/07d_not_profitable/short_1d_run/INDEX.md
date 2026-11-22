@@ -4,6 +4,7 @@
 029-02_breakout-volume-trapped-decline.d1_failed-breakout-from-flat-range_1d: 2 ideas (2 explorations)
 029-02_breakout-volume-trapped-decline_1d: 2 ideas (2 explorations)
 029-03_close-below-breakout-bar-low.a1_failed-breakout-all-coins_1d: 2 ideas (2 explorations)
+029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d: 2 ideas (2 explorations)
 029-03_close-below-breakout-bar-low_1d: 3 ideas (2 explorations)
 029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline_1d: 2 ideas (3 explorations)
 029-04_breakout-extension-failure-decline_1d: 1 ideas (2 explorations)

@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 5-bar move after a short bet",
+    "value": 0.02831675018937755,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.731239680033298
+    },
+    "threshold": "t >= 2 over at least 30 cases (confirm, with Spearman > 0); t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "Spearman of |forecast| vs short-side unusual move",
+    "value": 0.24083858276202624,
+    "passed": true
+  },
+  "counts": {
+    "cases": 50
+  },
+  "decided_by": "The mean short-side unusual move has t >= 2 over at least 30 cases and the Spearman correlation is above 0.",
+  "reading": "A short bet is a fall of the forecast of at least 2 points below its least negative level on the short side since the last bet (reset to 0 after a flat or a long), taking the first such bar in each 5-bar grid cell counted from each window's first row; the drift is the mean of each coin's non-overlapping 5-bar returns at grid positions 0, 5, 10, ... of all its windows; the situation holds where the raw component value is positive or a close lies below the low of the most recent of the last bars that closed above the prior 20-bar high."
+}
