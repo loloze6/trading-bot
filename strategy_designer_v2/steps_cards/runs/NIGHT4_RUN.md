@@ -118,7 +118,7 @@ at about the same time; all resumed at 03:32 UTC after the designer's check-in: 
 Session 6 sat idle about 75 minutes: a session whose loop the 2-hour limit cuts does not always restart it alone.
 Session 4's stop at 07:00 UTC ended its last idea mid-way (026-03...d3, step 3 done): a later resume finishes it.
 
-**Merges and shared code (the operator's go for master):** 23 components built and three earlier components given a
+**Merges and shared code (the operator's go for master):** 18 new components built (6 + 3 + 1 + 3 + 5) and three earlier components given a
 setting in place (`DonchianBreakout` forms, `VolumeRatio` lag, `MeanAbsScaledFallTimesRise` rise_lag). Each in-place
 change proven by old against new on real bars (4 coins, 1h, 4h and 1d, the earlier settings): 82,409, 137,980 and
 82,788 bars, 0 differ; the 14 paying books' step 4 reruns here (on the merged engine) reproduce their records file by
