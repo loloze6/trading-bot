@@ -173,6 +173,31 @@ def add_holding(config, horizon):
     return config
 
 
+# The brief's side (operator, 2026-11-22; topic 45, runs/SHORT_1D_RUN.md): enforced by code, never left to the model. Each
+# strategy component's forecast is capped at 0 from below ("long only") or from above ("short only"); the combined forecast
+# is a weighted mean of the components (common/forecast.md), so it keeps the side too. Any other side: nothing added.
+SIDE_CLIP = {"long only": {"op": "clip", "params": {"min": 0}}, "short only": {"op": "clip", "params": {"max": 0}}}
+
+
+def add_side(config, side):
+    clip = SIDE_CLIP.get((side or "").strip().lower())
+    if not clip:
+        return config
+    for reg in (config.get("strategies", {}).get("regimes") or {}).values():
+        if isinstance(reg, dict):
+            for c in reg.get("components", []):
+                t = c.setdefault("transforms", [])
+                if not t or t[-1] != clip:
+                    t.append(dict(clip, params=dict(clip["params"])))
+    return config
+
+
+def brief_side(brief_text):
+    """The brief's `side:` header line, or None."""
+    head, _ = header(brief_text)
+    return next((l.split(":", 1)[1].strip() for l in head if l.split(":", 1)[0].strip() == "side"), None)
+
+
 def main():
     a = argparse.ArgumentParser()
     a.add_argument("idea", type=Path)
@@ -232,9 +257,12 @@ def main():
     bracket = f"[{data['instruments']}, {data['bar']}, {data['period']}]"
     stale = args.plans_dir / f"{plan_id}_config.json"
     if out == "plan":
-        write_atomic(stale, json.dumps(add_holding(add_sizing(result["config"], data["bar"]), result["horizon"]),
+        side = brief_side(brief_text)
+        write_atomic(stale, json.dumps(add_side(add_holding(add_sizing(result["config"], data["bar"]), result["horizon"]), side),
                                        indent=2) + "\n")
-        body += (f"Forecast: {result['forecast']}\nConfig: {plan_id}_config.json\nCriterion:\n"
+        body += (f"Forecast: {result['forecast']}\nConfig: {plan_id}_config.json\n"
+                 + (f"Side: {side} (the brief): each component's forecast capped at 0 by step 3's code\n" if side in SIDE_CLIP else "")
+                 + "Criterion:\n"
                  + "".join(f"- {k.replace('-', ' ').capitalize()}: {result[k]}\n" for k in PLAN_FIELDS[1:]))
         line = f"{plan_id}: plan (fit: {fit}) {bracket}"
         print(f"plan ({fit}): {args.plans_dir / (plan_id + '.md')}")

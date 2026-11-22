@@ -37,7 +37,7 @@ One brief: one theory, with its optional context. Or "not researchable", with th
    - Without it: no limit set on period.
 5. **side** (header, optional): long only, short only, or long and short.
    - For: a theory about falling prices means something else if the book cannot go short.
-   - Used by: step 2.
+   - Used by: step 2; step 3's code, which caps the forecast to the side (since 2026-11-22).
    - Without it: no limit set on side.
 6. **source** (header, only when the helper wrote from one)
    - For: lets anyone check the theory against what it rests on.
