@@ -244,6 +244,60 @@ def write_summary(root=REGISTER):
     lines += ["", "## Confirmed books whose book does not pay, the least explained by the paying books first",
               "(real ideas that are not yet a profit; the least explained are the variations the research has found)", ""] + head + [l for _, l in con]
     write_atomic(root / "COMPARISONS.md", "\n".join(lines) + "\n")
+    write_matrix(root)
+
+
+def matrix(root=REGISTER):
+    """The similarity matrix of the paying books (common/measures.md): the share explained of every pair, read from their
+    comparisons; the books ordered so that similar books sit together (start from the first book, then always the book
+    most explained by the last one placed). Returns (ordered books, {(key a, key b): comparison entry})."""
+    pay = sorted((r for r in books(root) if r["kind"] == "paying"), key=lambda r: r["key"])
+    cell = {}
+    for r in pay:
+        f = root / "comparisons" / f"{r['key']}.json"
+        if f.exists():
+            for o in json.loads(f.read_text())["others"]:
+                cell[(r["key"], o["other"]["key"])] = o
+    share = lambda a, b: (cell.get((a, b)) or {}).get("share_explained") or 0.0
+    order, left = [], [r["key"] for r in pay]
+    while left:
+        nxt = left[0] if not order else max(left, key=lambda k: (share(order[-1], k), -left.index(k)))
+        order.append(nxt); left.remove(nxt)
+    rows = {r["key"]: r for r in pay}
+    return [rows[k] for k in order], cell
+
+
+def write_matrix(root=REGISTER):
+    """`MATRIX.md` (readable: numbered books, the share explained in hundredths, "-" not comparable) and `matrix.csv` (for
+    code: one line per pair, with the comparison timeframe, the share, the direction and who leads)."""
+    order, cell = matrix(root)
+    if not order:
+        return
+    n = {r["key"]: i + 1 for i, r in enumerate(order)}
+    lines = ["# The similarity matrix of the paying books", "",
+             "Each cell: the share (in hundredths) of the row book's ups and downs that the column book explains, at the larger",
+             "of their two bar sizes (`common/measures.md`); 100 is a copy, 0 unrelated; \"-\": under one year in common. The books",
+             "are ordered so that similar books sit together: blocks of high numbers are families. Written by",
+             "`orchestration/ideas_similarities_check/` with every summary; `matrix.csv` holds the same for code.", "",
+             "| # | Book | Run | Bar |", "|---|---|---|---|"]
+    lines += [f"| {n[r['key']]} | {r['id']} | {r['run']} | {r['bar']} |" for r in order]
+    lines += ["", "| # | " + " | ".join(str(n[r["key"]]) for r in order) + " |", "|---|" + "---|" * len(order)]
+    for r in order:
+        vals = []
+        for c in order:
+            if c["key"] == r["key"]:
+                vals.append("·"); continue
+            e = cell.get((r["key"], c["key"]))
+            vals.append(f"{round(100 * e['share_explained'])}" if e and e.get("comparable") else "-")
+        lines.append(f"| **{n[r['key']]}** | " + " | ".join(vals) + " |")
+    write_atomic(root / "MATRIX.md", "\n".join(lines) + "\n")
+    csv = ["book,other,comparison_timeframe,share_explained,direction,who_leads"]
+    for r in order:
+        for c in order:
+            e = cell.get((r["key"], c["key"]))
+            if c["key"] != r["key"] and e and e.get("comparable"):
+                csv.append(f"{r['key']},{c['key']},{e['comparison_timeframe']},{e['share_explained']:.4f},{e['direction']},{e['who_leads']}")
+    write_atomic(root / "matrix.csv", "\n".join(csv) + "\n")
 
 
 def main():

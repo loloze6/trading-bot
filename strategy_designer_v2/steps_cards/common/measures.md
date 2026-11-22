@@ -79,7 +79,12 @@ the book the same way). A plan's own words come first; these apply wherever it s
     **direction** is the sign of the slope (+ moves with, − against: the same effect either way).
   - **What is left**: in that reading, the new book's mean return per period that the other book does not explain (the
     intercept), and its t.
-  - The **nearest relative**: the paying book with the largest share explained (for a confirmed book too). The new book is also compared with
+  - The **nearest relative**: the paying book with the largest share explained (for a confirmed book too).
+  - The **similarity matrix of the paying books** (operator, 2026-11-22; topic 44): for every pair of paying books, the
+    share explained, its direction and who leads, as above (the share is the same read from either book). The books
+    are ordered so that similar books sit together (from the first book, always next the book most explained by the
+    last one placed): a block of high shares is a family. It is the map of what the research earns, and the input for
+    combining books in one bot later (topic 44). The new book is also compared with
     holding its own coins, the same way.
   - Example: a 1h book and a 1d book compared on days; the 1h book's day returns match the 1d book's next day (share
     explained 0.8, the new book one period ahead, direction +, what is left 0.01 % a day with t 0.9): the same profit,

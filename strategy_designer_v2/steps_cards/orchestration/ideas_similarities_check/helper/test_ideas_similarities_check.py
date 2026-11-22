@@ -135,3 +135,23 @@ def test_confirmed_books_are_compared_with_the_paying_books_and_a_repair_with_it
     assert sorted(o["other"]["id"] for o in r["others"]) == ["c-01_real_1d", "p-01_pay_1d"]
     assert r["nearest_relative"]["other"]["id"] == "p-01_pay_1d"                      # the nearest relative is a paying book
     assert r["parent"]["other"]["id"] == "c-01_real_1d" and r["parent"]["share_explained"] > 0.9   # it kept its parent's idea
+
+
+def test_the_matrix_holds_every_pair_of_paying_books_with_similar_books_together(tmp_path):
+    """Operator, 2026-11-22 (topic 44): every paying book and its similarity to every other; a family shows as a block."""
+    steps, reg = tmp_path / "steps", tmp_path / "register"
+    n = 500; a, b = rng.normal(0, 0.01, n), rng.normal(0, 0.01, n)
+    curve = lambda r: 1000 * np.cumprod(1 + r)
+    run = "m_run"
+    for rid, r in (("a1_x_1d", a), ("b1_y_1d", b), ("a2_x-copy_1d", a + rng.normal(0, 0.001, n)), ("c1_real_1d", b)):
+        kind = ("confirmed", "not profitable enough") if rid.startswith("c1") else ("confirmed", "profitable enough")
+        pb.add(make_book(steps, run, rid, *kind, curve(r)), run, root=reg, steps=steps)
+    for r in pb.books(reg):
+        pb.write_comparison(r["key"], reg)
+    pb.write_summary(reg)
+    order, cell = pb.matrix(reg)
+    ids = [r["id"] for r in order]
+    assert ids == ["a1_x_1d", "a2_x-copy_1d", "b1_y_1d"]                 # paying books only; the copy next to its original
+    assert cell[("m_run__a1_x_1d", "m_run__a2_x-copy_1d")]["share_explained"] > 0.95
+    text = (reg / "MATRIX.md").read_text(); csv = (reg / "matrix.csv").read_text().splitlines()
+    assert "| **1** | · |" in text and len(csv) == 1 + 3 * 2                   # header and every ordered pair

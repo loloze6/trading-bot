@@ -25,6 +25,12 @@ books that make money on the same bars are one bet taken twice.
 - Its comparison with every paying book of the register (and, for a repair, with its parent) and with holding its coins:
   `<id>.json` and `<id>.md`, one line in the register's `COMPARISONS.md` (its paying books, then its confirmed books from
   the least explained).
+- **The similarity matrix of the paying books** (operator, 2026-11-22; `../../common/measures.md`), rewritten with every
+  summary: `register/MATRIX.md` (the numbered books, then one row and one column per book, the share explained in
+  hundredths, "-" under one year in common; similar books together, so families show as blocks) and
+  `register/matrix.csv` (one line per ordered pair: book, other, comparison timeframe, share explained, direction, who
+  leads), for code. Business meaning: which paying books are one bet and which are different, the map for combining
+  books in one bot (topic 44).
 
 ## What a comparison is
 **The new book's returns set against another paying book's, period by period, on the comparison timeframe and the window
