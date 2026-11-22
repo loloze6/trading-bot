@@ -69,3 +69,9 @@ wrong."
   with the budget unchanged.
 - **To watch (for the operator):** the catalogue grows with every component built (99 KB today), and with it the cost of
   each step 3 call: 64,000 tokens written to the cache, 0.55 USD per plan.
+- **01:16 Paris, a second fix on one branch:** session 1 had already fixed the defect its own way (the prompt split into
+  `--system-prompt` and `--append-system-prompt` above 120 KB; it fails above about 240 KB) and objected to the file:
+  on haiku-4-5, its probe saw the file's text treated as the user's. Checked by the designer on the models the steps
+  use: the probe "reply PONG-7731" gives PONG-7731 through the file 3 of 3 times (claude-haiku-5-5), as through the
+  argument; a conflict probe (system: always APPLE; user: BANANA) gives APPLE through the file 2 of 2 (claude-opus-5-5,
+  step 3's model), as through the argument. Kept: the file, one rule with no size limit; session 1 asked to take it.
