@@ -212,6 +212,7 @@
 | 016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h | std_time_pilot_run | 1h | 024-01_fading-volume-uprun-giveback-size.g2_calm-strong-advance-continues_4h (4h) | 0.87 | same period | -0.0003 % (-0.12) | 0.49 |
 | 020-01_resistance-retest-turns-down.b1_breakout-through-repeated-resistance.b1_breakout-through-resistance-more-coins.b2_thirty-day-return-continuation_1d | night3_levels_run | 1d | 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d (1d) | 0.90 | same period | +0.0007 % (0.06) | 0.00 |
 | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs_1d | demo_run | 1d | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d (1d) | 0.94 | same period | -0.0043 % (-0.90) | 0.27 |
+| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h | retest_settlement_run | 1h | none comparable | | | | 0.01 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | retest_settlement_run | 1h | none comparable | | | | 0.02 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | retest_settlement_run | 1h | none comparable | | | | 0.02 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | retest_settlement_run | 1h | none comparable | | | | 0.54 |

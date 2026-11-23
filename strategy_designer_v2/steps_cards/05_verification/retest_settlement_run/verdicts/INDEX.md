@@ -1,3 +1,4 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: confirmed (fit: exact) [main: 4.82659; OLS slope t 4.82659; grid cases 17246, grid cases with a non-zero forecast 17147]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: confirmed (fit: exact) [main: 1.83357e-05; OLS slope t 12.2761; bars of nonzero forecast 414151, bars in the regression 416645]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: confirmed (fit: adapted) [main: 2.13161e-05; OLS slope t 13.7732; bars in total 416645, bars with high 24h volatility 119877, bars with low 24h volatility 189776]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h: confirmed (fit: exact) [main: 0.00170132; t of weighted mean 2.88492; independent cases 12648]
