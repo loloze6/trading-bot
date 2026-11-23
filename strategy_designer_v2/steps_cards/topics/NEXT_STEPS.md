@@ -25,7 +25,7 @@ found by a run or an analysis is added here with its source. Status: **done**, *
 | 1c | A run read problem by problem, under N3 | running: night 6 is the first whole run under N3 | `runs/NIGHT6_RUN.md` |
 | 1d | Ideas name the market state their effect works in | later (reconsider after P4) | topic 47 |
 | 1e | **New 2026-11-24.** The rule "an idea is about one coin's own bars, never the market or another coin" (`common/idea_definition.md`, step 1's prompt): books fail by market timing (1d-3, 1d-6); an idea about a coin against the market could avoid it, but needs the rule changed (and the engine to read a second series) | operator | `runs/NIGHT6_RUN.md` |
-| 1f | **New 2026-11-24.** The 26 real books built before N3 with their situation graded away, rebuilt under N3 (steps 3 to 7): faithful books for the families the portfolio holds (draft's open point 1) | next (needs the list of 26 written down first; model cost about 2 USD an idea) | topic 47 phase A |
+| 1f | **New 2026-11-24.** The 26 real books built before N3 with their situation graded away, rebuilt under N3 (steps 3 to 7): faithful books for the families the portfolio holds (draft's open point 1) | operator: the list is written (`47_review/ungated_real_books.csv`: 26 books, 13 absorption, 7 settlement, 6 learned; in a position 98 % of days, median; 8 of them already rebuilt by phase A and the N3 test); the other 18 through steps 3 to 7 under N3 cost about 2 USD each (about 35 USD) | topic 47 phase A |
 | 2a | `select_next`: breadth over depth | later (with 1b/1c reading) | topic 47 |
 | 2b | Search luck measured again | after 1c | topic 47 |
 | 2c | A stricter bar for books found after many tries | after 2b, only if needed | topic 47 |
