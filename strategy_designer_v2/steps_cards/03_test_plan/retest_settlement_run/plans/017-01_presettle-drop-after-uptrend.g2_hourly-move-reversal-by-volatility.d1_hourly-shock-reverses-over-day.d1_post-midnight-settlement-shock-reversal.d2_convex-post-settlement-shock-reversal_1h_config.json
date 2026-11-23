@@ -1,0 +1,75 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "hour",
+        "class": "strategies.strategy_components.HourOfDayComponent",
+        "params": {}
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "hour",
+              "op": "between",
+              "low": 0.5,
+              "high": 1.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "post_settle_move",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 1,
+              "vol_period": 24
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "unknown": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 24
+  }
+}

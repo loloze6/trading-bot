@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 24-bar return on forecast (grid cases, pooled)",
+    "value": 0.0003775085321954659,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.160135498537235
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and support passes; reject: slope < 0 with t <= -2; else inconclusive; minimum 300 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean of excess return x sign(forecast) > 0",
+    "value": 0.003539632688818262,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 5403
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean signed excess return is above 0.",
+  "reading": "Situation bars use the 24/720-bar return-std ratio recomputed from in-window closes (falling back to the recorded regime where fewer than 720 prior returns exist) and the expected side is minus the sign of the raw fade value; the coin's mean 24-bar return is taken over all grid bars of all its windows; the plan's 'fewer than 300 grid cases' minimum is reported as 'not observable'."
+}

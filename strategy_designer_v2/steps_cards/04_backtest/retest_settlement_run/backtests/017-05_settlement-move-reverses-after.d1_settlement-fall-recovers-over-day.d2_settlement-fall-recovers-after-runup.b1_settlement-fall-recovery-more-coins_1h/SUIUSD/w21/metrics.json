@@ -1,0 +1,367 @@
+{
+  "core": {
+    "net_return_pct": 56.26,
+    "sharpe": 3.206,
+    "max_drawdown_pct": -10.604,
+    "trade_count": 92,
+    "win_rate": 78.26,
+    "avg_trade_net_pnl": 6.114527,
+    "fees_paid": 17.738774,
+    "gross_pnl": 580.275268,
+    "net_pnl": 562.536494,
+    "cost_drag_pct": 3.057,
+    "forecast_return_corr": 0.170504,
+    "forecast_return_corr_pvalue": 0.133008,
+    "forecast_return_corr_pvalue_block_adjusted": 0.864613,
+    "forecast_return_corr_n_eff": 3,
+    "forecast_return_corr_all_bars": 0.018185,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.843406,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.0342,
+    "avg_trade_duration_bars": 44.96,
+    "sigma_bar_bps": 141.2957,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 161.5388,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 8.7318,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=3 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 582.8837,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 582.8837,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 58.2884,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=3 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 244,
+      "avg_forecast": 4.366042,
+      "trade_count": 92,
+      "total_net_pnl": 562.536496
+    },
+    "unknown": {
+      "bar_count": 2683,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 10,
+      "profitable_trades": 8,
+      "success_rate_pct": 80.0,
+      "total_net_pnl_usd": 85.2493,
+      "avg_pnl_per_trade_usd": 8.5249
+    },
+    "5_to_10": {
+      "total_forecasts": 11,
+      "profitable_trades": 8,
+      "success_rate_pct": 72.73,
+      "total_net_pnl_usd": 77.8632,
+      "avg_pnl_per_trade_usd": 7.0785
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 71,
+      "profitable_trades": 56,
+      "success_rate_pct": 78.87,
+      "total_net_pnl_usd": 399.424,
+      "avg_pnl_per_trade_usd": 5.6257
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall_x_runup.last_history_value": {
+      "mean_reversion": {
+        "mean": 5.268312,
+        "std": 13.38279
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall_x_runup.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 4.366042,
+        "std": 7.784936
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall_x_runup.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall_x_runup.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 4.366042,
+        "std": 7.784936
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": 0.00054904,
+      "forward_return_std": 0.01646978,
+      "n_bars": 243,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00067108,
+      "forward_return_std": 0.01390131,
+      "n_bars": 2683,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -13.5957,
+    "sharpe": 4.0043,
+    "sortino": 8.2618,
+    "exposure_pct": 50.2562,
+    "turnover": 23.998369,
+    "n_bars_total": 2927,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 34,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 23,
+    "events": [
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-05-12 05:00:00",
+        "previous_timestamp": "2024-05-12 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-05-19 01:00:00",
+        "previous_timestamp": "2024-05-18 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-05-29 01:00:00",
+        "previous_timestamp": "2024-05-28 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-05-31 05:00:00",
+        "previous_timestamp": "2024-05-31 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-15 02:00:00",
+        "previous_timestamp": "2024-06-15 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-21 02:00:00",
+        "previous_timestamp": "2024-06-21 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-22 01:00:00",
+        "previous_timestamp": "2024-06-21 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-22 07:00:00",
+        "previous_timestamp": "2024-06-22 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-27 07:00:00",
+        "previous_timestamp": "2024-06-27 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-27 12:00:00",
+        "previous_timestamp": "2024-06-27 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-28 08:00:00",
+        "previous_timestamp": "2024-06-28 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-06-30 13:00:00",
+        "previous_timestamp": "2024-06-30 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-01 16:00:00",
+        "previous_timestamp": "2024-07-01 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-01 21:00:00",
+        "previous_timestamp": "2024-07-01 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-06 20:00:00",
+        "previous_timestamp": "2024-07-06 18:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-07 00:00:00",
+        "previous_timestamp": "2024-07-06 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-12 03:00:00",
+        "previous_timestamp": "2024-07-12 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-13 04:00:00",
+        "previous_timestamp": "2024-07-13 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-27 03:00:00",
+        "previous_timestamp": "2024-07-27 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-28 02:00:00",
+        "previous_timestamp": "2024-07-28 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-28 04:00:00",
+        "previous_timestamp": "2024-07-28 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-07-31 03:00:00",
+        "previous_timestamp": "2024-07-31 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2024-09-01 03:00:00",
+        "previous_timestamp": "2024-09-01 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

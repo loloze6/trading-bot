@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of forecast/10 x drift-removed 24-bar return",
+    "value": 0.002216212965506551,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.02683681197601
+    },
+    "threshold": "confirm if t >= 2 (with top third beating bottom third); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean drift-removed return in forecast direction",
+    "value": 0.0015889083922150508,
+    "passed": true
+  },
+  "counts": {
+    "cases with a nonzero forecast": 16838
+  },
+  "decided_by": "The main t is 2 or more and the top third beats the bottom third.",
+  "reading": "Cases are grid bars 0,24,48,... of each window with a nonzero forecast and a close 24 bars later in the same window; the coin's mean is over its non-overlapping 24-bar grid returns of all windows; thirds are pooled over all cases by |forecast| (stable sort, numpy array_split); the plan's 'fewer than 500 cases' is treated as the minimum count giving 'not observable'."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of next-hour excess return on fade_1h forecast",
+    "value": 2.1316124455239555e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 13.773244857000492
+    },
+    "threshold": "t >= 2 with supporting check passing confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope on high-vol bars minus slope on low-vol bars",
+    "value": 2.6618002115243356e-05,
+    "passed": true
+  },
+  "counts": {
+    "bars in total": 416645,
+    "bars with high 24h volatility": 119877,
+    "bars with low 24h volatility": 189776
+  },
+  "decided_by": "The slope's t is 2 or more and the high-vol slope exceeds the low-vol slope.",
+  "reading": "The situation is any bar with a non-zero last-hour move (raw fade_1h value, or the close-to-close return where it is missing) and the expected side is opposite to that move; the regression uses every bar with a recorded post_pipeline_value and a next-hour return inside its window (zero forecasts included), and the volatility groups use the 24-bar standard deviation of hourly returns against its full 720-bar rolling mean computed inside each window, bars without that mean left out of the groups."
+}

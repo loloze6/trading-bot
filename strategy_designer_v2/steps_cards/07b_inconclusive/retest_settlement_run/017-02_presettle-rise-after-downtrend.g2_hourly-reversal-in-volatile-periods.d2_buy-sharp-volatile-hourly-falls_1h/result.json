@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3731767,
+  "findings": {
+    "F1": "The test's main measure is zero (mean excess -0.01 % per case, t -0.32, 16662 cases). On the same 24-hour grid, falling hours do reverse when they come during raised volatility. Falls in the top third of the 24-hour-to-30-day volatility ratio give +0.59 % excess (t 5.05, 2646 cases). Falls in the low and mid thirds give -0.06 % (t -0.79, 2792 cases) and -0.11 % (t -1.17, 2802 cases). Rising hours in the high third give -0.08 % (t -0.73, 2815 cases).",
+    "F2": "Inside the high-volatility third, the reversal is graded by the size of the fall. Mean 24-hour excess by fifth of the scaled fall, largest to smallest: +1.26 % (t 4.21), +0.86 % (t 3.21), +0.53 % (t 2.39), +0.20 % (t 0.80), -0.07 % (t -0.33), about 550 cases each.",
+    "F3": "Outside raised volatility, large falls do not reverse. Largest-fifth falls give +0.08 % (t 0.22) in the low third and -0.20 % (t -0.84) in the mid third. Among the extreme tenth of falls, the low-volatility third loses -0.66 % (t -2.08, 275 cases) and the high third gains +2.07 % (t 4.32, 275 cases). The tested forecast mixes all three regimes, which is why its result is zero.",
+    "F4": "The test measured the idea away from where it shows. Its cases are any rise of the forecast of 2 points, which are mostly ordinary falls. Across all regimes, the largest fifth of scaled falls gives +0.57 % excess over 24 hours (t 4.07), while the middle fifths give +0.09 %, +0.06 % and -0.17 % (t 0.79, 0.47, -1.59).",
+    "F5": "Large falls in high volatility hold across years and coins:",
+    "F6": "This move is large against the cost of a trade. Large falls in high volatility carry a total 24-hour move of about +1.40 % per case and an unusual move of about +1.26 %, roughly 7 times the 0.19 % cost. The tested idea's total move is +0.13 %, 0.7 times the cost.",
+    "F7": "The reversal of large falls is not tied to funding settlement. On hourly returns, extreme falls in the hour before a settlement give +0.06 % (t 1.95, 2622 cases) against +0.09 % (t 6.45, 16866 cases) in other hours."
+  },
+  "ideas": [
+    {
+      "idea": "Over the next 24 hours, a coin rises after a sharp falling hour, only while its 24-hour volatility is raised against its 30-day average. The larger that fall relative to the coin's usual hourly volatility, the larger the rise.",
+      "consequence": "A trader would buy sharp single-hour falls only when the coin's volatility is running above its monthly norm, scaled to the size of the fall, and would refuse to buy falls in calm or ordinary volatility.",
+      "name": "volatile-regime hourly fall reversal",
+      "from": "F1, F2, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "Over the next 24 hours, a coin rises after a sharp falling hour, and the larger that fall relative to the coin's usual hourly volatility, the larger the rise, while ordinary falls are followed by no rise.",
+      "consequence": "A trader would buy only the most extreme single-hour falls, measured in the coin's own hourly volatility, and hold them for a day.",
+      "name": "extreme hourly fall reversal",
+      "from": "F4, F2",
+      "refs": [
+        "F4",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal",
+    "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal"
+  ],
+  "no_ideas": null
+}

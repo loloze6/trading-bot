@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of forecast/10 x 24-bar excess return (non-overlapping grid, pooled)",
+    "value": 0.002638062086115046,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.667192373952823
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x excess return, largest |forecast| third minus smallest third",
+    "value": 0.0034066485978829658,
+    "passed": true
+  },
+  "counts": {
+    "cases with a non-zero forecast": 17147,
+    "cases in largest third": 5715,
+    "cases in smallest third": 5716
+  },
+  "decided_by": "The mean product is positive with t >= 2 and the largest-third minus smallest-third difference is > 0 (confirm rule).",
+  "reading": "Cases are grid bars (positions 0, 24, 48, ... of each window) with a non-zero forecast and a 24-bar forward return inside the window; the coin's normal drift is the mean of all its grid 24-bar returns over all windows; thirds are formed by sorting cases on |forecast| (stable sort) and splitting into three near-equal groups; the plan's 500-case minimum, when not met, gives 'not observable'."
+}

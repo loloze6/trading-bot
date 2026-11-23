@@ -1,0 +1,76 @@
+{
+  "line": "7.g",
+  "backtest": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4668561,
+  "findings": {
+    "F1": "Across all hours except 00:00, fading the coin's 24-hour return (in units of its 24-hour hourly volatility) over the next 24 hours depends on the volatility regime. When the 24-hour volatility is in the top third relative to its 30-day level, the fade pays: slope +25.4 bp per unit, t 14.3, sign mean +0.26 %, t 15.1, on 98,930 overlapping bar cases. When it is in the bottom third, the sign flips: slope \u221216.4 bp, t \u221210.5, sign mean \u22120.10 %, t \u22127.7. In calm regimes the 24-hour move continues rather than reverses.",
+    "F2": "On the 00:00 UTC bar, the tested idea's gain sits almost entirely in high relative volatility. In the aligned cases, the top third of volatility gives slope 55.2 bp, t 5.5, sign mean +0.77 %, t 6.3, on 2,012 cases. The bottom third gives slope 11.8 bp, t 1.4, sign mean +0.16 %. Fading the full 24-hour return at 00:00 shows the same split: top third t 5.0, sign mean +0.39 %; bottom third t 0.4, sign mean \u22120.01 %.",
+    "F3": "In the hours just after the 00:00 UTC settlement, an hour that moves against the coin's previous 23-hour return is followed by a 24-hour return in that hour's own direction, not a fade. Fading it gives sign means of \u22120.21 %, \u22120.25 % and \u22120.29 % at 01:00, 02:00 and 03:00, with t \u22124.2, \u22124.8 and \u22125.7, on about 8,900 cases each. The same opposed hours at 11:00\u201314:00 give positive fades (t +2.2 to +3.5). Counter-trend 3-hour moves ending at 03:00 also continue: slope +21 bp, t 2.7, on 5,815 cases, while those ending at 09:00, 15:00 and 21:00 show nothing (t 0.08, 0.16, \u22120.83).",
+    "F4": "Fading the coin's 24-hour return depends on the hour it is read at. Read at 23:00\u201304:00 UTC, the fade pays, with slopes +12 to +23 bp and t 2.7 to 5.0 (01:00: t 5.0, sign mean +0.17 %). Read at 12:00\u201315:00 UTC, it is negative, with slopes \u22128 to \u221217 bp; at 14:00 the t is \u22123.8 and the sign mean is \u22120.09 %. Volume follows the same clock: relative log volume is +0.15 at 00:00 and \u22120.39 at 05:00, and peaks at +0.45 at 16:00.",
+    "F5": "The tested aligned post-settlement fade holds in every year, with t from 1.6 to 3.7 from 2018 to 2025, and in every coin, with t from 1.5 for BTC to 3.7 for LTC and XMR. The weakest coin is BTC: slope 11.8 bp, sign mean +0.24 %. The broader unconditioned 00:00 fade of the 24-hour return has faded away: t 4.6 in 2018, \u22120.4 in 2024 and \u22121.5 in 2025.",
+    "F6": "The book's worst days come with the coin's largest moves. The bottom decile of book days averages \u22122.99 % on days when the coin moved 6.3 % in absolute terms. The middle deciles see coin moves of 1.9\u20133.4 %. Losses concentrate on days of outsized moves, not at random."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's hourly volatility over the last 24 hours is high relative to its last 30 days, its 24-hour return reverses over the next 24 hours, and the larger that 24-hour return in units of its hourly volatility, the larger the reversal.",
+      "consequence": "A trader would fade a coin's day-long move only in a stretch of raised volatility, sized by how stretched the move is, and refuse that fade in calm stretches.",
+      "name": "high-volatility daily move reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a coin's hourly volatility over the last 24 hours is low relative to its last 30 days, its 24-hour return continues in the same direction over the next 24 hours, and the larger that 24-hour return in units of its hourly volatility, the larger the continuation.",
+      "consequence": "A trader would follow a coin's day-long move in calm stretches, sized by the move's size relative to volatility, instead of fading it.",
+      "name": "calm-regime daily move continuation",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's return over the 1 to 3 hours after the 00:00 UTC settlement runs against its return over the previous 23 hours, the coin's return over the next 24 hours runs in the direction of that post-settlement move, and the larger that move relative to the coin's 24-hour hourly volatility, the larger it is.",
+      "consequence": "A trader would follow an early-morning UTC move that breaks against the previous day's run, sized by the move, rather than fade it.",
+      "name": "post-settlement counter-trend continuation",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's 24-hour return is read at the close of the hours around and just after midnight UTC, its return over the next 24 hours runs opposite to it, and the larger that 24-hour return in units of the coin's hourly volatility, the larger the reversal.",
+      "consequence": "A trader would fade the day's run around the UTC day change, sized by its stretch, and refuse that fade when the same run is read in the European and US midday hours.",
+      "name": "midnight UTC daily run reversal",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When the coin's first hour after the 00:00 UTC settlement runs the same way as its previous 23 hours, the over-24-hours reversal of that hour grows with the hour's return relative to its 24-hour volatility, and it grows more steeply the higher the coin's 24-hour volatility is relative to its last 30 days.",
+      "consequence": "A trader would size the post-settlement fade up when the market is in a raised-volatility stretch and keep it small in calm ones.",
+      "name": "settlement fade in volatile regimes",
+      "from": "F2, F5, F6",
+      "refs": [
+        "F2",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.g1_high-volatility-daily-move-reversal",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.g2_calm-regime-daily-move-continuation",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.g3_post-settlement-counter-trend-continuation",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.g4_midnight-utc-daily-run-reversal",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.g5_settlement-fade-in-volatile-regimes"
+  ],
+  "no_ideas": null
+}

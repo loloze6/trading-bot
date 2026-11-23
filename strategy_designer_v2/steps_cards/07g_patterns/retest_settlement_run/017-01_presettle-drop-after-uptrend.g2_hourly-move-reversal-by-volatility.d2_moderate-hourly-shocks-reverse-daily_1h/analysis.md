@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h
+idea tested: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3976 USD
+---
+## Findings
+- **F1:** The tested fade lives almost entirely in the hourly bar that opens at 00:00 UTC. On a once-per-day grid per signal hour, for hourly shocks of 1 to 3 times the 24-hour volatility, the drift-removed 24-hour fade returns +0.53 % at hour 0 (t 7.46, n 5398). The other 23 hours range from −0.20 % to +0.26 %, and only hours 5 and 23 pass |t| 2 (t 2.78 and 2.41). With 24 hours looked at, hour 0 is the only one that clearly stands out from chance.
+- **F2:** At hour 0 the reversal is graded by the size of the shock. The drift-removed next-24-hour return is +1.04 % after shocks of −3 to −2 (t 4.06, n 509), +0.48 % after −2 to −1 (t 4.37), −0.29 % after +0.5 to +1 (t −2.94) and −0.52 % after +1 to +2 (t −4.72). Ranked by |shock| into terciles, the fade rises from +0.17 % to +0.22 % to +0.52 % (t 7.46, n 5567). Beyond ±3 there is no reversal (t −0.72 and −0.66).
+- **F3:** The same buckets at 08:00 and 16:00 UTC, the other funding clocks, show nothing. Every bucket has |t| below 1.1, for example +0.08 % after −2 to −1 (t 1.00, n 3712). The pattern is therefore tied to the UTC day open, not to funding settlements, against the brief's own third rejection condition.
+- **F4:** The hour-0 fade (|shock| below 3) is positive in every year from 2018 to 2025, from +0.11 % (t 1.09, 2019) to +0.45 % (t 3.35, 2018), with 2025 at +0.42 % (t 4.05). It is positive in all six coins, from +0.20 % (BTC, t 2.98) to +0.47 % (ZEC, t 4.01). The all-hour grid fade, by contrast, fades to +0.00 % in 2024 and −0.12 % in 2025.
+- **F5:** The hour-0 fade builds over the day: +0.03 % at 1 hour (t 4.18), +0.14 % at 8 hours (t 7.05) and +0.30 % at 24 hours (t 7.84, n 16722), then shrinks to +0.16 % at 48 hours (t 3.11). The hour-0 bar also carries a larger mean |shock| (0.88) and raised volume (1.12 times its 7-day mean) compared with hours 1 to 11 (0.63 to 0.80 and 0.73 to 0.95).
+- **F6:** The size of the hour-0 effect clears the cost of a trade. The mean fade of +0.30 % per case is 1.6 times the 0.19 % cost of a trade, and the top tercile's +0.52 % is 2.7 times that cost. The tested all-hour grid moved +0.11 % per case, 0.6 times the cost.
+- **F7:** Across all grid bars, the fade grows with the coin's own 24-hour volatility quintile: +0.04 % (t 0.72) in the lowest quintile, +0.12 % (t 1.64) in the middle and +0.41 % (t 3.19, n 3422) in the highest.
+
+## Ideas
+- `017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily.g1_utc-day-open-shock-reversal` (from F1, F2, F3, F4, F5, F6): The larger a coin's return in the first hour after 00:00 UTC, measured against its 24-hour volatility, the more its return over the next 24 hours runs the opposite way, among first-hour moves of up to a few times that volatility.
+- `017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily.g2_shock-reversal-grows-with-volatility` (from F7, F2): The higher a coin's 24-hour volatility stands against its own volatility over the past weeks, the more its next 24 hours run against its last 1-hour return measured against that 24-hour volatility.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

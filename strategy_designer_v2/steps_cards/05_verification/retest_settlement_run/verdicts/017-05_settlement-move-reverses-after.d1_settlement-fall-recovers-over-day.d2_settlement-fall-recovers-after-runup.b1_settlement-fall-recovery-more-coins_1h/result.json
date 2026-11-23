@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9957036077923607,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 24-bar return",
+    "value": 0.0015355569990946989,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 3.053106222614973
+    },
+    "threshold": "above 0 with t >= 2 to confirm (with correlation > 0); below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "Pearson correlation of case forecast and excess return",
+    "value": 0.015485929532584673,
+    "passed": true
+  },
+  "counts": {
+    "cases": 12061
+  },
+  "decided_by": "The forecast-weighted mean excess return is above 0 with t >= 2 and the correlation is above 0.",
+  "reading": "Cases are holding-period bets (forecast rise of >= 2 points from its lowest level on its side since the last bet, from 0 after a flat), the first per 24-bar grid cell from each window's first row, dropped when the 24-bar return leaves the window; the weighted-mean t is the ordinary t of f_i*x_i/mean(f) over cases."
+}

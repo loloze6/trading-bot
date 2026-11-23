@@ -1,0 +1,132 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "clock",
+        "class": "strategies.strategy_components.HoursToSettlementComponent",
+        "params": {}
+      },
+      {
+        "id": "pre",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 2
+        }
+      },
+      {
+        "id": "trend24",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 24
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "clock",
+              "op": "between",
+              "low": 7.5,
+              "high": 8.5
+            },
+            {
+              "id": "pre",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "trend24",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      },
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "clock",
+              "op": "between",
+              "low": 7.5,
+              "high": 8.5
+            },
+            {
+              "id": "pre",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "trend24",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "trend_up",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 24
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "trend_down",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 24
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 8
+  }
+}

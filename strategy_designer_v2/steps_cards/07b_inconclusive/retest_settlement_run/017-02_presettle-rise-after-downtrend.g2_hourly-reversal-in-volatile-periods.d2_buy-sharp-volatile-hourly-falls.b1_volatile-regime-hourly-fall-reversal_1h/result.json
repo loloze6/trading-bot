@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3537304,
+  "findings": {
+    "F1": "The main measure is on the predicted side but short of the bar: +0.089 % mean 24-hour excess per case, t 1.58 over 9,530 cases. At other horizons the same cases are clearer: +0.093 % at 6 hours (t 3.16), +0.117 % at 12 hours (t 2.84) and +0.240 % at 48 hours (t 3.16). The 24-hour reading is the weakest of the four.",
+    "F2": "The supporting check could not pass for a mechanical reason. The median forecast is the cap of 20 (more than half the cases sit at 20), so the \"strictly above median\" half is empty and the check returns None. Yet the effect is graded with the forecast: mean excess by forecast quartile is \u22120.007 %, +0.042 %, +0.122 % and +0.199 % (t \u22120.07 to 1.50).",
+    "F3": "The effect is graded by how far 24-hour volatility is raised against its 30-day average, and the plan's on/off line at a ratio of 1.0 admits mostly cases without it. Among the strategy's cases, the lower three ratio quartiles give \u22120.104 %, \u22120.079 % and +0.071 % (t \u22121.01 to 0.66), and the top quartile gives +0.506 % (t 3.49).",
+    "F4": "On all sharp falling hours (at least 1.5 usual moves, one per 24-hour cell), the 24-hour excess rises steadily with the volatility ratio. Below 1.0 it is \u22120.253 % (t \u22123.60, strength \u22120.081, n 4,523); from 1.0 to 1.3, +0.010 % (t 0.09); from 1.3 to 1.6, +0.351 % (t 2.13); from 1.6 to 2.0, +0.315 % (t 1.41); from 2.0 to 2.5, +1.179 % (t 2.73, strength 0.097); above 2.5, +1.539 % (t 2.84, n 337).",
+    "F5": "The effect is mixed across coins and years, which drowns the pooled t. By coin, XRP (+0.224 %, t 1.39) and ZEC (+0.311 %, t 1.81) carry it, while BTC, ETH, LTC and XMR sit near 0 (t \u22120.21 to 0.25). By year, 2018, 2019 and 2022 are negative (\u22120.24 % each, t down to \u22121.69) and 2024 is strongly positive (+0.453 %, t 3.57). Among high-volatility falls (ratio 1.3 or more), all six coins are positive (+0.15 % to +1.32 %).",
+    "F6": "The average case is too small to pay for a trade, but the high-volatility cases are not. The average unusual move is +0.09 % per case (strength 0.015), half of the 0.19 % cost of a trade. Falls at volatility ratios above 2.0 carry +1.2 % to +1.5 % per case, about six to eight times that cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D",
+      "name": "volatile hourly falls, more coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "Over the next 24 hours, a coin rises after a sharp falling hour, only while its 24-hour volatility is raised against its 30-day average. The larger that fall relative to the coin's usual hourly volatility, the larger the rise.",
+      "consequence": "A trader would buy sharp single-hour falls only when the coin's volatility is running above its monthly norm, scaled to the size of the fall, and would refuse to buy falls in calm or ordinary volatility.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "Over the next 24 hours, a coin rises after a sharp falling hour, and the rise is larger the further the coin's 24-hour volatility is raised above its 30-day average at that hour.",
+      "consequence": "A trader would buy sharp hourly falls with more conviction the more turbulent the coin has become against its monthly norm, and would refuse falls that come in calm or merely average volatility.",
+      "name": "fall reversal graded by volatility",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal.b1_volatile-hourly-falls-more-coins",
+    "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal.b2_fall-reversal-graded-by-volatility"
+  ],
+  "no_ideas": null
+}

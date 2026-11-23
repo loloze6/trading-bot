@@ -1,0 +1,77 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "hod",
+        "class": "strategies.strategy_components.HourOfDayComponent",
+        "params": {}
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "hod",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            }
+          ],
+          [
+            {
+              "id": "hod",
+              "op": "between",
+              "low": 15.5,
+              "high": 16.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "fall_x_runup",
+            "class": "strategies.strategy_components.MeanAbsScaledFallTimesRiseComponent",
+            "params": {
+              "fall_period": 2,
+              "window": 720,
+              "rise_period": 168,
+              "rise_lag": 0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 24
+  },
+  "aux_feeds": []
+}

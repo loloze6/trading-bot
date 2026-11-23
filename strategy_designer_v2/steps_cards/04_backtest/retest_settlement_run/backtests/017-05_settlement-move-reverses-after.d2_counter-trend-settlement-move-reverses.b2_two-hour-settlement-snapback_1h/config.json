@@ -1,0 +1,78 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "hts",
+        "class": "strategies.strategy_components.HoursToSettlementComponent",
+        "params": {}
+      },
+      {
+        "id": "md",
+        "class": "strategies.strategy_components.MomentumDivergenceComponent",
+        "params": {
+          "short_period": 3,
+          "long_period": 25
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "hts",
+              "op": "between",
+              "low": 7.5,
+              "high": 8.5
+            },
+            {
+              "id": "md",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "trend24",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 24
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 2
+  }
+}

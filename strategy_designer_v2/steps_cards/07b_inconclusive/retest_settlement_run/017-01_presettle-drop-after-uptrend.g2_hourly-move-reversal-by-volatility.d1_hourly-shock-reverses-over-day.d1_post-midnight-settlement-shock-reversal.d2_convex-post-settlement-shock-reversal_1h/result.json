@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d2_convex-post-settlement-shock-reversal_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3741072,
+  "findings": {
+    "F1": "The main measure is on the idea's side and clearly so (mean y 0.0576, t 8.41, 12,716 cases). The result is inconclusive only because the convex part fails: the faded return per unit of move is lower in the top third of moves, by \u22120.0011. On my own recomputation the top third gives 0.296 % per unit (mean 0.51 %, t 7.24, n 5,696) against 0.413 % for the rest (mean 0.19 %, t 4.21, n 11,390).",
+    "F2": "The reversal over the next 24 hours grows with the size of the 00:00-bar move, but less than in proportion to it. By size quintile the mean faded return rises from 0.05 % (t 0.67) to 0.23, 0.30, 0.43 and 0.47 % (t 5.06). Per unit of move it falls from about 0.41\u20130.56 % in q1\u2013q3 to 0.23 % in q5.",
+    "F3": "Concave shapes fit the 24-hour return better than convex ones. The slope's t is \u22128.54 for sign\u00b7\u221a|z| (r\u00b2 0.0042), \u22127.84 for z (0.0036) and only \u22125.15 for z\u00b7|z| (0.0016). The plan's exponent-2 sizing therefore puts its weight where the reversal per unit is weakest.",
+    "F4": "The very largest moves do not reverse at all. Moves of 2\u20133 usual hourly moves fade 0.67 % (t 3.80, n 1,016). Moves of 3\u20134 fade 0.01 % (t 0.04, n 298), and moves above 4 fade \u22120.12 % (t \u22120.18, n 66). These capped extreme cases are the ones the convex test leans on.",
+    "F5": "The effect belongs to the post-settlement hour, not to every hour. The 24-hour faded return is 0.30 % (t 7.73) after the 00:00 bar. After the other 23 hours it lies between \u22120.12 % and +0.10 %, with no hour above t 2.63.",
+    "F6": "The effect is broad:",
+    "F7": "The unscaled percentage move of that hour predicts the next 24 hours better than the volatility-scaled one: slope t \u221211.62 with r\u00b2 0.0078, against t \u22127.84 with r\u00b2 0.0036 for the scaled move. The test's measured size, 0.37 % per case or 1.9 times the 0.19 % cost of a trade, leaves room for a better-graded version."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 1-hour return in the first hour after the 00:00 UTC funding settlement relative to its 24-hour volatility, the more its return over the next 24 hours runs the opposite way, with the reversal growing less than in proportion to the move, so that moderate moves reverse more per unit of move than the largest ones.",
+      "consequence": "A trader would fade the daily post-settlement hour with a size that rises with the move but flattens for big shocks, instead of concentrating the book on the extremes.",
+      "name": "concave post-settlement shock reversal",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's percentage return in the first hour after the 00:00 UTC funding settlement, the more its return over the next 24 hours runs the opposite way.",
+      "consequence": "A trader would size the daily post-settlement fade on the hour's raw percentage move, taking larger fades on the coins and days whose post-settlement hour moves most in price terms.",
+      "name": "raw post-settlement move reversal",
+      "from": "F5, F6, F7",
+      "refs": [
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d2_convex-post-settlement-shock-reversal.b1_concave-post-settlement-shock-reversal",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d2_convex-post-settlement-shock-reversal.b2_raw-post-settlement-move-reversal"
+  ],
+  "no_ideas": null
+}

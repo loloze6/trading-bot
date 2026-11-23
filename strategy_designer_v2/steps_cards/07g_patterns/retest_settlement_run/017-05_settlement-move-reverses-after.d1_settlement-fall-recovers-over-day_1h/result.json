@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.448141,
+  "findings": {
+    "F1": "A coin's 24-hour fall reverses over the next 24 hours only when its volatility is high. In the top tercile of each coin's 30-day hourly volatility, the 24h-return quintiles (24h return scaled by its usual 24h move) give an excess return over the next 24h of +1.25 % (t 5.12, 1012 cases) for the largest falls and \u22120.69 % (t \u22123.14, 991 cases) for the largest rises. In the low-volatility tercile the same quintiles give +0.02 % (t 0.14) and +0.17 % (t 1.49).",
+    "F2": "The reversal grows with volatility measured against the coin's own past. Sorting the 24h grid cases by 30-day volatility over its 90-day median, the slope of the next-24h excess return on the scaled 24h return is +0.3 bp (t 0.06), \u221214.0 bp (t \u22122.80) and \u221233.2 bp (t \u22126.65) from the low to the high tercile (about 4309 cases each).",
+    "F3": "In high volatility the reversal is graded. Across the fall quintiles, the next-24h excess return climbs from \u22120.38 % (t \u22121.45) for the mildest falls to +1.64 % (t 4.16, 424 cases) for the largest. +1.64 % is 8.6 times the 0.19 % cost of a trade, against the tested idea's total move of +0.23 % per case.",
+    "F4": "The high-volatility 24h reversal holds coin by coin and year by year, with differing strength:",
+    "F5": "The 2-hour move reverses over the next 24h most strongly on bars closing at 00:00, 01:00 and 02:00 UTC (t \u22126.32, \u22128.53, \u22127.83, about 15,900 bars each).",
+    "F6": "At the 00:00\u201302:00 UTC closes, the 2-hour move keeps its reversal when the 24h move is in the same regression: coefficients \u221213.5 bp (t \u22128.96) for the 2h move and \u221215.5 bp (t \u22129.63) for the 24h move. It is negative in all six coins (t \u22123.52 to \u22128.13) and in seven of eight years (2022: +0.7 bp, t 0.20).",
+    "F7": "The bar after a close at 21:00 or 22:00 UTC rises on average +5.09 bp (t 6.01) and +4.60 bp (t 5.73). This holds in seven of eight years (2022: \u22122.18 bp, t \u22121.44). The roughly 10 bp over the two hours is about half the 0.19 % cost of a trade, so it is not tradable on its own."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's hourly volatility over the past 30 days is high against its own past 90 days, its return over the next 24 hours runs opposite to its 24-hour return. The larger the 24-hour move against its usual 24-hour move, and the higher that relative volatility, the larger the reversal.",
+      "consequence": "After a large 24-hour fall in a coin that is unusually volatile for itself, a trader has a reason to be long for the next day, and a reason to refuse a long after a large 24-hour rise in that state.",
+      "name": "high-volatility daily move reverses",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin that falls over the 2 hours ending at 00:00, 01:00 or 02:00 UTC rises over the following 24 hours, more strongly the larger that fall against its usual 2-hour move. The rise comes on top of the reversal of its 24-hour fall.",
+      "consequence": "A fall into the first hours of the UTC day, especially after a falling day, is a reason to be long for the following day.",
+      "name": "early-UTC two-hour fall recovers",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.g1_high-volatility-daily-move-reverses",
+    "017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.g2_early-utc-two-hour-fall-recovers"
+  ],
+  "no_ideas": null
+}
