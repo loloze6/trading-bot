@@ -49,7 +49,7 @@ on the folds, the same "holds" rule on the unseen dates. No measure or bar of it
 | # | Observation | Where |
 |---|---|---|
 | E1 | Books that lose on their own sink any weighting: by P1's first rule (no earning condition), 7 of 25 candidates lose after costs, every weight rule loses (Calmar -0.21 to -0.16) while the median book earns (0.19). | `topics/44_review/p2_weights.csv`; topic 44 |
-| E2 | The strongest in-sample results hold least on unseen dates (weakest third of step 5 strength holds 100 %, highest third 50 %). So no strength threshold. | topic 47, 1d-11 |
+| E2 | In-sample strength does not tell which books hold on unseen dates: with 62 ideas tested there, the weakest third of step 5's statistic holds 71 %, the strongest 52 % (pairs ordered right 0.40; 0.5 = no information; first measured on 49 ideas: 100 % and 50 %). So no strength threshold. | topic 47, 1d-11 (updated 2026-11-24) |
 | E3 | A size above 0 says the idea exists, not that its book keeps it after costs (hourly gross already negative on many books; churn). | topic 47 1d-10; topic 48 obs. 6, 7, 9 |
 | E4 | Variants of one idea are one bet: five books of one family combined, Calmar 0.70 against 0.80 for five families. | topic 47, 1d-7 |
 | E5 | Correlation decides the gain: at 0.99 no reduction of the swing, at 0.90 about 3 %, at 0.64-0.71 no gain in Sharpe; at 0.05 Sharpe 1.26 and 1.23 alone, 1.66 together, the deepest fall halved. | `runs/COMBINE_TEST_RUN.md`; `runs/NIGHT4_RUN.md` test 2 |
