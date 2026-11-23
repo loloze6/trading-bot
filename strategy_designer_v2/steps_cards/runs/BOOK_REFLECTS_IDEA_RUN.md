@@ -71,3 +71,10 @@ situation itself, in crash periods (the operator's case 1, "wrong by design in t
   profitability;
 - the lever for paying is the market state the situation happens in (item 1d), and the first measure is direct: the
   situation days' returns inside crash periods against outside.
+
+## Then: crash periods (2026-11-23, operator's go; topic 47, 1d-1)
+The guess after phase A (the situation days fall in the crashes) is **wrong**. Inside crash periods (two definitions,
+the coin's state known before the trade) the trades earn as much or more than outside, with the same swing. The worst
+falls are what a small edge with a large swing gives by chance: on shuffled days, 63 to 95 % of the shuffles fall at
+least as deep. For these ideas the edge per trade (about +0.5 % after costs) is small against each trade's swing
+(about 6 %): Calmar stays low whatever the shape of the book or the market state.

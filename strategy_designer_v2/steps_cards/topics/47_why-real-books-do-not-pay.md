@@ -86,6 +86,7 @@ measured beside it (A); the search correction next.
 | 1a | Phase A: 5 ungated ideas rebuilt to trade only their situation, steps 4-6, measured problem by problem (`runs/BOOK_REFLECTS_IDEA_RUN.md`) | done 2026-11-23: days in a position fell (6-56 %), falls and Calmar did not improve (the situation days fall in the crashes); 3 of 5 no longer confirmed on their own situation |
 | 1b | Phase B: step 3's card and build, proved on the same 5 ideas | if 1a gains |
 | 1c | Phase C: a run, the problems read one by one against night 5 | after 1b |
+| 1d-1 | Crash periods (`47_review/crash_state.py`; a coin in a crash: 30 % below its 90-day high, or 30-day return -20 % or lower, known before the trade): the phase-A books' trades inside crash periods earn as much or more than outside (absorption +0.69 % against +0.41 % a trade; deep 2-hour fall +0.41 % against +0.06 %), with the same swing (about 6 % a trade). Their worst falls are ordinary losing streaks: shuffling a book's days 1,000 times gives a fall at least as deep in 63-95 % of the shuffles. So the falls come from a small edge against a large swing (about +0.5 % against 6 % a trade), not from crashes, not from the book's shape | done 2026-11-23 |
 | 1d | Ideas name the market state their effect works in (steps 2, 7; step 5 measures the effect by state) | after 1a sizes problem 2 |
 | 2a | `select_next`: breadth over depth (a branch that keeps failing the same check is left) | design with 1b |
 | 2b | Search luck measured again (this card's measurement 2) | after 1c |
