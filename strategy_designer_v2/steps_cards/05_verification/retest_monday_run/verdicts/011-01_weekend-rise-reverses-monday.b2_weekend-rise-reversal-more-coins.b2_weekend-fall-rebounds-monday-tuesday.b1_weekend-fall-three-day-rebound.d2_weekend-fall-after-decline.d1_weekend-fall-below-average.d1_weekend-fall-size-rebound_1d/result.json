@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9988738738738738,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (excess 3-bar return x forecast / 10) over Sunday cases with forecast > 0",
+    "value": 0.011016671580834305,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.030762242893551
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and correlation > 0; reject: mean < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast with excess 3-bar return across cases",
+    "value": 0.04801074667102161,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1497
+  },
+  "decided_by": "The mean of the products is above 0 with t >= 2 and the correlation is above 0.",
+  "reading": "The situation is a bar opening on Sunday UTC whose close is below the 50-bar SMA of closes computed inside its window and whose one-bar return (the recorded raw component, else the close versus the previous day's close) is negative, active Sunday bars whose SMA50 cannot be computed inside the window are left out of the agreement; the coin's mean 3-bar return is taken on the non-overlapping grid (positions 0, 3, 6, ...) of all its windows pooled, cases without 3 bars left in their window are left out, and t is the ordinary t of the mean of the products."
+}
