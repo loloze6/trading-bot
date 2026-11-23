@@ -1,3 +1,6 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
+017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
+017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
+017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]

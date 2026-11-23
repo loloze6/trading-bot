@@ -188,6 +188,8 @@ An idea's latest record counts once.
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | confirmed | retest_settlement_run | 1h | 6 | ef9a418cc | 2026-11-22T23:31:27 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | confirmed | retest_settlement_run | 1h | 6 | 58071a12b | 2026-11-22T23:18:26 |
+| 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | confirmed | retest_settlement_run | 1h | 6 | e845f92b7 | 2026-11-22T23:43:25 |
+| 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h | confirmed | retest_settlement_run | 1h | 6 | e845f92b7 | 2026-11-22T23:59:09 |
 | 017-05_settlement-move-reverses-after_1h | confirmed | retest_settlement_run | 1h | 6 | 8fb48db89 | 2026-11-22T23:07:31 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
 | 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth_1d | confirmed | short_1d_run | 1d | 6 | 9a768b6d6 | 2026-11-22T13:10:58 |

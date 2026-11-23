@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9930487060260204,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed excess 8-bar return after settlement cases",
+    "value": 0.0002569546079589036,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.2507004033691933
+    },
+    "threshold": "confirm if t >= 2 (with positive slope); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of signed excess return on |forecast|",
+    "value": 0.0001782820578996508,
+    "passed": true
+  },
+  "counts": {
+    "cases": 17689
+  },
+  "decided_by": "t is between -2 and 2.",
+  "reading": "Settlement bars are those whose close (timestamp + 1h) falls at 00:00, 08:00 or 16:00 UTC; returns, the 2-bar pre-move and the 24-bar trend are taken by row position inside each window (trend from the recorded raw component where present, else from prices); cases without a full 8-bar return inside their window are dropped; the 100-case minimum is applied as 'not observable'."
+}
