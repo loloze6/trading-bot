@@ -82,3 +82,32 @@ book that holds is momentum (0.74 explained). Their in-sample checks stay as rec
   path: metrics, forecasts and trade diagnostics identical in all 144; only run ids, times, commit id and temporary
   paths differ. Not covered: the engine's own `run_protocol.py` (shared code) still runs to its end after its step 4
   is stopped; it writes only into step 4's temporary folder, not the record. Sessions take it at their next restart.
+
+## Session 4 (brief 030, absorption): ended on budget, 02:28 Paris (35.31 USD, 2 h 24; branch night5-brief-absorption, 26561df6d6)
+| Measure | Count |
+|---|---|
+| Ideas written (step 2 / step 7) | 107 (4 / 103) |
+| Tested / duplicates / not testable, id too long / left | 38 / 9 / 38 / 31 |
+| Components built (wishes 12) | 9 (7 components), 3 existed; 5.85 USD |
+| Step 5: confirmed / inconclusive / mismatch (of 29 plans) | 22 / 6 / 1, all 22 from 030-03 (heavy volume, low close, next-day rise) |
+| Step 6 profitable enough | 3 (two are 7.d repairs) |
+| Unseen tests: hold on both periods | 0 of 2 |
+| 7.d: analyses / ideas / closures | 14 / 31 / 0; all 31 repairs by the session's reading; a trend condition in 9, each measured alone |
+| Failed on file names over 255 bytes | 13 (1.45 USD), none after the second fix |
+
+The session's reading: none of A1 to A4 as written; nearest A2 (a real effect, 22 of 29 confirmed; 3 books pay in
+sample, none holds on both unseen periods). Its shares are against this run's books only (the other runs' return files
+are not in its container): to be redone at the morning merge. One paying book (030-03...d2.d2.d2.d1) has no comparison:
+its register file name is too long (topic 46); the merge's `--all` will fail on it the same way. 38 of 107 ideas not
+testable for their id's length: topic 46's count for the operator.
+
+## The register's periods under pandas 3 (session 2, about 03:40 Paris)
+`run_idea` runs the similarity check under the python that runs it (here the system's, pandas 3), not the backtest's
+(`--python`, pandas 2). The register wrote a period as `astype("int64") // 10**9`, which assumes nanoseconds; pandas 3
+stores microseconds, so tonight's sessions wrote periods 1000 times too small (and truncated: 1641081 for 1641081600).
+Effect: no night-5 book had a date in common with another run's book; its nearest relative was none, or a book of its
+own run; `select_next`'s w had no evidence for most night-5 parents (0.5 by its rule). The register on this branch is
+not affected (215 files, 0 bad: built with pandas 2). **Fixed** (`utc_seconds`, whatever unit pandas stores; test
+under three units; checked under pandas 3.0.5). Not repairable by multiplying by 1000 (the truncation loses the
+minutes): at the morning merge, each night-5 book is added again from its record (`add` rewrites its returns file),
+then `--all`.

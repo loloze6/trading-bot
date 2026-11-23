@@ -155,3 +155,12 @@ def test_the_matrix_holds_every_pair_of_paying_books_with_similar_books_together
     assert cell[("m_run__a1_x_1d", "m_run__a2_x-copy_1d")]["share_explained"] > 0.95
     text = (reg / "MATRIX.md").read_text(); csv = (reg / "matrix.csv").read_text().splitlines()
     assert "| **1** | · |" in text and len(csv) == 1 + 3 * 2                   # header and every ordered pair
+
+
+def test_periods_are_utc_seconds_whatever_unit_pandas_stores():
+    """Night 5: pandas 3 stores times in microseconds; the periods must still be seconds (and read back the same)."""
+    t = pd.Series(pd.to_datetime(["2022-01-02 00:00", "2022-01-02 01:00"], utc=True))
+    for unit in ("ns", "us", "s"):
+        s = pb.utc_seconds(t.astype(f"datetime64[{unit}, UTC]"))
+        assert list(s) == [1641081600, 1641085200]
+        assert list(pd.to_datetime(s, unit="s", utc=True)) == list(t)
