@@ -1,4 +1,7 @@
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d1_volatile-sunday-reversal-over-two-days_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue_1h: 1 ideas (2 explorations)
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

@@ -53,6 +53,7 @@
 | 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d | paying_rerun_run | 1d | 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d (1d) | 0.75 | same period | +0.0213 % (1.61) | 0.13 |
 | 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d | paying_rerun_run | 1d | 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d (1d) | 0.99 | same period | +0.0011 % (0.32) | 0.42 |
 | N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.89 | same period | +0.0043 % (0.51) | 0.30 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h | retest_weekend_run | 1h | none comparable | | | | 0.00 |
 
 ## Confirmed books whose book does not pay, the least explained by the paying books first
 (real ideas that are not yet a profit; the least explained are the variations the research has found)
@@ -60,6 +61,8 @@
 | Book | Run | Bar | Nearest paying book | Share explained | Who leads | What is left per period (t) | Against holding: share explained |
 |---|---|---|---|---|---|---|---|
 | 017-05_settlement-move-reverses-after_1h | hold_confirmed_1h_run | 1h | 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d (1d) | 0.01 | new one period behind | -0.2274 % (-13.28) | 0.00 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday_1h | retest_weekend_run | 1h | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h (1h) | 0.01 | same period | +0.0003 % (0.59) | 0.00 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d1_volatile-sunday-reversal-over-two-days_1h | retest_weekend_run | 1h | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h (1h) | 0.01 | same period | +0.0007 % (0.97) | 0.00 |
 | 017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses_1h | step7ab_bp_run | 1h | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d (1d) | 0.01 | same period | -0.0431 % (-1.69) | 0.01 |
 | 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d | night3_learned_run | 1d | 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d (1d) | 0.01 | new one period behind | -0.1043 % (-1.63) | 0.00 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | hold_confirmed_1h_run | 1h | 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h (1h) | 0.01 | same period | -0.0327 % (-27.65) | 0.02 |

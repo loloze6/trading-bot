@@ -1,0 +1,1 @@
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: not observable (fit: adapted) [main: 0.000581749; OLS slope t 0.673601; entry cases 23]

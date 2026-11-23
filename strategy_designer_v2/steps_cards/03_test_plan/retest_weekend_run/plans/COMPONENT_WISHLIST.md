@@ -4,3 +4,12 @@ One block per idea that needs components the catalogue does not have.
 
 ## 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h
 - Component: VolumeRatioWeightedReturnComponent: the close's return over the last `period` bars (48), divided by the mean absolute `period`-bar return over a `window` (720), times the mean volume of the last `period` bars over the mean volume of the `base_period` bars before them (120, bars t-167 .. t-48), from close and volume. It is signed like the move and grows with the move's size and with the volume ratio, and it is 0 for a flat move | measures: situation
+
+## 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d2_calm-up-saturday-continues-higher_1h
+- Component: LaggedRiseTimesCalmness: max(0, close[t-lag] / close[t-lag-period] - 1) x mean(s over the last vol_lookback bars) / s(t), with s(i) the std of the vol_period hourly close-to-close returns ending at bar i (period 24, lag 24, vol_period 720, vol_lookback 8760), from closes only. It is 0 after a flat or down Saturday and grows with Saturday's rise and with how far current volatility sits below its past-year average | measures: situation
+
+## 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d1_sunday-reversal-grows-with-volatility_1h
+- Component: MeanAbsScaledReturnTimesVolatilityComponent: from closes, (close[t] / close[t-24] - 1) / m x s. Here m is the mean of abs(close[i] / close[i-24] - 1) over the last 720 bars, and s is the std (ddof 1) of the last 720 one-bar returns. It is signed like the 24-bar return, and its size grows with that move in usual 24h moves and with the coin's hourly volatility | measures: comparison
+
+## 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d3_moderate-sunday-moves-reverse-most_1h
+- Component: CappedScaledReturnTimesVolatilityComponent: clip((close[t]/close[t-24]-1)/m, -2, +2) x s, where m is the mean of abs(close[i]/close[i-24]-1) over the last 720 bars and s is the std (ddof 1) of the last 720 one-bar returns, all from closes; it is signed like the 24-hour return, grows linearly with the scaled move up to two usual moves and then stays flat, and grows with s | measures: situation

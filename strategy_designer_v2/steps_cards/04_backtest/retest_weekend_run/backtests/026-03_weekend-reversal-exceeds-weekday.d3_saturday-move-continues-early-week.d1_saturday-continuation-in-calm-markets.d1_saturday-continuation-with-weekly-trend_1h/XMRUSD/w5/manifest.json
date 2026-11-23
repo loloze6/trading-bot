@@ -1,0 +1,228 @@
+{
+  "run_id": "20261123T000544Z_4b184404",
+  "created_utc": "2026-11-23T00:05:44.919875+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "wd",
+          "class": "strategies.strategy_components.WeekdayComponent",
+          "params": {}
+        },
+        {
+          "id": "hr",
+          "class": "strategies.strategy_components.HourOfDayComponent",
+          "params": {}
+        },
+        {
+          "id": "volp",
+          "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+          "params": {
+            "vol_period": 720,
+            "lookback_period": 8760,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "sat_d",
+          "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+          "params": {
+            "period": 24,
+            "vol_period": 720,
+            "lag": 24,
+            "vol_lookback": 1
+          }
+        },
+        {
+          "id": "wk_d",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 168
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "wd",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              },
+              {
+                "id": "hr",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              },
+              {
+                "id": "volp",
+                "op": "lte",
+                "value": 0.5
+              },
+              {
+                "id": "sat_d",
+                "op": "gt",
+                "value": 0.0
+              },
+              {
+                "id": "wk_d",
+                "op": "gt",
+                "value": 0.0
+              }
+            ],
+            [
+              {
+                "id": "wd",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              },
+              {
+                "id": "hr",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              },
+              {
+                "id": "volp",
+                "op": "lte",
+                "value": 0.5
+              },
+              {
+                "id": "sat_d",
+                "op": "lt",
+                "value": 0.0
+              },
+              {
+                "id": "wk_d",
+                "op": "lt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "sat",
+              "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+              "params": {
+                "period": 24,
+                "vol_period": 720,
+                "lag": 24,
+                "vol_lookback": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 500,
+                    "min_periods": 120
+                  }
+                }
+              ]
+            },
+            {
+              "id": "week",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 168
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 169,
+                    "min_periods": 42
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "unknown": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 48
+    },
+    "aux_feeds": [],
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "4b184404519342afde7de73dfe7dac5d24fe4339c377d0034467244494cce20f",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2021-03-02 00:00:00",
+    "end": "2023-08-31 23:00:00",
+    "bar_count": 21905,
+    "data_sha256": "32ab1044f0e9910537ec4d7622645c0b489d5acac58a7c720429175be508deba"
+  },
+  "git_sha": "16d765ddbcb6720d892797d010bc3346a1cc7b6e",
+  "engine": {
+    "lookback": 745,
+    "warmup": 745
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}
