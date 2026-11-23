@@ -1,0 +1,58 @@
+{
+  "line": "7.d",
+  "backtest": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4715945,
+  "findings": {
+    "F1": "The check failed on Calmar (0.481 against 0.75) because of deep falls rather than a lack of gain. The book earned +15.8 % a year with a Sharpe of 0.74, but its deepest fall was \u221232.8 %, lasting 361 days from w11 to w14 and bottoming in 2018 while the coins fell 32.0 %. The next falls were \u221228.3 % (w5\u2013w6, 2023, while the coins rose 20.4 %), \u221219.3 % (w21, 2024) and \u221217.5 % (w8\u2013w9, 2019). Across all days the book's correlation with holding is only 0.04.",
+    "F2": "The fade's effect depends on the coin's 7-day volatility, and the vol-target sizing bets most where the effect is absent. In the lowest quartile of 7-day volatility (per coin) the case fade earns \u22120.06 % over 24 hours (t \u22120.68, n 1893); in the top quartile it earns +1.30 % (t 7.95, n 1944). Yet the mean absolute position is 0.62 in the lowest quartile and 0.35 in the top.",
+    "F3": "The deepest fall (w11\u2013w14) came from the calm cases. There, the position-weighted 24-hour results by 7-day-volatility quartile were \u22120.75 % (t \u22123.06, n 93), \u22120.47 % (t \u22122.36, n 142) and \u22120.28 % (t \u22122.32, n 371), against +0.29 % (t 2.92, n 733) in the top quartile. A fee-free proxy book (positions held 24 hours from each case, chained by window) shows the effect of leaving out the calmest quartile: deepest fall \u221222.1 % against \u221226.0 %, Calmar 1.53 against 1.07, Sharpe 1.51 against 1.15.",
+    "F4": "The fade is larger when the coin's 24-hour volatility is high against its 7-day volatility, and this condition alone does not earn. Aligned cases earn +0.78 % (t 5.80, n 1901) in the top quartile of that ratio against +0.25 % (t 2.29, n 1908) in the bottom. The same fade on non-aligned 00:00 hours in the top quartile earns only +0.15 % (t 1.41, n 2158). The proxy book restricted to the upper half of the ratio has a deepest fall of \u221215.3 % against \u221226.0 %, and a Calmar of 1.23 against 1.07.",
+    "F5": "The long side carries the book and the short side carries the falls.",
+    "F6": "Within its cases the effect is graded on both of the idea's measures. By quartile of |forecast| the 24-hour fade rises from +0.31 % (t 2.63) to +0.66 % (t 5.63). By quartile of the scaled 23-hour run it rises from +0.27 % to +0.62 % (t 5.43). Each quartile holds about 2040 cases."
+  },
+  "ideas": [
+    {
+      "idea": "When the coin's return in the first hour after the 00:00 UTC funding settlement runs the same way as its return over the previous 23 hours, the larger that hour's return relative to its 24-hour volatility, the more the coin's return over the next 24 hours runs the opposite way, and the reversal is larger the higher the coin's volatility over the past 7 days.",
+      "consequence": "A trader would size the fade of an aligned post-settlement hour up with the coin's 7-day volatility, not down with it, and take little position in a calm week, where the fade carried the deepest fall.",
+      "name": "settlement fade scaled by turbulence",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When the coin's return in the first hour after the 00:00 UTC funding settlement runs the same way as its return over the previous 23 hours, the larger that hour's return relative to its 24-hour volatility, the more the coin's return over the next 24 hours runs the opposite way, only while the coin's 24-hour volatility is raised against its 7-day volatility, and more so the higher that ratio.",
+      "consequence": "A trader would fade the aligned settlement hour when the last day has been unusually turbulent for the coin, and hold back when it has been quiet, which cuts the depth of the falls.",
+      "name": "settlement fade in volatility bursts",
+      "from": "F1, F4, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When the coin's return in the first hour after the 00:00 UTC funding settlement is a fall that extends its fall over the previous 23 hours, the larger that hour's fall relative to its 24-hour volatility, the more the coin rises over the next 24 hours.",
+      "consequence": "A trader would buy the post-settlement hour that extends a crowded down-run, sized by the move, and leave out the short fade of an extended up-run, which carried the falls against the coin's drift.",
+      "name": "long-side settlement capitulation rebound",
+      "from": "F1, F5, F6",
+      "refs": [
+        "F1",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.d1_settlement-fade-scaled-by-turbulence",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.d2_settlement-fade-in-volatility-bursts",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run.d3_long-side-settlement-capitulation-rebound"
+  ],
+  "no_ideas": null
+}

@@ -1,3 +1,4 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run_1h: not profitable enough [Sharpe 0.7436; Sharpe minus holding's Sharpe 0.1899; Calmar 0.481]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal_1h: not profitable enough [Sharpe 0.7642; Sharpe minus holding's Sharpe 0.2104; Calmar 0.4722]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: not profitable enough [Sharpe 0.1873; Sharpe minus holding's Sharpe -0.3664; Calmar -0.09903]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h: not profitable enough [Sharpe 0.3175; Sharpe minus holding's Sharpe -0.2362; Calmar -0.009965]

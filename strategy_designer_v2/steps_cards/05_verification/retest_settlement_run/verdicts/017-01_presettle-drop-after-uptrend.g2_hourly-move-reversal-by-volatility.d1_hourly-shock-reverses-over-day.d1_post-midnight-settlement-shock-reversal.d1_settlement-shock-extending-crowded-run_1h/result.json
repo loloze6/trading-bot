@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9838748787584869,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 24-bar forward return on forecast",
+    "value": 0.0003637760809335721,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 7.872467252712994
+    },
+    "threshold": "slope > 0 with t >= 2 (confirm), slope < 0 with t <= -2 (reject), on at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x excess 24-bar return > 0",
+    "value": 0.004523078086749643,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8162
+  },
+  "decided_by": "The slope is positive with t >= 2 on at least 300 cases and the supporting check passes.",
+  "reading": "Situation bars are those stamped 00:00 UTC whose own return close[t]/close[t-1]-1 has the same sign as close[t-1]/close[t-24]-1, expected side opposite to that hour's return; a coin-day's case is its first non-zero-forecast bar (UTC date of the timestamp); the coin's mean 24-bar return is taken on the non-overlapping 24-bar grid of all its windows; the slope is ordinary least squares with an intercept and t = slope / its standard error."
+}
