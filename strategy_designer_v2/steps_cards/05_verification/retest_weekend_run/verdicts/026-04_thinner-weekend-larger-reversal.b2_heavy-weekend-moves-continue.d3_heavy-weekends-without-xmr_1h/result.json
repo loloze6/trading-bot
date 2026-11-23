@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9336870026525199,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed unusual 48-bar move per case",
+    "value": 0.015481267888276565,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.1481431915951004
+    },
+    "threshold": "mean > 0 with t >= 2 (confirm, with size check); mean < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "mean signed unusual move, |forecast| above median minus below median",
+    "value": -0.0025271430490240096,
+    "passed": false
+  },
+  "counts": {
+    "cases": 374,
+    "cases above median": 187,
+    "cases below median": 187
+  },
+  "decided_by": "t >= 2 but the size check (above-median minus below-median |forecast|) fails.",
+  "reading": "Cases are the nonzero-forecast bars with 48 bars ahead in their window, keeping a bar only if 48 bars after the previous kept case; the normal drift is the coin's mean 48-bar return on the non-overlapping grid of all its windows; cases with |forecast| equal to the median are left out of the size check; the plan's 30-case minimum maps to 'not observable'."
+}

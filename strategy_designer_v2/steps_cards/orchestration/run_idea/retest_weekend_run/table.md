@@ -20,22 +20,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue | 026-04_thinner-weekend-larger-reversal | plan | confirmed (+2.53) | not profitable enough (failed: Calmar) | - | 7.d: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr; 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.g1_weekend-volume-graded-monday-follow-through, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.g2_weekend-relative-volume-grades-continuation | 1.27 | 12.5 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue | plan | confirmed (+2.63) | not profitable enough (failed: Calmar) | - | 7.d: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation; 7.g: no ideas: Every pattern that stands out above chance across the angles examined is the tested idea itself (F1–F3): heavy-volume, large, calm-coin weekend moves continue. These angles covered anchor weekdays, volume, move size, calm, horizon split, Saturday versus Sunday, year, coin and the book by year. The remaining splits (Tuesday versus Monday, the time decay, per coin; F4–F6) are too weak, or are not a market situation a new idea could stand on. | 1.10 | 12.1 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue | plan | inconclusive (+1.76) | not profitable enough (failed: Calmar) | - | 7.b: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation.b1_heavy-weekend-continuation-more-coins, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation.b2_heavy-weekend-falls-keep-falling; 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation.g1_evening-rebound-after-daily-falls, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation.g2_trend-aligned-two-day-continuation | 0.97 | 11.6 |
+| 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue | plan | inconclusive (+3.15) | profitable enough | - | 7.b: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.b1_weekend-volume-grades-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.b2_heavy-weekends-on-more-coins; 7.e: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.e1_weekend-volume-drives-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.e2_heavy-weekend-rises-extend; 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.g1_weekend-volume-grades-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.g2_thin-weekend-rises-reverse, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.g3_late-evening-utc-volatility-drift | 1.39 | 10.7 |
 
 ## Consumption
-16 ideas, 17.80 USD, 187.8 minutes in all.
+17 ideas, 19.19 USD, 198.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.75 | 17.2 |
-| step4_backtest | 0.00 | 114.1 |
-| step5_verdict | 2.42 | 9.2 |
+| step3_plan | 3.85 | 17.9 |
+| step4_backtest | 0.00 | 119.9 |
+| step5_verdict | 2.59 | 9.9 |
 | step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 1.0 |
 | similarity_check | 0.00 | 1.1 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 1.33 | 4.6 |
-| step7_7.e | 0.00 | 0.0 |
+| step7_7.b | 1.67 | 5.7 |
+| step7_7.e | 0.38 | 1.2 |
 | step7_7.c | 0.41 | 1.3 |
 | step7_7.d | 3.78 | 13.2 |
-| step7_7.g | 6.11 | 22.1 |
+| step7_7.g | 6.50 | 23.4 |
 | unseen_test | 0.00 | 3.2 |

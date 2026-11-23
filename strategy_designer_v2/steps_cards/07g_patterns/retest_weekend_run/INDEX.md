@@ -5,6 +5,8 @@
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week_1h: 3 ideas (2 explorations)
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue_1h: 3 ideas (2 explorations)
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h: 2 ideas (2 explorations)
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h: 3 ideas (3 explorations)
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins_1h: no ideas: Every pattern that stands out above chance across the angles examined is the tested idea itself (F1–F3): heavy-volume, large, calm-coin weekend moves continue. These angles covered anchor weekdays, volume, move size, calm, horizon split, Saturday versus Sunday, year, coin and the book by year. The remaining splits (Tuesday versus Monday, the time decay, per coin; F4–F6) are too weak, or are not a market situation a new idea could stand on.
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation_1h: 2 ideas (2 explorations)
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr_1h: 3 ideas (2 explorations)
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h: 2 ideas (0 explorations)

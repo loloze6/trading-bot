@@ -194,6 +194,7 @@ An idea's latest record counts once.
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday_1h | confirmed | retest_weekend_run | 1h | 6 | 16d765ddb | 2026-11-23T00:26:02 |
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week_1h | confirmed | retest_weekend_run | 1h | 6 | d3817b8a0 | 2026-11-22T23:44:53 |
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h | confirmed | retest_weekend_run | 1h | 6 | d3817b8a0 | 2026-11-22T23:01:57 |
+| 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h | paying | retest_weekend_run | 1h | 6 | 01b13e15f | 2026-11-23T02:17:21 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins_1h | confirmed | retest_weekend_run | 1h | 6 | 2fdadf83d | 2026-11-23T01:47:55 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h | confirmed | retest_weekend_run | 1h | 6 | 2fdadf83d | 2026-11-23T01:36:32 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
