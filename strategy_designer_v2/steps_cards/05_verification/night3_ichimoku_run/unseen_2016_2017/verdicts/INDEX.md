@@ -1,0 +1,1 @@
+021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins_1d: not observable (fit: exact) [main: 0.0776219; t of the mean 1.30189; independent grid cases in the regime 8, slow-fall half 4, fast-fall half 4]
