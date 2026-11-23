@@ -3872,27 +3872,29 @@ class NarrowRangeBreakoutComponent(SubStrategyComponent):
 
 class BreakoutInMeanRangesComponent(SubStrategyComponent):
     """
-    The close's distance from the prior stretch's highest high, in average bar ranges, on one side of it:
+    The close's distance beyond or under a high, counted in mean bar ranges, on every bar:
 
-        H = max(high[t - period .. t - 1])                     (bar t excluded)
-        B = mean(high[i] - low[i]) for i = t - base_period + 1 .. t   (bar t included)
+        stretch:  high_current = 0 (default): H = max(high[t - period .. t - 1])    (bar t excluded)
+                  high_current = 1:           H = max(high[t - period + 1 .. t])    (bar t included)
+        base:     base_exclude_current = 0 (default): B = mean(high[i] - low[i]), i = t - base_period + 1 .. t
+                  base_exclude_current = 1:           B = mean(high[i] - low[i]), i = t - base_period .. t - 1
         side = "above" (default): raw_value = max(0, close[t] - H) / B
         side = "below":           raw_value = max(0, H - close[t]) / B
         raw_value = 0.0 when B = 0
 
-    Range and sign: 0 and up, unbounded above, never negative; no direction. "above" is 0 when the close is at or
-    below the prior high and grows linearly with the size of the break. "below" is 0 when the close is at or above
-    the prior high and grows linearly as the close sits deeper below it. Units: mean bar ranges. Graded and
-    continuous in the close at H. The default "above" is the original output, unchanged.
-    Warm-up: max(base_period, period + 1) rows, bar t included.
+    The defaults (side "above", high_current 0, base_exclude_current 0) are the original output, unchanged.
+    With period 1, base_period 20, side "below", high_current 1 and base_exclude_current 1 the output is
+    (high[t] - close[t]) / mean(high[i] - low[i], i = t-20 .. t-1): 0 with the close at the bar's high, growing
+    as the close sits lower in a bar whose range is wide against the prior 20 bars' mean range.
+    Range: 0 and up, unbounded above, never negative; no direction; graded (linear in the close).
+    Warm-up: max(base_period + base_exclude_current, period + 1 - high_current) rows, bar t included.
+    NaN: a NaN high in the stretch, a NaN high or low in the base rows, or a NaN close[t] gives NaN.
+    B = 0 (base_period zero-range bars in a row, never on real bars) reads 0.0.
+    Building the component raises for period < 1, base_period < 1, a side other than "above" or "below",
+    a high_current or base_exclude_current other than 0 or 1.
 
-    WHY THIS CANNOT LEAK: it reads the `high` column of rows t-period .. t-1, the `high` and `low` columns of the
-    last base_period rows (up to and including bar t, the last row of data), and close[t]. All of these are known at
-    bar t's close.
-
-    NaN: a NaN high in the stretch, a NaN high or low in the last base_period rows, or a NaN close[t] gives NaN.
-    Building the component raises for a period below 1, a base_period below 1, or a side other than "above" or
-    "below".
+    WHY THIS CANNOT LEAK: it reads only the high, low and close of the rows up to and including bar t (the last
+    row of data): highs of bars t-period .. t, lows and highs of bars t-base_period-1 .. t at most, and close[t].
     """
 
     def __init__(self, name="BreakoutInMeanRanges", weight=1.0, parameters=None):
@@ -3902,15 +3904,25 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
             raise ValueError(f"BreakoutInMeanRangesComponent: period must be >= 1, got {self.period}")
         self.base_period = int(self.parameters.get("base_period", 180))
         if self.base_period < 1:
-            raise ValueError(
-                f"BreakoutInMeanRangesComponent: base_period must be >= 1, got {self.base_period}")
-        side = self.parameters.get("side", "above")
-        if side not in ("above", "below"):
-            raise ValueError(f"BreakoutInMeanRangesComponent: side must be 'above' or 'below', got {side!r}")
-        self.side = side
+            raise ValueError(f"BreakoutInMeanRangesComponent: base_period must be >= 1, got {self.base_period}")
+        self.side = self.parameters.get("side", "above")
+        if self.side not in ("above", "below"):
+            raise ValueError(f"BreakoutInMeanRangesComponent: side must be 'above' or 'below', got {self.side!r}")
+        hc = self.parameters.get("high_current", 0)
+        if isinstance(hc, bool):
+            hc = int(hc)
+        if hc not in (0, 1):
+            raise ValueError(f"BreakoutInMeanRangesComponent: high_current must be 0 or 1, got {hc!r}")
+        self.high_current = int(hc)
+        bx = self.parameters.get("base_exclude_current", 0)
+        if isinstance(bx, bool):
+            bx = int(bx)
+        if bx not in (0, 1):
+            raise ValueError(f"BreakoutInMeanRangesComponent: base_exclude_current must be 0 or 1, got {bx!r}")
+        self.base_exclude_current = int(bx)
         self._raw_value = 0.0
 
-    def update(self, data: pd.DataFrame):
+    def update(self, data):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
@@ -3919,29 +3931,38 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
         high = data['high'].astype(float).to_numpy()
         low = data['low'].astype(float).to_numpy()
         close = data['close'].astype(float).to_numpy()
-        stretch = high[-(self.period + 1):-1]
-        base_h = high[-self.base_period:]
-        base_l = low[-self.base_period:]
-        c = float(close[-1])
-        if np.isnan(stretch).any() or np.isnan(base_h).any() or np.isnan(base_l).any() or np.isnan(c):
+        n = len(close)
+        if self.high_current == 1:
+            stretch = high[n - self.period:n]
+        else:
+            stretch = high[n - 1 - self.period:n - 1]
+        b_stop = n - self.base_exclude_current
+        b_start = b_stop - self.base_period
+        bh = high[b_start:b_stop]
+        bl = low[b_start:b_stop]
+        c = close[-1]
+        if np.isnan(stretch).any() or np.isnan(bh).any() or np.isnan(bl).any() or np.isnan(c):
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
-        h = float(stretch.max())
-        b = float(np.mean(base_h - base_l))
-        gap = (c - h) if self.side == "above" else (h - c)
-        if b == 0:
-            self._raw_value = 0.0
+        H = float(np.max(stretch))
+        B = float(np.mean(bh - bl))
+        if B == 0:
+            value = 0.0
+        elif self.side == "above":
+            value = max(0.0, c - H) / B
         else:
-            self._raw_value = float(max(0.0, gap) / b)
+            value = max(0.0, H - c) / B
+        self._raw_value = float(value)
         self.confidence = 1.0
-        self.debug_info = {'prior_high': h, 'mean_bar_range': b, 'side': self.side}
+        self.debug_info = {'H': H, 'B': B, 'close': float(c), 'side': self.side,
+                           'high_current': self.high_current, 'base_exclude_current': self.base_exclude_current}
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self) -> int:
-        return max(self.base_period, self.period + 1)
+    def get_required_periods(self):
+        return max(self.base_period + self.base_exclude_current, self.period + 1 - self.high_current)
 
 
 class NarrowRangeBreakoutRangeRatioComponent(SubStrategyComponent):
@@ -7980,6 +8001,474 @@ class VolatilityWeightedFallComponent(SubStrategyComponent):
         self._raw_value = float(fall * s)
         self.confidence = 1.0
         self.debug_info = {'fall_pct': fall, 'vol': s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.vol_period + 1
+
+
+class BarBodySizeComponent(SubStrategyComponent):
+    """
+    The size of the current bar's body, the net move from its open, on bar t:
+
+        B = abs(close[t] - open[t])
+        relative_to = "open" (default):  body = B / open[t] x 100            (percent of the open)
+        relative_to = "range":           body = B / (high[t] - low[t])       (0.0 when high[t] = low[t])
+        form = "body" (default):         raw_value = body
+        form = "flatness" (needs relative_to "range"):
+                                         raw_value = 1 - B / (high[t] - low[t])   (1.0 when high[t] = low[t])
+
+    form "body" is the original output, unchanged. form "flatness" is 1 minus the body's share of the range.
+    It equals 1 when the close equals the open (or for a zero range) and 0 when the body spans the whole range.
+    It grows continuously as the close nears the open. No config step gives 1 minus a value, hence the setting.
+
+    Range & sign: "open" is 0 and up, never negative. "range" is 0 to 1 on real bars, never negative.
+    "flatness" is 0 to 1 on real bars, never negative. None of them has a direction.
+    Warm-up: 1 row (bar t only).
+
+    NaN: a NaN in any value read gives NaN. With "open", an open not above 0 gives NaN (never on real bars).
+    A missing column raises.
+    Building the component raises for a relative_to other than "open" or "range", for a form other than "body"
+    or "flatness", and for form "flatness" with relative_to "open".
+
+    WHY THIS CANNOT LEAK: it reads only the open, close (and, for "range", the high and low) of the last row of
+    data, bar t itself, all known at that bar's close.
+    """
+
+    def __init__(self, name="BarBodySize", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.relative_to = self.parameters.get("relative_to", "open")
+        if self.relative_to not in ("open", "range"):
+            raise ValueError(
+                f"BarBodySizeComponent: relative_to must be 'open' or 'range', got {self.relative_to!r}")
+        self.form = self.parameters.get("form", "body")
+        if self.form not in ("body", "flatness"):
+            raise ValueError(f"BarBodySizeComponent: form must be 'body' or 'flatness', got {self.form!r}")
+        if self.form == "flatness" and self.relative_to != "range":
+            raise ValueError("BarBodySizeComponent: form 'flatness' needs relative_to 'range'")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        o = float(data["open"].iloc[-1])
+        c = float(data["close"].iloc[-1])
+        if self.relative_to == "open":
+            if np.isnan(o) or np.isnan(c) or not o > 0:
+                value = float("nan")
+            else:
+                value = abs(c - o) / o * 100.0
+        else:
+            h = float(data["high"].iloc[-1])
+            lo = float(data["low"].iloc[-1])
+            if np.isnan(o) or np.isnan(c) or np.isnan(h) or np.isnan(lo):
+                value = float("nan")
+            else:
+                rng = h - lo
+                share = 0.0 if rng == 0 else abs(c - o) / rng
+                value = (1.0 - share) if self.form == "flatness" else share
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {"relative_to": self.relative_to, "form": self.form}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return 1
+
+
+class VolumeWeightedCloseLocationComponent(SubStrategyComponent):
+    """
+    Close location in the bar's range, weighted by the bar's volume against its average volume:
+
+        base = volume[t - volume_period - exclude_current + 1 .. t - exclude_current]
+            exclude_current = 0 (default): volume[t - volume_period + 1 .. t]  (bar t included)
+            exclude_current = 1:           volume[t - volume_period .. t - 1]  (bar t excluded)
+        ratio = volume[t] / mean(base)
+        rng = high[t] - low[t]
+        reference = "signed" (default): loc = 2 x (close[t] - low[t]) / rng - 1   (0 when rng = 0)
+        reference = "low":              loc = (close[t] - low[t]) / rng            (0.5 when rng = 0)
+        reference = "high":             loc = (high[t] - close[t]) / rng           (0.5 when rng = 0)
+        raw_value = loc x ratio
+
+    The defaults ("signed", exclude_current 0) give the original output, unchanged.
+    Range: "signed" is signed, positive when the close is in the upper half of the bar. "low" and "high" are
+    0 and up, never negative. "high" is 0 with the close at the high and grows as the close nears the low.
+    With exclude_current 0 the ratio is at most volume_period; with exclude_current 1 it is unbounded above.
+    Graded, continuous in the close and the volumes while rng > 0.
+    Warm-up: volume_period + exclude_current rows, bar t included.
+
+    NaN: a NaN high, low or close on bar t, a NaN volume[t], or a NaN volume in the base gives NaN. A base mean
+    not above 0 gives NaN (never on real bars).
+    Building the component raises for a volume_period below 2, an exclude_current other than 0 or 1, or a
+    reference other than "signed", "low" or "high".
+
+    WHY THIS CANNOT LEAK: it reads high, low and close of the last row (bar t) and volume over at most the last
+    volume_period + exclude_current rows, all at or before bar t; every value is known at bar t's close.
+    """
+
+    def __init__(self, name="VolumeWeightedCloseLocation", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.volume_period = int(self.parameters.get("volume_period", 20))
+        if self.volume_period < 2:
+            raise ValueError(
+                f"VolumeWeightedCloseLocationComponent: volume_period must be >= 2, got {self.volume_period}")
+        ex = self.parameters.get("exclude_current", 0)
+        if isinstance(ex, bool):
+            ex = int(ex)
+        if ex not in (0, 1):
+            raise ValueError(
+                f"VolumeWeightedCloseLocationComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        self.reference = self.parameters.get("reference", "signed")
+        if self.reference not in ("signed", "low", "high"):
+            raise ValueError(
+                "VolumeWeightedCloseLocationComponent: reference must be 'signed', 'low' or 'high', "
+                f"got {self.reference!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = len(data)
+        h = float(data["high"].iloc[-1])
+        l = float(data["low"].iloc[-1])
+        c = float(data["close"].iloc[-1])
+        vol = data["volume"].astype(float).to_numpy()
+        v_t = float(vol[-1])
+        ex = self.exclude_current
+        base = vol[n - self.volume_period - ex: n - ex]
+        if np.isnan(h) or np.isnan(l) or np.isnan(c) or np.isnan(v_t) or np.isnan(base).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        den = float(np.mean(base))
+        if not den > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rng = h - l
+        if self.reference == "signed":
+            loc = 0.0 if rng == 0 else 2.0 * (c - l) / rng - 1.0
+        elif self.reference == "low":
+            loc = 0.5 if rng == 0 else (c - l) / rng
+        else:
+            loc = 0.5 if rng == 0 else (h - c) / rng
+        ratio = v_t / den
+        self._raw_value = float(loc * ratio)
+        self.confidence = 1.0
+        self.debug_info = {"location": loc, "volume_ratio": ratio, "reference": self.reference,
+                           "exclude_current": ex}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.volume_period + self.exclude_current
+
+
+class VolumeWeightedCloseLocationVolatilityRatioComponent(SubStrategyComponent):
+    """
+    Low close on heavy volume in a volatile market, on every bar:
+
+        loc   = (high[t] - close[t]) / (high[t] - low[t])      (0.5 when high[t] == low[t])
+        vr    = volume[t] / mean(volume[t - volume_period .. t - 1])   (bar t excluded from the base)
+        s(i)  = std (ddof 1) of the vol_period one-bar returns close[j] / close[j-1] - 1, j = i-vol_period+1 .. i
+        volr  = s(t) / mean(s(t - vol_lookback + 1) .. s(t))
+        raw_value = loc * vr * volr
+
+    Range: 0 and up, unbounded above, never negative, with no direction. It is 0 with the close at the bar's high
+    and grows as the close nears the low, as volume rises above its prior average, and as volatility rises above
+    its average (volr is at most vol_lookback because the mean includes s(t)).
+    Warm-up: max(volume_period + 1, vol_lookback + vol_period) rows, bar t included (80 at the defaults).
+    NaN: a NaN in any high, low, close or volume read gives NaN. A close not above 0 among the closes read, a base
+    mean volume not above 0, or a mean of s equal to 0 also gives NaN (never seen on real bars).
+    Building the component raises for volume_period < 2, vol_period < 2 or vol_lookback < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the rows up to and including bar t (the last row of data). These are
+    high[t], low[t], volume of bars t-volume_period .. t, and closes of the last vol_lookback + vol_period rows,
+    all known at bar t's close.
+    """
+
+    def __init__(self, name="VolumeWeightedCloseLocationVolatilityRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.volume_period = int(self.parameters.get("volume_period", 20))
+        if self.volume_period < 2:
+            raise ValueError(f"volume_period must be >= 2, got {self.volume_period}")
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"vol_period must be >= 2, got {self.vol_period}")
+        self.vol_lookback = int(self.parameters.get("vol_lookback", 60))
+        if self.vol_lookback < 1:
+            raise ValueError(f"vol_lookback must be >= 1, got {self.vol_lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        nan = float("nan")
+        h = float(data["high"].iloc[-1])
+        lo = float(data["low"].iloc[-1])
+        c_t = float(data["close"].iloc[-1])
+        vol = data["volume"].astype(float).to_numpy()
+        v_t = vol[-1]
+        base = vol[-(self.volume_period + 1):-1]
+        n_c = self.vol_lookback + self.vol_period
+        c = data["close"].astype(float).to_numpy()[-n_c:]
+        if (np.isnan(h) or np.isnan(lo) or np.isnan(c_t) or np.isnan(v_t)
+                or np.isnan(base).any() or np.isnan(c).any() or (c <= 0).any()):
+            self._raw_value = nan
+            self.confidence = 1.0
+            return
+        rng = h - lo
+        loc = 0.5 if rng == 0 else (h - c_t) / rng
+        base_mean = float(base.mean())
+        if not base_mean > 0:
+            self._raw_value = nan
+            self.confidence = 1.0
+            return
+        vr = v_t / base_mean
+        r = c[1:] / c[:-1] - 1.0
+        s = np.array([np.std(r[k:k + self.vol_period], ddof=1) for k in range(self.vol_lookback)])
+        s_mean = float(s.mean())
+        if not s_mean > 0:
+            self._raw_value = nan
+            self.confidence = 1.0
+            return
+        volr = float(s[-1]) / s_mean
+        self._raw_value = float(loc * vr * volr)
+        self.confidence = 1.0
+        self.debug_info = {"location": loc, "volume_ratio": vr, "volatility_ratio": volr}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.volume_period + 1, self.vol_lookback + self.vol_period)
+
+
+class FallVolumeVolatilityWeightedComponent(SubStrategyComponent):
+    """
+    One-bar fall, weighted by the bar's volume against its prior average and by recent against longer volatility:
+
+        r(j)      = close[j] / close[j-1] - 1
+        fall      = max(0, -r(t)) x 100
+        vratio    = volume[t] / mean(volume[t-volume_period .. t-1])        (bar t excluded from the base)
+        s_recent  = std (ddof 1) of r(j), j = t-vol_period+1 .. t
+        s_base    = std (ddof 1) of r(j), j = t-base_vol_period+1 .. t
+        raw_value = fall x vratio x s_recent / s_base
+
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 on up bars and flat bars, and grows
+    with the fall, the volume ratio and the volatility ratio. Graded, and continuous in the prices and volumes.
+    Warm-up: max(volume_period + 1, vol_period + 1, base_vol_period + 1) rows, bar t included (121 at the defaults).
+
+    NaN: a NaN close among the closes read, or a NaN volume on bar t or in the base, gives NaN, whatever the move's
+    sign. A close not above 0 among those read, a base mean volume not above 0, or an s_base of 0 gives NaN (never
+    on real bars).
+    Building the component raises for a volume_period below 1, or a vol_period or base_vol_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads only the close and volume columns of the last get_required_periods() rows of
+    data, the last row being bar t; every value is known at bar t's close.
+    """
+
+    def __init__(self, name="FallVolVolWeighted", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.volume_period = int(self.parameters.get("volume_period", 20))
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        self.base_vol_period = int(self.parameters.get("base_vol_period", 120))
+        if self.volume_period < 1:
+            raise ValueError(f"FallVolumeVolatilityWeightedComponent: volume_period must be >= 1, got {self.volume_period}")
+        if self.vol_period < 2:
+            raise ValueError(f"FallVolumeVolatilityWeightedComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.base_vol_period < 2:
+            raise ValueError(
+                f"FallVolumeVolatilityWeightedComponent: base_vol_period must be >= 2, got {self.base_vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        nc = max(self.vol_period, self.base_vol_period) + 1
+        closes = data["close"].astype(float).to_numpy()[-nc:]
+        vols = data["volume"].astype(float).to_numpy()
+        v_t = float(vols[-1])
+        base = vols[-self.volume_period - 1:-1]
+        self.confidence = 1.0
+        if np.isnan(closes).any() or np.isnan(base).any() or np.isnan(v_t) or not (closes > 0).all():
+            self._raw_value = float("nan")
+            return
+        mean_base = float(np.mean(base))
+        if not mean_base > 0:
+            self._raw_value = float("nan")
+            return
+        rets = closes[1:] / closes[:-1] - 1.0
+        r_t = float(rets[-1])
+        s_recent = float(np.std(rets[-self.vol_period:], ddof=1))
+        s_base = float(np.std(rets[-self.base_vol_period:], ddof=1))
+        if not s_base > 0:
+            self._raw_value = float("nan")
+            return
+        fall = max(0.0, -r_t) * 100.0
+        vratio = v_t / mean_base
+        self._raw_value = float(fall * vratio * s_recent / s_base)
+        self.debug_info = {"fall_pct": fall, "volume_ratio": vratio, "s_recent": s_recent, "s_base": s_base}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.volume_period + 1, self.vol_period + 1, self.base_vol_period + 1)
+
+
+class FallVolumeTimesPriorDeclineComponent(SubStrategyComponent):
+    """
+    The day's fall in usual moves, times its volume multiple, times the decline before it:
+
+        r(j) = close[j] / close[j-1] - 1
+        s    = std (ddof 1) of r(j), j = t-vol_period+1 .. t            (bar t's return included)
+        F    = max(0, -r(t)) / s                                        (0 when s = 0)
+        V    = volume[t] / mean(volume[t-volume_period] .. volume[t-1])  (bar t excluded from the base)
+        P    = max(0, -(close[t-1] / close[t-1-decline_period] - 1)) x 100
+        raw_value = F x V x P
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 on up and flat bars, and 0 when
+    close[t-1] is not below close[t-1-decline_period]. It grows with the fall in usual moves, with the volume
+    multiple and with the prior decline in percent.
+    Warm-up: max(vol_period + 1, volume_period + 1, decline_period + 2) rows, bar t included (22 at the defaults).
+
+    NaN: a NaN close among the last max(vol_period + 1, decline_period + 2) rows, or a NaN volume at bar t or in
+    the base, gives NaN whatever the sign of the move. A close not above 0 there gives NaN, and so does a base
+    mean volume not above 0 (neither is seen on real bars). s = 0 gives 0.
+    Building the component raises for vol_period < 2, volume_period < 1 or decline_period < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the close and volume columns of the last rows of data, up to and
+    including bar t (the last row); the prior decline ends at bar t-1 and the volume base ends at bar t-1.
+    """
+
+    def __init__(self, name="FallVolumePriorDecline", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"FallVolumeTimesPriorDeclineComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.volume_period = int(self.parameters.get("volume_period", 20))
+        if self.volume_period < 1:
+            raise ValueError(
+                f"FallVolumeTimesPriorDeclineComponent: volume_period must be >= 1, got {self.volume_period}")
+        self.decline_period = int(self.parameters.get("decline_period", 20))
+        if self.decline_period < 1:
+            raise ValueError(
+                f"FallVolumeTimesPriorDeclineComponent: decline_period must be >= 1, got {self.decline_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n_close = max(self.vol_period + 1, self.decline_period + 2)
+        close = data["close"].astype(float).to_numpy()[-n_close:]
+        vol = data["volume"].astype(float).to_numpy()[-(self.volume_period + 1):]
+        if np.isnan(close).any() or np.isnan(vol).any() or not (close > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        vp = self.vol_period
+        rets = close[-vp:] / close[-vp - 1:-1] - 1.0
+        s = float(np.std(rets, ddof=1))
+        r_t = float(close[-1] / close[-2] - 1.0)
+        fall = max(0.0, -r_t) / s if s > 0 else 0.0
+        base_mean = float(np.mean(vol[:-1]))
+        if not base_mean > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        vratio = float(vol[-1]) / base_mean
+        dp = self.decline_period
+        decline = max(0.0, -(float(close[-2]) / float(close[-2 - dp]) - 1.0)) * 100.0
+        self._raw_value = float(fall * vratio * decline)
+        self.confidence = 1.0
+        self.debug_info = {"fall_in_usual_moves": fall, "volume_ratio": vratio, "prior_decline_pct": decline,
+                           "std": s}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.vol_period + 1, self.volume_period + 1, self.decline_period + 2)
+
+
+class CloseLocationTimesVolatilityComponent(SubStrategyComponent):
+    """
+    The close's location under the bar's high times the recent volatility, on every bar:
+
+        loc = (high[t] - close[t]) / (high[t] - low[t])        (0.5 when high[t] = low[t])
+        r[j] = close[j] / close[j-1] - 1,  j = t - vol_period + 1 .. t   (bar t's return included)
+        s = standard deviation (ddof 1) of those vol_period returns
+        raw_value = loc x s
+
+    Range and sign: 0 and up, never negative on real bars (the close lies inside [low, high], so loc is 0 to 1).
+    It has no direction. It is 0 with the close at the bar's high, and it grows as the close nears the bar's low
+    and as s rises. It is at most s.
+    Warm-up: vol_period + 1 rows, bar t included (21 at the default).
+    NaN: a NaN high[t], low[t] or a NaN close among the last vol_period + 1 rows gives NaN. A close not above 0
+    among the return bases gives NaN (never on real bars). A zero range gives loc = 0.5.
+    Building the component raises for a vol_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads high[t], low[t] and the closes of the last vol_period + 1 rows of data, bar t
+    (the last row) included and nothing after it; each value is known at its bar's close.
+    """
+
+    def __init__(self, name="CloseLocationTimesVolatility", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(
+                f"CloseLocationTimesVolatilityComponent: vol_period must be >= 2, got {self.vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.vol_period
+        closes = data['close'].astype(float).to_numpy()[-(n + 1):]
+        h = float(data['high'].iloc[-1])
+        l = float(data['low'].iloc[-1])
+        c = float(closes[-1])
+        if np.isnan(closes).any() or np.isnan(h) or np.isnan(l):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        bases = closes[:-1]
+        if not (bases > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = closes[1:] / bases - 1.0
+        s = float(np.std(rets, ddof=1))
+        rng = h - l
+        loc = 0.5 if rng == 0 else (h - c) / rng
+        self._raw_value = float(loc * s)
+        self.confidence = 1.0
+        self.debug_info = {'location': loc, 'volatility': s}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()

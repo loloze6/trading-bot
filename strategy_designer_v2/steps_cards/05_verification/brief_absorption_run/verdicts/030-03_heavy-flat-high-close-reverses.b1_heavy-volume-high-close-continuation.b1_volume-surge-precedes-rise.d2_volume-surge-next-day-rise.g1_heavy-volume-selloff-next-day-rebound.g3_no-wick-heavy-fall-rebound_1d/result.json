@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x (next-day return - coin mean daily return) on forecast > 0 bars",
+    "value": 0.08930797614334579,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.402076978400269
+    },
+    "threshold": "t >= 2 (with supporting check > 0) confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return above minus below median forecast",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases with forecast > 0": 3272,
+    "cases above median forecast": 0,
+    "cases below median forecast": 1629
+  },
+  "decided_by": "The main measure's t is >= 2 but the supporting check fails (inconclusive rule).",
+  "reading": "Bars without 20 prior bars inside their window (vr not recomputable from prices) are left out of the agreement share; the coin's mean daily return is the mean of all its 1-bar returns inside its windows; cases equal to the median forecast belong to neither half; the plan's 'fewer than 200 cases' minimum is reported as not observable, as the workflow requires."
+}

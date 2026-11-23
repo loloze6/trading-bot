@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3899851,
+  "findings": {
+    "F1": "The tested book's deepest fall (\u221235.3 %, over 201 days from w1 into w3, while the coins fell \u221262.5 %) comes from the heavy-volume days on which the coin closed up. On those signal bars the next-day excess return is \u22120.05 % (t \u22120.56, n 3409), and in w1\u2013w3 they summed a gain of \u22120.93 against +0.08 for the down-day signal bars. A book trading only up-day signals has Sharpe 0.03, Calmar \u22120.02 and its deepest fall at \u221242.4 %.",
+    "F2": "The heavy-volume days on which the coin fell carry the effect: next-day excess +0.41 % (t 4.33, n 3294) against \u22120.05 % on up days. Restricted to those days, the book (rebuilt with 0.19 % per round trip) moves from the full book's figures to these:",
+    "F3": "Inside the heavy-volume down days the move grows with the size of the day's fall:",
+    "F4": "Where the day closed in its range points the same way, as the brief's absorption theory reads it:",
+    "F5": "The forecast's grade holds and concentrates the move:",
+    "F6": "Down-day signals lose in one year only:"
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's volume on a day relative to its own prior 20-day average, the more the coin rises over the next day, when that day was a down day, and the more so the larger the day's fall.",
+      "consequence": "A trader holds long for the day after a heavy-volume down day, larger the bigger the surge and the fall, and stays out after heavy-volume up days, which carried the book's deepest falls.",
+      "name": "volume surge after falling day",
+      "from": "F1, F2, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The heavier a coin's volume on a day relative to its own prior 20-day average, the more the coin rises over the next day, the lower the day's close sits within its high-low range.",
+      "consequence": "A trader buys heavy-volume days that closed near their low, where the selling was absorbed, larger the bigger the surge, and stays out of heavy-volume days that closed near their high.",
+      "name": "absorbed selling, low close",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close"
+  ],
+  "no_ideas": null
+}

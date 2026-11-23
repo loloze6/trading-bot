@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-bar excess return on forecast",
+    "value": 0.00018555558836404426,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.3006697555386206
+    },
+    "threshold": "confirm: t >= 2 with mean excess return on forecast > 0 bars above 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-bar excess return on forecast > 0 bars",
+    "value": 0.0014942698454303745,
+    "passed": true
+  },
+  "counts": {
+    "bars": 17380,
+    "bars with forecast > 0": 4246
+  },
+  "decided_by": "The slope has t >= 2 and the mean excess return on forecast > 0 bars is above 0.",
+  "reading": "The slope is an ordinary least-squares regression over every bar with a next bar in its window (horizon 1, so every bar is its own grid cell), the coin mean is the mean of all its next-bar returns over all windows, and the plan's 'fewer than 100 forecast > 0 bars' minimum is treated as 'not observable' as the workflow requires."
+}

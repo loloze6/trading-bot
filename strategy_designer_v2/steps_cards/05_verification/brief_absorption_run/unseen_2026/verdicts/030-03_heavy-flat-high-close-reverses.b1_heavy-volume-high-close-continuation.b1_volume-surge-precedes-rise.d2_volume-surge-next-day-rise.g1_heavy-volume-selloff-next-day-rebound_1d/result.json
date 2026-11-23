@@ -1,0 +1,26 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return on forecast > 0 bars",
+    "value": -0.00043131166992582665,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -0.1809043328209234
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope t >= 1; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on forecast",
+    "value": -0.31854116285895245,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 394
+  },
+  "reading": "Active bars counted as bars with forecast > 0 and a next-day close in the same window; the coin's mean daily return is over all its close-to-close returns in all windows; the plan's 'fewer than 200 is inconclusive' is reported as 'not observable' per the workflow.",
+  "status": "inconclusive",
+  "decided_by": "The t of the mean next-day excess return lies between -2 and 2."
+}

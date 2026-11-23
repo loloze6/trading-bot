@@ -1,0 +1,2 @@
+030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound_1d: not profitable enough [Sharpe 1.085; Sharpe minus holding's Sharpe -2.666; Calmar 1.113]
+030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b2_heavy-low-close-next-day-rebound.d1_heavy-volume-bottom-close-rebound_1d: not profitable enough [Sharpe 0.6824; Sharpe minus holding's Sharpe -3.069; Calmar 0.74]

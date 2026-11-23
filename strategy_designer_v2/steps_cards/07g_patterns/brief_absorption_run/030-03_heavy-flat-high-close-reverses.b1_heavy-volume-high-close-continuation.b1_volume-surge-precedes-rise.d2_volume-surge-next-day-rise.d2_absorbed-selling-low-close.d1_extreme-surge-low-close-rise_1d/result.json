@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4219676,
+  "findings": {
+    "F1": "The next day reverses the day's return measured against its own 20-day volatility, and this grows with the coin's volatility. The slope of the next-day excess return on that scaled return goes from +0.0012 (t 2.1, 3197 cases) in the calmest fifth of 20-day volatility to \u22120.0090 (t \u22127.3, 3197 cases) in the most volatile fifth. In a regression on all days, the interaction with the high-volatility fifth is \u22120.0087 (t \u22123.4).",
+    "F2": "The high-volatility reversal holds in all six coins: slopes \u22120.0058 to \u22120.0159, with t from \u22121.6 (XRP, ZEC) to \u22125.5 (XMR), about 530 cases each. It also holds in every year from 2018 to 2024 (t \u22123.4, \u22121.0, \u22125.0, \u22124.1, \u22122.9, \u22123.1, \u22120.8). Only 2025 has the opposite sign (+0.0037, t 0.6, 208 cases).",
+    "F3": "The reversal outlasts the next day. In the high-volatility fifth, days in the lowest fifth of scaled return gain +1.16 % over 2 days (t 1.8, 302 cases) and +2.27 % over 3 days (t 2.3, 169 cases) beyond drift. Days in the highest fifth lose \u22121.03 % (t \u22122.1, 322 cases) and \u22121.41 % (t \u22121.8, 181 cases).",
+    "F4": "In the most volatile fifth, the tested idea's low-close effect vanishes once the day's scaled return is in the regression: the close-location slope is +0.00015 (t 0.08) against \u22120.0090 (t \u22123.7) for the scaled return. Within that regime, the edge from the low close is largely the reversal of a down day.",
+    "F5": "Volume surge carries its own next-day rise, separate from the close location and the day's return. The log surge coefficient is +0.0018 (t 4.0) on all days and +0.0045 (t 3.4) in the most volatile fifth. The top surge fifth gains +0.39 % beyond drift (t 3.8, 3198 cases), while the other four fifths sit between \u22120.13 % and 0.00 %.",
+    "F6": "The book makes its worst 2 % of days on falls of the coins themselves: \u22126.4 % for the book against \u22129.6 % for the coins. It is in a position on 98 % of coin-days, so little of the ordinary-day exposure is removed. This is the exposure behind its Calmar of 0.51.",
+    "F7": "Weekday effects are not stable and are not a finding. The pooled values are Thursday +0.25 % (t 2.6), Friday +0.31 % (t 3.8) and Wednesday \u22120.30 % (t \u22122.7). The year-by-year signs flip for most weekdays (Wednesday ranges from \u22121.56 % to +0.25 %)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day return relative to its own 20-day volatility, the more the coin moves the opposite way over the next three days. The reversal is stronger the higher the coin's 20-day volatility.",
+      "consequence": "In turbulent stretches, a trader buys after the sharpest volatility-scaled down days and sells after the sharpest up days, sized by how extreme the day was.",
+      "name": "turbulent-day volatility-scaled reversal",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The heavier a coin's volume on a day relative to its prior 20-day average, the more the coin rises over the next day, and more so the higher the coin's 20-day volatility.",
+      "consequence": "A trader leans long after volume surges in volatile stretches, sized by the surge, and refuses that long bet in calm ones.",
+      "name": "turbulent volume surge rise",
+      "from": "F5, F1",
+      "refs": [
+        "F5",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise.g1_turbulent-day-volatility-scaled-reversal",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise.g2_turbulent-volume-surge-rise"
+  ],
+  "no_ideas": null
+}

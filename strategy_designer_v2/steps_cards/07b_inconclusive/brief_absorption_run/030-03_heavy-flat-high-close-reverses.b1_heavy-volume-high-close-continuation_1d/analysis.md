@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation_1d
+idea tested: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3727 USD
+---
+## Findings
+- **F1:** The test's cases were mostly not the idea's situation: of the 1,586 first-in-cell forecast cases, 629 fell on days with volume at or below the 20-day average, and those cases had a mean 10-day unusual move of -0.67 % (t -1.17). Only 169 cases had volume more than twice the average, with means of +2.98 % (t 1.68) for 2–3x and +1.29 % (t 0.37) above 3x. The standardised, cubic forecast therefore fired on ordinary days and diluted step 5's measure, which was -0.23 % with t -0.57.
+- **F2:** On heavy-volume days (volume at least twice the prior 20-day mean, the heaviest day per 10-day cell, 654 cases), the close's position in the range adds nothing. High-close days minus low-close days differ by +0.04 % over 10 days (Welch t 0.03, 372 vs 282 cases), and the Spearman correlation of close location with the 10-day unusual move is -0.017. Low-close heavy days (close location ≤ -0.5) also rose +1.57 % (t 1.43, 133 cases).
+- **F3:** The volume surge itself is graded with the following 10-day unusual move. Taking the heaviest day of each 10-day cell, the mean rises across volume buckets:
+- **F4:** The heavy-volume effect varies by year and is not steady. Over 10 days, heavy days averaged +7.33 % in 2024 (t 3.35, 88 cases) and +5.15 % in 2021 (t 2.20), but -2.43 % in 2018 (t -1.19) and -1.26 % in 2023 (t -1.19). By coin it was positive in all six, from +0.41 % (BTC, t 0.41) to +3.23 % (XRP, t 1.39).
+- **F5:** At a one-day horizon the close location does carry information, in the reversal direction. Heavy-volume days closing in the bottom quarter of the range (close location ≤ -0.5) are followed by a next-day unusual move of +1.95 % (t 4.02, 149 cases). Heavy days closing just below the middle (-0.5 to 0) are followed by -1.01 % (t -2.34, 183 cases), and high-close heavy days by +0.02 % (t 0.04, 216 cases). The 1.95 % move is about ten times the 0.19 % cost of a trade.
+
+## Ideas
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise` (from F1, F3, F4): The heavier a coin's volume on a day relative to its own prior 20-day average, the more the coin rises over the next 10 days.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b2_heavy-low-close-next-day-rebound` (from F2, F5): On a day when a coin's volume is far above its 20-day average, the closer its close sits to the day's low, the more the coin rises over the next 1 day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

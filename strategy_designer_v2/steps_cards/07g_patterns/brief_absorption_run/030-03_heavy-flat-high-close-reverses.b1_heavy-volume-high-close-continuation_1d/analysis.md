@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation_1d
+idea tested: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3900 USD
+---
+## Findings
+- **F1:** Heavy-volume days are followed by a rebound when the close sits near the day's low, which is the opposite of the tested idea's direction. Days with volume in the top fifth that closed in the bottom quarter of their range (close location below -0.5) gained a mean unusual +1.44 % the next day (t 6.24, 647 non-overlapping cases), +1.70 % over 2 days (t 3.81, 331 cases) and +1.64 % over 3 days (t 2.42, 197 cases). By 5 days the gain had faded to +0.32 % (t 0.46, 134 cases).
+- **F2:** The rebound holds on every coin, in both halves of the windows and in every year. By coin it runs from +0.95 % (BTC, t 2.71) to +1.88 % (XRP, t 2.65), with ETH the weakest at t 1.97. It is +0.99 % (t 3.43) in windows w1–w12 and +1.89 % (t 5.16) in w13–w24. It is positive in every year from 2018 to 2025, from +0.52 % to +3.91 %.
+- **F3:** The rebound is graded by volume and depends on the close's place in the range.
+- **F4:** On the largest down days (the bottom fifth of the day's return over its 20-day volatility), volume carries the rebound.
+- **F5:** Days whose high-low range was in the top fifth relative to their prior 20-day average range were followed by +1.95 % unusual over 3 days when they closed down (t 4.54, 496 cases), and -0.28 % when they closed up (t -0.63, 447 cases).
+- **F6:** The tested 10-day continuation is not visible in the bars.
+
+## Ideas
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.g1_heavy-volume-low-close-rebound` (from F1, F2, F3, F6): After a day on which a coin closes near its low on heavy volume, the coin rises more than its normal drift over the next 2 days. The heavier that day's volume against its prior 20-day average, and the closer the close to the low, the larger the rise.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.g2_heavy-volume-selloff-exhaustion-rebound` (from F4, F1): After a day on which a coin falls sharply against its 20-day volatility, the coin rebounds over the next day by more the heavier that day's volume is against its prior 20-day average.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.g3_wide-range-down-day-reversal` (from F5, F2): After a down day whose high-low range is wide against the coin's prior 20-day average range, the coin rises more than its normal drift over the next 3 days. The wider that day's range against the average, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
