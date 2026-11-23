@@ -127,3 +127,10 @@ def test_an_idea_whose_files_cannot_be_written_is_not_a_candidate(tmp_path):
     idea(ideas, "003-01_x", "a brief idea"); idea(ideas, long_id, "a very deep idea")
     rows = {r["idea"]: r["status"] for r in s.rank(run, root=tmp_path)}
     assert rows["003-01_x"] == "candidate" and rows[long_id].startswith("not testable")
+
+
+def test_the_register_s_longer_names_count_too():
+    """Night 5: the similarity register names a book <run>__<id>_<bar>, longer than a plan's files: an id that fits step 3
+    but not the register is not offered either."""
+    iid = "x" * 228                                   # 228 + "_4h_config.json" = 243: fits step 3
+    assert not s.too_long(iid) and s.too_long(iid, "brief_absorption_run")    # 20 + 2 + 228 + 10 = 260: does not
