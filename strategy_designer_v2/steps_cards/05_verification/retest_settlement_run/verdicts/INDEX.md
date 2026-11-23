@@ -2,6 +2,7 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: confirmed (fit: exact) [main: 1.83357e-05; OLS slope t 12.2761; bars of nonzero forecast 414151, bars in the regression 416645]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h: confirmed (fit: exact) [main: 0.00263806; t of the mean 5.66719; cases with a non-zero forecast 17147, cases in largest third 5715, cases in smallest third 5716]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: confirmed (fit: adapted) [main: 2.13161e-05; OLS slope t 13.7732; bars in total 416645, bars with high 24h volatility 119877, bars with low 24h volatility 189776]
+017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d1_settlement-fall-recovers-when-volatile_1h: confirmed (fit: adapted) [main: 3.29881; OLS slope t 3.29881; independent cases 11231, active bars 16923]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h: confirmed (fit: exact) [main: 0.00170132; t of weighted mean 2.88492; independent cases 12648]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h: confirmed (fit: exact) [main: 0.000371917; t of the mean 2.31148; cases 44640, top half 22320, bottom half 22320]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h: confirmed (fit: exact) [main: 0.000749357; t of the mean 6.70734; cases 21229, active bars 21291]
