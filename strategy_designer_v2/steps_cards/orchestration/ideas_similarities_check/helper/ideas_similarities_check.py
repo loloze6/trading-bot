@@ -120,6 +120,13 @@ def books(root=REGISTER):
     return [{**r, "kind": r.get("kind", "paying")} for r in rows]
 
 
+def utc_seconds(times):
+    """Times as whole UTC seconds since 1970, whatever unit pandas stores them in (pandas 2: nanoseconds; pandas 3:
+    microseconds; night 5: `astype("int64") // 10**9` assumed nanoseconds, and pandas 3 wrote periods 1000 times too
+    small, so no book had a date in common with another run's)."""
+    return (pd.to_datetime(times, utc=True) - pd.Timestamp(0, tz="UTC")) // pd.Timedelta(seconds=1)
+
+
 def write_returns(record, bar, f):
     """The book's period returns on every timeframe it can be compared on (holding on its own bar size only)."""
     frames = []
@@ -129,7 +136,7 @@ def write_returns(record, bar, f):
             d["hold"] = float("nan")          # holding is compared on the book's own bar size only
         frames.append(d)
     out = pd.concat(frames, ignore_index=True)
-    out["period"] = pd.to_datetime(out["period"], utc=True).astype("int64") // 10**9   # UTC seconds
+    out["period"] = utc_seconds(out["period"])
     f.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(f, index=False, float_format="%.7g", compression="gzip")   # 7 digits: far below what a share explained shows
 
