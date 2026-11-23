@@ -10,21 +10,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day | 017-05_settlement-move-reverses-after | plan | confirmed (+2.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d1_settlement-fall-recovers-when-volatile, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day; 7.g: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.g1_high-volatility-daily-move-reverses, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.g2_early-utc-two-hour-fall-recovers | 1.14 | 9.6 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses | 017-05_settlement-move-reverses-after | plan | inconclusive (+1.25) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback; 7.g: 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.g1_large-daily-move-reverses, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.g2_sharp-daily-fall-rebounds, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.g3_volatility-burst-move-reverses, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.g4_sharp-two-hour-move-reverses | 1.08 | 9.1 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours | 017-05_settlement-move-reverses-after | plan | confirmed (+5.89) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d2_afternoon-settlement-fall-rebound; 7.g: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.g1_daily-fall-rebound-in-volatility, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.g2_daily-rise-gives-back | 1.10 | 9.3 |
+| 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses | plan | confirmed (+2.31) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins.d1_strong-settlement-reversal-3-hours, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins.d2_pre-move-sized-settlement-reversal; 7.g: 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins.g1_deep-daily-fall-rebounds, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins.g2_morning-counter-trend-moves-continue, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins.g3_us-hours-counter-trend-reversal, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins.g4_sharp-short-fall-rebounds | 1.34 | 18.0 |
 
 ## Consumption
-6 ideas, 6.78 USD, 69.0 minutes in all.
+7 ideas, 8.11 USD, 87.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.49 | 3.0 |
-| step4_backtest | 0.00 | 38.0 |
-| step5_verdict | 0.99 | 3.9 |
-| step6_check | 0.00 | 2.6 |
-| chart_files | 0.00 | 0.8 |
-| similarity_check | 0.00 | 0.7 |
+| step3_plan | 0.58 | 3.5 |
+| step4_backtest | 0.00 | 50.4 |
+| step5_verdict | 1.19 | 4.6 |
+| step6_check | 0.00 | 2.9 |
+| chart_files | 0.00 | 0.9 |
+| similarity_check | 0.00 | 0.9 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.38 | 1.3 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.g | 2.53 | 9.7 |
-| step7_7.d | 2.38 | 8.9 |
+| step7_7.g | 3.11 | 11.9 |
+| step7_7.d | 2.86 | 10.5 |
