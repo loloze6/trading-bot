@@ -167,3 +167,17 @@ The two paying books: b1.d1 weekend reversal in rising volatility (7.d repair, +
 period; its parent explains 0.76) and b2.b1.d3.b1 turbulent weekend fall rebound (+4.83, holds 2016-17, not 2026).
 Both add volatility, not trend. Their shares against other runs wait for the rebuild. The session's reading: **R3**
 (real, still not paying on unseen dates); R2 cannot be read before the rebuild.
+
+## Session 3 (brief 017 retest, settlement, 1h): ended on budget, 07:55 Paris (35.97 USD, 7 h 51 of which 2 h 56 stopped; branch night5-retest-settlement, 25dd56449a)
+| Measure | Count |
+|---|---|
+| Ideas written by step 7 (7.d / 7.g / 7.b / 7.c) | 154 (55 / 83 / 14 / 2) |
+| Tested through step 6 | 31 (3 starting, 28 loop turns); 0 file-name failures |
+| Step 5 confirmed / inconclusive / rejected | 22 / 8 / 1 |
+| Step 6 profitable enough | 0 of 31; 6 confirmed failed Calmar alone (statistics up to +9.48) |
+| 7.d: analyses / ideas / repairs / closures | 22 / 55 / 52 (3 replace the signal) / 0; a trend condition in 10, 9 measured alone (none significant) |
+| Group 2 tested | 7 (turns 22-28, after the register fix; before it, no parent had evidence) |
+
+The session's reading: **R3** (real, still not paying). The confirmed books are unlike any paying book (nearest
+explains 0.008 to 0.17), but the effect's move per case is below the round trip (017-05: +0.05 % per case against
+0.19 % per trade).
