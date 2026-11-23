@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move of Sunday-close bets (forecast >= 2)",
+    "value": 0.004229013788575071,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.5424607646453583
+    },
+    "threshold": "positive with t >= 2 (and supporting check passes) to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper minus lower half at median forecast",
+    "value": -0.03657482910737295,
+    "passed": false
+  },
+  "counts": {
+    "cases in total": 82,
+    "upper half cases": 41,
+    "lower half cases": 41
+  },
+  "decided_by": "Only 82 cases in total, fewer than the plan's minimum of 100.",
+  "reading": "The vol-ratio >= 1 condition is read from the recorded regime 'mean_reversion' because the detector's component is not recorded and its 365-day lookback cannot be rebuilt inside a window; the Sunday bar is the bar starting on a Sunday (UTC); cases are all Sunday-close bars with forecast >= 2 having a bar t+3 in the same window (Sundays are 7 bars apart, so none overlap); the coin's normal 3-day drift is the mean of non-overlapping 3-bar returns at positions 0,3,6,... of each of its windows pooled; the median split puts forecasts above the median in the upper half and those at or below it in the lower half."
+}

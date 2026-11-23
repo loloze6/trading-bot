@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9996209249431387,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 3-day return on Sunday forecast",
+    "value": 0.001643597949105756,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.875004901067392
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean drift-adjusted return > 0); reject: slope < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 3-day return of cases > 0",
+    "value": 0.006045606454708346,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2547,
+    "coins": 19
+  },
+  "decided_by": "The slope is positive with t >= 2 and the cases' mean drift-adjusted 3-day return is above 0.",
+  "reading": "Sunday bars are those whose UTC timestamp is a Sunday; the situation is a Sunday with a negative raw 1-bar return (last_history_value, or the price return where missing) and a positive forecast; the coin's drift is the mean of non-overlapping 3-bar returns on each window's grid from its first row over all windows; cases need t+3 inside the window; the plan's 'fewer than 100 cases' is reported as not observable."
+}
