@@ -8,7 +8,8 @@ PLAN is the idea's plan in 03_test_plan/<run>/plans/; its in-sample verdict (res
 files go in their usual folders under the run: 04_backtest/<run>/P/backtests/, 05_verification/<run>/P/verdicts/,
 06_profitability/<run>/P/checks/. The idea's result: orchestration/unseen_test/<run>/<plan id>.json and one line in
 orchestration/unseen_test/<run>/INDEX.md. A step whose output already exists is not called again (step 4's: a
-record where at least one window ran).
+record where at least one window ran). After step 4, the record's chart files under their committed names (step 4's
+chart_files.py), so an unseen record is read on any machine, not only where its bars were made.
 Prints one last line: the result as JSON.
 """
 import argparse, json, shutil, subprocess, sys
@@ -97,6 +98,8 @@ def main():
                 shutil.rmtree(bt / rid)            # holds no result: step 4 is called again
             call([STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python, "--out-root", bt,
                   "--windows", WINDOWS / f"{p}.json"], p)
+        if backtest_ran(bt / rid) and not (bt / rid / "chart_bars.csv.gz").exists():
+            call([STEPS / "04_backtest/helper/chart_files.py", bt / rid], p)   # readable on any machine (committed)
         if not (vd / rid / "result.json").exists():
             call([STEPS / "05_verification/helper/make_verdict.py", plan, "--python", args.python, "--records-root", bt,
                   "--verdicts-dir", vd, "--measure", measure_py], p)

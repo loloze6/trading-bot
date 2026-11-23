@@ -57,6 +57,8 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
             (root / rid / "BTCUSD" / "w1").mkdir(parents=True)
             (root / rid / "run.md").write_text("x")
             (root / rid / "BTCUSD" / "w1" / "metrics.json").write_text("{}")
+        elif name == "chart_files.py":
+            (Path(str(cmd[1])) / "chart_bars.csv.gz").write_text("x")
         elif name == "make_verdict.py":
             d = Path(str(cmd[cmd.index("--verdicts-dir") + 1])) / rid
             d.mkdir(parents=True)
@@ -73,7 +75,7 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
     monkeypatch.setattr(U, "call", fake)
     monkeypatch.setattr(sys, "argv", ["unseen_test.py", str(plan), "--run", run, "--python", "py"])
     U.main()
-    assert calls == ["run_backtest.py", "make_verdict.py", "check_profitability.py"] * 2
+    assert calls == ["run_backtest.py", "chart_files.py", "make_verdict.py", "check_profitability.py"] * 2
     assert (steps / "04_backtest" / run / "unseen_b" / "backtests" / rid / "run.md").exists()
     res = json.loads((steps / "orchestration" / "unseen_test" / run / f"{rid}.json").read_text())
     assert res["periods"]["unseen_a"]["holds"] and res["in_sample"]["statistic"] == 3.1

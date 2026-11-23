@@ -73,6 +73,9 @@ python3 orchestration/unseen_test/helper/unseen_test.py PLAN --run NAME_run --py
   Step 4's output is a record where at least one window ran; a record where none ran (the dates not fetched) is
   removed and step 4 called again, so a period gains its result once its data is fetched (2026-11-23: the record
   of 028-04 on 2026, written before the hourly 2026 bars were fetched, would otherwise have stayed empty).
+- After step 4, the record's chart files under their committed names (`04_backtest/helper/chart_files.py`): an
+  unseen record is the last evidence before live, read on any machine (2026-11-24: P4 could not read 028-04's
+  2016-17 record, made in another session, whose bars stayed there).
 
 ## When a step fails
 Nothing stops: the other periods go on, and the result says what each step gave.
