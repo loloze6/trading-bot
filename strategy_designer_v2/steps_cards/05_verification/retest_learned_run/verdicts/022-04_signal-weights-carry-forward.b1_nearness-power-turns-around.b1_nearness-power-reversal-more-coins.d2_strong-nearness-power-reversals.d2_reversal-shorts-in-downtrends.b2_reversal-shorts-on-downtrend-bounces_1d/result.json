@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of (forecast/10) x (5-bar return minus coin's mean 5-bar return), short grid bars",
+    "value": 0.016263053324344724,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.684422718775073
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 374
+  },
+  "decided_by": "The mean product is positive with t >= 2 over at least 30 grid cases.",
+  "reading": "The grid is each window's bars 0, 5, 10, ... that have a close 5 bars later. The coin's mean 5-bar return is taken on that same grid over all its windows. The plan's 'fewer than 30 grid cases' is read as the minimum count, which gives 'not observable'. Before 20 bars of a window exist, the recorded regime stands in for the return gate in the situation check."
+}

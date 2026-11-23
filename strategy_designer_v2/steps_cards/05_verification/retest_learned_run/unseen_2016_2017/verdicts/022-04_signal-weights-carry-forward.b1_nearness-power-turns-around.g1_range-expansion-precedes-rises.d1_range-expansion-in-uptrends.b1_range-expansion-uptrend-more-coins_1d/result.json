@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "upper-half minus lower-half mean excess 5-bar return (split at median forecast)",
+    "value": 0.006367607769519915,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.3356728878088525
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2 and supporting check; reject: difference < 0 with Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return of upper-half cases > 0",
+    "value": 0.014141914964220136,
+    "passed": true
+  },
+  "counts": {
+    "cases in upper half": 185,
+    "cases in lower half": 186,
+    "cases": 371
+  },
+  "decided_by": "Welch t lies between -2 and 2.",
+  "reading": "The 20-day return is recomputed as close[t]/close[t-20]-1 inside each window, so active bars of a window's first 20 rows are left out of the agreement; the trending regime for cases is the record's `regime` column; the coin's mean 5-bar return is the mean of all its non-overlapping grid returns over all its windows; the median is taken over all cases of all coins pooled; returns are fractions."
+}

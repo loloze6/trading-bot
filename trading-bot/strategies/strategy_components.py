@@ -5403,35 +5403,42 @@ class SignalPredictivePowerComponent(SubStrategyComponent):
 
 class ExcessPredictivePowerZComponent(SubStrategyComponent):
     """
-    Excess past predictive power of nearness to the high, times that nearness's z-score:
+    The excess past predictive power of one signal, times that signal's current z-score:
 
-        s(i)    = close[i] / max(close[i - high_period + 1 .. i]) - 1
-        y(i)    = close[i + horizon] / close[i] - 1
-        w(u)    = Pearson corr of s(i) with y(i), i = u - corr_lookback .. u - horizon
-                  (0 when s or y is flat over those rows)
-        wbar(t) = mean of w(t - mean_window) .. w(t - 1)
-        z(t)    = (s(t) - mean(S)) / std(S, ddof 1), S = s(t - z_window + 1 .. t)  (0 when std is 0)
-        raw_value = (w(t) - wbar(t)) * z(t)
+        signal = "high" (default): s(i) = close[i] / max(close[i-high_period+1 .. i]) - 1
+        signal = "volatility":     s(i) = -std (ddof 1) of r[j] = close[j] / close[j-1] - 1, j = i-vol_period+1 .. i
+        y(i) = close[i+horizon] / close[i] - 1
+        w(u) = Pearson corr of s(i) with y(i) over i = u-corr_lookback .. u-horizon (0 when either side is flat)
+        wbar(t) = mean of w(t-mean_window) .. w(t-1)
+        z(t) = (s(t) - mean) / std (ddof 1) of s over bars t-z_window+1 .. t (0 when s is flat there)
+        raw_value = (w(t) - wbar(t)) x z(t)
 
-    Range and sign: signed. abs(w - wbar) <= 2 and abs(z) <= (z_window - 1) / sqrt(z_window), so the value is
-    at most about 38.1 in size at the defaults. It is positive when the power is above its usual level and s is
-    above its mean. `negate` gives the counter-bet -(w - wbar) * z.
-    Warm-up: max(mean_window + corr_lookback, z_window - 1) + high_period rows, bar t included (820 at defaults).
-    NaN: a NaN close, or a close not above 0, in those rows gives NaN.
-    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2 or
-    mean_window < 1.
+    Signed. Its absolute value is at most 2 x (z_window-1)/sqrt(z_window), about 38.1. It is positive when the
+    signal's power is above its usual level and the signal sits above its mean, or when the power is below usual
+    and the signal sits below its mean. Graded, continuous in the closes. signal "high" is the original output,
+    unchanged. vol_period is read only by "volatility".
+    Warm-up: max(mean_window + corr_lookback, z_window - 1) + D + 1 rows, bar t included, with D = high_period - 1
+    ("high") or vol_period ("volatility"). That is 820 at the defaults and 761 for "volatility" with vol_period 30.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows up to and
-    including bar t. Each y(i) used by w(u), u <= t, ends at close[i + horizon] with i + horizon <= u <= t.
+    NaN: a NaN close, or a close not above 0, in the last (warm-up) rows gives NaN.
+    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2, mean_window < 1,
+    vol_period < 2, or a signal other than "high" or "volatility".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last (warm-up) rows of data, ending at bar t (the
+    last row). The forward return y(i) is used only for i <= u - horizon <= t - horizon, so the latest close it
+    reads is close[t].
     """
 
     def __init__(self, name="ExcessPredictivePowerZ", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
-        self.high_period = int(self.parameters.get("high_period", 90))
-        self.corr_lookback = int(self.parameters.get("corr_lookback", 365))
-        self.horizon = int(self.parameters.get("horizon", 5))
-        self.z_window = int(self.parameters.get("z_window", 365))
-        self.mean_window = int(self.parameters.get("mean_window", 365))
+        p = self.parameters
+        self.high_period = int(p.get("high_period", 90))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.z_window = int(p.get("z_window", 365))
+        self.mean_window = int(p.get("mean_window", 365))
+        self.signal = p.get("signal", "high")
+        self.vol_period = int(p.get("vol_period", 30))
         if self.high_period < 2:
             raise ValueError(f"ExcessPredictivePowerZComponent: high_period must be >= 2, got {self.high_period}")
         if self.horizon < 1:
@@ -5442,7 +5449,26 @@ class ExcessPredictivePowerZComponent(SubStrategyComponent):
             raise ValueError(f"ExcessPredictivePowerZComponent: z_window must be >= 2, got {self.z_window}")
         if self.mean_window < 1:
             raise ValueError(f"ExcessPredictivePowerZComponent: mean_window must be >= 1, got {self.mean_window}")
+        if self.vol_period < 2:
+            raise ValueError(f"ExcessPredictivePowerZComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.signal not in ("high", "volatility"):
+            raise ValueError(
+                f"ExcessPredictivePowerZComponent: signal must be 'high' or 'volatility', got {self.signal!r}")
         self._raw_value = 0.0
+
+    def _lead(self):
+        return self.high_period - 1 if self.signal == "high" else self.vol_period
+
+    @staticmethod
+    def _corr(x, y):
+        if x.max() == x.min() or y.max() == y.min():
+            return 0.0
+        xm = x - x.mean()
+        ym = y - y.mean()
+        den = np.sqrt(np.sum(xm * xm) * np.sum(ym * ym))
+        if not den > 0:
+            return 0.0
+        return float(np.sum(xm * ym) / den)
 
     def update(self, data):
         self.data = data
@@ -5450,46 +5476,51 @@ class ExcessPredictivePowerZComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.get_required_periods()
-        c = data['close'].astype(float).to_numpy()[-n:]
-        self.confidence = 1.0
-        if np.isnan(c).any() or not (c > 0).all():
+        n_rows = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n_rows:]
+        if np.isnan(c).any() or (c <= 0).any():
             self._raw_value = float("nan")
+            self.confidence = 1.0
             return
-        h, L, H, Z, M = self.high_period, self.corr_lookback, self.horizon, self.z_window, self.mean_window
-        t = n - 1
-        rmax = pd.Series(c).rolling(h).max().to_numpy()
-        s = c / rmax - 1.0
-        y = np.full(n, np.nan)
-        y[:n - H] = c[H:] / c[:n - H] - 1.0
+        t = n_rows - 1
+        D = self._lead()
+        L, h, zw, mw = self.corr_lookback, self.horizon, self.z_window, self.mean_window
 
-        def corr_at(u):
-            xs = s[u - L:u - H + 1]
-            ys = y[u - L:u - H + 1]
-            dx = xs - xs.mean()
-            dy = ys - ys.mean()
-            sxx = float(np.dot(dx, dx))
-            syy = float(np.dot(dy, dy))
-            if not (sxx > 0 and syy > 0):
-                return 0.0
-            return float(np.dot(dx, dy) / np.sqrt(sxx * syy))
+        s = np.full(n_rows, np.nan)
+        if self.signal == "high":
+            win = np.lib.stride_tricks.sliding_window_view(c, self.high_period)
+            s[D:] = c[D:] / win.max(axis=1) - 1.0
+        else:
+            r = c[1:] / c[:-1] - 1.0
+            win = np.lib.stride_tricks.sliding_window_view(r, self.vol_period)
+            s[D:] = -win.std(axis=1, ddof=1)
 
-        w_now = corr_at(t)
-        w_past = [corr_at(u) for u in range(t - M, t)]
-        wbar = float(np.mean(w_past))
-        win = s[t - Z + 1:t + 1]
-        sd = float(np.std(win, ddof=1))
-        z = float((s[t] - win.mean()) / sd) if sd > 0 else 0.0
-        self._raw_value = float((w_now - wbar) * z)
-        self.debug_info = {'w': w_now, 'w_mean': wbar, 'z': z}
+        y = np.full(n_rows, np.nan)
+        y[: n_rows - h] = c[h:] / c[: n_rows - h] - 1.0
+
+        def w_at(u):
+            lo, hi = u - L, u - h + 1
+            return self._corr(s[lo:hi], y[lo:hi])
+
+        w_t = w_at(t)
+        wbar = float(np.mean([w_at(u) for u in range(t - mw, t)]))
+
+        zs = s[t - zw + 1: t + 1]
+        if zs.max() == zs.min():
+            z = 0.0
+        else:
+            sd = float(np.std(zs, ddof=1))
+            z = float((s[t] - zs.mean()) / sd) if sd > 0 else 0.0
+
+        self._raw_value = float((w_t - wbar) * z)
+        self.confidence = 1.0
+        self.debug_info = {"w": w_t, "wbar": wbar, "z": z, "signal": self.signal}
 
     def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self):
-        return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period
-
-
+        return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self._lead() + 1
 
 
 class VolScaledBreakAboveHighComponent(SubStrategyComponent):
@@ -8475,3 +8506,106 @@ class CloseLocationTimesVolatilityComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.vol_period + 1
+
+
+class ExcessPowerReversalTimesMaDistanceComponent(SubStrategyComponent):
+    """
+    Excess predictive power of the nearness to the high, read as a reversal, times the trend distance:
+
+        s(i)    = close[i] / max(close[i-high_period+1 .. i]) - 1
+        y(i)    = close[i+horizon] / close[i] - 1
+        w(u)    = Pearson corr of s(i) with y(i) over i = u-corr_lookback .. u-horizon
+                  (0 when s or y is flat over those rows)
+        wbar(t) = mean of w(t-mean_window) .. w(t-1)
+        z(t)    = (s(t) - mean) / std (ddof 1) of s over bars t-z_window+1 .. t   (0 when s is flat there)
+        SMA     = mean(close[t-ma_period+1 .. t])
+        raw_value = max(0, -(w(t) - wbar(t)) * z(t)) * max(0, (close[t] - SMA) / SMA * 100)
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 unless (w - wbar) * z < 0 and
+    close[t] > SMA. Graded: it grows continuously with both factors.
+    Warm-up: max(mean_window + corr_lookback, z_window - 1) + high_period rows, at least ma_period (820 at the
+    defaults), bar t included.
+    NaN: a NaN close, or a close not above 0, in the last (warm-up) rows gives NaN.
+    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2,
+    mean_window < 1, ma_period < 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last (warm-up) rows up to and including bar t.
+    The latest forward return used is y(t-horizon) = close[t] / close[t-horizon] - 1, which ends at bar t.
+    """
+
+    def __init__(self, name="ExcessPowerReversalTrend", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        p = self.parameters
+        self.high_period = int(p.get("high_period", 90))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.z_window = int(p.get("z_window", 365))
+        self.mean_window = int(p.get("mean_window", 365))
+        self.ma_period = int(p.get("ma_period", 100))
+        if self.high_period < 2:
+            raise ValueError(f"high_period must be >= 2, got {self.high_period}")
+        if self.horizon < 1:
+            raise ValueError(f"horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("corr_lookback - horizon must be >= 2")
+        if self.z_window < 2:
+            raise ValueError(f"z_window must be >= 2, got {self.z_window}")
+        if self.mean_window < 1:
+            raise ValueError(f"mean_window must be >= 1, got {self.mean_window}")
+        if self.ma_period < 2:
+            raise ValueError(f"ma_period must be >= 2, got {self.ma_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        T = len(c) - 1
+        hp, L, h = self.high_period, self.corr_lookback, self.horizon
+        hi = pd.Series(c).rolling(hp, min_periods=hp).max().to_numpy()
+        s = c / hi - 1.0
+        y = np.full(T + 1, np.nan)
+        y[:T + 1 - h] = c[h:] / c[:T + 1 - h] - 1.0
+
+        def corr(u):
+            a = s[u - L:u - h + 1]
+            b = y[u - L:u - h + 1]
+            if a.max() == a.min() or b.max() == b.min():
+                return 0.0
+            da = a - a.mean()
+            db = b - b.mean()
+            den = np.sqrt(np.sum(da * da) * np.sum(db * db))
+            if not den > 0:
+                return 0.0
+            return float(np.sum(da * db) / den)
+
+        w_t = corr(T)
+        wbar = float(np.mean([corr(T - k) for k in range(1, self.mean_window + 1)]))
+        zw = s[T - self.z_window + 1:T + 1]
+        if zw.max() == zw.min():
+            z = 0.0
+        else:
+            sd = float(np.std(zw, ddof=1))
+            z = float((s[T] - zw.mean()) / sd) if sd > 0 else 0.0
+        sma = float(np.mean(c[T - self.ma_period + 1:T + 1]))
+        dist = (c[T] - sma) / sma * 100.0
+        rev = max(0.0, -(w_t - wbar) * z)
+        trend = max(0.0, dist)
+        self._raw_value = float(rev * trend)
+        self.confidence = 1.0
+        self.debug_info = {"w": w_t, "wbar": wbar, "z": z, "ma_distance": dist}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period,
+                   self.ma_period)

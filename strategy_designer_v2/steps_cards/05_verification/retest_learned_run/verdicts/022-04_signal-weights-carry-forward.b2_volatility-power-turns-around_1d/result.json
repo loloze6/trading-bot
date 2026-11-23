@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (5-day return minus coin's mean 5-day return), non-overlapping 5-bar cells, pooled",
+    "value": 0.0006646170464606342,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.31212167507400623
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 300 non-zero cells"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-zero cells": 3065,
+    "cells": 3065
+  },
+  "decided_by": "t lies between -2 and 2 with at least 300 non-zero cells, which the plan calls inconclusive.",
+  "reading": "The mean and t are taken over the non-zero-forecast cells only, which are the cells the plan's minimum counts. Each coin's mean 5-day return is the mean over all its valid grid cells in all windows. Cells whose 5-day return would leave the window are dropped."
+}

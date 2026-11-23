@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d3_range-expansion-ten-day-rise_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4220755,
+  "findings": {
+    "F1": "A coin's next-day return after a large one-day fall, measured against its prior 20-day volatility, is clearly above normal. In the bottom two of twenty groups the next-day excess return is +0.50 % (t 2.25, n 755) and +0.61 % (t 3.19, n 754). Across all bars the Spearman correlation between the scaled one-day return and the next day's excess return is \u22120.078 (p 1e-21, n 15076).",
+    "F2": "The reversal is graded inside the bottom 10 % of scaled one-day returns: the slope of next-day excess return on the scaled return is \u22120.00463 (t \u22123.59, n 1509), so the deeper the fall, the larger the rebound.",
+    "F3": "The rebound after the bottom 10 % of scaled falls holds in both 20-day regimes, at +0.57 % after a 20-day fall (t 3.02, n 1025) and +0.52 % after a 20-day rise (t 2.38, n 484). It is positive in 0.75 of the 24 windows and in all six coins, from +0.26 % for BTC (t 0.95) to +1.02 % for XMR (t 2.92).",
+    "F4": "The rebound is uneven over the years: +0.82 % in 2018 (t 1.93), +1.52 % in 2020 (t 2.89) and +1.81 % in 2021 (t 3.34), but about zero in 2019, 2022, 2024 and 2025 (from \u22120.06 % to +0.06 %). Its per-case size, about 0.5\u20130.6 %, is roughly three times the 0.19 % cost of a trade.",
+    "F5": "The idea that was tested depends heavily on the year. Its 10-day excess return in a 20-day rise was +5.30 % in 2020 (t 3.74) and +7.90 % in 2021 (t 3.31), but \u221210.40 % in 2018 (t \u22124.19) and \u22122.60 % in 2023 (t \u22123.46). That uneven record is consistent with the book's failed Calmar (0.575).",
+    "F6": "Other angles did not stand out once the number of angles tried is counted. A close near its 30-day high gave +3.07 % over 10 days in the top group (t 2.51, n 282), but the Spearman correlation across all cases was only 0.044 (p 0.10). Weekday effects on the coins' daily returns (Saturday +0.45 %, t 5.5, n 2484) are pooled across correlated coins, so that t is inflated, and Saturday was positive in only 5 of 8 years.",
+    "F7": "Trades entered on the lowest forecast quartile earned a mean of 17.35 % net, against 6.2\u20137.2 % for the other quartiles. Those trades lasted 28.4 days against 14\u201321 days, so holding time carries the trade results more than forecast strength does."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall relative to its typical daily move over the past 20 days, the higher that coin's return over the next 1 day.",
+      "consequence": "A trader can buy a coin at the close of an unusually sharp down day, more the sharper the fall, and expect a rebound of several times the cost of a trade the next day.",
+      "name": "sharp falls rebound next day",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d3_range-expansion-ten-day-rise.g1_sharp-falls-rebound-next-day"
+  ],
+  "no_ideas": null
+}

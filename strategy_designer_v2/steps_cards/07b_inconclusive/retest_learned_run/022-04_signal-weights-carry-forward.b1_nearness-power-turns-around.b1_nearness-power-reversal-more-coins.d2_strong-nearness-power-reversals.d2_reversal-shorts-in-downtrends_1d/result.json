@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d2_reversal-shorts-in-downtrends_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 3.6985754,
+  "findings": {
+    "F1": "The main measure is on the side the idea predicts but short of the bar (weighted t 1.50 over 699 cases), and it is weaker than the unweighted excess fall, whose mean is +0.83 % per 5 days with t 2.24. Weighting by |forecast| removes signal instead of adding it, because the move is not graded: the Spearman correlation of |forecast| with the excess fall is \u22120.015, and the supporting check is \u22120.40 % (t \u22120.53).",
+    "F2": "Larger readings do not bring larger falls. Mean excess fall by |forecast| quintile is +1.01 %, +1.26 %, +0.57 %, +0.79 % and +0.54 % from the weakest to the strongest. 137 of the 699 cases (20 %) sit at the clip of 20 and fall only +0.47 % (t 0.57), against +0.92 % (t 2.21) for the 562 unsaturated cases.",
+    "F3": "The effect sits in coins that rose over the 5 days before the signal inside their 20-day fall. Those 269 cases fall +2.04 % more than the coin's drift (t 3.53, weighted t 3.16, strength 0.18). The 430 cases after a falling 5 days show +0.08 % (t 0.17, weighted t \u22120.30). Inside the rising-5-day cases the above-median readings fall +0.84 % more than the below-median ones (t 0.72).",
+    "F4": "The effect fades in deep downtrends. Cases with a 20-day return below \u221220 % show \u22120.25 % (t \u22120.34, 149 cases). Cases between \u221211 % and \u22124 % show +1.61 % (t 1.84, weighted t 2.54, 140 cases).",
+    "F5": "A few large rallies drown the effect. Dropping the 2 % tails on each side lifts the 5-day t from 2.24 to 2.99 (weighted t from 1.50 to 2.71, 671 cases). 17 of 24 windows (71 %) and 11 of 15 coins have a positive mean excess fall.",
+    "F6": "The plan's 5-day horizon is where the effect is clearest. Unweighted t is 2.17 over 1 day, 1.76 over 3 days, 2.24 over 5 days, 1.52 over 10 days and 0.35 over 20 days. Strength is 0.07 over 5 days."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "nearness reversal more coins",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ],
+      "idea": "For a coin's nearness to its 90-day high, the higher that signal's predictive power for the coin's 5-day returns over the past 365 days, the lower its power over the following 90 days. The larger both the excess past power and today's deviation of nearness from its usual level, when the reading points against a past relation that implies a rise, the larger the coin's fall over the next 5 days, only while the coin's 20-day return is negative.",
+      "consequence": "A trader should short the nearness-power reversal only on coins already falling over 20 days, sized by the joint reading, and stay out of these shorts in rising coins.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "For a coin's nearness to its 90-day high, the higher that signal's predictive power for the coin's 5-day returns over the past 365 days, the lower its power over the following 90 days. The larger both the excess past power and today's deviation of nearness from its usual level, when the reading points against a past relation that implies a rise, the larger the coin's fall over the next 5 days, only while the coin's 20-day return is negative and its 5-day return is positive.",
+      "consequence": "A trader should short the nearness-power reversal only on bounces inside a 20-day fall, sized by the joint reading, and refuse these shorts when the coin is still falling over the last 5 days.",
+      "name": "reversal shorts on downtrend bounces",
+      "from": "F3, F1, F6",
+      "refs": [
+        "F3",
+        "F1",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d2_reversal-shorts-in-downtrends.b1_nearness-reversal-more-coins",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d2_reversal-shorts-in-downtrends.b2_reversal-shorts-on-downtrend-bounces"
+  ],
+  "no_ideas": null
+}

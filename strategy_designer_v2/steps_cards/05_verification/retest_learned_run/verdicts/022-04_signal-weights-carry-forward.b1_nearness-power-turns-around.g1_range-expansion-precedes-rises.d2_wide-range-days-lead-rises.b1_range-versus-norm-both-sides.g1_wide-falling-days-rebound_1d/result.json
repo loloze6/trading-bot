@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9145944689751336,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of excess 3-day return on forecast, falling-day grid cases pooled",
+    "value": 2.9063455696609,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.9063455696609
+    },
+    "threshold": "confirm if slope t >= 2 with top-third mean excess > 0; reject if slope t <= -2; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "top-third forecast mean excess 3-day return",
+    "value": 0.0068346680007576755,
+    "passed": true
+  },
+  "counts": {
+    "falling-day grid cases": 2718,
+    "top-third cases": 906
+  },
+  "decided_by": "Slope t is 2 or more and the top-third mean excess return is positive: confirm.",
+  "reading": "Situation = a falling day (close below prior close, regime column on a window's first row) and the side is long when its raw range ratio is above 1 (range above its 30-day average) and, for the graded adaptation, short when below 1; grid cases are regime 'mean_reversion' bars at positions 0,3,6,... of each window, the coin's mean 3-day return is the mean of all its grid returns over all windows, the slope t is the OLS slope over its standard error, and the top third is the n//3 cases with the highest forecast."
+}

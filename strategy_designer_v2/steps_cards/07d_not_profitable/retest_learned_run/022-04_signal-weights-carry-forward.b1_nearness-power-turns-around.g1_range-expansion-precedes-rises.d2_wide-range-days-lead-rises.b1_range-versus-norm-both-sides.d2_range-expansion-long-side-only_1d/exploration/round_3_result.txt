@@ -1,0 +1,42 @@
+## held bars by forecast>0
+            n  mean_alloc  mean_gain
+fpos                                
+False  5211.0    0.398307   0.000283
+True   6292.0    0.686007   0.002430
+
+## approx books
+                  sharpe    yearly     maxdd    calmar  held_share
+as tested       0.853237  0.262413 -0.393796  0.666369    0.656414
+only r30>=0     0.916596  0.237042 -0.326524  0.725956    0.431979
+only r60>=0     1.017112  0.288614 -0.406694  0.709659    0.495378
+only f>0        0.803719  0.214624 -0.293638  0.730915    0.359050
+f>0 and r30>=0  0.970654  0.226544 -0.262935  0.861597    0.260956
+
+## r60 splits
+                  n   mean_ex         t
+r60>=0|sig    639.0  0.010400  2.729586
+r60>=0|nosig  788.0 -0.003231 -1.153094
+r60<0|sig     471.0 -0.004183 -1.061387
+r60<0|nosig   945.0 -0.001930 -0.792452
+
+## r30>=0 sig by forecast tercile
+    count      mean
+fq                 
+0     341  0.000226
+1     342  0.003523
+2     341  0.020736
+
+## r30<0 sig by forecast tercile
+    count      mean
+fq                 
+0     205 -0.000495
+1     204 -0.006394
+2     205 -0.003195
+
+## bad windows held: r30<0, gain
+                  n  mean_gain  sum_gain
+r30neg fpos                             
+False  False  434.0  -0.002898 -1.257887
+       True   522.0  -0.001723 -0.899423
+True   False  469.0  -0.001430 -0.670809
+       True   423.0  -0.002313 -0.978273

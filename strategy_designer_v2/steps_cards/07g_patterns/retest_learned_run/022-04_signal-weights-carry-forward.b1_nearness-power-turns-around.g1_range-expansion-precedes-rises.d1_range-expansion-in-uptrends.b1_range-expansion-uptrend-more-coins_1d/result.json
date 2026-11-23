@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d1_range-expansion-in-uptrends.b1_range-expansion-uptrend-more-coins_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.6220498000000001,
+  "findings": {
+    "F1": "Across all bars, whatever the trend, the range ratio (the day's high-low range over its 30-day mean) separates the next 5 days clearly: the upper half's mean excess 5-day return is +0.89 % and the lower half's is \u22120.89 %, a difference of 0.0178 with Welch t 5.22 on 6046 non-overlapping cases; the sign is positive in 19 of 19 coins and in 6 of 8 years (Spearman 0.091).",
+    "F2": "The effect is as large in falling coins (20-day return \u2264 0), which the tested idea leaves out. There the upper half earns +0.38 % against \u22121.06 % for the lower half, a difference of 0.0144 with Welch t 3.24 on 3074 cases, positive in 19 of 19 coins and 6 of 8 years. It is graded by quintile (\u22120.72 %, \u22121.32 %, \u22121.26 %, +0.44 %, +1.15 %, top quintile t 2.66), and it matches the uptrend difference (0.0149, t 2.89, 17 of 19 coins).",
+    "F3": "In falling coins the day's direction does not matter. Wide-range down days and wide-range up days end the next 5 days alike (+0.41 % vs +0.38 %, difference 0.0003, t 0.05). The down-day top range quintile earns +1.44 % (t 2.45, mean ratio 2.09), and the up-day top two quintiles earn +0.83 % and +0.60 % (t about 1.0).",
+    "F4": "The falling-coin effect is uneven over time. Its yearly Spearman is 0.29 in 2024, 0.17 in 2025, 0.14 in 2021 and 0.08 in 2022, but \u22120.03 in 2018 and \u22120.01 in 2023, so it rests mostly on recent years.",
+    "F5": "In rising coins, wide-range up days look better than wide-range down days (+1.56 % vs +0.50 % excess over 5 days), but the difference does not stand out from chance (Welch t 1.33, 831 vs 655 cases).",
+    "F6": "Nearness to the 30-day high has a pooled difference of 0.0139 with t 4.06, but it is positive in only 63 % of coins and 50 % of years. Recent volatility against its 60-day level shows nothing (difference 0.0026, t 0.70). Neither counts after this many angles.",
+    "F7": "The tested idea's size covers its cost. Its total move is +1.16 % per case over 5 days, 5.2 times the 0.22 % cost of a trade, and its unusual move is +0.35 % (strength 0.027), 1.6 times the cost. The book's Sharpe is 1.06 and its Calmar 0.94."
+  },
+  "ideas": [
+    {
+      "idea": "The wider a coin's daily high-low range is relative to its average range over the past 30 days, the higher that coin's return over the next 5 days, while the coin's own 20-day return is negative.",
+      "consequence": "A trader should read a sharply widened daily range in a falling coin as a reason to buy for the next 5 days, rather than as a sign that the fall will continue.",
+      "name": "range expansion in downtrends",
+      "from": "F2, F3, F4, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d1_range-expansion-in-uptrends.b1_range-expansion-uptrend-more-coins.g1_range-expansion-in-downtrends"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x (5-bar return minus coin's mean 5-bar return), grid bars with forecast > 0",
+    "value": 0.04188505424496203,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.0700596897294032
+    },
+    "threshold": "confirm if t >= 2 (with supporting check > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, 20-day return above median minus below median",
+    "value": 0.0012594151482227373,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 1098
+  },
+  "decided_by": "The main measure's t is between -2 and 2.",
+  "reading": "The plan's situation is taken as raw component value < 0 (negated, standardised, clipped at 0 -> long) while the 20-day return recomputed from closes is > 0 (the regime column used only on the first 20 bars of a window, where it cannot be recomputed); the coin's mean 5-bar return is over all non-overlapping grid bars of all its windows; the supporting check splits the forecast > 0 cases at the pooled median of their recomputed 20-day return (cases without it left out, cases equal to the median in neither group); the 100-case minimum not reached gives 'not observable'."
+}

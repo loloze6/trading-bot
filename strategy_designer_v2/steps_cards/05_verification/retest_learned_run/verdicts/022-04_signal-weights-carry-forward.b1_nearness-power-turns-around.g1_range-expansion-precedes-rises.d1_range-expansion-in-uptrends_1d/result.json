@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-bar excess return on forecast, trending grid bars",
+    "value": 0.0008394926310905228,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4361046874605985
+    },
+    "threshold": "slope t >= 2 confirms (with top-minus-bottom third > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, top third minus bottom third of forecasts",
+    "value": 0.008995515585330877,
+    "passed": true
+  },
+  "counts": {
+    "trending-regime grid cases": 1685
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Trending cases are grid bars (positions 0,5,10,... of each window with a full 5-bar forward return) whose recorded regime is 'trending', thirds are equal-count groups of floor(n/3) cases by forecast rank, the drift is the coin's mean non-overlapping 5-bar return over all its windows, and on a window's first 20 bars the situation check uses the recorded regime since the 20-day return cannot be recomputed in-window."
+}

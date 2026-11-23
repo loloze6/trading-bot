@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x excess 3-bar return on positive-forecast grid bars",
+    "value": 0.12712012910081177,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.390937063727889
+    },
+    "threshold": "t >= 2 (with supporting check > 0) confirms; t <= -2 rejects; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return, upper minus lower half at median forecast",
+    "value": 0.011791146937216754,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with positive forecast": 1322,
+    "upper half cases": 661,
+    "lower half cases": 661
+  },
+  "decided_by": "the main measure's t is 2 or more and the supporting check is above 0, with at least 100 cases.",
+  "reading": "The coin's mean 3-bar return is taken over all its windows' non-overlapping grid returns (grid from each window's first row, last incomplete cell dropped), and the median split puts forecasts above the median in the upper half and those at or below it in the lower half."
+}

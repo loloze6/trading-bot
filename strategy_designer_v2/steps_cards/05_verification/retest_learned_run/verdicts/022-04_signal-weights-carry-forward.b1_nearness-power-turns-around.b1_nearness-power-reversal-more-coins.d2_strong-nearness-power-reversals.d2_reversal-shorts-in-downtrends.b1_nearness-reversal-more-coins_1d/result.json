@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9998064640990904,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "drift-removed 5-bar fall after shorts, weighted by abs(forecast)/mean abs(forecast)",
+    "value": 0.007129258960425335,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.6957180332519763
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope < 0; reject: mean < 0 with t <= -2; min 100 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of drift-removed 5-bar return on abs(forecast)",
+    "value": 0.00041308505365299464,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases": 1031,
+    "active bars": 5167
+  },
+  "decided_by": "t lies between -2 and 2",
+  "reading": "situation = raw excess_power > 0 and 20-day return (recomputed from closes, else regime) < 0, side short; cases are grid bars 0,5,10,... of each window with forecast < 0 and a full 5-bar return inside the window, drift = the coin's mean 5-bar grid return over all its windows, t = ordinary t of the mean of weighted values"
+}
