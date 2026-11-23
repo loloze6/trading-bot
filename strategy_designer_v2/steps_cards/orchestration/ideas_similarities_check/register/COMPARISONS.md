@@ -59,6 +59,7 @@
 
 | Book | Run | Bar | Nearest paying book | Share explained | Who leads | What is left per period (t) | Against holding: share explained |
 |---|---|---|---|---|---|---|---|
+| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility_1h | retest_settlement_run | 1h | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d (1d) | 0.01 | same period | +0.0854 % (2.56) | 0.00 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal_1h | retest_settlement_run | 1h | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d (1d) | 0.01 | same period | +0.0782 % (2.40) | 0.00 |
 | 017-05_settlement-move-reverses-after.d1_volatile-settlement-move-reverses_1h | step7ab_bp_run | 1h | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d (1d) | 0.01 | same period | -0.0431 % (-1.69) | 0.01 |
 | 022-03_combined-extremes-larger-moves.b1_past-weighted-reversal-20-days_1d | night3_learned_run | 1d | 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d (1d) | 0.01 | new one period behind | -0.1043 % (-1.63) | 0.00 |

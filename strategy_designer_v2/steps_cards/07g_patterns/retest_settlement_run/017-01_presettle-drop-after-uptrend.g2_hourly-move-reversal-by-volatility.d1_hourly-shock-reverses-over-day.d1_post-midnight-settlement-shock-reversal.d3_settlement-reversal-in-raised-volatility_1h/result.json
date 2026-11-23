@@ -1,0 +1,55 @@
+{
+  "line": "7.g",
+  "backtest": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45860690000000004,
+  "findings": {
+    "F1": "Apart from the tested 00:00 UTC hour itself (24-hour slope on the hour's volatility-scaled return \u221226.1 bp per unit, t \u22127.8, 17086 cases), the coin's prior 24-hour return in 24h-volatility units reverses over the next 24 hours when read at the close of the early-UTC hours. The slope is \u221221.1 bp at hour 0 (t \u22125.2), \u221221.7 at hour 1 (t \u22125.3), \u221219.2 at hour 2 (t \u22124.7), \u221218.2 at 3 (t \u22124.4), \u221218.0 at 4 (t \u22124.3) and \u221215.3 at 5 (t \u22123.6), about 17000 cases each. It fades to \u22123.1 (t \u22120.7) by hour 7 and turns positive at hours 12\u201315 (hour 14: +16.7, t +4.1).",
+    "F2": "At hour 0 the prior trend adds to the settlement-hour return rather than repeating it. In a joint fit, the hour's return keeps \u221226.2 bp (t \u22127.8) and the 23-hour trend before it adds \u221213.4 bp (t \u22123.2). That trend slope is negative in 2018\u20132023 (\u221247 to \u221215 bp) but near zero in 2024 (+2.0, t 0.2) and reversed in 2025 (+34.1, t +3.0), so it is not stable over time.",
+    "F3": "A coin's 1-hour return in 24h-volatility units reverses over the next 4 hours at many hours of the day, not only after settlement. Hour 11 gives \u221210.8 bp per unit (t \u22125.8), hour 18 \u22127.6 (t \u22125.0), hour 23 \u22126.3 (t \u22124.0) and hour 5 \u22126.7 (t \u22123.9). Pooled over hours 5, 11, 18 and 23 the slope is negative in every year (t below \u22122.5 in 6 of 8 years, about 8600 cases a year).",
+    "F4": "That 4-hour reversal, on the non-overlapping 4-hour grid, scales with how volatile and thin the coin is. ZEC gives \u22127.7 bp per unit (t \u22124.0), XRP \u22125.6 (t \u22123.4), XMR \u22125.2 (t \u22123.4) and LTC \u22123.2 (t \u22122.1), against BTC \u22120.9 (t \u22120.8) and ETH \u22120.1 (t \u22120.1), about 17000 cases each.",
+    "F5": "The settlement-hour reversal is larger on weekends: \u221237.9 bp per unit (t \u22126.8, 4833 cases) against \u221222.5 (t \u22125.5, 12111) on weekdays, with Saturday the strongest (\u221249.1, t \u22125.8). It is also larger when that hour's volume is low against its week: \u221234.3 (t \u22124.9) in the lowest volume tercile against \u221221.6 (t \u22124.4) in the highest. The weekend gap is about t 2.2, which is marginal after this many angles.",
+    "F6": "The volatility-ratio grading holds across quintiles at hour 0: the slope runs from \u22125.8 bp (t \u22120.8) at a ratio of 0.52 to \u221244.3 bp (t \u22124.5) at 1.59. Hours 6, 12 and 18 show no such grading (|t| \u2264 1.3).",
+    "F7": "The book is mostly uncorrelated with the coins (correlation of daily returns from \u22120.29 to +0.16 by year). It earns most on days after large coin moves: its mean daily return is 0.20 % in the top quintile of the previous day's absolute coin move, against 0.01\u20130.07 % in the others. It is weak in 2023 (Sharpe \u22120.20) and 2024 (0.14), while holding the coins gave 1.18 and 1.61; 5 of 24 windows lose, the worst w12 with Sharpe \u22123.1."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 24-hour return relative to its 24-hour volatility at the close of the early UTC hours (00:00 to 05:00), the more its return over the next 24 hours runs the opposite way.",
+      "consequence": "A trader would fade the previous day's run when reading it in the hours just after the midnight settlement, sized by the run's size in volatility units, and refuse to fade it later in the day.",
+      "name": "early-UTC daily trend reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 1-hour return relative to its 24-hour volatility, the more its return over the next 4 hours runs the opposite way, and more so the higher the coin's 24-hour volatility stands.",
+      "consequence": "A trader would fade sharp single-hour moves over a few hours, weighting the fade toward the coin's most volatile stretches.",
+      "name": "hourly shock four-hour fade",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 1-hour return relative to its 24-hour volatility in the first hour after the 00:00 UTC settlement on Saturdays and Sundays, the more its return over the next 24 hours runs the opposite way.",
+      "consequence": "A trader would weight the post-settlement fade toward weekends, when thinner books leave the settlement move more to give back.",
+      "name": "weekend settlement shock fade",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility.g1_early-utc-daily-trend-reversal",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility.g2_hourly-shock-four-hour-fade",
+    "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility.g3_weekend-settlement-shock-fade"
+  ],
+  "no_ideas": null
+}

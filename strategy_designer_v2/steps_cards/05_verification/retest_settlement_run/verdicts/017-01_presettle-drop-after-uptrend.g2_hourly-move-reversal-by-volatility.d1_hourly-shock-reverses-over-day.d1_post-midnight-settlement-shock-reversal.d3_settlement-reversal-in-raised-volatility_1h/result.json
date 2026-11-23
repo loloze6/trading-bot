@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9938042848870874,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 24-bar return on forecast",
+    "value": 0.0003082350791440512,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 9.478807416753677
+    },
+    "threshold": "slope > 0 with t >= 2 confirms, slope < 0 with t <= -2 rejects, over at least 1000 cases"
+  },
+  "supporting_check": {
+    "name": "mean fade gain, high-ratio half minus low-ratio half",
+    "value": 0.0036011166778014874,
+    "passed": true
+  },
+  "counts": {
+    "cases": 17128,
+    "cases_with_ratio": 12645,
+    "high_ratio_cases": 6322,
+    "low_ratio_cases": 6323
+  },
+  "decided_by": "Slope positive with t >= 2 over at least 1000 cases and the high-ratio half's fade gain above the low-ratio half's.",
+  "reading": "The situation is the bar whose timestamp (start) is 00:00 UTC with the forecast's sign opposite to the sign of the raw settle_fade value (price return where missing); the slope is an OLS with intercept of excess 24-bar return on forecast; the coin's mean 24-bar return uses the non-overlapping grid 0,24,48,... of each window pooled over its windows; s24 is the ddof-1 std of 24 hourly returns, its 720-bar mean includes bar t, both inside the window, cases without a ratio are left out of the check; the high half is ratio above the median, the low half at or below it."
+}
