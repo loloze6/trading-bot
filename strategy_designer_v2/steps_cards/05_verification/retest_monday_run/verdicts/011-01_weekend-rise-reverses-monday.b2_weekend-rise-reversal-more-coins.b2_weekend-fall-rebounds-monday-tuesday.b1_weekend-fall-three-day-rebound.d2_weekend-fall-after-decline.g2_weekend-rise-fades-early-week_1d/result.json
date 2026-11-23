@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9980806142034548,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean 3-day shortfall vs coin drift (short direction), before costs",
+    "value": 0.009157333069620225,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 3.5623230084532977
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and correlation > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Pearson correlation of |forecast| with shortfall",
+    "value": -0.001064920111117909,
+    "passed": false
+  },
+  "counts": {
+    "cases (Sunday rises)": 2559
+  },
+  "decided_by": "t >= 2 but the correlation is 0 or below (or undefined), so the plan's inconclusive rule applies.",
+  "reading": "A Sunday bar is a bar whose UTC start timestamp is a Sunday (its close is the Sunday close, the next bar Monday), the raw rise uses last_history_value (recomputed from prices where missing), cases are Sunday bars with forecast < 0 and 3 bars left in the window, the coin's drift is the mean of its non-overlapping 3-bar returns pooled over all its windows, and the t of the |forecast|-weighted mean uses the weighted standard error sqrt(n/(n-1) * sum(w^2 (x-m)^2)) / sum(w)."
+}
