@@ -150,3 +150,20 @@ several sessions, mine included, were restarted. My check-in at 06:51 Paris woke
 | 5, Monday (011) | 03:52, refused at step 7 | 3 h 00 | 18 run, 14 confirmed, 2 profitable, 33.59 USD |
 For a next night: a check-in timed just after the limit's reset (the refusal names it) would have saved about 3 hours
 per session.
+
+## Session 5 (brief 011 retest, Monday, 1d): ended on budget, 06:57 Paris (36.99 USD, 6 h 41 of which 3 h 01 stopped; branch night5-retest-monday, adb1e28e5b)
+| Measure | Count |
+|---|---|
+| Ideas written by step 7 (7.d / others) | 73 (24 / 49) |
+| Run to a result | 20 (2 starting, 18 from the loop) |
+| Components built | 1 (VolatilityWeightedFallComponent; every check passed, bot suite 1635 passed) |
+| Step 5 confirmed / inconclusive | 14 / 6 |
+| Step 6 profitable enough | 2; the other 18 fail Calmar (12 on Calmar alone) |
+| Unseen: hold on both periods | 0 of 2 |
+| 7.d: analyses / ideas / closures | 14 / 24 / 0; all 24 keep the weekend move; trend condition in 9 (5 tested: all confirmed, none paying) |
+| Failed | 3 on file names (before the fixes); 1 lost to an orphan, retried; 1 cut by the limit, resumed |
+
+The two paying books: b1.d1 weekend reversal in rising volatility (7.d repair, +5.46, holds on neither unseen
+period; its parent explains 0.76) and b2.b1.d3.b1 turbulent weekend fall rebound (+4.83, holds 2016-17, not 2026).
+Both add volatility, not trend. Their shares against other runs wait for the rebuild. The session's reading: **R3**
+(real, still not paying on unseen dates); R2 cannot be read before the rebuild.
