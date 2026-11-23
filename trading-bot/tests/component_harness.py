@@ -72,6 +72,20 @@ def same(a, b):
     return math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-12)
 
 
+def distinct_settings(cls, settings):
+    """The settings that differ in what the component is built with: a setting that spells out the defaults is the same
+    component as {} (RiseTimesVolatilityCalmnessComponent's spec listed both: its slowest check ran twice)."""
+    skip = {"data", "debug_info", "_raw_value", "confidence", "name", "weight", "parameters"}
+    out, seen = [], set()
+    for p in settings:
+        inst = cls(parameters=dict(p))
+        key = tuple(sorted((k, v) for k, v in vars(inst).items()                      # the settings it holds
+                           if k not in skip and isinstance(v, (int, float, str, bool, type(None)))))
+        if key not in seen:
+            seen.add(key); out.append(p)
+    return out
+
+
 def check_warmup(cls, params, df=None):
     df = bars_for(cls, params, df)
     req = cls(parameters=dict(params)).get_required_periods()
