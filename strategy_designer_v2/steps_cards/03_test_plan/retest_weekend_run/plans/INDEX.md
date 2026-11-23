@@ -11,4 +11,7 @@
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
-026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h: missing-components: The forecast must grow with both the weekend's 48-bar move and the weekend-to-weekday volume ratio, with the move's sign. The [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr_1h: plan (fit: exact) [BTC, ETH, LTC, XRP, ZEC, 1h, folds A, B, C, D]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

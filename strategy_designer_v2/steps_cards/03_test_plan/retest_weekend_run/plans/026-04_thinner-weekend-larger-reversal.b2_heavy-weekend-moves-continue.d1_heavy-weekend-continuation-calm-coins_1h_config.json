@@ -1,0 +1,92 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "wd",
+        "class": "strategies.strategy_components.WeekdayComponent",
+        "params": {}
+      },
+      {
+        "id": "hr",
+        "class": "strategies.strategy_components.HourOfDayComponent",
+        "params": {}
+      },
+      {
+        "id": "wkvol",
+        "class": "strategies.strategy_components.VolumeRatioComponent",
+        "params": {
+          "period": 120,
+          "exclude_current": 48,
+          "short_period": 48
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "wd",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            },
+            {
+              "id": "hr",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            },
+            {
+              "id": "wkvol",
+              "op": "gt",
+              "value": 1.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "wkmove",
+            "class": "strategies.strategy_components.RecentToPriorVolumeScaledReturnComponent",
+            "params": {
+              "period": 48,
+              "window": 720,
+              "base_period": 120
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 48
+  }
+}

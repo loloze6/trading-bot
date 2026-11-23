@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9978152130167308,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "position-weighted mean 2-bar excess return from 20:00 close",
+    "value": 0.0007774873269782705,
+    "statistic": {
+      "name": "t of weighted mean",
+      "value": 7.907569041884851
+    },
+    "threshold": "weighted mean excess > 0 with t >= 2 (confirm, with supporting check); < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "mean excess above-median minus below-median position",
+    "value": -0.0001834092240029098,
+    "passed": false
+  },
+  "counts": {
+    "cases": 16888,
+    "cases above median position": 8444,
+    "cases below median position": 8444
+  },
+  "decided_by": "The weighted mean excess return is above 0 with t >= 2, but the supporting check fails.",
+  "reading": "The situation is read as the bars whose coming bar is stamped 21:00 or 22:00 UTC (bars stamped 20:00 and 21:00, so the long is held over the 21:00-23:00 stretch), long side. A case is a coin-day whose 20:00 bar has a non-zero forecast and a positive position after its trade, its return runs to the bar stamped 22:00 by timestamp, the weight is that position, the t uses the weighted mean's sandwich standard error, the supporting check compares unweighted mean excess returns of cases strictly above versus strictly below the median position, and the plan's 200-case minimum gives 'not observable' when not reached."
+}
