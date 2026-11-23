@@ -1,0 +1,1 @@
+031-01_up-streak-length-reversal_1d: missing-components: The idea needs the count of consecutive higher closes and that count set against the lengths of past up streaks; [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
