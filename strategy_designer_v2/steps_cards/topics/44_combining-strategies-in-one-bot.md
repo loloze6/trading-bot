@@ -61,7 +61,7 @@ from books already proven); combining near copies only adds the same bet twice.
 same strategy or in parallel"):**
 | # | Step | What it settles |
 |---|---|---|
-| P1 | The candidates: the rule for a book to enter (real by step 5; its gain beyond the drift at its horizon above the round trip, topic 47 N2; unrelated to the others by the similarity register; its book faithful to its idea, topic 47 N3; one per family) and the operator's decision on "each must pay on its own" against "real and unrelated" | which books |
+| P1 | The candidates. Decided 2026-11-23 (the operator: option A): real by step 5, not "each must pay on its own"; its size above 0 (topic 47 N2), with no threshold on in-sample strength (topic 47, 1d-11: the strongest in-sample results hold least on unseen dates); unrelated to the others by the similarity register; its book faithful to its idea (topic 47 N3); one per family | which books |
 | P2 | The weights, compared out of fold (chosen on three folds, judged on the fourth): equal capital, equal risk (each book's swing over the previous days), and risk shared with the correlations | how much of each |
 | P3 | In parallel or in one strategy: decided 2026-11-22 (in parallel, the portfolio layer, option A); P1-P2 measured that way | how they run together |
 | P4 | One portfolio fixed by P1-P3 before any unseen result is seen, run on the unseen dates against its books alone | whether it holds |
