@@ -731,9 +731,14 @@ def _compute_trade_records_for_window(
             round((trade.get("duration_minutes") or 60) / 60), 1
         )
 
-        mae, mfe = _compute_mae_mfe(side, entry_price, holding_bars) if holding_bars else (0.0, 0.0)
+        # 2026-11-23 (research workflow, topic 47): the excursions and the exit efficiency are read on the bars AFTER the
+        # entry bar, up to the exit bar. The engine fills at the entry bar's close, so that bar's high and low come
+        # before the entry: counting them was look-ahead (a BTC trade entered at the close 43,410 had an MFE of 8.42 %
+        # from that bar's own high). The holding-bar count above already counted from the bar after the entry.
+        after_entry = holding_bars[1:]
+        mae, mfe = _compute_mae_mfe(side, entry_price, after_entry) if after_entry else (0.0, 0.0)
         entry_eff = _compute_entry_efficiency(side, entry_price, exit_price, bars, entry_idx)
-        exit_eff  = _compute_exit_efficiency(side, entry_price, exit_price, holding_bars)
+        exit_eff  = _compute_exit_efficiency(side, entry_price, exit_price, after_entry)
         post_5, post_20 = _compute_post_exit_returns(side, exit_price, bars, exit_idx)
         exit_reason = _infer_exit_reason(side, exit_forecast, bars, exit_idx, window_end)
         cost_bps = _cost_paid_bps(trade, cost_model, commission_bps, cost_product)

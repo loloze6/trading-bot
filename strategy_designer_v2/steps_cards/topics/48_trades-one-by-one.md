@@ -45,6 +45,16 @@ What separates a winning trade from a losing one, and can a book act on it (by n
     over `bars[entry_idx : exit_idx + 1]`): the entry bar's high and low come before the entry at its close. Median
     daily MFE reported 6.2 %, after the entry 3.9 %.
 
+## Done since (2026-11-23)
+- **The engine's excursions without the entry bar** (topic 47 N4; `trading-bot/backtest/run_protocol.py`: MAE, MFE and
+  the exit efficiency read on the bars after the entry bar, up to the exit bar). Tests:
+  `trading-bot/tests/test_trade_excursions_after_entry.py` (a long, a short, a one-bar trade; failing before, passing
+  after). Proof: one real backtest (011-01...d2 volatility-graded weekend reversal, 1d, 19 coins, 302 windows) rerun
+  before and after: bars, trades, metrics and forecasts identical in all 302 windows; the trade diagnostics differ only
+  in `mae` (1,528 of 6,246 trades), `mfe` and `exit_efficiency` (3,382) and their two summary medians; the protocol
+  summaries only in run ids, paths and those two medians. Bot suite: 1,657 passed. Records made before keep the old
+  values; `clean_excursions.py` recomputes them for an analysis.
+
 ## To discuss when resumed (the operator, 2026-11-23)
 1. **"Most ideas pay their cost, hourly included."** What was measured: the price move in the trade's direction from
    the entry close to the plan's horizon, less the coin's mean move over that span, per trade, before costs, at a fixed
