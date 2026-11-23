@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.99963113242346,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar return after Sunday bars with forecast >= 2",
+    "value": 0.00741370216628805,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.577492001371853
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 cases and supporting check passes; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess minus unweighted mean",
+    "value": 0.004306045569137514,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2372
+  },
+  "decided_by": "Mean excess 3-bar return positive with t >= 2 over at least 100 cases, and the forecast-weighted mean exceeds the unweighted mean.",
+  "reading": "A case is any bar whose UTC start timestamp is a Sunday with forecast >= 2 and a full 3-bar return inside its window, the coin's normal drift is the mean of its 3-bar returns on each window's grid 0,3,6,... over all its windows, and the plan's 'fewer than 100 cases' is reported as not observable per the workflow."
+}

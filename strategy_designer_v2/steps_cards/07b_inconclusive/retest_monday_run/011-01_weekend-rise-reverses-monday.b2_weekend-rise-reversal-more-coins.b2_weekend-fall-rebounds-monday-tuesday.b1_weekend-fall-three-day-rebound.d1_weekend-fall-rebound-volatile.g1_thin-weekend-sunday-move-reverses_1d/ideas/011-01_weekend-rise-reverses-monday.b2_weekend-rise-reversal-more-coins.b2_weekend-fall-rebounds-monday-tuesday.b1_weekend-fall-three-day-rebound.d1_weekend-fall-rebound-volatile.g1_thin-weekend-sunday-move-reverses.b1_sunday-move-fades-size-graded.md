@@ -1,0 +1,19 @@
+---
+brief: 011_weekend-moves-reverse-weekday
+source-idea: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d1_weekend-fall-rebound-volatile.g1_thin-weekend-sunday-move-reverses
+line: 7.b inconclusive
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d1_weekend-fall-rebound-volatile.g1_thin-weekend-sunday-move-reverses_1d
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO
+bar: 1d
+period: folds A, B, C, D
+---
+Idea: A coin's Sunday close-to-close move, a fall or a rise, is partly undone over the next 2 days, and the larger the Sunday move against the coin's usual daily move over the past 20 days, the larger the move that is undone.
+Consequence: A trader would fade a Sunday move over Monday and Tuesday, leaning harder the larger the move was against the coin's usual daily move, whatever the weekend's volume.
+Why:
+- F1: The Sunday fade is strong and holds across the data. Faded against the Sunday move, the next-3-day unusual move averages 0.117 of a usual 3-day move (t 7.68, 4267 cases); step 5's main measure gives t 6.58. Every year 2018–2025 is positive (strength 0.024 to 0.224), and 18 of 24 windows are positive.
+- F2: The fade belongs to Sunday alone. Faded the same way, the other weekdays' strength runs from −0.036 to +0.024 (t −2.69 to +1.55), against 0.117 for Sunday. Inside every quintile of move size, Sunday beats the other days: 0.044 against −0.000 in the smallest quintile, 0.155 against −0.017 in the largest.
+- F3: The thin-volume grading that failed the supporting check is absent, not merely weak. Split by the plan's weekend volume factor, the strength by quintile is 0.142, 0.111, 0.053, 0.123 and 0.157, with no order. The Spearman correlation of factor and strength is 0.001. A Sunday-only volume factor also shows no order (quintiles 0.164, 0.061, 0.140, 0.071, 0.150; rho 0.003, p 0.82). Step 5's thin-minus-heavy Welch t is 0.34.
+- F4: The fade is graded by the size of the Sunday move against the coin's usual daily move. By quintile of the move's size, the strength is 0.036 (t 1.15), 0.105, 0.147, 0.152 and 0.147 (t 3.67). The Spearman correlation is 0.051 (p 0.0008, 4267 cases).
+- F5: The reversal comes on Monday and Tuesday. The faded daily return is +0.48 % on day 1 (t 5.51), +0.43 % on day 2 (t 5.55) and +0.09 % on day 3 (t 1.11). By horizon, the strength is 0.095 at 1 day, 0.120 at 2 days (t 7.46), 0.117 at 3 days and 0.087 at 5 days.
+- F6: Saturday's move does not reverse. Fading the 2-day Saturday–Sunday move gives a strength of −0.001 to 0.019 (t at most 1.25) at every horizon, so the effect is in Sunday's own move only.
+- F7: Both sides reverse alike: Sunday falls 0.127 (t 5.64, 2088 cases) and Sunday rises 0.108 (t 5.22, 2179 cases). The effect is spread across coins, with 18 of 19 positive and LINK, ETH, XMR and LTC at t 2.5 to 3.9. Per case, the 3-day move of +0.84 % is 3.8 times the 0.22 % cost of a trade.

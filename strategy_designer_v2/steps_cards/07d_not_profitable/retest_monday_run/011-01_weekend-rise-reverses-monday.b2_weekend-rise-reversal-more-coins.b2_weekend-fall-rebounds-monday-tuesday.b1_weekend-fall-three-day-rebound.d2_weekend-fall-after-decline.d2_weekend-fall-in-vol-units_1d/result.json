@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.d2_weekend-fall-in-vol-units_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4477379,
+  "findings": {
+    "F1": "The Calmar fails because of one long fall: the book's chain reaches a deepest fall of \u221238.1 %, while it earns only +11.3 % a year. The fall opens in w3 (window minimum \u221235.3 %, book sum \u221221.5 %, worst days \u221215.6 % and \u221211.2 % against the coin's \u221218.7 % and \u221214.3 %). It is still not recovered through w9 (window minimum \u221238.1 %). From w11 to w24 no window falls deeper than \u221211 %.",
+    "F2": "The book's losses come from the largest Sunday falls. Above 2 usual daily moves (143 cases), the excess 3-day return is +0.9 % (t 0.45), \u22122.3 % (t \u22121.26) and +0.1 % (t 0.06) across the three bands. Between 1 and 2 usual moves it is +2.3 % (t 4.2) and +4.0 % (t 4.4). The forecast is capped at 20, so these largest falls carry the largest position (allocation 0.87 to 1.01, against 0.36 to 0.61 for 0.5 to 1.5 moves). Their mean 3-day low is \u221211 % to \u221215 %, against about \u22126 % for smaller falls.",
+    "F3": "The big-fall cases fill the worst trades. 14 of the 20 worst case results are falls above 2 usual moves, and 13 of the 20 lie in w3 and w9 (3-day returns down to \u221257 % at full allocation). The big falls lose in w1\u2013w10 (excess \u22125.8 % with t \u22122.3 and \u22125.5 % with t \u22122.2). They gain only in w18\u2013w24 (+3.3 %, t 2.2).",
+    "F4": "Leaving out the falls above 2 usual moves keeps all the gain and cuts the risk. Summed case result: 12.82 against 12.79. Standard deviation per case: 0.036 against 0.046. Sum of the 20 worst cases: \u22122.71 against \u22124.76.",
+    "F5": "The rebound depends on the coin's prior 20 days. For Sunday falls in the two lower quartiles of the 20-day return (below about \u22122.3 %), the excess is +2.2 % (t 5.3) and +2.0 % (t 3.8). In the upper two quartiles it is +0.04 % (t 0.10) and +1.05 % (t 1.8). Big falls after a 20-day rise lose (\u22127.4 % and \u22121.7 %, 21 cases each), while big falls after a 20-day decline still gain +2.1 % (74 cases). The big falls average a 20-day return of \u221210.1 %, against +1.9 % for the others.",
+    "F6": "A falling 20 days is not an upward effect on its own. Sunday rises in the same two lower 20-day quartiles are followed by excess 3-day returns of \u22121.24 % (t \u22123.2) and \u22121.34 % (t \u22124.3), against +2.2 % and +2.0 % after Sunday falls. The gain comes from the weekend fall itself; a decline already under way only makes it a liquidity overshoot, as the brief's theory expects, rather than a break. The effect is large enough to trade: its total move is 6.1 times the 0.22 % cost of a trade."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 3 days (Monday to Wednesday), and the rise is larger the larger that fall is measured in units of the coin's usual daily move over its past 60 days, only while the coin's 20-day return is negative.",
+      "consequence": "Buy weekend falls in proportion to their size only in coins already down over 20 days, and stay out after weekend falls that interrupt a 20-day rise, which held the book's crash losses.",
+      "name": "weekend fall after decline",
+      "from": "F1, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 3 days (Monday to Wednesday), and the rise is larger the larger that fall is measured in units of the coin's usual daily move over its past 60 days, except when the fall is more than twice that usual daily move.",
+      "consequence": "Size weekend-fall buys by the fall up to two usual moves and leave out the crash-sized weekend falls that continue lower and carried the book's deepest fall.",
+      "name": "weekend fall without crashes",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.d2_weekend-fall-in-vol-units.d1_weekend-fall-after-decline",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.d2_weekend-fall-in-vol-units.d2_weekend-fall-without-crashes"
+  ],
+  "no_ideas": null
+}

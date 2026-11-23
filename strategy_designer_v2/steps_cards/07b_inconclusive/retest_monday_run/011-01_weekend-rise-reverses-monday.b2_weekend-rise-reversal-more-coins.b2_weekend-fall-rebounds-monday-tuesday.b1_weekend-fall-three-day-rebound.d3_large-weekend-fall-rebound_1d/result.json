@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.47892650000000003,
+  "findings": {
+    "F1": "The main measure is positive (forecast-weighted excess 3-day return +1.11 %, t 3.65, 1477 cases). The result is inconclusive only because the forecast is not graded: by forecast quartile the excess 3-day return is +1.62 % (t 3.6), +1.12 %, +0.68 % and +1.39 % (t 2.5). The top quartile sits at the cap (mean forecast 20.0), so the top-quartile check comes out at Welch t \u22121.80.",
+    "F2": "Deep Sunday falls measured in usual daily moves do not rebound most. Sunday z below \u22123 gives +5.7 % but on only 8 cases, and z from \u22123 to \u22122 gives \u22121.76 % (t \u22121.14, 63 cases). The rebound sits at z from \u22121.5 to \u22120.5: +2.40 % (t 3.35, 232 cases) and +1.28 % (t 3.75, 691 cases).",
+    "F3": "Measured in percent, the Sunday fall is cleanly graded. Excess 3-day returns are +0.95 % (t 2.7) for falls of 1.5\u20133 %, +1.85 % (t 3.8) for 3\u20135 %, +2.31 % (t 3.0) for 5\u20138 % and +3.11 % (t 2.3) beyond 8 %. Sunday's own return has the strongest reversal slope of any weekday on the next 3 days: \u22120.234 (t \u22127.6), against \u22120.10 to +0.07 on the other weekdays.",
+    "F4": "The rebound lives where the coin's 20-day usual daily move is high against its own median. Sunday falls by volatility quintile give \u22120.61 %, +0.47 %, +0.32 %, +1.64 % (t 3.6) and +3.02 % (t 5.1).",
+    "F5": "Inside the high-volatility third, Sunday falls grade with depth: +1.55 % (shallow), +3.15 % (mid) and +3.30 % (deep), with a slope on the fall size of 0.41 (t 3.5, 699 cases).",
+    "F6": "The effect is spread across coins: 17 of 19 coins have a positive mean excess return. DOGE is the exception (\u22122.08 %, t \u22122.3, 93 cases). No more data is available than the test used, which already covered all 19 coins on all four folds of daily bars."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) by a large multiple of its usual daily move rises over the next 3 days (Monday to Wednesday), only while its usual daily move over the past 20 days is high against its own usual daily move over the past year. The rise grows both with the depth of the weekend fall and with how high that 20-day usual move stands against its past year.",
+      "consequence": "Buy weekend falls on Sunday's close mainly when the coin is in a turbulent stretch, and size them up with both the fall's depth and how turbulent the stretch is. Leave weekend falls in calm stretches alone.",
+      "name": "turbulent weekend fall rebound",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday-to-Sunday close-to-close fall, measured in percent of its price, is followed by a rise over the next 3 days (Monday to Wednesday), and the deeper the percent fall, the larger that rise.",
+      "consequence": "Size a Monday-to-Wednesday long by the percent depth of the weekend fall itself rather than by the fall in units of recent volatility, whose deepest readings do not rebound most.",
+      "name": "percent weekend fall rebound",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b1_turbulent-weekend-fall-rebound",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b2_percent-weekend-fall-rebound"
+  ],
+  "no_ideas": null
+}

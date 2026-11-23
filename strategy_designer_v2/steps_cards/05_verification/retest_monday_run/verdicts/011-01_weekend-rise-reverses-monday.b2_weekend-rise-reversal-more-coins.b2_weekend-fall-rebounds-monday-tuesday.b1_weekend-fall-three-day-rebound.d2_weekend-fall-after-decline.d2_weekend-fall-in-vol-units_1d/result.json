@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9996261682242991,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 3-bar return after Sunday falls",
+    "value": 0.013424048755962197,
+    "statistic": {
+      "name": "ordinary t of the mean of forecast-scaled excess returns",
+      "value": 4.954121279358801
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of excess 3-bar return on forecast > 0",
+    "value": 0.0013821854781418364,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2173
+  },
+  "decided_by": "Confirm: weighted mean excess 3-bar return above 0 with t >= 2 and a positive slope on the forecast.",
+  "reading": "Every Sunday bar (UTC start on Sunday) in regime mean_reversion with forecast >= 2 and three later bars in its window is one case (Sundays are 7 bars apart, so their 3-bar returns never overlap), and the coin's drift is the mean of its 3-bar returns on the grid 0, 3, 6, ... of each window, pooled over all its windows."
+}

@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 3.7708345,
+  "findings": {
+    "F1": "On Sunday bars the coin's next 3-day return against its drift, in usual 3-day moves, falls with the Sunday return in usual daily moves (slope -0.106, t -6.2, 4320 Sunday cases 7 bars apart), while every other weekday shows no reversal or a continuation (Monday -0.019 t -1.35, Tuesday -0.006 t -0.37, Wednesday +0.031 t 2.30, Thursday -0.011 t -0.83, Friday +0.042 t 3.36, Saturday +0.038 t 2.13).",
+    "F2": "The Sunday reversal is graded and works on both sides of zero, with moderate moves. The next 3-day excess return, in usual 3-day moves, is +0.27 after Sunday z in (-1.5,-1] (n 232), +0.16 in (-1,-0.5] (n 691), +0.06 in (-0.5,0] (n 1066), -0.10 in (0,0.5] (n 1040), -0.10 in (0.5,1] (n 637) and -0.16 in (1,1.5] (n 284). So Sunday rises are faded as much as Sunday falls rebound, and the tested idea is long-only and leaves that side out.",
+    "F3": "The reversal does not carry into the largest Sunday falls: z in (-3,-2] gives -0.18 (n 63) and (-2,-1.5] gives +0.13 (n 74), against +0.27 for (-1.5,-1]. This is consistent with the tested idea's cubic weighting on the largest falls failing its top-quartile check (Welch t -1.80) while its weighted mean passed (t 3.65).",
+    "F4": "Only Sunday's own day reverses. The two-day Saturday-to-Sunday return in usual moves has no slope on the next 3 days (-0.014, t -0.76, n 4320), and the Saturday bar's move continues (+0.038, t 2.13).",
+    "F5": "Weekend volume does not grade the rebound after Sunday falls (z < -1), contrary to the brief: low-volume tertile +0.13 (t 1.55, n 124), middle +0.19, high-volume +0.20 (t 1.46, n 126).",
+    "F6": "The rebound after Sunday falls (z < -1) sits in coins already down over 20 days, at +0.34 usual 3-day moves (t 2.83, n 127), against -0.004 (t -0.04, n 127) in coins up over 20 days. It is also stronger in calm than in turbulent volatility (+0.21 t 2.17 vs +0.02 t 0.14). Both are tertile splits among many angles, so they are suggestive only.",
+    "F7": "The rebound after Sunday falls is unstable by year: +1.17 in 2021 (t 3.76), -0.83 in 2018 (t -3.77, n 13), -0.17 in 2022 (n 74). The book earns most on Mondays: mean daily book return +0.094 % against the coins' -0.035 % (n 5270)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's Sunday close-to-close return, measured in its usual daily moves over the past 20 days, is followed over the next 3 days (Monday to Wednesday) by a move against the coin's normal drift in the opposite direction. The larger the Sunday move, the larger the reversal, both after Sunday rises and after Sunday falls.",
+      "consequence": "Lean against Sunday's move in either direction for the first three weekdays, fading Sunday rises as well as buying Sunday falls, and lean harder the larger the Sunday move.",
+      "name": "Sunday move reverses both ways",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's Friday close-to-close return, measured in its usual daily moves over the past 20 days, continues in the same direction over the next 3 days (Saturday to Monday). The larger the Friday move, the larger the continuation.",
+      "consequence": "Go with Friday's move into the weekend rather than against it, and keep the weekend reversal trade for Sunday's move only.",
+      "name": "Friday move continues weekend",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "After a Sunday fall, the rise over the next 3 days (Monday to Wednesday) against the coin's normal drift is larger the further the coin had fallen over the previous 20 days, measured in its usual daily moves.",
+      "consequence": "Buy Sunday falls in coins already in a 20-day decline, and refuse them in coins that have been rising.",
+      "name": "Sunday fall rebounds in downtrend",
+      "from": "F6, F2",
+      "refs": [
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.g1_sunday-move-reverses-both-ways",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.g2_friday-move-continues-weekend",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.g3_sunday-fall-rebounds-in-downtrend"
+  ],
+  "no_ideas": null
+}

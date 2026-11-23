@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9993293091884641,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar return of Sunday cases (return minus coin's normal 3-bar drift)",
+    "value": 0.012718030779826346,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.843491291666932
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 cases and supporting check > 0; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 3-bar return above median forecast minus below median",
+    "value": 0.020450773040614868,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1427
+  },
+  "decided_by": "Mean unusual 3-bar return positive with t >= 2 over at least 100 cases, and the supporting check above 0.",
+  "reading": "Situation bars are Sunday-start daily bars (next bar Monday) whose recorded raw component is > 0 (or, where unrecorded, one-bar and 20-bar price returns both negative) with forecast > 0; cases need close[t+3] inside the same window; cases equal to the median forecast are left out of both supporting groups."
+}

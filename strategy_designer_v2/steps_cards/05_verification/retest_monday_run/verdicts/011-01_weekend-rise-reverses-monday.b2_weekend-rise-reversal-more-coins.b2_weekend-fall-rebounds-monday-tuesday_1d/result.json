@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.99963113242346,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 2-bar return of Sunday cases with forecast > 0",
+    "value": 0.005733838005795711,
+    "statistic": {
+      "name": "t of the mean of per-Sunday cross-coin means",
+      "value": -0.5531001623437537
+    },
+    "threshold": "confirm: > 0 with t >= 2 and slope > 0; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 2-bar return on forecast",
+    "value": 0.0008231074284331767,
+    "passed": true
+  },
+  "counts": {
+    "Sundays carrying a case": 346,
+    "cases": 2664
+  },
+  "decided_by": "the numbers meet neither the confirm nor the reject rule (t between -2 and 2, or sign and t disagree).",
+  "reading": "Sunday bar = bar whose UTC start timestamp is a Sunday; the coin's mean 2-bar return is taken on the non-overlapping grid (positions 0, 2, 4, ...) of all its windows pooled; cases without 2 later bars in the window are dropped; the t uses the unweighted cross-coin mean of excess returns per Sunday; the slope is an ordinary least-squares fit of excess return on forecast over all cases."
+}

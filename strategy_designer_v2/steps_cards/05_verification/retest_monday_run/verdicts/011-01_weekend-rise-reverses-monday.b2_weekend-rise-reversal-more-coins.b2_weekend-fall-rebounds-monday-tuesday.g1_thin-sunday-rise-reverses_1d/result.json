@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9980559875583204,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-bar move in the short's direction (Sunday close to Tuesday close, minus coin drift, negated)",
+    "value": 0.010795440740254944,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 6.951335178814629
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting difference > 0; reject: mean < 0 with t <= -2; fewer than 200 cases: not observable"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half (> 0)",
+    "value": 7.34891175354635e-05,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2541,
+    "larger half": 1270,
+    "smaller half": 1271,
+    "active bars": 2572
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the larger-|forecast| half minus the smaller half is above 0.",
+  "reading": "Sunday bars are those whose UTC start timestamp falls on a Sunday and a rise is the raw component value > 0 (close over previous row's close when raw is missing); the return is close at row t+2 over close at t inside the window; the coin's drift is the mean of non-overlapping 2-bar returns at positions 0,2,4,... of each window pooled over all its windows; the median split puts cases with |forecast| strictly above the pooled median in the larger half and the rest in the smaller half."
+}

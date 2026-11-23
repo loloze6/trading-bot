@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_sunday-reversal-in-turbulence_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4754963,
+  "findings": {
+    "F1": "The move of the UTC Saturday bar is reversed by the Sunday bar. The drift-removed next-day return, scaled by 20-day volatility, regressed on Saturday's return over its 20-day volatility gives slope \u22120.147 (t \u22126.56, 2616 cases); on raw returns the slope is \u22120.125 (t \u22126.48). No other weekday's next day reverses this strongly: Tuesday is \u22120.064 (t \u22122.48) and Sunday \u22120.054 (t \u22121.96).",
+    "F2": "Saturday's reversal is graded by the size of the move. Ranked into quartiles of |Saturday return / 20-day vol|, the next day's drift-removed return against the move averages +0.07 %, +0.03 %, +0.27 % (t 1.80) and +0.85 % (t 4.43), 654 cases each. The top quartile alone covers 3.9 times the 0.22 % cost of a trade.",
+    "F3": "Saturday's reversal holds across years and coins. Its slope is negative in 7 of 8 years (t \u2264 \u22122 in 2018, 2019, 2022, 2023 and 2024, e.g. \u22120.240 with t \u22125.44 in 2024), with 2025 the exception (+0.067, t 0.90). It is negative in most coins (SOL \u22120.44 t \u22123.53, LTC \u22120.21 t \u22122.81, AAVE \u22120.26 t \u22122.58). It is gone after 2 days (slope +0.028, t 0.74), so it is a one-day effect.",
+    "F4": "The move of the UTC Wednesday bar continues, and the continuation grows with the horizon. The scaled slope is 0.065 (t 2.52) over 1 day, 0.215 (t 6.77) over 2, 0.242 (t 6.62) over 3 and 0.439 (t 9.00) over 5 days (2427 cases). On raw returns the 5-day slope is 0.304 (t 7.13). This is the strongest pattern of the roughly 28 weekday \u00d7 horizon cells examined, and the opposite sign to Sunday's 5-day slope (\u22120.118, t \u22121.55).",
+    "F5": "Wednesday's continuation is robust and graded. The 5-day slope is positive in 7 of 8 years (t > 2 in 2018, 2021, 2022, 2023, 2024 and 2025; 2024: 0.84, t 6.33). It is positive in every coin shown (ADA 0.80 t 4.08, DOGE 1.03 t 4.23, LTC 0.57 t 3.83, ETH 0.56 t 3.31, BTC 0.48 t 2.92). The 5-day drift-removed move in the direction of Wednesday's move rises from +0.60 % in the smallest |move/vol| quartile to +2.90 % in the largest, about 13 times the cost of a trade.",
+    "F6": "Sunday's own move reverses over the next 2 days more strongly the lower Sunday's volume is against its 20-day average. By volume quartile, low to high, the scaled slope is \u22120.43 (t \u22123.11), \u22120.24 (t \u22121.91), \u22120.19 (t \u22122.10) and +0.07 (t 1.01), about 651 cases each. This is the brief's thin-liquidity prediction, which the tested idea did not use. Ranked by the 20-day/60-day volatility ratio instead, only the top quartile reverses (\u22120.26, t \u22123.24).",
+    "F7": "The book's profit is almost entirely Monday. Its mean daily return on Monday days is +0.221 % (std 1.79 %, 414 days), against +0.00 % to +0.01 % on Tuesday to Saturday and \u22120.03 % on Sunday. Long trades average +1.86 % net (3278 trades) and short trades \u22120.86 % (2963 trades), so the short side costs the book money."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's UTC Saturday move is undone over the next 1 day (Sunday), and the larger Saturday's move relative to the coin's 20-day volatility, the larger the part that is undone.",
+      "consequence": "A trader would lean against a large Saturday move for Sunday, and against a small one hardly at all.",
+      "name": "Saturday move reverses Sunday",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "A coin's UTC Wednesday move continues in the same direction over the next 5 days, and the larger Wednesday's move relative to the coin's 20-day volatility, the larger the continuation.",
+      "consequence": "A trader would follow a large Wednesday move into the following week, sizing up with the move's size against recent volatility.",
+      "name": "Wednesday move continues five days",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's Sunday move is undone over the next 2 days (Monday and Tuesday), and the lower Sunday's volume stands relative to the coin's 20-day average volume, the larger the part that is undone.",
+      "consequence": "A trader would fade Sunday moves made on thin volume harder than Sunday moves made on normal or heavy volume.",
+      "name": "Thin-volume Sunday move reverses",
+      "from": "F6, F7",
+      "refs": [
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_sunday-reversal-in-turbulence.g1_saturday-move-reverses-sunday",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_sunday-reversal-in-turbulence.g2_wednesday-move-continues-five-days",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_sunday-reversal-in-turbulence.g3_thin-volume-sunday-move-reverses"
+  ],
+  "no_ideas": null
+}

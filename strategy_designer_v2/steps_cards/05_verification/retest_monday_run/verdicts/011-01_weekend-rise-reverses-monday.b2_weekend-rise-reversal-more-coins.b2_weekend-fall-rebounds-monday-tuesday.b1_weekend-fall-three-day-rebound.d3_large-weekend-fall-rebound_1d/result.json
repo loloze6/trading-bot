@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9996301775147929,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 3-bar return after a weekend fall",
+    "value": 0.011069326782642155,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 3.652090576803839
+    },
+    "threshold": "above 0 with t >= 2 confirms (with the top-quartile check); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-quartile minus other cases mean excess return, Welch t > 0",
+    "value": -1.799695195259171,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1477
+  },
+  "decided_by": "The main measure reaches t >= 2 but the top-quartile check fails, which the plan calls inconclusive.",
+  "reading": "Cases are Sunday bars (UTC weekday 6) with forecast >= 2 whose 3-bar return lies inside the window; the coin's mean 3-bar return is taken on the non-overlapping grid of all its windows; the t of the forecast-weighted mean is that mean over its weighted standard error sqrt(sum(w^2 (x - m)^2)) / sum(w) (sandwich form); the top quartile is the ceil(n/4) cases with the largest forecast (stable sort), compared with the rest by Welch t."
+}
