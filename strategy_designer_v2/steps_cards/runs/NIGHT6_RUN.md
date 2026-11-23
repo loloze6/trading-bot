@@ -48,7 +48,9 @@ The designer's guess, for the record: N1 on two or three briefs (streaks and lon
 effects of the four); N2 on none.
 
 ## During the night
-(notes)
+- 00:50 Paris: the four sessions launched (session 1 `session_012maTgWeD1GH4TXz9VJSiU1`, 2 `session_012maTgTihYXqVbsfcvKL5za`,
+  3 `session_012maTgU5GYo9zM36Fb7Euy4`, 4 `session_012maTgWBE2Ln9BPLKqXM7jV`), from the working branch at 072b469688.
+  The designer checks them at 04:30 Paris (usage limit) and runs P4's hourly part from about 06:45 Paris.
 
 ## Reading
 (in the morning)
