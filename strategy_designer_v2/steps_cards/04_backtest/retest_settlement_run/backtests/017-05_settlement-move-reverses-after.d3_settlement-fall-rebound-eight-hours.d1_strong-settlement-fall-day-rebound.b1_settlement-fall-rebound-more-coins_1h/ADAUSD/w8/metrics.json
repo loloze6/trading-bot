@@ -1,0 +1,1454 @@
+{
+  "core": {
+    "net_return_pct": 46.208,
+    "sharpe": 4.057,
+    "max_drawdown_pct": -4.146,
+    "trade_count": 72,
+    "win_rate": 69.44,
+    "avg_trade_net_pnl": 6.411086,
+    "fees_paid": 12.212844,
+    "gross_pnl": 473.811049,
+    "net_pnl": 461.598204,
+    "cost_drag_pct": 2.5776,
+    "forecast_return_corr": 0.035089,
+    "forecast_return_corr_pvalue": 0.704797,
+    "forecast_return_corr_pvalue_block_adjusted": 0.972009,
+    "forecast_return_corr_n_eff": 1,
+    "forecast_return_corr_all_bars": 0.021728,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.836692,
+    "forecast_return_corr_all_bars_n_eff": 93,
+    "gap_skipped_pairs": 67,
+    "gap_skipped_pct": 2.3894,
+    "avg_trade_duration_bars": 57.62,
+    "sigma_bar_bps": 105.915,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 28.2108,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 1.5249,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 326.5099,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 326.5099,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 32.651,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 240,
+      "avg_forecast": 1.742893,
+      "trade_count": 72,
+      "total_net_pnl": 461.598211
+    },
+    "unknown": {
+      "bar_count": 2565,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 29,
+      "profitable_trades": 14,
+      "success_rate_pct": 48.28,
+      "total_net_pnl_usd": 19.3772,
+      "avg_pnl_per_trade_usd": 0.6682
+    },
+    "5_to_10": {
+      "total_forecasts": 14,
+      "profitable_trades": 13,
+      "success_rate_pct": 92.86,
+      "total_net_pnl_usd": 87.4704,
+      "avg_pnl_per_trade_usd": 6.2479
+    },
+    "10_to_15": {
+      "total_forecasts": 6,
+      "profitable_trades": 4,
+      "success_rate_pct": 66.67,
+      "total_net_pnl_usd": 38.3838,
+      "avg_pnl_per_trade_usd": 6.3973
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 23,
+      "profitable_trades": 19,
+      "success_rate_pct": 82.61,
+      "total_net_pnl_usd": 316.3668,
+      "avg_pnl_per_trade_usd": 13.7551
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall2h.last_history_value": {
+      "mean_reversion": {
+        "mean": 0.1008,
+        "std": 1.711965
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall2h.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 1.742893,
+        "std": 4.595497
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall2h.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall2h.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 1.742893,
+        "std": 4.595497
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": 0.00047637,
+      "forward_return_std": 0.01427246,
+      "n_bars": 239,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00022867,
+      "forward_return_std": 0.01010408,
+      "n_bars": 2565,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -12.2022,
+    "sharpe": 3.8255,
+    "sortino": 14.2688,
+    "exposure_pct": 55.8289,
+    "turnover": 19.847258,
+    "n_bars_total": 2805,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 45,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 143,
+    "events": [
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-03 10:00:00",
+        "previous_timestamp": "2018-10-03 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-03 16:00:00",
+        "previous_timestamp": "2018-10-03 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-04 00:00:00",
+        "previous_timestamp": "2018-10-03 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-04 21:00:00",
+        "previous_timestamp": "2018-10-04 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-06 08:00:00",
+        "previous_timestamp": "2018-10-06 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-06 10:00:00",
+        "previous_timestamp": "2018-10-06 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-06 16:00:00",
+        "previous_timestamp": "2018-10-06 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-07 02:00:00",
+        "previous_timestamp": "2018-10-06 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-07 07:00:00",
+        "previous_timestamp": "2018-10-07 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-07 12:00:00",
+        "previous_timestamp": "2018-10-07 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-08 06:00:00",
+        "previous_timestamp": "2018-10-08 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-09 12:00:00",
+        "previous_timestamp": "2018-10-09 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-09 16:00:00",
+        "previous_timestamp": "2018-10-09 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-10 03:00:00",
+        "previous_timestamp": "2018-10-10 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-10 13:00:00",
+        "previous_timestamp": "2018-10-10 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-14 10:00:00",
+        "previous_timestamp": "2018-10-14 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-14 19:00:00",
+        "previous_timestamp": "2018-10-14 17:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-16 13:00:00",
+        "previous_timestamp": "2018-10-16 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-19 01:00:00",
+        "previous_timestamp": "2018-10-18 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-20 06:00:00",
+        "previous_timestamp": "2018-10-20 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-21 01:00:00",
+        "previous_timestamp": "2018-10-20 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-21 04:00:00",
+        "previous_timestamp": "2018-10-21 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-22 04:00:00",
+        "previous_timestamp": "2018-10-22 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-22 08:00:00",
+        "previous_timestamp": "2018-10-22 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-22 10:00:00",
+        "previous_timestamp": "2018-10-22 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-22 13:00:00",
+        "previous_timestamp": "2018-10-22 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-23 03:00:00",
+        "previous_timestamp": "2018-10-23 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-23 05:00:00",
+        "previous_timestamp": "2018-10-23 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-23 09:00:00",
+        "previous_timestamp": "2018-10-23 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-23 23:00:00",
+        "previous_timestamp": "2018-10-23 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-24 02:00:00",
+        "previous_timestamp": "2018-10-24 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-24 08:00:00",
+        "previous_timestamp": "2018-10-24 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-24 13:00:00",
+        "previous_timestamp": "2018-10-24 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-25 10:00:00",
+        "previous_timestamp": "2018-10-25 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-25 23:00:00",
+        "previous_timestamp": "2018-10-25 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-26 01:00:00",
+        "previous_timestamp": "2018-10-25 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-26 10:00:00",
+        "previous_timestamp": "2018-10-26 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-26 20:00:00",
+        "previous_timestamp": "2018-10-26 18:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-26 22:00:00",
+        "previous_timestamp": "2018-10-26 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-27 03:00:00",
+        "previous_timestamp": "2018-10-27 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-27 07:00:00",
+        "previous_timestamp": "2018-10-27 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-27 20:00:00",
+        "previous_timestamp": "2018-10-27 18:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-28 00:00:00",
+        "previous_timestamp": "2018-10-27 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-28 09:00:00",
+        "previous_timestamp": "2018-10-28 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-28 21:00:00",
+        "previous_timestamp": "2018-10-28 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-29 03:00:00",
+        "previous_timestamp": "2018-10-29 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-29 07:00:00",
+        "previous_timestamp": "2018-10-29 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-29 09:00:00",
+        "previous_timestamp": "2018-10-29 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-30 03:00:00",
+        "previous_timestamp": "2018-10-30 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-30 16:00:00",
+        "previous_timestamp": "2018-10-30 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-31 03:00:00",
+        "previous_timestamp": "2018-10-31 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-10-31 10:00:00",
+        "previous_timestamp": "2018-10-31 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-01 04:00:00",
+        "previous_timestamp": "2018-11-01 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-01 06:00:00",
+        "previous_timestamp": "2018-11-01 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-02 13:00:00",
+        "previous_timestamp": "2018-11-02 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-03 04:00:00",
+        "previous_timestamp": "2018-11-03 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-03 09:00:00",
+        "previous_timestamp": "2018-11-03 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-03 13:00:00",
+        "previous_timestamp": "2018-11-03 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-04 00:00:00",
+        "previous_timestamp": "2018-11-03 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-04 02:00:00",
+        "previous_timestamp": "2018-11-04 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-04 05:00:00",
+        "previous_timestamp": "2018-11-04 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-04 11:00:00",
+        "previous_timestamp": "2018-11-04 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-04 23:00:00",
+        "previous_timestamp": "2018-11-04 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-05 06:00:00",
+        "previous_timestamp": "2018-11-05 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-05 13:00:00",
+        "previous_timestamp": "2018-11-05 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-05 21:00:00",
+        "previous_timestamp": "2018-11-05 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-10 08:00:00",
+        "previous_timestamp": "2018-11-10 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-13 07:00:00",
+        "previous_timestamp": "2018-11-13 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-11-24 09:00:00",
+        "previous_timestamp": "2018-11-24 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-01 22:00:00",
+        "previous_timestamp": "2018-12-01 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-05 23:00:00",
+        "previous_timestamp": "2018-12-05 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-09 06:00:00",
+        "previous_timestamp": "2018-12-09 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-12 03:00:00",
+        "previous_timestamp": "2018-12-12 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-12 05:00:00",
+        "previous_timestamp": "2018-12-12 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-13 04:00:00",
+        "previous_timestamp": "2018-12-13 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2018-12-29 03:00:00",
+        "previous_timestamp": "2018-12-29 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-01 18:00:00",
+        "previous_timestamp": "2019-01-01 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-18 08:00:00",
+        "previous_timestamp": "2019-01-18 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-20 04:00:00",
+        "previous_timestamp": "2019-01-20 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-20 11:00:00",
+        "previous_timestamp": "2019-01-20 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-24 01:00:00",
+        "previous_timestamp": "2019-01-23 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-24 09:00:00",
+        "previous_timestamp": "2019-01-24 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-25 23:00:00",
+        "previous_timestamp": "2019-01-25 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-26 14:00:00",
+        "previous_timestamp": "2019-01-26 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-26 22:00:00",
+        "previous_timestamp": "2019-01-26 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-27 02:00:00",
+        "previous_timestamp": "2019-01-27 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-29 01:00:00",
+        "previous_timestamp": "2019-01-28 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-29 03:00:00",
+        "previous_timestamp": "2019-01-29 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-01-29 12:00:00",
+        "previous_timestamp": "2019-01-29 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-02 07:00:00",
+        "previous_timestamp": "2019-02-02 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-02 09:00:00",
+        "previous_timestamp": "2019-02-02 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-03 04:00:00",
+        "previous_timestamp": "2019-02-03 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-03 06:00:00",
+        "previous_timestamp": "2019-02-03 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-03 10:00:00",
+        "previous_timestamp": "2019-02-03 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-03 14:00:00",
+        "previous_timestamp": "2019-02-03 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-04 06:00:00",
+        "previous_timestamp": "2019-02-04 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-05 12:00:00",
+        "previous_timestamp": "2019-02-05 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-05 22:00:00",
+        "previous_timestamp": "2019-02-05 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-07 06:00:00",
+        "previous_timestamp": "2019-02-07 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-07 09:00:00",
+        "previous_timestamp": "2019-02-07 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-08 05:00:00",
+        "previous_timestamp": "2019-02-08 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-08 07:00:00",
+        "previous_timestamp": "2019-02-08 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-10 02:00:00",
+        "previous_timestamp": "2019-02-10 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-10 10:00:00",
+        "previous_timestamp": "2019-02-10 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-10 15:00:00",
+        "previous_timestamp": "2019-02-10 13:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-12 06:00:00",
+        "previous_timestamp": "2019-02-12 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-14 07:00:00",
+        "previous_timestamp": "2019-02-14 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-14 20:00:00",
+        "previous_timestamp": "2019-02-14 18:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-15 19:00:00",
+        "previous_timestamp": "2019-02-15 17:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-16 09:00:00",
+        "previous_timestamp": "2019-02-16 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-16 12:00:00",
+        "previous_timestamp": "2019-02-16 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-16 22:00:00",
+        "previous_timestamp": "2019-02-16 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-17 09:00:00",
+        "previous_timestamp": "2019-02-17 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-20 17:00:00",
+        "previous_timestamp": "2019-02-20 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-22 02:00:00",
+        "previous_timestamp": "2019-02-22 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-22 11:00:00",
+        "previous_timestamp": "2019-02-22 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-23 11:00:00",
+        "previous_timestamp": "2019-02-23 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-26 20:00:00",
+        "previous_timestamp": "2019-02-26 18:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-27 05:00:00",
+        "previous_timestamp": "2019-02-27 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-27 07:00:00",
+        "previous_timestamp": "2019-02-27 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-27 10:00:00",
+        "previous_timestamp": "2019-02-27 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-27 12:00:00",
+        "previous_timestamp": "2019-02-27 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-28 05:00:00",
+        "previous_timestamp": "2019-02-28 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-28 08:00:00",
+        "previous_timestamp": "2019-02-28 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-28 12:00:00",
+        "previous_timestamp": "2019-02-28 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-02-28 15:00:00",
+        "previous_timestamp": "2019-02-28 13:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-01 04:00:00",
+        "previous_timestamp": "2019-03-01 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-01 07:00:00",
+        "previous_timestamp": "2019-03-01 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-02 11:00:00",
+        "previous_timestamp": "2019-03-02 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-02 16:00:00",
+        "previous_timestamp": "2019-03-02 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-02 18:00:00",
+        "previous_timestamp": "2019-03-02 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-03 03:00:00",
+        "previous_timestamp": "2019-03-03 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-03 08:00:00",
+        "previous_timestamp": "2019-03-03 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-03 10:00:00",
+        "previous_timestamp": "2019-03-03 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-03 18:00:00",
+        "previous_timestamp": "2019-03-03 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-03 21:00:00",
+        "previous_timestamp": "2019-03-03 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-08 04:00:00",
+        "previous_timestamp": "2019-03-08 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-08 06:00:00",
+        "previous_timestamp": "2019-03-08 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-17 11:00:00",
+        "previous_timestamp": "2019-03-17 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-18 10:00:00",
+        "previous_timestamp": "2019-03-18 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-03-19 08:00:00",
+        "previous_timestamp": "2019-03-19 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-04-25 16:00:00",
+        "previous_timestamp": "2019-04-25 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2019-04-28 08:00:00",
+        "previous_timestamp": "2019-04-28 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

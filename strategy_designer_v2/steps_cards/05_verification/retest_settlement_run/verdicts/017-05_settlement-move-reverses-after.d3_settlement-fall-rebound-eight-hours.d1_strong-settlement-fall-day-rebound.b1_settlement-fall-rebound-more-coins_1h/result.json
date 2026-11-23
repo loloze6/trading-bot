@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9950740279507403,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 24-bar move of settlement bets (forecast >= 2)",
+    "value": 0.0007466227495324914,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.5785336382429715
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting difference > 0; reject: mean < 0 with t <= -2; at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "Welch difference of mean unusual move, cases minus small falls (0 < forecast < 2)",
+    "value": 0.0013606744858315882,
+    "passed": true,
+    "welch_t": 2.1080722584260867
+  },
+  "counts": {
+    "independent cases": 13768,
+    "small-fall settlement bars": 17227
+  },
+  "decided_by": "the t of the cases' mean unusual move lies between -2 and 2.",
+  "reading": "settlement bars are bars whose end (start + 1 h) is 00:00 or 16:00 UTC; cases and small falls are each kept as the first such bar per 24-bar grid cell counted from each window's first row, with the 24-bar forward return inside the window; the coin's mean 24-bar return is taken on the non-overlapping grid of all its windows; the supporting check passes when the difference is above 0; fewer than 30 cases is reported as not observable."
+}

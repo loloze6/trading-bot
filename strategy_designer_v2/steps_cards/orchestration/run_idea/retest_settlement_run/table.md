@@ -24,21 +24,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day | plan | confirmed (+3.77) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day.d1_settlement-fall-recovers-in-uptrend, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day.d2_settlement-fall-after-weekly-rise, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day.d3_settlement-fall-in-raised-volatility; 7.g: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day.g1_high-volatility-daily-move-reverses, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day.g2_midday-two-hour-move-reverses | 1.08 | 9.5 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls | plan | inconclusive (+1.58) | not profitable enough (failed: Calmar) | - | 7.b: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal.b1_volatile-hourly-falls-more-coins, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal.b2_fall-reversal-graded-by-volatility; 7.g: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal.g1_volatile-day-move-reversal, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal.g2_rebound-grows-with-turbulence | 1.05 | 8.9 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup | plan | confirmed (+3.05) | not profitable enough (failed: Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins.d1_day-long-fall-into-settlement, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins.d2_afternoon-settlement-fall-recovers; 7.g: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins.g1_volatile-day-fall-reverses, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins.g2_heavy-volume-fall-reverses, 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins.g3_calm-coin-trend-continues | 1.37 | 18.9 |
+| 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound | plan | inconclusive (+1.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.b1_settlement-fall-rebound-uptrend, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.b2_uptrend-two-hour-dip-rebound; 7.g: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.g1_volatile-regime-daily-fall-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.g2_calm-regime-daily-move-continuation | 1.21 | 17.5 |
 
 ## Consumption
-20 ideas, 22.53 USD, 221.2 minutes in all.
+21 ideas, 23.75 USD, 238.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.69 | 10.7 |
-| step4_backtest | 0.00 | 125.4 |
-| step5_verdict | 3.33 | 12.7 |
-| step6_check | 0.00 | 4.3 |
-| chart_files | 0.00 | 2.1 |
+| step3_plan | 1.79 | 11.3 |
+| step4_backtest | 0.00 | 138.3 |
+| step5_verdict | 3.52 | 13.4 |
+| step6_check | 0.00 | 4.5 |
+| chart_files | 0.00 | 2.3 |
 | similarity_check | 0.00 | 2.1 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 1.95 | 6.6 |
+| step7_7.b | 2.38 | 8.1 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.g | 8.69 | 32.0 |
+| step7_7.g | 9.18 | 33.6 |
 | step7_7.d | 6.87 | 25.0 |

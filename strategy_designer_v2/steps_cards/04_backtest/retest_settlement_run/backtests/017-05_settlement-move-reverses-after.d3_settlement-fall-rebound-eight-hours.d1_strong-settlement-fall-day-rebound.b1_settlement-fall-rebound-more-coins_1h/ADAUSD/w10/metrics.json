@@ -1,0 +1,518 @@
+{
+  "core": {
+    "net_return_pct": 58.942,
+    "sharpe": 3.781,
+    "max_drawdown_pct": -6.364,
+    "trade_count": 85,
+    "win_rate": 78.82,
+    "avg_trade_net_pnl": 6.934066,
+    "fees_paid": 18.91963,
+    "gross_pnl": 608.315256,
+    "net_pnl": 589.395626,
+    "cost_drag_pct": 3.1102,
+    "forecast_return_corr": 0.073863,
+    "forecast_return_corr_pvalue": 0.428677,
+    "forecast_return_corr_pvalue_block_adjusted": 0.941119,
+    "forecast_return_corr_n_eff": 4,
+    "forecast_return_corr_all_bars": 0.020553,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.822597,
+    "forecast_return_corr_all_bars_n_eff": 122,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.0339,
+    "avg_trade_duration_bars": 60.35,
+    "sigma_bar_bps": 105.4679,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 60.5182,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 3.2713,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=4 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 372.6817,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 372.6817,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 37.2682,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=4 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 246,
+      "avg_forecast": 2.534752,
+      "trade_count": 85,
+      "total_net_pnl": 589.395621
+    },
+    "unknown": {
+      "bar_count": 2705,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 10,
+      "profitable_trades": 6,
+      "success_rate_pct": 60.0,
+      "total_net_pnl_usd": 7.5512,
+      "avg_pnl_per_trade_usd": 0.7551
+    },
+    "5_to_10": {
+      "total_forecasts": 15,
+      "profitable_trades": 11,
+      "success_rate_pct": 73.33,
+      "total_net_pnl_usd": -32.0706,
+      "avg_pnl_per_trade_usd": -2.138
+    },
+    "10_to_15": {
+      "total_forecasts": 8,
+      "profitable_trades": 6,
+      "success_rate_pct": 75.0,
+      "total_net_pnl_usd": -26.9558,
+      "avg_pnl_per_trade_usd": -3.3695
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 52,
+      "profitable_trades": 44,
+      "success_rate_pct": 84.62,
+      "total_net_pnl_usd": 640.8709,
+      "avg_pnl_per_trade_usd": 12.3244
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall2h.last_history_value": {
+      "mean_reversion": {
+        "mean": -0.001735,
+        "std": 1.54429
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall2h.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 2.534752,
+        "std": 5.871638
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall2h.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall2h.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 2.534752,
+        "std": 5.871638
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": 0.00020505,
+      "forward_return_std": 0.01304272,
+      "n_bars": 245,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00038724,
+      "forward_return_std": 0.01029228,
+      "n_bars": 2705,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -11.1557,
+    "sharpe": 3.558,
+    "sortino": 7.3874,
+    "exposure_pct": 62.3179,
+    "turnover": 26.899507,
+    "n_bars_total": 2951,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 122,
+    "n_downside_days": 37,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 39,
+    "events": [
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-01 10:00:00",
+        "previous_timestamp": "2020-01-01 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-01 13:00:00",
+        "previous_timestamp": "2020-01-01 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-01 17:00:00",
+        "previous_timestamp": "2020-01-01 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-03 00:00:00",
+        "previous_timestamp": "2020-01-02 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-03 07:00:00",
+        "previous_timestamp": "2020-01-03 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-04 00:00:00",
+        "previous_timestamp": "2020-01-03 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-04 03:00:00",
+        "previous_timestamp": "2020-01-04 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-04 16:00:00",
+        "previous_timestamp": "2020-01-04 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-05 05:00:00",
+        "previous_timestamp": "2020-01-05 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-05 11:00:00",
+        "previous_timestamp": "2020-01-05 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-05 15:00:00",
+        "previous_timestamp": "2020-01-05 13:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-09 03:00:00",
+        "previous_timestamp": "2020-01-09 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-11 04:00:00",
+        "previous_timestamp": "2020-01-11 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-12 05:00:00",
+        "previous_timestamp": "2020-01-12 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-12 22:00:00",
+        "previous_timestamp": "2020-01-12 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-13 04:00:00",
+        "previous_timestamp": "2020-01-13 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-13 12:00:00",
+        "previous_timestamp": "2020-01-13 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-13 14:00:00",
+        "previous_timestamp": "2020-01-13 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-20 06:00:00",
+        "previous_timestamp": "2020-01-20 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-25 08:00:00",
+        "previous_timestamp": "2020-01-25 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-26 02:00:00",
+        "previous_timestamp": "2020-01-26 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-26 06:00:00",
+        "previous_timestamp": "2020-01-26 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-01-26 10:00:00",
+        "previous_timestamp": "2020-01-26 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-02-29 08:00:00",
+        "previous_timestamp": "2020-02-29 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-03-03 03:00:00",
+        "previous_timestamp": "2020-03-03 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-03-07 04:00:00",
+        "previous_timestamp": "2020-03-07 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-03-07 16:00:00",
+        "previous_timestamp": "2020-03-07 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-03-11 08:00:00",
+        "previous_timestamp": "2020-03-11 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-03-28 13:00:00",
+        "previous_timestamp": "2020-03-28 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-01 05:00:00",
+        "previous_timestamp": "2020-04-01 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-05 06:00:00",
+        "previous_timestamp": "2020-04-05 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-05 08:00:00",
+        "previous_timestamp": "2020-04-05 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-05 12:00:00",
+        "previous_timestamp": "2020-04-05 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-09 23:00:00",
+        "previous_timestamp": "2020-04-09 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-15 00:00:00",
+        "previous_timestamp": "2020-04-14 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-15 17:00:00",
+        "previous_timestamp": "2020-04-15 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-19 03:00:00",
+        "previous_timestamp": "2020-04-19 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-04-21 05:00:00",
+        "previous_timestamp": "2020-04-21 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ADAUSD",
+        "timestamp": "2020-05-16 10:00:00",
+        "previous_timestamp": "2020-05-16 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
