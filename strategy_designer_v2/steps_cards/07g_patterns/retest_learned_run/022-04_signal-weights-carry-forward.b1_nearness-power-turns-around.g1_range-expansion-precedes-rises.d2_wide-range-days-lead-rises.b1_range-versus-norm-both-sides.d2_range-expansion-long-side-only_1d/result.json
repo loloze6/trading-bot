@@ -1,0 +1,57 @@
+{
+  "line": "7.g",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3662468,
+  "findings": {
+    "F1": "The idea's gain comes entirely from wide days that close down. On non-overlapping 3-day grid cases, a down day with range above 1.7 times its 30-day mean range is followed by an excess 3-day return of +2.39 % (t 3.99, n 269). The same width on an up day is followed by \u22120.59 % (t \u22120.92, n 234). Over all wide days (range ratio above 1), down days give +0.71 % (t 2.26, n 936) and up days give \u22120.31 % (t \u22121.09, n 899).",
+    "F2": "On down days the effect grows with the range's width. The excess 3-day return is \u22120.54 % (t \u22121.15, n 388) at a ratio of 1\u20131.3, +0.81 % (t 1.43, n 279) at 1.3\u20131.7 and +2.39 % (t 3.99, n 269) above 1.7. On down days, the top quartile of fall size \u00d7 width gives +0.93 % (t 2.36, n 599).",
+    "F3": "Wide down days are followed by a positive excess in five of six coins. XMR gives +1.19 % (n 154), ZEC +1.28 % (n 157), XRP +0.95 % (n 152), LTC +0.61 % (n 174) and BTC +0.19 % (n 149), while ETH is flat at \u22120.01 % (n 150). By year the effect is uneven: 2020 gives +3.12 % (t 3.23, n 110), and 2018 (\u22120.34 %) and 2022 (\u22120.51 %) are negative.",
+    "F4": "Strong recent rises continue, but only at the top. The 7-day return scaled by 30-day daily volatility (\u221a7 \u00d7 daily vol) has a top decile followed by an excess 3-day return of +1.40 % (t 3.13, n 501), and its ninth decile by +0.50 % (t 1.17). Deciles 0\u20137 lie between \u22120.61 % and +0.00 %, so the overall correlation is only 0.046.",
+    "F5": "The 14-day return grades the next 3 days more evenly. By quintile, the excess 3-day return rises from \u22120.30 % and \u22120.65 % (t \u22122.68) in the two lowest, through \u22120.34 %, to +0.38 % and +0.66 % (t 2.02) in the two highest, with about 1000 cases each.",
+    "F6": "The top-decile momentum cases are positive in six of eight years. They are strongest in 2024 at +2.10 % (t 3.08, n 144), 2021 at +1.93 % (t 2.25) and 2020 at +1.35 % (t 1.93), and negative in 2022 (\u22120.63 %) and 2023 (\u22120.11 %).",
+    "F7": "The book is mostly the market and a few days. Its daily returns correlate 0.72 with the coins' mean daily return. Its best 5 % of days sum to 298 % of its total gain and its worst 5 % to \u2212275 %, which fits its Calmar failing at 0.64.",
+    "F8": "Other angles I looked at showed nothing clear given how many were examined. These were close location within the day's range (low-close days \u22120.34 %, t \u22121.56), the 1-day return quintiles (|t| < 0.9), volatility terciles (|t| < 0.5), weekday (largest is Saturday at +0.52 %, t 1.86) and per-coin forecast-positive cases (none with t above 1.6)."
+  },
+  "ideas": [
+    {
+      "idea": "The more a coin's daily high-low range exceeds its 30-day average range on a day it closes lower, the higher its return over the next 3 days above its usual drift.",
+      "consequence": "A trader would buy a coin after a wide down day, more the wider the day, and skip buying after wide up days, which carry the tested idea's long positions for nothing.",
+      "name": "wide down days rebound",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 7-day rise measured against its daily volatility over the past 30 days, the higher its return over the next 3 days above its usual drift, the effect growing sharply among its strongest rises.",
+      "consequence": "A trader would buy coins after their strongest week-long rises relative to their own volatility, more the stronger the rise, and refuse longs after middling weeks.",
+      "name": "strong week rises continue",
+      "from": "F4, F6",
+      "refs": [
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 14-day return, the higher its return over the next 3 days above its usual drift.",
+      "consequence": "A trader would lean long on coins that have risen most over two weeks and away from those that have fallen, scaled by the 14-day return.",
+      "name": "two-week return carries forward",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only.g1_wide-down-days-rebound",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only.g2_strong-week-rises-continue",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only.g3_two-week-return-carries-forward"
+  ],
+  "no_ideas": null
+}

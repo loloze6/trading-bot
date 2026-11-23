@@ -1,0 +1,63 @@
+{
+  "line": "7.d",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5447752,
+  "findings": {
+    "F1": "The Calmar failure comes from one fall: the book's deepest fall is \u221240.7 % over 164 days from w1 into w2, while the coins fell \u221264.1%. My approximate rebuild of the book gives the same picture (Sharpe 0.853, deepest fall \u221239.4 %, Calmar 0.67), and the four losing windows (w1 \u221218.8 %, w2 \u221215.7 %, w7 \u221213.4 %, w14 \u221222.7 %) are all windows where the coins fell 23\u201350 %.",
+    "F2": "The effect holds only when the coin's own 30-day return is positive. There, signal grid cases earn +0.82 % above drift over 3 days (t 2.87, 1024 cases). When the 30-day return is negative they earn \u22120.34 % (t \u22121.03, 614 cases). The 60-day return splits it the same way: +1.04 % (t 2.73, 639 cases) against \u22120.42 % (t \u22121.06, 471 cases).",
+    "F3": "A positive 30-day return is not an effect on its own: grid cases with a positive 30-day return and no signal earn \u22120.25 % above drift (t \u22121.16, 1164 cases), and with a positive 60-day return \u22120.32 % (t \u22121.15, 788 cases). Only wide days in an up-trending coin carry the move, which fits the theory's trend-following behaviour.",
+    "F4": "When the 30-day return is positive, the effect is graded by the width of the day. By forecast tercile, the excess 3-day return is +0.02 %, +0.35 % and +2.07 % (about 341 cases each). When the 30-day return is negative, the terciles are \u22120.05 %, \u22120.64 % and \u22120.32 %, so no grading at all.",
+    "F5": "The book spends much of its time in positions the signal no longer supports. Of 11503 held bars, 5211 had a forecast of 0, a leftover of the 3-bar minimum hold and the volatility sizing. Those bars earned +0.028 % each, against +0.243 % on the 6292 bars with a positive forecast.",
+    "F6": "Combining the two changes repairs the failing measure in an approximate rebuild with the backtest's cost:",
+    "F7": "The 30-day filter does not save the worst windows completely. In w1, w2, w7 and w14 the held bars lost in all four groupings of 30-day sign and forecast sign (mean gain per held bar \u22120.14 % to \u22120.29 %). The filter shrinks the falls by holding less often, and does not turn those windows positive.",
+    "F8": "On the 3-day grid, the signal's rise sits mostly in the widest days and in coins above their 50-day mean:"
+  },
+  "ideas": [
+    {
+      "idea": "The further a coin's daily high-low range exceeds its average range over the past 30 days, the higher that coin's return over the next 3 days above its usual drift, only while the coin's own 30-day return is positive, with no lean against the coin after narrower days.",
+      "consequence": "A trader would buy after wide days, sized with the width, only in coins that are up over the past 30 days, and stay out after wide days in falling coins, where the rise does not follow.",
+      "name": "wide days in rising coins",
+      "from": "F1, F2, F3, F4, F6, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The further a coin's daily high-low range exceeds its average range over the past 30 days, the higher that coin's return over the next 3 days above its usual drift, the rise coming within those 3 days and fading once the coin's range is back at its 30-day average, only while the coin's 30-day return is positive.",
+      "consequence": "A trader would hold the long only while the day's width stays above its 30-day norm in a rising coin, rather than carrying it through average days, which earn almost nothing.",
+      "name": "range expansion rise fades quickly",
+      "from": "F5, F6, F2, F4",
+      "refs": [
+        "F5",
+        "F6",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The further a coin's daily high-low range exceeds its average range over the past 30 days, the higher that coin's return over the next 3 days above its usual drift, only while the coin closes above its 50-day mean, with no lean against the coin after narrower days.",
+      "consequence": "A trader would buy wide days in proportion to their width only in coins above their 50-day mean, and refuse them below it, where wide days are followed by no rise.",
+      "name": "wide days above trend",
+      "from": "F8, F3, F1",
+      "refs": [
+        "F8",
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only.d1_wide-days-in-rising-coins",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only.d2_range-expansion-rise-fades-quickly",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only.d3_wide-days-above-trend"
+  ],
+  "no_ideas": null
+}

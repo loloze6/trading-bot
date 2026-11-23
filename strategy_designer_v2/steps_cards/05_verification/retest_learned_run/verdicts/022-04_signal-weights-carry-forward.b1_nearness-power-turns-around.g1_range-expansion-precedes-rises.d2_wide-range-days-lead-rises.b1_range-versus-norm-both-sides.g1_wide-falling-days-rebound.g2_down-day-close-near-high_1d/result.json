@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 3-bar excess return on forecast, down-day grid bars",
+    "value": 0.0013025331738385874,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.0655874073428184
+    },
+    "threshold": "confirm if t >= 2 (with timing gain > 0); reject if t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return minus position x coin mean daily return)",
+    "value": -7.880939591911558e-05,
+    "passed": false
+  },
+  "counts": {
+    "down-day grid cases": 2718,
+    "active bars": 8453
+  },
+  "decided_by": "The slope's t is 2 or more but the timing gain is at or below 0 (the plan's inconclusive rule).",
+  "reading": "The situation is checked from prices as close below the previous close inside the same window, with the first bar of each window left out of the check since its prior close is not recorded; the coin's mean 3-bar return is taken on the same non-overlapping grid of all bars of all its windows; the timing gain is read on daily book returns (postRebalance_total_value, inside windows, mean over coins per day) minus the position held into the day times the coin's mean daily return over all windows, averaged the same way; a count under the plan's 200 cases is reported as not observable, as the workflow requires."
+}

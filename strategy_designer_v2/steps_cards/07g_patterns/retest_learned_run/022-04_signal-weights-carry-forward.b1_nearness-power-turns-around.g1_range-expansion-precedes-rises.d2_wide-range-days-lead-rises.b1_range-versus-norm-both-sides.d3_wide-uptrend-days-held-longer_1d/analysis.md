@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d3_wide-uptrend-days-held-longer_1d
+idea tested: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d3_wide-uptrend-days-held-longer
+step 5: mismatch
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3890 USD
+---
+## Findings
+- **F1:** Among the widest-range grid days (top fifth of the day's high-low range over its 30-day average range), days that closed down were followed by a 6-day return above the coin's drift. This held whether the 30-day return was positive (mean 0.549 usual moves, t 3.56, 102 cases) or negative (0.254, t 2.72, 122 cases). Wide days that closed up showed no such rise (+0.071, t 1.00, 148 cases, in uptrends; −0.187, t −1.97, 82 cases, in downtrends).
+- **F2:** Inside the tested idea's own situation (30-day return positive, widest range fifth), most of the effect came from down days. Down days gave 0.614 usual moves (t 3.69, 91 cases) against 0.102 for up days (t 1.33, 129 cases). Days closing in the lower half of their range gave 0.544 (t 3.43, 95 cases) against 0.139 for the upper half (t 1.69, 125 cases).
+- **F3:** In that uptrend wide-day group, the excess grew with the range excess. By tercile it was 0.121 (t 1.05), 0.238 (t 2.27) and 0.585 (t 3.00) usual moves, about 73 cases each.
+- **F4:** The uptrend wide-day effect is weaker than its pooled t suggests. Averaged across coins per date, it falls to 0.157 usual moves with t 1.75 over 112 dates. It was also negative in 2018 (−0.593, t −3.18) and flat in 2023 (−0.018).
+- **F5:** The other single effects did not hold up across coins and years:
+- **F6:** The book's daily returns moved with holding the coins (correlation 0.71, 2898 days). Its best 5 % of days summed to 252 % of its total gain, a profit carried by a few market surges. That fits a mean of 0.0004 a day on days in a position, against the 0.0005 required.
+
+## Ideas
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d3_wide-uptrend-days-held-longer.g1_wide-down-days-rebound` (from F1, F2, F3, F5): On a day a coin closes lower than the day before, the further that day's high-low range exceeds its average range over the past 30 days, the higher the coin's return over the next 6 days above its usual drift.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d3_wide-uptrend-days-held-longer.g2_wide-day-weak-close-reverses` (from F1, F2, F5): The further a coin's daily range exceeds its 30-day average range and the nearer that day's close sits to the day's low, the higher the coin's return over the next 6 days above its usual drift.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

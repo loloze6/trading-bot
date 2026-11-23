@@ -1,0 +1,2 @@
+022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d1_range-expansion-in-uptrends.b1_range-expansion-uptrend-more-coins_1d: not profitable enough [Sharpe 1.118; Sharpe minus holding's Sharpe 1.052; Calmar 1.591]
+022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d1_wide-days-in-uptrends-rise_1d: not profitable enough [Sharpe 0.6514; Sharpe minus holding's Sharpe 0.5533; Calmar 0.5806]

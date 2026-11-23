@@ -7967,3 +7967,106 @@ class FailedBreakoutDepthRunUpDiscountComponent(SubStrategyComponent):
     def get_required_periods(self):
         return max(self.period + self.fail_window, self.rise_period + self.fail_window,
                    self.window + self.rise_period)
+
+
+class ExcessPowerReversalTimesMaDistanceComponent(SubStrategyComponent):
+    """
+    Excess predictive power of the nearness to the high, read as a reversal, times the trend distance:
+
+        s(i)    = close[i] / max(close[i-high_period+1 .. i]) - 1
+        y(i)    = close[i+horizon] / close[i] - 1
+        w(u)    = Pearson corr of s(i) with y(i) over i = u-corr_lookback .. u-horizon
+                  (0 when s or y is flat over those rows)
+        wbar(t) = mean of w(t-mean_window) .. w(t-1)
+        z(t)    = (s(t) - mean) / std (ddof 1) of s over bars t-z_window+1 .. t   (0 when s is flat there)
+        SMA     = mean(close[t-ma_period+1 .. t])
+        raw_value = max(0, -(w(t) - wbar(t)) * z(t)) * max(0, (close[t] - SMA) / SMA * 100)
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 unless (w - wbar) * z < 0 and
+    close[t] > SMA. Graded: it grows continuously with both factors.
+    Warm-up: max(mean_window + corr_lookback, z_window - 1) + high_period rows, at least ma_period (820 at the
+    defaults), bar t included.
+    NaN: a NaN close, or a close not above 0, in the last (warm-up) rows gives NaN.
+    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2,
+    mean_window < 1, ma_period < 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last (warm-up) rows up to and including bar t.
+    The latest forward return used is y(t-horizon) = close[t] / close[t-horizon] - 1, which ends at bar t.
+    """
+
+    def __init__(self, name="ExcessPowerReversalTrend", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        p = self.parameters
+        self.high_period = int(p.get("high_period", 90))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.z_window = int(p.get("z_window", 365))
+        self.mean_window = int(p.get("mean_window", 365))
+        self.ma_period = int(p.get("ma_period", 100))
+        if self.high_period < 2:
+            raise ValueError(f"high_period must be >= 2, got {self.high_period}")
+        if self.horizon < 1:
+            raise ValueError(f"horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("corr_lookback - horizon must be >= 2")
+        if self.z_window < 2:
+            raise ValueError(f"z_window must be >= 2, got {self.z_window}")
+        if self.mean_window < 1:
+            raise ValueError(f"mean_window must be >= 1, got {self.mean_window}")
+        if self.ma_period < 2:
+            raise ValueError(f"ma_period must be >= 2, got {self.ma_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        T = len(c) - 1
+        hp, L, h = self.high_period, self.corr_lookback, self.horizon
+        hi = pd.Series(c).rolling(hp, min_periods=hp).max().to_numpy()
+        s = c / hi - 1.0
+        y = np.full(T + 1, np.nan)
+        y[:T + 1 - h] = c[h:] / c[:T + 1 - h] - 1.0
+
+        def corr(u):
+            a = s[u - L:u - h + 1]
+            b = y[u - L:u - h + 1]
+            if a.max() == a.min() or b.max() == b.min():
+                return 0.0
+            da = a - a.mean()
+            db = b - b.mean()
+            den = np.sqrt(np.sum(da * da) * np.sum(db * db))
+            if not den > 0:
+                return 0.0
+            return float(np.sum(da * db) / den)
+
+        w_t = corr(T)
+        wbar = float(np.mean([corr(T - k) for k in range(1, self.mean_window + 1)]))
+        zw = s[T - self.z_window + 1:T + 1]
+        if zw.max() == zw.min():
+            z = 0.0
+        else:
+            sd = float(np.std(zw, ddof=1))
+            z = float((s[T] - zw.mean()) / sd) if sd > 0 else 0.0
+        sma = float(np.mean(c[T - self.ma_period + 1:T + 1]))
+        dist = (c[T] - sma) / sma * 100.0
+        rev = max(0.0, -(w_t - wbar) * z)
+        trend = max(0.0, dist)
+        self._raw_value = float(rev * trend)
+        self.confidence = 1.0
+        self.debug_info = {"w": w_t, "wbar": wbar, "z": z, "ma_distance": dist}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period,
+                   self.ma_period)

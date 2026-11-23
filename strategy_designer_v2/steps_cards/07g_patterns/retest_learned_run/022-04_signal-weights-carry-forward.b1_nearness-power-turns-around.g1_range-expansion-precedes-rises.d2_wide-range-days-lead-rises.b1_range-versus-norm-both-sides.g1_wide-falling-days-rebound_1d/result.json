@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.g1_wide-falling-days-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4012964,
+  "findings": {
+    "F1": "The tested idea's gain sits entirely on its long side. Bars held long earned +0.0526 % per bar (t 4.35, 5459 coin-bars), while bars held short earned \u22120.0017 % (t \u22120.28, 8018 coin-bars). Long trades netted +2.00 % on average over 2146 trades, and short trades netted \u22121.69 % over 2528 trades. The narrow-falling-day short half therefore holds most of the positions but adds nothing except fees, which drags the mean daily return on days in a position down to 0.0145 %.",
+    "F2": "On falling days, the effect is concentrated in the widest fifth of the range ratio. That fifth showed a 3-day excess return of +1.84 % (t 4.36, 523 cases), while the other four fifths ranged from \u22120.88 % to \u22120.13 %. On rising days the range ratio has no slope (t \u22120.55, 2601 cases), so the falling-day gate is essential.",
+    "F3": "On falling days, where the close sits within the day's range adds information of its own. A pooled regression on the range ratio and the close's location in the range (0 at the low, 1 at the high) gives t 4.95 for the range and t 2.90 for the close location (2397 cases). Falling days that closed in the top fifth of their range were followed by +1.48 % excess over 3 days (t 4.00, 480 cases), against \u22120.81 % to \u22120.03 % for the middle fifths.",
+    "F4": "In the book, the payoff grows with the size of the forecast. Bars with a forecast in (3, 6] gained +0.173 % per bar (t 5.13, 1110), and bars in (0, 3] gained +0.037 % (t 3.15, 2184). Negative-forecast bars gained +0.004 % to +0.006 % (t \u2264 0.64).",
+    "F5": "Momentum looks significant pooled but does not carry forward, so it is not a finding to build on. The 30-day return slope on 3-day excess is t 2.75 pooled (4283 cases), but by year it swings from t \u22124.04 (2018) to +3.77 (2025). Weekday, volatility-level and 1-day-shock patterns were not monotone, with all quintile t-values under 2.7 in magnitude."
+  },
+  "ideas": [
+    {
+      "idea": "On days a coin closes lower, the larger the distance from the day's low back up to its close, measured against the coin's average daily high-low range over the past 30 days, the higher the coin's return over the next 3 days above its usual drift.",
+      "consequence": "A trader would lean long after a falling day whose intraday sell-off was bought back by an unusually large amount for the coin, more strongly the larger that recovery, holding for 3 days.",
+      "name": "falling-day recovery wick rebound",
+      "from": "F2, F3, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "On days a coin closes lower, the closer the close sits to the day's high within that day's high-low range, the higher the coin's return over the next 3 days above its usual drift.",
+      "consequence": "A trader would lean long after a down day that closed near its high, more strongly the nearer the high, holding for 3 days.",
+      "name": "down-day close near high",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.g1_wide-falling-days-rebound.g1_falling-day-recovery-wick-rebound",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.g1_wide-falling-days-rebound.g2_down-day-close-near-high"
+  ],
+  "no_ideas": null
+}

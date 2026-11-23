@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 5-bar excess return on forecast (pooled, non-overlapping grid)",
+    "value": 2.5608516802482724,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.5608516802482724
+    },
+    "threshold": "confirm if t >= 2 with timing > 0; reject if t <= -2; else inconclusive; at least 500 non-overlapping cases with non-zero forecast"
+  },
+  "supporting_check": {
+    "name": "book timing (mean daily gain before costs minus market-rise part)",
+    "value": 0.00011135971726361985,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases with a non-zero forecast": 3419,
+    "non-overlapping cases": 3419
+  },
+  "decided_by": "The slope's t is 2 or more and timing is above 0.",
+  "reading": "The regression uses every grid bar (forecast zero included) with a complete 5-bar return inside its window, the drift is each coin's mean grid 5-bar return over all windows, the book before costs is position held x next-bar coin return averaged over coins per day, and the plan's 'fewer than 500 cases' minimum is applied as 'not observable'."
+}
