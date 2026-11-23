@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue_1h
+idea tested: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4808 USD
+---
+## Findings
+- **F1:** The tested continuation rests mostly on one year and on the deepest falls. Among Sunday 23:00 closes with a 48-hour fall on heavier volume than the 120 hours before, the next 12 hours' excess return averaged -0.31 of a usual 12-hour move (t -3.01, 177 cases). By year it was -1.82 in 2022 (t -4.93, 22 cases) and +0.23 in 2018 (t +3.44, 30 cases, a reversal); every other year had |t| < 1.3. By fall-size tercile it was -0.71 for the deepest falls against -0.08 and -0.15 for the other two.
+- **F2:** After those heavy-volume Sunday falls, the downward excess keeps growing past Monday morning: -0.31 usual 12-hour moves at 12 hours (t -3.01), -0.24 at 24 hours (t -1.91) and -0.47 at 48 hours (t -2.38), on the same 177 cases.
+- **F3:** At Sunday 23:00, volume flips the sign of the follow-through. The least-squares slope of the next 12 hours' excess return on the weekend's 48-hour return is +0.177 when weekend volume is heavier than the weekdays' (t +3.84, 436 cases, continuation). It is -0.123 when lighter (t -3.21, 1889 cases, reversal), and -0.145 over 24 hours (t -2.56).
+- **F4:** Within light-volume weekends, the reversal grows as the weekend gets thinner against the weekdays. The slope is -0.30 in the lightest volume tercile (t -3.89, 630 cases), -0.14 in the middle tercile (t -1.89) and -0.05 in the least-light tercile (t -0.94).
+- **F5:** Light-volume reversal is not specific to weekends, and it is not stable across years. On Tuesday-to-Thursday 23:00 closes with light volume the same slope is -0.080 (t -3.24, 2928 cases). The Sunday light-volume slope ranges from -0.42 in 2021 (t -3.78) and -0.32 in 2019 (t -3.70) to +0.19 in 2022 (t +1.90) and +0.18 in 2023 (t +1.56).
+- **F6:** Two-day moves into Wednesday's close are reversed over the next 12 hours. The slope is -0.085 on heavy volume (t -3.62, 1395 cases) and -0.098 on light volume (t -1.98, 936 cases). It is the most negative weekday slope after Sunday's light-volume one.
+- **F7:** Hours 20 and 21 UTC rise on average, by +5.45 bp (t 6.75) and +4.36 bp (t 5.66) per bar across coins, but the rise is not graded. Its slope on the day's return so far is -0.014 (t -1.50), it shows no order across recent-volatility quintiles, and its sign changes by year (2023 -0.086 usual 2-hour moves, t -2.41; 2020 +0.094, t +4.06). This is a fixed-time effect only, with no graded idea in it.
+
+## Ideas
+- `026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue.g1_heavy-weekend-falls-two-days` (from F1, F2): A coin's Saturday-Sunday fall made on heavier volume than its mean over the preceding five weekdays keeps falling over the next 2 days, through Monday and Tuesday. The fall that follows is the larger the deeper the weekend fall.
+- `026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue.g2_thinner-weekend-stronger-reversal` (from F3, F4, F5): A coin's Saturday-Sunday return is partly reversed over the next 12 hours. The reversal is the larger the larger the weekend move and the lighter the weekend's volume against its mean over the preceding five weekdays.
+- `026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue.g3_midweek-two-day-moves-reverse` (from F6, F5): A coin's 2-day return into Wednesday's close is partly reversed over the next 12 hours, and the reversal is the larger the larger that 2-day move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

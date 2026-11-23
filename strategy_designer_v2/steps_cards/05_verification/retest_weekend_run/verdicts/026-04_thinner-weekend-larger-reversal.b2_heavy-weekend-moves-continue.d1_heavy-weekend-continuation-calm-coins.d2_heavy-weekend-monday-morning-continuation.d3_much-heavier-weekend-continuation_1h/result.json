@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.994641384995878,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed 12-bar excess return, top fifth of |forecast| cases",
+    "value": 0.0046386071643627425,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.44700992023137
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2; at least 100 top-fifth cases"
+  },
+  "supporting_check": {
+    "name": "top-fifth mean minus bottom-fifth mean > 0",
+    "value": 0.004200004602156112,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2395,
+    "cases in the top fifth": 479,
+    "cases in the bottom fifth": 479
+  },
+  "decided_by": "The main mean is positive with t >= 2 and the top-minus-bottom fifth difference is above 0.",
+  "reading": "Situation bars are those starting Sunday 23:00 UTC, side from the sign of the raw component (48-bar price return where not recorded); cases are trending bars with nonzero forecast, first one per coin and calendar date, with a 12-bar return inside their window; the top/bottom fifth are the floor(N/5) cases with the largest/smallest |forecast| pooled over coins, ties broken by coin and time; the coin mean is over grid bars 0,12,24,... of every window."
+}
