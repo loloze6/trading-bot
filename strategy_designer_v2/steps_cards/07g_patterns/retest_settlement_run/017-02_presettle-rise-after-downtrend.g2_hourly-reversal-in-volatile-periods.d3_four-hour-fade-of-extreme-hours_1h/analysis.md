@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours_1h
+idea tested: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3830 USD
+---
+## Findings
+- **F1:** The fade pays most over 24 hours. On non-overlapping 24-hour cases, a coin's 24-hour return standardised by its 30-day hourly volatility predicts the opposite excess move over the next 24 hours, with a slope of -42.4 bp per standard deviation (t -11.05, 17102 cases). The top tenth by size fades 99.6 bp (t -5.46), against 20.3 bp for the tested 1-hour situation over 4 hours (t -6.30, 95448 cases), and the 24-hour fade is about 5 times the 0.19 % cost of a trade.
+- **F2:** The 24-hour reversal is concentrated where the coin's 24-hour volatility is high against its 30-day average. In the top tercile of that ratio, the slope is -36.5 bp per unit (t -6.71, 5269 cases) and the top-fifth fade is 84.9 bp. In the low tercile, the slope is +8.1 bp (t 0.64) and the fade is -0.4 bp. The product of the 24-hour move and the volatility ratio gives a slope of -18.4 (t -8.03, 15806 cases) and a top-fifth fade of 72.5 bp.
+- **F3:** The 24-hour reversal holds on every coin: slopes from -16.3 (BTC, t -2.47) to -44.9 (XMR, t -4.53), with top-fifth fades from 9 to 77 bp. It is negative in 7 of 8 years, with t from -1.39 to -5.39; 2024 is the exception (+5.4, t 0.60).
+- **F4:** The reversal is lopsided toward rebounds after falls. The decile of largest 24-hour falls (mean -1.72 standardised) gains 80.9 bp in excess over the next 24 hours (t 5.07, 1581 cases), and the next decile gains 23.3 bp (t 1.83). The decile of largest rises loses only 25.7 bp (t -1.86).
+- **F5:** The tested book loses before costs as well as after. Its 208476 trades average -0.097 % before fees and -0.197 % after, over a mean hold of 7.5 hours. Every coin's book loses 11 to 31 bp a day while holding the coin earns 7 to 16 bp a day.
+- **F6:** The hours starting 21:00 and 22:00 UTC rise more than the rest of the day, by +5.54 bp (t 6.87) and +4.42 bp (t 5.76) per hour pooled. The difference against other hours is positive on all 6 coins (4.1 to 5.4 bp, t 2.7 to 4.2) and in 7 of 8 years. Two such hours together (about 10 bp) are still below the cost of a trade.
+- **F7:** The brief's settlement clock shows no consistent lean against the trend. The trend-signed hourly return before settlement is -1.90 bp (t -2.65) in the hour starting 07:00, but +2.23 bp (t 2.45) at 15:00 and +5.21 bp (t 6.54) at 23:00. Hours without a settlement show leans just as large: 13:00 is -4.14 bp (t -4.44) and 21:00 is -3.51 bp (t -4.33).
+
+## Ideas
+- `017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours.g1_daily-fade-in-volatile-periods` (from F1, F2, F3): Over the next 24 hours, a coin moves against its last 24 hours' move, and the larger that move measured in units of its 30-day volatility, times its 24-hour volatility over its 30-day average, the larger the reversal.
+- `017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours.g2_rebound-after-deep-daily-falls` (from F1, F4, F3): Over the next 24 hours, a coin rises after a fall over its last 24 hours, and the deeper that fall measured in units of its 30-day volatility, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

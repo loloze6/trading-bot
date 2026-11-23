@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9949181587189033,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 24-bar forward return on forecast",
+    "value": 0.00019970871830326812,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.767718056216492
+    },
+    "threshold": "positive slope with t >= 2 confirms (with second-day check), negative with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "second-day (t+24 to t+48) slope t below 2",
+    "value": 0.5027270732096437,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 8534,
+    "cases": 17227,
+    "second-day cases": 17084
+  },
+  "decided_by": "Main slope positive with t >= 2 over at least 200 cases with forecast > 0, and the second-day slope's t is below 2.",
+  "reading": "Cases are the first regime 'mean_reversion' bar in each 24-row grid cell from each window's first row, all such cases (forecast 0 included) enter the regression, the drift is the coin's mean non-overlapping 24-bar return over all windows (used for both days), and the second-day regression uses those cases whose t+48 close lies in the same window."
+}
