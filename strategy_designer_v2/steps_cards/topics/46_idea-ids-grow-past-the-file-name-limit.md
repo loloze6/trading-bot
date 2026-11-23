@@ -29,6 +29,7 @@ Recommended: A, with the readers of ids changed together and old ids still read.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-23 | Until the ids are shortened, `select_next` does not offer an idea whose plan's files cannot be written | the designer, on the night's rights to fix (session 4 of `runs/RETEST_RUN.md`: 9 failures, failed ideas retried, each a step 3 call; the new order follows real lineages deep) | stops the waste with one rule; the convention is the operator's decision | changing the id convention at night with five loops running |
 
 ## Links
 `common/idea_created_from.md`, `orchestration/select_next/`, `runs/RETEST_RUN.md`.
