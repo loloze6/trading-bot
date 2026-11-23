@@ -16,21 +16,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around | 022-04_signal-weights-carry-forward | plan | inconclusive (+0.31) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The result is essentially zero at every horizon, and its scattered signs (F1–F6) show no coin, year, side, forecast size or volatility regime where it is clearly present, so neither more data nor a narrower idea is supported.; 7.g: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around.g1_volatility-scaled-up-day-continuation | 1.46 | 7.7 |
 | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d2_reversal-shorts-in-downtrends.b2_reversal-shorts-on-downtrend-bounces | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d2_reversal-shorts-in-downtrends | plan | confirmed (+3.68) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: no answer; 7.g: no ideas: Across the forecast, the gate, past returns, volatility, nearness, weekday and year, every pattern that stood out case by case (F1, F4, F5) loses its significance when same-date cases across coins are counted once, or rests on 2025 alone (F2), so none stands out enough to support a new idea. | 1.37 | 12.3 |
 | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long.d1_nearness-reversal-in-uptrends | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long | missing-components | - | - | - | - | 0.06 | 0.4 |
+| 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long.d2_nearness-reversal-after-20-day-strength | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long | plan | inconclusive (+1.07) | profitable enough | - | 7.b: no ideas: The positive t comes from the 20-day-rise gate and the coins' drift: the nearness-power forecast neither grades the 5-day move (F1) nor beats bars without it in the same regime (F2), and its 60-day split appears equally without the forecast (F4), so no amended form of the idea has a part of the data where it shows.; 7.e: no answer; 7.g: no ideas: Across the forecast, the regime, past returns at 1, 5, 20 and 60 days, nearness to the 30-day high, volatility, weekdays, years and the book's daily returns, nothing stands out as a graded per-coin effect. The only sharp pattern is a weekday calendar (F6), which is a fixed on-off condition whose t is inflated by pooling correlated coins on the same days. | 1.59 | 13.5 |
 
 ## Consumption
-12 ideas, 17.10 USD, 128.4 minutes in all.
+13 ideas, 18.69 USD, 141.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.70 | 6.9 |
-| step4_backtest | 0.00 | 73.2 |
-| step5_verdict | 1.85 | 5.8 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 1.80 | 7.6 |
+| step4_backtest | 0.00 | 81.6 |
+| step5_verdict | 2.02 | 6.3 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.e | 0.51 | 1.3 |
+| step7_7.e | 0.93 | 2.6 |
 | step7_7.d | 1.75 | 5.7 |
-| step7_7.b | 5.77 | 20.2 |
-| step7_7.g | 5.52 | 14.7 |
+| step7_7.b | 6.22 | 21.6 |
+| step7_7.g | 5.97 | 15.9 |
 | similarity_check | 0.00 | 0.1 |
