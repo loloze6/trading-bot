@@ -16,22 +16,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d1_volatile-sunday-reversal-over-two-days | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday | plan | confirmed (+2.61) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: no answer; 7.g: no answer | 1.19 | 10.3 |
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d2_sunday-falls-rebound-early-week | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday | plan | inconclusive (+1.06) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no answer; 7.g: no answer | 1.81 | 10.2 |
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d3_moderate-sunday-moves-reverse-most | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday | plan | confirmed (+3.41) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: no answer; 7.g: no answer | 1.26 | 10.6 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.g1_volatile-market-falls-rebound-next-day | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday | plan | rejected (+4.57) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: no answer; 7.g: no answer | 1.21 | 10.6 |
 
 ## Consumption
-12 ideas, 12.30 USD, 132.2 minutes in all.
+13 ideas, 13.51 USD, 142.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.96 | 11.8 |
-| step4_backtest | 0.00 | 82.4 |
-| step5_verdict | 1.56 | 5.9 |
-| step6_check | 0.00 | 0.4 |
-| chart_files | 0.00 | 0.6 |
+| step3_plan | 3.18 | 13.4 |
+| step4_backtest | 0.00 | 87.8 |
+| step5_verdict | 1.72 | 6.5 |
+| step6_check | 0.00 | 0.5 |
+| chart_files | 0.00 | 0.7 |
 | similarity_check | 0.00 | 0.9 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.73 | 2.6 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 0.00 | 0.0 |
+| step7_7.c | 0.41 | 1.3 |
 | step7_7.d | 2.72 | 9.8 |
-| step7_7.g | 4.33 | 14.7 |
+| step7_7.g | 4.74 | 16.2 |
 | unseen_test | 0.00 | 3.2 |
