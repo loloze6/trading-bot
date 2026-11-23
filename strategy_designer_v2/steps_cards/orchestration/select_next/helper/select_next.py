@@ -101,13 +101,16 @@ def parent_confirmed(run, created_from, root=STEPS):
 
 
 NAME_MAX = 255          # the longest file name the system writes, in bytes (Linux)
-LONGEST_SUFFIX = "_4h_config.json"   # the longest name a plan's files add to an idea's id (step 3's config)
+def longest_name(idea_id, run):
+    """The longest file name an idea's test writes (topic 46): step 3's config (`<id>_<bar>_config.json`) or the
+    similarity register's returns (`<run>__<id>_<bar>.csv.gz`), with the longest bar."""
+    return max(len(f"{idea_id}_4h_config.json".encode()), len(f"{run}__{idea_id}_4h.csv.gz".encode()))
 
 
-def too_long(idea_id):
-    """Whether the files of this idea's plan cannot be written: its id plus the longest suffix over the file name limit
-    (topic 46: an id grows with every generation; step 3 then fails with "File name too long")."""
-    return len((idea_id + LONGEST_SUFFIX).encode()) > NAME_MAX
+def too_long(idea_id, run=""):
+    """Whether some file of this idea's test cannot be written: its longest name over the file name limit (topic 46: an
+    id grows with every generation; step 3, or the similarity register after step 6, then fails "File name too long")."""
+    return longest_name(idea_id, run) > NAME_MAX
 
 
 def record_of(line, recs):
@@ -180,7 +183,7 @@ def rank(run, root=STEPS, exclude=()):
             row["status"] = f"duplicate of {seen[key]}"
         elif iid in exclude:
             row["status"] = "excluded"
-        elif too_long(iid):
+        elif too_long(iid, run):
             row["status"] = "not testable: its id is too long for a file name (topic 46)"
         else:
             row["status"] = "candidate"
