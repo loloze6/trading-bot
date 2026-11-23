@@ -111,3 +111,27 @@ not affected (215 files, 0 bad: built with pandas 2). **Fixed** (`utc_seconds`, 
 under three units; checked under pandas 3.0.5). Not repairable by multiplying by 1000 (the truncation loses the
 minutes): at the morning merge, each night-5 book is added again from its record (`add` rewrites its returns file),
 then `--all`.
+
+## Session 2 (brief 022 retest, 1d): ended on budget, 03:39 Paris (35.14 USD, 3.7 h; branch night5-retest-learned, 85c5a2c3d2)
+| Measure | Count |
+|---|---|
+| Ideas written by step 7 (7.b / 7.d / 7.e / 7.g) | 63 (12 / 20 / 2 / 29) |
+| Tested (plans) | 27 (26, 1 missing components) |
+| Components built / existing | 2 / 1 (every check passed) |
+| Step 5: confirmed / inconclusive / mismatch | 12 / 13 / 1 |
+| Step 6 profitable enough / of them confirmed | 4 / 2 |
+| Unseen: the 2 confirmed and paying books hold on both periods | 2 of 2 |
+| 7.d: runs on confirmed not-paying ideas / ideas / closures | 10 (2 failed on names) / 20 / 0; 20 of 20 keep the signal; a trend condition in 13, measured alone in 9 |
+| Failed on file names over 255 bytes | 11 (3.6 USD): 4 at step 3; 7 step 7 runs whose children's names were too long |
+
+The two confirmed and paying books, nearest paying book measured again by the session in scratch with pandas 2:
+| Book | Line | Holds unseen | Nearest paying book | Share |
+|---|---|---|---|---|
+| ...g1_range-expansion-precedes-rises.d1...b1_range-expansion-uptrend-more-coins | 7.b | both | 020-03 resistance breakout (paying_rerun_run) | 0.853 |
+| ...d2_wide-range-days-lead-rises.b1...d1_wide-days-in-uptrends-rise | 7.d repair | both | 013-01 nearness to high (momentum) | 0.789 (its parent: 0.356) |
+
+The session's reading: **R2, pays but drifted**: both hold on unseen dates, both mostly explained by a paying momentum
+or breakout book; no paying book under 0.25. Group 2: 7 of 27 tested; with correct shares, five more parents would
+have been group 2 (w 0.60 to 0.96). A cause found: `select_next`'s length rule guards the names of an idea's plan and
+register files, not the names of the ideas step 7 writes from it; at generation 6, its children's names pass the limit
+(topic 46).
