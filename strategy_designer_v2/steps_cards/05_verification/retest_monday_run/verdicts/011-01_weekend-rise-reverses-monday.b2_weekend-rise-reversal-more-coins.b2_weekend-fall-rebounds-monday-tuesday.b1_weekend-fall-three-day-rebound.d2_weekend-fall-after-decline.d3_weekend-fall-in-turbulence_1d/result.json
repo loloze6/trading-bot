@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-bar return on forecast, Sunday bars with forecast > 0",
+    "value": 0.0011430167620138296,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.5667838674413963
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess > 0; reject: slope t <= -2; at least 200 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return > 0",
+    "value": 0.00979871098672425,
+    "passed": true
+  },
+  "counts": {
+    "cases": 524
+  },
+  "decided_by": "The slope t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Sunday bars are bars whose UTC start is a Sunday (the next bar is Monday), a weekend fall is a negative raw component value (the Sunday one-bar return where not recorded), cases are those with a full 3-bar return inside the window, the slope's t is the ordinary OLS t, and the plan's 'below 200 cases' rule is applied as the minimum count giving 'not observable'."
+}

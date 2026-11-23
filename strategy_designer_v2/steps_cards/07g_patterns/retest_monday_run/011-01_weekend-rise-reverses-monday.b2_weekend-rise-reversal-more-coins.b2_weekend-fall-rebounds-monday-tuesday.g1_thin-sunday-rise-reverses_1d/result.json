@@ -1,0 +1,64 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.48641159999999994,
+  "findings": {
+    "F1": "Shorting a Sunday rise pays in the book's daily returns, but the size of the rise and the thinness of Sunday's volume do not grade it. By size quintile of the Sunday rise, the unusual 2-day move in the short's direction runs +1.60 %, +1.28 %, +0.54 %, +1.20 %, +0.94 % (about 433 cases each). By volume-ratio quintile, from thickest to thinnest, it runs +1.42 %, +1.10 %, +0.69 %, +1.13 %, +1.21 %. Step 5's supporting difference was only 0.007 %.",
+    "F2": "After every Sunday close the coin underperforms, so much of the Sunday reversal is a calendar effect rather than a graded one. Across all Sundays, the coin's 2-day return minus its drift is \u22120.26 % (t \u22122.15, 4272 cases). Thursday is +0.33 % (t 3.19) and Friday +0.28 % (t 3.10). Measured as a move against the Sunday's sign, Sunday rises reverse by +1.11 % (t 6.54, 2167) and Sunday falls rebound by +0.63 % (t 3.88, 2105).",
+    "F3": "A Sunday fall rebounds more over the next 2 days the larger the fall. By fall-size quintile, smallest to largest, the rebound is \u22120.30 %, +0.45 %, +0.52 %, +1.54 % (t 4.58), +0.96 % (t 2.22), about 419 cases each.",
+    "F4": "Monday's move reverses over the next 2 days in a mostly graded way. By Monday-move quintile, from largest fall to largest rise, the 2-day return minus drift is +1.25 % (t 4.83), +0.04 %, \u22120.43 %, \u22120.73 % (t \u22123.17), +0.35 %, about 853 cases each.",
+    "F5": "A large rise late in the week continues over the next 2 days. Friday's top rise quintile is followed by +0.93 % minus drift (t 3.86, 852 cases), against \u22120.19 % after its largest falls. Thursday's top rise quintile is followed by +1.02 % (t 3.64, 855 cases).",
+    "F6": "The Sunday-rise reversal is not concentrated on Monday. Monday's day gives back +0.36 % (t 3.05) and Tuesday's day +0.48 % (t 4.32), over 2167 cases.",
+    "F7": "A Sunday rise reverses more after a falling week. When the 7-day move is in its lowest quintile, the reversal is +1.77 % (t 5.28, 434 cases), against +1.03 % in the top quintile. The middle quintiles are not monotonic, with +0.35 % in quintile 3."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's Monday move reverses over the next 2 days: the larger Monday's fall, measured in the coin's usual one-day moves over the past 60 days, the more the coin rises from Monday's close to Wednesday's close.",
+      "consequence": "A sharp Monday drop is a reason to buy at Monday's close, and to refuse a short carried into Tuesday.",
+      "name": "Monday fall rebounds midweek",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin whose Sunday close is below its Saturday close rises over the next 2 days, and the larger Sunday's fall in the coin's usual one-day moves over the past 60 days, the larger that rise.",
+      "consequence": "A large Sunday fall is a reason to buy at Sunday's close, and to refuse a short into Monday and Tuesday.",
+      "name": "Sunday fall rebounds graded",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "A coin's Friday rise continues over the next 2 days: the larger Friday's rise, measured in the coin's usual one-day moves over the past 60 days, the more the coin rises from Friday's close to Sunday's close.",
+      "consequence": "A strong Friday rise is a reason to hold a long through the weekend, and to refuse a short on it.",
+      "name": "Friday rise carries weekend",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin whose Sunday close is above its Saturday close falls over the next 2 days, and the more the coin fell over the 5 days before that Sunday rise, measured in its usual one-day moves over the past 60 days, the larger that fall.",
+      "consequence": "A Sunday bounce after a falling week is a reason to sell at Sunday's close, and to refuse a long into Monday.",
+      "name": "Sunday bounce after falling week",
+      "from": "F1, F7",
+      "refs": [
+        "F1",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.g1_monday-fall-rebounds-midweek",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.g2_sunday-fall-rebounds-graded",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.g3_friday-rise-carries-weekend",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.g4_sunday-bounce-after-falling-week"
+  ],
+  "no_ideas": null
+}
