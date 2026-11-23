@@ -100,6 +100,16 @@ def parent_confirmed(run, created_from, root=STEPS):
     return False
 
 
+NAME_MAX = 255          # the longest file name the system writes, in bytes (Linux)
+LONGEST_SUFFIX = "_4h_config.json"   # the longest name a plan's files add to an idea's id (step 3's config)
+
+
+def too_long(idea_id):
+    """Whether the files of this idea's plan cannot be written: its id plus the longest suffix over the file name limit
+    (topic 46: an id grows with every generation; step 3 then fails with "File name too long")."""
+    return len((idea_id + LONGEST_SUFFIX).encode()) > NAME_MAX
+
+
 def record_of(line, recs):
     return recs.get(line, (0, 0, 0.5))[2]                # a line with no analysis yet: (0 + 1) / (0 + 2)
 
@@ -170,6 +180,8 @@ def rank(run, root=STEPS, exclude=()):
             row["status"] = f"duplicate of {seen[key]}"
         elif iid in exclude:
             row["status"] = "excluded"
+        elif too_long(iid):
+            row["status"] = "not testable: its id is too long for a file name (topic 46)"
         else:
             row["status"] = "candidate"
         if key[0]:
