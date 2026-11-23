@@ -26,3 +26,4 @@
 028_volume-confirmed-hourly-moves-continue: An hourly move far above usual on surging volume carries on over the next two to six hours; on ordinary volume it does not. [instruments BTC, ETH; bar 1h; long and short]
 029_failed-breakout-traps-late-buyers: A daily close back inside the range after a break above the recent high leads to days of decline, as trapped breakout buyers sell. [bar: 1d, side: short only]
 030_absorption-day-close-location: Question: on heavy-volume, flat days, does the close's place in the daily range show who absorbed the order and the next direction? [bar: 1d]
+031_medium-term-overreaction-reversal: Coins that moved far beyond usual over two to three months partly reverse over following weeks as the overreaction's chasing or capitulation flow fades. [bar: 1d]
