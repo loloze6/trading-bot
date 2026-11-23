@@ -11,5 +11,6 @@
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d2_afternoon-settlement-fall-rebound_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-05_settlement-move-reverses-after_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

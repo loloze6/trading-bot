@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9947035118019574,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x drift-removed 8-bar return, pooled",
+    "value": 0.02251923886757368,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 5.162662124305325
+    },
+    "threshold": "mean > 0 with t >= 2 and supporting check passes confirms; mean < 0 with t <= -2 rejects; fewer than 300 cases inconclusive"
+  },
+  "supporting_check": {
+    "name": "drift-removed 8-bar return, above-median forecast minus below-median",
+    "value": 0.001976491416914616,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8637,
+    "cases above median": 4318,
+    "cases below median": 4318
+  },
+  "decided_by": "The main-measure mean is > 0 with t >= 2 and the supporting check passes.",
+  "reading": "The settlement bar is the bar whose close (start + 1h) is 16:00 UTC, the 8-bar return is taken 8 rows ahead inside the window, the median is pooled over all cases with cases equal to it left out of both halves, and the 300-case minimum is treated as the plan's minimum count (not observable)."
+}

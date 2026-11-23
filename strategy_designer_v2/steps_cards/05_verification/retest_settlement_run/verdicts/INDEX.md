@@ -11,5 +11,6 @@
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h: confirmed (fit: exact) [main: 0.000749357; t of the mean 6.70734; cases 21229, active bars 21291]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses_1h: inconclusive (fit: exact) [main: 0.000256955; t of the mean 1.2507; cases 17689]
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound_1h: inconclusive (fit: exact) [main: 0.00240414; ordinary t of case excess returns 4.16131; cases 8564, cases forecast >= 10 6034, cases forecast 2 to below 10 2530]
+017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d2_afternoon-settlement-fall-rebound_1h: confirmed (fit: exact) [main: 0.0225192; ordinary t 5.16266; cases 8637, cases above median 4318, cases below median 4318]
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h: confirmed (fit: exact) [main: 0.00187065; t of the weighted mean 5.88766; cases across all coins and windows 14329, upper half cases 7164, lower half cases 7165]
 017-05_settlement-move-reverses-after_1h: confirmed (fit: exact) [main: 0.000438208; ordinary t of the mean 5.11781; cases 51399, top third cases 17133, bottom third cases 17133]
