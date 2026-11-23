@@ -1,0 +1,1 @@
+030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise_1d: not observable (fit: adapted) [main: 0.0117566; t of the mean, cases summed per day 0.723487; distinct case days 19, cases 30, control days 220]

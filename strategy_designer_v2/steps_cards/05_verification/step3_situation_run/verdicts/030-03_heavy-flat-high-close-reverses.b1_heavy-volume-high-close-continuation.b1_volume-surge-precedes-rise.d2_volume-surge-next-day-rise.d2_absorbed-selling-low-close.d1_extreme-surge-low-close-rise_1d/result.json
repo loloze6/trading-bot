@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return of long cases (vs coin mean daily return)",
+    "value": 0.020148344829284803,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.9457448972830345
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "cases minus low-volume low-close controls, mean excess next-day return (Welch t >= 1)",
+    "value": 0.019036516903148185,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 157,
+    "cases": 235,
+    "control days": 1878
+  },
+  "decided_by": "Mean excess next-day return above 0 with t >= 2 and the supporting check passes (confirm rule).",
+  "reading": "A case is a bar whose forecast is >= 2 while the previous bar in the same window is exactly 0 (a window's first bar has no known previous forecast and is not a case); the t clusters case deviations by UTC day; the volume ratio uses the prior 20 bars inside the window, falling back to the recorded absorb value divided by the close's distance from the high on the first 20 bars; the supporting check uses Welch t on case-level excess returns of these same cases against control days recomputed from prices; the plan's 'fewer than 30 distinct case days' minimum is applied as not observable."
+}

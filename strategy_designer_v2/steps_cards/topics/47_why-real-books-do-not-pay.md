@@ -86,7 +86,7 @@ measured beside it (A); the search correction next.
 |---|---|---|---|
 | N1 | Combinations on unseen dates: **replaced (2026-11-23, the operator)** by topic 44's portfolio steps: first the candidates (P1), the weights (P2), in parallel (P3, decided), then one portfolio fixed before any unseen result is seen, on the unseen dates (P4) | decides whether the workflow's aim becomes "find different real effects and combine them" | see topic 44 |
 | N2 | Step 5, an informative measure: the idea's gain beyond the coin's drift at its horizon, per trade, with its t by day, against the round trip | shows, per idea, whether the effect is worth trading beyond the market's drift (19 of 81 real books are below 0) | **done 2026-11-23**: the gain was already measured (step 5's size, 2026-11-20, same values as this analysis); added: how sure it is (its t by day) |
-| N3 | Step 3: the book trades the idea's situation (1b) | a verdict tests the idea (phase A: 3 of 5 confirmations were of another book) | medium |
+| N3 | Step 3: the book trades the idea's situation (1b) | a verdict tests the idea (phase A: 3 of 5 confirmations were of another book) | **done 2026-11-23** (`runs/STEP3_SITUATION_RUN.md`: the three ideas naming their situation gated; one of them pays, Calmar 0.85, holds on both unseen periods with few cases) |
 | N4 | The engine's MAE and MFE without the entry bar (shared code) | correct trade diagnostics (median daily MFE 6.2 % reported, 3.9 % real) | **done 2026-11-23** (proof in topic 48) |
 Kept for later, not sure enough: the stop moved to the entry after +1 %, long only on hourly books, merging re-entries, a horizon set from the edge curve.
 
