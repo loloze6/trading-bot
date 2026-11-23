@@ -111,6 +111,8 @@ not affected (215 files, 0 bad: built with pandas 2). **Fixed** (`utc_seconds`, 
 under three units; checked under pandas 3.0.5). Not repairable by multiplying by 1000 (the truncation loses the
 minutes): at the morning merge, each night-5 book is added again from its record (`add` rewrites its returns file),
 then `--all`.
+Proof on real books (session 2): its 12 books re-added with the fix under pandas 3.0.5 give the same shares as a
+rebuild under pandas 2.3.3 (book 1: 0.853; book 2: 0.789, parent 0.356), each compared with 50 of 50 paying books.
 
 ## Session 2 (brief 022 retest, 1d): ended on budget, 03:39 Paris (35.14 USD, 3.7 h; branch night5-retest-learned, 85c5a2c3d2)
 | Measure | Count |
