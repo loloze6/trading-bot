@@ -84,7 +84,7 @@ measured beside it (A); the search correction next.
 **Final next steps after the review (2026-11-23), in order:**
 | # | Step | Value | Effort |
 |---|---|---|---|
-| N1 | Combinations on unseen dates: one real book per family, picked by a fixed rule before any result is seen; their books run on the unseen periods (steps 4-6, no model call); combined with equal risk; Calmar of the combination against its books alone | decides whether the workflow's aim becomes "find different real effects and combine them" (in-sample: Calmar 0.49 alone, 0.80-0.87 combined) | small to medium |
+| N1 | Combinations on unseen dates: **replaced (2026-11-23, the operator)** by topic 44's portfolio steps: first the candidates (P1), the weights (P2), in parallel (P3, decided), then one portfolio fixed before any unseen result is seen, on the unseen dates (P4) | decides whether the workflow's aim becomes "find different real effects and combine them" | see topic 44 |
 | N2 | Step 5, an informative measure: the idea's gain beyond the coin's drift at its horizon, per trade, with its t by day, against the round trip | shows, per idea, whether the effect is worth trading beyond the market's drift (19 of 81 real books are below 0) | small |
 | N3 | Step 3: the book trades the idea's situation (1b) | a verdict tests the idea (phase A: 3 of 5 confirmations were of another book) | medium |
 | N4 | The engine's MAE and MFE without the entry bar (shared code) | correct trade diagnostics (median daily MFE 6.2 % reported, 3.9 % real) | small |
