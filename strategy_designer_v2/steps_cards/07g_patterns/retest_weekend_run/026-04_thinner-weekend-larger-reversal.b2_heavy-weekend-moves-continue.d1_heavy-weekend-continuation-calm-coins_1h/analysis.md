@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins_1h
+idea tested: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 0
+cost: 0.2714 USD
+---
+## Findings
+- **F1:** Following a 48-hour move over the next 48 hours pays only when that move ends at Sunday's close and came on heavy volume. Of the seven 23:00 UTC anchor days with weekend/weekday volume ratio above 1, only the Sunday anchor stands out: strength 0.083, t 2.89, 1201 non-overlapping cases. The other six days range from -0.003 to 0.036, all with |t| ≤ 1.21 and about 1100–1200 cases each. The pattern is the tested idea itself, not a general momentum effect.
+- **F2:** On all Sunday closes, the continuation grows with the weekend's volume against the five weekdays before it. Strength by quartile, lightest to heaviest: 0.012, 0.045, 0.073, 0.064. Unusual move: 0.03 %, 0.21 %, 0.49 %, 0.54 %. About 582 cases per quartile. This is the idea's volume grading, not a new effect.
+- **F3:** The continuation also grows with the coin's calm over the past 30 days and with the move's size, again as the idea already states. By calm quartile, calmest to wildest, strength is 0.095 (t 2.29), 0.059, 0.024, 0.016. The largest-move quartile has strength 0.094 (t 2.18), against 0.031–0.037 for the other three. Calm and heavy together give strength 0.099 (t 2.40, 585 cases). Neither calm nor heavy gives -0.008 (t -0.2).
+- **F4:** The effect has faded over time, in both the bars and the book.
+- **F5:** The continuation lands more on Tuesday than on Monday, and adds little after that.
+- **F6:** Each coin taken alone points the same way as the tested idea but none is significant. Sunday strength per coin is 0.025 to 0.072, with t from 0.49 to 1.40 on about 390 cases each. No coin carries an effect of its own.
+
+## Ideas
+- No ideas: Every pattern that stands out above chance across the angles examined is the tested idea itself (F1–F3): heavy-volume, large, calm-coin weekend moves continue. These angles covered anchor weekdays, volume, move size, calm, horizon split, Saturday versus Sunday, year, coin and the book by year. The remaining splits (Tuesday versus Monday, the time decay, per coin; F4–F6) are too weak, or are not a market situation a new idea could stand on.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

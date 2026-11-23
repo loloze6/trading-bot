@@ -8609,3 +8609,239 @@ class ExcessPowerReversalTimesMaDistanceComponent(SubStrategyComponent):
     def get_required_periods(self):
         return max(max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period,
                    self.ma_period)
+
+
+class RecentToPriorVolumeScaledReturnComponent(SubStrategyComponent):
+    """
+    The period-bar return in usual period-bar moves, weighted by recent volume against the volume just before it:
+
+        R      = close[t] / close[t - period] - 1
+        m      = mean over i = t-window+1 .. t of abs(close[i] / close[i - period] - 1)
+        first  = R / m            (0.0 when m = 0)
+        recent = mean(volume[t - period + 1 .. t])
+        base   = mean(volume[t - period - base_period + 1 .. t - period])
+        raw_value = first * recent / base
+
+    Defaults: period 48, window 720, base_period 120, so the base is bars t-167 .. t-48.
+    Range and sign: unbounded and signed like the period-bar return. It is 0 for a flat move. Its size grows
+    with the move in usual moves, which is at most `window` because R is one of the averaged returns. It also
+    grows with the volume ratio, which is above 0 and is 1 at equal means.
+    Warm-up: max(window + period, period + base_period) rows (768 at the defaults), bar t included.
+    NaN: a NaN close in the last window + period rows, or a NaN volume in either volume window, gives NaN.
+    A close not above 0 there, or a base mean volume not above 0, also gives NaN (never on real bars).
+    m = 0 gives 0.
+    Building the component raises for period < 1, window < 1 or base_period < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` and `volume` columns of the rows up to and including bar t
+    (the last row of data). It reads at most the last max(window + period, period + base_period) rows.
+    """
+
+    def __init__(self, name="RecentToPriorVolumeScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 48))
+        self.window = int(self.parameters.get("window", 720))
+        self.base_period = int(self.parameters.get("base_period", 120))
+        if self.period < 1:
+            raise ValueError(f"RecentToPriorVolumeScaledReturnComponent: period must be >= 1, got {self.period}")
+        if self.window < 1:
+            raise ValueError(f"RecentToPriorVolumeScaledReturnComponent: window must be >= 1, got {self.window}")
+        if self.base_period < 1:
+            raise ValueError(
+                f"RecentToPriorVolumeScaledReturnComponent: base_period must be >= 1, got {self.base_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        P, W, B = self.period, self.window, self.base_period
+        c = data['close'].astype(float).to_numpy()[-(W + P):]
+        v = data['volume'].astype(float).to_numpy()
+        recent = v[-P:]
+        base = v[-(P + B):-P]
+        if np.isnan(c).any() or not (c > 0).all() or np.isnan(recent).any() or np.isnan(base).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        base_mean = float(base.mean())
+        if not base_mean > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = c[P:] / c[:W] - 1.0
+        ret = float(rets[-1])
+        m = float(np.abs(rets).mean())
+        first = 0.0 if m == 0 else ret / m
+        recent_mean = float(recent.mean())
+        self._raw_value = float(first * recent_mean / base_mean)
+        self.confidence = 1.0
+        self.debug_info = {'return': ret, 'mean_abs_return': m, 'recent_volume': recent_mean,
+                           'base_volume': base_mean}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.window + self.period, self.period + self.base_period)
+
+
+class RiseTimesVolatilityCalmnessComponent(SubStrategyComponent):
+    """
+    A lagged rise weighted by how calm the market is now, on every bar:
+
+        e = t - lag
+        rise = max(0, close[e] / close[e - period] - 1)
+        r[j] = close[j] / close[j-1] - 1
+        s(i) = std (ddof 1) of r[i-vol_period+1 .. i]          (bar i's return included)
+        ratio = mean(s(t-vol_lookback+1) .. s(t)) / s(t)
+        raw_value = rise x ratio
+
+    Range: 0 and up, unbounded above, never negative; no direction. It is 0 when the period-bar return
+    ending at bar t-lag is 0 or negative. It grows with that rise and as the current volatility s(t) sits
+    below its mean over the lookback (ratio 1 at equal volatility).
+    Units: simple return (fraction) x ratio of volatilities.
+    Warm-up: max(period + lag + 1, vol_lookback + vol_period) rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the rows up to and including bar t (the last
+    row of data). The rise uses closes t-lag-period and t-lag, and the volatilities use the closes of bars
+    t-vol_lookback-vol_period+1 .. t. A bar's close is known at that bar's close.
+
+    NaN: a NaN close in the rows read gives NaN, and so does a close not above 0 there (never on real bars).
+    s(t) = 0 gives NaN (never on real bars).
+    Building the component raises for period < 1, lag < 0, vol_period < 2 or vol_lookback < 1.
+    """
+
+    def __init__(self, name="RiseTimesCalmness", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 24))
+        self.lag = int(self.parameters.get("lag", 24))
+        self.vol_period = int(self.parameters.get("vol_period", 720))
+        self.vol_lookback = int(self.parameters.get("vol_lookback", 8760))
+        if self.period < 1:
+            raise ValueError(f"RiseTimesVolatilityCalmnessComponent: period must be >= 1, got {self.period}")
+        if self.lag < 0:
+            raise ValueError(f"RiseTimesVolatilityCalmnessComponent: lag must be >= 0, got {self.lag}")
+        if self.vol_period < 2:
+            raise ValueError(
+                f"RiseTimesVolatilityCalmnessComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.vol_lookback < 1:
+            raise ValueError(
+                f"RiseTimesVolatilityCalmnessComponent: vol_lookback must be >= 1, got {self.vol_lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).iloc[-n:].reset_index(drop=True)
+        if c.isna().any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        last = len(c) - 1
+        base = float(c.iloc[last - self.lag - self.period])
+        end = float(c.iloc[last - self.lag])
+        rise = max(0.0, end / base - 1.0)
+        r = c / c.shift(1) - 1.0
+        s = r.rolling(self.vol_period).std(ddof=1)
+        s_win = s.iloc[-self.vol_lookback:]
+        s_t = float(s.iloc[-1])
+        if s_win.isna().any() or not s_t > 0:
+            self._raw_value = float("nan")
+        else:
+            ratio = float(s_win.mean()) / s_t
+            self._raw_value = float(rise * ratio)
+        self.confidence = 1.0
+        self.debug_info = {'rise': rise, 's_t': s_t}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period + self.lag + 1, self.vol_lookback + self.vol_period)
+
+
+class MeanAbsScaledReturnTimesVolatilityComponent(SubStrategyComponent):
+    """
+    The period-bar return in usual period-bar moves (optionally capped), times the one-bar volatility:
+
+        x = (close[t] / close[t-period] - 1) / m
+        m = mean over i = t-window+1 .. t of abs(close[i] / close[i-period] - 1)   (bar t included)
+        x = 0 when m = 0
+        cap = None (default): x unchanged (the original output)
+        cap = c > 0:          x = clip(x, -c, +c)
+        s = std (ddof 1) of r[j] = close[j] / close[j-1] - 1, j = t-vol_period+1 .. t
+        raw_value = x * s
+
+    Range: unbounded, signed like the period-bar return, 0 for a flat move. abs(x) is at most window (today's
+    return is one of those averaged), and at most cap when cap is set. s is 0 and up.
+    Graded: linear in the scaled move (up to cap usual moves, then flat), and growing with s.
+    Warm-up: max(window + period, vol_period + 1) rows, bar t included (744 at the defaults).
+    NaN: a NaN close, or a close not above 0, in the last max(window + period, vol_period + 1) rows gives NaN.
+    m = 0 gives x = 0 (never on real bars).
+    Building raises for period < 1, window < 1, vol_period < 2, or a cap that is set and not above 0.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(window + period, vol_period + 1)
+    rows of data, the last row being bar t; no later row exists in data.
+    """
+
+    def __init__(self, name="MeanAbsScaledReturnTimesVol", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 24))
+        self.window = int(self.parameters.get("window", 720))
+        self.vol_period = int(self.parameters.get("vol_period", 720))
+        if self.period < 1:
+            raise ValueError(f"MeanAbsScaledReturnTimesVolatilityComponent: period must be >= 1, got {self.period}")
+        if self.window < 1:
+            raise ValueError(f"MeanAbsScaledReturnTimesVolatilityComponent: window must be >= 1, got {self.window}")
+        if self.vol_period < 2:
+            raise ValueError(
+                f"MeanAbsScaledReturnTimesVolatilityComponent: vol_period must be >= 2, got {self.vol_period}")
+        cap = self.parameters.get("cap", None)
+        if cap is not None:
+            try:
+                cap = float(cap)
+            except (TypeError, ValueError):
+                raise ValueError(f"MeanAbsScaledReturnTimesVolatilityComponent: cap must be a number > 0, got {cap!r}")
+            if not cap > 0:
+                raise ValueError(f"MeanAbsScaledReturnTimesVolatilityComponent: cap must be > 0, got {cap!r}")
+        self.cap = cap
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        need = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-need:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        t = len(c) - 1
+        p = self.period
+        idx = np.arange(t - self.window + 1, t + 1)
+        rets = c[idx] / c[idx - p] - 1.0
+        m = float(np.mean(np.abs(rets)))
+        x = (c[t] / c[t - p] - 1.0) / m if m > 0 else 0.0
+        if self.cap is not None:
+            x = min(max(x, -self.cap), self.cap)
+        j = np.arange(t - self.vol_period + 1, t + 1)
+        r1 = c[j] / c[j - 1] - 1.0
+        s = float(np.std(r1, ddof=1))
+        self._raw_value = float(x * s)
+        self.confidence = 1.0
+        self.debug_info = {"scaled_move": float(x), "mean_abs_return": m, "vol": s, "cap": self.cap}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.window + self.period, self.vol_period + 1)

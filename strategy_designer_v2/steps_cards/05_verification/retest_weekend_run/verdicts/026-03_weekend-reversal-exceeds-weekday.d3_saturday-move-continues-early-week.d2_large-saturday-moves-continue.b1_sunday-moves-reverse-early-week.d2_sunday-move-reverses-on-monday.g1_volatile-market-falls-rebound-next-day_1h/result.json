@@ -1,0 +1,28 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 0.9999950858743458,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x drift-adjusted 24-bar return on the 24-bar grid, before costs",
+    "value": 0.0015694060452042143,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.574825141600652
+    },
+    "threshold": "confirm if t >= 2 (with the supporting check passing); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 24-bar return after the top fifth of positive raw values (rises)",
+    "value": -0.0038970576382593362,
+    "passed": false
+  },
+  "counts": {
+    "grid bars with forecast > 0": 8432,
+    "grid bars in the main measure": 17246,
+    "grid bars in the supporting check": 1760
+  },
+  "decided_by": "Reject rule: the main measure's t is at most -2, or the post-rise mean has a t of at most -2.",
+  "reading": "The main mean is over all grid bars (forecast 0 bars contribute 0), the drift is the coin's mean grid 24-bar return over all windows, and the top fifth is the 80th percentile of the coin's positive raw values on the grid bars; the plan's below-200 'inconclusive' is reported as 'not observable' per the workflow."
+}

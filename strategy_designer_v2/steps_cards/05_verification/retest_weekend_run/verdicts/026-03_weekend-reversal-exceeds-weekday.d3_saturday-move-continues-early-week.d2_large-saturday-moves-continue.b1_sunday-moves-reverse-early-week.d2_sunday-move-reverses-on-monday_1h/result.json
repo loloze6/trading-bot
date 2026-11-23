@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9947304418321848,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed 24-bar return of Monday 00:00 cases minus coin's mean non-overlapping 24-bar return, before costs",
+    "value": 0.004365121925487594,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.6817537570792758
+    },
+    "threshold": "confirm: positive with t >= 2 and positive check; reject: negative with t <= -2; else inconclusive; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean signed excess return above minus below each coin's median 720-bar volatility",
+    "value": 0.0044170577098840355,
+    "passed": true
+  },
+  "counts": {
+    "cases with a position": 2081,
+    "cases above volatility median": 777,
+    "cases below volatility median": 777
+  },
+  "decided_by": "The main measure is positive with t >= 2 and the supporting check is positive.",
+  "reading": "The Monday 00:00 bar is the bar whose start timestamp + 1h is Monday 00:00 UTC; the Sunday move's sign is the recorded raw component (24-bar return from closes when missing); a case needs a non-zero position and forecast on that bar, the 24 bars are counted in rows of the same window, cases are pooled over coins, the volatility needs a full 720 hourly returns inside the window, and cases exactly at a coin's median are in neither group."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 48-bar return on entry forecast, pooled",
+    "value": 0.0005817488948645188,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.673600998350008
+    },
+    "threshold": "slope t >= 2 with >= 100 cases (and mean directional excess > 0) confirms; t <= -2 with >= 100 cases rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 48-bar return in forecast direction",
+    "value": 0.00043063328968082434,
+    "passed": true
+  },
+  "counts": {
+    "entry cases": 23
+  },
+  "decided_by": "Only 23 entry cases, below the plan's minimum of 100.",
+  "reading": "The decision bar is taken as the bar read at Monday 00:00 UTC (closing at it, per the plan, or opening at it); the calm-market rule is taken from regime == 'trending' because the 8760-bar percentile cannot be rebuilt inside a window; Saturday/weekly signs use the recorded raw values, else recomputed from prices; each coin's mean 48-bar return uses non-overlapping grid stretches of all its windows; the slope t is the OLS t over all entry bars with a full 48-bar return."
+}

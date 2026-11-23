@@ -1,0 +1,42 @@
+{
+  "line": "7.g",
+  "backtest": "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.42774540000000005,
+  "findings": {
+    "F1": "The two hours from 20:00 to 22:00 UTC carry the strongest clock pattern in the bars, and it is a rebound: the mean hourly return is +5.45 bp at 20:00 (t 6.75) and +4.36 bp at 21:00 (t 5.66), against roughly \u00b11 to 3 bp at the other hours. Over the 20:00\u201322:00 stretch, the coin's 24-hour return before 20:00 (in usual moves) predicts the stretch with slope \u22120.067 (t \u22125.45, n 15966), from +19.2 bp (t 4.96) in the lowest fifth of prior returns down to \u22120.8 bp (t \u22120.30) in the highest.",
+    "F2": "The same 20:00\u201322:00 rebound is concentrated in volatile conditions, at +16.1 bp (t 4.71) in each coin's top quarter of 30-day hourly volatility against \u22120.6 to +2.5 bp in the other three quarters. It appears in every coin (+1.6 to +8.0 bp, t 0.55 to 2.28) and is strongest on Sundays (+12.2 bp, t 3.75) and Mondays (+10.5 bp, t 3.29). Its sign is not stable across years: it is negative in 2018 (\u22125.6 bp) and 2023 (\u22123.6 bp). Even its best fifth is only about the size of one trade's cost (0.19 %).",
+    "F3": "On a non-overlapping 48-hour grid on every day of the week, a 48-hour move that goes the same way as the coin's 30-day return before it continues: +0.053 usual moves over the next 48 hours (t 2.69, n 3191 cases), against \u22120.008 (t \u22120.42, n 3228) when it goes against the trend. The tested weekend version (+0.150 of a usual move, t 1.76, 252 cases) is thus a small subset of a broader pattern. The broader pattern is unstable by year, strong in 2020 (t 3.06), 2021 (t 2.29) and 2024 (t 3.61) and negative in 2019, 2022, 2023 and 2025.",
+    "F4": "The idea's own grading fails in the bars: among Sunday-23:00 cases, the smallest quarter of weekend moves continues the most (+0.082 usual moves, t 1.92) and the largest quarter reverses (\u22120.060, t \u22121.05). The weekend continuation also flips sign by year, positive in 2023 (t 2.73) and 2024 (t 1.97) and negative in 2025 (\u22120.116, t \u22121.96).",
+    "F5": "The reversal the brief expected appears one day later than its weekend: the 48-hour move ending Monday 23:00 reverses over the next 48 hours (slope \u22120.074, t \u22123.21, n 1814), as does the move ending Tuesday 23:00 (slope \u22120.066, t \u22122.84). The move ending Sunday 23:00 does not (slope \u22120.015, t \u22120.47). The Monday slope swings from +0.22 (t 2.86) in 2018 to \u22120.24 (t \u22124.29) in 2025, so after the many angles looked at it does not stand apart from a regime effect."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's return from 20:00 to 22:00 UTC is higher the more the coin fell over the preceding 24 hours, measured in its usual 24-hour moves. The rebound is larger the higher the coin's volatility over the past 30 days.",
+      "consequence": "Buy a coin's day-long fall into the US evening when its volatility is high, and refuse to sell it short at that hour.",
+      "name": "evening rebound after daily falls",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's 48-hour move continues over the next 48 hours, on any day of the week, the more it goes the same way as the coin's 30-day return before it.",
+      "consequence": "Follow two-day moves that extend the coin's month-long trend and refuse those that cut against it, whatever the weekday.",
+      "name": "trend-aligned two-day continuation",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation.g1_evening-rebound-after-daily-falls",
+    "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation.g2_trend-aligned-two-day-continuation"
+  ],
+  "no_ideas": null
+}

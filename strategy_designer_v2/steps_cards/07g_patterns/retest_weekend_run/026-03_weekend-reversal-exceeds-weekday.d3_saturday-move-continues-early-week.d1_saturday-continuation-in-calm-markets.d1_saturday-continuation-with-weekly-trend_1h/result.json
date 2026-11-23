@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4355346,
+  "findings": {
+    "F1": "Saturday's volatility-scaled return predicts the volatility-scaled return over Monday and Tuesday in the same direction (slope 0.211, t 6.27, 2103 Mondays), and this holds in both halves of the period (2018\u20132021 t 4.77, 2022\u20132025 t 3.97). On the other start days, the return from two days back predicts nothing comparable (t between \u22121.18 and 2.11).",
+    "F2": "The book's condition that the 7-day return agree with Saturday is not what carries the effect, and calm markets are where it is largest.",
+    "F3": "The 7-day return at Friday 00:00 UTC predicts the volatility-scaled return over Friday and Saturday in the same direction.",
+    "F4": "Saturday's own return is positive on average, in both halves and for every coin.",
+    "F5": "Sunday's volatility-scaled return is partly reversed on Monday, but only in turbulent markets and mostly in the earlier years, so this is the weakest finding.",
+    "F6": "The book's gain comes from its strongest forecasts and is uneven across years."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's 24-hour return over Saturday is followed over Monday and Tuesday by a move in the same direction that grows with the size of Saturday's move scaled by the coin's 30-day volatility of hourly returns, while that volatility is low against its own past year, whichever way the coin's 7-day return points.",
+      "consequence": "A trader would follow Saturday's move into Monday and Tuesday in calm markets without waiting for the week to agree, which roughly doubles the cases available to the tested book.",
+      "name": "calm Saturday continuation unfiltered",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's 7-day return, read at the start of Friday, is followed over Friday and Saturday by a move in the same direction that grows with the size of the 7-day return scaled by its 30-day volatility of hourly returns, the more so the lower that volatility is against its own past year.",
+      "consequence": "A trader would ride the week's direction through Friday and Saturday, most of all in calm markets, ahead of the Saturday-continuation trade.",
+      "name": "weekly momentum into weekend",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's 24-hour return over Sunday is followed on Monday by a move in the opposite direction that grows with the size of Sunday's move scaled by its 30-day volatility of hourly returns, while that volatility is high against its own past year.",
+      "consequence": "A trader would lean against Sunday's move during Monday in turbulent markets, and refuse to follow Sunday's move into the week.",
+      "name": "turbulent Sunday reverses Monday",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend.g1_calm-saturday-continuation-unfiltered",
+    "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend.g2_weekly-momentum-into-weekend",
+    "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend.g3_turbulent-sunday-reverses-monday"
+  ],
+  "no_ideas": null
+}

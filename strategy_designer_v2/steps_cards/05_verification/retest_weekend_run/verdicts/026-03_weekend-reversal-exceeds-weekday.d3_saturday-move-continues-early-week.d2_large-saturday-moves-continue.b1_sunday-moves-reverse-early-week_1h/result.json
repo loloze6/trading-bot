@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9947304418321848,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 48-bar return on post_pipeline_value of sunday_move",
+    "value": 0.0003814309111790872,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.557461792271773
+    },
+    "threshold": "slope > 0 with t >= 2 to confirm (with check); slope < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean of drift-adjusted 48-bar return x sign(forecast) over |forecast| >= 2",
+    "value": 0.00625455341294239,
+    "passed": true
+  },
+  "counts": {
+    "cases across all coins and windows": 2414,
+    "cases with |forecast| >= 2": 2018
+  },
+  "decided_by": "The slope is positive with t >= 2 and the supporting check passes (confirm rule).",
+  "reading": "The situation is the bar whose close (timestamp + 1h) is Monday 00:00 UTC, with the side opposite to the sign of the raw sunday_move (or Sunday's 24-bar price return where not recorded); the drift is each coin's mean of non-overlapping 48-bar returns (positions 0, 48, ... of each window) pooled over its windows; the regression is OLS with intercept of the drift-adjusted return on post_pipeline_value, and |forecast| and its sign in the supporting check are read from post_pipeline_value; cases without 48 bars ahead in their window are left out; fewer than 200 cases gives 'not observable' as the workflow requires."
+}
