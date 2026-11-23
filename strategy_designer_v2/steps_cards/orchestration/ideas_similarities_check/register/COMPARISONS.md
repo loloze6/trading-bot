@@ -216,5 +216,6 @@
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | retest_settlement_run | 1h | none comparable | | | | 0.02 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | retest_settlement_run | 1h | none comparable | | | | 0.54 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | retest_settlement_run | 1h | none comparable | | | | 0.01 |
+| 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h | retest_settlement_run | 1h | none comparable | | | | 0.00 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h | retest_settlement_run | 1h | none comparable | | | | 0.28 |
 | 017-05_settlement-move-reverses-after_1h | retest_settlement_run | 1h | none comparable | | | | 0.00 |

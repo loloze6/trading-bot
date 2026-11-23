@@ -2,6 +2,7 @@
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1h, folds A, B, C, D]
+017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

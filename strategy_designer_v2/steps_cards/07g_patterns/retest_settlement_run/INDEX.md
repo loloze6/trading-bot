@@ -2,6 +2,7 @@
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: 2 ideas (2 explorations)
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h: 2 ideas (2 explorations)
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h: 4 ideas (2 explorations)
+017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h: 2 ideas (2 explorations)
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses_1h: 4 ideas (2 explorations)
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h: 2 ideas (2 explorations)
 017-05_settlement-move-reverses-after_1h: 4 ideas (2 explorations)
