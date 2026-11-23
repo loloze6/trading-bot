@@ -83,3 +83,30 @@ def test_a_call_the_service_refused_exits_with_its_own_code(monkeypatch):
     with pytest.raises(SystemExit) as e:
         _lib.call("m", "s", "r")
     assert str(e.value.code).startswith("model call failed")          # a call that ran and failed: as before
+
+
+def test_a_helper_started_by_a_helper_ends_with_it(tmp_path):
+    """Night 5: an orphan step 4 kept writing after its run was stopped. A child that imports lib, started by a parent
+    that imports lib, ends when the parent is killed (SIGKILL: no clean-up of its own); a helper started from a shell
+    is not marked, so it is never stopped this way."""
+    import os, signal, subprocess, sys, time
+    common = str(Path(__file__).resolve().parent)
+    child = f"import sys; sys.path.insert(0, {common!r}); import lib, time; time.sleep(60)"
+    parent = (f"import sys, subprocess; sys.path.insert(0, {common!r}); import lib; "
+              f"p = subprocess.Popen([sys.executable, '-c', {child!r}]); print(p.pid, flush=True); p.wait()")
+    env = {k: v for k, v in os.environ.items() if k != "CARDS_PARENT_PID"}      # as from a shell
+    par = subprocess.Popen([sys.executable, "-c", parent], stdout=subprocess.PIPE, text=True, env=env)
+    kid = int(par.stdout.readline())
+    time.sleep(1)                                   # the child has imported lib
+    assert par.poll() is None                       # the parent, started from a shell, is not stopped
+    os.kill(par.pid, signal.SIGKILL); par.wait()
+    for _ in range(50):
+        try:
+            os.kill(kid, 0)
+        except ProcessLookupError:
+            return                                  # the child ended
+        if open(f"/proc/{kid}/stat").read().split()[2] == "Z":
+            return                                  # ended, waiting to be reaped by init
+        time.sleep(0.1)
+    os.kill(kid, signal.SIGKILL)
+    raise AssertionError("the child outlived its parent")
