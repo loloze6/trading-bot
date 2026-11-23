@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound_1d
+idea tested: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.7017 USD
+---
+## Findings
+- **F1:** The confirmed Sunday-fall rebound rests mostly on many coins falling on the same Sundays. Pooled across coins, falls of z ≤ -1 are followed by a 3-day excess of +1.20 % (t 2.06, n 375). Averaged per Sunday first, the fall-weighted excess has a t of only 1.46 (338 Sundays), and z ≤ -1 falls give +1.52 % with t 1.59 (104 Sundays).
+- **F2:** The Sunday rebound is not graded at the extreme. Sunday falls of z in (-1, -0.5] are followed by +1.85 % (t 4.90, n 703) and falls of (-2, -1] by +1.64 % (t 2.59, n 306), but the largest falls (z ≤ -2) are followed by -0.76 % (t -0.53, n 69).
+- **F3:** Thursday falls rebound over the next 3 days (Friday to Sunday), and the rebound is graded by the size of the fall. The 3-day excess is +2.91 % after z ≤ -2 (t 4.27, n 120), +1.00 % after (-2, -1] (t 3.06, n 554) and +0.35 % after (-1, -0.5] (t 1.27, n 734).
+- **F4:** The Thursday rebound holds once same-date cases are grouped. Averaged per Thursday, z ≤ -1 falls give +1.45 % (t 2.35, 137 Thursdays), and the fall-weighted product has t 2.05 over 338 Thursdays. It is positive in 16 of 19 coins (84 %, median +0.53 %). Most of it comes on the first day: +1.04 % by Friday's close and +1.47 % by Saturday's.
+- **F5:** The Thursday rebound is uneven across years. Per-date means are +2.40 % in 2020 (t 1.62), +1.54 % in 2021 (t 1.77) and +0.79 % in 2023 (t 1.87), against -0.46 % in 2022 (t -1.12) and about 0 in 2018, 2019 and 2024.
+- **F6:** On weekdays other than Sunday and Thursday, falls of z ≤ -1 are followed by continuation, not rebound: a 3-day excess of -0.70 % averaged per date (t -2.10, 582 dates). Friday falls of (-2, -1] are the clearest case pooled (-1.46 %, t -4.25, n 417), but the fall-weighted Friday product averaged per date is only t -0.45.
+- **F7:** The book's failed Calmar comes from bear years. Its mean daily return is -0.052 % in 2018 (t -3.10) and -0.069 % in 2022 (t -3.02), against +0.08 % to +0.10 % in 2019–2021 and 2024. Sunday-fall cases lose -6.29 % (n 13) in 2018 and -4.17 % (n 52) in 2022.
+- **F8:** The book's tails decide its result. Its best 1 % of days sum to 2.36 times its total gain and its worst 1 % to -2.04 times it. On those days the coins moved +12.8 % and -9.4 % on average.
+- **F9:** The brief's volume condition does not show. Sunday falls of z ≤ -1 rebound by +1.48 % with low weekend volume (t 1.65), +1.14 % with middle volume (t 1.17) and +0.98 % with high volume (t 0.86), n 125 each, and the differences are well within noise. Volatility terciles of Sunday falls, averaged per date, are also flat at +1.10 %, +1.21 % and +1.29 %, all with t near 1.
+
+## Ideas
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.g1_thursday-fall-rebounds-into-weekend` (from F3, F4, F5): A coin that fell on Thursday, its Thursday close-to-close return measured in its usual daily moves over the past 60 days, rises over the next 3 days (Friday to Sunday), and the larger the Thursday fall, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

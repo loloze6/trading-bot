@@ -140,7 +140,6 @@ An idea's latest record counts once.
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways.g1_large-daily-fall-rebounds_1d | confirmed | night_run | 1d | 6 | c156cbef9 | 2026-11-17T02:07:07 |
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d | confirmed | night_run | 1d | 6 | 7f4b77735 | 2026-11-17T00:44:29 |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal_1d | confirmed | night_run | 1d | 19 | c156cbef9 | 2026-11-17T02:10:47 |
-| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d | confirmed | night_run | 1d | 19 | 000f00318 | 2026-11-17T01:32:08 |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises_1d | confirmed | night_run | 1d | 19 | c156cbef9 | 2026-11-17T02:19:35 |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday_1d | confirmed | night_run | 1d | 19 | 000f00318 | 2026-11-17T01:41:30 |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal_1d | confirmed | night_run | 1d | 19 | 7f4b77735 | 2026-11-17T01:01:50 |
@@ -189,6 +188,9 @@ An idea's latest record counts once.
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h | confirmed | retest_1h_run | 1h | 2 | bc98e9119 | 2026-11-19T04:53:40 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h | confirmed | retest_1h_run | 1h | 6 | 06e13143f | 2026-11-19T05:03:42 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_weekend-reversal-in-rising-volatility_1d | paying | retest_monday_run | 1d | 19 | e02713e79 | 2026-11-22T23:55:00 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d | confirmed | retest_monday_run | 1d | 19 | e02713e79 | 2026-11-22T23:17:09 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound_1d | confirmed | retest_monday_run | 1d | 19 | e02713e79 | 2026-11-22T23:46:29 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
 | 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth_1d | confirmed | short_1d_run | 1d | 6 | 9a768b6d6 | 2026-11-22T13:10:58 |
 | 016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h | confirmed | std_time_pilot_run | 1h | 6 | 57cc6a9c6 | 2026-11-20T10:11:00 |

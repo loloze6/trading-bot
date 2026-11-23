@@ -1,0 +1,1 @@
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_weekend-reversal-in-rising-volatility_1d: inconclusive (fit: exact) [main: -0.00351404; ordinary t of the mean -1.20665; cases 346, larger half 173, smaller half 173]

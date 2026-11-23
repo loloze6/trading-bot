@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.99963113242346,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 3-bar return over Sunday cases",
+    "value": 0.011723937310144258,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.68064827370811
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, with at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return, larger-fall half minus smaller-fall half (median forecast split)",
+    "value": 0.017509647961347834,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2215,
+    "larger-fall half": 1107,
+    "smaller-fall half": 1108
+  },
+  "decided_by": "Confirm rule: t of 2 or more with at least 100 cases, and the larger-fall half's mean excess return exceeds the smaller-fall half's.",
+  "reading": "Sunday bars are those whose UTC start is a Sunday; cases need forecast >= 2 and close[t+3] in the same window; the coin's mean 3-bar return uses the non-overlapping grid 0,3,6,... of each window pooled across windows; the larger-fall half is forecast strictly above the median and the smaller-fall half the rest."
+}
