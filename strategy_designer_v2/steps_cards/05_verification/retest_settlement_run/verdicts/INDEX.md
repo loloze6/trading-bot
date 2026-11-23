@@ -1,3 +1,4 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal_1h: confirmed (fit: adapted) [main: 0.000279985; OLS slope t 8.8578; cases pooled over coins and windows 17048, cases with |forecast| >= 10 8028]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: confirmed (fit: exact) [main: 4.82659; OLS slope t 4.82659; grid cases 17246, grid cases with a non-zero forecast 17147]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h: confirmed (fit: exact) [main: 0.00221621; t of the mean 5.02684; cases with a nonzero forecast 16838]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: confirmed (fit: exact) [main: 1.83357e-05; OLS slope t 12.2761; bars of nonzero forecast 414151, bars in the regression 416645]

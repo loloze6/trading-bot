@@ -186,6 +186,7 @@ An idea's latest record counts once.
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h | confirmed | retest_1h_run | 1h | 2 | bc98e9119 | 2026-11-19T04:53:40 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h | confirmed | retest_1h_run | 1h | 6 | 06e13143f | 2026-11-19T05:03:42 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
+| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal_1h | confirmed | retest_settlement_run | 1h | 6 | b81327fc8 | 2026-11-23T02:54:38 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h | confirmed | retest_settlement_run | 1h | 6 | 7b5be8743 | 2026-11-23T00:30:54 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h | confirmed | retest_settlement_run | 1h | 6 | 371cb8cc4 | 2026-11-23T01:03:35 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | confirmed | retest_settlement_run | 1h | 6 | ef9a418cc | 2026-11-22T23:31:27 |
