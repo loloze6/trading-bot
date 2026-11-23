@@ -214,6 +214,7 @@
 | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs_1d | demo_run | 1d | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d (1d) | 0.94 | same period | -0.0043 % (-0.90) | 0.27 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h | retest_settlement_run | 1h | none comparable | | | | 0.01 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | retest_settlement_run | 1h | none comparable | | | | 0.02 |
+| 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h | retest_settlement_run | 1h | none comparable | | | | 0.02 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | retest_settlement_run | 1h | none comparable | | | | 0.02 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | retest_settlement_run | 1h | none comparable | | | | 0.54 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | retest_settlement_run | 1h | none comparable | | | | 0.01 |

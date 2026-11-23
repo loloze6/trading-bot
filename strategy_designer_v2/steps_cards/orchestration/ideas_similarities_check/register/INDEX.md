@@ -188,6 +188,7 @@ An idea's latest record counts once.
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h | confirmed | retest_settlement_run | 1h | 6 | 7b5be8743 | 2026-11-23T00:30:54 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h | confirmed | retest_settlement_run | 1h | 6 | ef9a418cc | 2026-11-22T23:31:27 |
+| 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h | confirmed | retest_settlement_run | 1h | 6 | 9e6d82c1f | 2026-11-23T00:39:04 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | confirmed | retest_settlement_run | 1h | 6 | 58071a12b | 2026-11-22T23:18:26 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | confirmed | retest_settlement_run | 1h | 6 | e845f92b7 | 2026-11-22T23:43:25 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | confirmed | retest_settlement_run | 1h | 19 | fab654662 | 2026-11-23T00:07:04 |
