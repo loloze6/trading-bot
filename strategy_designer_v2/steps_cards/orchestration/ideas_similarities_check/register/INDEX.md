@@ -112,7 +112,6 @@ An idea's latest record counts once.
 | 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h | confirmed | night4_weekend_run | 1h | 6 | 54a2cf3b0 | 2026-11-22T00:52:26 |
 | 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | c9f81b724 | 2026-11-22T01:21:05 |
 | 026-03_weekend-reversal-exceeds-weekday.d2_sunday-move-fades-monday_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:35:49 |
-| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:56:19 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h | confirmed | night4_weekend_run | 1h | 6 | 26cc1e9f5 | 2026-11-22T04:48:31 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
@@ -189,6 +188,9 @@ An idea's latest record counts once.
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h | confirmed | retest_1h_run | 1h | 2 | bc98e9119 | 2026-11-19T04:53:40 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h | confirmed | retest_1h_run | 1h | 6 | 06e13143f | 2026-11-19T05:03:42 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h | confirmed | retest_1h_run | 1h | 6 | bf19e4475 | 2026-11-19T07:22:44 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets_1h | confirmed | retest_weekend_run | 1h | 6 | d3817b8a0 | 2026-11-22T23:20:12 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week_1h | confirmed | retest_weekend_run | 1h | 6 | d3817b8a0 | 2026-11-22T23:44:53 |
+| 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h | confirmed | retest_weekend_run | 1h | 6 | d3817b8a0 | 2026-11-22T23:01:57 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
 | 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth_1d | confirmed | short_1d_run | 1d | 6 | 9a768b6d6 | 2026-11-22T13:10:58 |
 | 016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h | confirmed | std_time_pilot_run | 1h | 6 | 57cc6a9c6 | 2026-11-20T10:11:00 |

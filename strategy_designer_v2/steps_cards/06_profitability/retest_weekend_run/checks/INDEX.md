@@ -1,0 +1,4 @@
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets_1h: not profitable enough [Sharpe 1.081; Sharpe minus holding's Sharpe 0.5002; Calmar 0.6089]
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week_1h: not profitable enough [Sharpe 0.2391; Sharpe minus holding's Sharpe -0.3146; Calmar 0.0779]
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue_1h: not profitable enough [Sharpe 0.3684; Sharpe minus holding's Sharpe -0.1853; Calmar 0.1459]
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h: not profitable enough [Sharpe 1.136; Sharpe minus holding's Sharpe 0.5823; Calmar 0.6923]
