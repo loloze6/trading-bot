@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 24-bar move of the cases (return minus coin's normal 24-bar drift, long)",
+    "value": 0.00019957599257589071,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.5145645385436948
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (median split of forecast)",
+    "value": -0.0005521088080742499,
+    "passed": false
+  },
+  "counts": {
+    "cases": 17184
+  },
+  "decided_by": "t between -2 and 2 over at least 30 cases.",
+  "reading": "A bet is a rise of the forecast of >= 2 points above its lowest positive level since the last bet (reset to 0 when the forecast is not positive), the first bet in each 24-bar grid cell (from each window's first row) is the case, cases without 24 bars left in the window are dropped, the normal drift is the coin's mean non-overlapping 24-bar return over all its windows, and the median split sorts the cases by forecast (stable, in coin/window/time order) and puts the first floor(n/2) in the lower half."
+}

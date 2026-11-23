@@ -3,6 +3,7 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

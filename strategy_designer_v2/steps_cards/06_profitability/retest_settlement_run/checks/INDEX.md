@@ -3,6 +3,7 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: not profitable enough [Sharpe -13.77; Sharpe minus holding's Sharpe -14.33; Calmar -0.9856]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h: not profitable enough [Sharpe 0.1067; Sharpe minus holding's Sharpe -0.4471; Calmar -0.1361]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b1_volatile-regime-hourly-fall-reversal_1h: not profitable enough [Sharpe 0.6629; Sharpe minus holding's Sharpe 0.1091; Calmar 0.374]
+017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal_1h: not profitable enough [Sharpe 0.665; Sharpe minus holding's Sharpe 0.1112; Calmar 0.346]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls_1h: not profitable enough [Sharpe 0.6299; Sharpe minus holding's Sharpe 0.07613; Calmar 0.3274]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours_1h: not profitable enough [Sharpe -2.661; Sharpe minus holding's Sharpe -3.215; Calmar -0.5581]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: not profitable enough [Sharpe -11.93; Sharpe minus holding's Sharpe -12.48; Calmar -0.9807]
