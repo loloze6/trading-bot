@@ -85,6 +85,7 @@ def test_a_call_the_service_refused_exits_with_its_own_code(monkeypatch):
     assert str(e.value.code).startswith("model call failed")          # a call that ran and failed: as before
 
 
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="end_with_parent acts on Linux only (prctl); elsewhere it does nothing, as its card says")
 def test_a_helper_started_by_a_helper_ends_with_it(tmp_path):
     """Night 5: an orphan step 4 kept writing after its run was stopped. A child that imports lib, started by a parent
     that imports lib, ends when the parent is killed (SIGKILL: no clean-up of its own); a helper started from a shell

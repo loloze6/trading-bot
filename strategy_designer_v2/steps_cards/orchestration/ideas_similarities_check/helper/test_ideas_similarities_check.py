@@ -153,7 +153,7 @@ def test_the_matrix_holds_every_pair_of_paying_books_with_similar_books_together
     ids = [r["id"] for r in order]
     assert ids == ["a1_x_1d", "a2_x-copy_1d", "b1_y_1d"]                 # paying books only; the copy next to its original
     assert cell[("m_run__a1_x_1d", "m_run__a2_x-copy_1d")]["share_explained"] > 0.95
-    text = (reg / "MATRIX.md").read_text(); csv = (reg / "matrix.csv").read_text().splitlines()
+    text = (reg / "MATRIX.md").read_text(encoding="utf-8"); csv = (reg / "matrix.csv").read_text(encoding="utf-8").splitlines()
     assert "| **1** | · |" in text and len(csv) == 1 + 3 * 2                   # header and every ordered pair
 
 
