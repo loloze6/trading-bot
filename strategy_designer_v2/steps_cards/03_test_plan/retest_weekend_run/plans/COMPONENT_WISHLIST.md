@@ -10,6 +10,3 @@ One block per idea that needs components the catalogue does not have.
 
 ## 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d1_sunday-reversal-grows-with-volatility_1h
 - Component: MeanAbsScaledReturnTimesVolatilityComponent: from closes, (close[t] / close[t-24] - 1) / m x s. Here m is the mean of abs(close[i] / close[i-24] - 1) over the last 720 bars, and s is the std (ddof 1) of the last 720 one-bar returns. It is signed like the 24-bar return, and its size grows with that move in usual 24h moves and with the coin's hourly volatility | measures: comparison
-
-## 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d3_moderate-sunday-moves-reverse-most_1h
-- Component: CappedScaledReturnTimesVolatilityComponent: clip((close[t]/close[t-24]-1)/m, -2, +2) x s, where m is the mean of abs(close[i]/close[i-24]-1) over the last 720 bars and s is the std (ddof 1) of the last 720 one-bar returns, all from closes; it is signed like the 24-hour return, grows linearly with the scaled move up to two usual moves and then stays flat, and grows with s | measures: situation
