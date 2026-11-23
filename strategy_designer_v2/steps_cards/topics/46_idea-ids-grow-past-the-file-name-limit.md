@@ -18,6 +18,11 @@ How should an idea's id carry its track back to its brief without its file names
   (011), 1 (022), 0 (017); step 7 failures (a line on a generation-5 idea could not write its generation-6 children, 257
   to 269 bytes): 6 (026: 7.b 1, 7.d 2, 7.g 3). The `select_next` rule stops the step 3 failures, not the step 7 ones (the
   generation-5 idea's own test is kept: only its children are lost, about 0.4 USD per line).
+- Correction (session 4, 2026-11-23): no failed idea was picked again (0 of 13); commit 01b1f5ffe0's message says
+  "retried": wrong (an idea stopped on missing components was retested once they were built, the normal path). Its 13
+  failures: 5 at step 3, 4 at the similarity register after step 6 (`<run>__<id>_<bar>` is longer than a plan's names;
+  in Python 3.13 `Path.exists()` raises on a name over the limit, so `run_idea` stopped there and step 7 did not run), 4
+  on other paths. The `select_next` rule now counts the register's names too (commit after 01b1f5ffe0).
 - Deep ideas rank low (score / (1 + generation)), so the loss is small today; the new order (`select_next`, 2026-11-22)
   follows real lineages further, so it will grow.
 
