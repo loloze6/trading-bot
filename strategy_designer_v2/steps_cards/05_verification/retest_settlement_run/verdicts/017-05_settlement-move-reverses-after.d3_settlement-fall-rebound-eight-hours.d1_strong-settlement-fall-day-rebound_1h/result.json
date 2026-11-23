@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9949103391134521,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 24-bar return of settlement-fall cases (forecast >= 2)",
+    "value": 0.002404144377223804,
+    "statistic": {
+      "name": "ordinary t of case excess returns",
+      "value": 4.161307994778922
+    },
+    "threshold": "confirm: weighted mean > 0 with t >= 2 (and supporting check passes); reject: weighted mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess return of forecast >= 10 cases minus forecast 2 to <10 cases",
+    "value": -0.0002064582217771115,
+    "passed": false
+  },
+  "counts": {
+    "cases": 8564,
+    "cases forecast >= 10": 6034,
+    "cases forecast 2 to below 10": 2530
+  },
+  "decided_by": "A confirming weighted mean and t, but the supporting check failed or could not be measured: inconclusive.",
+  "reading": "Settlement bars are those whose close (timestamp + 1h) is at 00:00 or 16:00 UTC; in each 24-bar grid cell counted from a window's first row the bar with the largest forecast is the case and is dropped if its 24-bar return leaves the window; the coin's mean 24-bar return is taken on the non-overlapping grid of all its windows; the supporting check is the difference of the two groups' unweighted mean excess returns (>=10 minus 2 to <10)."
+}

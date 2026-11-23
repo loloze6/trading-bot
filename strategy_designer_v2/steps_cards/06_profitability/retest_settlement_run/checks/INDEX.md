@@ -7,5 +7,6 @@
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h: not profitable enough [Sharpe -0.9235; Sharpe minus holding's Sharpe -1.531; Calmar -0.2092]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h: not profitable enough [Sharpe -2.312; Sharpe minus holding's Sharpe -2.865; Calmar -0.2301]
 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses_1h: not profitable enough [Sharpe -0.8331; Sharpe minus holding's Sharpe -1.387; Calmar -0.2059]
+017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound_1h: not profitable enough [Sharpe 0.4186; Sharpe minus holding's Sharpe -0.1351; Calmar 0.1463]
 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h: not profitable enough [Sharpe 0.1506; Sharpe minus holding's Sharpe -0.4032; Calmar 0.0161]
 017-05_settlement-move-reverses-after_1h: not profitable enough [Sharpe -3.966; Sharpe minus holding's Sharpe -4.52; Calmar -0.5203]

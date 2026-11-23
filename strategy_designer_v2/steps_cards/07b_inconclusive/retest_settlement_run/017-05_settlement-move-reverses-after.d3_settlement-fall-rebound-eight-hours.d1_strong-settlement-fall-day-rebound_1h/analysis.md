@@ -1,0 +1,24 @@
+---
+line: 7.b inconclusive
+backtest: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound_1h
+idea tested: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6173 USD
+---
+## Findings
+- **F1:** The supporting check failed because the forecast saturates, not because the rebound is ungraded: 6034 of the 8564 cases sit at a forecast of 10 or more, and that top group mixes falls of only 1 to 1.5 usual 2-hour moves (1899 cases, +0.02 %, t 0.17) with falls deeper than 4 usual moves (511 cases, +1.09 %, t 3.56), so the two groups differ by -0.02 % while the main measure stands at +0.24 % with t 4.16.
+- **F2:** Measured on the depth of the fall itself, the settlement-bar rebound is graded as the idea says: the excess 24-hour return is +0.80 % (t 3.91, n 1103) for falls of 3 or more usual moves, +0.30 % (t 2.19, n 1406) for 2 to 3, +0.35 % (t 2.49, n 1331) for 1.5 to 2, +0.07 % (t 0.68, n 2335) for 1 to 1.5, and -0.05 % to -0.19 % after small falls and rises; the Spearman correlation of depth with excess return over the cases is 0.050 (p 2e-6).
+- **F3:** The rebound is not tied to settlement clock times: after falls of at least one usual 2-hour move, the excess 24-hour return is +0.58 % (t 5.71) at the 01:00 close, +0.41 % (t 3.74) at 21:00 and +0.40 % (t 3.31) at 06:00, against +0.37 % (t 3.47) at 00:00 and +0.28 % (t 2.97) at 16:00. Outside settlement hours the rebound is graded the same way: +0.93 % (t 12.2, n 8499) after falls of 3 or more usual moves, +0.26 % (t 4.89) after falls of 2 to 3. These t-statistics come from overlapping bars and overstate the evidence.
+- **F4:** Counted once per 24-hour cell, at the first deep fall and without look-ahead, the any-hour rebound is smaller and present mostly in the deepest falls and some years. Outside settlement hours it is +1.01 % (t 2.62, n 466) after falls of 4 or more usual moves, +0.32 % (t 1.38) after falls of 3 to 4, and -0.12 % (t -2.24, n 7522) after falls of 1 to 1.5. Over all first falls of 2 or more usual moves it is +0.26 % (t 2.61, n 3638), carried by 2021 (+1.15 %, t 2.77) and 2024 (+0.89 %, t 4.43); 2022 is -0.21 %.
+- **F5:** The settlement cases are mixed across coins and years. By coin they range from BTC +0.00 % (t 0.02, n 1533) to XMR +0.30 % (t 2.48) and ZEC +0.31 % (t 1.96). By year they range from 2020 +0.71 % (t 4.43) to 2022 -0.32 % (t -2.48), and 2025 is -0.11 %. Six coins give too few independent cases per coin to show the graded tail clearly.
+- **F6:** The rebound is front-loaded: the raw return after the settlement cases is +0.11 % over 2 hours (t 5.80), +0.23 % over 8 hours (t 7.26) and +0.36 % over 24 hours (t 6.67), so about two thirds of the day's move comes in the first 8 hours.
+- **F7:** On average the move is too small to pay, but the deepest falls clear the cost. The unusual move is +0.16 % per case, 0.8 times the 0.19 % cost of a trade, and the total move is +0.30 %, 1.6 times the cost; the book's Sharpe is 0.42, 0.135 below holding, with a Calmar of 0.15. The settlement falls of 3 or more usual moves move +0.80 %, about 4 times the cost.
+
+## Ideas
+- `017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins` (from F1, F2, F5, F7): The return over the 24 hours after the 00:00 and 16:00 UTC funding settlement times runs opposite to a fall over the 2 hours before it, and the larger the fall against the coin's usual 2-hour move, the larger the rise, with the largest falls carrying almost all of the rebound.
+- `017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound` (from F3, F4, F6, F7): The return over the next 24 hours after a fall over a coin's last 2 hours, at any hour of the day, runs upward, and the larger the fall against the coin's usual 2-hour move, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
