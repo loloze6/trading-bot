@@ -7,6 +7,7 @@
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours_1h: not profitable enough [Sharpe -2.661; Sharpe minus holding's Sharpe -3.215; Calmar -0.5581]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: not profitable enough [Sharpe -11.93; Sharpe minus holding's Sharpe -12.48; Calmar -0.9807]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d1_settlement-fall-recovers-when-volatile_1h: not profitable enough [Sharpe 0.4203; Sharpe minus holding's Sharpe -0.1334; Calmar 0.1463]
+017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins_1h: not profitable enough [Sharpe 0.8856; Sharpe minus holding's Sharpe 0.2784; Calmar 0.6666]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup_1h: not profitable enough [Sharpe 0.8238; Sharpe minus holding's Sharpe 0.2701; Calmar 0.6355]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day_1h: not profitable enough [Sharpe 0.417; Sharpe minus holding's Sharpe -0.1367; Calmar 0.1434]
 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h: not profitable enough [Sharpe 0.417; Sharpe minus holding's Sharpe -0.1367; Calmar 0.1434]

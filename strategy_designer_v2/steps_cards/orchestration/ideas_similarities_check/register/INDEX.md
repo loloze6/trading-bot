@@ -193,6 +193,7 @@ An idea's latest record counts once.
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d3_four-hour-fade-of-extreme-hours_1h | confirmed | retest_settlement_run | 1h | 6 | adbd3bfdb | 2026-11-23T01:38:58 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h | confirmed | retest_settlement_run | 1h | 6 | 58071a12b | 2026-11-22T23:18:26 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d1_settlement-fall-recovers-when-volatile_1h | confirmed | retest_settlement_run | 1h | 6 | 4bc967e85 | 2026-11-23T00:47:09 |
+| 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.b1_settlement-fall-recovery-more-coins_1h | confirmed | retest_settlement_run | 1h | 19 | ba4ace1ea | 2026-11-23T02:05:48 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d3_settlement-recovery-lasts-one-day_1h | confirmed | retest_settlement_run | 1h | 6 | adbd3bfdb | 2026-11-23T01:48:54 |
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | confirmed | retest_settlement_run | 1h | 6 | e845f92b7 | 2026-11-22T23:43:25 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | confirmed | retest_settlement_run | 1h | 19 | fab654662 | 2026-11-23T00:07:04 |
