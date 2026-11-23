@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9998838019986056,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "weekend-regime slope of next-day excess return on forecast",
+    "value": 0.0002795034941839801,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.937095847677579
+    },
+    "threshold": "confirm t >= 2 (with difference t >= 2); reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "weekend slope minus weekday slope (Welch-style t)",
+    "value": -0.0001060059716637687,
+    "passed": false
+  },
+  "counts": {
+    "weekend cases with forecast > 0": 2294,
+    "weekday cases with forecast > 0": 6220
+  },
+  "decided_by": "inconclusive rule: weekend slope t 1.94 and difference t -0.63 meet neither the confirm nor the reject rule",
+  "reading": "Situation bars are those whose recorded raw fall-times-volume value is above 0 with the regime matching the bar's own day (mean_reversion on Saturday/Sunday bars, unknown otherwise), expected side long; the regressions pool all coins and windows with every bar as a 1-bar case, the coin's mean daily return taken over all its windows, and the difference t is (b_we - b_wd)/sqrt(se_we^2 + se_wd^2)."
+}

@@ -1,0 +1,48 @@
+## vol_ratio quintile: all bars
+         n      ex       t
+qv                        
+0   1748.0 -0.0045 -4.1275
+1   1748.0  0.0000  0.0264
+2   1748.0  0.0026  2.4693
+3   1748.0 -0.0011 -0.8919
+4   1748.0  0.0026  1.9727
+
+## vol_ratio quintile: not-signal bars (not strong)
+         n      ex       t
+qv                        
+0   1598.0 -0.0042 -3.7578
+1   1558.0 -0.0001 -0.1293
+2   1603.0  0.0019  1.8069
+3   1552.0 -0.0025 -1.9259
+4   1565.0  0.0005  0.3815
+
+## vol_ratio quintile: strong-signal bars
+        n      ex       t
+qv                       
+0   150.0 -0.0074 -1.7517
+1   190.0  0.0014  0.3458
+2   145.0  0.0096  2.3531
+3   196.0  0.0097  2.3479
+4   183.0  0.0208  4.0711
+
+## down days slope by vol regime
+                              n    slope        t
+vol_ratio upper60=False  1797.0 -0.00354 -1.61507
+vol_ratio upper60=True   2522.0  0.00845  6.77181
+
+## variants (approx, cost 0.095%/side)
+                                 sharpe  yearly   maxdd  calmar  in_share
+as run                           0.7414  0.2113 -0.3607  0.5860    0.4657
+only top fifth forecast          0.7652  0.1895 -0.3540  0.5353    0.1783
+out when vol_ratio lowest fifth  1.0152  0.3045 -0.3302  0.9221    0.4161
+alloc x (fc/10)                  0.7740  0.3231 -0.6099  0.5297    0.4451
+alloc x vol_ratio                0.9174  0.2900 -0.3687  0.7865    0.4657
+
+## w1-3 by vol_ratio fifth: gain
+        n   gain
+qv              
+0   164.0 -0.420
+1   126.0 -0.130
+2   621.0 -0.228
+3    38.0 -0.452
+4    79.0  0.658
