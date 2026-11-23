@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.6582222,
+  "findings": {
+    "F1": "Across all six coins the evening hours carry a steady rise: the bar opening at 21:00 UTC averages +0.055 % (t 6.87, about 17,400 bars) and the one at 22:00 +0.044 % (t 5.76). The 2-hour 21:00\u201323:00 return is positive in every coin (+0.08 % to +0.13 %, t 2.0 to 4.7), in 20 of 24 windows, and in 6 of 8 years (2022 \u22120.016 %, t \u22120.50; 2025 +0.03 %, t 1.01). It holds on every weekday, from +0.059 % on Monday to +0.142 % on Sunday.",
+    "F2": "The evening rise is graded by how heavy the day's volume has been. Taking the mean volume from 01:00 to 21:00 against the prior week, the volatility-scaled 21:00\u201323:00 return grows from 0.008 (t 0.52) in the lightest-volume quintile to 0.131 (t 4.75) in the heaviest. Its slope on the log volume ratio is +0.055 (t 3.72, 13,518 day-cases) and is positive in 5 of 6 coins. The same test on 17:00\u201319:00 gives \u22120.023 (t \u22121.62).",
+    "F3": "Weekend moves made on thin volume are reversed over Monday and Tuesday. On Sunday-close cases with a below-median weekend-to-weekday volume ratio, the slope of the next 48-hour excess return on the weekend's 48-hour move is \u22120.18 (t \u22123.15, 945 cases), negative in all six coins (t \u22120.7 to \u22121.9). Across all Sundays, the weekend move divided by the volume ratio predicts the next 48 hours with slope \u22120.058 (t \u22122.85, 1,893 cases) and the next 24 hours with \u22120.045 (t \u22122.88). The effect weakens after 2021 (2018\u201321: \u22120.086, t \u22122.66; 2022\u201325: \u22120.024, t \u22120.97).",
+    "F4": "The tested continuation sits only in the heavy-volume, week-extending weekends: signed continuation of 0.33 usual moves (t 3.36, 202 cases), with a within-cell slope of +0.21 (t 2.6). It is not graded by the weekend move's size as the idea states: the largest-move quintile of all Sundays gives \u22120.05 (t \u22120.81) against +0.12 (t 2.33) in the second.",
+    "F5": "Sunday continuation depends on how calm the coin has been. The slope of the next 48 hours on the weekend move is +0.23 (t 2.82, 631 cases) in the calmest third of the past 7 days' hourly volatility, +0.14 (t 2.26) in the middle third, and \u22120.08 (t \u22121.77) in the most volatile third.",
+    "F6": "Heavy-volume continuation is not specific to weekends. 48-hour moves ending Tuesday to Thursday that extend the prior five days on above-average volume continue by 0.074 usual moves (t 2.81, 1,675 overlapping cases) against 0.33 on Sundays."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's price rises during the 21:00\u201323:00 UTC evening hours. The rise over those two hours is the larger, the heavier the coin's volume since 01:00 that day has been against its mean over the preceding week.",
+      "consequence": "An evening long is backed by a heavy-volume day and refused after a quiet one, though at about 0.1 % per evening the move is below one trade's 0.19 % cost and can only pay folded into a position held for other reasons.",
+      "name": "heavy-day evening rise",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday\u2013Sunday move made on thinner volume than its preceding five weekdays is reversed over the next 48 hours. The reversal is the larger, the larger the weekend move and the thinner the weekend volume against the weekdays.",
+      "consequence": "A thin-volume weekend move is a reason to lean against it into Monday and Tuesday, and to refuse to follow it.",
+      "name": "thin weekend moves reverse",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday\u2013Sunday move continues over the next 48 hours. The continuation is the larger, the larger the weekend move and the calmer the coin's hourly returns have been over the preceding seven days.",
+      "consequence": "Following a weekend move into the week is backed in a calm coin and refused in a coin that has been turbulent.",
+      "name": "calm-coin weekend continuation",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week.g1_heavy-day-evening-rise",
+    "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week.g2_thin-weekend-moves-reverse",
+    "026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week.g3_calm-coin-weekend-continuation"
+  ],
+  "no_ideas": null
+}

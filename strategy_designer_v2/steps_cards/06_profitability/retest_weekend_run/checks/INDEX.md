@@ -10,6 +10,7 @@
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue_1h: not profitable enough [Sharpe 0.3684; Sharpe minus holding's Sharpe -0.1853; Calmar 0.1459]
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h: not profitable enough [Sharpe 1.136; Sharpe minus holding's Sharpe 0.5823; Calmar 0.6923]
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h: profitable enough [Sharpe 1.082; Sharpe minus holding's Sharpe 0.5281; Calmar 0.9857]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation_1h: not profitable enough [Sharpe 0.6049; Sharpe minus holding's Sharpe 0.05115; Calmar 0.576]
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins_1h: not profitable enough [Sharpe 0.8957; Sharpe minus holding's Sharpe 0.342; Calmar 0.6712]
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation_1h: not profitable enough [Sharpe 0.6862; Sharpe minus holding's Sharpe 0.1325; Calmar 0.4598]
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr_1h: profitable enough [Sharpe 0.9975; Sharpe minus holding's Sharpe 0.445; Calmar 0.796]
