@@ -67,6 +67,27 @@ same strategy or in parallel"):**
 | P4 | One portfolio fixed by P1-P3 before any unseen result is seen, run on the unseen dates against its books alone | whether it holds |
 | P5 | The portfolio layer's card and build (engine, shared code: the operator's go) | only if P4 holds |
 
+**P1 and P2, measured (2026-11-23, `topics/44_review/p1_candidates.py`, `p2_weights.py`, their CSVs):**
+- P1 as decided: 280 register books, 213 with a size above 0, 51 families, 25 candidates (13 daily, 12 hourly; the
+  others correlated 0.5 or more with one already in). Not applied: fidelity to the idea (every book predates topic 47 N3).
+- P2 on them: every weight rule loses (whole chain Calmar -0.21 equal capital, -0.16 the others), though the median book
+  alone is at 0.19. Cause, checked against step 6's records: 7 candidates lose on their own after costs, 4 hourly ones
+  heavily (017-01: -1.2 % a day in a position, 21 trades a day, Sharpe -13.8). A size above 0 says the idea exists, not
+  that its book keeps it after costs; no weight fixes a book that loses every day.
+- Variant measured (`--earning`, not yet decided): the same rule, keeping first only the books that earn on their own in
+  sample (step 6's Sharpe above 0; no bar on how much). 173 books, 43 families, 20 candidates (13 daily, 7 hourly).
+
+  | Weights | Calmar fold 1 / 2 / 3 / 4 | whole chain: Calmar, yearly, worst fall, Sharpe |
+  |---|---|---|
+  | equal capital | 2.02 / 2.04 / 2.38 / 2.57 | 1.37, +10.3 %, 7.5 %, 1.64 |
+  | equal risk | 1.71 / 3.27 / 1.64 / 1.84 | 1.17, +5.8 %, 5.0 %, 1.75 |
+  | shared risk | 1.94 / 2.90 / 1.87 / 1.76 | 1.19, +5.8 %, 4.9 %, 1.80 |
+  | the books alone (median) | 0.67 / 0.61 / 0.25 / 0.27 | 0.24, Sharpe 0.50 |
+
+  Out of fold, equal capital is chosen on 3 of 4 folds and the other choice does worse on its held-out fold: by the
+  rule written before the run, **equal capital**. In sample only: the candidates were kept for earning on these same
+  dates, so these figures are optimistic; P4 judges on the unseen dates.
+
 Kept (2026-11-22): every paying strategy and its similarity matrix (the register, kept current by `run_idea`). Waiting: at least two unrelated paying books that each hold on the unseen dates (today one family, momentum: topic 41's
 register). Then: the layer's card (by `HOW_WE_DESIGN_A_CARD.md`), the operator's go for the engine change, its proof
 (the layer on two books gives method A's daily returns, minus the netted costs).
