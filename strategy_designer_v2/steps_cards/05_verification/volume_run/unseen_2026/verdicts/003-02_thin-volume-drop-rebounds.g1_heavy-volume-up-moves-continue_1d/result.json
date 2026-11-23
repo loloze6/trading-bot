@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return of cases with forecast >= 2 (vs coin mean on the same grid)",
+    "value": 0.017176259509718808,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9278771781757407
+    },
+    "threshold": "confirm if t >= 2 and supporting difference > 0; reject if t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess of cases above median forecast minus below median",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 52,
+    "cases above median forecast": 0,
+    "cases below median forecast": 25,
+    "active bars": 915
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive whatever the supporting check shows.",
+  "reading": "The coin's mean is taken over every grid bar with a full 5-bar return in all its windows, cases are grid bars with forecast >= 2 and a full return inside the window, cases equal to the median forecast are left out of the supporting split, and fewer than 30 cases gives 'not observable' as the workflow requires."
+}
