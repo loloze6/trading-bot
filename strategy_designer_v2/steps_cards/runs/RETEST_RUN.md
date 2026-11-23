@@ -76,3 +76,9 @@ book that holds is momentum (0.74 explained). Their in-sample checks stay as rec
 - **A stop by hand leaves the loop's children running** (session 5): an idea stopped inside step 4 failed on resume
   ("Directory not empty": an orphan backtest still writing into its folder); re-admitted with a retry line once the
   orphans were stopped. Stopping a loop: stop its whole process group, not loop.py alone.
+  **Fixed** (about 02:30 Paris, `common/lib.py` `end_with_parent`): a helper started by another helper now ends when
+  that helper ends, whatever stopped it; a helper started from a shell (the loop) is unaffected. Test: a child outlives
+  a killed parent without it, ends with it. Proof: step 4 rerun on 029-01 (1d, 6 coins, 144 windows) through the new
+  path: metrics, forecasts and trade diagnostics identical in all 144; only run ids, times, commit id and temporary
+  paths differ. Not covered: the engine's own `run_protocol.py` (shared code) still runs to its end after its step 4
+  is stopped; it writes only into step 4's temporary folder, not the record. Sessions take it at their next restart.

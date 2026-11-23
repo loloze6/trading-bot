@@ -1,4 +1,4 @@
-"""Code shared by the steps' helpers, in one place: the closed-book model call, atomic writes, a file's --- header, the
+"""Code shared by the steps' helpers, in one place: the closed-book model call, a child helper ending with its parent, atomic writes, a file's --- header, the
 idea fields step 3 reads, and the shared definitions. A helper imports it with
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common")); from lib import ...
 """
@@ -6,6 +6,24 @@ import json, os, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 COMMON = Path(__file__).resolve().parent
+
+
+def end_with_parent():
+    """A helper started by another helper ends when that helper ends (killed by hand, by a time limit, or by a crash),
+    so no orphan keeps writing into a step's files after its run was stopped (night 5: an orphan step 4 kept writing
+    into the folder a resumed run was removing). How: a helper marks its children with its own process id
+    (CARDS_PARENT_PID); a child that sees its parent's id there asks Linux to stop it when that parent ends. A helper
+    started from a shell (the loop, run_idea or a step called by hand) is not marked, so it is never stopped this way.
+    Elsewhere than Linux it does nothing."""
+    if sys.platform.startswith("linux") and os.environ.get("CARDS_PARENT_PID") == str(os.getppid()):
+        import ctypes, signal
+        ctypes.CDLL(None, use_errno=True).prctl(1, signal.SIGTERM)       # 1 = PR_SET_PDEATHSIG
+        if os.getppid() != int(os.environ["CARDS_PARENT_PID"]):           # the parent ended before the call above
+            sys.exit("its parent ended")
+    os.environ["CARDS_PARENT_PID"] = str(os.getpid())
+
+
+end_with_parent()      # on import: every helper that imports lib takes part
 # The calling session's variables that must not reach a closed-book model call.
 DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
             "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}
