@@ -181,3 +181,22 @@ Both add volatility, not trend. Their shares against other runs wait for the reb
 The session's reading: **R3** (real, still not paying). The confirmed books are unlike any paying book (nearest
 explains 0.008 to 0.17), but the effect's move per case is below the round trip (017-05: +0.05 % per case against
 0.19 % per trade).
+
+## Session 1 (brief 020 retest, weekend, 1h): ended at the time rule, 10:06 Paris (28.78 USD, 10 h 09 of which 3 h 31 stopped; branch night5-retest-weekend, 3eeaf4c8f5)
+| Measure | Count |
+|---|---|
+| Ideas run | 22 (2 starting, 20 from the loop); a 23rd stopped after 11 s (started after the time rule) |
+| Components built | 3 (every check passed); 1 wish answered "exists"; 2 ideas still missing components |
+| Step 5 confirmed / rejected / inconclusive | 13 / 1 / 6 |
+| Step 6 profitable enough / of them confirmed | 4 / 3 |
+| Unseen: hold 2016-17 (no 2026 data on 1h) | 2 of 3 |
+| 7.d: runs / ideas / closures | 11 (2 failed on names) / 23 / 0; all repairs; a trend condition in 6, 2 measured alone |
+| Failed on file names | 6 step 7 runs |
+
+The three confirmed and paying books: 026-03.d3.d1.d1 Saturday continuation with weekly trend (+5.86, holds 2016-17);
+026-04.b2.d1.d1 heavy weekend extends week (+3.11, holds 2016-17; nearest paying book 018-02 hourly breakout, 0.10;
+holding explains 0.01); 026-04.b2.d1.d2.d2 heavy weekend falls continue (+3.87, does not hold 2016-17). Shares to be
+read from the rebuilt register. The session's reading: **R1 on the counts** (book 2: confirmed, paying, holds the one
+unseen period with data, nearest paying book under 0.25).
+Found: `trading-bot/performance/signal_statistics.py` (shared code) scans every segment for every block; on 2016-17
+hourly BTC (17k bars) one coin's unseen test took about 75 min. Not changed (shared code: the operator's go).
