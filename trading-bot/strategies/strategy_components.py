@@ -7934,3 +7934,55 @@ class FailedBreakoutDepthRunUpDiscountComponent(SubStrategyComponent):
     def get_required_periods(self):
         return max(self.period + self.fail_window, self.rise_period + self.fail_window,
                    self.window + self.rise_period)
+
+
+class VolatilityWeightedFallComponent(SubStrategyComponent):
+    """
+    Bar t's fall weighted by the coin's recent volatility:
+
+        r[j] = close[j] / close[j-1] - 1,  j = t - vol_period + 1 .. t   (bar t's return included)
+        s    = std(r, ddof=1)
+        raw_value = max(0, -r[t]) x 100 x s
+
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 on up bars and flat bars, and it grows
+    with the depth of bar t's fall (in percent) and with the volatility s of the last vol_period one-bar returns.
+    Graded and continuous in the closes.
+    Warm-up: vol_period + 1 rows, bar t included.
+
+    NaN: a NaN close in the last vol_period + 1 rows gives NaN. A close not above 0 there also gives NaN (never on
+    real bars). Building the component raises for a vol_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last vol_period + 1 rows of data, bar t (the last
+    row) included. Each close is known at its bar's close.
+    """
+
+    def __init__(self, name="VolatilityWeightedFall", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"VolatilityWeightedFallComponent: vol_period must be >= 2, got {self.vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        closes = data['close'].astype(float).iloc[-(self.vol_period + 1):].to_numpy()
+        if np.isnan(closes).any() or (closes <= 0).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = closes[1:] / closes[:-1] - 1.0
+        s = float(np.std(rets, ddof=1))
+        fall = max(0.0, -float(rets[-1])) * 100.0
+        self._raw_value = float(fall * s)
+        self.confidence = 1.0
+        self.debug_info = {'fall_pct': fall, 'vol': s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.vol_period + 1
