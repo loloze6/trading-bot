@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of drift-removed 5-day return on forecast",
+    "value": 0.0002872032116905083,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 2.019062136651927
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and timing > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "timing part of book's mean daily return before costs",
+    "value": 0.0003812141915870408,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 4729,
+    "grid cases": 4732
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing part of the book's mean daily return is above 0.",
+  "reading": "Active bars are bars with a nonzero forecast and a recorded raw value, the expected side being the opposite of the raw (w - wbar) x z sign because of negate; the slope is the OLS slope (with intercept) of each grid case's 5-day return minus the coin's mean 5-day grid return over all its windows, on the forecast, pooled over all grid cases including zero forecasts; the timing part is the mean over days of the coins' mean gross daily gain (position after the previous bar's trade x the bar's return) minus the same with the coin's mean daily return over all windows; the plan's 'fewer than 300 grid cases with a nonzero forecast' is applied first as the minimum count."
+}

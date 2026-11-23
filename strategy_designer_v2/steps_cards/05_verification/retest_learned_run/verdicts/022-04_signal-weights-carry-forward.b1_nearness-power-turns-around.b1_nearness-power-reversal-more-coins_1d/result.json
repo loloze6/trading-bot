@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.999917478131705,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (5-bar forward return minus coin's mean 5-bar return), before costs",
+    "value": 0.003707151044666476,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.046480727403572
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 300 non-zero-forecast cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases with a non-zero forecast": 4732,
+    "grid cases": 4732
+  },
+  "decided_by": "The mean is above 0 with t >= 2 on at least 300 non-zero-forecast cases (confirm rule).",
+  "reading": "The mean and t are taken over all grid cases at positions 0, 5, 10, ... of each window with a full 5-bar forward return (zero-forecast cases contribute 0), the coin's mean 5-bar return is the mean of its grid returns over all its windows, and the 300-case minimum counts the non-zero-forecast cases."
+}

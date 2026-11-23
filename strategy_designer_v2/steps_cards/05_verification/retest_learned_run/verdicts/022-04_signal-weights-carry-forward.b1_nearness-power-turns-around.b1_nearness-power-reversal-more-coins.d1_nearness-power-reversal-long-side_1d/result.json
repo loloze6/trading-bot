@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9999213465471134,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "one-sample t of mean excess 5-day return on positive-forecast grid bars",
+    "value": 0.0037299388227072772,
+    "statistic": {
+      "name": "one-sample t",
+      "value": 1.7184740857794643
+    },
+    "threshold": "confirm t >= 2 (with check passing); reject t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess return, larger half minus smaller half of positive forecasts",
+    "value": 0.0019090356929288193,
+    "passed": true
+  },
+  "counts": {
+    "positive-forecast grid cases": 2457
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Situation taken as raw component value < 0 with forecast > 0 (standardise only scales, so negate+clip leaves the forecast positive exactly when the raw value is negative); the coin's mean 5-day return is taken on the same non-overlapping grid over all its windows; the halves are split by sorted forecast with the middle case left out when the count is odd; the plan's fewer-than-100-cases rule is treated as a minimum count, giving 'not observable'."
+}

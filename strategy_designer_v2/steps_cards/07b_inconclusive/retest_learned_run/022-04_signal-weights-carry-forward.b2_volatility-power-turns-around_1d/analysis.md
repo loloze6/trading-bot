@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d
+idea tested: 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.1840 USD
+---
+## Findings
+- **F1:** The test's main measure is effectively zero rather than just short of the bar. The mean is +0.00066 with t 0.31 over 3065 non-zero 5-day cells. Strength is -0.003 of a usual 10.60 % move, and the total move of +0.07 % per case is 0.3 times the 0.19 % cost of a trade. At this mean, the t would only reach 2 with roughly 40 times as many cells, far more than the remaining coins in folds A and D could add.
+- **F2:** No other horizon shows the effect. The same forecast-weighted excess return has t 0.09 at 1 day (15575 cells), 0.25 at 10 days (1517), -1.08 at 20 days (743) and 0.74 at 30 days (485). The rank correlation of forecast with excess return stays between -0.022 and +0.018 at every horizon.
+- **F3:** The sign changes from coin to coin. Only LTC is clear (t 2.34, 570 cells). BTC has t 1.21, ETH -0.41, XMR 0.11, XRP -0.44 and ZEC -1.47, so the pooled mean is one coin against offsetting others.
+- **F4:** The sign also flips from year to year. 2019 is +0.0207 with t 2.73 (285 cells) and 2021 is -0.0146 with t -2.21 (426 cells). The other years lie between t -1.13 and 1.74, with no lasting regime in which the counter-bet works.
+- **F5:** Neither the side, the size of the forecast nor the volatility level isolates the effect:
+- **F6:** The underlying low-volatility signal itself has no stable sign. The plain minus-volatility z times the excess 5-day return ranges from t -1.47 (ZEC) to +2.08 (XRP) across coins, and from -1.77 (2025) to +1.30 (2021) across years. There is little steady power in the signal whose turning around the idea forecasts, which explains why the turnaround cannot be seen.
+
+## Ideas
+- No ideas: The result is essentially zero at every horizon, and its scattered signs (F1–F6) show no coin, year, side, forecast size or volatility regime where it is clearly present, so neither more data nor a narrower idea is supported.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

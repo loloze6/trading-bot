@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long_1d
+idea tested: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4256 USD
+---
+## Findings
+- **F1:** The day's high-low range relative to its 20-day average is the strongest pattern in the bars, and the tested idea does not explain it: over 4334 non-overlapping 5-day cases its pooled slope on the next 5-day strength is +0.055 per standard deviation (t 3.68). It stays at +0.055 (t 3.68) next to the 5-day return and the forecast, while the forecast keeps its own +0.037 (t 2.47).
+- **F2:** The range effect is graded and large next to cost. The top two range deciles end +1.48 % and +1.39 % above the coin's normal 5-day drift (strength +0.136 and +0.130), against −0.88 % and −0.77 % in the bottom two. That move above drift is about 6 times the 0.22 % cost of a trade, where the tested idea's unusual move is −0.07 % per case.
+- **F3:** The range effect holds across time and coins: its slope is positive in 6 of 8 years (t 2.32 in 2022, 3.35 in 2024, 2.05 in 2025, negative only in 2018 at t −1.02 and 2023 at t −0.16) and positive in 12 of 15 coins (AVAX t 2.57, DOGE t 2.25).
+- **F4:** The range effect is stronger after a wide day that closed up, with a slope of +0.082 (t 3.36, 2144 cases), than after one that closed down, with +0.035 (t 1.92, 2190 cases).
+- **F5:** Other single readings stand out less:
+- **F6:** Weekday effects in next-day strength:
+- **F7:** The book's failing Calmar comes from 2022, which had a Sharpe of −1.88 and a mean of −0.10 % a day while holding fell −0.19 % a day. Every other year from 2019 on has a Sharpe between 0.80 and 1.74.
+- **F8:** The trade gains rest on long holds that ride the coins' drift. The longest quarter of trades averages 55 days and +11.96 % net, against 2.3 days and +2.18 % for the shortest quarter. This matches the tested idea's size: a total move of +0.64 % per case, almost all of it the coin's drift (+0.72 %).
+
+## Ideas
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long.g1_range-expansion-precedes-rises` (from F1, F2, F3, F4): The wider a coin's high-low range on a day compared with its average daily range over the past 20 days, the larger the coin's rise above its normal drift over the next 5 days, and more so when that wide day closed higher than it opened.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
