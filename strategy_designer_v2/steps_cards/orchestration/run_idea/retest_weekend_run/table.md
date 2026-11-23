@@ -23,22 +23,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue | plan | inconclusive (+3.15) | profitable enough | - | 7.b: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.b1_weekend-volume-grades-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.b2_heavy-weekends-on-more-coins; 7.e: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.e1_weekend-volume-drives-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.e2_heavy-weekend-rises-extend; 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.g1_weekend-volume-grades-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.g2_thin-weekend-rises-reverse, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d3_heavy-weekends-without-xmr.g3_late-evening-utc-volatility-drift | 1.39 | 10.7 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins | plan | confirmed (+3.11) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week.g1_heavy-day-evening-rise, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week.g2_thin-weekend-moves-reverse, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week.g3_calm-coin-weekend-continuation | 0.96 | 87.3 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins | plan | confirmed (+2.65) | not profitable enough (failed: Calmar) | - | 7.d: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d3_much-heavier-weekend-continuation; 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.g1_thin-weekend-moves-reverse, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.g2_evening-rebound-after-daily-falls | 2.12 | 12.2 |
+| 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation | plan | confirmed (+2.42) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend.d1_heavy-weekend-falls-continue-monday, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend.d2_heavy-weekend-rises-continue-three-days; 7.g: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend.g1_heavy-weekend-volume-drives-continuation, 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend.g2_extreme-weekend-moves-continue | 1.38 | 12.3 |
 
 ## Consumption
-19 ideas, 22.26 USD, 298.0 minutes in all.
+20 ideas, 23.64 USD, 310.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.71 | 19.2 |
-| step4_backtest | 0.00 | 134.1 |
-| step5_verdict | 2.95 | 11.3 |
+| step3_plan | 4.82 | 20.0 |
+| step4_backtest | 0.00 | 141.2 |
+| step5_verdict | 3.13 | 12.0 |
 | step6_check | 0.00 | 0.8 |
-| chart_files | 0.00 | 1.2 |
-| similarity_check | 0.00 | 1.5 |
+| chart_files | 0.00 | 1.3 |
+| similarity_check | 0.00 | 1.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 1.67 | 5.7 |
 | step7_7.e | 0.38 | 1.2 |
 | step7_7.c | 0.41 | 1.3 |
-| step7_7.d | 4.42 | 15.3 |
-| step7_7.g | 7.71 | 27.4 |
+| step7_7.d | 5.06 | 17.3 |
+| step7_7.g | 8.15 | 28.9 |
 | unseen_test | 0.00 | 79.0 |

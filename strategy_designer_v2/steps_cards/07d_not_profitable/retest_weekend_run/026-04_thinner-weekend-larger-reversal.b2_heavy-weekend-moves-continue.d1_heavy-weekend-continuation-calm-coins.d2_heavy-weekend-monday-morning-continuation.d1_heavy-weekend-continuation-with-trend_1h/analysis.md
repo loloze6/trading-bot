@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend_1h
+idea tested: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6421 USD
+---
+## Findings
+- **F1:** The book earns only in the first 12 hours after the Monday signal and then keeps a small leftover position that loses. Bars held 0-11 hours after the signal sum to +1.00 gain on the short side and +0.46 on the long side, at a mean |allocation| of about 0.6. Bars held 168 or more hours after it sum to +0.07 short and -0.20 long, at an allocation of about 0.11. Trades last 55 hours long and 86 hours short on average, against the 12-hour horizon. Counting only the first 12 hours, the gross book's Sharpe rises from 0.75 to 0.85 and its Calmar from 0.69 to 0.81.
+- **F2:** The effect sits on the short side. Down cases have a mean unusual 12-hour move of +1.41 % (t 2.98, 114 cases), against +0.15 % on up cases (t 0.53, 195 cases). The short-only gross book has Sharpe 0.80, Calmar 0.80 and a deepest fall of -2.7 %. The long-only gross book has Sharpe 0.28, Calmar 0.16 and a deepest fall of -5.1 %. Both failing measures (Calmar 0.50 net, Sharpe 0.02 below holding's) are carried down by the long side.
+- **F3:** The long side does pay, but over a longer horizon than 12 hours. Rebuilt up weekends that are heavy and with the trend have a mean unusual move of +0.67 % at 12 hours (t 2.06) and +1.92 % at 72 hours (t 2.43, 144 cases). In the book's own long cases the unusual move is +0.15 % at 12 hours (t 0.53) and +1.97 % at 72 hours (t 2.50, 195 cases).
+- **F4:** On the short side the move comes from the strongest graded cases. Among heavy down weekends with a falling 30-day return, split into terciles of |48h move| × volume ratio, the top tercile has a mean unusual 12-hour move of +3.25 % (t 2.88, 27 cases), while the lower two have -0.48 % and -0.11 %.
+- **F5:** The grade on its own is not the effect. Over all down weekends, without the volume and trend conditions, the top grade tercile earns only +0.40 % at 12 hours (t 1.26, 264 cases), and down weekends on light volume earn about 0 (+0.01 % and +0.08 %, 306 and 344 cases). Heavy weekend volume, the idea's own condition, is what carries the move. Heavy down weekends against the trend also earn +1.22 % (t 2.07, 58 cases).
+- **F6:** Over all cases, the size of the forecast grades the move more clearly at longer horizons. The top half of |forecast| has a mean unusual move of +0.81 % at 12 hours (t 2.13) and +2.91 % at 72 hours (t 3.45, 154 cases). The lowest quartile has +0.22 % at 12 hours and -1.26 % at 72 hours.
+- **F7:** The book is in a position on 10 % of days and makes +2.1 % a year. In years when the coins rose, it falls far behind holding them: 2020 book +7.6 % against holding +154 % summed, and 2021 +2.0 % against +148 %. A thin weekly bet with a leftover position cannot match holding's Sharpe unless its in-position move is larger.
+
+## Ideas
+- `026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend.d1_heavy-weekend-falls-continue-monday` (from F1, F2, F4, F5): A coin's Saturday-Sunday fall made on higher volume than its mean over the preceding five weekdays, while its 30-day return is also negative, continues downward over the first 12 hours of Monday. The continuation is the larger the larger the fall and the heavier the weekend volume against the weekdays, and it is concentrated in the largest, heaviest falls.
+- `026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d1_heavy-weekend-continuation-with-trend.d2_heavy-weekend-rises-continue-three-days` (from F3, F6, F7): A coin's Saturday-Sunday rise made on higher volume than its mean over the preceding five weekdays, and in the same direction as its rising 30-day return, continues upward over the next 3 days. The continuation is the larger the larger the rise and the heavier the weekend volume against the weekdays.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
