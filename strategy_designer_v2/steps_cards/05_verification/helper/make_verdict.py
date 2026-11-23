@@ -115,7 +115,9 @@ def size_line(s):
     if not s or not s.get("cases"):
         return "- Size: no case to measure"
     p = lambda v: f"{100 * v:+.2f} %"
-    return (f"- Size: unusual move {p(s['unusual_move'])} per case over {s['horizon_bars']} bars, "
+    sure = (f" (t {s['unusual_move_t']:.2f}, the cases of one day together: {s['case_days']} days)"
+            if s.get("unusual_move_t") is not None else "")
+    return (f"- Size: unusual move {p(s['unusual_move'])}{sure} per case over {s['horizon_bars']} bars, "
             f"{s['strength']:.3f} of the coin's usual move ({100 * s['usual_move']:.2f} %); normal drift in its direction "
             f"{p(s['normal_drift'])}, total {p(s['total_move'])}; {s['cases']} cases")
 

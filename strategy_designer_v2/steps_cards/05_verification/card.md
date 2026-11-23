@@ -63,7 +63,7 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
    - Used by: the reading of each exercise, and anyone who disputes a number.
    - Without it: the numbers cannot be checked.
 6. **`result.json`:** what the function returned, as it returned it.
-6b. **`size.json`:** the idea's size (cases, unusual move, normal drift, total move, the coin's usual move, strength),
+6b. **`size.json`:** the idea's size (cases, unusual move and how sure it is (its t by day, and the days), normal drift, total move, the coin's usual move, strength),
    with one line in `verdict.md` ("Size: ..."). Not for a mismatch.
    - For: telling a real but small idea from a real and large one.
    - Used by: the operator, step 7, and whoever compares an idea's size with what a trade costs.

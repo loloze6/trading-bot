@@ -62,3 +62,12 @@ def test_line_7d_runs_only_on_a_confirmed_idea_whose_book_does_not_pay():
     for s5 in ("inconclusive", "rejected", "not observable", "mismatch"):
         assert not a.entry_met(entry, s5, "not profitable enough")
     assert not a.entry_met(entry, "confirmed", "profitable enough")
+
+
+def test_the_analyst_reads_how_sure_the_size_is(tmp_path):
+    import json
+    f = tmp_path / "size.json"; rec = tmp_path / "rec"; rec.mkdir()
+    base = {"horizon_bars": 2, "cases": 10, "unusual_move": 0.004, "normal_drift": 0.001, "total_move": 0.005, "usual_move": 0.05, "strength": 0.08}
+    f.write_text(json.dumps(base)); assert "how sure" not in a.size_and_cost(f, rec)
+    f.write_text(json.dumps(dict(base, unusual_move_t=-1.5, case_days=9)))
+    assert "+0.40 % (how sure: t -1.50, the cases of one day taken together, 9 days)" in a.size_and_cost(f, rec)

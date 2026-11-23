@@ -165,7 +165,9 @@ def size_and_cost(size_file, record):
     if not s.get("cases"):
         return "The idea's size: no case to measure.\n" + cost_line
     p = lambda v: f"{100 * v:+.2f} %"
-    lines = [f"The idea's size: per case, over its horizon of {s['horizon_bars']} bars, the unusual move is {p(s['unusual_move'])} "
+    sure = (f" (how sure: t {s['unusual_move_t']:.2f}, the cases of one day taken together, {s['case_days']} days)"
+            if s.get("unusual_move_t") is not None else "")
+    lines = [f"The idea's size: per case, over its horizon of {s['horizon_bars']} bars, the unusual move is {p(s['unusual_move'])}{sure} "
              f"({s['strength']:.3f} of the coin's usual move over that horizon, {100 * s['usual_move']:.2f} %); the coin's normal "
              f"drift in the case's direction is {p(s['normal_drift'])}; the total move is {p(s['total_move'])}; {s['cases']} cases.",
              cost_line]

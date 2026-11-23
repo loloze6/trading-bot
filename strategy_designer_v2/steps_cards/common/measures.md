@@ -43,6 +43,10 @@ the book the same way). A plan's own words come first; these apply wherever it s
   - the **total move**: the same without removing the drift (what a trade on the signal earns before costs);
   - the **strength**: the unusual move divided by the coin's usual move, per case, then averaged: a pure number (0.05
     means the idea predicts 5 % of a usual move).
+  - **how sure** the unusual move is (operator, 2026-11-23; topic 47, N2): its t, the mean over its standard error, the
+    cases of one day taken together (their deviations summed per day: cases on several coins the same day are one
+    piece of evidence, not several); with the number of days the cases fall on. A t under 2 means the size cannot be
+    told from 0 (night 5: 50 of the 81 real books had a positive size with a t under 2).
   Example: over 3 days a coin usually moves about 10 % up or down; an idea whose cases end 0.5 % higher than the coin's
   normal drift has a strength of 0.05. Real ideas measured so far have a strength of about 0.05 whatever their horizon
   (`runs/RETRO_DIAGNOSIS_RUN.md`, fourth question).
