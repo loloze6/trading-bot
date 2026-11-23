@@ -100,3 +100,14 @@ sample, none holds on both unseen periods). Its shares are against this run's bo
 are not in its container): to be redone at the morning merge. One paying book (030-03...d2.d2.d2.d1) has no comparison:
 its register file name is too long (topic 46); the merge's `--all` will fail on it the same way. 38 of 107 ideas not
 testable for their id's length: topic 46's count for the operator.
+
+## The register's periods under pandas 3 (session 2, about 03:40 Paris)
+`run_idea` runs the similarity check under the python that runs it (here the system's, pandas 3), not the backtest's
+(`--python`, pandas 2). The register wrote a period as `astype("int64") // 10**9`, which assumes nanoseconds; pandas 3
+stores microseconds, so tonight's sessions wrote periods 1000 times too small (and truncated: 1641081 for 1641081600).
+Effect: no night-5 book had a date in common with another run's book; its nearest relative was none, or a book of its
+own run; `select_next`'s w had no evidence for most night-5 parents (0.5 by its rule). The register on this branch is
+not affected (215 files, 0 bad: built with pandas 2). **Fixed** (`utc_seconds`, whatever unit pandas stores; test
+under three units; checked under pandas 3.0.5). Not repairable by multiplying by 1000 (the truncation loses the
+minutes): at the morning merge, each night-5 book is added again from its record (`add` rewrites its returns file),
+then `--all`.
