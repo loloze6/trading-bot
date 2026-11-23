@@ -52,3 +52,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 45 | [Why the research finds almost only long momentum](45_why-the-research-finds-only-long-momentum.md) | research: step 6's rule, books judged alone, one coin at a time | open: investigated; changes for the operator's go |
 | 46 | [An idea's id grows past the file name limit](46_idea-ids-grow-past-the-file-name-limit.md) | research: the id convention | built 2026-11-23 (option A) |
 | 47 | [Why most real effects give a book that does not pay](47_why-real-books-do-not-pay.md) | research: steps 3, 6, 1-2, 5 and select_next | open: measured 2026-11-23; for the operator |
+| 48 | [The trades one by one](48_trades-one-by-one.md) | research: steps 3, 5, 6; the engine's diagnostics | parked 2026-11-23 (observations; two points to discuss) |

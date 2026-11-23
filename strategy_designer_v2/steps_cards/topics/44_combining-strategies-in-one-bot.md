@@ -32,6 +32,12 @@ by side, and which strategies are worth combining?
   1.26 combined (half each, or equal risk) against 1.24 alone. At a share explained of 0.4 to 0.5 two books are mostly one
   bet; a real gain needs a correlation near 0.
 
+- **Real books that do not pay, combined (topic 47, measurement 1d-7, in-sample, 2026-11-23):** one real book (step 5
+  confirmed) drawn at random from each of night 5's five sessions, equal risk, 500 draws: correlation 0.12; Calmar 0.49
+  alone, 0.80 combined (0.87 with weights known in advance only); deepest fall about 35 % alone, 18 % combined; above
+  0.75 in 55 % of draws, 44 % with no paying book in the draw; five books of one family: 0.70. This questions the
+  decision "each must pay on its own" (below): real books that do not pay alone may pay together. Not yet on unseen dates.
+
 ## Why it matters
 Combining unrelated books is the cheapest gain in risk the research can find (a higher Sharpe and a smaller deepest fall
 from books already proven); combining near copies only adds the same bet twice.
@@ -51,6 +57,16 @@ from books already proven); combining near copies only adds the same bet twice.
 | 2026-11-22 | Keep every paying strategy with its similarity matrix (the register of paying books, `orchestration/ideas_similarities_check/register/MATRIX.md`, current with every run since `run_idea` calls the check); how to combine them automatically is decided later | the operator | the portfolio needs every strategy that pays and how they relate; the rule for choosing and weighting them comes later | a contribution measured now (most of today's books, one family, would add almost nothing; and a repair changes a book's contribution) |
 
 ## Status and next
+**Portfolio design steps (2026-11-23, the operator: "before, we need to see what are the candidates, what is the weight,
+same strategy or in parallel"):**
+| # | Step | What it settles |
+|---|---|---|
+| P1 | The candidates: the rule for a book to enter (real by step 5; its gain beyond the drift at its horizon above the round trip, topic 47 N2; unrelated to the others by the similarity register; its book faithful to its idea, topic 47 N3; one per family) and the operator's decision on "each must pay on its own" against "real and unrelated" | which books |
+| P2 | The weights, compared out of fold (chosen on three folds, judged on the fourth): equal capital, equal risk (each book's swing over the previous days), and risk shared with the correlations | how much of each |
+| P3 | In parallel or in one strategy: decided 2026-11-22 (in parallel, the portfolio layer, option A); P1-P2 measured that way | how they run together |
+| P4 | One portfolio fixed by P1-P3 before any unseen result is seen, run on the unseen dates against its books alone | whether it holds |
+| P5 | The portfolio layer's card and build (engine, shared code: the operator's go) | only if P4 holds |
+
 Kept (2026-11-22): every paying strategy and its similarity matrix (the register, kept current by `run_idea`). Waiting: at least two unrelated paying books that each hold on the unseen dates (today one family, momentum: topic 41's
 register). Then: the layer's card (by `HOW_WE_DESIGN_A_CARD.md`), the operator's go for the engine change, its proof
 (the layer on two books gives method A's daily returns, minus the netted costs).
