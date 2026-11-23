@@ -137,3 +137,16 @@ or breakout book; no paying book under 0.25. Group 2: 7 of 27 tested; with corre
 have been group 2 (w 0.60 to 0.96). A cause found: `select_next`'s length rule guards the names of an idea's plan and
 register files, not the names of the ideas step 7 writes from it; at generation 6, its children's names pass the limit
 (topic 46).
+
+## The usage limit (about 03:50 to 06:54 Paris)
+The 5-hour usage limit stopped sessions 1, 3 and 5 between about 03:23 and 04:15 Paris (reset 05:30 Paris). Nothing
+woke them at the reset: their own waits and my check-in at 04:46 Paris fired during the limit, and the workers of
+several sessions, mine included, were restarted. My check-in at 06:51 Paris woke them; all three restarted at about
+06:53 Paris, with both fixes (fddb0558b9, 86b9f9fa9f), no orphans found, the cut idea resumed or retried.
+| Session | Stopped (Paris) | Time lost | State at 06:55 Paris |
+|---|---|---|---|
+| 1, weekend (020) | 03:23, machine restarted mid step 7 | 3 h 30 | 17 ideas run, 9 confirmed, 2 profitable (1 confirmed), 21.20 USD |
+| 3, settlement (017) | 03:57, cut at step 5 | 2 h 55 | 21 turns, 25.80 USD |
+| 5, Monday (011) | 03:52, refused at step 7 | 3 h 00 | 18 run, 14 confirmed, 2 profitable, 33.59 USD |
+For a next night: a check-in timed just after the limit's reset (the refusal names it) would have saved about 3 hours
+per session.
