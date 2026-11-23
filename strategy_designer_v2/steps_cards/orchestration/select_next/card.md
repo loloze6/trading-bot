@@ -67,6 +67,10 @@ no line but the neutral 0.5.
 
 **Ties:** the lower number first (the order in which the brief or the line wrote them).
 
+**An idea whose plan's files cannot be written is not offered** (2026-11-23, night 5; topic 46): its id plus the longest
+suffix a plan adds (`_4h_config.json`) over the 255-byte file name limit. Step 3 would fail on it ("File name too long")
+and each retry would spend a model call. Its status says so in the ranking. Until topic 46 shortens the ids.
+
 **Why a success is a book that pays, not a confirmation (operator, 2026-11-19; `topics/30_why-hourly-ideas-rarely-pay.md`).**
 The goal is an idea that is real and pays. On hourly bars a small effect is confirmed easily (a short horizon's random
 move is small) and is too small to pay its costs: in slow_1h_run and intraday_1h_run, 7.g's ideas were often confirmed

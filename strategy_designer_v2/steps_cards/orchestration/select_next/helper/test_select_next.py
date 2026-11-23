@@ -117,3 +117,13 @@ def test_real_ideas_unlike_what_we_earn_come_first_and_those_we_already_earn_las
     rows = {r["idea"]: r for r in s.rank(run, root=tmp_path)}
     assert rows["003-01_unrelated.g1_child"]["group"] == 2 and rows["003-02_earned.g1_child"]["group"] == 3
     assert rows["003-03_unclear.g1_child"]["difference"] is None                # no evidence: w 0.5
+
+
+def test_an_idea_whose_files_cannot_be_written_is_not_a_candidate(tmp_path):
+    """Topic 46 (2026-11-23): an id plus its plan's longest file suffix over 255 bytes is not offered (step 3 would fail)."""
+    run = "t_run"; ideas = tmp_path / "02_ideation" / run / "ideas"
+    long_id = ("003-01_x" + "".join(f".g{i}_" + "a-long-short-name-of-an-idea" for i in range(1, 9)))[:245]
+    assert len(long_id) == 245            # its idea file fits (245 + ".md"); its plan's config (245 + 15) does not
+    idea(ideas, "003-01_x", "a brief idea"); idea(ideas, long_id, "a very deep idea")
+    rows = {r["idea"]: r["status"] for r in s.rank(run, root=tmp_path)}
+    assert rows["003-01_x"] == "candidate" and rows[long_id].startswith("not testable")
