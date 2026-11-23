@@ -7,10 +7,11 @@ PLAN is the idea's plan in 03_test_plan/<run>/plans/; its in-sample verdict (res
 05_verification/<run>/verdicts/<plan id>/. Per period P (a windows file 04_backtest/windows/P.json), the steps'
 files go in their usual folders under the run: 04_backtest/<run>/P/backtests/, 05_verification/<run>/P/verdicts/,
 06_profitability/<run>/P/checks/. The idea's result: orchestration/unseen_test/<run>/<plan id>.json and one line in
-orchestration/unseen_test/<run>/INDEX.md. A step whose output already exists is not called again.
+orchestration/unseen_test/<run>/INDEX.md. A step whose output already exists is not called again (step 4's: a
+record where at least one window ran).
 Prints one last line: the result as JSON.
 """
-import argparse, json, subprocess, sys
+import argparse, json, shutil, subprocess, sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -60,6 +61,12 @@ def reading(in_sample, verdict, check):
             "step6": (check or {}).get("status", "not checked"), "holds": holds}
 
 
+def backtest_ran(record):
+    """Step 4's output exists: its run.md, and at least one window run (a coin's w*/metrics.json). A record where no
+    window ran (the dates not fetched, for example) is not an output: step 4 is called again on the next call."""
+    return (record / "run.md").exists() and any(record.glob("*/w*/metrics.json"))
+
+
 def call(cmd, period):
     """One step's helper. Its whole output is printed, headed by the period and the step, so the caller's log keeps
     it (run_idea: logs/<backtest>/unseen_test.txt); a step that fails leaves its message there and no result file."""
@@ -85,7 +92,9 @@ def main():
         bt = STEPS / "04_backtest" / run / p / "backtests"
         vd = STEPS / "05_verification" / run / p / "verdicts"
         ck = STEPS / "06_profitability" / run / p / "checks"
-        if not (bt / rid / "run.md").exists():
+        if not backtest_ran(bt / rid):
+            if (bt / rid).exists():                # a record where no window ran (e.g. the dates were not fetched)
+                shutil.rmtree(bt / rid)            # holds no result: step 4 is called again
             call([STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python, "--out-root", bt,
                   "--windows", WINDOWS / f"{p}.json"], p)
         if not (vd / rid / "result.json").exists():

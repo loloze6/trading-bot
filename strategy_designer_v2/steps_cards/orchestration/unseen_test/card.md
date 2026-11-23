@@ -70,6 +70,9 @@ python3 orchestration/unseen_test/helper/unseen_test.py PLAN --run NAME_run --py
   `05_verification/helper/make_verdict.py PLAN --records-root ... --verdicts-dir ... --measure .../measure.py`,
   `06_profitability/helper/check_profitability.py RECORD --checks-dir ...`.
 - A step whose output exists is not called again: a second call makes no step call (a resumed run costs nothing).
+  Step 4's output is a record where at least one window ran; a record where none ran (the dates not fetched) is
+  removed and step 4 called again, so a period gains its result once its data is fetched (2026-11-23: the record
+  of 028-04 on 2026, written before the hourly 2026 bars were fetched, would otherwise have stayed empty).
 
 ## When a step fails
 Nothing stops: the other periods go on, and the result says what each step gave.

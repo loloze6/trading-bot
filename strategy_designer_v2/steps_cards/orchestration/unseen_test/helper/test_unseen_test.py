@@ -54,8 +54,9 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
         name = Path(str(cmd[0])).name
         if name == "run_backtest.py":
             root = Path(str(cmd[cmd.index("--out-root") + 1]))
-            (root / rid).mkdir(parents=True)
+            (root / rid / "BTCUSD" / "w1").mkdir(parents=True)
             (root / rid / "run.md").write_text("x")
+            (root / rid / "BTCUSD" / "w1" / "metrics.json").write_text("{}")
         elif name == "make_verdict.py":
             d = Path(str(cmd[cmd.index("--verdicts-dir") + 1])) / rid
             d.mkdir(parents=True)
@@ -81,3 +82,14 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
     calls.clear()
     U.main()                                         # a second call: every output exists, no step is called
     assert calls == []
+
+
+def test_a_record_where_no_window_ran_is_run_again(tmp_path):
+    rec = tmp_path / "rec"
+    (rec / "BTCUSD").mkdir(parents=True)
+    (rec / "run.md").write_text("- w1 not run: the dates were not fetched")
+    assert not U.backtest_ran(rec)
+    (rec / "BTCUSD" / "w1").mkdir()
+    (rec / "BTCUSD" / "w1" / "metrics.json").write_text("{}")
+    assert U.backtest_ran(rec)
+    assert not U.backtest_ran(tmp_path / "none")
