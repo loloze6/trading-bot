@@ -77,7 +77,17 @@ measured beside it (A); the search correction next.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-23 | Step 3 first: the book reflects the idea (its situation, its side, its horizon); a hand check on 5 ideas before any build (phase A), then the build (B), then a run (C) | the operator, on the designer's proposal | today's book trades "the score above its usual level" almost every day, not the idea; the check tells the gain before a build | "only when strong enough to pay its cost": a fitted threshold (search luck) and cost in a book's design; building first: a build spent before the gain is known |
+| 2026-11-23 | Study 2: no luck correction built yet; breadth over depth in `select_next` (a branch that keeps failing the same check is left); search luck measured again after step 3's change; a stricter bar for books found after many tries designed only if deep books still keep under half their effect | the operator | luck grows with the tries; a book that reflects its idea should need fewer tries | a correction now: sized on small groups, before the larger loss (study 1) is fixed |
 
 ## Status and next
-For the operator: which step to develop first. Then a card for it (its business objective, its definitions), a plan
-with gain, effort and risk, and its proof.
+| # | Step | Status |
+|---|---|---|
+| 1a | Phase A: 5 ideas rebuilt by hand as the idea states (wrong side 2, effect fails in a market state 2, trade too small 1), steps 4-6, measured problem by problem, outcomes written before | to start on the operator's go |
+| 1b | Phase B: step 3's card and build, proved on the same 5 ideas | if 1a gains |
+| 1c | Phase C: a run, the problems read one by one against night 5 | after 1b |
+| 1d | Ideas name the market state their effect works in (steps 2, 7; step 5 measures the effect by state) | after 1a sizes problem 2 |
+| 2a | `select_next`: breadth over depth (a branch that keeps failing the same check is left) | design with 1b |
+| 2b | Search luck measured again (this card's measurement 2) | after 1c |
+| 2c | A stricter bar for books found after many tries, if deep books still keep under half their effect | after 2b, only if needed |
+| 2d | Split the luck measure by kind of idea (momentum or not) | when there are enough books with an unseen test |
