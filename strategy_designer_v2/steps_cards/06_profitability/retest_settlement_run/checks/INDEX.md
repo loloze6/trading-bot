@@ -1,4 +1,5 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: not profitable enough [Sharpe 0.1873; Sharpe minus holding's Sharpe -0.3664; Calmar -0.09903]
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h: not profitable enough [Sharpe 0.3175; Sharpe minus holding's Sharpe -0.2362; Calmar -0.009965]
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: not profitable enough [Sharpe -13.77; Sharpe minus holding's Sharpe -14.33; Calmar -0.9856]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h: not profitable enough [Sharpe 0.1067; Sharpe minus holding's Sharpe -0.4471; Calmar -0.1361]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: not profitable enough [Sharpe -11.93; Sharpe minus holding's Sharpe -12.48; Calmar -0.9807]

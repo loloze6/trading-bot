@@ -1,4 +1,5 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

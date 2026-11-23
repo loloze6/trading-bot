@@ -1,4 +1,5 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: 3 ideas (2 explorations)
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_moderate-hourly-shocks-reverse-daily_1h: 2 ideas (2 explorations)
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: 1 ideas (2 explorations)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours_1h: 2 ideas (2 explorations)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: 2 ideas (2 explorations)
