@@ -64,3 +64,21 @@ Step 6 counted on days in a position (2026-11-22) turned two confirmed books pro
 Not a second family: the reversal book fails 2026, as the daily reversal book of `runs/COMBINE_TEST_RUN.md` did; the
 book that holds is momentum (0.74 explained). Their in-sample checks stay as recorded (written under step 6 before
 2026-11-22).
+
+## During the night
+- **About 02:00 Paris, an idea's id too long for a file name** (sessions 2 and 4; topic 46): ids grow with every
+  generation; at generation 5 to 6 a plan's file (255-byte limit) or the similarity register's (`<run>__<id>_<bar>`,
+  longer) cannot be written; step 3, or `run_idea` after step 6 (`Path.exists()` raises on such a name), fails. Failures
+  before the fix: 9 (030), 6 in step 7 (026), 2 (011), 1 (022), 0 (017). **Fixed for tonight** (commits 01b1f5ffe0 and
+  2d18f5ad6e): `select_next` does not offer an idea whose longest file name would pass the limit; the ids themselves are
+  topic 46, for the operator. All five sessions stopped, took the fix, restarted (about 02:10 to 02:16 Paris).
+  Correction: 01b1f5ffe0's message says failed ideas were retried; they were not (0 of 13, session 4).
+- **A stop by hand leaves the loop's children running** (session 5): an idea stopped inside step 4 failed on resume
+  ("Directory not empty": an orphan backtest still writing into its folder); re-admitted with a retry line once the
+  orphans were stopped. Stopping a loop: stop its whole process group, not loop.py alone.
+  **Fixed** (about 02:30 Paris, `common/lib.py` `end_with_parent`): a helper started by another helper now ends when
+  that helper ends, whatever stopped it; a helper started from a shell (the loop) is unaffected. Test: a child outlives
+  a killed parent without it, ends with it. Proof: step 4 rerun on 029-01 (1d, 6 coins, 144 windows) through the new
+  path: metrics, forecasts and trade diagnostics identical in all 144; only run ids, times, commit id and temporary
+  paths differ. Not covered: the engine's own `run_protocol.py` (shared code) still runs to its end after its step 4
+  is stopped; it writes only into step 4's temporary folder, not the record. Sessions take it at their next restart.
