@@ -3,3 +3,4 @@
 022-02_combination-beats-best-single.b1_28-day-momentum-over-10-days.d1_momentum-continues-only-upward_1d: confirmed (fit: adapted) [main: 0.00446745; OLS slope t 2.0693; grid cases 284, grid cases with forecast > 0 183]
 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d: confirmed (fit: exact) [main: 0.00245795; OLS t of slope 2.58745; grid cases on trending bars 446, book days 725]
 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d: confirmed (fit: exact) [main: 0.00329405; OLS slope t 3.36884; grid cells 572, grid cells with forecast > 0 379]
+022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d: not observable (fit: exact) [main: -0.00129735; ordinary t of the mean -0.377126; non-overlapping cases across all coins and windows 211, cases BTCUSD 117, cases ETHUSD 43, cases LTCUSD 51, coins with positive mean timing gain 1]
