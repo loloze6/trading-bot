@@ -224,6 +224,7 @@
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | retest_settlement_run | 1h | none comparable | | | | 0.54 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | retest_settlement_run | 1h | none comparable | | | | 0.01 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h | retest_settlement_run | 1h | none comparable | | | | 0.00 |
+| 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound_1h | retest_settlement_run | 1h | none comparable | | | | 0.87 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d2_afternoon-settlement-fall-rebound_1h | retest_settlement_run | 1h | none comparable | | | | 0.18 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h | retest_settlement_run | 1h | none comparable | | | | 0.28 |
 | 017-05_settlement-move-reverses-after_1h | retest_settlement_run | 1h | none comparable | | | | 0.00 |

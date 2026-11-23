@@ -198,6 +198,7 @@ An idea's latest record counts once.
 | 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day_1h | confirmed | retest_settlement_run | 1h | 6 | e845f92b7 | 2026-11-22T23:43:25 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | confirmed | retest_settlement_run | 1h | 19 | fab654662 | 2026-11-23T00:07:04 |
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b2_two-hour-settlement-snapback_1h | confirmed | retest_settlement_run | 1h | 6 | a6c4d44c9 | 2026-11-23T00:23:26 |
+| 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound_1h | confirmed | retest_settlement_run | 1h | 6 | 372739d10 | 2026-11-23T02:46:43 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d2_afternoon-settlement-fall-rebound_1h | confirmed | retest_settlement_run | 1h | 6 | cef28544c | 2026-11-23T01:30:13 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h | confirmed | retest_settlement_run | 1h | 6 | e845f92b7 | 2026-11-22T23:59:09 |
 | 017-05_settlement-move-reverses-after_1h | confirmed | retest_settlement_run | 1h | 6 | 8fb48db89 | 2026-11-22T23:07:31 |
