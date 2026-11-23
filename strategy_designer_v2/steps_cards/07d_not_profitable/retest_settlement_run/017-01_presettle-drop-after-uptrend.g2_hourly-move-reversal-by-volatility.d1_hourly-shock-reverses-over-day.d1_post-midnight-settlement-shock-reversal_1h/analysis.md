@@ -1,0 +1,26 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal_1h
+idea tested: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6964 USD
+---
+## Findings
+- **F1:** The check failed on the falls. The book's deepest fall was -47.0 % over 140 days in w12–w13, against a yearly return of +22.2 % (Calmar 0.47 against the 0.75 required). During that fall the coins barely drifted (-2.8 bp a day) but moved hard (346 bp mean absolute daily move), while the book lost 40 bp a day. In w12 the large signals (|forecast| ≥ 10) lost 0.49 % per case (t -2.04, 410 cases), and w12 alone fell 42 %.
+- **F2:** The effect grows with the size of the post-settlement hour's move. The drift-adjusted 24-hour reversal is +0.16 % (t 2.1, 4820 cases) for |forecast| 0–5, +0.18 % (t 2.5) for 5–10, +0.39 % (t 4.5) for 10–15 and +0.50 % (t 6.7, 4872 cases) for 15–20. The small signals carry little: even holding only the signals with |forecast| ≥ 10, at full weight, lifts a simulated book's Calmar from 0.26 to 0.61, with the deepest fall going from -75 % to -63 % and Sharpe from 0.60 to 0.93.
+- **F3:** The reversal is stronger when the 01:00 hour moved the same way as the coin's prior 23 hours, so that the shock extends the side that was already crowded. In that case the large signals earn +0.57 % per case (t 6.8, 3867) and the small ones +0.33 % (t 4.1). When the hour runs against the prior 23 hours, the large signals earn +0.35 % (t 4.5) and the small ones +0.02 % (t 0.37, 4822 cases). Graded the same way, the quintile where the 24-hour move ran most in the shock's direction earns +0.78 % (t 7.2, 3380).
+- **F4:** The crowded-run condition is not an effect of its own. Fading the 24-hour move at 13:00 UTC, a clock hour with no settlement, earns nothing at any size (every quintile between -0.18 % and +0.02 %, t between -1.98 and +0.19, about 3400 cases each). Fading the 13:00 one-hour move earns between -0.14 % and +0.10 % in every cell (|t| ≤ 1.3). So the gain belongs to the settlement hour, as the brief's theory of crowded-side funding flow says.
+- **F5:** The reversal is larger when the coin's 24-hour volatility is high against its 30-day volatility. Large signals earn +0.61 % (t 4.4, 1702) in the top third of that ratio against +0.24 % (t 2.6, 2224) in the bottom third. The same high-volatility condition at 13:00 earns only +0.10 % (t 0.7) for large moves, so it is not an effect alone. It also raises the spread per case (std 5.7 % against 4.4 %), so it does not cut the falls by itself.
+- **F6:** The book's losses come on the coins' big days. Its worst tenth of days lost 3.16 % with a mean absolute coin move of 6.6 %, against 1.4 % on middle days. The mean worst excursion inside a 24-hour case is -2.6 %, about eight times the +0.33 % mean case.
+- **F7:** Holding longer does not help. Over 48 hours the large signals' reversal falls to +0.25 % (from +0.39 % at 24 hours) and the small ones' to +0.01 %.
+- **F8:** The book trades at 1.65 trades a day and is in a position on 98 % of days, though its signal comes once a day. Its small signals still get a mean |allocation| of 0.25, against 0.77 for large ones. With a trade cost of 0.19 %, the small signals' +0.16–0.18 % reversal per case does not cover the cost.
+
+## Ideas
+- `017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run` (from F3, F4, F2, F1): When the coin's return in the first hour after the 00:00 UTC funding settlement runs the same way as its return over the previous 23 hours, the larger that hour's return relative to its 24-hour volatility, the more the coin's return over the next 24 hours runs the opposite way.
+- `017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d2_convex-post-settlement-shock-reversal` (from F2, F8, F1, F6): The larger a coin's 1-hour return in the first hour after the 00:00 UTC funding settlement relative to its 24-hour volatility, the more its return over the next 24 hours runs the opposite way, and the reversal grows faster than the move itself, so that moves of several usual hourly moves reverse far more per unit of move than small ones.
+- `017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility` (from F5, F4, F2): The larger a coin's 1-hour return in the first hour after the 00:00 UTC funding settlement relative to its 24-hour volatility, the more its return over the next 24 hours runs the opposite way, and more so the higher its 24-hour volatility stands against its 30-day volatility.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

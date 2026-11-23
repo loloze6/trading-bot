@@ -27,21 +27,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound | plan | inconclusive (+1.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.b1_settlement-fall-rebound-uptrend, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.b2_uptrend-two-hour-dip-rebound; 7.g: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.g1_volatile-regime-daily-fall-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b1_settlement-fall-rebound-more-coins.g2_calm-regime-daily-move-continuation | 1.21 | 17.5 |
 | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal | 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls | plan | inconclusive (+0.51) | not profitable enough (failed: Calmar) | - | 7.b: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal.b1_hourly-fall-reversal-in-turbulence; 7.g: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal.g1_day-long-fall-reversal, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_buy-sharp-volatile-hourly-falls.b2_extreme-hourly-fall-reversal.g2_volatile-week-day-reversal | 1.02 | 9.3 |
 | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound | 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound | plan | confirmed (+3.81) | not profitable enough (failed: Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound.d1_only-deepest-two-hour-falls-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound.d2_deep-fall-two-day-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound.d3_deep-fall-rebound-volatile-markets; 7.g: 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound.g1_volatile-day-fall-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound.g2_volatility-burst-fall-rebound, 017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.d1_strong-settlement-fall-day-rebound.b2_deep-two-hour-fall-rebound.g3_volatile-day-rise-giveback | 1.03 | 8.9 |
+| 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day | plan | confirmed (+8.86) | not profitable enough (failed: Calmar) | - | 7.d: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d1_settlement-shock-extending-crowded-run, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d2_convex-post-settlement-shock-reversal, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.d3_settlement-reversal-in-raised-volatility; 7.g: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.g1_weekend-post-settlement-shock-reversal, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.g2_high-volatility-hourly-shock-reversal, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.g3_quiet-market-hourly-breakout-continuation, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day.d1_post-midnight-settlement-shock-reversal.g4_second-day-giveback-after-settlement-fade | 1.34 | 10.7 |
 
 ## Consumption
-23 ideas, 25.80 USD, 256.9 minutes in all.
+24 ideas, 27.14 USD, 267.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.92 | 12.2 |
-| step4_backtest | 0.00 | 148.5 |
-| step5_verdict | 3.83 | 14.5 |
-| step6_check | 0.00 | 4.6 |
-| chart_files | 0.00 | 2.4 |
-| similarity_check | 0.00 | 2.3 |
+| step3_plan | 2.00 | 12.7 |
+| step4_backtest | 0.00 | 153.9 |
+| step5_verdict | 3.99 | 15.3 |
+| step6_check | 0.00 | 4.7 |
+| chart_files | 0.00 | 2.5 |
+| similarity_check | 0.00 | 2.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 2.78 | 9.5 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.g | 10.01 | 36.4 |
-| step7_7.d | 7.26 | 26.4 |
+| step7_7.g | 10.43 | 37.9 |
+| step7_7.d | 7.95 | 28.6 |
