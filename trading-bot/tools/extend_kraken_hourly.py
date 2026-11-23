@@ -30,6 +30,8 @@ TRADES = "https://api.kraken.com/0/public/Trades?pair={}&since={}&count=1000"
 HEADERS = {"User-Agent": "curl/8.5.0"}           # the asset host refuses Python's default client name
 PAIR = {"BTC": "XBT", "DOGE": "XDG"}             # Kraken's own names; the others use the usual ticker
 UTC = dt.timezone.utc
+PAUSE = 1.2          # seconds between two trades calls: under Kraken's public limit of about one call a second
+MAX_LIMITED = 5      # rate-limit answers in a row (waits 30 s, doubling to 10 min) before the coin is given up
 
 
 def get(url, headers=None, tries=8):
@@ -97,13 +99,18 @@ def archive_bars(zf, coin):
 
 def trade_bars(coin, start, end, log):
     """{hour start: (o, h, l, c, volume, trades)} from Kraken's public trades in [start, end) (unix s)."""
-    bars, since, calls, last_id = {}, int(start * 1e9), 0, -1   # a page repeats the previous page's last trade: by id
+    bars, since, calls, last_id, limited = {}, int(start * 1e9), 0, -1, 0   # a page repeats the previous page's last trade: by id
     while True:
         ans = json.loads(get(TRADES.format(PAIR.get(coin, coin) + "USD", since))); calls += 1
         if ans["error"]:
             if any("Too many" in e or "Rate limit" in e for e in ans["error"]):
-                time.sleep(5); continue
+                limited += 1
+                if limited > MAX_LIMITED:
+                    raise RuntimeError(f"{coin}: Kraken's rate limit {limited} times in a row: stopped")
+                wait = min(600, 30 * 2 ** (limited - 1))
+                log(f"  {coin}: Kraken's rate limit ({ans['error']}); waiting {wait} s"); time.sleep(wait); continue
             raise RuntimeError(f"{coin}: {ans['error']}")
+        limited = 0
         trades = next(v for k, v in ans["result"].items() if k != "last")
         for p, v, t, *_rest in trades:
             tid = int(_rest[-1])
@@ -119,7 +126,7 @@ def trade_bars(coin, start, end, log):
         since = nxt
         if calls % 500 == 0:
             log(f"  {coin}: {calls} calls, up to {dt.datetime.fromtimestamp(trades[-1][2], UTC):%Y-%m-%d %H:%M}")
-        time.sleep(0.5)
+        time.sleep(PAUSE)
     return {h: tuple(b) for h, b in bars.items()}, calls
 
 
