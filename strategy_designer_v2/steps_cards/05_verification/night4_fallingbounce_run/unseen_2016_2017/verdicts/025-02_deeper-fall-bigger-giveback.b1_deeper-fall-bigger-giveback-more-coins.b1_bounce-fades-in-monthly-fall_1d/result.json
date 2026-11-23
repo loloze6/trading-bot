@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of position x (next-day return minus coin's mean daily return) over mean_reversion cases",
+    "value": -0.014368374499614018,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.8282945260149053
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast with next-day drift-adjusted return > 0",
+    "value": -0.9654278473759442,
+    "passed": false
+  },
+  "counts": {
+    "cases": 4
+  },
+  "decided_by": "Only 4 cases over all coins and windows, fewer than the plan's minimum of 30.",
+  "reading": "Situation check uses active bars where r90 (close/close 90 bars earlier within the window), r30 (recorded fall30 raw value, else from prices) and the jump (1-day return over the 20-day std of daily returns, accepted if >= 2 with the std either including or excluding today) can be computed, side short; cases are regime == mean_reversion bars with nonzero forecast and a next close in the same window, the drift is the coin's pooled mean daily return over all its windows, the correlation is Pearson between forecast and drift-adjusted next-day return, and the plan's 'fewer than 30 cases' minimum gives 'not observable'."
+}
