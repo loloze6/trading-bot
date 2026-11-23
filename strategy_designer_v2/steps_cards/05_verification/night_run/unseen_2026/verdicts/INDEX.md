@@ -1,0 +1,1 @@
+011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: inconclusive (fit: adapted) [main: -0.00250386; ordinary t of the mean (n=296) -0.926298; cases with forecast >= 5 296, high-volatility half cases 48, low-volatility half cases 49]
