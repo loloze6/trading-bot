@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9993527508090615,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of (excess 3-bar return x forecast/10) over Sunday cases",
+    "value": 4.1206643770148546,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.1206643770148546
+    },
+    "threshold": "t >= 2 over at least 100 cases (confirm, with slope > 0); t <= -2 over at least 100 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 3-bar return on forecast > 0",
+    "value": 0.0016163669886858866,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1493
+  },
+  "decided_by": "Confirm: t >= 2 over at least 100 cases and the slope of excess return on forecast is above 0.",
+  "reading": "A Sunday bar is one whose UTC start timestamp is a Sunday (its next bar is a Monday); the coin's mean 3-bar return is pooled over non-overlapping 3-bar stretches of all its windows; cases whose 3-bar return would leave the window are dropped; the minimum of 100 cases gives 'not observable' when unmet."
+}

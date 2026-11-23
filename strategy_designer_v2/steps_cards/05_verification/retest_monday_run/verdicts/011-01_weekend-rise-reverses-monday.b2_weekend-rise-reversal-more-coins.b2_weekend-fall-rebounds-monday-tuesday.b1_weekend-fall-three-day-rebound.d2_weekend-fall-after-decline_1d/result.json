@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9993293091884641,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-day return after Sunday bars with forecast > 0",
+    "value": 0.012718030779826346,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.843491291666932
+    },
+    "threshold": "t >= 2 with slope > 0 (confirm), t <= -2 (reject), on at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 3-day return on forecast",
+    "value": 0.0013716932787212694,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1427
+  },
+  "decided_by": "Mean excess 3-day return positive with t >= 2 on at least 100 cases and a positive slope.",
+  "reading": "A Sunday bar is one whose next calendar day is a Monday (UTC), a case needs close[t+3] in the same window, and the coin's mean 3-day return is taken on the non-overlapping grid 0, 3, 6, ... of all its windows pooled; fewer than 100 cases is reported as not observable."
+}

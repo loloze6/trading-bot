@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d2_volatility-graded-weekend-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.467632,
+  "findings": {
+    "F1": "On Sunday bars, the weekend splits into two opposite effects. In a joint regression over 4325 Sunday cases, Saturday's vol-scaled move carries on into Monday\u2013Tuesday (beta +0.216, t 5.97; into Monday alone +0.135, t 5.55). Sunday's own move reverses (beta \u22120.078, t \u22122.39; Monday alone \u22120.071, t \u22123.23). That is why the Saturday+Sunday return predicts continuation (slope +0.053, t 2.09) while the Sunday return alone predicts reversal (\u22120.092, t \u22122.82).",
+    "F2": "Sunday's reversal is a market-wide move in time, not a difference between coins on the same date. Measured per date, sign(Sunday move) \u00d7 the next days' vol-scaled return is \u22120.111 for one day (t \u22122.51), \u22120.178 for two days (t \u22122.85) and \u22120.224 for three days (t \u22122.72), over about 340 dates. The per-date cross-coin slope has the opposite sign (+0.060, t 1.46). For the next day, only 3 of 19 coins have a continuation slope.",
+    "F3": "Sunday's reversal is not graded by the size of the move. The signed 2-day reversal, in units of 20-day volatility, is 0.080, 0.247, 0.245 and 0.058 from the smallest to the largest quartile of |Sunday move| (t 1.42, 3.96, 4.90, 0.99), so the largest moves reverse least.",
+    "F4": "The volatility-ratio grading behind the confirmed idea is not monotone. The signed 2-day reversal is 0.159, 0.044, 0.065 and 0.240 from the lowest to the highest quartile of s20/s60 (t 1.74, 0.62, 0.94, 3.52, about 650 cases each).",
+    "F5": "Low weekend volume does not deepen Sunday's reversal, against the brief. The signed reversal is 0.159, 0.236, 0.134 and 0.102 from the lowest to the highest quartile of Sunday volume against its 20-day mean (t 3.16, 3.97, 2.36, 1.69).",
+    "F6": "The reversal is fading over time. The signed Sunday-to-Tuesday reversal by year is 0.282, 0.173, 0.395 and 0.165 in 2018\u20132021, then 0.048, 0.084, 0.186 and 0.120 in 2022\u20132025. The Sunday-to-Monday reversal turns positive in 2025 (+0.047).",
+    "F7": "Friday's move carries on into Saturday, graded by volume and size, but much of it is common to all coins on the same date. The signed next-day return rises with Friday volume quartile (0.009, 0.023, 0.050, 0.138; top quartile t 3.55) and with |Friday move| quartile (top quartile 0.177, t 4.74). 16 of 19 coins have a positive slope, yet the per-date cross-coin slope has t 1.27 for one day and 2.64 for three days.",
+    "F8": "The book earns almost all its gain on Mondays and Tuesdays: mean daily return 0.00174 on Monday and 0.00075 on Tuesday, against \u22120.00035 on Sunday, the day it pays to enter, and about 0.0000\u20130.0001 on the other days."
+  },
+  "ideas": [
+    {
+      "idea": "At Sunday's close, a coin's Saturday return continues in the same direction over the next 2 days (Monday and Tuesday), and the continuation is larger the larger Saturday's return is relative to the coin's 20-day daily volatility.",
+      "consequence": "A trader holding the Sunday-close reversal bet would be leaning against a Saturday move that tends to keep going, and could trade with Saturday's move instead, sized by its vol-scaled size.",
+      "name": "Saturday move continues early-week",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's Friday return continues in the same direction over the next day (Saturday), and the continuation is larger the higher Friday's volume is relative to the coin's 20-day average volume.",
+      "consequence": "A trader would follow a heavy-volume Friday move into Saturday rather than fade it, and would refuse to fade such Friday moves.",
+      "name": "High-volume Friday move continues",
+      "from": "F7",
+      "refs": [
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d2_volatility-graded-weekend-reversal.g1_saturday-move-continues-early-week",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d2_volatility-graded-weekend-reversal.g2_high-volume-friday-move-continues"
+  ],
+  "no_ideas": null
+}
