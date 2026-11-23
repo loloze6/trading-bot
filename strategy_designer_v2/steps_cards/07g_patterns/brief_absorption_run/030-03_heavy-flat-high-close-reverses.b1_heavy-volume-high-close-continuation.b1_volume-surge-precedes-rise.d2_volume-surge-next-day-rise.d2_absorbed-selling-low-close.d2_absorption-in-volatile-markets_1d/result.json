@@ -1,0 +1,65 @@
+{
+  "line": "7.g",
+  "backtest": "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d2_absorption-in-volatile-markets_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38792649999999995,
+  "findings": {
+    "F1": "On regime-active bars (20-day volatility at or above its 60-day mean), the next-day move beyond the coin's mean rises steadily with how low the close sits in the range: from \u22120.39 % (t \u22122.84, 1582 bars) for closes nearest the high to +0.87 % (t 6.11, 1486 bars) for closes nearest the low. On inactive bars no quintile reaches |t| 1.2. The idea's whole effect sits in its lowest-close fifth, at a per-case move about 4.5 times the 0.19 % cost of a trade.",
+    "F2": "The low-close effect needs the day itself to be large. In the lowest-close quintile, the next-day t is 6.28 when the day's range is in the widest tercile against its prior 20-day average, against \u22120.06 and \u22121.59 for the other terciles. It is 5.24 in the heaviest-volume tercile against 0.62 and \u22120.34, and 5.40 in the largest open-to-close tercile against \u22120.23 and \u22120.47.",
+    "F3": "In the highest 20-day-volatility tercile, the next-day move falls with the day's own return. The weakest-day quintile is followed by +1.05 % (t 4.01) and the second by +0.79 % (t 3.13), the middle and fourth by \u22120.54 % (t \u22122.15) and \u22120.65 % (t \u22122.79). In the lowest-volatility tercile no such ordering appears (the weakest quintile is +0.11 %, t 0.41).",
+    "F4": "Inside the book's positions, the gain sits only in the largest forecasts. The top forecast bin earns +0.45 % next day (t 4.10, 3008 bars), while the three lower bins lose \u22120.28 %, \u22120.16 % and \u22120.29 % (t \u22122.10, \u22121.18, \u22122.13, about 1500 bars each). The book's best decile of days (+2.71 %) follows a coin day of \u22122.33 % on average, and its worst decile (\u22122.40 %) comes on coin days of \u22125.53 %.",
+    "F5": "On inactive (calmer) bars, a close nearest the low is followed over the next 3 days by \u22120.88 % beyond the coin's mean (t \u22122.78, 642 non-overlapping cases). Closes in the second-highest fifth are followed by +0.69 % (t 2.29). This is the opposite of the reversal seen in the volatile regime, though it is modest given how many angles were looked at.",
+    "F6": "Weekdays differ: Friday's next-day move is +0.30 % (t 3.76) and Wednesday's \u22120.30 % (t \u22122.70), across about 2480 bars each. Weekday is not a graded situation, so this finding supports no idea here."
+  },
+  "ideas": [
+    {
+      "idea": "The wider a coin's day range against its own prior 20-day average range, the more the coin rises over the next day, the lower the day's close sits within that range.",
+      "consequence": "A trader buys only low closes on unusually wide days, where the move per case is several times the cost of a trade, and refuses low closes on ordinary-range days.",
+      "name": "wide-range low-close rebound",
+      "from": "F2, F1, F4",
+      "refs": [
+        "F2",
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "While a coin's 20-day volatility is high against its own history, the larger the coin's fall over a day, the more it rises over the next day, and the larger that volatility, the larger the rebound.",
+      "consequence": "In volatile stretches a trader buys after the coin's sharpest down days and stays out after flat or rising days, which are followed by falls.",
+      "name": "volatile-regime one-day reversal",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "While a coin's 20-day volatility is high against its own history, the closer the day's close sits to its high, the more the coin falls over the next day.",
+      "consequence": "A trader takes the short side, or refuses a long, after volatile-regime days that close near their high.",
+      "name": "volatile high-close next-day fall",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    },
+    {
+      "idea": "While a coin's 20-day volatility is low against its own history, the lower the day's close sits within its high-low range, the more the coin falls over the next 3 days.",
+      "consequence": "In calm stretches a trader reads a low close as continued weakness and avoids buying it, the opposite of the volatile-regime trade.",
+      "name": "calm-regime low-close continuation",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d2_absorption-in-volatile-markets.g1_wide-range-low-close-rebound",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d2_absorption-in-volatile-markets.g2_volatile-regime-one-day-reversal",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d2_absorption-in-volatile-markets.g3_volatile-high-close-next-day-fall",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d2_absorption-in-volatile-markets.g4_calm-regime-low-close-continuation"
+  ],
+  "no_ideas": null
+}

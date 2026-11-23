@@ -1,24 +1,36 @@
 # Function card: ideas_similarities_check (orchestration, 2026-11-21; named by the operator)
 
 ## Business objective, one question
-Is a book that pays a new source of profit, or one we already have?
+Is a book that pays a new source of profit, or one we already have? And is a real idea whose book does not pay a profit we already earn, or a variation (operator, 2026-11-22)?
 
 **Establish, for every paying book (step 5 confirmed, step 6 profitable enough), how much of its gains and losses the
 books we already have account for, which of them is its nearest relative, who of the two acts first, and what it earns
 that they do not, so that a profit already found is not counted again as a discovery** (operator, 2026-11-21; topic 41).
+**And the same for every confirmed book whose book does not pay, against the paying books, so that the real ideas that
+differ from what we earn stay visible; for a repair (line 7.d), also against the idea it repairs, so that a repair that
+drifted to another effect shows** (operator, 2026-11-22; topic 45: the idea's verdict had been forgotten, and 7.d's
+ideas drifted to momentum).
 Why: on night 3, 19 ideas paid from five different briefs; checked against their own trend condition alone, the 7
 checked added 0 to 0.15 of Sharpe or less (`runs/NIGHT3_RUN.md`). Tomorrow, books will be combined in one live bot: two
 books that make money on the same bars are one bet taken twice.
 
 ## Input
-- One paying book: its backtest record (`04_backtest/<run>/backtests/<id>/`, with each window's `bars.csv.gz`) and its
+- One paying or confirmed book: its backtest record (`04_backtest/<run>/backtests/<id>/`, with each window's `bars.csv.gz`, or
+  its committed `chart_bars.csv.gz` when the bars are not on this machine) and its
   step 5 and step 6 results (`05_verification/<run>/verdicts/<id>/result.json`, `06_profitability/<run>/checks/<id>/result.json`).
-- The register of paying books (below): the books already there.
+- The register (below): the paying and confirmed books already there.
 
 ## Output
-- The book added to the register: its bar returns (one small file) and its line.
-- Its comparison with every book of the register and with holding its coins: `<id>.json` and `<id>.md`, one line in the
-  register's `COMPARISONS.md`.
+- The book added to the register: its bar returns (one small file; committed for a paying book, local for a confirmed one) and its line, with its kind.
+- Its comparison with every paying book of the register (and, for a repair, with its parent) and with holding its coins:
+  `<id>.json` and `<id>.md`, one line in the register's `COMPARISONS.md` (its paying books, then its confirmed books from
+  the least explained).
+- **The similarity matrix of the paying books** (operator, 2026-11-22; `../../common/measures.md`), rewritten with every
+  summary: `register/MATRIX.md` (the numbered books, then one row and one column per book, the share explained in
+  hundredths, "-" under one year in common; similar books together, so families show as blocks) and
+  `register/matrix.csv` (one line per ordered pair: book, other, comparison timeframe, share explained, direction, who
+  leads), for code. Business meaning: which paying books are one bet and which are different, the map for combining
+  books in one bot (topic 44).
 
 ## What a comparison is
 **The new book's returns set against another paying book's, period by period, on the comparison timeframe and the window
@@ -72,9 +84,13 @@ The bar returns are committed (about 1.3 MB per hourly book, 7 significant digit
 new session must find the register whole.
 
 ## Who calls it, and when
-- **Open (topic 41, to be decided with the operator):** whether `run_idea` calls it, after the unseen test, for an idea
-  step 5 confirmed and step 6 found profitable enough, and who reads it besides the operator. Until then it is called
-  by hand.
+- **`run_idea`** (operator, 2026-11-22; topic 41), after step 6 and the chart files, for every idea step 5 confirmed, its
+  book paying or not: the book added and compared (code only, no model call). `select_next` reads the register to order
+  the next ideas (the parent's difference). A failure is recorded in the run's journal and the run goes on.
+- **Parallel sessions** each add their run's books on their own branch. When their branches are merged, `books.json`,
+  `INDEX.md` and `COMPARISONS.md` conflict: `books.json` is resolved as the union of both sides' rows (keys are unique,
+  `<run>__<id>`), then `--all` compares every book again and rewrites `INDEX.md` and `COMPARISONS.md`, so a book added on
+  one branch is compared with those added on the other.
 - **The operator** (or the designer, on the operator's go), with `--all`, to compare every book again (after the
   register is first filled, or a book is rerun).
 

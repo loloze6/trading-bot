@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -328,14 +328,17 @@ def main():
     (d / "ideas").mkdir(exist_ok=True)
     names = []
     tested = {f: (re.search(rf"^{f}:\s*(.+)$", idea_text, re.M) or [None, ""])[1].strip() for f in ("Idea", "Consequence")}
-    for i, g in enumerate(ideas or [], 1):
+    # the run's other analyses by this line: numbering goes on after their ideas of the same parent (topic 46)
+    others = [f.stem for f in out_dir.glob("*/ideas/*.md") if f.parent.parent != d and f.name != "INDEX.md"]
+    start = first_child_number(h.get('idea', rid), letter, others)
+    for i, g in enumerate(ideas or [], start):
         if "same-idea-on" in g:
             g["idea"], g["consequence"], g["data"] = tested["Idea"], tested["Consequence"], g["same-idea-on"]
             g.setdefault("name", "same idea on other data")
         mk = dict(market)
         for k, v in re.findall(r"(instruments|bar|period)\s*:\s*([^;]+)", g.get("data", "")):
             mk[k] = v.strip()
-        iid = f"{h.get('idea', rid)}.{letter}{i}_{slug(g.get('name') or g['idea'])}"
+        iid = child_id(h.get('idea', rid), letter, i, slug(g.get('name') or g['idea']))   # topic 46
         why = "".join(f"\n- {r}: {findings[r]}" for r in g["refs"])
         body = ("---\n" + f"brief: {h.get('brief', '')}\nsource-idea: {h.get('idea', '')}\nline: {line['id']} {line['name']}\n"
                 f"backtest: {rid}\n" + "".join(f"{k}: {v}\n" for k, v in mk.items()) + "---\n"

@@ -28,7 +28,7 @@ tested in the run, and not a duplicate.**
 ## The score
 In the words of `../../common/idea_created_from.md`.
 
-**score = record of the line that wrote the idea / (1 + the idea's generation)**
+**score = record of the line that wrote the idea / (1 + the idea's generation)**; **priority = score x w** after a brief's ideas (below)
 
 | Part | What it is | Why |
 |---|---|---|
@@ -41,7 +41,36 @@ once before the workflow goes deep on one of them. Why: with the score alone, a 
 record) against 0.15 to 0.33 for the lines' children, so one lineage took 26 of 30 turns in night_run and 28 of 33 in
 night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled).
 
+**Real ideas unlike what we earn next (operator, 2026-11-22; topic 45).** After a brief's own ideas, the order has two
+more groups, each ranked by **priority = score x w**:
+- **w, the parent's difference** = 1 - the share of the parent's book explained by its nearest paying book (the
+  similarity register, `../ideas_similarities_check/`; `../../common/measures.md`), when the idea was written from a
+  confirmed idea (step 5) that is in the register; **0.5, no evidence, otherwise** (as a line with no record has 0.5).
+- **Group 2:** ideas written from a confirmed idea more different from the paying books than no evidence (w > 0.5): real
+  ideas unlike what we earn.
+- **Group 3:** the others; an idea written from a confirmed idea we already earn (w < 0.5) comes after the unproven ones.
+
+Why: the research rediscovered momentum (topic 45: 33 of 35 paying books in one family; real ideas unrelated to every
+paying book left untested). Three orders compared on every named run, the first 10 candidates after a brief's ideas
+(270 places), against the old score:
+
+| Order | From a confirmed idea | ... unlike what we earn (w > 0.5) | ... we already earn (w < 0.5) | Mean w |
+|---|---|---|---|---|
+| old: score | 46 | 27 | 14 | 0.52 |
+| A: every confirmed parent first, then score x w | 249 | 173 | 30 | 0.64 |
+| B: one priority, score x w | 100 | 92 | 4 | 0.60 |
+| **C, kept: the confirmed parents unlike what we earn first, then score x w** | **190** | **185** | **2** | **0.67** |
+
+A put first every confirmed parent, those we already earn too; B let unproven ideas at w 0.5 pass the slightly different
+real ones; C keeps the real ideas unlike what we earn first and puts those we already earn after the unproven ones, with
+no line but the neutral 0.5.
+
 **Ties:** the lower number first (the order in which the brief or the line wrote them).
+
+**An idea whose plan's files cannot be written is not offered** (2026-11-23, night 5; topic 46): the longest file name its test
+writes over the 255-byte limit: step 3's config (`<id>_<bar>_config.json`) or the similarity register's returns
+(`<run>__<id>_<bar>.csv.gz`). Step 3, or the register after step 6, would fail on it ("File name too long"), the idea
+marked failed after its model calls. Its status says so in the ranking. Until topic 46 shortens the ids.
 
 **Why a success is a book that pays, not a confirmation (operator, 2026-11-19; `topics/30_why-hourly-ideas-rarely-pay.md`).**
 The goal is an idea that is real and pays. On hourly bars a small effect is confirmed easily (a short horizon's random

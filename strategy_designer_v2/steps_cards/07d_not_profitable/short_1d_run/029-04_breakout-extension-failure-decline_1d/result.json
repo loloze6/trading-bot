@@ -1,0 +1,33 @@
+{
+  "line": "7.d",
+  "backtest": "029-04_breakout-extension-failure-decline_1d",
+  "step5": "rejected",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34113910000000003,
+  "findings": {
+    "F1": "Failed breakouts were followed by rises, not falls: over 605 cases, the 5-day move after the signal was +0.19 % above the coin's drift (t 0.44), and +0.77 % in total. A short therefore lost about four times the 0.19 % cost of a trade on average, and the book's mean daily return was -0.028 % (Sharpe -0.49, against a required mean of at least 0.05 %).",
+    "F2": "The grading runs against the idea: a larger peak excursion above the old high brought a larger 5-day rise (slope +0.0022 of return per percent of excursion, t 2.53, 605 cases). The top excursion quintile (median 10.3 %) rose +1.02 % above drift, against +0.03 % for the bottom quintile (median 1.4 %).",
+    "F3": "The day right after the signal rose on average (+0.40 %, t 2.25, 605 cases), so the short entered just before a bounce.",
+    "F4": "The rise was strongest when the coin was already deep below its 60-day high. In the deepest quartile (median -22 %), the move was +1.81 % above drift (t 2.01, 128 cases), against about -0.1 % to -0.3 % in the other three quartiles. Neither the coin's 60-day return (slope t 0.34) nor its 20-day return (slope t 1.78) turned the sign negative in any quartile.",
+    "F5": "Only breakouts made on thin volume failed into a decline. When the breakout day's volume was in the lowest quartile against its 20-day average (median 0.63\u00d7), the coin fell 1.45 % below drift over 5 days (t -1.91, 125 cases), about 7.6 times the cost of a trade. The higher-volume quartiles rose +1.50 %, -0.30 % and +1.78 % (slope of the move on volume ratio +0.0094, t 1.89, 500 cases).",
+    "F6": "The short worked only in some years. The move was -2.97 % below drift in 2018 (t -1.85, 40 cases) and -2.25 % in 2019 (t -1.96, 65 cases), but +2.76 % above it in 2020 (t 2.97, 97 cases). No window carried the book: its mean daily return was negative in 11 of 24 windows."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its prior 20-day high, reaches further above it within the next 3 days, and then closes back below the old high, the coin falls over the next 5 days, only when the breakout day's volume was low against its 20-day average volume, and the lower that volume ratio was, the larger the fall.",
+      "consequence": "Short failed breakouts whose breakout day traded thinly, and refuse those whose breakout day traded heavily, because heavy-volume breakouts that slip back below the old high tend to recover.",
+      "name": "thin-volume breakout failure decline",
+      "from": "F5, F1, F2",
+      "refs": [
+        "F5",
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline"
+  ],
+  "no_ideas": null
+}

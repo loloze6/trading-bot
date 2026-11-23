@@ -1,0 +1,2 @@
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_weekend-reversal-in-rising-volatility_1d: not profitable enough [Sharpe -0.5102; Sharpe minus holding's Sharpe -0.5766; Calmar -0.6837]
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b1_turbulent-weekend-fall-rebound_1d: not profitable enough [Sharpe -0.2281; Sharpe minus holding's Sharpe -0.2945; Calmar -0.2396]

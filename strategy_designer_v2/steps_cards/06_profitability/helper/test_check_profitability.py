@@ -20,7 +20,8 @@ def write_record(root, books, closes, trades_per_window=5, forced_last=True):
             d = root / coin / f"w{k}"
             d.mkdir(parents=True)
             ts = pd.date_range(f"2001-0{k}-01", periods=len(b), freq="D")
-            pd.DataFrame({"timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"), "close": c, "postRebalance_total_value": b}).to_csv(
+            pd.DataFrame({"timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"), "close": c, "postRebalance_total_value": b,
+                          "postRebalance_current_allocation": 1.0}).to_csv(
                 d / "bars.csv.gz", index=False, compression="gzip")
             exits = [ts[i].isoformat() for i in range(1, 1 + trades_per_window)]
             if forced_last:
@@ -99,10 +100,44 @@ def test_trades_are_counted_per_day_on_any_bar_size(tmp_path):
         d.mkdir(parents=True)
         ts = pd.date_range(f"2001-0{k}-01", periods=240, freq="h")
         v = np.linspace(1.0, 1.1, 240)
-        pd.DataFrame({"timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"), "close": v, "postRebalance_total_value": v}).to_csv(
+        pd.DataFrame({"timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"), "close": v, "postRebalance_total_value": v,
+                      "postRebalance_current_allocation": 1.0}).to_csv(
             d / "bars.csv.gz", index=False, compression="gzip")
         with gzip.open(d / "trades.json.gz", "wt") as g:
             json.dump([{"exit_time": ts[i].isoformat()} for i in (5, 50, 100, 150, 200)] + [{"exit_time": ts[-1].isoformat()}], g)
     rows, facts = m.check(tmp_path, RULE)
     v = {x["measure"]: x["value"] for x in rows}
     assert v["trade_frequency_min"] == pytest.approx(10 / 20) and facts["bars"] == 480
+
+
+def test_the_shown_values_follow_their_definitions_and_change_no_status(tmp_path):
+    """Daily standard deviation: of all the daily returns (ddof 1). Yearly return: the chained curve compounded to a year.
+    Neither enters the rule."""
+    rng = np.random.default_rng(4)
+    books = {c: [1000 * np.cumprod(1 + 0.001 + rng.normal(0, 0.01, 90)) for _ in range(3)] for c in ("AAA", "BBB")}
+    closes = {c: [100 * np.cumprod(1 + rng.normal(0, 0.03, 90)) for _ in range(3)] for c in ("AAA", "BBB")}
+    write_record(tmp_path / "rec", books, closes)
+    rows, facts = m.check(tmp_path / "rec", RULE)
+    r, _, _ = independent(books, closes)
+    assert facts["daily_standard_deviation"] == pytest.approx(np.std(r, ddof=1))
+    assert facts["annualised_return"] == pytest.approx(np.prod(1 + r) ** (365 / len(r)) - 1)
+    assert {x["measure"] for x in rows} == {k for k, _, _ in m.MEASURES}     # still the six measures, nothing added to the rule
+
+
+def test_the_mean_daily_return_counts_only_the_days_in_a_position(tmp_path):
+    """Operator, 2026-11-22: a book in a position on half its days and flat on the others is judged on the days it is on."""
+    alloc = np.r_[np.ones(60), np.zeros(60)]                        # in a position for 60 days, then flat
+    r = np.r_[np.full(60, 0.002), np.zeros(60)]                     # +0.2 % a day while in, 0 while flat
+    value = 1000 * np.cumprod(1 + np.r_[0, r[:-1]])
+    for k in (1, 2):                                                # two windows alike
+        d = tmp_path / "rec" / "AAA" / f"w{k}"; d.mkdir(parents=True)
+        ts = pd.date_range(f"2001-0{k}-01", periods=120, freq="D") if k == 1 else pd.date_range("2001-06-01", periods=120, freq="D")
+        pd.DataFrame({"timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"), "close": 100.0, "postRebalance_total_value": value,
+                      "postRebalance_current_allocation": alloc}).to_csv(d / "bars.csv.gz", index=False, compression="gzip")
+        with gzip.open(d / "trades.json.gz", "wt") as g:
+            json.dump([{"exit_time": ts[60].isoformat()}], g)
+    rows, facts = m.check(tmp_path / "rec", RULE)
+    v = {x["measure"]: x["value"] for x in rows}
+    daily_all = np.diff(value) / value[:-1]
+    assert facts["share_of_days_in_a_position"] == pytest.approx(61 / 120)     # 60 days held, and the day it sold
+    assert v["avg_daily_return_min"] == pytest.approx(daily_all.mean() / (61 / 120))

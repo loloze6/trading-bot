@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-hour excess return on forecast",
+    "value": 1.8335674972142746e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 12.276144535689292
+    },
+    "threshold": "t >= 2 (with the check) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus market-rise gain",
+    "value": 0.0018543585524712395,
+    "passed": true
+  },
+  "counts": {
+    "bars of nonzero forecast": 414151,
+    "bars in the regression": 416645
+  },
+  "decided_by": "The slope's t is at least 2 and the book's mean daily return before costs minus its market gain is above 0.",
+  "reading": "The slope is an OLS with intercept and classic standard errors over all bars (including zero forecasts), the book before costs is rebuilt from the held allocation times the next-hour return compounded per UTC day and averaged over coins, its market gain is the day's mean allocation times the coin's mean daily return, and the plan's 10,000-bar minimum is applied as 'not observable'."
+}

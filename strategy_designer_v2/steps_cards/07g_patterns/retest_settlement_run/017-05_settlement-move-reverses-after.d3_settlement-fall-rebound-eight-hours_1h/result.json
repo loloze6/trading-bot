@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44580089999999994,
+  "findings": {
+    "F1": "Over the whole day, the coin's 24-hour fall is followed by a 24-hour rebound that is graded and far larger than a trade's cost. Measured on 14942 non-overlapping cases, the slope of the next-24h excess return on the 24h move (scaled by the usual 24h move) has t \u22127.78. The bottom quintile of 24h moves (2991 cases) is followed by an excess return of +0.54 % (t 5.1) and a total move of +0.68 %. That total is 3.6 times the 0.19 % cost of a trade, against 0.9 times for the tested 8-hour settlement case.",
+    "F2": "The 24h-fall rebound holds in every coin and across time. The per-coin slope t runs from \u22122.60 (LTC) to \u22124.47 (XMR). The slope is negative in 7 of 8 years, from t \u22120.84 (2022) to \u22125.66 (2021), and positive only in 2024 (t +0.93). Averaged across coins at each time, its signal profit still has t 3.90 over 6691 independent times.",
+    "F3": "The rebound is concentrated where volatility is high. By the coin's 30-day hourly volatility tercile, the slope t is +0.24, \u22122.66 and \u22129.28. In the high-volatility tercile, the bottom quintile of 24h moves (933 cases) is followed by an excess of +1.45 % (t 5.7) and a total of +1.59 %, about 8 times the cost.",
+    "F4": "Recent volatility against usual volatility sharpens the rebound further. When the 3-day hourly volatility over the 30-day one is in its top tercile, the slope t is \u22127.67 and the bottom-quintile excess is +1.11 %. In the bottom tercile the slope t is +0.33 and the bottom-quintile excess is \u22120.03 %.",
+    "F5": "A 24h rise is also followed by a 24h move below drift, so the effect runs on both sides. The top quintile of 24h moves gives an excess of \u22120.33 % (t \u22123.5) and a total of \u22120.19 %. In high volatility it gives an excess of \u22120.73 % (t \u22123.3) and a total of \u22120.59 %. The middle quintiles sit between \u22120.06 % and \u22120.17 %, so the grading is clear only at the extremes.",
+    "F6": "The tested 2h-fall rebound is not specific to the funding settlements, which meets the brief's third rejection condition. The slope t of the 8h excess return on the 2h fall is 4.97 at close hour 00 and \u22120.13 at close hour 16. At the non-settlement close hours 02, 12 and 13 it is larger, at 10.73, 8.96 and 8.71.",
+    "F7": "The book's trades carry little after costs. The 16492 trades entered on the bar closing at 16:00 average +0.27 % gross and +0.17 % net. The 9007 trades closing at 00:00 average +0.32 % gross and +0.22 % net. Book Sharpe is 0.15 and the yearly return +0.8 %.",
+    "F8": "Hour-of-day drift alone does not stand out against the 24 hours tested, so it supports no idea here. The strongest hour is the 8h excess after the 15:00 close, at +0.12 % with clustered t 2.80. Its t by year changes sign, from \u22120.30 (2018) to +3.47 (2020) to \u22120.25 (2022)."
+  },
+  "ideas": [
+    {
+      "idea": "The return over the next 24 hours runs opposite to a fall over the coin's past 24 hours: the larger that 24-hour fall against the coin's usual 24-hour move, the larger the rise that follows. The rise is larger still when the coin's hourly volatility over the past 3 days is high against its past 30 days.",
+      "consequence": "A trader buys a coin after a large 24-hour fall, most of all in a volatile spell, and holds for a day, where the rebound is several times a trade's cost; after a small fall, or in a calm spell, the trader refuses the trade.",
+      "name": "daily fall rebound in volatility",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The return over the next 24 hours runs opposite to a rise over the coin's past 24 hours: the larger that 24-hour rise against the coin's usual 24-hour move, the larger the fall that follows. The fall is larger when the coin's past 30-day hourly volatility is high.",
+      "consequence": "A trader sells or shorts a coin after an unusually large 24-hour run-up in a volatile market for one day, and refuses to chase such a run-up with a long.",
+      "name": "daily rise gives back",
+      "from": "F5, F3, F2",
+      "refs": [
+        "F5",
+        "F3",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.g1_daily-fall-rebound-in-volatility",
+    "017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours.g2_daily-rise-gives-back"
+  ],
+  "no_ideas": null
+}

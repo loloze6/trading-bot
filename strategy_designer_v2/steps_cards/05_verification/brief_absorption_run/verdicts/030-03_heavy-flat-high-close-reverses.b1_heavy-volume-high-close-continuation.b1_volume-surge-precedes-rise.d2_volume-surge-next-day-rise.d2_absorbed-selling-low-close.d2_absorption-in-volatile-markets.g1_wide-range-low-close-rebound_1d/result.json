@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess next-day return on post_pipeline_value",
+    "value": 0.00036322446776918633,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 6.153473582383062
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return, top fifth of forecasts minus other bars (Welch t) [Welch t = 5.026]",
+    "value": 0.004948608377586377,
+    "passed": true
+  },
+  "counts": {
+    "bars with a next-day return": 17380,
+    "bars in the top fifth": 3476
+  },
+  "decided_by": "Slope positive with t >= 2 and top-fifth mean excess return larger with Welch t >= 2 (confirm rule).",
+  "reading": "Top fifth taken as pooled bars with post_pipeline_value at or above its pooled 80th percentile; each coin's mean daily return is the mean of its next-bar returns over all its windows; the supporting check passes when the top-fifth mean is larger with Welch t >= 2, as the confirm rule needs."
+}

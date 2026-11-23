@@ -1,0 +1,46 @@
+{
+  "line": "7.e",
+  "backtest": "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d1_nearness-power-reversal-long-side.b1_nearness-reversal-all-coins.b1_nearness-reversal-after-rises_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.5104048,
+  "findings": {
+    "F1": "The book's mean daily gain of 0.049 % splits into 0.019 % from the coins' own rise and 0.030 % of timing (t 1.88 over 2922 days), and that timing comes from the 30-day-return gate rather than from the idea's forecast. On the 5-day grid, cases with a positive 30-day return end +0.44 % above the coin's drift and the others \u22120.44 % (t 2.81, about 2440 cases each). Inside the gate, the forecast's slope has t 0.89. With the 30-day return in the same regression, the forecast's t is 0.83 and the 30-day return's t is 2.14.",
+    "F2": "The tested idea's own reading is weak where the book trades. Rising-coin cases with a positive forecast gain +0.91 % over 5 days, against +0.03 % for rising-coin cases with a zero forecast (t 1.89, 1127 vs 1317 cases). At 10 days the t is 0.68 and at 20 days \u22120.15.",
+    "F3": "Momentum scaled by the coin's own volatility predicts the next 5 days, and the shorter the lookback the stronger it is. On 2415 non-overlapping cases, the slope in strength units per unit of scaled return is 0.085 with t 4.46 for the 14-day return, 0.063 with t 3.54 for the 30-day return and 0.028 with t 1.61 for the 60-day return.",
+    "F4": "The 30-day return is graded at 5 days. By quintile of the 30-day return, the 5-day excess move runs \u22120.38 %, \u22120.87 %, \u22120.57 %, +0.40 %, +1.09 % (729 cases each; slope t 3.23, n 3645). At 20 days the slope's t is only 0.36. The rising-minus-falling split has t 2.49 at 1 day, 2.81 at 5 days, 2.13 at 10 days and 0.31 at 20 days.",
+    "F5": "The effect is broad and not carried by a few trades. Rising-coin minus falling-coin 5-day excess is positive in 14 of 16 coins, for example XRP +3.13 %, SOL +3.11 %, ETH +2.47 % and BTC +1.04 %. The top 10 of 1798 trades carry 13.5 % of the summed trade result, the win rate is 55 %, and BTC carries the largest share of the gain at 21 %.",
+    "F6": "The gain depends on the market state. Rising coins' strength was \u22120.23 in 2022 and \u22120.65 in 2018, the two years the book's timing lost (\u22121.77 and \u22120.44 summed). It was +0.42 in 2020, +0.40 in 2021 and +0.12 in 2024, years when timing earned +1.66, +2.39 and +3.56.",
+    "F7": "Inside rising coins, the move peaks at moderate 30-day returns. By quartile of the 30-day return, the 5-day excess is \u22120.71 %, +0.57 %, +1.57 %, then +0.54 % in the top quartile (mean 30-day return 65 %). The same shape shows at 10 days: \u22120.83 %, +1.18 %, +1.94 %, +0.71 %."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 14-day return relative to its own daily volatility over the past 30 days, the higher its return over the next 5 days.",
+      "consequence": "A trader should lean long in proportion to a coin's volatility-scaled two-week rise and refuse longs in coins whose recent two weeks were weak relative to their volatility.",
+      "name": "short volatility-scaled momentum",
+      "from": "F1, F3, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 30-day return, the higher its return over the next 5 days, with the effect fading by 20 days.",
+      "consequence": "A trader should hold rising coins for about a week, in proportion to their month's rise, rather than for weeks.",
+      "name": "monthly return predicts week",
+      "from": "F1, F4, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d1_nearness-power-reversal-long-side.b1_nearness-reversal-all-coins.b1_nearness-reversal-after-rises.e1_short-volatility-scaled-momentum",
+    "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d1_nearness-power-reversal-long-side.b1_nearness-reversal-all-coins.b1_nearness-reversal-after-rises.e2_monthly-return-predicts-week"
+  ],
+  "no_ideas": null
+}

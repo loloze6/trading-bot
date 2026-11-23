@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9999223361292326,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 5-bar return on forecast>0 grid cells",
+    "value": 0.005751876543921766,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 1.9655433833491505
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and timing gain > 0); reject if mean < 0 with t <= -2; at least 100 cells"
+  },
+  "supporting_check": {
+    "name": "book mean daily timing gain > 0",
+    "value": 0.00025888526340929843,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with forecast > 0": 2490
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), which the plan rules inconclusive.",
+  "reading": "The normal drift is the coin's mean return over the non-overlapping 5-bar grid of all its windows. The t of the weighted mean uses the weighted (sandwich) standard error with an n/(n-1) correction. The plan's 'below 100 cells' rule is reported as not observable. The market gain on day t uses the allocation held after day t-1's trade times the coin's mean daily close return over all windows."
+}

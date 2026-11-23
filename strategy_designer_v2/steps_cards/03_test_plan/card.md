@@ -86,6 +86,13 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
    - Without it: nothing to run.
    - **Sizing, added by code, the same for every plan** (operator, 2026-11-13; the engine's `strategies.sizing` block, as in v1): the forecast stays the signal, capped at ±20; the allocation is forecast ÷ 10 × target ÷ the coin's realised volatility over the last 60 days (in bars of the bar size), capped at 2×, the target being a 2 % daily move (0.382 a year). A more volatile coin gets a smaller position. The model does not write it.
    - **The holding period, added by code, the same rule for every plan** (operator, 2026-11-19 and 20; `../common/forecast.md`, point 7): `strategies.min_holding_bars` = the plan's horizon in bars (field 10), so each bet the forecast makes is held for the idea's horizon; never written by the model (`helper/make_test_plan.py`, `add_holding`). Checked on 2026-11-21: in all 214 plans with it, it equals the horizon.
+   - **The brief's side, enforced by code** (operator, 2026-11-22; topic 45, `../runs/SHORT_1D_RUN.md`): for a brief
+     whose `side` is "short only", every strategy component's transforms end with `clip` `max` 0; for "long only", `clip`
+     `min` 0; the combined forecast is a weighted mean of the components, so it keeps the side. Any other side adds
+     nothing. The plan says so in a `Side:` line. Why: on brief 029 (short only) the 13 books sold only because their
+     components happened never to go below 0 before being negated; only 2 of 13 configs capped the forecast. Proof: a
+     short-only plan of `short_1d_run` rerun with the cap gives the same 288 summary files, and the bot's validator
+     accepts the capped configs.
 10. **Criterion** (plan only): horizon (bars: the idea's horizon in real time divided by the bar size; operator, 2026-11-15), main measure, supporting check (or none), confirm (with its number), reject, inconclusive (with the minimum count). The supporting check is part of the decision: confirmed needs the main measure to confirm and the check to pass (operator, 2026-11-14).
    - For: the result that confirms or rejects, fixed before the data.
    - Used by: step 5.

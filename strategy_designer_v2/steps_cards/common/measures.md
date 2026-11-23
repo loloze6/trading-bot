@@ -17,6 +17,16 @@ the book the same way). A plan's own words come first; these apply wherever it s
   averaged like the book; the rest of the book's mean gain is timing (being in when the coin rises more than usual).
 - Sharpe: the mean of the daily returns over their standard deviation, times the square root of 365. Calmar: the yearly
   return of the daily returns chained in window order, over the deepest fall of that chain.
+- A book's **mean daily return on days in a position** (operator, 2026-11-22; step 6): the mean of its daily returns divided by
+  the share of (coin, day) pairs in which the coin held a position (held into one of the day's bars, or traded on it).
+  A day out of the market earns 0, so this is the mean over the days in a position. Calmar stays on calendar days.
+- **An informative measure** (operator, 2026-11-22): a measure a step computes and shows, that enters no rule and decides
+  nothing; it is there to be read. A step's card lists its informative measures apart from the measures its rule uses.
+- The book's daily standard deviation: the standard deviation (ddof 1) of its daily returns, the one inside the
+  Sharpe: how much the book's value typically moves in a day. The yearly return: the daily returns chained in window
+  order (Calmar's chain), compounded to one year: (value at the end / value at the start) ^ (365 / days) - 1; with the
+  number of years it covers, the total over the period follows (operator, 2026-11-22: per year, so books tested over
+  different lengths compare).
 - A t-statistic not named: for a difference between two groups, Welch's two-sample t; for one group's mean, the
   ordinary t of the mean (mean / (standard deviation / square root of n)).
 - A difference is "A minus B" in the order named, so its sign keeps its meaning. A mean "weighted by" X is
@@ -48,6 +58,11 @@ the book the same way). A plan's own words come first; these apply wherever it s
   already have, or is its profit new?
   - A **paying book**: a backtest record whose idea step 5 confirmed and step 6 found profitable enough, in any run. An
     idea run again in another run counts once (its latest record). Paying books are compared only with each other.
+  - A **confirmed book** (operator, 2026-11-22; topic 45): a record whose idea step 5 confirmed and step 6 found not
+    profitable enough: a real idea that is not yet a profit. It is in the register too, compared with the paying books
+    ("is this real effect one we already earn, or a variation?"), and a repair (`idea_created_from.md`) also with the
+    idea it repairs (did it keep that idea?). A paying book is still compared with paying books only. A confirmed book's
+    returns are rebuilt from its record when needed (its chart file if its bars are not on the machine), not committed.
   - A book's **bar returns**: its value after the last bar of each period against the one before, read from the
     record's value series (`postRebalance_total_value`), inside each window, all its coins together (each period, the
     mean of the coins' returns), as the book is built above for daily returns. Holding its coins: the same from their
@@ -64,7 +79,12 @@ the book the same way). A plan's own words come first; these apply wherever it s
     **direction** is the sign of the slope (+ moves with, − against: the same effect either way).
   - **What is left**: in that reading, the new book's mean return per period that the other book does not explain (the
     intercept), and its t.
-  - The **nearest relative**: the paying book with the largest share explained. The new book is also compared with
+  - The **nearest relative**: the paying book with the largest share explained (for a confirmed book too).
+  - The **similarity matrix of the paying books** (operator, 2026-11-22; topic 44): for every pair of paying books, the
+    share explained, its direction and who leads, as above (the share is the same read from either book). The books
+    are ordered so that similar books sit together (from the first book, always next the book most explained by the
+    last one placed): a block of high shares is a family. It is the map of what the research earns, and the input for
+    combining books in one bot later (topic 44). The new book is also compared with
     holding its own coins, the same way.
   - Example: a 1h book and a 1d book compared on days; the 1h book's day returns match the 1d book's next day (share
     explained 0.8, the new book one period ahead, direction +, what is left 0.01 % a day with t 0.9): the same profit,

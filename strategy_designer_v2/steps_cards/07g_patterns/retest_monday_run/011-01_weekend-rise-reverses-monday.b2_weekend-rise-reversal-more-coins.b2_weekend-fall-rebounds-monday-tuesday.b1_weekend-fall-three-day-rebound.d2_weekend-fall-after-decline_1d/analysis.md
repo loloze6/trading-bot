@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline_1d
+idea tested: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.7472 USD
+---
+## Findings
+- **F1:** The weekend-fall rebound grows steeply with the coin's own 20-day volatility. For Sunday falls after a 20-day fall, the excess 3-day return is +0.47 % (t 0.99, n 388) in the calmest third, +1.29 % (t 3.14, n 384) in the middle third and +3.25 % (t 5.75, n 396) in the most volatile third, and the strength rises from 0.05 to 0.15 to 0.37 of a usual move.
+- **F2:** Inside each volatility third, the deeper half of the Sunday falls rebounds more. In the calmest third it gives +0.87 % against +0.18 %, in the middle third +2.27 % against +0.32 %, and in the most volatile third +4.60 % (t 4.66, n 195) against +1.86 %. The deepest fifth of Sunday falls gives +3.89 % (t 4.79) and the deepest fifth of 20-day falls +4.22 % (t 5.56).
+- **F3:** Much of the confirmed effect is one move shared by all coins in the same week, not each coin's own. Averaged by week, Sunday fall-after-fall cases give +0.17 % (t 0.29, 210 weeks), and with each week's cross-coin mean removed they give about zero (−0.14 %, +0.09 %, +0.30 % by volatility third). Only the most volatile third keeps a week-clustered +2.19 % (t 2.04, 97 weeks), so the step-5 t of 4.84 on 1427 cases counts roughly 200 independent weeks.
+- **F4:** The rebound is tied to Sunday. The same 1-day fall after a 20-day fall gives an excess 3-day return of +1.68 % (t 5.91) on Sunday, against −0.76 % (t −3.27) on Friday, −0.50 % on Saturday and between −0.48 % and +0.39 % on Monday to Thursday. In the most volatile third the gap is +3.25 % on Sunday against −0.48 % to +1.50 % on the other days.
+- **F5:** Sunday rises, which the long-only idea ignores, are followed by underperformance. Pooled, the excess 3-day return after a Sunday rise is −1.02 % (t −5.62, n 2528). It is −1.04 % and −1.11 % in the two top fifths of the volatility-scaled Sunday return, and about −1.0 % in every volatility third. The Sunday slope of strength on the volatility-scaled 1-day return is −0.095 (t −6.15), against −0.012 to +0.034 on the other weekdays. Averaged by week this falls to −0.81 % (t −1.96, 344 weeks), and with each week's mean removed to −0.08 % (t −0.59).
+- **F6:** Weekend volume, the brief's second prediction, does not grade the rebound. Sunday fall-after-fall cases give +1.41 %, +1.80 % and +1.73 % from the thinnest to the heaviest third of weekend volume against the coin's last 28 days.
+- **F7:** The effect is uneven over the years. The Sunday fall-after-fall excess return was −0.36 % in 2018 and −0.24 % in 2019, then +7.16 % (t 4.32) in 2021, +1.99 % in 2022 and +2.19 % in 2024, but only +0.48 % in 2023 and +0.62 % in 2025. This fits the Calmar failure (0.57).
+- **F8:** Trades entered on the lowest quarter of the forecast earn +0.47 % net on average (median +0.86 %, 532 trades), against +2.12 %, +2.81 % and +2.84 % for the other three quarters. The book's worst 2 % of coin-days fall mostly on Mondays (68 of 129), and its best mostly on Mondays and Wednesdays (49 and 60 of 129).
+
+## Ideas
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.g1_volatile-weekend-fall-rebound` (from F1, F2, F4, F3): A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 3 days. The rise is larger the larger the weekend fall and the higher the coin's 20-day volatility of daily returns, so the same weekend fall in a volatile coin is followed by a much larger rebound.
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.g2_weekend-rise-fades-early-week` (from F5, F4): A coin that rose over the weekend (its Saturday-to-Sunday close-to-close return, measured against its 20-day volatility of daily returns) falls behind its normal drift over the next 3 days. The larger the weekend rise, the larger the shortfall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

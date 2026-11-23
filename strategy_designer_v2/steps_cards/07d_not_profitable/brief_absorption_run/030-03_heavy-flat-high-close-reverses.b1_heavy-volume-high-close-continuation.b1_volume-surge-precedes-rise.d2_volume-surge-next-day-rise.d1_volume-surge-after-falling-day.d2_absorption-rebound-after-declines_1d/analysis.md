@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d2_absorption-rebound-after-declines_1d
+idea tested: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d2_absorption-rebound-after-declines
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4136 USD
+---
+## Findings
+- **F1:** The book's gain comes from the heavy-volume part of the signal; on low-volume falls the edge is smaller than one trade's cost. Held bars after a volume ratio of 1.5–2.5 earned +0.64 % per bar (466 bars), and after a ratio above 2.5 they earned +0.94 % (194 bars). After a ratio of 1 or less they earned only +0.11 % (2210 bars, more than half of all held bars), and from 1 to 1.5 they earned +0.06 % (700 bars). One trade costs 0.19 %.
+- **F2:** Restricting the same one-day long to signal days with volume above 1.5 times its 20-day average fixes both failing measures in a simple simulation. The deepest fall drops from −47.8 % to −11.6 %, Calmar rises from 0.23 to 0.69, and Sharpe rises from 0.52 to 0.71, while the position is held on 3.6 % of coin-days instead of 24.6 %. Raising the forecast threshold instead (forecast ≥ 15) leaves Calmar at 0.21 and the fall at −45.6 %, because the forecast's size is driven by the fall and the prior decline, not by volume.
+- **F3:** The prior 20-day decline adds little to the rebound, so it does not grade the effect; volume does. On down days with volume above 3 times the 20-day average, the next-day excess return is +1.75 % without the signal (83 cases) and +1.45 % with it (125 cases). For ratios 2–3 it is +0.39 % without against +0.79 % with. On down days in a 20-day decline with volume above 1.5 times average, the excess is +0.98 % with or without the signal (110 / 622 cases). On ratios of 1 or less, the signal's excess is −0.10 % (1765 cases).
+- **F4:** The book's deepest falls came in rising markets. In w16 the coins rose +0.54 on average, while the book lost −0.18 and fell −44 %. It bought low-volume dips: the mean volume ratio on the days it held was 1.0–1.1, and five of the six coins lost between −0.13 and −0.30. In w24, with coins up +0.45, the book lost −0.05.
+- **F5:** The effect lasts one day and then reverses. On all 4246 signal bars (overlapping counts), the mean excess return is +0.15 % at 1 day (t 1.88) but −0.02 % at 2 days, −0.18 % at 3 days, −0.38 % at 5 days (t −2.21) and −0.45 % at 10 days. The book's trades average 1.9 days, and their mean is −0.14 % gross and −0.24 % net.
+- **F6:** Where the close sits in the day's range does not grade the rebound consistently among heavy-volume signal days. With a ratio of 1.5–2.5, the excess is +0.61 % for a close in the low third (262 cases), +1.27 % for the middle third (144) and +0.67 % for the high third (34). With a ratio above 2.5, it is +2.36 % for the low third (93) and +1.23 % for the high third (28).
+
+## Ideas
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d2_absorption-rebound-after-declines.d1_volume-graded-absorption-rebound` (from F1, F2, F4): The heavier a coin's volume on a down day relative to its own prior 20-day average, the more the coin rises over the next day, and the rebound grows steeply with that volume multiple, so that a fall on volume several times its usual level is followed by a far larger next-day rise than an ordinary-volume fall in the same 20-day decline.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d2_absorption-rebound-after-declines.d2_heavy-volume-fall-next-day-rebound` (from F1, F3, F4): The heavier a coin's volume on a down day relative to its own prior 20-day average, and the larger that day's fall, the more the coin rises over the next day, whether or not it had already fallen over the previous 20 days.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d2_absorption-rebound-after-declines.d3_one-day-absorption-rebound-fades` (from F5, F1): The heavier a coin's volume on a down day relative to its own prior 20-day average, the more the coin rises over the next day, and this rise is given back over the following days, the coin ending lower over the next five days the heavier the volume of the falling day after a 20-day decline.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

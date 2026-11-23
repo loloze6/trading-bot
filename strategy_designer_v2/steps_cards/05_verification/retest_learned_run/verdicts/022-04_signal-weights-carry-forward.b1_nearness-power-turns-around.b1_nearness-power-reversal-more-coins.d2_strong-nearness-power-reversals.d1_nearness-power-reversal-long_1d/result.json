@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9999213465471134,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next 5-bar return minus coin drift on forecast",
+    "value": 0.0005832734174472832,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.4769002170191494
+    },
+    "threshold": "confirm if slope > 0 with t >= 2 (and supporting check passes); reject if slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next 5-bar return minus coin drift on grid bars with forecast > 0, above 0",
+    "value": 0.0037299388227072785,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 2457,
+    "grid bars in regression": 4732
+  },
+  "decided_by": "Confirm: the slope is positive with t >= 2 and the mean excess 5-bar return on forecast > 0 grid bars is above 0.",
+  "reading": "The coin's normal drift is its mean next 5-bar return over all its grid bars (positions 0, 5, 10, ... of each window) pooled across windows, the slope is an OLS with intercept over all grid bars with a forecast, and the plan's 'at least 100 grid bars with forecast > 0' minimum is applied as a minimum count giving 'not observable'."
+}

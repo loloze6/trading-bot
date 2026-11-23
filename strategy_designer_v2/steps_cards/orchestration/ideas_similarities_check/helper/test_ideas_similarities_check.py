@@ -91,3 +91,87 @@ def test_book_returns_per_period_inside_each_window(tmp_path):
 def test_a_record_that_is_not_paying_is_refused(tmp_path):
     with pytest.raises(SystemExit):
         pb.add(tmp_path / "x_1d", "nope_run", root=tmp_path / "register", steps=tmp_path)
+
+
+def test_the_chart_file_stands_in_for_bars_that_are_not_on_this_machine(tmp_path):
+    ts = pd.date_range("2024-01-01", periods=72, freq="h", tz="UTC")
+    value = 1000 * np.cumprod(1 + rng.normal(0, 0.002, 72)); close = 100 * np.cumprod(1 + rng.normal(0, 0.01, 72))
+    a = tmp_path / "a_1h"; write_window(a / "BTCUSD" / "w1", ts, close, value)
+    b = tmp_path / "b_1h"; b.mkdir()
+    pd.DataFrame({"coin": "BTCUSD", "window": "w1", "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S+00:00"), "close": close,
+                  "forecast": 0.0, "position": 0.0, "value": value}).to_csv(b / "chart_bars.csv.gz", index=False)
+    pd.testing.assert_frame_equal(br.book_returns(a, "4h"), br.book_returns(b, "4h"))
+
+
+def make_book(steps, run, rid, s5, s6, value):
+    rec = steps / "04_backtest" / run / "backtests" / rid
+    ts = pd.date_range("2020-01-01", periods=len(value), freq="D", tz="UTC")
+    write_window(rec / "BTCUSD" / "w1", ts, np.full(len(value), 100.0), value)
+    (rec / "BTCUSD" / "w1" / "manifest.json").write_text(json.dumps({"git_sha": "abc", "created_utc": "2026-11-22T00:00:00"}))
+    for step, folder, st in ((5, "05_verification/{}/verdicts", s5), (6, "06_profitability/{}/checks", s6)):
+        d = steps / folder.format(run) / rid; d.mkdir(parents=True, exist_ok=True)
+        (d / "result.json").write_text(json.dumps({"status": st}))
+    return rec
+
+
+def test_confirmed_books_are_compared_with_the_paying_books_and_a_repair_with_its_parent(tmp_path):
+    """Operator, 2026-11-22: the register holds paying and confirmed books; a book's nearest relative is a paying book; a
+    repair (line 7.d's idea) is also compared with the idea it repairs; a paying book is not compared with confirmed ones."""
+    steps, reg = tmp_path / "steps", tmp_path / "register"
+    n = 500; x, y = rng.normal(0, 0.01, n), rng.normal(0, 0.01, n)
+    curve = lambda r: 1000 * np.cumprod(1 + r)
+    run = "t_run"
+    pb.add(make_book(steps, run, "p-01_pay_1d", "confirmed", "profitable enough", curve(x)), run, root=reg, steps=steps)
+    pb.add(make_book(steps, run, "c-01_real_1d", "confirmed", "not profitable enough", curve(y)), run, root=reg, steps=steps)
+    pb.add(make_book(steps, run, "c-01_real.d1_repair_1d", "confirmed", "not profitable enough", curve(0.9 * y + 0.1 * x)), run, root=reg, steps=steps)
+    with pytest.raises(SystemExit):
+        pb.add(make_book(steps, run, "q-01_unclear_1d", "inconclusive", "not profitable enough", curve(x)), run, root=reg, steps=steps)
+    kinds = {r["id"]: r["kind"] for r in pb.books(reg)}
+    assert kinds == {"p-01_pay_1d": "paying", "c-01_real_1d": "confirmed", "c-01_real.d1_repair_1d": "confirmed"}
+    assert (reg / "returns" / "t_run__p-01_pay_1d.csv.gz").exists() and (reg / "returns" / "confirmed" / "t_run__c-01_real_1d.csv.gz").exists()
+    p = pb.comparison("t_run__p-01_pay_1d", reg)
+    assert [o["other"]["id"] for o in p["others"]] == [] and p["parent"] is None        # paying books compare with paying books only
+    r = pb.comparison("t_run__c-01_real.d1_repair_1d", reg)
+    assert sorted(o["other"]["id"] for o in r["others"]) == ["c-01_real_1d", "p-01_pay_1d"]
+    assert r["nearest_relative"]["other"]["id"] == "p-01_pay_1d"                      # the nearest relative is a paying book
+    assert r["parent"]["other"]["id"] == "c-01_real_1d" and r["parent"]["share_explained"] > 0.9   # it kept its parent's idea
+
+
+def test_the_matrix_holds_every_pair_of_paying_books_with_similar_books_together(tmp_path):
+    """Operator, 2026-11-22 (topic 44): every paying book and its similarity to every other; a family shows as a block."""
+    steps, reg = tmp_path / "steps", tmp_path / "register"
+    n = 500; a, b = rng.normal(0, 0.01, n), rng.normal(0, 0.01, n)
+    curve = lambda r: 1000 * np.cumprod(1 + r)
+    run = "m_run"
+    for rid, r in (("a1_x_1d", a), ("b1_y_1d", b), ("a2_x-copy_1d", a + rng.normal(0, 0.001, n)), ("c1_real_1d", b)):
+        kind = ("confirmed", "not profitable enough") if rid.startswith("c1") else ("confirmed", "profitable enough")
+        pb.add(make_book(steps, run, rid, *kind, curve(r)), run, root=reg, steps=steps)
+    for r in pb.books(reg):
+        pb.write_comparison(r["key"], reg)
+    pb.write_summary(reg)
+    order, cell = pb.matrix(reg)
+    ids = [r["id"] for r in order]
+    assert ids == ["a1_x_1d", "a2_x-copy_1d", "b1_y_1d"]                 # paying books only; the copy next to its original
+    assert cell[("m_run__a1_x_1d", "m_run__a2_x-copy_1d")]["share_explained"] > 0.95
+    text = (reg / "MATRIX.md").read_text(encoding="utf-8"); csv = (reg / "matrix.csv").read_text(encoding="utf-8").splitlines()
+    assert "| **1** | · |" in text and len(csv) == 1 + 3 * 2                   # header and every ordered pair
+
+
+def test_periods_are_utc_seconds_whatever_unit_pandas_stores():
+    """Night 5: pandas 3 stores times in microseconds; the periods must still be seconds (and read back the same)."""
+    t = pd.Series(pd.to_datetime(["2022-01-02 00:00", "2022-01-02 01:00"], utc=True))
+    for unit in ("ns", "us", "s"):
+        s = pb.utc_seconds(t.astype(f"datetime64[{unit}, UTC]"))
+        assert list(s) == [1641081600, 1641085200]
+        assert list(pd.to_datetime(s, unit="s", utc=True)) == list(t)
+
+
+def test_a_repair_finds_its_parent_in_either_id_convention():
+    """Topic 46: a repair written with a short id (lineage code and its own name) finds the same parent book as one
+    written with every ancestor's name; another bar or another run is not its parent."""
+    parent = {"run": "r_run", "bar": "1d", "id": "011-01_weekend.b2_more-coins_1d"}
+    for repair in ("011-01_weekend.b2_more-coins.d1_in-volatility_1d", "011-01.b2.d1_in-volatility_1d"):
+        me = {"run": "r_run", "bar": "1d", "id": repair}
+        assert pb.parent_of(repair) == ("011-01.b2", "1d") and pb.is_parent(parent, me)
+        assert not pb.is_parent(dict(parent, bar="1h"), me) and not pb.is_parent(dict(parent, run="o_run"), me)
+    assert pb.parent_of("011-01.b2.g1_pattern_1d") is None                  # not a repair (line 7.g)

@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5831227999999999,
+  "findings": {
+    "F1": "The book's whole gain comes from its long side. Long bars summed to +2.51 of gain against \u22120.05 for short bars (60,885 and 54,816 bars). Long trades averaged +0.49 % after fees and short trades \u22120.49 % (3,746 trades in all, mean net \u22120.003 %), even though up Sundays did reverse on Monday at the day level (+0.50 %, t 3.21, n 1,113).",
+    "F2": "The reversal on the next day is one-sided across all weekdays. After a day in the coin's lowest decile of its move in usual 30-day daily moves, the next day's excess return was +0.57 % (t 3.78, n 1,440), and +0.28 % (t 2.33) in the second decile. The top decile was followed by \u22120.15 % (t \u22121.14), and the middle deciles were flat to slightly negative.",
+    "F3": "The rebound after down days only appears when the coin's 30-day volatility is high. The graded measure (fall in usual moves \u00d7 next-day excess) was +0.0152 (t 4.35, n 2,336) in the highest volatility tercile, against +0.0010 (t 0.54) and \u22120.0012 (t \u22120.83) in the other two. For the largest falls in that tercile the mean next-day excess was +1.27 %, against \u22120.07 % in the lowest volatility tercile.",
+    "F4": "The signed next-day reversal of all days grew with volatility: \u22120.04 % (t \u22120.68), +0.11 % (t 1.68) and +0.39 % (t 4.52) from the lowest to the highest 30-day volatility tercile, n 4,787 each.",
+    "F5": "By year, the down-day rebound was strong in 2020 (+0.77 %, t 3.50) and 2021 (+0.74 %, t 3.76) and absent elsewhere (from \u22120.18 % to +0.19 %, |t| \u2264 1.5). The signed reversal of all days faded in 2024 (\u22120.02 %, t \u22120.19) and 2025 (\u22120.15 %, t \u22121.37).",
+    "F6": "The hours starting 21:00 and 22:00 UTC carry a persistent positive drift. Hour 21 averaged +0.055 % (t 6.87, n 17,417) and hour 22 +0.044 % (t 5.76), the strongest of all 24 hours. Over the two hours, the excess was positive in all six coins (t 2.61 to 4.04), on every weekday (t 3.0 to 3.6 except Monday, 1.54) and in 7 of 8 years (2022: \u22120.028 %, t \u22121.87).",
+    "F7": "The hours starting 02:00 and 03:00 UTC were negative: hour 3 averaged \u22120.028 % (t \u22123.89) and hour 2 \u22120.018 % (t \u22122.29). The effect was concentrated in 2018 to 2022 (t from \u22121.4 to \u22125.2) and turned positive in 2023 to 2025 (t 1.24, 2.60, 1.46)."
+  },
+  "ideas": [
+    {
+      "idea": "After a coin falls over 24 hours, measured in its usual 30-day daily moves, it rises over the next 24 hours more than its normal drift. The rise is larger the larger the fall and the higher the coin's 30-day hourly volatility, while the coin's 24-hour rises are followed by no comparable fall.",
+      "consequence": "A trader would buy a coin after an unusually deep 24-hour fall in a volatile month, and refuse to sell short after unusual rises.",
+      "name": "volatile-market falls rebound next day",
+      "from": "F2, F3, F4, F1, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's return over the two hours from 21:00 to 23:00 UTC is above its normal hourly drift, and the excess is larger the higher the coin's 30-day hourly volatility.",
+      "consequence": "A trader would hold the coin long through 21:00\u201323:00 UTC, or time purchases before that stretch and sales after it.",
+      "name": "late-evening UTC upward drift",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.g1_volatile-market-falls-rebound-next-day",
+    "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.g2_late-evening-utc-upward-drift"
+  ],
+  "no_ideas": null
+}

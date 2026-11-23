@@ -1,0 +1,19 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.44813278008298757,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "forecast-weighted excess 5-bar return",
+    "value": null,
+    "statistic": null,
+    "threshold": "t >= 2 confirm, t <= -2 reject, over at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active_bars": 482
+  },
+  "decided_by": "Fewer than 90% of active bars are heavy, flat, lower-half-close days with a long forecast: the config's forecast does not bet only long on the plan's situation.",
+  "reading": "The situation is a day with volume >= 2x its prior 20-day mean, body <= 1/3 of range and the close in the lower half of the range (close location < 0), expected side long; bars without 20 prior bars in their window use the recorded regime for the volume rule; cases are bets of both signs, the first bet in each 5-bar grid cell, weighted by the signed forecast at the case bar."
+}

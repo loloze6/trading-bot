@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "030-01_absorption-close-high-rises_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3825543,
+  "findings": {
+    "F1": "On days with volume at least 2x the prior 20-day mean, the close location (from -1 at the low to +1 at the high) predicts the next day's unusual move against itself: the slope is -0.285 of the coin's usual 1-day move per unit of close location, t -4.68, on 1292 non-overlapping cases. It holds on both flat-body days (-0.323, t -2.25, n 341) and wide-body days (-0.276, t -4.12, n 951).",
+    "F2": "This one-day reversal grows with volume. The slope is -0.026 (t -1.51, n 8994) when volume is under its 20-day mean, -0.063 (t -2.25, n 4214) at 1-2x, and -0.285 (t -4.68, n 1292) at 2x or more. Across all days it is -0.066 (t -4.86, n 17379), and it stands out from the roughly 100 slopes and groups examined.",
+    "F3": "On heavy-volume days the reversal fades with the horizon and is gone by 5 days. The slope is -0.235 at 2 days (t -3.00, n 665), -0.188 at 3 days (t -1.89, n 447) and +0.189 at 5 days (t 1.82, n 275). This explains why the 5-day test of continuation found nothing (slope -0.00016, t -0.39, 369 cases).",
+    "F4": "There is no 5-day continuation graded by volume. The close location \u00d7 log(volume ratio) interaction is -0.021 (t -0.44). On flat heavy-volume days alone the 5-day slope is 0.081 (t 0.28, n 66). The 5-day slope on days at 1.5x volume or more changes sign by year: 2018 -0.08, 2022 -0.11, 2020 +0.72 (t 2.13), 2023 +0.26 (t 2.02).",
+    "F5": "The tested book's total move per case is +0.12% against a 0.19% cost per trade. Its 366 long trades averaged +2.56% and its 291 short trades -3.52%, which matches the coins' upward drift rather than any timing. ZEC is the only coin with a positive mean trade (+2.66%, 146 trades).",
+    "F6": "Saturday's unusual daily return is +0.34% (t 4.08, n 2484), but it is negative in 2022 (-0.05%) and 2023 (-0.12%). It is not graded, so it is not carried into an idea."
+  },
+  "ideas": [
+    {
+      "idea": "On a day when a coin's volume is far above its 20-day average, the closer its close sits to the day's high, the more the coin falls over the next 1 to 2 days, and the closer to the low, the more it rises. The effect is larger the heavier that day's volume is relative to its 20-day average.",
+      "consequence": "A close at an extreme of the range on heavy volume is a reason to bet on a short pullback against it over the next day or two, not on continuation.",
+      "name": "heavy-volume close-location reversal",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "Over the next day, a coin moves against where its previous daily close sat in that day's high-low range: the nearer the close was to the high, the lower the next day's return.",
+      "consequence": "A close near the day's high is a reason to refuse a next-day long, and a close near the low a reason to refuse a next-day short.",
+      "name": "next-day close-location fade",
+      "from": "F2",
+      "refs": [
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-01_absorption-close-high-rises.g1_heavy-volume-close-location-reversal",
+    "030-01_absorption-close-high-rises.g2_next-day-close-location-fade"
+  ],
+  "no_ideas": null
+}

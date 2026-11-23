@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9947304418321848,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 48-bar return (%) on forecast",
+    "value": 0.03866178840941029,
+    "statistic": {
+      "name": "t of slope",
+      "value": 2.6057467264578555
+    },
+    "threshold": "confirm: positive with t >= 2; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third volatility slope, Welch t",
+    "value": 0.11627070458563096,
+    "passed": true,
+    "welch_t": 2.4224208084474284
+  },
+  "counts": {
+    "cases across all coins": 2427,
+    "cases in top volatility third": 603,
+    "cases in bottom volatility third": 603
+  },
+  "decided_by": "Confirm rule: the main slope is positive with t >= 2 and the volatility slope difference is positive with t >= 2.",
+  "reading": "Situation = bar starting Sunday 23:00 UTC with forecast sign opposite to the raw scaled Sunday move; drift = coin's mean of non-overlapping 48-bar returns on each window's grid; volatility = std of the 720 one-bar returns ending at the entry close (cases with fewer bars in the window left out of the split); thirds = lowest and highest floor(n/3) cases per coin by volatility, pooled across coins; slopes by OLS with intercept, difference t = diff / sqrt(se_top^2 + se_bottom^2); too few cases gives 'not observable'."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of pooled 10-day excess return on forecast",
+    "value": 2.1763403067043914,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.1763403067043914
+    },
+    "threshold": "confirm if slope t >= 2 and the check passes; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-day return of cases above the in-regime median forecast",
+    "value": 0.009647777360328848,
+    "passed": true
+  },
+  "counts": {
+    "in-regime cases": 820,
+    "cases above the median": 410,
+    "cases at or below the median": 410
+  },
+  "decided_by": "Confirm: the slope t is 2 or more and the above-median cases' mean excess return is above 0.",
+  "reading": "The 20-day return is recomputed from closes inside each window, with the recorded regime used on the first 20 bars of a window where it cannot be computed; the in-regime median is the median forecast over the in-regime cases, 'above' is strictly above it and the other side is at or below it; a case needs its 10-day return inside its window; the plan's minimum counts, when not reached, give 'not observable' as the workflow requires."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast, pooled over coins and windows (1-bar grid)",
+    "value": 0.0003479223115218526,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.986359672765297
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passing; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top fifth of forecast bars minus bottom fifth",
+    "value": 0.006732045791312768,
+    "passed": true
+  },
+  "counts": {
+    "bars with a forecast above 0": 17217,
+    "bars in the regression": 17380,
+    "bars per fifth": 3476
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-minus-bottom fifth difference is above 0.",
+  "reading": "Situation taken as the graded product (high-close)/(high-low) x volume / prior-20-day mean volume being above 0 with a long forecast (raw value recomputed from prices where not recorded); top and bottom fifths are the pooled bars ranked by forecast (stable sort, ties kept in record order), n//5 bars each; the 1000-bar minimum counts bars with forecast > 0 that have a next-day return, and failing it gives 'not observable'."
+}

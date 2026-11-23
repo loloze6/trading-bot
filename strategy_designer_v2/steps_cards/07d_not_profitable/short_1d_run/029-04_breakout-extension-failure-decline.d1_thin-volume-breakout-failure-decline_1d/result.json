@@ -1,0 +1,50 @@
+{
+  "line": "7.d",
+  "backtest": "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.4909323,
+  "findings": {
+    "F1": "The book barely trades and loses on the trades it takes: positions are open on 2.3 % of bars (0.007 trades per day), and its 126 trades average \u22121.19 % net (median \u22122.13 %, 29 % winners), although step 5's 70 cases show an unusual move of +1.75 % per 5 days.",
+    "F2": "Failed 20-day breakouts as a whole carry almost no edge: the short-signed 5-day unusual move after a close back below the old high within 4 bars is +0.53 % (t 0.63, 128 cases), against \u22120.02 % on all other grid bars (3,291 cases).",
+    "F3": "The useful effect lies in how far below the old high the failure closes: shallow failures (close within 2.3 % below the old 20-day high) give +2.09 % (t 1.96, 64 cases), deep ones \u22121.03 % (t \u22120.80, 64 cases). The quartiles run monotonically from +2.19 % (shallowest) to \u22122.35 % (deepest), and the Spearman correlation of closeness with the move is 0.125.",
+    "F4": "The book's trades show the same split: trades entered on deep failures average \u22123.37 % net (37 trades), those entered on shallow failures \u22121.31 % (65 trades).",
+    "F5": "Thin volume adds to the effect only on top of shallowness. Shallow and thin (breakout-day volume below its 20-day mean) gives +6.55 % (t 2.57, 14 cases), shallow and heavy +0.84 % (50 cases), deep and thin \u22121.54 % (14 cases). Volume alone is not monotone: a ratio of 0.7\u20131.0 gives +3.98 % (18 cases), below 0.7 gives \u22120.14 % (10 cases).",
+    "F6": "The trap acts fast and fades. Failures 4\u20136 days after the breakout give \u22120.92 % (115 cases), and widening the failure window to 10 days drops the mean to \u22120.14 % (352 cases). Breakouts that pushed furthest above the old high (more than 6 %) give \u22121.10 % (118 cases).",
+    "F7": "A 10-day high nearly doubles the cases and keeps the shallow effect: 217 failures. Shallow 10-day failures give +1.58 % (t 1.77, 107 cases), deep ones \u22120.48 % (110 cases). Shallow and thin gives +3.28 % (t 1.93, 27 cases).",
+    "F8": "The edge is unevenly spread over time, which is why the book fails with one window left out. Shallow 10-day failures give +2.63 % (t 1.96, 55 cases) in w1\u2013w12 and only +0.47 % (t 0.41, 52 cases) in w13\u2013w24. The book's summed returns hinge on a few windows (w23 +6.9 %, w11 +4.5 %, w3 +4.1 %)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its prior 20-day high, reaches further above it within the next 3 days, and then closes back below the old high, the coin falls over the next 5 days, only while that close sits just under the old high, and the nearer to the old high the failed close and the lower the breakout day's volume against its 20-day average, the larger the fall.",
+      "consequence": "Short failed breakouts that slip only just back under the old high on a thin breakout day, and refuse those that have already dropped well below it, because those tend to bounce.",
+      "name": "shallow thin breakout failure",
+      "from": "F2, F3, F4, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin closes above its prior 10-day high and within the next 3 days closes back just below that old high, the coin falls over the next 5 days, and the closer that close sits to the old high, the larger the fall.",
+      "consequence": "Short the many shallow 10-day breakout failures to trade often enough, and skip failures that have already fallen far below the old high.",
+      "name": "shallow ten-day failure decline",
+      "from": "F1, F3, F7, F8",
+      "refs": [
+        "F1",
+        "F3",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline.d1_shallow-thin-breakout-failure",
+    "029-04_breakout-extension-failure-decline.d1_thin-volume-breakout-failure-decline.d2_shallow-ten-day-failure-decline"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9931662870159453,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (48h return minus normal 48h drift) over weekend bets, before costs",
+    "value": 0.014919277330164234,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.63288593379375
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 463
+  },
+  "decided_by": "The mean position-weighted unusual 48h move is positive with t >= 2 over at least 100 cases.",
+  "reading": "The situation bar is read literally as the bar whose start + 1h is Monday 00:00 UTC (Sunday 23:00 start) with mean volume of its last 48 rows over the mean of the 120 rows before them > 1 and the forecast signed like the 48h close-to-close move; active bars without 168 prior rows in their window cannot be checked and are left out of the agreement; cases are active bars (one per coin and weekend) whose 48-bar return lies inside the window, with drift the mean of non-overlapping 48h returns over all windows of the coin."
+}

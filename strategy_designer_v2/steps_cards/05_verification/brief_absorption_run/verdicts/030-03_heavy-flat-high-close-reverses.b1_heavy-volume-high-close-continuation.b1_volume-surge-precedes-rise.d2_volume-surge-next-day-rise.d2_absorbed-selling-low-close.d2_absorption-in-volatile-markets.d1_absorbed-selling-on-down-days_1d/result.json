@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean timing gain on bars in a position (position x (next-day return - coin mean daily return))",
+    "value": 0.0014009084223602765,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.635589483019484
+    },
+    "threshold": "t >= 2 to confirm (with supporting check), t <= -2 to reject, over at least 300 bars in a position"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third by forecast of next-day return minus coin mean, Welch t > 0",
+    "value": 0.007957199763722892,
+    "passed": true,
+    "welch_t": 5.95146446132222
+  },
+  "counts": {
+    "bars in a position": 8433
+  },
+  "decided_by": "The mean timing gain has t >= 2 over at least 300 bars in a position and the top third beats the bottom third with Welch t > 0.",
+  "reading": "Bars in a position are bars with a non-zero postRebalance_current_allocation and a next close in the same window; the thirds are cut by forecast pooled over all coins and windows (stable sort, equal-size split); the situation check uses close below the prior close within the window with forecast > 0, leaving out each window's first bar."
+}

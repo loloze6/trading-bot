@@ -24,13 +24,17 @@ step before it, and recorded under one run name.**
   code only), for the run viewer, for every backtest: under the committed names for a backtest confirmed by step 5 or
   profitable enough by step 6, under the local names (ignored by git) for any other; one journal line (`chart_files`).
   The rule is steps 5 and 6's results, not a judgment.
+- **The similarity register** (operator, 2026-11-22; topic 41): after the chart files, for an idea step 5 confirmed (its
+  book paying or not), it calls `orchestration/ideas_similarities_check/` (code only): the book added to the register and
+  compared with the paying books, a repair also with the idea it repairs; one journal line (`similarity_check`).
+  `select_next` reads the register for the next idea's order. The rule is step 5's result.
 - **The unseen test** (2026-11-18): after step 7, for an idea step 5 confirmed and step 6 found profitable enough, it
   calls `orchestration/unseen_test/` (code only): the plan unchanged on every unseen period; one journal line
   (`unseen_test`). Step 7 has run before it and never reads its files. The rule is steps 5 and 6's results.
 - **A step that fails stops it** (2026-11-21, night 3): a called step whose helper fails ends the run of the idea, for
   steps 3 to 6, whose outputs the next step reads (an output left on disk by an earlier call is not read as this call's
   answer: step 3 called again for an unblocked refusal failed on the usage limit, and its old refusal was read instead).
-  A step 7 line or the chart files that fail are recorded in the journal and the run goes on. A model call the service
+  A step 7 line, the chart files or the similarity check that fail are recorded in the journal and the run goes on. A model call the service
   refused stops the run of the idea at any step with exit code `SERVICE_REFUSED` (`common/lib.py`), for the loop to
   retry later.
 - **It stops where a step stops.** A plan that is untestable or misses a component ends the run of that idea (the

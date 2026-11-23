@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 0.9615384615384616,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed excess 48-bar return",
+    "value": 0.050051169519422456,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.637003158130213
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and rank correlation > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman of abs(forecast) vs signed excess return",
+    "value": -0.2919018671298307,
+    "passed": false
+  },
+  "counts": {
+    "cases": 48
+  },
+  "decided_by": "Only 48 cases over all coins and windows, below the plan's minimum of 100.",
+  "reading": "The Monday 00:00 case bar is the bar closing at Monday 00:00 UTC, accepted as the bar stamped Sunday 23:00 or Monday 00:00 because the record's timestamp convention may differ, with the situation computed from prices on that bar (48-bar return, 120-bar return ending 48 bars earlier, mean volume of the last 48 bars over bars t-167..t-48), and the coin's mean 48-bar return is taken on the non-overlapping 48-bar grid of all its windows pooled."
+}

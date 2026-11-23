@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-day excess return on forecast (forecast > 0)",
+    "value": 0.00045211335614030667,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 5.433101944430082
+    },
+    "threshold": "slope > 0 with t >= 2 confirms; slope < 0 with t <= -2 rejects; |t| < 2 inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return over top third of positive forecasts > 0",
+    "value": 0.004985066253916483,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 8514,
+    "top-third bars": 2838
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-third mean excess return is above 0.",
+  "reading": "Coin mean daily return is the mean of close[t+1]/close[t]-1 over every bar of all the coin's windows; the slope's t is the ordinary OLS t; the top third is the pooled positive-forecast bars with forecast at or above the pooled 2/3 quantile; the 300-bar minimum counts positive-forecast bars with a next-day return and, as a minimum count, gives 'not observable'."
+}

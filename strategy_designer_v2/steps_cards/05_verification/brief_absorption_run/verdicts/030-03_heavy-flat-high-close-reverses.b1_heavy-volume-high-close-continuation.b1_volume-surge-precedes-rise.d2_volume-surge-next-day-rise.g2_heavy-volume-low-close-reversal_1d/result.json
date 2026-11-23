@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of pooled slope of excess next-day return on forecast (absorb post_pipeline_value)",
+    "value": 6.225241170242805,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 6.225241170242805
+    },
+    "threshold": "t >= 2 (with check difference > 0) confirms, t <= -2 rejects, between is inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope on close location, volume ratio >= 1 minus ratio < 1",
+    "value": 0.007468056698712103,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 2": 11443,
+    "regression bars": 17380,
+    "heavy-volume days (ratio >= 1)": 5506,
+    "light-volume days (ratio < 1)": 8994
+  },
+  "decided_by": "The slope t is >= 2 and the supporting check's difference is > 0.",
+  "reading": "Situation bars are those whose recorded raw absorb value (close-location x volume ratio, recomputed from prices where not recorded) is > 0, with the expected side long; the coin's mean daily return is the mean of all its in-window next-day returns pooled over windows; the supporting check's volume ratio is recomputed inside each window from the prior 20 recorded bars (first 20 bars of each window left out), ordinary OLS slopes are used, and 'bars with forecast > 2' counts the recorded forecast column."
+}

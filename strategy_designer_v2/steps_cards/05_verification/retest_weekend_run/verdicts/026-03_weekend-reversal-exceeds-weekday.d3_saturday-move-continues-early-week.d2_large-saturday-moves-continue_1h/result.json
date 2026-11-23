@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9914390542193233,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (48-bar return - drift)",
+    "value": 0.001091819174193404,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.79594558016939
+    },
+    "threshold": "t >= 2 (with supporting check) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-quartile |forecast| directional excess minus rest",
+    "value": 0.00035042404045525417,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2389,
+    "top quartile cases": 598
+  },
+  "decided_by": "-2 < t < 2.",
+  "reading": "The situation bars are those whose close (timestamp + 1 hour) is Sunday 00:00 UTC, with the expected side the sign of Saturday's raw scaled 24-bar move; the coin's drift is the mean of its non-overlapping 48-bar grid returns pooled over all windows; cases are all such bars with non-zero forecast and a full 48-bar forward return in the window; the top quartile is the ceil(n/4) cases with the largest |forecast| (stable sort) and the rest are all other cases."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9988564894225271,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 2-bar unusual move on forecast",
+    "value": 0.0007375894762867544,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 6.909698655672073
+    },
+    "threshold": "slope > 0 with t >= 2 (and check passing) to confirm; slope < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean unusual move in forecast direction > 0",
+    "value": 0.009560109468810868,
+    "passed": true
+  },
+  "counts": {
+    "Sunday cases": 5169
+  },
+  "decided_by": "The slope is positive with t >= 2 and the forecast-weighted mean unusual move is above 0.",
+  "reading": "Cases are Sunday-stamped bars (UTC weekday 6) with a non-zero forecast and a close two bars later in the same window; the normal 2-bar drift is the coin's mean 2-bar return on the non-overlapping grid (positions 0, 2, 4, ...) of all its windows pooled; the slope is ordinary least squares with an intercept over all coins pooled, with its usual t; the plan's 'fewer than 300 cases' outcome is reported as 'not observable' per the workflow's minimum-count rule; the situation's side is against Sunday's one-bar close-to-close return (the raw component value when the previous close is not in the window)."
+}

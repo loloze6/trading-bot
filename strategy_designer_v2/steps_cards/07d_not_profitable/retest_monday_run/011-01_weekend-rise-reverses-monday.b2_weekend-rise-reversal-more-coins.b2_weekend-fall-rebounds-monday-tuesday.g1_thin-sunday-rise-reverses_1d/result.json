@@ -1,0 +1,58 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5161177,
+  "findings": {
+    "F1": "The book keeps little of the real effect, and its sizing works against it: per case the unusual move in the short's direction is +1.08 % (t 6.95, 2541 cases), but the position's gain over the same 2 days is only +0.33 %, the mean allocation is -0.51, and the size of the short has almost no link to the move that follows (correlation of short size with unusual move -0.02).",
+    "F2": "The vol-target sizing puts the largest shorts on the calmest coins, where the effect is weakest. In the lowest fifth of 20-day volatility the mean allocation is -0.86, the unusual move is +0.40 % (t 1.45, 435 cases) and the position gain is -0.00 %. In the highest fifth the allocation is -0.30 and the unusual move is +1.75 % (t 3.98, 435). The condition alone does not carry the effect: on bars with no signal, on a 2-bar grid, high-volatility bars give the short -0.62 % (2834 bars), against +0.14 % in the calmest fifth (2324).",
+    "F3": "The book's deepest fall, which drives Calmar to 0.30, is -18.7 % over 376 days in w3\u2013w6, while the coins rose +0.16 % a day. The Sunday rises in that stretch reversed half as much (+0.59 % against +1.21 % elsewhere, 541 against 2000 cases), on calmer coins (20-day volatility 0.035 against 0.050) that had risen more over the prior week (7-day return +4.1 % against +2.8 %).",
+    "F4": "A Sunday rise that follows a falling week reverses far more. With the coin's 7-day return in its lowest fifth, the unusual move is +1.81 % (t 5.10, 477 cases) and the position gain +0.65 %. In the highest fifth it is +0.54 % (t 1.23, 477) and the position gain +0.04 %. The condition alone is not the effect: on no-signal bars a short earns -0.34 % in the lowest fifth and -0.79 % in the highest.",
+    "F5": "The worst tenth of cases (by position gain) held larger shorts (allocation -0.83 against -0.48) after stronger 7-day rises (+4.8 % against +2.9 %) and larger Sunday rises (+4.5 % against +3.0 %). The trades that closed on Monday lost -3.79 % before fees (1071 trades), while the 2191 that closed on Tuesday gained +0.98 %.",
+    "F6": "The thinness grading of the tested idea is barely present in the sizes. The unusual move is +1.22 % in the fifth with the thinnest Sunday volume against +1.44 % in the thickest fifth. By size of the Sunday rise in usual one-day moves, it is +1.61 % for the smallest fifth against +0.93 % for the largest. The effect is still present in every year from 2018 to 2025 (+0.20 % to +2.63 %).",
+    "F7": "The book is short only and pays the coins' drift: the drift in the short's direction is -0.29 % per case and holding has the higher Sharpe (the book's Sharpe minus holding's is -0.13). Sunday falls, the other side of the same weekend situation, rebound by +0.54 % unusual over 2 days (t 3.32, 2142 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin whose Sunday close is above its Saturday close falls over the next 2 days, and the higher the coin's volatility over the past 20 days, the larger that fall measured against the coin's normal drift.",
+      "consequence": "A Sunday rise on a turbulent coin is a reason to short it at Sunday's close with conviction, while a Sunday rise on a calm coin is a reason to keep the short small.",
+      "name": "volatile Sunday rise reverses",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "A coin whose Sunday close is above its Saturday close falls over the next 2 days, and the more the coin fell over the 7 days before that Sunday, the larger that fall.",
+      "consequence": "A Sunday bounce in a coin that fell during the week is a reason to sell into it at Sunday's close, and a reason to refuse a long carried into Monday.",
+      "name": "Sunday bounce after weak week",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin whose Sunday close is above its Saturday close falls over the next 2 days, and the smaller the Sunday rise is against the coin's usual one-day move while the coin's 20-day volatility is high, the larger that fall per unit of the rise.",
+      "consequence": "Small Sunday drifts up on turbulent coins are the cleanest reason to short at Sunday's close, while outsized Sunday jumps call for a smaller short.",
+      "name": "small volatile Sunday drift reverses",
+      "from": "F2, F5, F6",
+      "refs": [
+        "F2",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.d1_volatile-sunday-rise-reverses",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.d2_sunday-bounce-after-weak-week",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_thin-sunday-rise-reverses.d3_small-volatile-sunday-drift-reverses"
+  ],
+  "no_ideas": null
+}

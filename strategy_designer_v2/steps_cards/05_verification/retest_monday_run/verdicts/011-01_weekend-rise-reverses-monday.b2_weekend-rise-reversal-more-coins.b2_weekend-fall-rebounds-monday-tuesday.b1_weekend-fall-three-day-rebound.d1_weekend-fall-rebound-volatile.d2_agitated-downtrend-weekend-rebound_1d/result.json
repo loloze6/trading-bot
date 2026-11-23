@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9993234100135318,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 3-day return of Sunday cases (forecast >= 2)",
+    "value": 0.024058909597583774,
+    "statistic": {
+      "name": "t of the forecast-weighted mean",
+      "value": 5.884067163512814
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check; reject: mean < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top half minus bottom half of forecast",
+    "value": 0.01994130883020378,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1144
+  },
+  "decided_by": "The forecast-weighted mean excess 3-day return is positive with t >= 2 and the top-half minus bottom-half difference is above 0.",
+  "reading": "Sunday bars are those whose bar start (UTC) is a Sunday; the 20-day return is close[t]/close[t-20]-1 inside the window (the recorded regime where 20 prior bars are not in the window); the weekend fall is the raw component < 0 (else Sunday's close-to-close return); the weighted t uses the heteroskedasticity-robust standard error sqrt(n/(n-1) * sum(w^2 (x-m)^2)) / sum(w); top and bottom halves are the upper and lower n//2 cases by forecast (stable sort, middle case dropped if n is odd), compared by unweighted means; the plan's fewer-than-100-cases rule is applied as a minimum count (not observable)."
+}

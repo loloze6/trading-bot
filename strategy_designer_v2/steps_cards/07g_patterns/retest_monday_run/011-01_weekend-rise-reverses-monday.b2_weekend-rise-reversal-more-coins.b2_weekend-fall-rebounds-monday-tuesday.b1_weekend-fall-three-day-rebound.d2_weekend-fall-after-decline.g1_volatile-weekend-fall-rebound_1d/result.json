@@ -1,0 +1,33 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.g1_volatile-weekend-fall-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5546633,
+  "findings": {
+    "F1": "The tested rebound is real when pooled but uneven over time. Sunday falls are followed by a 3-day excess of +0.97 % (t 4.67 over 2125 cases, counted per coin and Sunday). Measured per date, no single year reaches |t| 1.4, and the yearly mean ranges from \u22121.98 % in 2018 (29 dates) to +2.39 % in 2021 (36 dates).",
+    "F2": "The years where the rebound failed are the years where the coins fell, and they are where the book lost its Calmar. In 2018, 2022 and 2025 the coins' mean daily return was \u22120.35 %, \u22120.26 % and \u22120.03 %, and the Sunday-fall excess was \u22121.98 %, \u22120.44 % and \u22120.12 %. In 2020, 2021 and 2024, with coin means of +0.47 %, +0.64 % and +0.28 %, it was +1.24 %, +2.39 % and +1.17 %; 2023 is the exception at \u22120.32 % with a +0.32 % coin mean. The book lost \u22120.077 % a day in 2018 and \u22120.069 % a day in 2022, with mean trade returns of \u22120.60 % and +0.11 % (184 and 643 trades), against +2.7 % to +6.1 % in 2019\u20132021.",
+    "F3": "The coin's 20-day volatility, more than the weekday, carries the rebound. After Sunday falls larger than one daily volatility, the 3-day excess by volatility tercile is \u22120.14 %, +1.39 % and +3.83 % (126, 146 and 105 cases). Non-Sunday falls of that size in the top tercile also show +1.73 % (t 1.51 over 101 dates, sampled on the non-overlapping grid).",
+    "F4": "Sunday rises also reverse when pooled, but it does not hold up. The pooled reversal is +1.02 % (t 5.48 over 2186 cases). Measured per date, the four size quartiles give t of only 1.18 to 2.10 over 172\u2013214 dates each. The effect does not grow with the size of the rise (slope t 0.52, and the largest quartile is the weakest at +0.76 %). It is positive in 5 of 8 years.",
+    "F5": "Saturday falls appear to continue, but this cannot be told apart from chance. Pooled, the 3-day excess after them is \u22120.68 % (t \u22123.39 over 1961 cases), but measured per date the four quartiles give t of 0.37 to 1.83, and the years split 5 against 3.",
+    "F6": "The volume claim in the brief does not show; if anything it points the other way. The Sunday-rise reversal grows with that day's volume relative to the last 20 days rather than with thinness: +0.52 %, +0.94 % and +1.06 % for low, mid and high volume (t 0.95, 1.77 and 1.93 per date). None of these can be told apart from chance."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose own 60-day return is positive, a Sunday fall (the Sunday close-to-close return) is followed by a rise over the next 3 days. The rise is larger the larger the fall times the coin's 20-day volatility of daily returns.",
+      "consequence": "Buy volatile coins' weekend falls only while the coin's own 60-day trend is up, and refuse them in a falling coin, where the rebound turned into further losses and cut the book's Calmar.",
+      "name": "weekend-fall rebound in uptrends",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline.g1_volatile-weekend-fall-rebound.g1_weekend-fall-rebound-in-uptrends"
+  ],
+  "no_ideas": null
+}

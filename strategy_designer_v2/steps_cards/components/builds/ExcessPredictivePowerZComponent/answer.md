@@ -1,47 +1,54 @@
-# ExcessPredictivePowerZComponent: night3_learned_run | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d | centred-power counter-bet
+# ExcessPredictivePowerZComponent: retest_learned_run | 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d | ExcessPredictivePowerZ (volatility signal)
 
 ## attempt 1
 
 answer: built
 class: ExcessPredictivePowerZComponent
-settings: {"high_period": 90, "corr_lookback": 365, "horizon": 5, "z_window": 365, "mean_window": 365}
-reason: The catalogue has the correlation w(t) alone (`SignalPredictivePowerComponent`, `signal` "high") and w(t) x z(t) (`PastPredictivePowerWeightedCompositeComponent`, "single"), but nothing measures w's excess over its own prior-365-bar mean times z. This new class computes (w(t) − mean w) x z(t); the wished counter-bet is its negative, which a `negate` step gives exactly.
+settings: {"signal": "volatility", "vol_period": 30, "corr_lookback": 365, "horizon": 5, "z_window": 365, "mean_window": 365}
+reason: `ExcessPredictivePowerZComponent` computes (w(t) − wbar(t)) x z(t), but only for the nearness-to-high signal, and no setting changes which signal it uses. The wished volatility signal, s(i) = −std of 30 one-bar returns, is the same measure on another base. So the whole class is written again with a `signal` setting (and the `vol_period` it needs). The default "high" keeps today's output exactly.
 
 table: Directional components
-row: | `ExcessPredictivePowerZComponent` | `high_period` (90), `corr_lookback` (365), `horizon` (5), `z_window` (365), `mean_window` (365) | (w(t) − wbar(t)) x z(t). s(i) = close[i] / max(close[i-`high_period`+1 .. i]) − 1. w(u) = Pearson corr of s(i) with y(i) = close[i+`horizon`] / close[i] − 1 over i = u-`corr_lookback` .. u-`horizon` (0 when either side is flat). wbar(t) = mean of w(t-`mean_window`) .. w(t-1). z(t) = (s(t) − mean) / std (ddof 1) of s over bars t-`z_window`+1 .. t (0 when that std is 0) | signed; abs at most 2 x (`z_window`−1)/sqrt(`z_window`) (about 38.1). Positive when the nearness signal's power is above its usual level and the close sits nearer its high than usual, or when power is below usual and the close is further from its high than usual; `negate` gives the counter-bet | graded | z-score x correlation | max(`mean_window` + `corr_lookback`, `z_window` − 1) + `high_period` (820) | closes only. A NaN close, or a close not above 0, in the last 820 rows gives NaN. These settings raise when the component is built: `high_period` < 2, `horizon` < 1, `corr_lookback` − `horizon` < 2, `z_window` < 2, `mean_window` < 1 | stateless; every w is recomputed on every bar. The latest forward return used ends at bar t (inside w(t)). It is continuous in the closes. With wbar replaced by 0 it would be the "single"/"high" term of `PastPredictivePowerWeightedCompositeComponent`. No `scaling_factor`: scale it with transforms |
+row: | `ExcessPredictivePowerZComponent` | `high_period` (90), `corr_lookback` (365), `horizon` (5), `z_window` (365), `mean_window` (365), `signal` ("high"), `vol_period` (30) | (w(t) − wbar(t)) x z(t). The signal s(i) depends on `signal`: "high" s(i) = close[i] / max(close[i-`high_period`+1 .. i]) − 1; "volatility" s(i) = −std (ddof 1) of the `vol_period` one-bar returns close[j] / close[j-1] − 1, j = i-`vol_period`+1 .. i. w(u) = Pearson corr of s(i) with y(i) = close[i+`horizon`] / close[i] − 1 over i = u-`corr_lookback` .. u-`horizon` (0 when either side is flat). wbar(t) = mean of w(t-`mean_window`) .. w(t-1). z(t) = (s(t) − mean) / std (ddof 1) of s over bars t-`z_window`+1 .. t (0 when s is flat there) | signed; abs at most 2 x (`z_window`−1)/sqrt(`z_window`) (about 38.1). Positive when the signal's power is above its usual level and the signal sits above its mean, or when power is below usual and the signal sits below its mean; `negate` gives the counter-bet | graded | z-score x correlation | max(`mean_window` + `corr_lookback`, `z_window` − 1) + D + 1, D = `high_period` − 1 ("high") or `vol_period` ("volatility"): 820 at the defaults, 761 with "volatility" and `vol_period` 30 | closes only. A NaN close, or a close not above 0, in the last (warmup) rows gives NaN. These settings raise when the component is built: `high_period` < 2, `horizon` < 1, `corr_lookback` − `horizon` < 2, `z_window` < 2, `mean_window` < 1, `vol_period` < 2, `signal` other than "high" or "volatility" | stateless; every w is recomputed on every bar. `signal` "high" (default) is the original output, unchanged; `vol_period` is read only by "volatility". With "volatility", s is the volatility signal of `PastPredictivePowerWeightedCompositeComponent` and `SignalPredictivePowerComponent` (s4), and w(t) is `SignalPredictivePowerComponent` (`signal` "volatility"). The latest forward return used ends at bar t (inside w(t)). It is continuous in the closes. No `scaling_factor`: scale it with transforms |
 
 ```python class
 class ExcessPredictivePowerZComponent(SubStrategyComponent):
     """
-    Excess past predictive power of nearness to the high, times that nearness's z-score:
+    The excess past predictive power of one signal, times that signal's current z-score:
 
-        s(i)    = close[i] / max(close[i - high_period + 1 .. i]) - 1
-        y(i)    = close[i + horizon] / close[i] - 1
-        w(u)    = Pearson corr of s(i) with y(i), i = u - corr_lookback .. u - horizon
-                  (0 when s or y is flat over those rows)
-        wbar(t) = mean of w(t - mean_window) .. w(t - 1)
-        z(t)    = (s(t) - mean(S)) / std(S, ddof 1), S = s(t - z_window + 1 .. t)  (0 when std is 0)
-        raw_value = (w(t) - wbar(t)) * z(t)
+        signal = "high" (default): s(i) = close[i] / max(close[i-high_period+1 .. i]) - 1
+        signal = "volatility":     s(i) = -std (ddof 1) of r[j] = close[j] / close[j-1] - 1, j = i-vol_period+1 .. i
+        y(i) = close[i+horizon] / close[i] - 1
+        w(u) = Pearson corr of s(i) with y(i) over i = u-corr_lookback .. u-horizon (0 when either side is flat)
+        wbar(t) = mean of w(t-mean_window) .. w(t-1)
+        z(t) = (s(t) - mean) / std (ddof 1) of s over bars t-z_window+1 .. t (0 when s is flat there)
+        raw_value = (w(t) - wbar(t)) x z(t)
 
-    Range and sign: signed. abs(w - wbar) <= 2 and abs(z) <= (z_window - 1) / sqrt(z_window), so the value is
-    at most about 38.1 in size at the defaults. It is positive when the power is above its usual level and s is
-    above its mean. `negate` gives the counter-bet -(w - wbar) * z.
-    Warm-up: max(mean_window + corr_lookback, z_window - 1) + high_period rows, bar t included (820 at defaults).
-    NaN: a NaN close, or a close not above 0, in those rows gives NaN.
-    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2 or
-    mean_window < 1.
+    Signed. Its absolute value is at most 2 x (z_window-1)/sqrt(z_window), about 38.1. It is positive when the
+    signal's power is above its usual level and the signal sits above its mean, or when the power is below usual
+    and the signal sits below its mean. Graded, continuous in the closes. signal "high" is the original output,
+    unchanged. vol_period is read only by "volatility".
+    Warm-up: max(mean_window + corr_lookback, z_window - 1) + D + 1 rows, bar t included, with D = high_period - 1
+    ("high") or vol_period ("volatility"). That is 820 at the defaults and 761 for "volatility" with vol_period 30.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows up to and
-    including bar t. Each y(i) used by w(u), u <= t, ends at close[i + horizon] with i + horizon <= u <= t.
+    NaN: a NaN close, or a close not above 0, in the last (warm-up) rows gives NaN.
+    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2, mean_window < 1,
+    vol_period < 2, or a signal other than "high" or "volatility".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last (warm-up) rows of data, ending at bar t (the
+    last row). The forward return y(i) is used only for i <= u - horizon <= t - horizon, so the latest close it
+    reads is close[t].
     """
 
     def __init__(self, name="ExcessPredictivePowerZ", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
-        self.high_period = int(self.parameters.get("high_period", 90))
-        self.corr_lookback = int(self.parameters.get("corr_lookback", 365))
-        self.horizon = int(self.parameters.get("horizon", 5))
-        self.z_window = int(self.parameters.get("z_window", 365))
-        self.mean_window = int(self.parameters.get("mean_window", 365))
+        p = self.parameters
+        self.high_period = int(p.get("high_period", 90))
+        self.corr_lookback = int(p.get("corr_lookback", 365))
+        self.horizon = int(p.get("horizon", 5))
+        self.z_window = int(p.get("z_window", 365))
+        self.mean_window = int(p.get("mean_window", 365))
+        self.signal = p.get("signal", "high")
+        self.vol_period = int(p.get("vol_period", 30))
         if self.high_period < 2:
             raise ValueError(f"ExcessPredictivePowerZComponent: high_period must be >= 2, got {self.high_period}")
         if self.horizon < 1:
@@ -52,7 +59,26 @@ class ExcessPredictivePowerZComponent(SubStrategyComponent):
             raise ValueError(f"ExcessPredictivePowerZComponent: z_window must be >= 2, got {self.z_window}")
         if self.mean_window < 1:
             raise ValueError(f"ExcessPredictivePowerZComponent: mean_window must be >= 1, got {self.mean_window}")
+        if self.vol_period < 2:
+            raise ValueError(f"ExcessPredictivePowerZComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.signal not in ("high", "volatility"):
+            raise ValueError(
+                f"ExcessPredictivePowerZComponent: signal must be 'high' or 'volatility', got {self.signal!r}")
         self._raw_value = 0.0
+
+    def _lead(self):
+        return self.high_period - 1 if self.signal == "high" else self.vol_period
+
+    @staticmethod
+    def _corr(x, y):
+        if x.max() == x.min() or y.max() == y.min():
+            return 0.0
+        xm = x - x.mean()
+        ym = y - y.mean()
+        den = np.sqrt(np.sum(xm * xm) * np.sum(ym * ym))
+        if not den > 0:
+            return 0.0
+        return float(np.sum(xm * ym) / den)
 
     def update(self, data):
         self.data = data
@@ -60,44 +86,51 @@ class ExcessPredictivePowerZComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.get_required_periods()
-        c = data['close'].astype(float).to_numpy()[-n:]
-        self.confidence = 1.0
-        if np.isnan(c).any() or not (c > 0).all():
+        n_rows = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n_rows:]
+        if np.isnan(c).any() or (c <= 0).any():
             self._raw_value = float("nan")
+            self.confidence = 1.0
             return
-        h, L, H, Z, M = self.high_period, self.corr_lookback, self.horizon, self.z_window, self.mean_window
-        t = n - 1
-        rmax = pd.Series(c).rolling(h).max().to_numpy()
-        s = c / rmax - 1.0
-        y = np.full(n, np.nan)
-        y[:n - H] = c[H:] / c[:n - H] - 1.0
+        t = n_rows - 1
+        D = self._lead()
+        L, h, zw, mw = self.corr_lookback, self.horizon, self.z_window, self.mean_window
 
-        def corr_at(u):
-            xs = s[u - L:u - H + 1]
-            ys = y[u - L:u - H + 1]
-            dx = xs - xs.mean()
-            dy = ys - ys.mean()
-            sxx = float(np.dot(dx, dx))
-            syy = float(np.dot(dy, dy))
-            if not (sxx > 0 and syy > 0):
-                return 0.0
-            return float(np.dot(dx, dy) / np.sqrt(sxx * syy))
+        s = np.full(n_rows, np.nan)
+        if self.signal == "high":
+            win = np.lib.stride_tricks.sliding_window_view(c, self.high_period)
+            s[D:] = c[D:] / win.max(axis=1) - 1.0
+        else:
+            r = c[1:] / c[:-1] - 1.0
+            win = np.lib.stride_tricks.sliding_window_view(r, self.vol_period)
+            s[D:] = -win.std(axis=1, ddof=1)
 
-        w_now = corr_at(t)
-        w_past = [corr_at(u) for u in range(t - M, t)]
-        wbar = float(np.mean(w_past))
-        win = s[t - Z + 1:t + 1]
-        sd = float(np.std(win, ddof=1))
-        z = float((s[t] - win.mean()) / sd) if sd > 0 else 0.0
-        self._raw_value = float((w_now - wbar) * z)
-        self.debug_info = {'w': w_now, 'w_mean': wbar, 'z': z}
+        y = np.full(n_rows, np.nan)
+        y[: n_rows - h] = c[h:] / c[: n_rows - h] - 1.0
+
+        def w_at(u):
+            lo, hi = u - L, u - h + 1
+            return self._corr(s[lo:hi], y[lo:hi])
+
+        w_t = w_at(t)
+        wbar = float(np.mean([w_at(u) for u in range(t - mw, t)]))
+
+        zs = s[t - zw + 1: t + 1]
+        if zs.max() == zs.min():
+            z = 0.0
+        else:
+            sd = float(np.std(zs, ddof=1))
+            z = float((s[t] - zs.mean()) / sd) if sd > 0 else 0.0
+
+        self._raw_value = float((w_t - wbar) * z)
+        self.confidence = 1.0
+        self.debug_info = {"w": w_t, "wbar": wbar, "z": z, "signal": self.signal}
 
     def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self):
-        return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period
+        return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self._lead() + 1
 ```
 
 ```python hand
@@ -105,30 +138,48 @@ def hand(df, params):
     import math
     hp = int(params.get("high_period", 90))
     L = int(params.get("corr_lookback", 365))
-    H = int(params.get("horizon", 5))
-    Z = int(params.get("z_window", 365))
-    M = int(params.get("mean_window", 365))
+    h = int(params.get("horizon", 5))
+    zw = int(params.get("z_window", 365))
+    mw = int(params.get("mean_window", 365))
+    sig = params.get("signal", "high")
+    vp = int(params.get("vol_period", 30))
     c = [float(x) for x in list(df["close"])]
     t = len(c) - 1
-    need = max(M + L, Z - 1) + hp
-    for k in range(t - need + 1, t + 1):
-        if c[k] != c[k] or not c[k] > 0:
+    D = hp - 1 if sig == "high" else vp
+    need = max(mw + L, zw - 1) + D + 1
+    for x in c[t - need + 1:]:
+        if x != x or not x > 0:
             return float("nan")
 
-    def near(i):
-        m = c[i]
-        for j in range(i - hp + 1, i + 1):
-            if c[j] > m:
-                m = c[j]
-        return c[i] / m - 1.0
+    memo = {}
 
-    def fwd(i):
-        return c[i + H] / c[i] - 1.0
+    def s(i):
+        if i in memo:
+            return memo[i]
+        if sig == "high":
+            m = c[i]
+            for k in range(i - hp + 1, i + 1):
+                if c[k] > m:
+                    m = c[k]
+            v = c[i] / m - 1.0
+        else:
+            rets = []
+            for j in range(i - vp + 1, i + 1):
+                rets.append(c[j] / c[j - 1] - 1.0)
+            mu = sum(rets) / len(rets)
+            var = 0.0
+            for r in rets:
+                var += (r - mu) ** 2
+            var = var / (len(rets) - 1)
+            v = -math.sqrt(var)
+        memo[i] = v
+        return v
 
-    def pearson(xs, ys):
-        k = len(xs)
-        mx = sum(xs) / k
-        my = sum(ys) / k
+    def corr(xs, ys):
+        if max(xs) == min(xs) or max(ys) == min(ys):
+            return 0.0
+        mx = sum(xs) / len(xs)
+        my = sum(ys) / len(ys)
         sxy = 0.0
         sxx = 0.0
         syy = 0.0
@@ -136,27 +187,37 @@ def hand(df, params):
             sxy += (a - mx) * (b - my)
             sxx += (a - mx) ** 2
             syy += (b - my) ** 2
-        if sxx <= 0 or syy <= 0:
+        if not sxx * syy > 0:
             return 0.0
         return sxy / math.sqrt(sxx * syy)
 
-    def power(u):
-        rows = list(range(u - L, u - H + 1))
-        return pearson([near(i) for i in rows], [fwd(i) for i in rows])
+    def w(u):
+        xs = []
+        ys = []
+        for i in range(u - L, u - h + 1):
+            xs.append(s(i))
+            ys.append(c[i + h] / c[i] - 1.0)
+        return corr(xs, ys)
 
-    w_t = power(t)
-    past = [power(u) for u in range(t - M, t)]
-    wbar = sum(past) / len(past)
-    vals = [near(i) for i in range(t - Z + 1, t + 1)]
-    mu = sum(vals) / Z
-    var = 0.0
-    for v in vals:
-        var += (v - mu) ** 2
-    sd = math.sqrt(var / (Z - 1))
-    z = (near(t) - mu) / sd if sd > 0 else 0.0
-    return (w_t - wbar) * z
+    total = 0.0
+    for u in range(t - mw, t):
+        total += w(u)
+    wbar = total / mw
+
+    vals = [s(i) for i in range(t - zw + 1, t + 1)]
+    if max(vals) == min(vals):
+        z = 0.0
+    else:
+        mu = sum(vals) / len(vals)
+        var = 0.0
+        for v in vals:
+            var += (v - mu) ** 2
+        sd = math.sqrt(var / (len(vals) - 1))
+        z = (s(t) - mu) / sd if sd > 0 else 0.0
+
+    return (w(t) - wbar) * z
 ```
 
 checks:
 ExcessPredictivePowerZComponent: every check passed
-the bot's suite: ======= 1581 passed, 16 skipped, 75 deselected, 2244 warnings in 56.96s ========
+the bot's suite: == 1634 passed, 16 skipped, 75 deselected, 2244 warnings in 84.16s (0:01:24) ===

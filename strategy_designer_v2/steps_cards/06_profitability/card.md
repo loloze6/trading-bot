@@ -31,7 +31,8 @@ One profitability check per backtest: **profitable enough** or **not profitable 
 3. **The six measures:** for each, its value, the rule, and passed or not.
    - **Sharpe:** the book's gain against its ups and downs.
    - **Sharpe minus holding's Sharpe:** better than simply holding the same coins.
-   - **Mean daily return:** large enough to matter.
+   - **Mean daily return, on days in a position** (operator, 2026-11-22): large enough to matter when the book trades; a day
+     it is out of the market is not counted (a selective book is judged on what it does when it is on).
    - **Lowest Sharpe with one window left out:** not carried by one period.
    - **Calmar:** the yearly return against the deepest fall.
    - **Trades per day:** the book trades often enough to be judged (per day, not per bar, since 2026-11-18: the same
@@ -40,12 +41,19 @@ One profitability check per backtest: **profitable enough** or **not profitable 
    - For: the evidence, measure by measure.
    - Used by: the rule, the operator.
    - Without it: a bare word nobody can check.
-4. **Decided by:** "every measure passed", or the measures that failed.
+4. **Informative measures** (operator, 2026-11-22; `common/measures.md`): the **daily standard deviation** (how much the book's value
+   typically moves in a day; the one inside the Sharpe) and the **yearly return** (how much it makes a year, compounded;
+   Calmar's numerator), with the number of years it covers.
+   - For: two books with the same Sharpe can differ in size; the yearly return is what an investor reads first, and per
+     year it compares books tested over different lengths (a total over the period would not).
+   - Used by: the operator, and the combining of books (topic 44).
+   - Without it: the size of a book's moves and its yearly gain are hidden inside the Sharpe and the Calmar.
+5. **Decided by:** "every measure passed", or the measures that failed.
    - For: the answer can be challenged.
    - Used by: the operator.
    - Without it: no way to see what failed.
 
-**Next to it:** `result.json` (the status, the six measures and "decided by", for code), and the **index line** (`INDEX.md`): `<backtest>: profitable enough | not profitable enough [Sharpe; Sharpe minus holding's; Calmar]`, or `<backtest>: not checked: the record holds no window that ran`.
+**Next to it:** `result.json` (the status, the six measures, "decided by" and the informative measures, for code), and the **index line** (`INDEX.md`): `<backtest>: profitable enough | not profitable enough [Sharpe; Sharpe minus holding's; Calmar]`, or `<backtest>: not checked: the record holds no window that ran`.
 
 ## The rule (`helper/rule.yaml`)
 **Profitable enough** when all six measures pass; otherwise **not profitable enough**. The values are those of the old pipeline's profit bars, without its deflated Sharpe and its drawdown ceiling.
@@ -54,7 +62,7 @@ One profitability check per backtest: **profitable enough** or **not profitable 
 |---|---|---|
 | Sharpe | 0 | strictly above |
 | Sharpe minus holding's Sharpe | 0 | strictly above |
-| Mean daily return | 0.05 % a day (about 20 % a year) | at least |
+| Mean daily return, on days in a position | 0.05 % a day (about 20 % a year) | at least |
 | Lowest Sharpe, one window left out | 0 | strictly above |
 | Calmar | 0.75 | strictly above |
 | Trades per day | 1 % (one trade per 100 days) | at least |
@@ -64,6 +72,9 @@ One profitability check per backtest: **profitable enough** or **not profitable 
 - **The backtest's book:** all its coins together, equal weight: each day, the mean of the coins' daily returns. **Holding:** the same, from the coins' closing prices.
 - **Sharpe:** the mean of all daily returns over their standard deviation, times √365.
 - **Calmar:** the yearly return of the daily returns chained in window order, over the deepest fall of that chain.
+- **Mean daily return, on days in a position:** the mean of all the daily returns divided by the share of (coin, day) pairs in which the coin held a position (held into one of the day's bars, or traded on it): a day out of the market earns 0, so it is the mean over the days in a position (operator, 2026-11-22; Calmar stays on calendar days: on days in a position it is about Calmar divided by that share, rewarding time out of the market; topic 45).
+- **Daily standard deviation**, **yearly return** and **days in a position** (informative measures): the standard deviation (ddof 1) of the daily returns; the
+  same chain as Calmar, compounded to one year.
 - **Trades:** the backtest's trades, minus those closed on a window's last bar (forced closes), per bar of the record.
 
 ## Storage and naming

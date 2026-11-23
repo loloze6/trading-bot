@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9938042848870874,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of y = forecast x (r24 - d) over 00:00 bars with |forecast| >= 2",
+    "value": 0.05762082000917017,
+    "statistic": {
+      "name": "one-sample t",
+      "value": 8.408493017806126
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "faded return per unit of move, top third minus bottom two thirds",
+    "value": -0.0011055140519774876,
+    "passed": false
+  },
+  "counts": {
+    "cases with |forecast| >= 2": 12716,
+    "active bars": 17270,
+    "top third cases": 4238,
+    "bottom two thirds cases": 8478
+  },
+  "decided_by": "t >= 2 but the supporting check failed (top third per unit of move not larger)",
+  "reading": "d is each coin's mean 24-bar return on the non-overlapping grid (positions 0, 24, 48, ... of each window) pooled over all its windows; cases need close[t+24] inside the same window; the raw move is the recorded last_history_value (recomputed from closes where missing); the top third is the floor(n/3) cases with the largest |raw|, the rest are the bottom two thirds; the plan's 'fewer than 100 cases' rule is reported as not observable."
+}

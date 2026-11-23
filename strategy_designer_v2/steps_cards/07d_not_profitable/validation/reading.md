@@ -55,3 +55,42 @@ The review against the business objective found four things, all fixed in the li
 One run on the three inputs with the fixed prompt: no label in any idea's text (0 of 9); repairs written in full; the
 same main repairs as runs 1 and 2 on 002-01 and 002-03; on 002-04 the line reads the short's bet as reversed (the
 deeper below the average, the larger the rebound) and proposes it as an idea of its own.
+
+## 2026-11-22: confirmed and not profitable only; repairs that keep the idea (the operator's go; topic 45)
+**Change:** the entry condition (step 5 confirmed and step 6 not profitable enough), the prompt (repairs only; the
+self-check; "no ideas" only on the size against the cost), the card, `common/idea_created_from.md` ("A repair of a
+confirmed idea"). **Fixed inputs:** 9 confirmed books that do not pay, 7 of them among the least explained by the paying
+books (0.01 to 0.33): 012-02, 016-03.g1, 012-01, 011-01.g1, 011-01.g2, 013-02.g1, 022-04.b1, 022-04.b2, 026-04.b2. The
+three without bars on this machine were rerun through step 4 first (254, 274 and 288 summary files identical to their
+records). **Old:** the analyses each run wrote. **New:** the line rerun with the new prompt (15 analyses in all, the
+first pass included; 7.48 USD).
+
+**First pass (the self-check as a sentence: "a condition you add must not be an effect of its own"), 6 books:** 14
+ideas, all repairs, but 3 added a trend condition ("only while the close is above its 50-day average", "while the
+coin's 30-day return is positive") and no finding measured the condition alone: the sentence was not applied. **Fix:**
+the self-check made a measurement in the exploration (the bars where the condition holds without the idea's signal,
+against those where both hold), given in the finding.
+
+**Final prompt, 9 books:**
+| | Old line | New line |
+|---|---|---|
+| Ideas | 20 | 24 |
+| Replacing the confirmed idea (keeping under half of its words) | 4 (3 of them momentum: "near-high momentum keeps rising", "nearness to 90-day high", "four-week momentum continues") | 0 (the least kept: 65 %) |
+| Repairs adding a trend or momentum condition | 5 | 2, each measured alone and found not to be the effect (016-03: a rising 30-day trend alone +0.017 % over 24 hours, t 0.3; 026-04.b2: the same condition on light weekends +0.28 %, t 0.62) |
+| "No ideas" | 0 | 0 |
+
+Example, 022-04.b2 (unrelated to every paying book, 0.01 explained): old, "volatility reversal with trend", "nearness
+to 90-day high", "four-week momentum continues"; new, two repairs of the idea itself, "... only while the coin's 30-day
+volatility is calm". The repairs now draw on the idea's own material: the size of the move, volatility, volume, repeated
+cases, a longer horizon.
+
+**Not yet shown:** whether the new repairs pay (steps 3 to 6 on them): the next run reads it, with each repair's book
+against its parent's in the similarity check.
+
+**"No ideas" without the cost (operator, 2026-11-22):** the sentence now says an idea is closed only when the effect itself
+cannot be traded in any version of it (situation, strength, horizon, side); the cost is no longer named. Rerun on 3 of
+the 9 books (013-02.g1, 022-04.b2, 012-01; 1.3 USD): no closure (0, as before), 7 ideas, all repairs (73 to 100 % of the
+parent's words). Findings naming cost or fees: 7 of 22, against 4 of 20 with the previous sentence: the cost focus
+does not come from this sentence; the analyst still receives the cost of a trade, and step 7's shared rules
+(`07_common/helper/common_rules.md`) keep the paragraph on the size against the cost, decided after the step 7 A/B test
+(2026-11-21). Three books, one run each: a small sample.

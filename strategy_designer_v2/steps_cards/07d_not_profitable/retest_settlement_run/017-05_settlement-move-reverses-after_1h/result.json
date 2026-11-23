@@ -1,0 +1,65 @@
+{
+  "line": "7.d",
+  "backtest": "017-05_settlement-move-reverses-after_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5669026,
+  "findings": {
+    "F1": "The move per case is far too small to pay for a trade, so the book loses before any choice of sizing. The idea's total move is +0.05 % per case over 2 hours, which is 0.2 times the 0.19 % cost of a trade. The book made 65 566 trades, a median of 120 minutes each, averaging \u22120.078 % before fees and \u22120.178 % after. Sharpe was \u22123.97, the mean daily return on days in a position \u22120.2 %, and the yearly return \u221251.9 %.",
+    "F2": "The short side loses before fees and the long side carries all the gross gain. SHORT trades averaged \u22120.303 % gross (\u22120.403 % net, 32 573 trades). LONG trades averaged +0.144 % gross (+0.044 % net, 32 993 trades). At the 00:00 and 16:00 settlements over 8 hours, a fall into settlement in the 50\u201395th percentile of |pre-move| was followed by +21.5 bp and +23.1 bp total (unusual +16.8 bp, t 4.13, n 5 007; +18.5 bp, t 2.83, n 2 559). A rise in the same bands was followed by only +4.4 bp and +2.9 bp, and by \u22120.5 bp to +3.7 bp over 16 hours.",
+    "F3": "The effect on the long side grows with the horizon past the 2 hours the book holds, and with the size of the fall, until the extreme 1 %. For falls into settlement on the long side, the total move was:",
+    "F4": "The 08:00 UTC settlement carries none of the effect.",
+    "F5": "The move reverses when it runs against the coin's 24-hour trend, the crowded-side reading the brief gives, and it grows with the strength of that trend.",
+    "F6": "The settlement clock adds most in the middle band of falls. Falls in the 50\u201380th percentile at hours away from settlement gave +7.2 bp total and +2.6 bp unusual over 8 hours. At the 00:00 and 16:00 settlements the same band gave +21.5 bp and +16.8 bp. In the 80\u201395 band other hours gave +19.9 bp, close to settlement's +23.1 bp.",
+    "F7": "The long-side gain at 00:00 and 16:00 over 8 hours, 50\u201399th percentile of falls, is positive in 7 of 8 years. It ranges from +4.9 bp in 2025 to +44.5 bp in 2018; 2022 was the exception at \u221215.9 bp (n about 1 000\u20131 200 per year). So it does not rest on one period.",
+    "F8": "The book's gross gain sits entirely in the first 2 hours after settlement, at +0.38 and +0.75 bp per bar with a mean |allocation| of 0.43. The other six hours hold about 0.014 and earn about 0. The book pays the full cost every 8 hours for a 2-hour move, and that move is below the cost."
+  },
+  "ideas": [
+    {
+      "idea": "The return over the 24 hours after the 00:00 and 16:00 UTC funding settlement times runs opposite to a fall over the 2 hours before it: the coin rises after falling into settlement, and the larger the fall against the coin's usual 2-hour move, the larger the rise.",
+      "consequence": "A fall into a 00:00 or 16:00 settlement is a reason to be long for the following day, sized by the fall; a rise into settlement is not a reason to short.",
+      "name": "settlement fall recovers over day",
+      "from": "F1, F2, F3, F4, F7, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7",
+        "F8"
+      ]
+    },
+    {
+      "idea": "The return over the 8 hours after each funding settlement time runs opposite to the return over the 2 hours before it when that pre-move runs against the coin's 24-hour trend, and the stronger the 24-hour trend, the larger the move back.",
+      "consequence": "A trader takes the reversal bet at settlement only when the move into settlement goes against the recent trend, and sizes it by the trend's strength, holding it through the 8 hours to the next settlement.",
+      "name": "counter-trend settlement move reverses",
+      "from": "F1, F4, F5, F8",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "The return over the 8 hours after the 00:00 and 16:00 UTC funding settlement times runs opposite to a fall over the 2 hours before it, and the larger the fall against the coin's usual 2-hour move, the larger the rise.",
+      "consequence": "A trader keeps the long reversal on these two settlements and holds it until the next settlement, instead of paying a full trade's cost for a 2-hour move at every settlement.",
+      "name": "settlement fall rebound eight hours",
+      "from": "F2, F3, F4, F6, F8",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day",
+    "017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses",
+    "017-05_settlement-move-reverses-after.d3_settlement-fall-rebound-eight-hours"
+  ],
+  "no_ideas": null
+}

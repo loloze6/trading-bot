@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9998041136141038,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean |forecast|/10-weighted short gain over coin drift, 5-bar grid cases with forecast <= -2",
+    "value": 0.0067308731940545164,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.499509585506077
+    },
+    "threshold": "t >= 2 confirms (with >= 30 cases and supporting check > 0); t <= -2 rejects (with >= 30 cases)"
+  },
+  "supporting_check": {
+    "name": "mean excess fall of above-median |forecast| cases minus below-median cases",
+    "value": -0.003954127869669617,
+    "passed": false
+  },
+  "counts": {
+    "cases": 699
+  },
+  "decided_by": "A t between -2 and 2 is inconclusive.",
+  "reading": "Cases are grid bars (positions 0,5,10,... of each window) with forecast <= -2 and a 5-bar return inside the window, the coin's mean 5-bar return is over the same grid across all its windows, each case's value is -(excess return) x |forecast|/10 and the t is the ordinary t of their mean; the supporting check uses unweighted excess falls with cases equal to the median left out; and for the situation check, the 20-day return is taken from prices, or from the recorded regime on a window's first 20 bars."
+}

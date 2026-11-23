@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9938042848870874,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of drift-adjusted 24-bar return on forecast",
+    "value": 0.00027998484472371084,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 8.857797261746613
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x drift-adjusted 24-bar return, |forecast| >= 10",
+    "value": 0.0045776801242022585,
+    "passed": true
+  },
+  "counts": {
+    "cases pooled over coins and windows": 17048,
+    "cases with |forecast| >= 10": 8028
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean signed drift-adjusted return over |forecast| >= 10 is above 0.",
+  "reading": "Cases are the first mean_reversion bar with non-zero forecast per coin per UTC day, the forward return is close 24 rows later in the same window, the drift is the coin's mean 24-bar return on each window's non-overlapping grid pooled over all windows, and the slope is from an OLS with intercept."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast, heavy-volume days",
+    "value": 0.0003811736127069511,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 0.41874951955988865
+    },
+    "threshold": "confirm: slope positive with t >= 2; reject: slope negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, lowest-quarter minus other heavy days (Welch t >= 2)",
+    "value": 0.004264741683570401,
+    "passed": false
+  },
+  "counts": {
+    "heavy-volume days": 152,
+    "lowest-quarter days": 40,
+    "other heavy-volume days": 112
+  },
+  "decided_by": "Minimum counts not reached: 152 heavy-volume days (need 300) and 40 lowest-quarter days (need 60).",
+  "reading": "The volume ratio is recomputed inside each window as volume over the mean of the 20 prior bars, so active bars with fewer than 20 prior bars in their window are left out of the agreement; heavy-volume days are the bars with regime mean_reversion and a next-day return in the same window; the coin's mean daily return is over all its 1-day returns in all windows; the slope's t is the OLS slope over its standard error; the 'other heavy-volume days' are heavy days with loc_low post_pipeline_value below 8.4; the minimum counts make the result 'not observable' when not reached. Welch t = 0.368."
+}

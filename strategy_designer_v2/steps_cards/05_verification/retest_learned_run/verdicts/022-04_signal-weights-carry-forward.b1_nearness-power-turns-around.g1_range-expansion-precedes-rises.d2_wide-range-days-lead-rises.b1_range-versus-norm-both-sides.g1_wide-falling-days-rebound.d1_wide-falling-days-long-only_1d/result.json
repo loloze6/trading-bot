@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move per case (3-bar return from signal close minus coin's normal 3-bar drift, long)",
+    "value": 0.009128027282597678,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.957166128956465
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, top third of entry forecast minus bottom third",
+    "value": 0.00997413585331065,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1619,
+    "active bars": 3306
+  },
+  "reading": "Cases are the first bet (forecast rise of >= 2 points on its side from its lowest level since the last bet) in each non-overlapping 3-bar cell counted from each window's first row, the normal drift is the coin's mean 3-bar return on that grid over all its windows, thirds are split by rank of entry forecast (n//3 cases each), the plan's 'fewer than 30 cases' minimum is reported as not observable, and the situation is rebuilt from prices (falling back to the recorded regime / raw component where a window lacks the prior close or 30 bars).",
+  "status": "confirmed",
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the top third beats the bottom third."
+}

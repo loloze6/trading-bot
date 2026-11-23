@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup_1h
+idea tested: 017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4695 USD
+---
+## Findings
+- **F1:** Over the next 24 hours, a coin's excess return grows with the depth of its past 24-hour fall measured against its usual 24-hour move (z24). Bins from shallow to deep falls run -0.26 %, -0.12 %, +0.32 % (t 2.3), +0.50 % (t 2.6), +0.41 %, and +2.15 % (t 4.8, 329 non-overlapping cases) beyond 3 usual moves. The graded product (-z24, floored at 0) × next-24h excess return has t 4.88, and the Spearman correlation on the 7,486 falling cases is -0.098.
+- **F2:** That 24-hour fall reversal sits almost entirely in high volatility. For falls beyond 1.5 usual moves, the top 30-day volatility tercile returns +2.34 % (t 6.2, 544 cases), the middle +0.14 % (t 0.7) and the bottom -0.09 % (t -0.6). The same move per case is 12 times the 0.19 % cost of a trade.
+- **F3:** The fall reversal is stronger when the coin's 7-day return is negative (+0.88 %, t 4.7, 1,269 cases) than when it is positive (+0.51 %, t 2.1, 362 cases). This is the opposite of the run-up condition the tested idea used.
+- **F4:** The fall reversal is not even across coins or years. It is strong in the smaller coins (ZEC +1.51 % t 3.2, XRP +1.26 % t 3.2, XMR +1.03 % t 2.7) and weak in BTC (+0.23 %, t 0.9). It is heaviest in 2018 (+1.85 %, t 3.8) and 2021 (+2.88 %, t 4.2), and it is positive in 18 of 24 windows.
+- **F5:** The hour after bars closing at 21:00 and 22:00 UTC rises on average. Over the next 1 hour the mean is +0.055 % (t 6.7) and +0.044 % (t 5.6), against about ±0.02 % at most other hours.
+- **F6:** The 2 hours after the 21:00 UTC close rise in every coin (+0.08 % to +0.11 %, t 3.0 to 4.7, about 2,890 cases each) and in 7 of 8 years (2022 -0.04 %, t -1.4). The rise is largest after the lowest past-24h-return quintile (+0.23 %, t 6.9) against +0.00 % to +0.13 % in the other quintiles. That move is only about the size of the 0.19 % trade cost.
+- **F7:** The tested forecast is capped at 20 for over 60 % of its 7,148 cases, so its median split cannot run (the supporting check returned None). By quintile, only the lowest one (mean forecast 4.9) separates: -0.01 % against +0.17 % to +0.44 % in the others.
+- **F8:** Volume does not peak at settlement hours. Relative volume runs about 1.5 at the hours closing 15:00 to 17:00 UTC, against 0.95 at 00:00 and 0.76 at 08:00. The volume peak follows the US session, not the funding clock.
+- **F9:** Excess returns by starting weekday are uneven: Friday-start 24-hour cases return +0.52 % (t 5.4, 2,459 cases), while Monday returns -0.36 % (t -3.2) and Thursday -0.40 % (t -3.5). The book earns most on Saturdays (+0.21 % a day, t 3.8). The pattern is not graded, so no idea is built on it.
+
+## Ideas
+- `017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.g1_volatile-day-fall-recovers` (from F1, F2, F3, F4): Over the next 24 hours, a coin rises after a fall over its past 24 hours, and the rise is larger the deeper that fall is against the coin's usual 24-hour move. The rise grows further the higher the coin's volatility of hourly returns over the past 30 days.
+- `017-05_settlement-move-reverses-after.d1_settlement-fall-recovers-over-day.d2_settlement-fall-recovers-after-runup.g2_late-evening-rebound-after-falls` (from F5, F6): Over the 2 hours after the 21:00 UTC close, a coin's price rises, and the rise is larger the deeper the coin's fall over the 24 hours before it.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

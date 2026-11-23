@@ -9,8 +9,11 @@ import select_next as s  # noqa: E402
 
 def test_id_parts():
     assert s.id_parts("003-01_some-name") == ("step 2", "003", 1, 0)
-    assert s.id_parts("003-01_some-name.b2_other") == ("7.b", "003-01_some-name", 2, 1)
-    assert s.id_parts("001-01_x.a1_y.c1_z") == ("7.c", "001-01_x.a1_y", 1, 2)
+    # created_from is the parent's lineage code, the same in both id conventions (topic 46)
+    assert s.id_parts("003-01_some-name.b2_other") == ("7.b", "003-01", 2, 1)
+    assert s.id_parts("001-01_x.a1_y.c1_z") == ("7.c", "001-01.a1", 1, 2)
+    assert s.id_parts("001-01.a1.c1_z") == ("7.c", "001-01.a1", 1, 2)
+    assert s.id_parts("001-01.a1.c12_z") == ("7.c", "001-01.a1", 12, 2)
     assert s.id_parts("N2-04_renamed-by-hand")[0] is None
 
 
@@ -87,3 +90,50 @@ def test_a_brief_s_own_ideas_come_first(tmp_path):
     idea(lines, "003-01_x.g1_child", "three")
     cands = [r["idea"] for r in s.rank(run, tmp_path) if r["status"] == "candidate"]
     assert cands == ["003-02_y", "003-01_x.g1_child"]                       # the brief's idea before a better-scored child
+
+
+def register_book(root, run, iid, kind, share):
+    reg = root / "orchestration" / "ideas_similarities_check" / "register"
+    (reg / "comparisons").mkdir(parents=True, exist_ok=True)
+    f = reg / "books.json"; rows = json.loads(f.read_text()) if f.exists() else []
+    key = f"{run}__{iid}_1d"; rows.append({"key": key, "run": run, "id": f"{iid}_1d", "kind": kind})
+    f.write_text(json.dumps(rows))
+    (reg / "comparisons" / f"{key}.json").write_text(json.dumps({"nearest_relative": {"share_explained": share}}))
+
+
+def test_real_ideas_unlike_what_we_earn_come_first_and_those_we_already_earn_last(tmp_path):
+    """Operator, 2026-11-22: after a brief's own ideas, the ideas written from a confirmed idea whose book the paying books
+    explain little; then the unproven ones; an idea written from a confirmed idea we already earn after them."""
+    run = "t_run"; ideas = tmp_path / "02_ideation" / run / "ideas"
+    for iid in ("003-01_unrelated", "003-02_earned", "003-03_unclear"):
+        idea(ideas, iid, f"parent {iid}")
+    mark_tested(tmp_path, run, "003-01_unrelated", "confirmed", "not profitable enough")
+    mark_tested(tmp_path, run, "003-02_earned", "confirmed", "profitable enough")
+    mark_tested(tmp_path, run, "003-03_unclear", "inconclusive", "not profitable enough")
+    register_book(tmp_path, run, "003-01_unrelated", "confirmed", 0.05)       # difference 0.95
+    register_book(tmp_path, run, "003-02_earned", "paying", 0.90)             # difference 0.10
+    idea(ideas, "003-04_brief-idea", "a brief idea not yet tested")
+    for parent in ("003-01_unrelated", "003-02_earned", "003-03_unclear"):
+        idea(ideas, f"{parent}.g1_child", f"a child of {parent}")
+    order = [r["idea"] for r in s.rank(run, root=tmp_path) if r["status"] == "candidate"]
+    assert order == ["003-04_brief-idea", "003-01_unrelated.g1_child", "003-03_unclear.g1_child", "003-02_earned.g1_child"]
+    rows = {r["idea"]: r for r in s.rank(run, root=tmp_path)}
+    assert rows["003-01_unrelated.g1_child"]["group"] == 2 and rows["003-02_earned.g1_child"]["group"] == 3
+    assert rows["003-03_unclear.g1_child"]["difference"] is None                # no evidence: w 0.5
+
+
+def test_an_idea_whose_files_cannot_be_written_is_not_a_candidate(tmp_path):
+    """Topic 46 (2026-11-23): an id plus its plan's longest file suffix over 255 bytes is not offered (step 3 would fail)."""
+    run = "t_run"; ideas = tmp_path / "02_ideation" / run / "ideas"
+    long_id = ("003-01_x" + "".join(f".g{i}_" + "a-long-short-name-of-an-idea" for i in range(1, 9)))[:245]
+    assert len(long_id) == 245            # its idea file fits (245 + ".md"); its plan's config (245 + 15) does not
+    idea(ideas, "003-01_x", "a brief idea"); idea(ideas, long_id, "a very deep idea")
+    rows = {r["idea"]: r["status"] for r in s.rank(run, root=tmp_path)}
+    assert rows["003-01_x"] == "candidate" and rows[long_id].startswith("not testable")
+
+
+def test_the_register_s_longer_names_count_too():
+    """Night 5: the similarity register names a book <run>__<id>_<bar>, longer than a plan's files: an id that fits step 3
+    but not the register is not offered either."""
+    iid = "x" * 228                                   # 228 + "_4h_config.json" = 243: fits step 3
+    assert not s.too_long(iid) and s.too_long(iid, "brief_absorption_run")    # 20 + 2 + 228 + 10 = 260: does not

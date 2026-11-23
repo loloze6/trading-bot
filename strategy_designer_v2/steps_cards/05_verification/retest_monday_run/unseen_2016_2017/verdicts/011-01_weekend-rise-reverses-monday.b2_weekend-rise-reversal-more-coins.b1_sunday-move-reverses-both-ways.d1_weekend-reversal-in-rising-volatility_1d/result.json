@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean signed excess 2-bar move after Sunday forecasts",
+    "value": -0.006659098835908797,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -0.6186248221090518
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 cases and supporting check passes; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean signed excess, larger |forecast| half minus smaller half",
+    "value": -0.015274487067664454,
+    "passed": false
+  },
+  "counts": {
+    "cases": 188,
+    "larger half": 94,
+    "smaller half": 94
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A Sunday bar is the daily bar opening on Sunday UTC (its close is Sunday's close); the volatility ratio is recomputed from closes inside each window as rolling std (ddof 1) of 20 over 60 one-bar returns including the bar, and active bars where it cannot be computed (first 60 bars of a window) are left out of the agreement; the drift is each coin's mean 2-bar return on the grid 0,2,4,... of every window pooled; for the supporting check the larger half is |forecast| strictly above the median and the smaller half at or below it; fewer than 100 cases gives 'not observable' as the workflow requires."
+}

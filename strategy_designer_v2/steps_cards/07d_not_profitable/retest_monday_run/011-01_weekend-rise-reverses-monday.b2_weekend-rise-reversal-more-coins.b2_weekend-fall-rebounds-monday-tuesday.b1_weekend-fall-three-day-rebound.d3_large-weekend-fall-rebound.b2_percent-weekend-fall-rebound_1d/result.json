@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b2_percent-weekend-fall-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 0,
+  "cost": 0.2778688,
+  "findings": {
+    "F1": "The book's deepest fall, \u221226.7 % against a yearly return of +10.2 % (Calmar 0.30), ran over 412 days from w3 to w7, while the coins' summed daily returns fell \u221269.8 %. The book lost \u221222.1 % in that stretch: \u221210.5 % in w4, \u22127.3 % in w5 and \u22124.3 % in w7. In w4 to w7 every one of its Monday, Tuesday and Wednesday holdings lost (\u22128.1 %, \u221212.0 %, \u22127.0 % summed) as the coins kept falling on those weekdays (\u221242 %, \u221225 %, \u221231 %). In every window from w8 to w24 the book gained (+1.9 % to +5.8 % each, except w13 at \u22121.5 %).",
+    "F2": "Split by the coin's 30-day return before the Sunday, the quarter of the 2418 weekend-fall cases with the lowest one (below \u221212.5 %) rebounded only +0.35 % over 3 days (t 0.66, 604 cases), with the largest loss per position (\u221228 %). The other three quarters rebounded +1.22 %, +1.37 % and +2.16 % (t 2.86, 3.81, 4.71), with losses per position no worse than \u22128.4 %.",
+    "F3": "The condition alone is not the effect. On non-overlapping 3-day stretches with no weekend fall, a coin whose 30-day return was above \u221212.5 % rose +0.49 % (15437 stretches), against +1.58 % (t 9.6) when a weekend fall came on top of the same condition. This fits the brief's theory: a weekend fall that is only the cost of thin liquidity fades on Monday, while a fall inside a 30-day slide is part of a move carried by information, which keeps going.",
+    "F4": "Split by the coin's 30-day daily volatility against its 180-day volatility, the quarter of cases with the most excited volatility rebounded only +0.42 % (t 0.89), with the widest spread of position gains (0.048 against 0.022 to 0.027). The calmer three quarters rebounded +1.18 % to +1.81 % (t 3.1 to 4.9).",
+    "F5": "Rebuilt from the record, with the Monday-to-Wednesday holdings removed after Sundays whose prior 30-day return was below \u221212.5 %, the book's Calmar is 0.83 (deepest fall \u221213.7 %, yearly +11.4 %, Sharpe 0.88). Leaving out the excited-volatility cases instead gives a Calmar of 0.79. Leaving out both gives a Calmar of 0.90 (deepest fall \u22129.0 %, Sharpe 1.02).",
+    "F6": "Coins above their 50-day mean on the Sunday rebounded +1.96 % (t 5.16, 1013 cases), against +0.58 % (t 1.38, 1291 cases) below it."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's Saturday-to-Sunday close-to-close fall, measured in percent of its price, is followed by a rise over the next 3 days (Monday to Wednesday), and the deeper the percent fall, the larger that rise, while the coin's 30-day return before the weekend has not been a deep fall; the higher that 30-day return, the larger the rebound.",
+      "consequence": "Size the Monday-to-Wednesday long by the depth of the weekend fall only when the weekend fall does not extend a month-long slide, and stay out after a deep 30-day decline.",
+      "name": "weekend fall outside slides",
+      "from": "F1, F2, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday-to-Sunday close-to-close fall, measured in percent of its price, is followed by a rise over the next 3 days (Monday to Wednesday), and the deeper the percent fall, the larger that rise, while the coin's last 30 days have been calm against its last 180 days; the calmer they were, the larger the rebound.",
+      "consequence": "Hold the Monday-to-Wednesday rebound long in calm months and stay out of it when the coin's recent volatility is well above its usual level.",
+      "name": "weekend fall in calm markets",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b2_percent-weekend-fall-rebound.d1_weekend-fall-outside-slides",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b2_percent-weekend-fall-rebound.d2_weekend-fall-in-calm-markets"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,32 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9947218838814454,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 48-bar excess return on forecast, pooled",
+    "value": 0.0007878814317835252,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.569228849857902
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting mean > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x (48-bar return - coin mean 48-bar return)",
+    "value": 0.004800337916617843,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1864,
+    "cases_BTCUSD": 278,
+    "cases_ETHUSD": 312,
+    "cases_LTCUSD": 321,
+    "cases_XMRUSD": 338,
+    "cases_XRPUSD": 306,
+    "cases_ZECUSD": 309
+  },
+  "decided_by": "The slope is positive with t >= 2 and the supporting mean is above 0 (confirm rule).",
+  "reading": "Situation bars are those whose next bar starts Monday 00:00 UTC, with the expected side from the sign of the recorded raw Saturday return (prices at Saturday/Friday 23:00 bars when missing); 48-bar returns are by row position within a window, the coin's mean 48-bar return is taken on the non-overlapping grid 0, 48, 96, ... of all its windows, cases are trending bars with |forecast| >= 2 and a full 48-bar return in the window, and the slope's t is the ordinary OLS t."
+}

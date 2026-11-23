@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return",
+    "value": 0.004047151409360796,
+    "statistic": {
+      "name": "t of the weighted mean over cases",
+      "value": 5.001475777305006
+    },
+    "threshold": "confirm: above 0 with t >= 2 and supporting check passes; reject: below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean excess return",
+    "value": 0.006166605439973758,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 8514
+  },
+  "decided_by": "The weighted mean excess return is above 0 with t >= 2 and the top-third minus bottom-third difference is above 0.",
+  "reading": "The situation holds on bars where the component's raw value (fall x volume ratio x volatility ratio) is above 0, falling back to a price fall when it is missing, on the long side; the t of the weighted mean is the ordinary t of the per-case values forecast x excess / mean forecast; the top and bottom thirds are the n//3 cases with the highest and lowest forecast; the 300-case minimum gives 'not observable'."
+}

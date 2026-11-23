@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long_1d
+idea tested: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4256 USD
+---
+## Findings
+- **F1:** The check failed on Calmar alone (0.615 against 0.75): the yearly return of +20.7 % sits against a deepest fall of -33.7 %. That fall is one episode lasting 850 days across w1–w8, while the coins in the book fell -53.6 % and the book chained -5.8 %. The year of that fall, 2022, is the book's worst (book -32.0 %, coin -63.5 %), and 2018 also ends flat (book -2.0 %, coin -83.1 %).
+- **F2:** The book's falls come from staying long while the coin is in a downtrend. On days in a position, the book's mean daily return in the coin's lowest third of 20-day return is -0.220 % (Sharpe -1.81, 4449 coin-days), against +0.393 % (Sharpe 3.29) in its highest third. By price against its 100-day mean the pattern is the same: -0.181 % (Sharpe -1.42) below, +0.396 % (Sharpe 3.25) above. On the book's worst 5 % of days, 77.6 % of coins were in a position (63.4 % on all days), with a mean price 6.5 % below the 100-day mean (+3.7 % on all days).
+- **F3:** The idea's effect is concentrated where the coin is above its 100-day mean. On those 5-day grid cases, signal bars earn +2.00 % over the next 5 days, an unusual move of +1.34 % (t 3.46, 395 cases). The same trend state without the signal earns an unusual move of only +0.10 % (525 cases), so the trend condition is not an effect of its own. Below the 100-day mean, the signal's unusual move is +0.07 % (519 cases).
+- **F4:** The 20-day return separates the cases the same way. With the signal, the unusual move is +0.70 % in the top third (t 2.81, 565 cases) against +0.03 % in the bottom third (781 cases). Without the signal, the top third earns +0.17 %, so here too the condition alone carries little.
+- **F5:** After a 5-day rise the signal fails. Signal bars in the top third of 5-day return have an unusual move of -0.15 % (t 1.31 on the raw 5-day mean, 721 cases), against +0.58 % and +0.54 % in the lower two thirds (t 3.53 and 3.46). Without the signal, the low and middle thirds earn +0.04 % and -1.00 %, so a quiet or falling last 5 days is not an effect alone.
+- **F6:** The move is graded in the joint reading. Across thirds of positive forecasts, the unusual 5-day move rises from -0.08 % (mean forecast 1.4) to +0.40 % (6.5) and then +0.80 % (17.7), with 819 cases each. The weakest third covers none of the 0.22 % trade cost beyond the coin's drift. This fits the step-5 size reading of -0.07 % unusual move per signal rise (total move +0.64 %, 2.9 times the cost, mostly drift).
+
+## Ideas
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long.d1_nearness-reversal-in-uptrends` (from F1, F2, F3, F6): For a coin's nearness to its 90-day high, the larger both the excess of its past 365-day predictive power for 5-day returns and today's deviation of nearness from its usual level, when the reading points against a past relation that implies a fall, the larger the coin's rise over the next 5 days. This rise is larger the further the coin's price stands above its 100-day mean.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long.d2_nearness-reversal-after-20-day-strength` (from F1, F2, F4): For a coin's nearness to its 90-day high, the larger both the excess of its past 365-day predictive power for 5-day returns and today's deviation of nearness from its usual level, when the reading points against a past relation that implies a fall, the larger the coin's rise over the next 5 days. This rise is larger the higher the coin's 20-day return.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.b1_nearness-power-reversal-more-coins.d2_strong-nearness-power-reversals.d1_nearness-power-reversal-long.d3_nearness-reversal-after-quiet-week` (from F5, F6): For a coin's nearness to its 90-day high, the larger both the excess of its past 365-day predictive power for 5-day returns and today's deviation of nearness from its usual level, when the reading points against a past relation that implies a fall, the larger the coin's rise over the next 5 days. This rise is larger the lower the coin's own 5-day return before the reading.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

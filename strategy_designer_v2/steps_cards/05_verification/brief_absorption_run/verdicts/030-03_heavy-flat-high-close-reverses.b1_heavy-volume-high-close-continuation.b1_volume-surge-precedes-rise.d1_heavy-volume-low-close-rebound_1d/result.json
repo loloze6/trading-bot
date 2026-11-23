@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess next-10-bar return on forecast",
+    "value": 0.0013576631225558468,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 2.589770540522836
+    },
+    "threshold": "t >= 2.0 confirms (with the check), t <= -2.0 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return on grid bars with forecast >= 10",
+    "value": 0.013916804678940404,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1691,
+    "cases with a forecast of 10 or more": 377
+  },
+  "decided_by": "The slope's t is 2.0 or more and the mean excess return on forecast >= 10 cases is above 0.",
+  "reading": "The situation is taken as graded, so it holds on every bar where the raw component value (close's nearness to the low times the volume ratio) is positive (from prices when the raw value is missing), on the long side; the coin's mean 10-bar return is taken over the same non-overlapping grid of all its windows; the slope's t is the ordinary least-squares t; missing a minimum count gives 'not observable'."
+}

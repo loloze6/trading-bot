@@ -28,6 +28,9 @@ by side, and which strategies are worth combining?
 - **The long-and-short book 025-03.d2 split into its legs (`runs/NIGHT4_RUN.md`, test 1, 2026-11-22):** its short leg
   is unrelated to every paying book (at most 0.10 explained) but small and not reliable (+0.006 % a day, t 1.25); its long
   leg is momentum (0.58). Not yet the second book.
+- **025-03.d2 combined with momentum (`runs/NIGHT4_RUN.md`, test 2):** correlation 0.64 and 0.71 on the folds; Sharpe 1.21 to
+  1.26 combined (half each, or equal risk) against 1.24 alone. At a share explained of 0.4 to 0.5 two books are mostly one
+  bet; a real gain needs a correlation near 0.
 
 ## Why it matters
 Combining unrelated books is the cheapest gain in risk the research can find (a higher Sharpe and a smaller deepest fall
@@ -45,9 +48,10 @@ from books already proven); combining near copies only adds the same bet twice.
 |---|---|---|---|---|
 | 2026-11-22 | The direction: a portfolio layer (option A); the config's component weights stay for combining parts of one idea | the operator, on the designer's recommendation | it is the tested method A with no change to a proven strategy | B: one holding period per config remains; C: too complex for the gain ("a holding period per component sounds a complex logic") |
 | 2026-11-22 | Which strategies to combine: unrelated by the similarity check (`orchestration/ideas_similarities_check/`) and each holding on the unseen dates | the operator and the designer, from the test | unrelated makes the combination smoother; each must pay on its own | combining by the folds' result alone (the reversal book paid there and not out of sample) |
+| 2026-11-22 | Keep every paying strategy with its similarity matrix (the register of paying books, `orchestration/ideas_similarities_check/register/MATRIX.md`, current with every run since `run_idea` calls the check); how to combine them automatically is decided later | the operator | the portfolio needs every strategy that pays and how they relate; the rule for choosing and weighting them comes later | a contribution measured now (most of today's books, one family, would add almost nothing; and a repair changes a book's contribution) |
 
 ## Status and next
-Waiting: at least two unrelated paying books that each hold on the unseen dates (today one family, momentum: topic 41's
+Kept (2026-11-22): every paying strategy and its similarity matrix (the register, kept current by `run_idea`). Waiting: at least two unrelated paying books that each hold on the unseen dates (today one family, momentum: topic 41's
 register). Then: the layer's card (by `HOW_WE_DESIGN_A_CARD.md`), the operator's go for the engine change, its proof
 (the layer on two books gives method A's daily returns, minus the netted costs).
 

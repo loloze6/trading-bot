@@ -13,6 +13,11 @@ Definitions (the same for every backtest):
 - Sharpe: mean over standard deviation of all the daily returns of all windows, times sqrt(365).
 - Calmar: the annualised return of all the daily returns chained in window order, divided by the deepest fall of
   that chained curve. No fall and a positive return passes.
+- Informative measures (common/measures.md: computed and shown, in no rule; operator, 2026-11-22): the daily standard deviation (ddof 1) of all the daily returns, the one
+  inside the Sharpe; the yearly return, the numerator of Calmar: the chained curve's end, compounded to one year.
+- Mean daily return, on days in a position (operator, 2026-11-22): the mean of all the daily returns divided by the share
+  of (coin, day) pairs in which the coin held a position (held into one of the day's bars, or traded on it); a day out
+  of the market earns 0, so this is the mean over the days in a position. A day a strategy is off is not counted.
 - Leave one window out: the Sharpe without the days of one window (the same window number for every coin, so the
   same period); the lowest over all windows.
 - Trades per day: the backtest's trades, without those closed on a window's last bar (a forced close), divided by
@@ -33,7 +38,7 @@ STEPS = HERE.parents[1]
 MEASURES = [  # (rule key, label, comparison)
     ("sharpe_min", "Sharpe", "above"),
     ("sharpe_vs_hold_min", "Sharpe minus holding's Sharpe", "above"),
-    ("avg_daily_return_min", "Mean daily return", "at least"),
+    ("avg_daily_return_min", "Mean daily return, on days in a position", "at least"),
     ("leave_one_window_out_sharpe_min", "Lowest Sharpe, one window left out", "above"),
     ("calmar_min", "Calmar", "above"),
     ("trade_frequency_min", "Trades per day", "at least"),
@@ -56,7 +61,7 @@ def daily(series, ts):
 
 def load(record):
     """Per window: the equal-weight daily returns of the book and of holding; and the trade, bar and day counts."""
-    book, hold, trades, bars, days, coins = {}, {}, 0, 0, 0, []
+    book, hold, trades, bars, days, coins, on_days = {}, {}, 0, 0, 0, [], 0
     for coin in sorted(p for p in record.iterdir() if p.is_dir()):
         wins = sorted(coin.glob("w*/bars.csv.gz"), key=lambda p: int(p.parent.name[1:]))
         if not wins:
@@ -64,21 +69,26 @@ def load(record):
         coins.append(coin.name)
         for f in wins:
             w = int(f.parent.name[1:])
-            d = pd.read_csv(f, usecols=["timestamp", "close", "postRebalance_total_value"])
+            d = pd.read_csv(f, usecols=["timestamp", "close", "postRebalance_total_value", "postRebalance_current_allocation"])
             book.setdefault(w, []).append(daily(d["postRebalance_total_value"], d["timestamp"]).rename(coin.name))
             hold.setdefault(w, []).append(daily(d["close"], d["timestamp"]).rename(coin.name))
             bars += len(d)
-            days += pd.to_datetime(d["timestamp"]).dt.normalize().nunique()
+            day = pd.to_datetime(d["timestamp"]).dt.normalize()
+            days += day.nunique()
+            a = d["postRebalance_current_allocation"].fillna(0).to_numpy(float)
+            held = pd.Series(np.r_[0.0, a[:-1]] != 0) | pd.Series(np.r_[a[0] != 0, a[1:] != a[:-1]])   # held into the bar, or traded on it
+            on_days += int(held.groupby(day.to_numpy()).any().sum())
             last = pd.to_datetime(d["timestamp"].iloc[-1])
             with gzip.open(f.parent / "trades.json.gz", "rt") as g:
                 t = json.load(g)
             trades += sum(1 for x in t if pd.to_datetime(x["exit_time"]) != last)   # a close on the last bar is forced
     eq = lambda parts: {w: pd.concat(v, axis=1, sort=True).mean(axis=1) for w, v in parts.items()}
-    return eq(book), eq(hold), trades, bars, days, coins
+    return eq(book), eq(hold), trades, bars, days, coins, on_days
 
 
 def check(record, rule):
-    book, hold, trades, bars, days, coins = load(record)
+    book, hold, trades, bars, days, coins, on_days = load(record)
+    share_on = on_days / days if days else 0.0          # the share of (coin, day) pairs in a position
     windows = sorted(book)
     r = np.concatenate([book[w].to_numpy() for w in windows])
     h = np.concatenate([hold[w].to_numpy() for w in windows])
@@ -91,7 +101,7 @@ def check(record, rule):
     v = {
         "sharpe_min": sharpe(r),
         "sharpe_vs_hold_min": sharpe(r) - sharpe(h),
-        "avg_daily_return_min": float(r.mean()),
+        "avg_daily_return_min": float(r.mean()) / share_on if share_on > 0 else 0.0,   # on the days in a position
         "leave_one_window_out_sharpe_min": min(loo.values()),
         "calmar_min": calmar,
         "trade_frequency_min": trades / days if days else 0.0,
@@ -102,7 +112,8 @@ def check(record, rule):
         rows.append({"measure": key, "label": label, "value": v[key], "threshold": rule[key], "comparison": cmp, "passed": bool(ok)})
     facts = {"coins": coins, "windows": len(windows), "days": int(len(r)), "years": round(years, 2), "bars": bars,
              "trades": trades, "holding_sharpe": sharpe(h), "annualised_return": float(ann), "deepest_fall": fall,
-             "worst_window_left_out": f"w{min(loo, key=loo.get)}"}
+             "worst_window_left_out": f"w{min(loo, key=loo.get)}",
+             "daily_standard_deviation": float(r.std(ddof=1)) if len(r) > 1 else 0.0, "share_of_days_in_a_position": share_on}
     return rows, facts
 
 
@@ -142,11 +153,17 @@ def main():
     status = "profitable enough" if ok else "not profitable enough"
     d = out_dir / rid
     d.mkdir(parents=True, exist_ok=True)
-    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "decided_by": decided},
+    informative = {"daily_standard_deviation": facts["daily_standard_deviation"], "yearly_return": facts["annualised_return"],
+             "years": facts["years"], "share_of_days_in_a_position": facts["share_of_days_in_a_position"]}
+    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "decided_by": decided, "informative": informative},
                                                indent=2, default=str) + "\n")
     lines = ["---", f"backtest: {rid}", f"data: {data}", f"status: {status}", "---",
              "| Measure | Value | Rule | Passed |", "|---|---|---|---|"]
     lines += [f"| {x['label']} | {fmt(x['value'])} | {x['comparison']} {fmt(x['threshold'])} | {'yes' if x['passed'] else 'no'} |" for x in rows]
+    lines += ["", "| Informative measure | Value |", "|---|---|",
+              f"| Daily standard deviation | {100 * informative['daily_standard_deviation']:.3f} % |",
+              f"| Yearly return | {100 * informative['yearly_return']:+.1f} % (over {informative['years']} years) |",
+              f"| Days in a position | {100 * informative['share_of_days_in_a_position']:.0f} % of the coins' days |"]
     lines += ["", f"- Decided by: {decided}",
               f"Record: `steps_cards/{os.path.relpath(record, STEPS)}`", "Rule: `steps_cards/06_profitability/helper/rule.yaml`"]
     write_atomic(d / "check.md", "\n".join(lines) + "\n")

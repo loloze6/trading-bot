@@ -18,7 +18,7 @@ def test_standard_checks(spec_path):
     spec = H.load_spec(spec_path)
     cls = getattr(H.SC, spec.CLASS)
     fails = []
-    for p in spec.SETTINGS:
+    for p in H.distinct_settings(cls, spec.SETTINGS):           # a setting equal to the defaults runs once
         fails += H.check_warmup(cls, p) + H.check_engine(cls, p)
     fails += H.check_hand(cls, spec.SETTINGS, spec.hand)
     assert fails == []
@@ -51,3 +51,9 @@ def test_the_synthetic_data_is_long_enough_for_a_long_warmup():
     cls = H.SC.DistanceFromHighComponent
     assert H.check_warmup(cls, {"period": 450}) == []
     assert len(H.bars_for(cls, {"period": 450})) >= 2 * 450 + 100
+
+
+def test_a_setting_that_spells_out_the_defaults_is_checked_once():
+    cls = H.SC.RiseTimesVolatilityCalmnessComponent
+    assert H.distinct_settings(cls, [{}, {"period": 24, "lag": 24, "vol_period": 720, "vol_lookback": 8760}]) == [{}]
+    assert len(H.distinct_settings(cls, [{}, {"period": 12}])) == 2

@@ -267,6 +267,13 @@ def main():
         row["step6"] = rc["status"] + (f" (failed: {', '.join(failed)})" if failed else "")
     else:
         row["step6"] = "not checked"
+    # The similarity register (code only; operator, 2026-11-22): every confirmed idea's book, paying or not, added and
+    # compared with the paying books (a repair also with the idea it repairs); select_next reads it. After the chart
+    # files: a confirmed book's returns are rebuilt from them where its bars are not kept.
+    if (result(v) or {}).get("status") == "confirmed":
+        isc = STEPS / "orchestration" / "ideas_similarities_check"
+        j.step("similarity_check", [isc / "helper/ideas_similarities_check.py", record, "--run", args.run],
+               [isc / "register" / "comparisons" / f"{args.run}__{rid}.json"])
 
     # Step 7: every active line, in parallel; each line's own entry condition decides whether it runs
     def run_line(line):

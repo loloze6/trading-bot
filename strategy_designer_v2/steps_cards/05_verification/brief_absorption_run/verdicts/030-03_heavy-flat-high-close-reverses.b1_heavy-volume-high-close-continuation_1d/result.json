@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar unusual move after long cases",
+    "value": -0.00226551075151024,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.565560862752432
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; fewer than 30 cases is not observable"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-forecast half minus smaller half",
+    "value": 0.005939957753226276,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1578
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first long bet (forecast rise of at least 2 points from its lowest positive level since the last bet, from 0 after a flat) in each 10-bar grid cell counted from the window's first row, dropped if its 10-bar return leaves the window; the normal drift is each coin's mean non-overlapping 10-bar grid return over all its windows; the median split puts cases with forecast above the median in the larger half and the rest in the smaller half."
+}

@@ -1,0 +1,15 @@
+---
+brief: 026_weekend-moves-reverse-in-the-week
+source-idea: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation
+line: 7.b inconclusive
+backtest: 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d2_trend-aligned-heavy-weekend-continuation_1h
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO
+bar: 1h
+period: folds A, B, C, D
+---
+Idea: A coin's Saturday-Sunday move made on higher volume than its mean over the preceding five weekdays continues in the same direction over the next 48 hours, the more so the larger the move and the heavier the weekend volume. The continuation is larger the more the weekend move goes the same way as the coin's 30-day return before the weekend.
+Consequence: Follow a heavy weekend move into the week when it extends the coin's month-long trend, and refuse it when it cuts against that trend.
+Why:
+- F1: The test's result points the way the idea predicts but falls short of the bar: the mean signed unusual 48-hour move is +1.04 % with t 1.76 over 258 non-overlapping weekend cases. The sign holds at every horizon measured: +0.68 % at 12h (t 2.46), +0.69 % at 24h (t 1.63), +1.41 % at 72h (t 2.30) and +1.57 % at 96h (t 2.10, 257 cases).
+- F2: The effect is mixed across coins, which drowns it at six coins. It is positive in ETH (+2.53 %, t 2.35, 40 cases), XRP (+6.10 %, t 2.19, 38 cases) and BTC (+2.19 %, t 1.80, 25 cases). It reverses in XMR (−2.14 %, t −2.70, 48 cases) and is near zero in LTC (−0.25 %, t −0.25) and ZEC (−0.10 %, t −0.09). With only 25 to 64 cases per coin, more coins would give the clear answer.
+- F6: The effect is not confined to one period. Six of the eight years are positive, with 2020 the strongest (+4.00 %, t 2.43, 44 cases), while 2018 (−1.51 %), 2023 (−0.57 %) and 2025 (−0.93 %) are negative.

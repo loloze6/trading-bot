@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9988564894225271,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed excess 2-day return (Sunday close to Tuesday close) over Sunday cases, before costs",
+    "value": 0.006597426413981362,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 6.179514903735947
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope t >= 2); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of signed excess 2-day return on s20/s60 (recomputed from closes)",
+    "value": 0.01856902332383858,
+    "passed": true,
+    "slope_t": 3.2626376899364327
+  },
+  "counts": {
+    "Sunday cases": 5169,
+    "cases in slope regression": 2601
+  },
+  "decided_by": "Main mean positive with t >= 2 and the s20/s60 slope positive with t >= 2.",
+  "reading": "Cases are Sunday (UTC start) bars with nonzero forecast and a close two bars later in the same window, the coin's mean 2-day return is pooled over a 0,2,4,... grid of all its windows, s20/s60 uses within-window daily returns (std ddof 1, cases without 60 returns left out of the regression), and the plan's 300-case minimum is applied as 'not observable'."
+}

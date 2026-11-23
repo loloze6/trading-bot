@@ -1,0 +1,26 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-24-bar return minus drift on forecast",
+    "value": -8.120278872028063e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -2.299358887624892
+    },
+    "threshold": "slope t >= 2 (with check mean > 0) to confirm, slope t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x (24-bar return - drift)",
+    "value": -0.000999982860235617,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 11744
+  },
+  "decided_by": "Slope t <= -2 (moves of quiet hours reverse) with at least 200 independent cases.",
+  "reading": "Volatility ratio recomputed per window from close-to-close hourly returns (rolling std, ddof 1, 24 and 720 returns including the current bar), the expected side is the sign of the hour's move (raw component value, else the 1-bar price return), active bars without a computable ratio are left out of the agreement; the drift is each coin's mean 24-bar return over all grid cells of all its windows, the slope's t is the ordinary OLS t of a pooled regression with intercept, and the independent cases are the active grid cells with a 24-bar return inside their window."
+}

@@ -40,3 +40,20 @@ def test_the_holding_period_is_the_plan_s_horizon():
 
 def test_the_prompt_has_no_placeholder_left():
     assert "{{" not in (HERE / "system_prompt.md").read_text()
+
+
+def test_the_brief_side_is_enforced_by_code_on_every_component():
+    """Operator, 2026-11-22: a short-only brief's book never goes long (each component capped at 0 from above), a long-only
+    brief's never goes short; any other side adds nothing; applying it twice adds one cap."""
+    import copy
+    cfg = {"strategies": {"regimes": {"unknown": {"components": [
+        {"id": "a", "class": "X", "transforms": [{"op": "standardise", "params": {"window": 60, "min_periods": 20}}]},
+        {"id": "b", "class": "Y"}]}, "trending": None}}}
+    short = m.add_side(m.add_side(copy.deepcopy(cfg), "short only"), "short only")
+    for c in short["strategies"]["regimes"]["unknown"]["components"]:
+        assert c["transforms"][-1] == {"op": "clip", "params": {"max": 0}} and sum(t["op"] == "clip" for t in c["transforms"]) == 1
+    long_ = m.add_side(copy.deepcopy(cfg), "long only")
+    assert all(c["transforms"][-1] == {"op": "clip", "params": {"min": 0}} for c in long_["strategies"]["regimes"]["unknown"]["components"])
+    assert m.add_side(copy.deepcopy(cfg), "long and short") == cfg and m.add_side(copy.deepcopy(cfg), None) == cfg
+    assert m.brief_side("---\nbar: 1d\nside: short only\n---\nA theory.") == "short only"
+    assert m.brief_side("---\n---\nA theory.") is None

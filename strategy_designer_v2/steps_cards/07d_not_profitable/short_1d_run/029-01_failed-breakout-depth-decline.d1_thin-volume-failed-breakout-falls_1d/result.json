@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38279830000000004,
+  "findings": {
+    "F1": "The move per case cannot cover a trade. The total short-side move is +0.10 % over 5 days, against a cost of 0.19 % per trade, because the coins' normal drift runs \u22120.59 % against the short. The 394 actual trades lost \u22121.84 % gross on average (t \u22124.26), with only 30 % winners, so the mean daily return was 5.2e-05 against the 0.0005 required.",
+    "F2": "The forecast does not keep the idea's grading. 442 of its 468 non-zero bars sit at exactly \u221220, so the book is short at full size whether the breakout volume was a little thin or very thin. It is also in the market only 2\u20139 % of bars per coin.",
+    "F3": "Across all 498 failed breakouts rebuilt from prices, only the thinnest quartile shows a fall. That quartile, with a mean thinness of 0.38 (volume about 38 % below its 20-day average), has a short-side unusual move of +1.15 % (t 1.42, 125 cases). The heavy-volume failures move \u22120.99 % (t \u22121.59, 303 cases). The near-average quartile (thinness 0.05) moves \u22121.09 %.",
+    "F4": "The losses gather where the coin was already depressed when the breakout failed. Trades entered in the lowest quartile of distance to the 50-day mean (\u22127 %) lost \u22125.0 % gross (t \u22123.95, 56 trades); the other quartiles lost \u22120.3 % to \u22122.6 %. Trades in the lowest 60-day-return quartile (\u221225 %) lost \u22124.45 % (t \u22122.97, 47 trades).",
+    "F5": "Among thin-volume failures, those after a falling 60 days (mean \u221218 %) rose: short-side unusual move \u22122.13 % (t \u22121.74, 60 cases). Those in the second and fourth 60-day quartiles fell: +2.63 % (t 2.17, 41 cases) and +1.87 % (t 1.17, 52 cases).",
+    "F6": "One market year carries much of the damage. In 2020 the failed-breakout cases moved \u22123.67 % against the short (t \u22123.48, 81 cases), and the trades lost \u22123.63 % gross (t \u22123.81, 46 trades). The book summed \u221211.4 % that year, while the coins averaged +0.42 % a day.",
+    "F7": "The book does better when the breakout came after a larger 20-day rise. Trade losses shrink steadily from \u22123.51 % (t \u22123.79) in the lowest 20-day-return quartile (+1 %) to \u22121.27 % (t \u22121.13) in the highest (+40 %). The failed-breakout cases in that highest quartile are the only 20-day quartile with a positive short-side unusual move (+0.41 %)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily close moves above its prior 20-day high and then, within the next 3 days, closes back below that old high, the coin falls over the next 5 days. This holds only while the breakout day's volume was below its 20-day average and the coin's close stood above its 50-day average, and the lower that volume against its average, the larger the fall.",
+      "consequence": "A trader would short thin-volume failed breakouts only in a coin that is above its 50-day average, and refuse those that come out of a depressed market, where the failure tends to start a recovery.",
+      "name": "thin failure above trend",
+      "from": "F1, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's daily close moves above its prior 20-day high and then, within the next 3 days, closes back below that old high, the coin falls over the next 5 days. The thinner the breakout day's volume against its 20-day average, and the larger the coin's 20-day rise into the breakout, the larger that fall.",
+      "consequence": "A trader would size a short on a failed breakout by both how thin the breakout volume was and how extended the run into it was, keeping full size for thin failures at the end of large rises.",
+      "name": "thin failure after extension",
+      "from": "F1, F2, F3, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.d1_thin-failure-above-trend",
+    "029-01_failed-breakout-depth-decline.d1_thin-volume-failed-breakout-falls.d2_thin-failure-after-extension"
+  ],
+  "no_ideas": null
+}

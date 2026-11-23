@@ -1,0 +1,34 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44920860000000007,
+  "findings": {
+    "F1": "The main t is negative even though the pooled mean is positive, because coins fall and rebound together on the same Sundays: across 2,235 Sunday-fall cases the pooled excess 2-day return is +0.36 % (t 2.21), but the mean of per-Sunday cross-coin means is \u22120.33 % (t \u22120.87, 292 Sundays), and the case-level correlation between fall size and the 2-day excess return is only 0.018.",
+    "F2": "Over 2 days a Sunday fall is followed by nothing a weekday fall is not: the per-date mean 2-day excess return after a fall is \u22120.33 % (t \u22120.87) for Sunday, against a range of \u22120.20 % to +0.46 % (t \u22120.47 to 1.38, about 280\u2013300 dates each) for the other six weekdays.",
+    "F3": "Over 3 days the rebound grows with the size of the weekend fall: the per-Sunday mean 3-day excess return by fall quintile is \u22120.11 %, +0.16 %, +0.75 %, +1.67 % (t 2.12, 146 Sundays) and +1.25 % (t 1.47, 122 Sundays). The same quintiles over 2 days follow no order (pooled \u22120.48 %, +0.37 %, \u22120.02 %, +1.66 %, +0.23 %).",
+    "F4": "The rebound arrives on the third day rather than on Monday: Wednesday's own excess return after a Sunday fall averages +0.53 % per Sunday (t 1.92, 288 Sundays), while Monday's averages \u22120.24 % (t \u22120.81, 294 Sundays) and the 2-day return \u22120.33 %.",
+    "F5": "The effect is not steady over time: the per-Sunday mean 3-day excess return after a Sunday fall is +1.70 % in 2020 and +1.91 % in 2021, but \u22120.38 %, \u22120.60 %, +0.59 % and \u22120.52 % in 2022\u20132025, with no year reaching |t| 1.4.",
+    "F6": "Volume runs against the brief: the per-Sunday mean 3-day excess return after a Sunday fall rises from the low to the high relative-volume tercile (\u22120.13 %, +0.22 %, +0.52 %). The brief predicts the most reversal on low weekend volume.",
+    "F7": "On the other side, weekend rises are followed by an underperformance over 2 days: per-Sunday mean \u22120.84 % (t \u22122.19, 297 Sundays, 2,147 cases), weaker at 1 day (\u22120.30 %, t \u22121.01) and at 3 days (\u22120.67 %, t \u22121.56)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 3 days (Monday to Wednesday), and the larger the weekend fall, the larger the rise.",
+      "consequence": "Large weekend falls are a reason to buy at Sunday's close and hold through Wednesday, sized by how far the coin fell, rather than exiting on Tuesday.",
+      "name": "weekend fall three-day rebound",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound"
+  ],
+  "no_ideas": null
+}

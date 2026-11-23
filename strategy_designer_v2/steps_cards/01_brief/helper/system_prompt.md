@@ -22,7 +22,7 @@ Header lines. Write a line only for a key the request or the source states in wo
 - instruments: the coins or pairs
 - bar: the bar size, such as 1h or 1d
 - period: years
-- side: long only, or long and short
+- side: long only, short only, or long and short
 - source: a reference to the source, only when one is given
 
 Output exactly this, and nothing else:

@@ -1,0 +1,25 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides_1d
+idea tested: 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3564 USD
+---
+## Findings
+- **F1:** The short side does not pay for itself: summed bar gains of short positions were -0.004 in falling 30-day markets and -0.19 in rising ones, against fees of -0.23 and -0.16; long positions earned +1.27 and +2.52 against fees of -0.28 and -0.21; narrower-than-norm cases had a 3-day excess of only -0.16 % (t -1.16, n 3570), while wider cases had +0.26 % (t 1.40, n 2153).
+- **F2:** The effect lives only while the coin's 30-day return is positive: there the pooled slope of 3-day excess on the forecast is 0.00284 (t 3.96, n 2187), and when it is negative it is -0.00047 (t -0.63, n 2096); the 3-day excess rises in steps in rising markets (-0.27 %, -0.05 %, -0.27 %, +0.56 %, +2.03 % with t 3.71 at the widest, n 345).
+- **F3:** A rising 30-day return is not an effect of its own: in rising markets, grid cases without a wide day had 3-day excess of -0.19 % (n 1585), against +1.40 % (t 3.79, n 602) when the day was also wider than its norm; in falling markets wide days gave -0.31 % (n 670). The trend belongs to the idea's own theory, because range expansion that follows a trend is trend-following traders adding, not panic.
+- **F4:** The book's deepest falls came in falling windows: w9 fell -12.9 % while its coins fell 32 %, and w2 fell -9.2 % while its coins fell 44 %, with long positions losing -0.25 in w2. Being long on wide days inside a downtrend is what feeds the Calmar failure (0.42).
+- **F5:** The book was in a position on 99 % of coin-days, mostly with small positions near a zero forecast (mean |allocation| 0.09–0.11 for |f| < 1.5, 14 % of bars with |f| < 0.5). That is why the mean on days in a position is 0.016 % against the required 0.05 %, while the bars with f > 3 carried +2.34 of the +3.6 summed gain.
+- **F6:** The move is large against the cost where the effect holds: wide days in rising markets were followed by a total 3-day move of +1.77 % (9 times the 0.19 % trade cost) and a 6-day move of +3.28 % (excess +2.54 %, t 2.93, n 310), while the 10-day move fades (t 1.46).
+- **F7:** Wide days that close down carry the effect too (3-day excess +0.88 %, t 2.47, n 612), against +0.15 % (t 0.42) on wide days that close up. Unlike the trend, this is a split inside the signal, not a separate condition.
+
+## Ideas
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d1_wide-days-in-uptrends-rise` (from F2, F3, F4, F5, F6): The further a coin's daily high-low range exceeds its average range over the past 30 days, the higher that coin's return over the next 3 days above its usual drift, only while the coin's 30-day return is positive.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d2_range-expansion-long-side-only` (from F1, F5): The further a coin's daily high-low range exceeds its average range over the past 30 days, the higher that coin's return over the next 3 days above its usual drift, with no lean against the coin after narrower days.
+- `022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.d3_wide-uptrend-days-held-longer` (from F2, F6): The further a coin's daily high-low range exceeds its average range over the past 30 days, the higher that coin's return over the next 6 days above its usual drift, while the coin's 30-day return is positive.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

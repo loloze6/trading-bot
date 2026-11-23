@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast, over cases with forecast > 0",
+    "value": 0.001132619093188099,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.228372487967596
+    },
+    "threshold": "confirm: slope t >= 2 with forecast-weighted mean excess > 0 and >= 100 cases; reject: slope t <= -2 with >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-day excess return > 0",
+    "value": 0.008038412912554195,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1607
+  },
+  "decided_by": "Slope t >= 2 and forecast-weighted mean excess return > 0 with at least 100 cases (confirm rule).",
+  "reading": "Situation bars are bars whose volume is at least 2x the mean of the prior 20 bars (recomputed from prices, the recorded regime used where the window lacks 20 prior bars) with a close location from the high above 0, on the long side; cases are all forecast>0 bars with a next bar in the same window (a 1-bar grid is every bar), pooled over coins and windows, the excess removing each coin's mean 1-bar return over all its windows, and the slope t is the OLS t of excess return on forecast."
+}

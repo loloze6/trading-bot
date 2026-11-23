@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound_1d
+idea tested: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5103 USD
+---
+## Findings
+- **F1:** The check failed on Calmar (0.31 against 0.75). The book's deepest fall was -35.6 % over 880 days, through windows w1 to w9, while the coins' mean chain fell -45.0 % over the same span. Inside those windows the 859 Sunday cases earned a mean excess 3-day return of -0.26 % (t -0.87). The other 1356 cases earned +1.54 % (t 5.18), so the fall comes from periods where the effect was absent.
+- **F2:** Volatility targeting sized the book against the effect. Across quartiles of 20-day daily volatility at the Sunday close, the mean position fell from 0.56 to 0.32 while the mean excess 3-day return rose from +0.14 % to +3.59 % (444 cases per quartile). In w1 to w9 the two calmest quartiles lost -0.39 and -0.61 in summed case returns and the most volatile one gained +1.37. A fixed position per case gave a weekly-chain Calmar of 1.44 against 0.65 as tested; this is an approximate chain of case returns after a 0.22 % cost, not the daily book.
+- **F3:** The effect lives in Sundays with high volatility, and high volatility alone does not earn it. Sunday falls with 20-day volatility above the median gave +2.17 % excess over 3 days (887 cases), against +0.24 % below the median (888 cases). Sundays above the median with no fall signal gave -1.04 % (1027 cases), so the condition alone does not earn the rise. This fits the brief: a thin weekend book in an agitated market charges the largest liquidity cost.
+- **F4:** The rebound concentrates after coins that were already down over the prior 20 days, and that condition alone loses. Sunday falls in the lowest quartile of 20-day return gave +2.54 % excess (t 5.72, 548 cases), the second quartile +1.48 % (t 3.18), the third -0.46 % (t -1.13). Sundays with no fall signal in the lowest quartile gave -1.49 % (444 cases). Restricting to cases below the median 20-day return raised the weekly-chain Calmar to 2.85, with a deepest fall of -9.1 % (approximate chain).
+- **F5:** The book's gain comes from the large falls. Cases with a forecast of 8 to 12 and 12 to 20 summed +3.81 and +5.52 of the book's +10.9 of case returns after costs. Forecasts of 2 to 8 summed about +1.1 across 947 cases, with excess returns of -0.25 %, +0.76 % and -0.62 %. Keeping only forecasts of 8 or more lifted the weekly-chain Calmar to 1.03.
+- **F6:** The losing years were 2018 (-3.00 % mean excess, 107 cases) and 2022 (-1.05 %, 375 cases). Within the w1 to w9 fall, the large-forecast cases still earned +0.88 % (329 cases) while the small ones earned -0.10 % (399 cases).
+
+## Ideas
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d1_weekend-fall-rebound-volatile` (from F2, F3, F1): A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 3 days (Monday to Wednesday), the larger the weekend fall, the larger the rise. The rise is larger the more volatile the coin's daily moves were over the past 20 days, so the rebound is carried by the weekend falls of agitated markets.
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d2_weekend-fall-after-decline` (from F4, F1): A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 3 days (Monday to Wednesday), the larger the weekend fall, the larger the rise. The rise is larger the further the coin had already fallen over its past 20 days.
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound` (from F5, F6, F2): A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) by a large multiple of its usual daily move rises over the next 3 days (Monday to Wednesday). The rise grows with how many usual daily moves the weekend fall spans, and is carried by the largest falls.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

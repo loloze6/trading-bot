@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week_1h
+idea tested: 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4547 USD
+---
+## Findings
+- **F1:** Over the two days after Sunday's close, the coins reverse Sunday's own 24-hour move: the slope of the Monday-and-Tuesday excess return on Sunday's volatility-scaled return is -0.0061 (t -3.20, 2173 weekly cases); the mean of the excess return taken against Sunday's sign is +0.82 % (t 5.25) next to a usual 48-hour move of 6.7 %; by quintile, the most negative Sundays are followed by +1.0 % and the second-highest by -1.6 %. Cases on the same weekend are shared across the six coins, so this t overstates how independent they are.
+- **F2:** The reversal grows with the coin's volatility: the slope is +0.0030 (t 1.19) in the lowest volatility tercile, -0.0085 (t -3.02) in the middle one and -0.0137 (t -3.07) in the highest; it is negative for all six coins (t from -0.76 to -2.47) and in 6 of 8 years.
+- **F3:** In the same regression, Saturday's continuation and Sunday's reversal each stand on their own: Saturday's return has beta +0.0104 (t 5.03) and Sunday's -0.0051 (t -2.68). The combined weekend 2-day return predicts nothing monotone (quintiles +0.28 %, -0.85 %, -0.47 %, +0.02 %, +0.30 %), because the two days pull opposite ways.
+- **F4:** Saturday's move continues only once the week starts: read at Saturday's close, its slope over Sunday and Monday is +0.0011 (t 0.61); read at Sunday's close, its slope over Monday and Tuesday is +0.0110 (t 5.34). The book earns its money on those days: 22.1 bp per coin-day on Mondays and 12.0 bp on Tuesdays, against -2.4 to +1.2 bp on the other days.
+- **F5:** The book's long trades earn +0.62 % net (1978 trades) while its short trades lose -0.36 % (1514), and the trade gain rises with the entry forecast's size, from -0.04 % in the lowest quartile to +0.58 % in the highest.
+- **F6:** Hours 21 and 22 UTC rise by +4.9 bp (t 6.09) and +3.8 bp (t 4.95) above the coin's mean hourly return, for every coin (t 2.6 to 3.9) and in 7 of 8 years. Their roughly 9 bp over the two hours is below the 0.19 % a trade costs, so I propose no idea from it.
+
+## Ideas
+- `026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.g1_sunday-move-reverses-early-week` (from F1, F2): A coin's 24-hour return over Sunday is followed over the next two days, Monday and Tuesday, by a move in the opposite direction, and the larger Sunday's move, the larger the reversal; the effect is strongest when the coin's 30-day volatility is high.
+- `026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.g2_saturday-minus-sunday-spread` (from F3, F4, F1): Over Monday and Tuesday a coin moves in the direction of its Saturday 24-hour return minus its Sunday 24-hour return, and the larger that difference, the larger the move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

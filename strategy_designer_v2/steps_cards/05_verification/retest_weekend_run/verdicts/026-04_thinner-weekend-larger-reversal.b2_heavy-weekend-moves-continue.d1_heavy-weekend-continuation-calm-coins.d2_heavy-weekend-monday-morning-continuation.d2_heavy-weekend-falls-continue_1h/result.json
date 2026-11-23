@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9842105263157894,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 12-bar excess return over coin drift, Sunday 23:00 signals (forecast <= -2)",
+    "value": 0.014925814221688016,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.8734954047687093
+    },
+    "threshold": "confirm: t >= 2 with slope on forecast size > 0; reject: t <= -2; otherwise inconclusive; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of short-direction excess return on |forecast|",
+    "value": 0.0015585157987031315,
+    "passed": true
+  },
+  "counts": {
+    "cases over all coins and windows": 153
+  },
+  "decided_by": "Mean short-direction excess return is positive with t >= 2 and the slope on the forecast's size is above 0.",
+  "reading": "Situation bars are those starting Sunday 23:00 UTC with a negative raw weekend_fall value (else negative 48-bar return) and a recomputed 48/120-bar volume ratio above 1 (regime 'trending' where it cannot be recomputed); the excess is -(r12 - coin drift), drift being the coin's mean 12-bar return on the 0,12,24,... grid of all its windows; cases are deduplicated to the first per coin and ISO week, those without 12 later bars in the window are dropped, and the slope is on |forecast|."
+}

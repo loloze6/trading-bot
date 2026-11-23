@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.975973669775096,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 24-bar forward return minus normal drift on forecast, pooled",
+    "value": 0.00022224653814939427,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.2029924351092305
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean unusual move > 0); reject: slope < 0 with t <= -2; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 24-bar move in forecast direction",
+    "value": 0.0024198525594845213,
+    "passed": true
+  },
+  "counts": {
+    "cases": 9041
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean unusual move in the forecast's direction is above 0.",
+  "reading": "The active bar of the situation is the bar stamped 00:00 UTC (closing at 01:00), with r24 the 24-bar return to its close and the hour's move the one-bar return 24 bars earlier, both by row position inside a window; cases are trending bars with non-zero forecast and a full 24-bar forward return in the window, one per day so already non-overlapping, the drift is the coin's mean 24-bar return on the non-overlapping grid of all its windows, the regression is OLS with intercept, and fewer than 300 cases is reported as not observable."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 5-bar excess return over drift",
+    "value": -0.0012507695276822875,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.29498119478811613
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases (confirm); mean < 0 with t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation |forecast| vs short excess return",
+    "value": 0.0568904114002091,
+    "passed": true
+  },
+  "counts": {
+    "cases": 617
+  },
+  "decided_by": "t is between -2 and 2 (or undefined) with at least 30 cases: inconclusive.",
+  "reading": "Situation recomputed from closes (most recent bar 1-3 ago with close above the max of its prior 20 closes, today's close below that max), falling back to a nonzero raw component value where the window's prices are too short; a case is a short bet (|forecast| rising by >= 2 from its lowest size on the short side since the last bet, reset to 0 on flat or side change), the first one per non-overlapping 5-bar cell from each window's first row, with drift the coin's mean 5-bar grid return over all its windows."
+}

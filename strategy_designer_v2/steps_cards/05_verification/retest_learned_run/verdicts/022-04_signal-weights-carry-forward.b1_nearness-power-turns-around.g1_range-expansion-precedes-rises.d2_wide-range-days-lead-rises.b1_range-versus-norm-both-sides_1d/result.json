@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next 3-bar excess return on forecast",
+    "value": 0.0012924021918632649,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 2.806226036107988
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; over at least 1000 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "independent grid cases": 5723,
+    "active bars": 17524
+  },
+  "decided_by": "Confirm rule met: the slope is positive with t >= 2 over at least 1000 grid cases.",
+  "reading": "All grid cells (positions 0,3,6,... of each window with a bar 3 ahead) enter the regression, including those with a zero forecast, and the coin's mean 3-bar return is taken over its grid cells of all windows."
+}

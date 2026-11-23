@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9912663755458515,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 12-bar move in the forecast's direction",
+    "value": 0.006154641143919596,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.42456675132475
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half of |forecast|, mean unusual move",
+    "value": 0.004178810776186757,
+    "passed": true
+  },
+  "counts": {
+    "cases over all coins and windows": 305,
+    "active bars": 309,
+    "evaluable active bars": 229
+  },
+  "decided_by": "mean unusual move > 0 with t >= 2 and the upper-minus-lower |forecast| half difference is above 0",
+  "reading": "situation bar read as the bar whose close (timestamp + 1h) is Monday 00:00 UTC, with 48/720-bar returns and the 48-vs-prior-120-bar volume ratio rebuilt from in-window prices, active bars lacking that history left out of the agreement share; cases deduplicated to the first nonzero bar per coin per ISO week, and the median split puts |forecast| above the median in the upper half"
+}

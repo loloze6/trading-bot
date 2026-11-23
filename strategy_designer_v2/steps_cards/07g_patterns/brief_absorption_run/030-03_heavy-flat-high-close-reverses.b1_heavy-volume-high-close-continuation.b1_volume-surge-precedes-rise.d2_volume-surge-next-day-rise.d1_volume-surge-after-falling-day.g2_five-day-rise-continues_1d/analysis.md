@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.g2_five-day-rise-continues_1d
+idea tested: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.g2_five-day-rise-continues
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4097 USD
+---
+## Findings
+- **F1:** Over all the 3-day grid cases (n 3886), the coin's excess 3-day return, in usual 3-day moves, rises with the log of its 5-day volume against its 60-day average volume, slope +0.125 per log unit with t 4.49. This is the strongest pattern across about twenty angles, and stronger than the tested 5-day-rise forecast itself (slope t 2.79 on its 2850 cases).
+- **F2:** On a coin's heaviest-volume days (top fifth of volume against its 20-day average), the next 3 days' excess return is +1.59 % (t 3.51, n 476) when the day closed down, and +0.00 % (t 0.01, n 525) when it closed up.
+- **F3:** The tested idea's gain sits on heavy volume. Among cases with a positive forecast, the top tercile of 1-day relative volume gives +0.91 % excess over 3 days (t 2.78, n 854), while the lower two terciles give −0.01 % (t −0.03) and −0.17 % (t −0.73). In the full grid, though, the rise × volume interaction term is −0.005 with t −0.42, so volume adds to the rise rather than amplifying it.
+- **F4:** The tested forecast is not graded through its range. Forecast 3–6 gives −0.47 % (t −1.53, n 518), forecast 6–10 gives +0.47 % (t 1.49, n 501), and forecast 10–21 gives +0.63 % (t 2.25, n 1159). The lowest positive 5-day-rise sextile is −0.61 % (t −2.86, n 881), and the top two sextiles are +0.55 % (t 2.35) and +0.80 % (t 2.33).
+- **F5:** The heavy-volume effect is not uniform:
+- **F6:** The brief's question finds no clear answer. On heavy-volume flat days, closes in the low third give −0.05 % (n 46, t −0.05) and closes in the high third give +1.08 % (n 89, t 1.27). Over all days, the close-location terciles stay within |t| 1.72. With this many angles looked at, none of these stands out from chance.
+- **F7:** The book's daily returns are fat-tailed:
+
+## Ideas
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.g2_five-day-rise-continues.g1_five-day-volume-surge-rises` (from F1, F3): The larger a coin's traded volume over the past 5 days, measured against its usual volume over the past 60 days, the more the coin rises over the next 3 days.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.g2_five-day-rise-continues.g2_heavy-volume-down-day-rebounds` (from F2, F5): The heavier a coin's volume on a day it closes lower, measured against its average volume over the past 20 days, the more the coin rises over the next 3 days.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.g2_five-day-rise-continues.g3_volume-backed-rise-continues` (from F3, F4, F1): The larger a coin's 5-day rise in usual 5-day moves, the more it rises over the next 3 days, and the more so the heavier its volume over those 5 days against its usual 60-day volume.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

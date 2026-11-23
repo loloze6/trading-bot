@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9843417317246274,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x drift-adjusted 8-bar return over settlement mean_reversion cases",
+    "value": 0.0003719168647550177,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.3114792683479584
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting difference > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half |forecast| drift-adjusted 8-bar return in forecast direction",
+    "value": 0.0004328165831979404,
+    "passed": true
+  },
+  "counts": {
+    "cases": 44640,
+    "top half": 22320,
+    "bottom half": 22320
+  },
+  "decided_by": "Main mean > 0 with t >= 2 and the top-half minus bottom-half difference > 0.",
+  "reading": "Settlement bar = bar whose next bar (timestamp + 1h) starts at 00/08/16 UTC, 2- and 24-bar returns taken positionally inside each window, expected side = sign of the 24-bar return; cases with no 8-bar forward return in their window are left out; halves are the upper and lower floor(n/2) cases sorted by |forecast| (stable sort, middle case dropped when n is odd); fewer than 200 cases is reported as not observable per the workflow's minimum-count rule."
+}

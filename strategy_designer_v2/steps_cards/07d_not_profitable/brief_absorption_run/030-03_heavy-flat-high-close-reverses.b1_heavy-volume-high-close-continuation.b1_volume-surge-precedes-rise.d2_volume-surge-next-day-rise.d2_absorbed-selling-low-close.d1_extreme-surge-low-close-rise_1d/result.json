@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40238240000000003,
+  "findings": {
+    "F1": "The deepest fall that failed Calmar was \u221241.7 % over 311 days, from w1 to w3, while holding the coins fell 66.4 %; in w1\u2013w3 the strongest positions (forecast above 10, mean position 0.84) lost \u22121.48 in summed next-day gain with a mean next-day return of \u22120.19 %, although over all windows that same band earned +12.34 net of fees.",
+    "F2": "Holding only the stronger readings does not lift Calmar in a rebuilt book: 0.54 with every bar, 0.544 above forecast 5, 0.45 above 10 and 0.44 above 15, with the deepest fall staying at \u22120.38 to \u22120.40. A threshold on the same 1-day bet keeps the falls and gives up return.",
+    "F3": "The effect is larger over two days than over one: on forecast-above-10 bars, on non-overlapping grids, the excess return is +0.36 % over 1 day (t 4.11, 3895 cases) and +0.83 % over 2 days (t 4.71, 1980 cases). It fades to +0.51 % over 3 days (t 1.94, 1221) and +0.08 % over 5 days (t 0.24, 820). A 2-day holding captures more than twice the move per trade for one cost of 0.19 %.",
+    "F4": "The gain is graded by the close's position more than by the surge, and the two compound:",
+    "F5": "The weak readings cost more than they earn: bars with forecast \u2264 5 (11347 of 17524) made +0.55 gross but paid 2.51 in fees, \u22121.95 net. The 98 % of days in a position is mostly small, fee-eating exposure.",
+    "F6": "A trend filter is not a repair, because the signal works on both sides of the 50-day mean: a surge above 1.5\u00d7 with a close in the lower 40 % of the range earns +0.83 % (t 3.15, 371 cases) above it and +0.87 % (t 3.28, 570 cases) below it. Non-signal bars below the 50-day mean earn \u22120.20 % (t \u22123.58, 6973 cases), and the book still held 0.24 on them."
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's volume on a day relative to its own prior 20-day average, and the nearer that day's close sits to its low, the more the coin rises over the next two days. The rise grows faster than the volume surge.",
+      "consequence": "A trader holds each heavy-volume, low-close day for two days instead of one, so each trade captures more than twice the move for a single cost of 0.19 %.",
+      "name": "absorbed selling two-day rise",
+      "from": "F3, F1, F2",
+      "refs": [
+        "F3",
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "On a day of heavy volume relative to the coin's prior 20-day average, the nearer the close sits to the day's low, the larger the coin's rise over the next day. The rise per unit of volume surge grows steeply as the close approaches the very low of the range.",
+      "consequence": "A trader sizes heavy-volume days by how near the close sits to the low rather than by the surge alone. He takes almost no exposure on heavy days that close in the upper half or on faint readings, which removes the fee drag and the losing exposure.",
+      "name": "close at low grades surge",
+      "from": "F4, F5, F6",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise.d1_absorbed-selling-two-day-rise",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise.d2_close-at-low-grades-surge"
+  ],
+  "no_ideas": null
+}

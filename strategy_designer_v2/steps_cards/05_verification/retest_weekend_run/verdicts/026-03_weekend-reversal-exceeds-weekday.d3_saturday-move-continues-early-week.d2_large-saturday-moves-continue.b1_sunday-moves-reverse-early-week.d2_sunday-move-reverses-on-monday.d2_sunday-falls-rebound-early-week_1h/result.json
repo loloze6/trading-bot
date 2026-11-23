@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9933499584372403,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 48h return after Sunday-close bars with forecast >= 2",
+    "value": 0.002493076973717218,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.064722470393269
+    },
+    "threshold": "t >= 2 confirms (with correlation > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast with 48h excess return over the cases",
+    "value": 0.03395220034141754,
+    "passed": true
+  },
+  "counts": {
+    "cases": 990
+  },
+  "decided_by": "The t of the mean excess 48h return is between -2 and 2 (inconclusive rule).",
+  "reading": "The Sunday-close bar is the bar starting Sunday 23:00 UTC, the 48h return is close 48 rows later in the same window, the drift is the coin's mean over 48-row non-overlapping stretches from each window's first row, and the correlation is Pearson's."
+}

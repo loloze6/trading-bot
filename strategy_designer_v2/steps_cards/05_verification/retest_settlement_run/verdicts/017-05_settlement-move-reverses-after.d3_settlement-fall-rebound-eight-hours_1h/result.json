@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9949181587189033,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 8-bar excess return of settlement cases with forecast >= 2",
+    "value": 0.0018706531075624267,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 5.887664294961599
+    },
+    "threshold": "confirm: above 0 with t >= 2; reject: below 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return (median forecast split), Welch t 3.765",
+    "value": 0.0018423269438675746,
+    "passed": true
+  },
+  "counts": {
+    "cases across all coins and windows": 14329,
+    "upper half cases": 7164,
+    "lower half cases": 7165
+  },
+  "decided_by": "The forecast-weighted mean excess return is above 0 with t >= 2 and the upper-minus-lower half difference is above 0.",
+  "reading": "Settlement bars are those whose close (timestamp + 1h) is at 00:00 or 16:00 UTC and a fall is a negative raw fall2h value (2-bar price return where not recorded); cases are bars with regime mean_reversion and forecast >= 2, 8-bar returns by row position inside a window, the coin's normal drift is the mean of its non-overlapping 8-bar returns (positions 0, 8, 16, ...) over all its windows, the t of the weighted mean uses the robust standard error sqrt(n/(n-1)*sum(w^2 (x-m)^2))/sum(w), and the median split puts forecasts above the median in the upper half and the rest in the lower half."
+}

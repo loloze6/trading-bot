@@ -1,4 +1,4 @@
-"""Code shared by the steps' helpers, in one place: the closed-book model call, atomic writes, a file's --- header, the
+"""Code shared by the steps' helpers, in one place: the closed-book model call, a child helper ending with its parent, atomic writes, a file's --- header, the
 idea fields step 3 reads, and the shared definitions. A helper imports it with
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common")); from lib import ...
 """
@@ -6,6 +6,53 @@ import json, os, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 COMMON = Path(__file__).resolve().parent
+
+
+def end_with_parent():
+    """A helper started by another helper ends when that helper ends (killed by hand, by a time limit, or by a crash),
+    so no orphan keeps writing into a step's files after its run was stopped (night 5: an orphan step 4 kept writing
+    into the folder a resumed run was removing). How: a helper marks its children with its own process id
+    (CARDS_PARENT_PID); a child that sees its parent's id there asks Linux to stop it when that parent ends. A helper
+    started from a shell (the loop, run_idea or a step called by hand) is not marked, so it is never stopped this way.
+    Elsewhere than Linux it does nothing."""
+    if sys.platform.startswith("linux") and os.environ.get("CARDS_PARENT_PID") == str(os.getppid()):
+        import ctypes, signal
+        ctypes.CDLL(None, use_errno=True).prctl(1, signal.SIGTERM)       # 1 = PR_SET_PDEATHSIG
+        if os.getppid() != int(os.environ["CARDS_PARENT_PID"]):           # the parent ended before the call above
+            sys.exit("its parent ended")
+    os.environ["CARDS_PARENT_PID"] = str(os.getpid())
+
+
+end_with_parent()      # on import: every helper that imports lib takes part
+
+
+# An idea's id (common/idea_created_from.md; topic 46, operator 2026-11-23): the lineage code (the brief's idea NNN-KK,
+# then one .<line letter><number> per generation) and the idea's own short name: `022-04.b1.d2_strong-nearness`.
+# Ids written before 2026-11-23 carry every ancestor's short name (`022-04_signal-weights.b1_power-turns.d2_strong-
+# nearness`); both are read the same way, through their lineage code.
+LINEAGE_STEP = re.compile(r"\.([a-g])(\d+)(?=[._]|$)")
+
+
+def idea_code(idea_id):
+    """The lineage code of an id, in either convention: '022-04_x.b1_y.d2_z' and '022-04.b1.d2_z' -> '022-04.b1.d2'."""
+    head = idea_id.split(".", 1)[0].split("_", 1)[0]
+    return head + "".join(f".{m.group(1)}{m.group(2)}" for m in LINEAGE_STEP.finditer(idea_id))
+
+
+def child_id(parent_id, letter, number, name):
+    """The id of the idea a step 7 line writes from parent_id: the parent's lineage code, the line's letter and the
+    idea's number, and its short name. It grows by about 3 characters a generation, not by a whole name."""
+    return f"{idea_code(parent_id)}.{letter}{number}_{name}"
+
+
+def first_child_number(parent_id, letter, existing_ids):
+    """The number a line's first new idea from parent_id takes: one after the highest number the same line already
+    gave an idea of the same parent among existing_ids (the run's other analyses), so that a lineage code names one idea
+    in a run (an idea tested on two bar sizes is analysed twice by the same line; before 2026-11-23 both analyses
+    numbered from 1, which only the full names told apart)."""
+    want = f"{idea_code(parent_id)}.{letter}"
+    taken = [int(c[len(want):]) for c in map(idea_code, existing_ids) if c.startswith(want) and c[len(want):].isdigit()]
+    return max(taken, default=0) + 1
 # The calling session's variables that must not reach a closed-book model call.
 DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
             "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}

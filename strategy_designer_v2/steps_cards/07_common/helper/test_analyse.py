@@ -51,3 +51,14 @@ def test_shared_files_are_pasted_where_a_prompt_names_them():
     assert "{{" not in out and "BTC, ETH, LTC" in out
     for line in sorted(Path(a.STEPS).glob("07?_*/helper/line_prompt.md")):
         assert "{{" not in a.with_common(line.read_text()), line
+
+
+def test_line_7d_runs_only_on_a_confirmed_idea_whose_book_does_not_pay():
+    """Operator, 2026-11-22 (topic 45): 7.d repairs a real idea; a book whose idea is not confirmed goes to the verdict's line."""
+    import yaml
+    from pathlib import Path
+    entry = yaml.safe_load((Path(a.__file__).resolve().parents[2] / "07d_not_profitable/helper/line.yaml").read_text())["entry"]
+    assert a.entry_met(entry, "confirmed", "not profitable enough")
+    for s5 in ("inconclusive", "rejected", "not observable", "mismatch"):
+        assert not a.entry_met(entry, s5, "not profitable enough")
+    assert not a.entry_met(entry, "confirmed", "profitable enough")

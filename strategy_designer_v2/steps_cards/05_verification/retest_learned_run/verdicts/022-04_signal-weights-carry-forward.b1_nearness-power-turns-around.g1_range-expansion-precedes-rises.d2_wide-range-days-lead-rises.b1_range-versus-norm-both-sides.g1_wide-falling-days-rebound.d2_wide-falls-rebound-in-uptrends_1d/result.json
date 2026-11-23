@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-day excess return on forecast, forecast > 0 grid bars, pooled",
+    "value": 0.0005141407062094499,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.7680562376815414
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 on >= 100 cases; reject: slope < 0 with t <= -2 on >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess per unit forecast, trending minus unknown",
+    "value": 0.00043434388216639377,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2718,
+    "trending cases": 1256,
+    "unknown cases": 1462
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The normal drift is each coin's mean 3-day return over all grid bars of all its windows, the mean excess per unit of forecast is sum(excess)/sum(forecast) per regime, a regime is the record's regime on the case bar, and a supporting check that cannot be computed counts as not passed."
+}
