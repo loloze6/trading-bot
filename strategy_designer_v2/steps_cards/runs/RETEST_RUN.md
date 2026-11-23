@@ -82,3 +82,21 @@ book that holds is momentum (0.74 explained). Their in-sample checks stay as rec
   path: metrics, forecasts and trade diagnostics identical in all 144; only run ids, times, commit id and temporary
   paths differ. Not covered: the engine's own `run_protocol.py` (shared code) still runs to its end after its step 4
   is stopped; it writes only into step 4's temporary folder, not the record. Sessions take it at their next restart.
+
+## Session 4 (brief 030, absorption): ended on budget, 02:28 Paris (35.31 USD, 2 h 24; branch night5-brief-absorption, 26561df6d6)
+| Measure | Count |
+|---|---|
+| Ideas written (step 2 / step 7) | 107 (4 / 103) |
+| Tested / duplicates / not testable, id too long / left | 38 / 9 / 38 / 31 |
+| Components built (wishes 12) | 9 (7 components), 3 existed; 5.85 USD |
+| Step 5: confirmed / inconclusive / mismatch (of 29 plans) | 22 / 6 / 1, all 22 from 030-03 (heavy volume, low close, next-day rise) |
+| Step 6 profitable enough | 3 (two are 7.d repairs) |
+| Unseen tests: hold on both periods | 0 of 2 |
+| 7.d: analyses / ideas / closures | 14 / 31 / 0; all 31 repairs by the session's reading; a trend condition in 9, each measured alone |
+| Failed on file names over 255 bytes | 13 (1.45 USD), none after the second fix |
+
+The session's reading: none of A1 to A4 as written; nearest A2 (a real effect, 22 of 29 confirmed; 3 books pay in
+sample, none holds on both unseen periods). Its shares are against this run's books only (the other runs' return files
+are not in its container): to be redone at the morning merge. One paying book (030-03...d2.d2.d2.d1) has no comparison:
+its register file name is too long (topic 46); the merge's `--all` will fail on it the same way. 38 of 107 ideas not
+testable for their id's length: topic 46's count for the operator.
