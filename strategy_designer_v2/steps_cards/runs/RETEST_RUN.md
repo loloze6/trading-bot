@@ -15,6 +15,7 @@ return on days in a position; step 3 enforces the brief's side.
 | 1 | `retest_weekend_run` | 026 weekend moves, 1h | 026-03.d3 Saturday move continues early week (0.05; 1.08); 026-04.b2 heavy weekend moves continue (0.07; 0.89) | 35 USD |
 | 2 | `retest_learned_run` | 022 learned combination, 1d | 022-04.b1 nearness power turns around (0.03; 0.92); 022-04.b2 volatility power turns around (0.01; 0.68) | 35 USD |
 | 3 (added 2026-11-23, about 00:15 Paris) | `retest_settlement_run` | 017 settlement-hour moves, 1h | 017-05 settlement move reverses after (0.01); 017-02.g2 hourly reversal in volatile periods (0.01); 017-01.g2 hourly move reversal by volatility (0.01) | 35 USD |
+| 5 (added 2026-11-23, about 00:40 Paris; the operator: quota to use) | `retest_monday_run` | 011 weekend rise reverses on Monday, 1d | 011-01.b2.b1 Sunday move reverses both ways (0.06); 011-01.b2.b2 weekend fall rebounds Monday-Tuesday (0.06) | 35 USD |
 
 Each session: `run_idea` on its two starting ideas (retested under today's rules), then the loop on the run with the
 budget. Night 4's rules: a loop the 2-hour limit cuts is restarted at once; a usage-limit stop resumed after its reset;
@@ -54,3 +55,12 @@ Step 6 counted on days in a position (2026-11-22) turned two confirmed books pro
 `night_013_run`'s 013-01.d2 nearness with rising month (57 %). Neither went through the unseen test. Expected: if
 011-01.g2 holds on both unseen periods, it is a candidate for the second family (R1's measure: under 0.25 is not met,
 0.25 exactly: read with its parent and its family).
+
+**Read (2026-11-23, about 00:30 Paris; 0 USD):**
+| Book | Nearest paying book (share) | Unseen 2016-17 | Unseen 2026 |
+|---|---|---|---|
+| 011-01.g2 heavy-volume falls reverse | 005-02...g2 volatile reversal completes quickly (0.25) | holds (Sharpe 1.11; step 5 inconclusive, t 2.37) | does not hold (Sharpe −0.86, t −0.38) |
+| 013-01.d2 nearness with rising month | 001-01...c1 high-RSI continuation (0.74) | holds | holds |
+Not a second family: the reversal book fails 2026, as the daily reversal book of `runs/COMBINE_TEST_RUN.md` did; the
+book that holds is momentum (0.74 explained). Their in-sample checks stay as recorded (written under step 6 before
+2026-11-22).
