@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return on bars with forecast > 0",
+    "value": 0.004272751953306856,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 2.5033843814732872
+    },
+    "threshold": "confirm: positive with t >= 2 and Spearman > 0; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, next-day excess return) on forecast > 0 bars > 0",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "bars with forecast > 0": 1059
+  },
+  "decided_by": "The weighted mean is positive with t >= 2 but the Spearman check fails.",
+  "reading": "The t of the forecast-weighted mean uses the weighted standard error sqrt(sum(w^2 (x-m)^2) / (sum w)^2 * n/(n-1)), every in-window bar with a next bar counts as a case, the coin's mean daily return is over all its in-window daily returns, and the plan's 200-bar minimum yields 'not observable' when unmet."
+}

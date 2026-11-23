@@ -83,7 +83,7 @@ measured beside it (A); the search correction next.
 ## Status and next
 | # | Step | Status |
 |---|---|---|
-| 1a | Phase A: 5 ideas rebuilt by hand as the idea states (wrong side 2, effect fails in a market state 2, trade too small 1), steps 4-6, measured problem by problem, outcomes written before | to start on the operator's go |
+| 1a | Phase A: 5 ungated ideas rebuilt to trade only their situation, steps 4-6, measured problem by problem (`runs/BOOK_REFLECTS_IDEA_RUN.md`) | done 2026-11-23: days in a position fell (6-56 %), falls and Calmar did not improve (the situation days fall in the crashes); 3 of 5 no longer confirmed on their own situation |
 | 1b | Phase B: step 3's card and build, proved on the same 5 ideas | if 1a gains |
 | 1c | Phase C: a run, the problems read one by one against night 5 | after 1b |
 | 1d | Ideas name the market state their effect works in (steps 2, 7; step 5 measures the effect by state) | after 1a sizes problem 2 |
