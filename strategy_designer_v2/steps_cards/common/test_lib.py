@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import common_text, header, header_fields, idea_fields, write_atomic  # noqa: E402
+from lib import child_id, common_text, first_child_number, header, header_fields, idea_code, idea_fields, write_atomic  # noqa: E402
 
 STEP7_IDEA = """---
 brief: 002_some-brief
@@ -111,3 +111,29 @@ def test_a_helper_started_by_a_helper_ends_with_it(tmp_path):
         time.sleep(0.1)
     os.kill(kid, signal.SIGKILL)
     raise AssertionError("the child outlived its parent")
+
+
+def test_an_idea_id_carries_its_lineage_code_and_its_own_name_only():
+    """Topic 46 (operator, 2026-11-23): a child's id is its parent's lineage code, the line's letter and number, and its
+    own short name; an id written before reads the same lineage code."""
+    old = "022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.d2_strong-nearness-power-reversals"
+    assert idea_code(old) == "022-04.b1.d2"
+    assert idea_code("022-04.b1.d2_strong-nearness-power-reversals") == "022-04.b1.d2"
+    assert idea_code("022-04_signal-weights-carry-forward") == "022-04"
+    assert idea_code(old + "_1d") == "022-04.b1.d2"                              # a record id: the bar is not a step
+    assert child_id(old, "d", 1, "nearness-reversal-long") == "022-04.b1.d2.d1_nearness-reversal-long"
+    deep = "022-04"
+    for k in range(12):                                                         # twelve generations
+        deep = child_id(deep, "d", 3, "a-short-name-of-about-forty-characters-x")
+    assert len(f"{deep}_4h_config.json".encode()) < 120 and idea_code(deep).count(".") == 12
+
+
+def test_a_lines_numbering_goes_on_across_the_runs_analyses_of_the_same_parent():
+    """An idea tested on two bar sizes is analysed twice by the same line in a run: the second analysis numbers after the
+    first, so a lineage code names one idea (retest_1h_run had 5 codes shared by two ideas)."""
+    parent = "001-01_x.a1_y"
+    assert first_child_number(parent, "c", []) == 1
+    others = ["001-01_x.a1_y.c1_one", "001-01_x.a1_y.c2_two", "001-01.a1.c3_three", "001-01_x.a1_y.d1_other-line",
+              "001-01_x.a2_z.c5_other-parent"]
+    assert first_child_number(parent, "c", others) == 4
+    assert first_child_number(parent, "d", others) == 2

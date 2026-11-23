@@ -18,7 +18,7 @@ STEPS = FUNC.parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(STEPS / "common"))
 from book_returns import bar_of, book_returns, timeframes_from, HOURS  # noqa: E402
-from lib import write_atomic, utc_now  # noqa: E402
+from lib import idea_code, write_atomic, utc_now  # noqa: E402
 
 REGISTER = FUNC / "register"
 MIN_DAYS = 365                     # the window in common: under one year, "not comparable" (operator, 2026-11-21)
@@ -45,9 +45,19 @@ def kind_of(run, rid, steps=STEPS):
 
 
 def parent_of(rid):
-    """The idea a repair was written from (line 7.d: `<parent>.d<n>_<name>_<bar>`), as a record id, or None."""
-    m = re.fullmatch(r"(.+)\.d\d+_[a-z0-9-]+_(1h|4h|1d)", rid)
-    return f"{m.group(1)}_{m.group(2)}" if m else None
+    """The idea a repair was written from (line 7.d), as its lineage code and the bar, or None: '<...>.d<n>_<name>_<bar>'
+    -> ('<lineage code of ...>', bar), in either id convention (topic 46)."""
+    m = re.fullmatch(r"(.+\.d\d+_[a-z0-9-]+)_(1h|4h|1d)", rid)
+    if not m:
+        return None
+    code = idea_code(m.group(1))
+    return code.rsplit(".", 1)[0], m.group(2)
+
+
+def is_parent(o, me):
+    """Whether the register's book o is the idea book me repairs: the same run, the same bar, the parent's lineage code."""
+    p = parent_of(me["id"])
+    return bool(p) and o["run"] == me["run"] and o["bar"] == p[1] and idea_code(re.sub(r"_(1h|4h|1d)$", "", o["id"])) == p[0]
 
 
 def key(run, rid):
@@ -184,7 +194,7 @@ def comparison(k, root=REGISTER):
     out = {"book": me, "made_utc": utc_now(), "others": []}
     parent = parent_of(me["id"])
     for o in sorted(rows.values(), key=lambda r: r["key"]):
-        if o["key"] == k or (o["kind"] != "paying" and not (o["run"] == me["run"] and o["id"] == parent)):
+        if o["key"] == k or (o["kind"] != "paying" and not is_parent(o, me)):
             continue        # every book is compared with the paying books; a repair also with its parent
         tf = larger(me["bar"], o["bar"])
         c = compare(series(k, tf, root), series(o["key"], tf, root), HOURS[tf])
@@ -194,7 +204,7 @@ def comparison(k, root=REGISTER):
     out["against_holding"] = {"comparison_timeframe": tf, **compare(series(k, tf, root), series(k, tf, root, "hold"), HOURS[tf])}
     comp = [o for o in out["others"] if o.get("comparable") and rows[o["other"]["key"]]["kind"] == "paying"]
     out["nearest_relative"] = max(comp, key=lambda o: o["share_explained"]) if comp else None
-    par = [o for o in out["others"] if rows[o["other"]["key"]]["kind"] != "paying" or (rows[o["other"]["key"]]["id"] == parent and o["other"]["run"] == me["run"])]
+    par = [o for o in out["others"] if is_parent(rows[o["other"]["key"]], me)]
     out["parent"] = par[0] if par and parent else None
     return out
 

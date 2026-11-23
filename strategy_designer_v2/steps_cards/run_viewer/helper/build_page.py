@@ -12,6 +12,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CARDS = HERE.parent.parent                      # steps_cards/
+import sys
+sys.path.insert(0, str(CARDS / "common"))
+from lib import idea_code  # noqa: E402  (the id convention, common/idea_created_from.md)
 IDEA_ID = re.compile(r"^\d{3}-\d{2}_[\w.-]+$")   # 011-01_weekend-rise-reverses-monday.b1_...
 BAR_SUFFIX = re.compile(r"_(\d+[smhdw])$")       # a backtest id is the idea id plus its bar: ..._1d
 FULL_DATE = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d")  # a journal "at" with its day (journals before 2026-11-17: time only)
@@ -72,8 +75,17 @@ def words(slug):
     return last.replace("-", " ")
 
 
-def parent_of(idea):
-    return idea.rsplit(".", 1)[0] if "." in idea else None
+def parent_of(idea, ids):
+    """The idea it was written from, among the run's ids: the one whose lineage code is its own less the last step
+    (either id convention, topic 46); for a parent not in the run, its id as the child's id spells it; None for a
+    brief's idea."""
+    if "." not in idea:
+        return None
+    direct = idea.rsplit(".", 1)[0]               # an id written before topic 46 spells its parent's id
+    if direct in ids:
+        return direct
+    want = idea_code(idea).rsplit(".", 1)[0]
+    return next((i for i in sorted(ids) if idea_code(i) == want), direct)
 
 
 def line_of(idea):
@@ -314,7 +326,7 @@ def build_run(cards, run, files):
         first = sorted(x for b in mine for x in backtests[b]["dated"])
         if not first:
             first = sorted(backtests[b]["book"]["ran"] for b in mine if backtests[b]["book"] and backtests[b]["book"]["ran"])
-        ideas[i] = {"id": i, "title": words(i), "parent": parent_of(i), "line": line_of(i), "brief": i[:3],
+        ideas[i] = {"id": i, "title": words(i), "parent": parent_of(i, ids), "line": line_of(i), "brief": i[:3],
                     "dated": first[0] if first else None,
                     "text": body.strip() or None, "statement": labelled(body, "Idea:"),
                     "backtests": sorted(b for b in backtests if backtests[b]["idea"] == i),

@@ -1,6 +1,6 @@
 # Topic 46: an idea's id grows with every generation, past the limit of a file name
 
-Status: open (found 2026-11-23, night 5; for the operator's decision)  
+Status: built 2026-11-23 (option A, the operator's go)  
 Where: research: the id convention (`common/idea_created_from.md`), every step that names a file after an idea or a
 plan, `select_next` (it reads the track from the id)  
 Opened: 2026-11-23, session 2 of `runs/RETEST_RUN.md` (`retest_learned_run`).
@@ -38,7 +38,15 @@ Recommended: A, with the readers of ids changed together and old ids still read.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-23 | Option A: a child's id is its parent's lineage code, the line's letter and number, and its own short name (`022-04.b1.d2.d1_<name>`); a line numbers after its earlier ideas of the same parent in the run; old ids stay and are read through the same lineage code (`common/lib.py`: `idea_code`, `child_id`, `first_child_number`) | the operator ("go ... 5") | the track stays in the id and a name stays short at any depth (12 generations: under 120 bytes) | B delays the limit; C takes the track out of the id |
 | 2026-11-23 | Until the ids are shortened, `select_next` does not offer an idea whose plan's files cannot be written | the designer, on the night's rights to fix (session 4 of `runs/RETEST_RUN.md`: 9 failures, failed ideas retried, each a step 3 call; the new order follows real lineages deep) | stops the waste with one rule; the convention is the operator's decision | changing the id convention at night with five loops running |
+
+## Proof (2026-11-23)
+On every committed run (43 runs, 3,323 rows): `select_next`'s ranking, its line records, the similarity register's
+parents of the 53 repairs, and the run viewer's page (45 runs, byte for byte) are identical before and after. Found on
+the way: 5 lineage codes shared by two ideas, all in `retest_1h_run` (one idea analysed twice by line 7.c, on two bar
+sizes, both numbered from 1): hence the numbering rule; `select_next` reads a candidate's parent from its file's
+`source-idea:`, and the run viewer keeps the parent an old id spells.
 
 ## Links
 `common/idea_created_from.md`, `orchestration/select_next/`, `runs/RETEST_RUN.md`.

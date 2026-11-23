@@ -164,3 +164,14 @@ def test_periods_are_utc_seconds_whatever_unit_pandas_stores():
         s = pb.utc_seconds(t.astype(f"datetime64[{unit}, UTC]"))
         assert list(s) == [1641081600, 1641085200]
         assert list(pd.to_datetime(s, unit="s", utc=True)) == list(t)
+
+
+def test_a_repair_finds_its_parent_in_either_id_convention():
+    """Topic 46: a repair written with a short id (lineage code and its own name) finds the same parent book as one
+    written with every ancestor's name; another bar or another run is not its parent."""
+    parent = {"run": "r_run", "bar": "1d", "id": "011-01_weekend.b2_more-coins_1d"}
+    for repair in ("011-01_weekend.b2_more-coins.d1_in-volatility_1d", "011-01.b2.d1_in-volatility_1d"):
+        me = {"run": "r_run", "bar": "1d", "id": repair}
+        assert pb.parent_of(repair) == ("011-01.b2", "1d") and pb.is_parent(parent, me)
+        assert not pb.is_parent(dict(parent, bar="1h"), me) and not pb.is_parent(dict(parent, run="o_run"), me)
+    assert pb.parent_of("011-01.b2.g1_pattern_1d") is None                  # not a repair (line 7.g)

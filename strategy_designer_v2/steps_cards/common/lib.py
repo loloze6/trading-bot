@@ -24,6 +24,35 @@ def end_with_parent():
 
 
 end_with_parent()      # on import: every helper that imports lib takes part
+
+
+# An idea's id (common/idea_created_from.md; topic 46, operator 2026-11-23): the lineage code (the brief's idea NNN-KK,
+# then one .<line letter><number> per generation) and the idea's own short name: `022-04.b1.d2_strong-nearness`.
+# Ids written before 2026-11-23 carry every ancestor's short name (`022-04_signal-weights.b1_power-turns.d2_strong-
+# nearness`); both are read the same way, through their lineage code.
+LINEAGE_STEP = re.compile(r"\.([a-g])(\d+)(?=[._]|$)")
+
+
+def idea_code(idea_id):
+    """The lineage code of an id, in either convention: '022-04_x.b1_y.d2_z' and '022-04.b1.d2_z' -> '022-04.b1.d2'."""
+    head = idea_id.split(".", 1)[0].split("_", 1)[0]
+    return head + "".join(f".{m.group(1)}{m.group(2)}" for m in LINEAGE_STEP.finditer(idea_id))
+
+
+def child_id(parent_id, letter, number, name):
+    """The id of the idea a step 7 line writes from parent_id: the parent's lineage code, the line's letter and the
+    idea's number, and its short name. It grows by about 3 characters a generation, not by a whole name."""
+    return f"{idea_code(parent_id)}.{letter}{number}_{name}"
+
+
+def first_child_number(parent_id, letter, existing_ids):
+    """The number a line's first new idea from parent_id takes: one after the highest number the same line already
+    gave an idea of the same parent among existing_ids (the run's other analyses), so that a lineage code names one idea
+    in a run (an idea tested on two bar sizes is analysed twice by the same line; before 2026-11-23 both analyses
+    numbered from 1, which only the full names told apart)."""
+    want = f"{idea_code(parent_id)}.{letter}"
+    taken = [int(c[len(want):]) for c in map(idea_code, existing_ids) if c.startswith(want) and c[len(want):].isdigit()]
+    return max(taken, default=0) + 1
 # The calling session's variables that must not reach a closed-book model call.
 DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
             "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}

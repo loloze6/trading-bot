@@ -200,3 +200,12 @@ def test_page_holds_the_data_and_writes_only_its_file(cards, tmp_path, monkeypat
     assert after - before == {out}
     html = out.read_text(encoding="utf-8")
     assert "/*DATA*/null" not in html and '"name":"x_run"' in html
+
+
+def test_an_idea_with_a_short_id_hangs_under_its_parent():
+    """Topic 46: a child written with a short id (lineage code and its own name) finds its parent among the run's ids,
+    as one written with every ancestor's name does; an old id keeps the parent it spells."""
+    ids = {"011-01_weekend", "011-01_weekend.b2_more-coins", "011-01.b2.d1_in-volatility", "011-01_weekend.b2_more-coins.d2_old"}
+    assert bp.parent_of("011-01.b2.d1_in-volatility", ids) == "011-01_weekend.b2_more-coins"
+    assert bp.parent_of("011-01_weekend.b2_more-coins.d2_old", ids) == "011-01_weekend.b2_more-coins"
+    assert bp.parent_of("011-01_weekend", ids) is None

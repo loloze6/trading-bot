@@ -9,8 +9,11 @@ import select_next as s  # noqa: E402
 
 def test_id_parts():
     assert s.id_parts("003-01_some-name") == ("step 2", "003", 1, 0)
-    assert s.id_parts("003-01_some-name.b2_other") == ("7.b", "003-01_some-name", 2, 1)
-    assert s.id_parts("001-01_x.a1_y.c1_z") == ("7.c", "001-01_x.a1_y", 1, 2)
+    # created_from is the parent's lineage code, the same in both id conventions (topic 46)
+    assert s.id_parts("003-01_some-name.b2_other") == ("7.b", "003-01", 2, 1)
+    assert s.id_parts("001-01_x.a1_y.c1_z") == ("7.c", "001-01.a1", 1, 2)
+    assert s.id_parts("001-01.a1.c1_z") == ("7.c", "001-01.a1", 1, 2)
+    assert s.id_parts("001-01.a1.c12_z") == ("7.c", "001-01.a1", 12, 2)
     assert s.id_parts("N2-04_renamed-by-hand")[0] is None
 
 

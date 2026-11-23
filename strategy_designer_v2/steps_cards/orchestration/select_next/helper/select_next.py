@@ -27,22 +27,23 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import header_fields  # noqa: E402  (shared helpers, common/lib.py)
+from lib import header_fields, idea_code  # noqa: E402  (shared helpers, common/lib.py)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 
-SEG = re.compile(r"\.([a-g])(\d+)_")                 # one analysis in an id: .<line letter><number>_
+SEG = re.compile(r"\.([a-g])(\d+)(?=[._])")          # one analysis in an id: .<line letter><number>, then _ or .
 BRIEF_IDEA = re.compile(r"^(\d{3})-(\d{2})_")          # an idea created from a brief: NNN-KK_
 BAR = re.compile(r"_\d+[mhdw]$")                       # a plan's id ends with its bar size
 
 
 def id_parts(idea_id):
     """(line, created_from, number, generation) read from an id; line 'step 2' for a brief's idea, None if the id does
-    not follow the convention (ideas renamed by hand)."""
+    not follow the convention (ideas renamed by hand). created_from is the parent's lineage code (`idea_code`), the
+    same for an id written in either convention (topic 46)."""
     segs = list(SEG.finditer(idea_id))
     if segs:
         last = segs[-1]
-        return "7." + last.group(1), idea_id[:last.start()], int(last.group(2)), len(segs)
+        return "7." + last.group(1), idea_code(idea_id[:last.start()]), int(last.group(2)), len(segs)
     m = BRIEF_IDEA.match(idea_id)
     if m:
         return "step 2", m.group(1), int(m.group(2)), 0
@@ -80,7 +81,7 @@ REGISTER = STEPS / "orchestration" / "ideas_similarities_check" / "register"
 
 
 def parent_evidence(root=STEPS):
-    """{(run, parent idea id): (kind, difference)} for every book of the similarity register: its kind (paying or
+    """{(run, parent idea id or its lineage code): (kind, difference)} for every book of the similarity register: its kind (paying or
     confirmed) and 1 - the share its nearest paying book explains (None if no paying book is comparable)."""
     reg = root / "orchestration" / "ideas_similarities_check" / "register"
     f = reg / "books.json"
@@ -88,14 +89,18 @@ def parent_evidence(root=STEPS):
     for r in (json.loads(f.read_text()) if f.exists() else []):
         c = reg / "comparisons" / f"{r['key']}.json"
         n = json.loads(c.read_text()).get("nearest_relative") if c.exists() else None
-        out[(r["run"], BAR.sub("", r["id"]))] = (r.get("kind", "paying"), 1 - n["share_explained"] if n else None)
+        v = (r.get("kind", "paying"), 1 - n["share_explained"] if n else None)
+        out[(r["run"], BAR.sub("", r["id"]))] = v                  # by the parent's id (an idea file's source-idea)
+        out.setdefault((r["run"], idea_code(BAR.sub("", r["id"]))), v)   # and by its lineage code (an id alone, topic 46)
     return out
 
 
 def parent_confirmed(run, created_from, root=STEPS):
-    """Whether the idea a candidate was written from was confirmed by step 5 in the run (any of its plans)."""
-    for v in (root / "05_verification" / run / "verdicts").glob(f"{created_from}_*/result.json"):
-        if BAR.sub("", v.parent.name) == created_from and json.loads(v.read_text()).get("status") == "confirmed":
+    """Whether the idea a candidate was written from (its id, or its lineage code) was confirmed by step 5 in the run
+    (any of its plans)."""
+    for v in (root / "05_verification" / run / "verdicts").glob(f"{created_from.split('.')[0].split('_')[0]}*/result.json"):
+        idea = BAR.sub("", v.parent.name)
+        if created_from in (idea, idea_code(idea)) and json.loads(v.read_text()).get("status") == "confirmed":
             return True
     return False
 
@@ -163,6 +168,8 @@ def rank(run, root=STEPS, exclude=()):
             rows.append({"idea": iid, "path": str(f), "status": "unreadable"})
             continue
         line, created_from, number, gen = id_parts(iid)
+        # the idea it was written from, as its file names it (the id holds only its lineage code since topic 46)
+        created_from = header_fields(text).get("source-idea") or created_from
         rec = record_of(line, recs)
         row = {"idea": iid, "path": str(f), "line": line or "?", "generation": gen, "number": number,
                "record": round(rec, 4), "score": round(rec / (1 + gen), 4)}

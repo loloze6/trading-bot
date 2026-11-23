@@ -50,5 +50,5 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 43 | [The findings register](43_the-findings-register.md) | research: common, step 7 | closed 2026-11-21: switched off and deleted |
 | 44 | [Combining strategies in one bot](44_combining-strategies-in-one-bot.md) | engine (a portfolio layer); research: which strategies | open: direction decided (a portfolio layer); waits for two unrelated books that hold |
 | 45 | [Why the research finds almost only long momentum](45_why-the-research-finds-only-long-momentum.md) | research: step 6's rule, books judged alone, one coin at a time | open: investigated; changes for the operator's go |
-| 46 | [An idea's id grows past the file name limit](46_idea-ids-grow-past-the-file-name-limit.md) | research: the id convention | open: found on night 5; for the operator |
+| 46 | [An idea's id grows past the file name limit](46_idea-ids-grow-past-the-file-name-limit.md) | research: the id convention | built 2026-11-23 (option A) |
 | 47 | [Why most real effects give a book that does not pay](47_why-real-books-do-not-pay.md) | research: steps 3, 6, 1-2, 5 and select_next | open: measured 2026-11-23; for the operator |
