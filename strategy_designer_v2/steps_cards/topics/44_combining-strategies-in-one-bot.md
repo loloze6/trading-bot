@@ -54,6 +54,8 @@ from books already proven); combining near copies only adds the same bet twice.
 |---|---|---|---|---|
 | 2026-11-22 | The direction: a portfolio layer (option A); the config's component weights stay for combining parts of one idea | the operator, on the designer's recommendation | it is the tested method A with no change to a proven strategy | B: one holding period per config remains; C: too complex for the gain ("a holding period per component sounds a complex logic") |
 | 2026-11-22 | Which strategies to combine: unrelated by the similarity check (`orchestration/ideas_similarities_check/`) and each holding on the unseen dates | the operator and the designer, from the test | unrelated makes the combination smoother; each must pay on its own | combining by the folds' result alone (the reversal book paid there and not out of sample) |
+| 2026-11-23 | Which books (replaces the row above): real by step 5, size above 0, earning on its own in sample (step 6's Sharpe above 0, no bar on how much), one per family, unrelated (correlation under 0.5); not "each must pay on its own" (step 6's bars) | the operator ("option A", then "what if we only allow ones rejected by step 6 but with a positive Sharpe", then "Go") | real books that do not pay alone may pay together (1d-7); books that lose sink any weighting (P2, first run) | step 6's bars (too few books, one family); no earning condition (7 losing books, every weighting loses); a strength threshold (the strongest hold least, 1d-11) |
+| 2026-11-23 | Weights: equal capital (by the rule written before P2: another rule only if chosen on 3 of 4 folds and better on 3 held-out folds) | the operator ("Go") on the designer's P2 | chosen out of fold on 3 of 4 folds | equal risk, shared risk: not better out of fold |
 | 2026-11-22 | Keep every paying strategy with its similarity matrix (the register of paying books, `orchestration/ideas_similarities_check/register/MATRIX.md`, current with every run since `run_idea` calls the check); how to combine them automatically is decided later | the operator | the portfolio needs every strategy that pays and how they relate; the rule for choosing and weighting them comes later | a contribution measured now (most of today's books, one family, would add almost nothing; and a repair changes a book's contribution) |
 
 ## Status and next
@@ -87,6 +89,10 @@ same strategy or in parallel"):**
   Out of fold, equal capital is chosen on 3 of 4 folds and the other choice does worse on its held-out fold: by the
   rule written before the run, **equal capital**. In sample only: the candidates were kept for earning on these same
   dates, so these figures are optimistic; P4 judges on the unseen dates.
+
+**P4** (2026-11-23): the portfolio fixed before its unseen test, its reading rule and expected outcomes written:
+`runs/PORTFOLIO_UNSEEN_RUN.md`. **The combination function, draft** (rules, each with its evidence, and open
+points): `topics/44_review/COMBINATION_STEP_DRAFT.md`.
 
 Kept (2026-11-22): every paying strategy and its similarity matrix (the register, kept current by `run_idea`). Waiting: at least two unrelated paying books that each hold on the unseen dates (today one family, momentum: topic 41's
 register). Then: the layer's card (by `HOW_WE_DESIGN_A_CARD.md`), the operator's go for the engine change, its proof
