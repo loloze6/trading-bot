@@ -1,0 +1,24 @@
+---
+line: 7.b inconclusive
+backtest: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound.g3_no-wick-heavy-fall-rebound_1d
+idea tested: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound.g3_no-wick-heavy-fall-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3462 USD
+---
+## Findings
+- **F1:** The step-5 result was inconclusive only because the supporting check could not be computed: the forecast is capped at its ceiling, with the median forecast at 20.0 and 50.2 % of the 3,272 active cases sitting at 20. That left 0 cases above the median against 1,629 below, while the main measure itself is on the idea's side with mean +0.089 and t 5.40.
+- **F2:** The capped cases carry the whole effect: forecast = 20 gives +0.93 % excess next-day return (t 6.59, n 1,643), while forecasts in 0–5, 5–10, 10–15 and 15–20 give −0.40 %, −0.07 %, −0.21 % and +0.07 % (all |t| < 1.0). The grading inside the standardised forecast is therefore lost to saturation.
+- **F3:** The close's distance below the day's high is graded on heavy-volume down days, at −0.66 %, −0.03 %, +0.29 % (t 1.94), +0.79 % (t 4.59) and +0.86 % (t 2.90) for distance-from-high bins ≤0.25, 0.25–0.5, 0.5–0.75, 0.75–0.9 and >0.9. On ordinary-volume down days the same bins show no gradient (−0.08 % to +0.20 %, all |t| < 1.1), as the brief's control requires.
+- **F4:** The size of the day's fall grades the rebound strongly: falls beyond 6 % give +0.93 % (t 4.00, n 880), falls of 3–6 % give +0.58 % (t 3.30, n 897), and falls of 0–3 % give +0.00 % (n 1,481).
+- **F5:** The volume and volatility parts also grade the effect. The top two volume-ratio quartiles give +0.72 % (t 3.48) and +0.86 % (t 3.51) against +0.13 % and −0.01 % for the bottom two. The top 20-day/60-day volatility-ratio quartile gives +0.94 % (t 2.67) against −0.11 % for the bottom one.
+- **F6:** The uncapped raw product of the three parts ranks the next-day move monotonically at the extremes, with a Spearman of 0.118 with excess return. Its top quintile gives +1.22 % (t 2.80) and its bottom quintile −0.42 %. Cases above its median give +0.75 % against +0.35 % below, so a graded check would have passed.
+- **F7:** The effect is positive on every coin, from BTC at +0.09 % (t 0.57) to XMR at +0.77 % (t 3.41). It is positive in 7 of 8 years, the exception being 2022 at −0.19 % (t −0.69). Its size is +0.30 % unusual and +0.42 % total per case, which is 1.5 and 2.2 times the 0.19 % trade cost.
+
+## Ideas
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound.g3_no-wick-heavy-fall-rebound.b1_no-wick-heavy-fall-rebound` (from F1, F3, F6, F7): The larger the share of a day's fall that remains at the close, measured as how small the lower wick is against the day's range, the more the coin rises over the next day. This holds on down days whose volume is heavy against the prior 20-day average, and more so when 20-day volatility is high.
+- `030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound.g3_no-wick-heavy-fall-rebound.b2_deep-heavy-fall-rebound` (from F3, F4, F5): On a day whose volume is heavy against its prior 20-day average, the larger the day's fall and the nearer its close sits to the day's low, the more the coin rises over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
