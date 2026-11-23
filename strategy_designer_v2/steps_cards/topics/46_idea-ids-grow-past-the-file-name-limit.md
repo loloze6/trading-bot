@@ -14,6 +14,10 @@ How should an idea's id carry its track back to its brief without its file names
 - At generation 6, step 3 failed with "OSError: [Errno 36] File name too long" (a file name is limited to 255 bytes on
   Linux) on `022-04...b1_nearness-reversal-after-rises.e1_short-volatility-scaled-momentum`; the idea is lost and every
   deeper idea of that lineage fails the same way. The loop marks it failed and goes on (no spin).
+- Night 5, all sessions (2026-11-23, about 02:10 Paris): step 3 failures before the `select_next` rule: 9 (brief 030), 2
+  (011), 1 (022), 0 (017); step 7 failures (a line on a generation-5 idea could not write its generation-6 children, 257
+  to 269 bytes): 6 (026: 7.b 1, 7.d 2, 7.g 3). The `select_next` rule stops the step 3 failures, not the step 7 ones (the
+  generation-5 idea's own test is kept: only its children are lost, about 0.4 USD per line).
 - Deep ideas rank low (score / (1 + generation)), so the loss is small today; the new order (`select_next`, 2026-11-22)
   follows real lineages further, so it will grow.
 
