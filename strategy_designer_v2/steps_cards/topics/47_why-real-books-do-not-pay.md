@@ -28,6 +28,18 @@ night-5 runs, from their committed chart files; Calmar recomputed here equals st
   5,267; 1.43 % per trade after costs against 0.24 %; deepest fall 12 % against 35 %; the same yearly return (10 %).
   A book that pays trades its effect rarely and strongly; one that does not is in the market most days, with an edge
   per trade close to its cost, and lives through the market's crashes.
+- **Correction (operator, 2026-11-23): a crash hurts a book only if it is on the wrong side, or if its effect does not
+  work in that market** (`47_review/side_in_fall.py`, `side_in_fall.csv`). Of the 41 books in B, the side they held:
+
+| Books in B | Sides | Side held over the deepest fall | In a position over the fall | Deepest fall | What it is |
+|---|---|---|---|---|---|
+| 30 | long only | long (median +0.53) | 53 % of coin-days | 40 % | one-sided by design, long through a falling market: the wrong side |
+| 11 | both sides | neutral (between -0.16 and +0.03) | 24 % | 15 % | not the market's direction: the effect itself did not work in that period |
+
+  So "falls with the market" holds for the 30 long-only books only. For the 11 two-sided ones the market fell at the
+  same time, but they were neutral: their effect failed in that market state (for example the volatility-graded weekend
+  reversal: half long, half short, side +0.02 over a fall of 24 % while its coins fell 46 %). Up or down is not the
+  only state that matters.
 - Step 6 chains the windows in fold order (2022-23, then 2018-21, then 2024-25), not in date order. Chained by date,
   Calmar's verdict changes for 3 of 81 books (1 fail to pass, 2 pass to fail): not the cause.
 - 4 of the 81 books are exact copies of another (same Calmar, return and trades): a 7.d repair whose added condition
