@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day return minus coin mean on forecast, regime-active bars pooled",
+    "value": 0.0005647830225921471,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 6.1733557806093655
+    },
+    "threshold": "t >= 2 (with timing gain > 0) confirms, t <= -2 rejects, on at least 300 active bars"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return minus position x coin mean daily return)",
+    "value": 0.0003423903027963254,
+    "passed": true
+  },
+  "counts": {
+    "regime-active bars pooled": 7591
+  },
+  "decided_by": "The slope t is 2 or more on at least 300 active bars and the timing gain is above 0.",
+  "reading": "Situation bars are those where the detector chose the volatility regime (20-day vol over its 60-day mean >= 1, recorded as regime 'mean_reversion') and the component's raw product (close distance from high x volume ratio x vol ratio) is positive, on the long side; regime-active bars are bars with regime 'mean_reversion', the coin's mean daily return is pooled over all its windows, the slope t is the OLS t with an intercept, and the timing gain uses each coin's postRebalance_total_value day returns averaged across coins per day minus the held position times the coin's mean daily return averaged the same way."
+}

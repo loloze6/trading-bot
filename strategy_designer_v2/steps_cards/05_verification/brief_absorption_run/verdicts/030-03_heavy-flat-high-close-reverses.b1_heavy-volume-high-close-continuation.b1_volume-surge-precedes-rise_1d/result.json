@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 10-bar forward return on forecast (non-overlapping grid)",
+    "value": 0.002128843851534275,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.255410655354394
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return on grid bars with forecast > 0",
+    "value": 0.00848519041007913,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases with forecast > 0": 708,
+    "independent grid cases (all)": 1691
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean excess on forecast > 0 bars is above 0.",
+  "reading": "Situation read as raw log volume ratio > 0 with a long forecast (raw recomputed from volume where missing); grid bars at positions 0,10,20,... of each window with a full 10-bar forward return inside the window; the coin's mean 10-bar return is the mean over its grid returns of all windows; slope and t from ordinary least squares with intercept; the plan's minimum of 100 grid cases with forecast > 0 is treated as a minimum count giving 'not observable'."
+}

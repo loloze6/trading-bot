@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 2-day return on forecast, pooled",
+    "value": 0.0003352975801015082,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 6.317069704126703
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-fifth mean excess 2-day return > 0",
+    "value": 0.00977258032496889,
+    "passed": true
+  },
+  "counts": {
+    "grid cells pooled": 8650,
+    "top fifth cells": 1730
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-fifth mean excess return is above 0.",
+  "reading": "The situation for this graded, long-only idea is taken as every bar where the raw close-near-low times volume-multiple value is positive (recomputed from prices where unrecorded); the coin's mean 2-day return is taken over its grid cells in all windows; the forecast for the regression and the ranking is post_pipeline_value; the top fifth is the floor(n/5) highest cells (stable sort); and the plan's minimum counts, when not reached, give 'not observable' per the workflow."
+}

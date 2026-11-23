@@ -1,0 +1,17 @@
+---
+plan: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound_1d
+idea: 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound
+fit: exact
+status: confirmed
+---
+Situation check: 100 % of the active bars match the plan's situation and side
+Evidence:
+- Main measure: mean next-day excess return on forecast > 0 bars: 0.00418611; ordinary t of the mean: 4.40162 (threshold: confirm: mean > 0 with t >= 2 and slope t >= 1; reject: mean < 0 with t <= -2)
+- Supporting check: OLS slope of next-day excess return on forecast: 6.11095, passed: True
+- Counts: active bars: 3272
+- Decided by: Mean next-day excess return above 0 with t >= 2 and a positive slope with t >= 1.
+- Reading: Active bars counted as bars with forecast > 0 and a next-day close in the same window; the coin's mean daily return is over all its close-to-close returns in all windows; the plan's 'fewer than 200 is inconclusive' is reported as 'not observable' per the workflow.
+- Size: unusual move +0.33 % per case over 1 bars, 0.068 of the coin's usual move (4.78 %); normal drift in its direction +0.12 %, total +0.45 %; 2742 cases
+Plan: `steps_cards/03_test_plan/brief_absorption_run/plans/030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound_1d.md`
+Record: `steps_cards/04_backtest/brief_absorption_run/backtests/030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound_1d`
+Measure: `measure.py`

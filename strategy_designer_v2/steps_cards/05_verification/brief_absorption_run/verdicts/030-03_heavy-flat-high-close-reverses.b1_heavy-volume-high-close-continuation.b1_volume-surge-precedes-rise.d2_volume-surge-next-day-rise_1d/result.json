@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t-statistic of pooled OLS slope of next-day excess return on forecast",
+    "value": 4.70191065374965,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.70191065374965
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 bars with forecast > 0"
+  },
+  "supporting_check": null,
+  "counts": {
+    "bars with a forecast above 0": 6703,
+    "bars in the fit": 17380
+  },
+  "decided_by": "Confirm rule: the slope is positive with t >= 2, on at least 300 bars with a forecast above 0.",
+  "reading": "Every bar with a next-day close in the same window enters the fit (zero-forecast bars included), the coin's mean daily return is the mean of all its in-window next-day returns, and the t is the ordinary OLS slope t with an intercept; the situation is a raw centred volume ratio above 0 with a positive forecast."
+}

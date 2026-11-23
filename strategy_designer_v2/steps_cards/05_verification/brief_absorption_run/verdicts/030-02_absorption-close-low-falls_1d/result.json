@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-day excess fall after short bets (minus coin drift, fall positive)",
+    "value": -0.005035706855613121,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.6596398465697965
+    },
+    "threshold": "confirm t >= 2 with the slope check passing; reject t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "slope of excess fall on abs(forecast) above 0",
+    "value": -3.55477302427032e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 151
+  },
+  "decided_by": "The t of the mean excess fall lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "The situation is recomputed per window from prices: volume over the mean of the 20 prior bars' volume (rows of the same window, current bar excluded) at least 2 and |close-open|/open at most 1 percent, the expected side short; active bars of a window's first 20 rows, where the ratio cannot be computed, are left out of the agreement; a case is a short bet (a rise of the short forecast's size of at least 2 points from its lowest level on that side since the last bet, reset to 0 after flat or long), the first such bet in each 5-row grid cell of a window, pooled over all coins, its 5-bar return taken from that bet's close and dropped if it runs past the window's end; the drift is the coin's mean non-overlapping 5-bar grid return over all its windows; the slope is ordinary least squares, judged above 0 by sign alone."
+}

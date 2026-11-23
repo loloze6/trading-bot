@@ -1,0 +1,34 @@
+{
+  "line": "7.d",
+  "backtest": "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b2_heavy-low-close-next-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38682130000000003,
+  "findings": {
+    "F1": "The book fails only on Calmar (0.67 against 0.75). Its deepest fall is -14.8 % over 196 days, running from w1 to w3, while holding the coins fell -60 % over the same stretch. All of its gain comes from heavy-volume days that close in the bottom quarter of the day's range (location from the high at or above 0.75). Those 315 cases have a next-day excess of +1.91 % (t 4.28, 220 cases with location 0.75 to 0.9) and +2.20 % (t 3.35, 95 cases with location 0.9 to 1). They carry 76 % of the position's summed gain. The 1292 heavy-volume cases higher in the range earn between -0.25 % and +0.27 % (t from -0.81 to 0.90).",
+    "F2": "The cases higher in the range are what deepen the falls. In w1 to w3, heavy-volume cases with location below 0.75 lost -1.12 % excess next day (t -2.04, 141 cases), while cases at 0.75 or above still gained +1.65 % (t 1.87, 63 cases). Across all windows, cases with location below 0.75 on coins under their 50-day average lost -0.79 % (t -2.75, 403 cases).",
+    "F3": "In an approximate rebuild of the book that keeps the recorded allocations and charges the 0.19 % round-trip cost, trading only the cases at location 0.75 or above lifts Calmar from 0.66 to 1.11. The deepest fall drops from -14.4 % to -8.0 %, the yearly return stays close at +8.9 % against +9.5 %, and Sharpe rises from 0.81 to 1.05. A down-day-only filter reaches a Calmar of only 0.75, and location 0.5 or above reaches 0.62.",
+    "F4": "A close in the bottom quarter of the range is not an effect on its own. On ordinary-volume days (volume under the 20-day average) it is followed by an excess of -0.004 % (t -0.04, 1821 cases), against +2.10 % (t 5.28, 258 cases) on heavy-volume days. The heavy volume, which is the brief's absorption, is what makes the close location informative.",
+    "F5": "The effect holds above and below the 50-day average when the close is in the bottom quarter: +1.65 % (t 3.48, 156 cases) above and +2.34 % (t 4.15, 159 cases) below. It holds on 5 of 6 coins (t from 0.74 to 2.37); XMR shows -0.22 % (t -0.58, 243 cases). Each case's total move of +2 % is about ten times the 0.19 % cost of a trade."
+  },
+  "ideas": [
+    {
+      "idea": "On a day when a coin's volume is far above its 20-day average, the closer its close sits to the day's low, the more the coin rises over the next 1 day, with the rise coming from closes in the lowest quarter of the day's range and growing as the close nears the very low.",
+      "consequence": "Buy a heavy-volume day's close for a one-day rebound only when it sits in the lowest part of the range, sized up toward the low, and stay flat on heavy-volume closes in the middle or upper range, which carry the book's falls.",
+      "name": "heavy-volume bottom-close rebound",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b2_heavy-low-close-next-day-rebound.d1_heavy-volume-bottom-close-rebound"
+  ],
+  "no_ideas": null
+}

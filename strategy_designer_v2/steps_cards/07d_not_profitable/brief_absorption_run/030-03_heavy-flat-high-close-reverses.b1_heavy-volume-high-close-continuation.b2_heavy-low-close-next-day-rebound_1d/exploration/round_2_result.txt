@@ -1,0 +1,76 @@
+## cases by raw loc band
+                   n  mean_fwd   mean_ex         t  pos_gain_sum  mean_alloc
+locb                                                                        
+(-0.01, 0.25]  479.0 -0.001255 -0.002478 -0.809822      0.148471    0.135116
+(0.25, 0.5]    397.0  0.003857  0.002650  0.901290      0.657456    0.426206
+(0.5, 0.75]    416.0  0.002102  0.000903  0.301789      0.677755    0.720367
+(0.75, 0.9]    220.0  0.020273  0.019110  4.278892      3.209380    0.893158
+(0.9, 1.01]     95.0  0.023198  0.021957  3.354343      1.542902    0.876005
+
+## cases loc>=0.75 x down day
+                 n  mean_fwd   mean_ex         t  pos_gain_sum  mean_alloc
+loc   down                                                                
+False False  812.0 -0.000488 -0.001715 -0.783962      0.136770    0.308975
+      True   480.0  0.004585  0.003403  1.184813      1.346913    0.588978
+True  False   19.0  0.025458  0.024251  2.291342      0.409629    0.956459
+      True   296.0  0.020879  0.019694  5.093278      4.342653    0.883589
+
+## heavy days by loc>=0.75
+            n  mean_fwd   mean_ex         t  pos_gain_sum  mean_alloc
+loc                                                                  
+False  1034.0 -0.000460 -0.001668 -0.866895      0.730603    0.414117
+True    258.0  0.022213  0.021018  5.282568      4.103014    0.880050
+
+## ordinary-volume days by loc>=0.75
+            n  mean_fwd   mean_ex         t  pos_gain_sum  mean_alloc
+loc                                                                  
+False  7173.0  0.000207 -0.000979 -1.903381      0.007565    0.000583
+True   1821.0  0.001157 -0.000042 -0.040022      0.015626    0.000556
+
+## cases fall wins vs rest, by loc>=0.75
+                    n  mean_fwd   mean_ex         t  pos_gain_sum  mean_alloc
+fallwin loc                                                                  
+False   False  1151.0  0.002796  0.001586  0.866382      2.389678    0.423236
+        True    252.0  0.022032  0.020838  5.136679      3.646855    0.907867
+True    False   141.0 -0.010029 -0.011234 -2.035308     -0.905995    0.329457
+        True     63.0  0.017648  0.016492  1.874587      1.105426    0.808454
+
+## cases by below ma50 x loc>=0.75
+                    n  mean_fwd   mean_ex         t  pos_gain_sum  mean_alloc
+trend_dn loc                                                                 
+False    False  889.0  0.005083  0.003867  1.794852      2.139850    0.410407
+         True   156.0  0.017652  0.016485  3.479463      2.128544    0.926503
+True     False  403.0 -0.006737 -0.007933 -2.746032     -0.656167    0.418724
+         True   159.0  0.024592  0.023387  4.150336      2.623737    0.850193
+
+## pos gain share by band (all wins)
+locb
+(-0.01, 0.25]    0.023809
+(0.25, 0.5]      0.105430
+(0.5, 0.75]      0.108685
+(0.75, 0.9]      0.514657
+(0.9, 1.01]      0.247420
+
+## approx book: all cases
+yearly    0.095311
+maxdd    -0.143521
+calmar    0.664095
+sharpe    0.806027
+
+## approx book: loc>=0.75
+yearly    0.088822
+maxdd    -0.080139
+calmar    1.108352
+sharpe    1.045093
+
+## approx book: loc>=0.5
+yearly    0.089487
+maxdd    -0.143663
+calmar    0.622897
+sharpe    0.829287
+
+## approx book: down day
+yearly    0.095964
+maxdd    -0.127590
+calmar    0.752130
+sharpe    0.881549

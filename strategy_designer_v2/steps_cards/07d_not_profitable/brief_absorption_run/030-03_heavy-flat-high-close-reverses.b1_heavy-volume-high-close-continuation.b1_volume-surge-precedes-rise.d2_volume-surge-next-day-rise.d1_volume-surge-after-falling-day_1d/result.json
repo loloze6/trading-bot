@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36651789999999995,
+  "findings": {
+    "F1": "The book fails only on Calmar (0.627 against 0.75), and its deepest fall is -25.7 % over 121 days from w8 into w9. Holding the coins fell -39.0 % over the same stretch, so the book's falls come from long days in a falling market. In w8\u2013w9, the held bars in a calm state lost -0.106 in summed gain over 114 bars. The mid state gained +0.195 over 135 bars and the wild state +0.240 over 73 bars.",
+    "F2": "The effect lives only when the coin's recent volatility is high against its own longer volatility (20-day standard deviation of daily returns over the 120-day one, cut in thirds).",
+    "F3": "The condition is not an effect of its own. Wild bars without the signal lose -0.38 % the next day, against +0.62 % when both hold. The heavy-volume fall is what carries the move, and high volatility is where absorption by a patient buyer matters.",
+    "F4": "Inside the wild state the effect stays graded. The upper half of the forecast gives +0.82 % and the lower half +0.42 % (708 cases each). In the calm state the two halves are flat: -0.19 % against -0.22 %.",
+    "F5": "On held bars, the book's gain per bar rises with the volatility state.",
+    "F6": "An approximate rebuild of the book, with the same positions and costs, compares three versions.",
+    "F7": "After a 20-day fall (lowest quarter of the 20-day return), signal bars give +0.27 % next-day excess return. Non-signal bars in the same quarter give -0.52 %. The signal works where selling is heavy, which agrees with F2."
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's volume on a day relative to its own prior 20-day average, and the larger that day's fall, the more the coin rises over the next day. This holds while its daily volatility over the past 20 days is high against its volatility over the past 4 months, and the more so the higher that ratio.",
+      "consequence": "A trader buys heavy-volume down days only when the coin's recent volatility runs above its longer norm, sized up with that ratio. They stay out in calm markets, where these days carried the losses of the deepest fall.",
+      "name": "absorption rebound in stressed markets",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The heavier a coin's volume on a down day relative to its own prior 20-day average, and the larger the fall, the more the coin rises over the next day. The rise is larger the more the coin has fallen over the previous 20 days.",
+      "consequence": "A trader weights the next-day long after a heavy-volume fall toward coins already in a 20-day decline, where the absorbing buyer's effect is strongest.",
+      "name": "absorption rebound after declines",
+      "from": "F2, F7",
+      "refs": [
+        "F2",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d1_absorption-rebound-in-stressed-markets",
+    "030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d1_volume-surge-after-falling-day.d2_absorption-rebound-after-declines"
+  ],
+  "no_ideas": null
+}

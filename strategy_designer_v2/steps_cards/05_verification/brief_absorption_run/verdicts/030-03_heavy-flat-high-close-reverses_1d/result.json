@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 5-bar move (minus the 5-bar return from the signal close, minus the coin's normal 5-bar drift)",
+    "value": -0.007365266809958717,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.9361768882052631
+    },
+    "threshold": "confirm: t >= 2 over at least 30 cases with correlation > 0; reject: t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "correlation of |forecast| on the signal bar with the short-side unusual move, above 0",
+    "value": 0.03981778974330257,
+    "passed": true
+  },
+  "counts": {
+    "cases": 150
+  },
+  "decided_by": "Inconclusive rule: t lies between -2 and 2 over at least 30 cases.",
+  "reading": "Situation recomputed from prices as volume / mean of the prior 20 recorded bars of the same window >= 2 and |close - open| / open <= 1 %, expected side short; active bars in a window's first 20 rows, where the prior 20-bar mean cannot be computed, are left out of the agreement (34 such bars); cases are the first short bet (a rise of the short forecast of at least 2 points from its lowest level since the last bet) in each 5-bar grid cell of each window, measured from that bet's close over 5 bars inside the window, with the coin's drift the mean of its non-overlapping 5-bar grid returns over all its windows."
+}
