@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move, mean_reversion cases minus trending cases",
+    "value": 0.0021223723980720727,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.2444549532535742
+    },
+    "threshold": "confirm at Welch t <= -2 with the supporting check passing; reject at Welch t >= +2"
+  },
+  "supporting_check": {
+    "name": "same difference on cases with rise reading above pooled median, more negative than main",
+    "value": -0.018498289190886634,
+    "passed": true
+  },
+  "counts": {
+    "mean_reversion cases": 455,
+    "trending cases": 312,
+    "mean_reversion cases above median rise": 235,
+    "trending cases above median rise": 148
+  },
+  "decided_by": "Main Welch t lies between -2 and +2, which the plan calls inconclusive.",
+  "reading": "The unusual move is the raw 5-bar return minus the coin's mean 5-bar grid return, not signed by the bet's direction (the plan compares returns across regimes), the case's regime is the bar's recorded regime, the first bet of each 5-bar grid cell is the case, and the plan's 30-case minimum per regime is applied as 'not observable'."
+}
