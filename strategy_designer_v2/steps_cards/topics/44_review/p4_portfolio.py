@@ -5,7 +5,9 @@
   - the portfolio: the mean of its books' daily returns that day (equal capital among the books with a record);
   - holds: its Sharpe after costs above 0 (the book part of common/unseen_dates.md); Calmar, yearly, worst fall;
   - holding: each book's coins held (book_returns' "hold"), averaged over the books like the portfolio;
-  - the books alone: each book's own unseen result (orchestration/unseen_test/<run>/<id>.json): holds, Sharpe.
+  - the books alone: each book's own unseen result (orchestration/unseen_test/<run>/<id>.json): holds, Sharpe;
+  - where the result comes from: each book's mean net position (its coins' positions averaged, long +, short -; from the
+    record's chart files) and the correlation of its daily returns with holding its coins.
   python3 topics/44_review/p4_portfolio.py"""
 import json, pathlib, sys, warnings
 import numpy as np, pandas as pd
@@ -36,7 +38,12 @@ for period in PERIODS:
             missing.append(b.family); rows.append({"period": period, "family": b.family, "bar": b.bar, "record": False, "why": why}); continue
         br = br.set_index(["window", "period"]).sort_index()
         s_ = br["book"]; series[b.family] = s_; holds[b.family] = br["hold"]
+        net = np.nan
+        if (rec / "chart_bars.csv.gz").exists():
+            cb = pd.read_csv(rec / "chart_bars.csv.gz", usecols=["coin", "window", "timestamp", "position"])
+            net = float(np.sign(cb.position).mean())
         rows.append({"period": period, "family": b.family, "bar": b.bar, "record": True, "days": len(s_),
+                     "mean_net_position": net, "corr_with_holding": float(np.corrcoef(s_, br["hold"])[0, 1]) if s_.std() > 0 else np.nan,
                      "sharpe_from_days": sharpe(s_.to_numpy()) if s_.std() > 0 else np.nan, "calmar": calmar(s_.to_numpy())[0],
                      "own_holds": own.get("holds"), "own_step5": own.get("step5"), "own_sharpe": own.get("sharpe"),
                      "own_holding_sharpe": own.get("holding_sharpe")})
@@ -53,6 +60,8 @@ for period in PERIODS:
                     "books_holding": f"{int((b.own_holds == True).sum())} of {len(b)}",
                     "books_sharpe_above_0": f"{int((b.sharpe_from_days > 0).sum())} of {len(b)}",
                     "books_median_sharpe": b.sharpe_from_days.median(), "books_median_calmar": b.calmar.median(),
+                    "portfolio_corr_with_holding": float(np.corrcoef(p, hold)[0, 1]),
+                    "books_median_net_position": b.mean_net_position.median(),
                     "mean_correlation_between_books": R.corr().where(~np.eye(R.shape[1], dtype=bool)).stack().mean()})
 pd.set_option("display.width", 220)
 s = pd.DataFrame(summary); print(s.round(3).T.to_string())

@@ -14,6 +14,7 @@ found by a run or an analysis is added here with its source. Status: **done**, *
 | P5 | The portfolio layer's card and build (shared code) | operator, only if P4 holds | topic 44 |
 | P6 | The combination function: rules, evidence, open points | operator: draft to review | `44_review/COMBINATION_STEP_DRAFT.md` |
 | P7 | Night 6's books as portfolio candidates (the P1 rule on the new books) | next, in the morning | `runs/NIGHT6_RUN.md` |
+| P8 | **New 2026-11-24 (P4, daily books).** The portfolio is mostly a bet on the market's direction: its daily returns correlate 0.70 with holding its coins in 2016-17 and 0.49 in 2026; the long-leaning books (long 52-81 % of coin-days) earn in 2016-17 and lose in 2026, the short-leaning ones the reverse; the two books with no net lean (013-03, 013-04) earn in both (Sharpe 1.84 and 1.70; 1.94 and 0.87). A rule on market exposure (a book's correlation with holding its coins as a P1 condition, or a portfolio-level hedge) is the next design question. **Caution:** the portfolio's unseen periods are now seen; such a rule is designed on the folds and can only be judged on new dates (the holdout, or paper trading) | operator | `runs/PORTFOLIO_UNSEEN_RUN.md` (reading) |
 
 ## The research workflow (topic 47)
 | # | Step | Status | Detail |
