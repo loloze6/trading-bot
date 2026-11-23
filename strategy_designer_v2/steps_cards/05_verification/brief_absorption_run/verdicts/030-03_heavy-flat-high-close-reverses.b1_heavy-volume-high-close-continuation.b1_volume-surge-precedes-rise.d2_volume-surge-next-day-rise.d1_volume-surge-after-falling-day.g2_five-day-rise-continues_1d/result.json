@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-bar excess forward return on rise5 forecast (grid cases with forecast > 0)",
+    "value": 0.0006422402996676112,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 2.822665296273794
+    },
+    "threshold": "confirm: slope > 0 with t >= 2.0 and supporting check passes; reject: slope < 0 with t <= -2.0"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 3-bar return > 0",
+    "value": 0.005529883934481635,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 2850
+  },
+  "decided_by": "The slope is positive with t >= 2.0 and the forecast-weighted mean excess return is above 0.",
+  "reading": "Grid cases are bars at positions 0, 3, 6, ... of each window with forecast > 0 and a 3-bar forward return inside the window; the drift is the coin's mean 3-bar return on that grid over all its windows; the slope is an OLS regression with intercept, t = slope / its standard error."
+}
