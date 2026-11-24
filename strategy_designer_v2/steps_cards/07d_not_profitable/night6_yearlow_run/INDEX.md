@@ -5,6 +5,7 @@
 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01.g1.g1.g1_two-week-run-carries-weekend_1d: 2 ideas (3 explorations)
 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d: 2 ideas (2 explorations)
 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: 1 ideas (3 explorations)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (2 explorations)
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: 3 ideas (2 explorations)
