@@ -8,6 +8,7 @@
 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+031-01.g1.g1.g2.g2_calm-volatility-short-term-trend_1d: 2 ideas (1 explorations)
 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

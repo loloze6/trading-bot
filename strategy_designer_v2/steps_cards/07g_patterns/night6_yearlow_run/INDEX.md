@@ -8,6 +8,7 @@
 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: 2 ideas (2 explorations)
 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d: 2 ideas (2 explorations)
 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g2.g2_calm-volatility-short-term-trend_1d: 2 ideas (2 explorations)
 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: 2 ideas (2 explorations)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (3 explorations)
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: 1 ideas (2 explorations)

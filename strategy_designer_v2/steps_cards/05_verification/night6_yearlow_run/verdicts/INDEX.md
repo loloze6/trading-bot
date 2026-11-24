@@ -8,6 +8,7 @@
 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: confirmed (fit: exact) [main: 0.00127004; OLS slope t 4.69346; cases 1230]
 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d: confirmed (fit: adapted) [main: 0.00117813; slope t, clustered by day 2.74797; uptrend Thursday cases with forecast above 0 781, distinct Thursdays of those cases 258, uptrend Thursday cases (all, incl. forecast 0) 1244, distinct days (clusters) 318]
 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d: confirmed (fit: exact) [main: 0.000570132; t of the OLS slope, clustered by Thursday date 2.74183; distinct Thursdays 411, cases (coin-Thursdays) 2465]
+031-01.g1.g1.g2.g2_calm-volatility-short-term-trend_1d: inconclusive (fit: adapted) [main: 0.000325119; OLS slope t 3.52507; calm grid cases 4872, non-calm grid cases 3323]
 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: confirmed (fit: exact) [main: 0.0429135; t of the mean over days 3.35189; distinct Fridays with cases 317, cases 1103, high-volatility Fridays in slope 979, other Fridays in slope 1193]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: confirmed (fit: adapted) [main: 0.00545422; t of the mean, cases of one date summed 3.31152; distinct Fridays with cases 414, cases 2476, regression cases 2459]
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: confirmed (fit: exact) [main: 0.00835242; t of the weighted mean, cases of one day summed 2.88957; cases 1180, days 316]
