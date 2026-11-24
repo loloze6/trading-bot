@@ -1,0 +1,2 @@
+031-01.b1.e1_strong-run-continues-three-days_1d: confirmed (fit: adapted) [main: 0.00150015; OLS slope t 2.70366; grid bars with a forecast above 0 573, grid bars 956]
+031-01.b1.e2_wide-day-in-strong-run_1d: inconclusive (fit: adapted) [main: 0.0362285; t of the mean, same-day cases taken together 1.84184; top-fifth cases on separate days 73, top-fifth cases 115, bottom-fifth in-rise cases 115, in-rise grid bars 573]

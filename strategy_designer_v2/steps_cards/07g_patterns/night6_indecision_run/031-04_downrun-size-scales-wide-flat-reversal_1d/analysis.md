@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 031-04_downrun-size-scales-wide-flat-reversal_1d
+idea tested: 031-04_downrun-size-scales-wide-flat-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3938 USD
+---
+## Findings
+- **F1:** Across all 17,236 coin-days, the next day's return beyond the coin's normal drift falls as the day's own return rises (slope -0.064, t -2.96 with cases summed per day, 2,874 days), so daily moves partly reverse.
+- **F2:** The reversal sits mainly on the side of falls: after the 10 % largest one-day falls (below -4.9 %), the next day ends +0.68 % above drift (t 2.42, 1,724 cases, 625 days); after the largest falls measured against 20-day volatility (z below -1.17), it ends +0.54 % above drift (t 1.97, 1,436 cases); after the largest rises it ends only -0.19 % (t -0.84).
+- **F3:** Among those large-fall days, the rebound grows the nearer the day closes to its low: +1.26 % (t 2.97, 430 cases, 226 days) when the close sits in the bottom 9 % of the range, +0.75 % (t 1.90) and +0.78 % (t 1.85) in the next two quarters, and -0.03 % (t -0.05) when the close is more than 29 % off the low.
+- **F4:** The large-fall rebound is positive on every coin (BTC +0.47 %, ETH +0.51 %, LTC +0.36 %, XMR +1.32 % with t 3.58, XRP +0.68 %, ZEC +0.74 % with t 2.09) and in every year from 2018 to 2025 (+0.00 % to +1.60 %), weakest in 2025.
+- **F5:** The tested idea did not show: wide flat days after a 5-day fall were followed by +0.93 % above drift over 5 days (t 0.42, 34 cases), the step-5 size was -1.28 % (t -0.55), and the book had a Sharpe of -0.18 while in a position on only 3 % of coin-days.
+- **F6:** Contrary to the brief, wide flat days after the strongest 5-day rises (+17 % or more) were followed by more rise, not less: +3.26 % above drift the next day (t 2.17, 27 cases) and +4.83 % over 5 days (t 1.62, 26 cases). With so few cases and so many angles examined, this cannot be told apart from chance.
+- **F7:** Across the other angles examined (5-day z-score, range ratio, close location, signed body and 20-day return, each in five bins on the 5-day grid; volatility level; weekday), no bin reached |t| 2.1. The largest was Friday's next day at +0.30 % (t 2.09), which is not distinct from chance given the number of angles examined.
+
+## Ideas
+- `031-04.g1_close-at-low-fall-rebounds` (from F2, F3, F4): On a day a coin falls sharply against its own 20-day daily volatility, the nearer its close lands to the day's low, the larger its rise over the next day.
+- `031-04.g2_sharp-daily-fall-reverses` (from F1, F2, F4): The larger a coin's one-day fall measured in its 20-day daily volatility, the larger its rise over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

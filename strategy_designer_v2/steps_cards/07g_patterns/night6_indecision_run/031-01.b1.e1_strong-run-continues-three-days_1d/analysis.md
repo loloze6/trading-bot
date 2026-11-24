@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 031-01.b1.e1_strong-run-continues-three-days_1d
+idea tested: 031-01.b1.e1_strong-run-continues-three-days
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 3
+cost: 0.5347 USD
+---
+## Findings
+- **F1:** On down days (close below the previous close), the excess 3-day return rises with how wide the day's range is against its 20-day mean range: the slope on the log of that ratio is +1.12 % per unit with t 3.26 (2397 non-overlapping cases), and +1.24 % with t 3.43 once the 5-day volatility-scaled return is in the same regression (that term itself: t 1.07).
+- **F2:** The F1 slope is positive in all 6 coins (XMR +2.34 % t 2.81, ZEC +1.89 % t 1.74, BTC lowest at +0.22 % t 0.41) and in all 8 years (from +0.21 % in 2023 to +2.25 % in 2020), while on up days the same slope is −0.31 % with t −1.03.
+- **F3:** Down days in the widest fifth of relative range are followed by a +1.60 % excess 3-day return (469 cases on 178 days, day-clustered t 2.22), about 8 times the 0.19 % cost of a trade; the other four fifths of down days range from −0.82 % to −0.11 %.
+- **F4:** Among wide down days (top 40 % of relative range), the move back grows with where the close sits in the day's range: +0.46 % when the close is in the lower third (587 cases, t 0.82), +0.72 % in the middle third (287, t 0.77) and +4.02 % in the upper third (74 cases on 50 days, t 2.44).
+- **F5:** The rebound after wide down days does not depend on a prior run, against what the brief expects: +0.71 % after a falling 5 days (674 cases, t 1.10) and +0.93 % after a rising 5 days (285 cases, t 1.15).
+- **F6:** The tested 5-day volatility-scaled rise is not steady: its slope on the excess 3-day return is negative in 2022 (t −0.77), 2023 (t −1.58) and 2025 (t −1.42), it is near zero in LTC (t −0.18) and XMR (t 0.16), and its size is +0.19 % per case with t 0.81, only 1.0 times the cost of a trade.
+- **F7:** Down days on the heaviest third of volume relative to the 20-day mean are followed by +1.06 % excess over 3 days (782 cases, t 1.98); a Saturday excess return of +0.30 % (t 2.09) is the best of 7 weekdays. Given how many angles I looked at, neither of these stands out from chance.
+
+## Ideas
+- `031-01.b1.e1.g1_wide-down-day-rebounds` (from F1, F2, F3, F5): The wider a coin's falling day's range compared with its typical daily range over the past 20 days, the more the coin rises over the next 3 days.
+- `031-01.b1.e1.g2_rejected-low-rebounds-higher` (from F4, F1): On a falling day with a wide range compared with the past 20 days, the higher the close sits within the day's range, the more the coin rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

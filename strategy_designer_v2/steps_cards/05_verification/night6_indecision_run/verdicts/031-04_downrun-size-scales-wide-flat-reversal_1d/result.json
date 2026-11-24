@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar forward excess return on forecast, mean_reversion bars",
+    "value": -0.0011444659620776952,
+    "statistic": {
+      "name": "slope t, residual scores summed per day",
+      "value": -0.5502786942474965
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return of cases with forecast >= 2 above 0",
+    "value": -0.009988317787853468,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 130,
+    "cases with forecast >= 2": 41,
+    "days with cases": 108
+  },
+  "decided_by": "The slope's |t| is below 2 (or its sign disagrees with t), which the plan calls inconclusive.",
+  "reading": "Cases are mean_reversion bars with a 5-bar forward return inside their window, kept greedily so that a case 1 to 5 bars after a kept case is dropped; the coin's mean 5-bar return is taken on the non-overlapping grid (positions 0, 5, 10, ...) of all its windows; the day-summed t uses the OLS residual scores clustered by UTC day with a G/(G-1) correction; the plan's minimum counts give 'not observable' when not reached."
+}

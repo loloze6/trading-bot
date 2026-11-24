@@ -1,0 +1,80 @@
+## n wide-flat, regime match share
+107, 1.00
+
+## by side
+               n  mean_ex5         t  share_reverse   mean_f1   mean_f3  mean_f10
+side                                                                             
+prior down  34.0  0.009252  0.529332       0.676471  0.001941  0.014055  0.001729
+prior up    70.0  0.017688  1.260058       0.442857  0.013092  0.029912  0.035289
+
+## reversal by |run| quartile, side
+                    n  mean_rev5  mean_absz
+side       bucket                          
+prior down q1      10  -0.010019   0.217397
+           q2       9   0.026803   0.593377
+           q3      13   0.010665   1.221596
+           q4       2   0.017432   2.307412
+prior up   q1      16  -0.003114   0.139114
+           q2      17  -0.003334   0.559902
+           q3      12   0.025819   1.212711
+           q4      25  -0.057659   2.737950
+
+## slope ex5 on z_r5, prior down
+slope 0.0131 t 0.45 n 34
+
+## slope ex5 on z_r5, prior up
+slope -0.0042 t -0.43 n 70
+
+## slope ex5 on z_r5, all
+slope -0.0001 t -0.01 n 104
+
+## slope ex5 on z_r5, narrow-flat
+slope -0.0083 t -1.77 n 851
+
+## slope ex5 on z_r5, all days
+slope 0.0035 t 4.00 n 16084
+
+## wide-flat by coin, side
+                n           mean_rev5          
+side   prior down prior up prior down  prior up
+coin                                           
+BTCUSD          8        6  -0.009450 -0.007526
+ETHUSD          4        7  -0.058750 -0.095960
+LTCUSD          4       15   0.052819 -0.013205
+XMRUSD          6        9   0.032641 -0.027587
+XRPUSD          7       14   0.002936  0.004953
+ZECUSD          5       19   0.039497 -0.007593
+
+## wide-flat by year
+       n  mean_rev5  mean_ex5
+year                         
+2018   9  -0.059880 -0.045504
+2019  15   0.017442 -0.022133
+2020  13  -0.021796  0.021796
+2021  14  -0.043377  0.060276
+2022   8   0.038997  0.023852
+2023   9  -0.023352 -0.003237
+2024  14   0.029294  0.011501
+2025  22  -0.012165  0.038379
+
+## reversal by width tercile
+                   n  mean_rev5
+side       wbin                
+prior down w_lo   11  -0.004387
+           w_mid  15   0.011377
+           w_hi    8   0.024020
+prior up   w_lo   25  -0.041347
+           w_mid  18  -0.018010
+           w_hi   27   0.004433
+
+## relaxed (wide>=1.3, body<=.25) by side
+              n  mean_rev5        sd
+side                                
+prior down  190  -0.004889  0.105936
+prior up    270  -0.015749  0.135498
+
+## relaxed slope, prior down
+slope -0.0010 t -0.11 n 190
+
+## relaxed slope, prior up
+slope 0.0152 t 2.03 n 270

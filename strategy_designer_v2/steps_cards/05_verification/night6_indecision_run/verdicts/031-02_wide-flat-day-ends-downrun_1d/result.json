@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move per long case",
+    "value": -0.005030149187677583,
+    "statistic": {
+      "name": "t of the mean, cases of one day clustered",
+      "value": -0.5230092958065657
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 197,
+    "days": 148
+  },
+  "decided_by": "The t lies between -2 and 2 over at least 30 cases (inconclusive rule).",
+  "reading": "Situation checked from prices within each window (close below its close 5 bars earlier, range over the 20-bar mean range including the current bar >= 1.0, flatness 1-|close-open|/range >= 0.9, recorded component values used where present), active bars whose 5-bar or 20-bar history lies before the window's first recorded bar left out of the share; a case is the first long bet (forecast rise >= 2 from its lowest long level since the last bet, from 0 after flat) in each 5-bar cell counted from each window's first row, the drift is the coin's mean non-overlapping 5-bar return over all its windows, and the day-clustered standard error sums deviations per UTC day with a G/(G-1) small-sample factor."
+}
