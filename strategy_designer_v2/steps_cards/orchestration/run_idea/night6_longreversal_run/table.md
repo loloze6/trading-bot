@@ -26,22 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.g1.b1.d2_rising-volume-rally-continues | 031-03.g1.b1_volume-surge-more-coins | plan | inconclusive (+1.71) | profitable enough | - | 7.b: no ideas: The result is on the predicted side, but no more data exists beyond the 19 coins and four folds already used, and the findings show no part of one coin's own data where the effect is clear and graded (it comes from market-wide swells, F4, and swings by year, F3), so no amended idea is supported.; 7.e: 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails, 031-03.g1.b1.d2.e2_volume-swell-predicts-rise; 7.g: 031-03.g1.b1.d2.g1_volume-swell-lifts-price, 031-03.g1.b1.d2.g2_drying-volume-precedes-falls | 1.54 | 12.1 |
 | 031-03.g1.b1.g1_volume-confirmed-two-week-continuation | 031-03.g1.b1_volume-surge-more-coins | plan | inconclusive (+1.35) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.g1.b1_volume-swelled-rise-continues-weekly; 7.g: 031-03.g1.b1.g1.g1_volume-swell-predicts-direction | 1.21 | 13.2 |
 | 031-03.g1.b1.g2_swelling-volume-after-rises | 031-03.g1.b1_volume-surge-more-coins | plan | confirmed (+2.07) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 031-03.g1.b1.g2.g1_swelling-volume-after-falls, 031-03.g1.b1.g2.g2_drying-volume-precedes-falls | 0.69 | 11.8 |
+| 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails | 031-03.g1.b1.d2_rising-volume-rally-continues | plan | inconclusive (+0.09) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The test already used every coin, fold and the daily bars available. Its result is essentially zero, and no coin, year, regime, horizon or drying depth shows the effect steadily once grid placement is varied (F2–F4), so there is no part of the data to narrow the idea to and no more data to rerun it on.; 7.g: 031-03.g1.b1.d2.e1.g1_volume-expansion-predicts-continuation, 031-03.g1.b1.d2.e1.g2_drying-volume-precedes-weakness | 1.18 | 11.0 |
 
 ## Consumption
-22 ideas, 24.76 USD, 203.2 minutes in all.
+23 ideas, 25.94 USD, 214.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.91 | 11.3 |
-| step4_backtest | 0.00 | 117.6 |
-| step5_verdict | 4.16 | 14.6 |
+| step3_plan | 1.99 | 11.8 |
+| step4_backtest | 0.00 | 124.7 |
+| step5_verdict | 4.36 | 15.3 |
 | step6_check | 0.00 | 1.1 |
-| chart_files | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.99 | 3.4 |
 | step7_7.e | 0.45 | 1.3 |
 | step7_7.a | 0.31 | 1.0 |
-| step7_7.b | 6.22 | 17.7 |
-| step7_7.g | 10.73 | 31.8 |
+| step7_7.b | 6.64 | 19.0 |
+| step7_7.g | 11.20 | 33.2 |
 | similarity_check | 0.00 | 0.2 |
 | unseen_test | 0.00 | 2.7 |
