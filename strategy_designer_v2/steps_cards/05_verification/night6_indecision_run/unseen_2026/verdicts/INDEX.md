@@ -5,6 +5,7 @@
 031-01.b1.e2_wide-day-in-strong-run_1d: inconclusive (fit: adapted) [main: 0.0222447; t of the mean, same-day cases taken together 1.23426; top-fifth cases on separate days 32, top-fifth cases 57, bottom-fifth in-rise cases 57, in-rise grid bars 283]
 031-01.g1.d1_rebound-grows-with-volatility_1d: inconclusive (fit: adapted) [main: 0.0120101; t of the mean, cases of one day pooled 1.0805; cases (signal days) 78, distinct days 48, cases above median 39, cases below median 39]
 031-01.g1.d2_wide-low-close-in-volatile-coins_1d: inconclusive (fit: adapted) [main: 0.0180544; t of the mean, cases clustered by day 1.2591; cases 47, distinct case days 31]
+031-01.g1.d3_deeper-wide-day-fall-rebounds-more_1d: inconclusive (fit: exact) [main: 0.0223655; t of the mean of per-day summed cases 1.12594; cases with a forecast above 0 77, days 47]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: inconclusive (fit: exact) [main: 0.00803582; t of the mean, cases clustered by day 0.913715; cases 357, distinct days 138]
 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d: inconclusive (fit: adapted) [main: 0.0117528; t of the mean, cases pooled by day 1.11926; cases 312, distinct days 125, upper half cases 156, lower half cases 156]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: inconclusive (fit: exact) [main: -0.00107519; t of the mean, cases of one day taken together -0.101408; cases 155, distinct days 87]

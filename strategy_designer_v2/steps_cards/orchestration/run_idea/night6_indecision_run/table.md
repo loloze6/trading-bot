@@ -34,15 +34,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1_wide-day-low-close-rebounds | 031-01_wide-flat-day-ends-uprun | plan | confirmed (+3.59) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.d1_rebound-grows-with-volatility, 031-01.g1.d2_wide-low-close-in-volatile-coins, 031-01.g1.d3_deeper-wide-day-fall-rebounds-more; 7.g: 031-01.g1.g1_large-range-low-close-rebounds, 031-01.g1.g2_volatility-scales-wide-low-rebound, 031-01.g1.g3_high-close-in-downtrend-fades | 1.10 | 5.6 |
 | 031-01.g1.d1_rebound-grows-with-volatility | 031-01.g1_wide-day-low-close-rebounds | plan | confirmed (+3.59) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.g1.d1.g1_low-close-rebounds-when-volatile, 031-01.g1.d1.g2_rebound-grows-with-range-width, 031-01.g1.d1.g3_volatile-sharp-drops-rebound-next | 0.65 | 5.2 |
 | 031-01.g1.d2_wide-low-close-in-volatile-coins | 031-01.g1_wide-day-low-close-rebounds | plan | confirmed (+3.70) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.g1.d2.g1_close-far-below-high, 031-01.g1.d2.g2_wide-low-close-three-day-rebound | 0.70 | 5.5 |
+| 031-01.g1.d3_deeper-wide-day-fall-rebounds-more | 031-01.g1_wide-day-low-close-rebounds | plan | confirmed (+2.93) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.g1.d3.g1_low-close-rebound-scales-volatility, 031-01.g1.d3.g2_wide-low-day-volatility-graded | 0.64 | 5.0 |
 
 ## Consumption
-30 ideas, 29.00 USD, 223.9 minutes in all.
+31 ideas, 29.64 USD, 228.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.27 | 17.4 |
-| step4_backtest | 0.00 | 100.4 |
-| step5_verdict | 5.38 | 18.9 |
+| step3_plan | 4.35 | 18.0 |
+| step4_backtest | 0.00 | 102.1 |
+| step5_verdict | 5.54 | 19.5 |
 | step6_check | 0.00 | 1.2 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.1 |
@@ -50,6 +51,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.e | 0.81 | 2.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 3.99 | 11.2 |
-| step7_7.g | 13.30 | 38.9 |
+| step7_7.g | 13.69 | 40.0 |
 | similarity_check | 0.00 | 1.0 |
-| unseen_test | 0.00 | 27.7 |
+| unseen_test | 0.00 | 28.7 |

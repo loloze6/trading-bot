@@ -10,6 +10,7 @@
 031-01.b2_wide-doji-continues-strong-run_1d: 1 ideas (2 explorations)
 031-01.g1.d1_rebound-grows-with-volatility_1d: 3 ideas (2 explorations)
 031-01.g1.d2_wide-low-close-in-volatile-coins_1d: 2 ideas (2 explorations)
+031-01.g1.d3_deeper-wide-day-fall-rebounds-more_1d: 2 ideas (2 explorations)
 031-01.g1_wide-day-low-close-rebounds_1d: 3 ideas (2 explorations)
 031-01_wide-flat-day-ends-uprun_1d: 1 ideas (2 explorations)
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: 1 ideas (2 explorations)

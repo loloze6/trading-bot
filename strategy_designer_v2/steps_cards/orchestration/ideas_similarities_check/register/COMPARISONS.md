@@ -27,6 +27,7 @@
 | 031-01.b1.e2_wide-day-in-strong-run_1d | night6_indecision_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.82 | same period | +0.0095 % (1.17) | 0.36 |
 | 031-01.g1.d1_rebound-grows-with-volatility_1d | night6_indecision_run | 1d | 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b2_heavy-low-close-next-day-rebound.d1_heavy-volume-bottom-close-rebound_1d (1d) | 0.55 | same period | +0.0088 % (1.45) | 0.07 |
 | 031-01.g1.d2_wide-low-close-in-volatile-coins_1d | night6_indecision_run | 1d | 031-01.g1.d1_rebound-grows-with-volatility_1d (1d) | 0.93 | same period | +0.0005 % (0.23) | 0.05 |
+| 031-01.g1.d3_deeper-wide-day-fall-rebounds-more_1d | night6_indecision_run | 1d | 031-01.g1.d1_rebound-grows-with-volatility_1d (1d) | 0.88 | same period | -0.0013 % (-0.33) | 0.07 |
 | 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d | night6_indecision_run | 1d | 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d (1d) | 0.84 | same period | +0.0028 % (0.51) | 0.28 |
 | 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d | night6_indecision_run | 1d | 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d (1d) | 1.00 | same period | -0.0000 % (-54.14) | 0.25 |
 | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d | night6_indecision_run | 1d | 031-03.b1_wide-day-extends-up-run_1d (1d) | 0.49 | same period | +0.0171 % (2.13) | 0.18 |

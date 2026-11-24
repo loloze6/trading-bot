@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 031-01.g1.d3_deeper-wide-day-fall-rebounds-more_1d
+idea tested: 031-01.g1.d3_deeper-wide-day-fall-rebounds-more
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3899 USD
+---
+## Findings
+- **F1:** The tested idea's rebound sits almost entirely in the coin's most volatile days. On wide low-close days (range multiple ≥ 1.5, close location ≤ 0.25), the next-day excess return is -0.06 % (t -0.13, 178 cases, 114 days) in the coin's lowest tercile of 20-day volatility, +0.71 % (t 1.71, 177 cases, 126 days) in the middle tercile, and +3.41 % (t 3.45, 160 cases, 100 days) in the top tercile.
+- **F2:** The volatility gradient holds coin by coin. On wide low-close days, the top volatility tercile has a higher mean next-day excess return than the bottom tercile in all 6 coins: BTC +2.21 % vs -0.24 %, ETH +3.76 % vs -0.96 %, LTC +2.79 % vs +0.34 %, XMR +1.92 % vs +1.26 %, XRP +4.90 % vs -0.37 %, ZEC +4.82 % vs -0.25 %.
+- **F3:** The gradient holds year by year. In the top volatility tercile, wide low-close days have a positive mean next-day excess return in all 7 years with more than one case, from +1.28 % (2021) to +5.59 % (2020). Outside that tercile the mean ranges from -1.33 % to +2.47 % and is negative in 2018 and 2024.
+- **F4:** The rebound after low closes does not need a wide range; it follows the coin's volatility. Over all low-close days (close location ≤ 0.25), the next-day excess return is -0.14 % (t -0.74, 975 cases) in the low tercile of 20-day volatility, +0.06 % (t 0.29, 1014 cases) in the middle tercile and +0.98 % (t 3.19, 1049 cases, 506 days) in the high tercile. Narrow low-close days in the high tercile still give +0.55 % (t 1.84, 889 cases).
+- **F5:** On down days that close in the lowest quarter of their range, the next-day excess return rises steadily across the coin's quintiles of 20-day volatility: -0.15 %, -0.05 %, +0.14 %, +0.50 % (t 1.86), +1.12 % (t 2.58, 609 cases, 328 days). Over all 7151 down days, the Spearman correlation of the next-day excess return is 0.073 with 20-day volatility and 0.080 with the range multiple.
+- **F6:** The book's gain comes from its high-volatility bars. Summed over the bars in a position (bar returns of the book value, not daily book returns), the high volatility tercile gives +3.67 (156 bars, mean +2.36 %), the middle tercile +0.98 (171 bars, mean +0.58 %) and the low tercile -0.09 (167 bars, mean -0.05 %).
+- **F7:** Other angles did not stand out against the number of angles looked at. The prior 5-day return gives a U-shape across quartiles: +2.52 % (t 2.03), +0.15 %, +0.62 % and +1.47 % (t 2.86). Higher 20-day volatility relative to 60-day volatility points the same way but is not significant: +0.26 %, +0.96 % and +2.42 % (t 1.82). By weekday, only Friday reaches t 2.09 out of 7 days. Wide high-close days show no reversal in any z bin (all |t| < 1.5).
+
+## Ideas
+- `031-01.g1.d3.g1_low-close-rebound-scales-volatility` (from F4, F5, F6): After a day that closes near its low, a coin rises over the next 1 day, and the rise is larger the higher the coin's 20-day volatility of daily returns at that close.
+- `031-01.g1.d3.g2_wide-low-day-volatility-graded` (from F1, F2, F3, F6): After a day whose high-low range is wide against its past 20-day average range and that closes near its low, a coin rises over the next 1 day, and the rise is larger the higher the coin's 20-day volatility of daily returns.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
