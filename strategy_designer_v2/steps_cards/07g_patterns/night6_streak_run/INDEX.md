@@ -1,3 +1,4 @@
+031-01_up-streak-length-reversal_1d: 2 ideas (3 explorations)
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: 2 ideas (2 explorations)
 031-02.b1.g2.b1_volatile-falls-more-coins_1d: no ideas: Across about seventy cells of forecast, streak, past-return, volatility, weekday, year and book-tail splits, no pattern stands out from chance once that many looks are counted. The best candidate, 20-day continuation over 10 days (F4), drops to a |t| of about 1 on most grid offsets and flips sign between years. The book's profit is the coins' own rise held at about 0.43 (F1), which leaves no new effect to propose.
 031-02.b1.g2_volatile-falls-rebound-harder_1d: 1 ideas (3 explorations)

@@ -1,0 +1,126 @@
+{
+  "core": {
+    "net_return_pct": -29.255,
+    "sharpe": -2.808,
+    "max_drawdown_pct": -28.146,
+    "trade_count": 29,
+    "win_rate": 44.83,
+    "avg_trade_net_pnl": -10.151255,
+    "fees_paid": 7.991836,
+    "gross_pnl": -286.394548,
+    "net_pnl": -294.386383,
+    "cost_drag_pct": 2.7905,
+    "forecast_return_corr": -0.336436,
+    "forecast_return_corr_pvalue": 0.003858,
+    "forecast_return_corr_pvalue_block_adjusted": 0.005196,
+    "forecast_return_corr_n_eff": 72,
+    "forecast_return_corr_all_bars": 0.189678,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.038532,
+    "forecast_return_corr_all_bars_n_eff": 122,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 13.76,
+    "sigma_bar_bps": 269.7368,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 336.6293,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 18.1962,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "refine_inverted_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.3364 (negative, significant at p=0.0052). Signal direction is inverted -- flip polarity.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -143.8267,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -143.8267,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 14.3827,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "refine_inverted_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=-0.3364 (negative, significant at p=0.0052). Signal direction is inverted -- flip polarity.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 123,
+      "avg_forecast": -10.341882,
+      "trade_count": 29,
+      "total_net_pnl": -294.386384
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 18,
+      "profitable_trades": 8,
+      "success_rate_pct": 44.44,
+      "total_net_pnl_usd": -202.57,
+      "avg_pnl_per_trade_usd": -11.2539
+    },
+    "minus_15_to_minus_10": {
+      "total_forecasts": 11,
+      "profitable_trades": 5,
+      "success_rate_pct": 45.45,
+      "total_net_pnl_usd": -91.8164,
+      "avg_pnl_per_trade_usd": -8.3469
+    }
+  },
+  "dynamic": {
+    "debug_info.components.up_streak_rank.last_history_value": {
+      "unknown": {
+        "mean": 0.428554,
+        "std": 0.378619
+      }
+    },
+    "debug_info.components.up_streak_rank.post_pipeline_value": {
+      "unknown": {
+        "mean": -10.341882,
+        "std": 8.814576
+      }
+    },
+    "debug_info.components.up_streak_rank.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.up_streak_rank.weighted_contribution": {
+      "unknown": {
+        "mean": -10.341882,
+        "std": 8.814576
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00293021,
+      "forward_return_std": 0.02697368,
+      "n_bars": 122,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -29.5069,
+    "sharpe": -1.5695,
+    "sortino": -2.1799,
+    "exposure_pct": 93.4959,
+    "turnover": 19.718612,
+    "n_bars_total": 123,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 122,
+    "n_downside_days": 73,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
