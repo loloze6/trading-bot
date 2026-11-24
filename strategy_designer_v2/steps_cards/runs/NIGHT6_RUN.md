@@ -86,6 +86,17 @@ effects of the four); N2 on none.
   (UpCloseStreakLength, VolatilityRatioWeightedScaledFall), proof 588 files identical but run ids, times, paths; bot
   suite passed. No failure, no restart. The session's reading: N1 pending the designer's check against the
   portfolio (nearest paying correlations 0.50 to 0.93: momentum mostly), not N2, the streak theme not confirmed.
+- **04:55 Paris, session 2 (long-horizon reversal) ended on budget** (about 36.7 USD; 4.1 h; branch
+  night6-longreversal, 642551c28a): 32 ideas (4 from the brief, 28 from step 7), 32 plans; step 5: 9 confirmed, 20
+  inconclusive, 2 mismatch, 1 not observable; step 6: 5 profitable enough, 3 of them confirmed; unseen: 1 holds on
+  both periods (an XMR next-day fall rebound, step 5 +3.71; its nearest paying book not yet computed). The theme
+  itself: 0 of the direct 2-to-3-month reversal ideas confirmed; what pays is a volume swell after rises and two XMR
+  next-day rebounds. 5 of the 6 confirmed that do not pay fail on Calmar only. One component setting built (standing
+  go; default output unchanged; bot suite passed). No failure, no restart. The session's reading: N1 likely, N4 for
+  the theme.
+- **Seen in three sessions so far:** the brief's own theme is not confirmed (streaks 0 of 4, yearly low 0 of 8,
+  long-horizon reversal 0 direct); what is confirmed comes from step 7's lines and returns to trend continuation and
+  next-day rebounds after a fall. To read in the morning against topic 45 (why the research finds momentum).
 
 ## Reading
 (in the morning)
