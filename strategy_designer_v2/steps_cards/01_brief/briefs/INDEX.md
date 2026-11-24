@@ -30,3 +30,4 @@
 031_medium-term-overreaction-reversal: Coins that moved far beyond usual over two to three months partly reverse over following weeks as the overreaction's chasing or capitulation flow fades. [bar: 1d]
 031_wide-flat-day-ends-run: After a multi-day run, a wide-range day closing near its open shows the push absorbed; the coin reverses over following days. [bar: 1d]
 031_yearly-low-capitulation-or-exhaustion: Question: near its one-year low, does a coin keep falling as holders capitulate or bounce as sellers run out; do breaks below continue? [bar: 1d]
+032_monthly-low-in-falling-agitated: Question: in a falling, agitated market, does a coin's new one-month low lead to more falling via forced-selling cascades, or a rebound as sellers run out? [bar: 1d]
