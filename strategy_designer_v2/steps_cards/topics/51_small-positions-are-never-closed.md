@@ -1,6 +1,6 @@
 # Topic 51: a position smaller than the rebalance band is never closed
 
-Status: open (found 2026-11-24; for the operator)  
+Status: parked (the operator, 2026-11-24); the rule was kept on 2026-11-18 (topic 19)  
 Where: engine (shared code: the risk layer's `min_allocation_change`); research: what a book holds after its bets end  
 Opened: 2026-11-24, the designer, from topic 49's proof (a book that must be flat outside its market profile).
 
@@ -9,8 +9,8 @@ When a book's bets have all ended and it is asked to be flat, should it close a 
 until the next bet?
 
 ## Seen
-- **The rule** (`03_test_plan/helper/reference/strategy_config_guide.md`, the risk layer): a rebalance whose size is below
-  `min_allocation_change` (0.2 of the capital by default, 2 forecast points) is refused. Closing a position is a
+- **The rule** (`03_test_plan/helper/reference/strategy_config_guide.md`, the risk layer; kept: topic 19): a rebalance
+  is refused when both the signal's change (forecast / 10) and the sized change are below `min_allocation_change` (0.2). Closing a position is a
   rebalance, so a position under 0.2 stays open until a bet changes it.
 - **Example** (topic 49's proof, idea 025-01 "in a falling market, a large one-day rise is given back over 5 days",
   ETH, fold C, window w14): its last bet ends; the book is asked to go flat from a short of 9 % of the capital; the
@@ -37,9 +37,11 @@ a paying book's gain or loss, the book is not what its idea says.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-24 | Parked | the operator ("park that") | the rule was already decided (topic 19: kept, so backtests and live follow the same rule); this adds one measure (a short book in falling markets: leftovers 8 % of its days in a position, median 0.14) | |
 
 ## Status and next
-Found; the operator's decision. First step if wanted: B's measure on the register's paying books (computing only).
+Parked. Note: the band is 2 forecast points of signal change, or 0.2 of the capital of sized change, whichever passes
+(`trading-bot/risk/risk_manager.py`); only a leftover under both is never closed. Topic 19 holds the decision.
 
 ## Links
 Topic 49 (`49_review/profile_book_check.py`, the proof that found it); topic 47 (N3: the book trades the idea's

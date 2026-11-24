@@ -4,7 +4,6 @@ The inventory of every strategy component: what each one outputs, exactly. Read 
 the strategy config guide (how to design a config from these components). Every class below lives in
 `strategies.strategy_components`; a config refers to one as
 `"class": "strategies.strategy_components.<ClassName>"`. There are 119 classes. No other component exists: a class
-`"class": "strategies.strategy_components.<ClassName>"`. There are 117 classes. No other component exists: a class
 name that is not a row below is invented.
 
 ## How to read a row
