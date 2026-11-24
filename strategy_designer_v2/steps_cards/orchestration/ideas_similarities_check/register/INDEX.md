@@ -127,6 +127,7 @@ An idea's latest record counts once.
 | 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h | confirmed | night4_weekend_run | 1h | 6 | 54a2cf3b0 | 2026-11-22T00:52:26 |
 | 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | c9f81b724 | 2026-11-22T01:21:05 |
 | 026-03_weekend-reversal-exceeds-weekday.d2_sunday-move-fades-monday_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:35:49 |
+| 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 6e0bef554 | 2026-11-24T01:40:33 |
 | 031-01.g1.g1_midweek-run-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | 36c799391 | 2026-11-24T01:35:42 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 19f1eb4c6 | 2026-11-24T01:30:32 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |

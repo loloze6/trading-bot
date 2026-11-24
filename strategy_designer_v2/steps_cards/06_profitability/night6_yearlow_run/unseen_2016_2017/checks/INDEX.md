@@ -1,1 +1,2 @@
+031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: not profitable enough [Sharpe 0.433; Sharpe minus holding's Sharpe -3.318; Calmar 0.3054]
 031-01.g1_weekly-gains-carry-into-saturday_1d: not profitable enough [Sharpe 0.9961; Sharpe minus holding's Sharpe -2.755; Calmar 1.514]

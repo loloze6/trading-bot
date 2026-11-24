@@ -1,4 +1,5 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: no ideas: The slope is on the idea's side but small at every horizon (F1), the test already used all available coins and folds, and the effect is not graded in proximity (F2–F4) and appears in no stable coin, year or horizon subset, only in market-phase swings that flip sign (F5, F6), so no amended idea has a finding to rest on.
+031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.g1_weekly-gains-carry-into-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (2 explorations)

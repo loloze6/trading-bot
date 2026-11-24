@@ -1,1 +1,2 @@
+031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: not observable (fit: exact) [main: -8.15003e-05; slope t, residuals summed per Saturday -0.293788; Friday cases with forecast > 0 114, distinct Saturdays 34]
 031-01.g1_weekly-gains-carry-into-saturday_1d: not observable (fit: adapted) [main: 0.00141163; t of the mean, cases of one day summed 0.373048; distinct days with a positive forecast 40, main measure cases 120, days of main measure cases 40, top-third Friday bars 40, zero-forecast Friday bars 156]
