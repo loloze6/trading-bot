@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 3-bar forward return minus coin's mean 3-bar return on depth post_pipeline_value (grid bars with non-zero forecast)",
+    "value": 0.0007672655764379683,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 1.2173208797626083
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check passes); reject: slope < 0 with t <= -2; |t| < 2 inconclusive; < 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 3-bar move in the short direction (minus coin drift) > 0",
+    "value": 0.002235534447700577,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases in a position": 1071,
+    "days": 435,
+    "active bars": 3281
+  },
+  "decided_by": "The slope's |t| is below 2, which the plan calls inconclusive.",
+  "reading": "Profile taken from the recorded regime ('unknown' = not vetoed to chop, the detector's components are not recorded) and depth from last_history_value; the t is an OLS slope t with standard errors clustered by UTC calendar day (small-sample factor G/(G-1)*(n-1)/(n-2)); the coin's mean 3-bar return is over its non-overlapping grid of all bars of all windows; the 100-case minimum counts grid cases with a non-zero forecast and a full 3-bar forward return."
+}

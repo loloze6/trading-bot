@@ -1,4 +1,7 @@
 032-01_calm-fall-depth-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-02_calm-fall-below-high-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 033-01_close-near-low-rebounds_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 034-01_agitated-low-close-rebounds_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 035-01_wide-low-close-rebounds_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+036-01_fall-vs-swing-next-day-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+037-01_wide-day-fall-next-day-rebound_1d: missing-components: The idea needs the day's fall multiplied by the day's range against its 14-day average. The config cannot multiply two [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
