@@ -9,11 +9,12 @@ and same data as an idea tested or listed before them).
 
 Order (operator, 2026-11-17 and 2026-11-22), three groups, each ranked by its priority:
   1. a brief's own ideas (generation 0), by score: every idea of a theory is tested once before the workflow goes deep;
-  2. ideas written from a confirmed idea whose book is more different from the paying books than no evidence (w > 0.5):
-     real ideas unlike what we earn, by priority;
-  3. the others, by priority (an idea written from a confirmed idea we already earn, w < 0.5, after the unproven ones).
+  2. ideas written from a confirmed idea whose book is more different from the held books than no evidence (w > 0.5):
+     real ideas unlike what we hold, by priority;
+  3. the others, by priority (an idea written from a confirmed idea we already hold, w < 0.5, after the unproven ones).
 score = record of the line that wrote the idea / (1 + the idea's generation); priority = score x w
-w = the parent's difference = 1 - the share of the parent's book its nearest paying book explains (the similarity
+w = the parent's difference = 1 - the share of the parent's book its nearest held book explains (the paying books and
+the portfolio's books, register/held.json, 2026-11-24; the similarity
 register, orchestration/ideas_similarities_check/: common/measures.md), when the parent is confirmed and in the
 register; 0.5 (no evidence) otherwise, as a line with no record has 0.5.
 record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
@@ -82,13 +83,15 @@ REGISTER = STEPS / "orchestration" / "ideas_similarities_check" / "register"
 
 def parent_evidence(root=STEPS):
     """{(run, parent idea id or its lineage code): (kind, difference)} for every book of the similarity register: its kind (paying or
-    confirmed) and 1 - the share its nearest paying book explains (None if no paying book is comparable)."""
+    confirmed) and 1 - the share its nearest held book explains (the paying books and the portfolio's, register/held.json;
+    a comparison made before 2026-11-24 has its nearest paying book only); None if none is comparable."""
     reg = root / "orchestration" / "ideas_similarities_check" / "register"
     f = reg / "books.json"
     out = {}
     for r in (json.loads(f.read_text()) if f.exists() else []):
         c = reg / "comparisons" / f"{r['key']}.json"
-        n = json.loads(c.read_text()).get("nearest_relative") if c.exists() else None
+        cj = json.loads(c.read_text()) if c.exists() else {}
+        n = cj["nearest_held"] if "nearest_held" in cj else cj.get("nearest_relative")
         v = (r.get("kind", "paying"), 1 - n["share_explained"] if n else None)
         out[(r["run"], BAR.sub("", r["id"]))] = v                  # by the parent's id (an idea file's source-idea)
         out.setdefault((r["run"], idea_code(BAR.sub("", r["id"]))), v)   # and by its lineage code (an id alone, topic 46)

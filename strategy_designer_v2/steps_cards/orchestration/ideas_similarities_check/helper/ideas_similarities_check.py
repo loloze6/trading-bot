@@ -1,4 +1,5 @@
-"""ideas_similarities_check: add a paying book to the register and compare it with every other paying book and with holding
+"""ideas_similarities_check: add a book to the register and compare it with the held books (the paying books and the
+portfolio's, register/held.json) and with holding
 (card: orchestration/ideas_similarities_check/card.md; definitions: common/measures.md, "A paying book, and what it shares with the
 books we have"). Code only, no model call. It records; it decides nothing.
 
@@ -109,8 +110,9 @@ def compare(new, other, hours):
 
 
 def returns_file(k, root=REGISTER):
-    """A paying book's returns are committed (`returns/`); a confirmed book's are kept local (`returns/confirmed/`, ignored by
-    git: 89 hourly confirmed books would weigh about 90 MB) and rebuilt from its record when missing."""
+    """A held book's returns (paying, or in the portfolio) are committed (`returns/`), so any session compares with it; a
+    confirmed book's are kept local (`returns/confirmed/`, ignored by git: 89 hourly confirmed books would weigh about
+    90 MB) and rebuilt from its record when missing."""
     f = root / "returns" / f"{k}.csv.gz"
     return f if f.exists() else root / "returns" / "confirmed" / f"{k}.csv.gz"
 
@@ -122,6 +124,17 @@ def series(k, timeframe, root=REGISTER, column="book"):
     d = pd.read_csv(returns_file(k, root))
     d = d[d["timeframe"] == timeframe]
     return pd.Series(d[column].to_numpy(float), index=pd.to_datetime(d["period"], unit="s", utc=True)).sort_index().dropna()
+
+
+def held_keys(root=REGISTER):
+    """The portfolio's books (register/held.json; common/measures.md, "The held books"): with the paying books, the books we
+    hold. Empty when the file is absent."""
+    f = root / "held.json"
+    return set(json.loads(f.read_text()).get("keys", [])) if f.exists() else set()
+
+
+def is_held(r, held):
+    return r["kind"] == "paying" or r["key"] in held
 
 
 def books(root=REGISTER):
@@ -190,12 +203,13 @@ def add(record, run, root=REGISTER, steps=STEPS):
 def comparison(k, root=REGISTER):
     """The book's comparison with every other book of the register and with holding its own coins."""
     rows = {r["key"]: r for r in books(root)}
+    held = held_keys(root)
     me = rows[k]
     out = {"book": me, "made_utc": utc_now(), "others": []}
     parent = parent_of(me["id"])
     for o in sorted(rows.values(), key=lambda r: r["key"]):
-        if o["key"] == k or (o["kind"] != "paying" and not is_parent(o, me)):
-            continue        # every book is compared with the paying books; a repair also with its parent
+        if o["key"] == k or (not is_held(o, held) and not is_parent(o, me)):
+            continue        # every book is compared with the held books (paying, and the portfolio's); a repair also with its parent
         tf = larger(me["bar"], o["bar"])
         c = compare(series(k, tf, root), series(o["key"], tf, root), HOURS[tf])
         out["others"].append({"other": {"key": o["key"], "id": o["id"], "run": o["run"], "bar": o["bar"], "kind": o["kind"], "coins": len(o["coins"])},
@@ -204,6 +218,8 @@ def comparison(k, root=REGISTER):
     out["against_holding"] = {"comparison_timeframe": tf, **compare(series(k, tf, root), series(k, tf, root, "hold"), HOURS[tf])}
     comp = [o for o in out["others"] if o.get("comparable") and rows[o["other"]["key"]]["kind"] == "paying"]
     out["nearest_relative"] = max(comp, key=lambda o: o["share_explained"]) if comp else None
+    hc = [o for o in out["others"] if o.get("comparable") and is_held(rows[o["other"]["key"]], held)]
+    out["nearest_held"] = max(hc, key=lambda o: o["share_explained"]) if hc else None
     par = [o for o in out["others"] if is_parent(rows[o["other"]["key"]], me)]
     out["parent"] = par[0] if par and parent else None
     return out
@@ -225,9 +241,10 @@ def write_comparison(k, root=REGISTER):
     n = c["nearest_relative"]
     lines = [f"# {c['book']['id']} ({c['book']['run']}, {c['book']['bar']}, {c['book']['kind']}): what it shares with the paying books", "",
              f"- Nearest relative: " + (f"{n['other']['id']} ({n['other']['run']}, {n['other']['bar']}): {fmt(n)}" if n else "none comparable"),
+             f"- Nearest held book (paying, or in the portfolio): " + (f"{c['nearest_held']['other']['id']} ({c['nearest_held']['other']['run']}, {c['nearest_held']['other']['bar']}): {fmt(c['nearest_held'])}" if c.get("nearest_held") else "none comparable"),
              f"- Against holding its coins: {fmt(c['against_holding'])}",
              *([f"- Against its parent (the idea it repairs), {c['parent']['other']['id']}: {fmt(c['parent'])}"] if c.get("parent") else []), "",
-             "| Other paying book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |",
+             "| Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |",
              "|---|---|---|---|---|---|---|---|---|"]
     for o in sorted(c["others"], key=lambda o: -(o.get("share_explained") or -1)):
         if o.get("comparable"):

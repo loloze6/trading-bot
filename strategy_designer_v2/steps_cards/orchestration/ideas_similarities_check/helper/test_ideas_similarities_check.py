@@ -175,3 +175,15 @@ def test_a_repair_finds_its_parent_in_either_id_convention():
         assert pb.parent_of(repair) == ("011-01.b2", "1d") and pb.is_parent(parent, me)
         assert not pb.is_parent(dict(parent, bar="1h"), me) and not pb.is_parent(dict(parent, run="o_run"), me)
     assert pb.parent_of("011-01.b2.g1_pattern_1d") is None                  # not a repair (line 7.g)
+
+
+def test_the_held_books_are_the_paying_books_and_the_portfolios(tmp_path):
+    import json
+    import ideas_similarities_check as ISC
+    (tmp_path / "held.json").write_text(json.dumps({"keys": ["r__b_1d"]}))
+    held = ISC.held_keys(tmp_path)
+    assert held == {"r__b_1d"}
+    assert ISC.is_held({"key": "r__a_1d", "kind": "paying"}, held)
+    assert ISC.is_held({"key": "r__b_1d", "kind": "confirmed"}, held)
+    assert not ISC.is_held({"key": "r__c_1d", "kind": "confirmed"}, held)
+    assert ISC.held_keys(tmp_path / "none") == set()
