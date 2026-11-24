@@ -47,12 +47,18 @@ line, no theme rule, no discoveries; P9 and the folds rule as today): 4 sessions
 | C3 | `night7c_steadydecline_run` | `night7c-steadydecline` | as session 3 | 25 USD |
 | C4 | `night7c_panic_run` | `night7c-panic` | as session 4 | 25 USD |
 
-**The comparison, fixed now:** each new-code run cut at its first 25 USD (`loop.jsonl`'s spend) against its control,
-theme by theme, on: confirmed ideas; confirmed books earning on their own (step 6's Sharpe above 0); of those, unrelated
-to the portfolio's 20 (correlation under 0.5): the portfolio candidates; follow-ups on the brief's theme (by
-`common/theme.md`); the brief's answer (real, not real, open). **The change goes the good way** if the new code gives
-at least as many portfolio candidates in total and more ideas on the theme; it is **not useful** if it gives fewer
-candidates and no clearer answers. Four themes are few: the reading says so, and gives the counts.
+**The comparison, fixed now (revised 2026-11-25 about 00:45 Paris, before any result, after the operator asked
+whether the control is really useful):** each new-code run cut at its first 25 USD (`loop.jsonl`'s spend) against its
+control, theme by theme. Judged on what has enough cases to show a difference:
+- follow-ups on the brief's theme (by `common/theme.md`), as a share of the ideas written;
+- the spend on ideas re-finding the portfolio's effects (nearest held book explains 0.5 or more);
+- each brief's answer (real, not real, open);
+- for ideas naming a profile: the share of their days in a position inside it, against the control's reading of the
+  same words.
+Counted but not judged: portfolio candidates (night 6 found 2 for 140 USD; at 25 USD a theme, 0 or 1 per arm is
+chance). **The change goes the good way** if the new code keeps more follow-ups on the theme, answers more themes, and
+does not spend more on the portfolio's effects; whether it finds better strategies needs several nights and their
+unseen test, and the reading says so.
 The control branches are read in place, not merged.
 
 ## During the night (the designer's watch)
