@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Pearson correlation of forecast with excess next-3-day return (grid bars)",
+    "value": 0.05908846885827206,
+    "statistic": {
+      "name": "correlation t",
+      "value": 1.8263360650887321
+    },
+    "threshold": "t >= 2 (with top-third check and >= 100 grid bars with forecast > 0) to confirm; t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-day return in top third of forecast > 0 grid bars",
+    "value": 0.013226109315697145,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 436,
+    "grid bars": 954
+  },
+  "decided_by": "The correlation t is between -2 and 2.",
+  "reading": "The correlation uses all grid bars (positions 0, 3, 6, ... of each window, forecast zero included) with the excess over the mean 3-day grid return of all windows; the top third is the ceil(n/3) positive-forecast grid bars with the largest forecasts; the plan's fewer-than-100 rule is applied as a minimum count, giving 'not observable'."
+}

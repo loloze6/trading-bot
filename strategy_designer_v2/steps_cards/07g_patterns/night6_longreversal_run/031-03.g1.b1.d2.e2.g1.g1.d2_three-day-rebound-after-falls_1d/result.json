@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4053676,
+  "findings": {
+    "F1": "XMR's one-day return scaled by its 30-day volatility predicts the next day's return against it: correlation \u22120.099 (t \u22124.91, 2,417 non-overlapping 1-day cases); the bottom quintile (falls below \u22120.68 usual moves) is followed by +0.80 % excess (t 3.73, 484 cases), the top quintile (rises above +0.74) by \u22120.44 % (t \u22122.27, 484 cases).",
+    "F2": "The reversal fades with the horizon: the same scaled move has a correlation t of \u22122.46 over 3 days (785 cases) and \u22122.25 over 2 days, and is gone over 10 days (t +0.50, 234 cases). The 3-day horizon tested keeps only part of an effect that is mostly over within one day.",
+    "F3": "The one-day reversal grows with how far 30-day volatility stands above its six-month level: correlation of scaled move with the next day's scaled return \u22120.041 (t \u22120.90, 486 cases) in the lowest volatility-ratio tercile (median 0.66), \u22120.104 (t \u22122.30) in the middle one (median 0.94) and \u22120.115 (t \u22122.54) in the highest (median 1.16).",
+    "F4": "The reversal is negative in 6 of 8 years (2018 t \u22121.87, 2020 t \u22124.34, 2024 t \u22121.75; 2019 +0.18 and 2025 +0.36 the exceptions), so no single year carries it alone, although 2020 is the strongest.",
+    "F5": "Where the close sits in the day's range carries the same next-day reversal: correlation \u22120.094 (t \u22125.10, 2,898 cases); closes in the bottom fifth of the range are followed by +0.85 % excess (t 4.17), closes in the top fifth by \u22120.60 % (t \u22123.33); over 2 days its correlation t is \u22122.95, against \u22122.25 for the scaled move. With the scaled move in the same regression the close location adds little (t \u22120.86 against \u22121.93), but on down days alone it still grades the rebound (correlation t \u22122.06; lowest quarter +0.68 % excess, t 2.39).",
+    "F6": "A combined score (scaled fall plus close near the low) puts its top quintile at +0.93 % mean next-day return (+0.82 % excess, t 3.99, 484 cases), about 3 times the 0.31 % cost of a trade; the bottom quintile gives \u22120.44 % excess (t \u22122.29).",
+    "F7": "The book mostly holds the coin rather than the signal: its daily returns correlate 0.77 with the coin's, it is in a position on 88 % of days, and 35 % of bars carry a positive allocation with a zero forecast. In 15 of 24 windows its summed daily return is below the coin's (w11: +0.44 against +1.35).",
+    "F8": "Friday and Saturday next-day returns are positive (+0.42 %, t 2.43; +0.59 %, t 2.96, about 413 cases each), but in 2018\u20132021 neither reaches t 2 (Friday t 0.48, Saturday t 1.18). It was one of about twenty angles examined and supports no idea."
+  },
+  "ideas": [
+    {
+      "idea": "The larger XMR's one-day move against its 30-day daily volatility, the more its price moves back the other way over the next day: up after scaled falls, down after scaled rises. The lean grows with how far its 30-day volatility stands above its usual level over the past six months.",
+      "consequence": "A trader could fade XMR's large scaled daily moves for one day, on both sides, and lean harder when volatility is above its six-month norm, instead of holding three days on falls only.",
+      "name": "one-day scaled move reversal",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The nearer XMR closes to the low of its day's range, the more its price rises over the next one to two days; the nearer it closes to the high, the more it falls.",
+      "consequence": "A trader could read a close near the day's low as a reason to buy for a day or two, and a close near the high as a reason to refuse a long or lean short.",
+      "name": "close location next-day reversal",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1.g1.d2.g1_one-day-scaled-move-reversal",
+    "031-03.g1.b1.d2.e2.g1.g1.d2.g2_close-location-next-day-reversal"
+  ],
+  "no_ideas": null
+}

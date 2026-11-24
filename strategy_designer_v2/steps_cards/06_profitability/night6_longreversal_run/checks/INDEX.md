@@ -18,6 +18,7 @@
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: profitable enough [Sharpe 1.07; Sharpe minus holding's Sharpe 0.4624; Calmar 1.088]
 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d: profitable enough [Sharpe 1.064; Sharpe minus holding's Sharpe 0.6236; Calmar 1.331]
 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d: profitable enough [Sharpe 0.98; Sharpe minus holding's Sharpe 0.54; Calmar 0.9543]
+031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls_1d: not profitable enough [Sharpe 0.5804; Sharpe minus holding's Sharpe 0.1404; Calmar 0.333]
 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d: not profitable enough [Sharpe 0.5537; Sharpe minus holding's Sharpe 0.1137; Calmar 0.2296]
 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: not profitable enough [Sharpe 0.7771; Sharpe minus holding's Sharpe 0.3371; Calmar 0.487]
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: not profitable enough [Sharpe 0.5663; Sharpe minus holding's Sharpe -0.04116; Calmar 0.2352]
