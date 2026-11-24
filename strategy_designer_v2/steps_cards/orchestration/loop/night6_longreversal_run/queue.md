@@ -1,53 +1,54 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 31.03 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 31.58 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound | 7.d | 6 | 0.2482 | 0.0355 | candidate |
-| 2 | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | 7.g | 6 | 0.1038 | 0.0148 | candidate |
-| 3 | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 7.g | 6 | 0.1038 | 0.0148 | candidate |
-| 4 | 031-03.g1.b1.d2.e2.d2.e1_volume-swell-predicts-two-weeks | 7.e | 6 | 0.6786 | 0.0969 | candidate |
-| 5 | 031-03.g1.b1.d2.e2.d2.e2_fading-volume-in-downtrend | 7.e | 6 | 0.6786 | 0.0969 | candidate |
-| 6 | 031-03.g1.b2_volume-drought-one-week-fall | 7.b | 2 | 0.2362 | 0.0787 | candidate |
-| 7 | 031-03.g2_one-week-momentum-continues | 7.g | 1 | 0.1038 | 0.0519 | candidate |
-| 8 | 031-02.b1.b1.b1.b1_monthly-losers-keep-falling | 7.b | 4 | 0.2362 | 0.0472 | candidate |
-| 9 | 031-02.b2.a1.b1.b1_still-falling-deep-fall-rebound | 7.b | 4 | 0.2362 | 0.0472 | candidate |
-| 10 | 031-03.b1.b1.b1.b1_aligned-20-day-rise-continuation | 7.b | 4 | 0.2362 | 0.0472 | candidate |
-| 11 | 031-03.g1.b1.d1.b1_volume-confirmed-move-one-week | 7.b | 4 | 0.2362 | 0.0472 | candidate |
-| 12 | 031-03.g1.b1.g1.b1_volume-swelled-rise-continues-weekly | 7.b | 4 | 0.2362 | 0.0472 | candidate |
-| 13 | 031-02.b2.a1.b1.b2_failed-bounce-after-deep-fall | 7.b | 4 | 0.2362 | 0.0472 | candidate |
-| 14 | 031-01.g1.d1_sharp-drop-in-fresh-turbulence | 7.d | 2 | 0.2482 | 0.0827 | candidate |
-| 15 | 031-02.b1.g1_strong-month-continues-next-week | 7.g | 2 | 0.1038 | 0.0346 | candidate |
-| 16 | 031-02.b2.g1_short-horizon-scaled-trend-continuation | 7.g | 2 | 0.1038 | 0.0346 | candidate |
-| 17 | 031-03.g1.g1_one-day-overreaction-reversal | 7.g | 2 | 0.1038 | 0.0346 | candidate |
-| 18 | 031-02.b2.g2_quiet-market-trend-continuation | 7.g | 2 | 0.1038 | 0.0346 | candidate |
-| 19 | 031-03.g1.g2_rebound-after-sharp-daily-falls | 7.g | 2 | 0.1038 | 0.0346 | candidate |
-| 20 | 031-03.g1.b1.d2.e2.d1.b1_volume-swell-above-trend | 7.b | 6 | 0.2362 | 0.0337 | candidate |
-| 21 | 031-03.g1.b1.d2.e2.d2.b1_volume-swell-predicts-two-weeks | 7.b | 6 | 0.2362 | 0.0337 | candidate |
-| 22 | 031-03.g1.b1.d2.e2.d2.b2_fading-volume-in-downtrend | 7.b | 6 | 0.2362 | 0.0337 | candidate |
-| 23 | 031-02.b1.b1.g1_90-day-run-ups-keep-rising | 7.g | 3 | 0.1038 | 0.0259 | candidate |
-| 24 | 031-03.b1.b1.g1_volatility-scaled-monthly-continuation | 7.g | 3 | 0.1038 | 0.0259 | candidate |
-| 25 | 031-03.b1.b1.g2_direction-not-size-turbulent-coins | 7.g | 3 | 0.1038 | 0.0259 | candidate |
-| 26 | 031-03.b1.b1.g3_long-side-volatile-continuation | 7.g | 3 | 0.1038 | 0.0259 | candidate |
-| 27 | 031-02.b1.b1.b1.g1_monthly-trend-carries-next-week | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 28 | 031-02.b2.a1.b1.g1_volatility-compression-precedes-weakness | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 29 | 031-02.b2.a1.b2.g1_one-day-crash-next-day-rebound | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 30 | 031-03.b1.b1.b1.g1_calm-coins-near-highs-continue | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 31 | 031-03.g1.b1.d1.g1_volume-swell-leads-price | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 32 | 031-03.g1.b1.d2.g1_volume-swell-lifts-price | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 33 | 031-03.g1.b1.g1.g1_volume-swell-predicts-direction | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 34 | 031-02.b2.a1.b1.g2_calm-coins-outperform-next-month | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 35 | 031-03.b1.b1.b1.g2_calm-upside-20-day-continuation | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 36 | 031-03.g1.b1.d2.g2_drying-volume-precedes-falls | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 37 | 031-02.b2.a1.b1.g3_near-high-continuation-over-month | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 38 | 031-01.g1.g1_wide-range-low-close-bounce | 7.g | 2 | 0.1038 | 0.0346 | candidate |
-| 39 | 031-03.g1.b1.d2.e1.g1_volume-expansion-predicts-continuation | 7.g | 5 | 0.1038 | 0.0173 | candidate |
-| 40 | 031-03.g1.b1.d2.e1.g2_drying-volume-precedes-weakness | 7.g | 5 | 0.1038 | 0.0173 | candidate |
-| 41 | 031-03.g1.b1.d2.e2.d2.g1_volume-swell-any-trend | 7.g | 6 | 0.1038 | 0.0148 | candidate |
-| 42 | 031-03.g1.b1.d2.e2.d2.g2_fading-volume-precedes-falls | 7.g | 6 | 0.1038 | 0.0148 | candidate |
-| 43 | 031-03.g1.b1.g2.g1_swelling-volume-after-falls | 7.g | 4 | 0.1038 | 0.0208 | candidate |
-| 44 | 031-03.g1.b1.g2.g2_drying-volume-precedes-falls | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 1 | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | 7.g | 6 | 0.1038 | 0.0148 | candidate |
+| 2 | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 7.g | 6 | 0.1038 | 0.0148 | candidate |
+| 3 | 031-03.g1.b1.d2.e2.g1.d1.g1_xmr-close-below-high-rebound | 7.g | 7 | 0.1038 | 0.013 | candidate |
+| 4 | 031-03.g1.b1.d2.e2.g1.d1.g2_xmr-strong-close-next-day-fade | 7.g | 7 | 0.1038 | 0.013 | candidate |
+| 5 | 031-03.g1.b1.d2.e2.d2.e1_volume-swell-predicts-two-weeks | 7.e | 6 | 0.6786 | 0.0969 | candidate |
+| 6 | 031-03.g1.b1.d2.e2.d2.e2_fading-volume-in-downtrend | 7.e | 6 | 0.6786 | 0.0969 | candidate |
+| 7 | 031-03.g1.b2_volume-drought-one-week-fall | 7.b | 2 | 0.2362 | 0.0787 | candidate |
+| 8 | 031-03.g2_one-week-momentum-continues | 7.g | 1 | 0.1038 | 0.0519 | candidate |
+| 9 | 031-02.b1.b1.b1.b1_monthly-losers-keep-falling | 7.b | 4 | 0.2362 | 0.0472 | candidate |
+| 10 | 031-02.b2.a1.b1.b1_still-falling-deep-fall-rebound | 7.b | 4 | 0.2362 | 0.0472 | candidate |
+| 11 | 031-03.b1.b1.b1.b1_aligned-20-day-rise-continuation | 7.b | 4 | 0.2362 | 0.0472 | candidate |
+| 12 | 031-03.g1.b1.d1.b1_volume-confirmed-move-one-week | 7.b | 4 | 0.2362 | 0.0472 | candidate |
+| 13 | 031-03.g1.b1.g1.b1_volume-swelled-rise-continues-weekly | 7.b | 4 | 0.2362 | 0.0472 | candidate |
+| 14 | 031-02.b2.a1.b1.b2_failed-bounce-after-deep-fall | 7.b | 4 | 0.2362 | 0.0472 | candidate |
+| 15 | 031-01.g1.d1_sharp-drop-in-fresh-turbulence | 7.d | 2 | 0.2535 | 0.0845 | candidate |
+| 16 | 031-02.b1.g1_strong-month-continues-next-week | 7.g | 2 | 0.1038 | 0.0346 | candidate |
+| 17 | 031-02.b2.g1_short-horizon-scaled-trend-continuation | 7.g | 2 | 0.1038 | 0.0346 | candidate |
+| 18 | 031-03.g1.g1_one-day-overreaction-reversal | 7.g | 2 | 0.1038 | 0.0346 | candidate |
+| 19 | 031-02.b2.g2_quiet-market-trend-continuation | 7.g | 2 | 0.1038 | 0.0346 | candidate |
+| 20 | 031-03.g1.g2_rebound-after-sharp-daily-falls | 7.g | 2 | 0.1038 | 0.0346 | candidate |
+| 21 | 031-03.g1.b1.d2.e2.d1.b1_volume-swell-above-trend | 7.b | 6 | 0.2362 | 0.0337 | candidate |
+| 22 | 031-03.g1.b1.d2.e2.d2.b1_volume-swell-predicts-two-weeks | 7.b | 6 | 0.2362 | 0.0337 | candidate |
+| 23 | 031-03.g1.b1.d2.e2.d2.b2_fading-volume-in-downtrend | 7.b | 6 | 0.2362 | 0.0337 | candidate |
+| 24 | 031-02.b1.b1.g1_90-day-run-ups-keep-rising | 7.g | 3 | 0.1038 | 0.0259 | candidate |
+| 25 | 031-03.b1.b1.g1_volatility-scaled-monthly-continuation | 7.g | 3 | 0.1038 | 0.0259 | candidate |
+| 26 | 031-03.b1.b1.g2_direction-not-size-turbulent-coins | 7.g | 3 | 0.1038 | 0.0259 | candidate |
+| 27 | 031-03.b1.b1.g3_long-side-volatile-continuation | 7.g | 3 | 0.1038 | 0.0259 | candidate |
+| 28 | 031-02.b1.b1.b1.g1_monthly-trend-carries-next-week | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 29 | 031-02.b2.a1.b1.g1_volatility-compression-precedes-weakness | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 30 | 031-02.b2.a1.b2.g1_one-day-crash-next-day-rebound | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 31 | 031-03.b1.b1.b1.g1_calm-coins-near-highs-continue | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 32 | 031-03.g1.b1.d1.g1_volume-swell-leads-price | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 33 | 031-03.g1.b1.d2.g1_volume-swell-lifts-price | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 34 | 031-03.g1.b1.g1.g1_volume-swell-predicts-direction | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 35 | 031-02.b2.a1.b1.g2_calm-coins-outperform-next-month | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 36 | 031-03.b1.b1.b1.g2_calm-upside-20-day-continuation | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 37 | 031-03.g1.b1.d2.g2_drying-volume-precedes-falls | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 38 | 031-02.b2.a1.b1.g3_near-high-continuation-over-month | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 39 | 031-01.g1.g1_wide-range-low-close-bounce | 7.g | 2 | 0.1038 | 0.0346 | candidate |
+| 40 | 031-03.g1.b1.d2.e1.g1_volume-expansion-predicts-continuation | 7.g | 5 | 0.1038 | 0.0173 | candidate |
+| 41 | 031-03.g1.b1.d2.e1.g2_drying-volume-precedes-weakness | 7.g | 5 | 0.1038 | 0.0173 | candidate |
+| 42 | 031-03.g1.b1.d2.e2.d2.g1_volume-swell-any-trend | 7.g | 6 | 0.1038 | 0.0148 | candidate |
+| 43 | 031-03.g1.b1.d2.e2.d2.g2_fading-volume-precedes-falls | 7.g | 6 | 0.1038 | 0.0148 | candidate |
+| 44 | 031-03.g1.b1.g2.g1_swelling-volume-after-falls | 7.g | 4 | 0.1038 | 0.0208 | candidate |
+| 45 | 031-03.g1.b1.g2.g2_drying-volume-precedes-falls | 7.g | 4 | 0.1038 | 0.0208 | candidate |
 | - | 031-01_extreme-rise-partly-reverses | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-1.02); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 031-02_extreme-fall-partly-rebounds | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (+0.01); step 6 not profitable enough (failed: Calmar) |
 | - | 031-03_fading-volume-after-rise-reverses | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-0.46); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
@@ -66,12 +67,13 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound | 7.b | 3 | 0.2362 | 0.0591 | tested: step 5 inconclusive (-0.20); step 6 not profitable enough (failed: Calmar) |
 | - | 031-02.b2.a1.b2_deep-fall-rebound-45-days | 7.b | 3 | 0.2362 | 0.0591 | tested: step 5 inconclusive (+0.36); step 6 not profitable enough (failed: Calmar) |
 | - | 031-03.b1.b1.b1_aligned-20-day-continuation | 7.b | 3 | 0.2362 | 0.0591 | tested: step 5 inconclusive (+1.85); step 6 not profitable enough (failed: Calmar) |
-| - | 031-03.g1.b1.d1_volume-surge-with-price-move | 7.d | 3 | 0.2482 | 0.0621 | tested: step 5 inconclusive (+1.70); step 6 not profitable enough (failed: Calmar) |
-| - | 031-03.g1.b1.d2_rising-volume-rally-continues | 7.d | 3 | 0.2482 | 0.0621 | tested: step 5 inconclusive (+1.71); step 6 profitable enough |
+| - | 031-03.g1.b1.d1_volume-surge-with-price-move | 7.d | 3 | 0.2535 | 0.0634 | tested: step 5 inconclusive (+1.70); step 6 not profitable enough (failed: Calmar) |
+| - | 031-03.g1.b1.d2_rising-volume-rally-continues | 7.d | 3 | 0.2535 | 0.0634 | tested: step 5 inconclusive (+1.71); step 6 profitable enough |
 | - | 031-03.g1.b1.g1_volume-confirmed-two-week-continuation | 7.g | 3 | 0.1038 | 0.0259 | tested: step 5 inconclusive (+1.35); step 6 not profitable enough (failed: Calmar) |
 | - | 031-03.g1.b1.g2_swelling-volume-after-rises | 7.g | 3 | 0.1038 | 0.0259 | tested: step 5 confirmed (+2.07); step 6 profitable enough  GOAL REACHED |
 | - | 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails | 7.e | 4 | 0.6786 | 0.1357 | tested: step 5 inconclusive (+0.09); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | 7.e | 4 | 0.6786 | 0.1357 | tested: step 5 confirmed (+2.38); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
-| - | 031-03.g1.b1.d2.e2.d1_volume-swell-long-only | 7.d | 5 | 0.2482 | 0.0414 | tested: step 5 inconclusive (+1.43); step 6 not profitable enough (failed: Calmar) |
-| - | 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend | 7.d | 5 | 0.2482 | 0.0414 | tested: step 5 inconclusive (+1.65); step 6 profitable enough |
+| - | 031-03.g1.b1.d2.e2.d1_volume-swell-long-only | 7.d | 5 | 0.2535 | 0.0423 | tested: step 5 inconclusive (+1.43); step 6 not profitable enough (failed: Calmar) |
+| - | 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend | 7.d | 5 | 0.2535 | 0.0423 | tested: step 5 inconclusive (+1.65); step 6 profitable enough |
 | - | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | 7.g | 5 | 0.1038 | 0.0173 | tested: step 5 confirmed (+4.14); step 6 not profitable enough (failed: Calmar) |
+| - | 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound | 7.d | 6 | 0.2535 | 0.0362 | tested: step 5 confirmed (+3.71); step 6 profitable enough  GOAL REACHED |
