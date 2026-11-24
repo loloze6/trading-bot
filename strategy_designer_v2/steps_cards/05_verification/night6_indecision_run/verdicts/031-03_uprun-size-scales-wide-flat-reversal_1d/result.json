@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move in the short direction after a bet",
+    "value": -0.013453471618523732,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.0025884976470214
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 (and check passes); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above-median |forecast| minus below-median",
+    "value": -0.03370366571246194,
+    "passed": false
+  },
+  "counts": {
+    "cases": 78,
+    "distinct days": 68
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A bet is a fall of the forecast at least 2 points below its lowest short level since the last bet (from 0 after a flat), the first bet of each 5-bar grid cell per window is the case; the drift is each coin's mean non-overlapping 5-bar return over all its windows; the t uses day-clustered errors with a G/(G-1) correction; above-median means |forecast| strictly above the median, below-median the rest; the plan's 30-case and 30-day minimums are applied as 'not observable'."
+}

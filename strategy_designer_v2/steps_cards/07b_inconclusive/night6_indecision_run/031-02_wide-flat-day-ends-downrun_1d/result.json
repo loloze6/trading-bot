@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "031-02_wide-flat-day-ends-downrun_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39713859999999995,
+  "findings": {
+    "F1": "The tested down-run idea shows no effect at any horizon. Step 5 measured -0.50 % unusual move per case (t -0.52, 197 cases on 148 days). My recount of the plain wide-flat-after-fall days gives +0.09 % at 5 days (t 0.09, 153 cases), -0.33 % at 1 day (t -0.71), +0.76 % at 3 days (t 1.12) and +0.26 % at 10 days (t 0.18). The result is zero, not a true effect too small to show.",
+    "F2": "Nothing in the down-run version is graded the way the idea says. The correlation of the 5-day unusual move with the range ratio is 0.002 and with flatness is 0.055. By range-ratio tercile the moves are +1.03 %, -0.85 % and +0.12 %, all with |t| < 1. The wide range adds nothing over narrow flat days after a fall, which give -0.003 % (t -0.01, 519 cases).",
+    "F3": "No part of the down-run data holds the effect. The coins split three positive and three negative, every |t| < 1. Years split four positive and four negative. Only 2020 has t above 2 (+6.51 %, t 2.22), and that rests on just 8 cases.",
+    "F4": "The mirror situation shows a clear effect, but in the opposite direction to the brief. After a 5-day rise, a wide-range flat day is followed by a further rise, not a reversal. The unusual move is +1.93 % over 5 days (t 2.29, 197 cases on 173 days) and +4.12 % over 10 days (t 2.74, 188 cases on 166 days).",
+    "F5": "The continuation after a rise needs the wide range. Narrow flat days after a rise give -0.34 % over 5 days (t -0.62, 472 cases) and -0.22 % over 10 days (t -0.27). All days after a rise give -0.05 % (t -0.14, 2,329 cases).",
+    "F6": "The continuation is graded by the size of the prior 5-day rise, not by the range ratio. By rise tercile the 5-day unusual move is -0.19 % (t -0.22), +2.30 % (t 1.79) and +3.53 % (t 1.91). The correlation with the 5-day rise is 0.10, against -0.04 for the range ratio and -0.09 for flatness. Range-ratio terciles give +1.26 %, +2.56 % and +1.95 %.",
+    "F7": "The continuation is broad but strongest in two coins. All six coins are positive: ETH +6.20 % (t 3.07), XRP +4.28 % (t 1.63), ZEC +1.47 %, BTC +0.66 %, XMR +0.30 % and LTC +0.21 %. Six of eight years are positive, with 2019 at -1.51 % and 2022 at -0.50 %.",
+    "F8": "Neither version can pay at this cost unless the move is larger. A trade costs 0.19 %, while the tested idea's total move per case is +0.07 %. The rise-side continuation's unusual move of about 1.9 % over 5 days and 4.1 % over 10 days is many times that cost."
+  },
+  "ideas": [
+    {
+      "idea": "After a coin has risen over the past 5 days, a day whose range is wide compared with its average daily range over the past 20 days, but whose close lands near its open, is followed by a further rise over the next 10 days. The larger the coin's 5-day rise before that day, the larger the further rise.",
+      "consequence": "A wide, flat day at the top of an up-run is a pause that absorbs supply without stopping buyers, so a trader should stay long or add, not fade it.",
+      "name": "wide flat day continues uprun",
+      "from": "F4, F5, F6, F7, F8",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1_wide-flat-day-continues-uprun"
+  ],
+  "no_ideas": null
+}

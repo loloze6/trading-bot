@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return on forecast > 0 bars",
+    "value": 0.013070032577501792,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 3.5930719446769475
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 confirms (with slope > 0); mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess next-day return on forecast",
+    "value": 0.017611234188972466,
+    "passed": true
+  },
+  "counts": {
+    "cases": 611,
+    "distinct case days": 305
+  },
+  "decided_by": "The mean excess next-day return is positive with t >= 2 and the slope is positive.",
+  "reading": "The situation is recomputed from prices inside each window (20-bar mean range including the current bar); every bar with forecast > 0 is a case on the 1-bar grid; the coin's mean is over all its 1-day returns in all windows; the t clusters deviations per UTC day with a D/(D-1) correction; the plan's 'fewer than 30 distinct case days' is applied as the minimum count (not observable)."
+}

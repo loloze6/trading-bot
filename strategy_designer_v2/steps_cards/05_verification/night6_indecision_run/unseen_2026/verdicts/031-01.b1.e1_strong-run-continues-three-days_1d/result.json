@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-bar return on forecast (non-overlapping grid, pooled)",
+    "value": 0.0005631381416883643,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.3229585618876119
+    },
+    "threshold": "t >= 2 confirms (with the supporting check), t <= -2 rejects, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 3-bar return on grid bars with forecast > 0",
+    "value": 0.005661128051933237,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with a forecast above 0": 283,
+    "grid bars": 624
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Grid bars at positions 0, 3, 6, ... of each window, dropping those without a bar t+3 in the window; the coin's mean 3-bar return is the mean of its grid returns over all its windows; the slope is an OLS with intercept and its ordinary t; the 200 minimum counts grid bars with forecast > 0 and a valid 3-bar return and, as a minimum count, gives 'not observable' when not reached."
+}

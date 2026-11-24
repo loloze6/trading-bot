@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-day unusual move in the short direction",
+    "value": -0.012447002029598237,
+    "statistic": {
+      "name": "t of the mean, same-day cases taken together",
+      "value": -0.9293332809420904
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above minus below the median |forecast|",
+    "value": 0.04903275836332864,
+    "passed": true
+  },
+  "counts": {
+    "cases": 86,
+    "days": 74,
+    "active bars": 87
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Active bars whose 5-day return or range ratio cannot be computed inside the record are left out of the agreement share; a case is the first short bet in each 5-bar cell of its window, cases with no full 5-bar return in the window are dropped, the t clusters cases by UTC day, and the supporting check compares cases strictly above with cases strictly below the median |forecast| (ties left out)."
+}

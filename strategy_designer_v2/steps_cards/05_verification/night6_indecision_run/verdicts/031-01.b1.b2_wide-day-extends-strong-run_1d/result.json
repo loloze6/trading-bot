@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of long cases (forecast rises >= 2 points, one per 3-bar cell)",
+    "value": 0.0017192340682349605,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.7592277230273804
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and upper-minus-lower half > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at median forecast)",
+    "value": 0.004631020484986228,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 1164,
+    "cases": 2538
+  },
+  "decided_by": "The t lies between -2 and 2 (or is not computable): neither confirm nor reject is met.",
+  "reading": "Situation = 5-bar close return > 0 recomputed from prices inside each window (component raw value > 0 on a window's first 5 bars), side long; a case is the first bar in each 3-bar grid cell (from each window's first row) where the positive forecast has risen >= 2 points above its lowest level since the last bet (from 0 after flat); drift is the coin's mean 3-bar return on the same grid over all its windows; t sums case deviations per UTC day; the median split puts cases with forecast above the median in the upper half and the rest in the lower half; fewer than 30 case days gives 'not observable'."
+}

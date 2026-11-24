@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return on mean_reversion bars",
+    "value": 0.012849328019066691,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.208651553411248
+    },
+    "threshold": "t >= 2 to confirm, t <= -2 to reject, over at least 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean excess of upper vol20 half minus lower half",
+    "value": 0.020709568519987818,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 150,
+    "cases": 330
+  },
+  "decided_by": "The mean excess next-day return has t >= 2 over at least 30 case-days and the high-volatility half beats the low-volatility half.",
+  "reading": "Situation recomputed from prices as 1-bar return over the std (ddof 1) of the last 20 one-bar returns including bar t, with close location (close-low)/(high-low), falling back to the recorded regime on bars without 20 returns of history; cases are bars with regime mean_reversion and a next bar in the same window; the coin's mean is over all its 1-bar returns in all windows; the t clusters cases by UTC day (deviations summed per day); the median split puts cases above the median in the upper half and the rest in the lower half; fewer than 30 case-days is reported as not observable."
+}

@@ -28,3 +28,4 @@
 030_absorption-day-close-location: Question: on heavy-volume, flat days, does the close's place in the daily range show who absorbed the order and the next direction? [bar: 1d]
 031_daily-close-streak-reversal-or-continuation: Question: after unusually long runs of same-direction daily closes, does a coin give back part of the run or continue, scaling with streak length? [bar: 1d]
 031_medium-term-overreaction-reversal: Coins that moved far beyond usual over two to three months partly reverse over following weeks as the overreaction's chasing or capitulation flow fades. [bar: 1d]
+031_wide-flat-day-ends-run: After a multi-day run, a wide-range day closing near its open shows the push absorbed; the coin reverses over following days. [bar: 1d]

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 031-03_uprun-size-scales-wide-flat-reversal_1d
+idea tested: 031-03_uprun-size-scales-wide-flat-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3745 USD
+---
+## Findings
+- **F1:** The tested idea came out on the wrong side, not short of the bar: after wide flat days following a rise, the coin kept rising, with a mean unusual 5-day move in the short direction of -1.35 % (t -1.00, 78 cases on 68 days). Larger run-ups made it worse, not better: the above-median minus below-median |forecast| difference was -3.4 %.
+- **F2:** The grading the idea predicts is inverted. Among wide flat days, the top quintile of the 5-day move (mean rise +33 %) was followed by a 6.6 % further rise beyond drift over 5 days (t -2.28 in the reversal direction, 21 cases on 20 days, only 24 % reversing). The middle quintiles were near zero (-0.6 % to +0.0 %), and across up-run cases the correlation between rise size and the move back was -0.095.
+- **F3:** The wrong-side result is uneven across years, so even it is not a stable effect. In 2021, the up-run wide flat cases rose a further 10.2 % (t -3.47, 10 cases), while 2019 and 2024 reversed by +2.7 % and +1.2 %. On the non-overlapping up-run grid without 2021, wide flat days show a 2.7 % fall (t -1.25, 15 cases on 12 days), against +0.5 % with 2021 included (t 0.26, 21 cases).
+- **F4:** The reversal the brief describes appears only on the down side, and only faintly. Wide flat days after a 5-day fall were followed by bounces of +1.0 % over 3 days (t 1.12, 34 cases on 27 days) and +0.9 % over 5 days (t 0.42, 65 % hit). Coin by coin the signs disagree: LTC, XMR and ZEC positive, ETH and BTC negative. So no part of the data shows the effect clearly.
+- **F5:** Wide-range days with a non-flat body that follow a rise are followed by continuation, at more horizons than one. The unusual move in the reversal direction was -1.08 % over 3 days (t -2.63, 815 cases on 500 days) and -2.5 % over 10 days (t -2.38, 495 cases on 308 days). Ordinary days after a rise showed nothing: +0.05 % over 3 days, t 0.17, 1,946 cases.
+- **F6:** That continuation grows with the size of the run on the 3-to-5-day grid. On wide days after an up-run, by standardised 5-day rise quartile, the 5-day move was -2.3 %, -3.3 %, +1.2 % and +1.7 % (t up to 1.05). Among all wide non-flat days, the top quintile of the 5-day move (mean +23 %) was followed by -1.9 % in the reversal direction (t -1.84, 250 cases). It is mixed by year: 2020 +7.5 %, 2025 -3.8 %.
+- **F7:** Cost is not the obstacle. The book's total move per case was -1.94 % against a trade cost of 0.19 %, ten times the cost but in the losing direction. The problem is the sign of the effect, not its size.
+
+## Ideas
+- `031-03.b1_wide-day-extends-up-run` (from F5, F6, F2, F1): On a day whose range is wide compared with its 20-day average daily range, the larger the coin's rise over the preceding 5 days, the larger its further rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 3-bar unusual move of long bets (return minus coin's normal 3-bar drift), before costs",
+    "value": -0.0010751920150660979,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.10140799412551978
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases and supporting check passes; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above minus below the median case forecast > 0",
+    "value": 0.022288837147919245,
+    "passed": true
+  },
+  "counts": {
+    "cases": 155,
+    "distinct days": 87
+  },
+  "decided_by": "The t of the mean unusual move is between -2 and 2.",
+  "reading": "The situation is rebuilt per window from the recorded raw flatness and run_up where present and otherwise from prices, with 'wide' as the day's range over the mean range of the last 20 bars including it, active bars whose 20-bar range history is incomplete being left out of the agreement; a case is the first bet (forecast rise of >= 2 points from its lowest level on its side since the last bet) in each cell of the per-window 3-bar grid, its unusual move is its 3-bar return minus the coin's mean 3-bar return on the pooled grid of all its windows, the t is clustered by UTC day, the median split drops cases equal to the median, and the minimum is 30 cases."
+}

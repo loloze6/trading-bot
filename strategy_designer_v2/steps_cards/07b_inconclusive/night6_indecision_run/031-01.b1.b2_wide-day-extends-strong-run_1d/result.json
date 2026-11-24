@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "031-01.b1.b2_wide-day-extends-strong-run_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34262230000000005,
+  "findings": {
+    "F1": "The test's result is on the side the idea predicts but short of the bar: a mean unusual 3-day move of +0.17 % with t 0.76 over 1164 case days. My own reading on every 3-day grid bar with a positive forecast gives the same picture, +0.30 % with t 1.13 (2907 cases, 781 days).",
+    "F2": "The effect is spread thinly but mostly the right way across coins: 5 of 6 coins are positive at 3 days (XRP +0.80 % t 1.54, ZEC +0.48 % t 0.98, LTC +0.28 %, ETH +0.25 %, BTC +0.11 %), and only XMR is negative (\u22120.06 % t \u22120.19). No single coin's t reaches 2, so this data is too small to show the effect, not opposed to it.",
+    "F3": "The effect swings with the period, which drowns it: it is positive in 2020 (+1.23 %, t 1.54) and 2021 (+1.52 %, t 1.77), negative in 2022 (\u22121.19 %, t \u22121.66), and near 0 in 2018, 2019 and 2025 (each 89\u2013106 days).",
+    "F4": "The 5-day rise carries the effect more than the range does. On rising bars, the top half of 5-day rises gains +0.87 % (t 1.58) on narrower days and +0.72 % (t 1.39) on wider days, against \u22120.05 % and \u22120.55 % for the bottom half. The range-multiple quartiles do not rise in order (+0.09 %, +0.56 %, \u22120.63 %, +1.05 %).",
+    "F5": "The graded effect shows only while the coin's 60-day return is positive. There, the top quarter of rise \u00d7 range multiple gains +2.15 % over 3 days (t 2.07, 120 days), and the rank correlation of the product with the unusual move is 0.045. When the 60-day return is not positive, the top quarter gains \u22120.49 % (t \u22120.42) and the rank correlation is \u22120.001.",
+    "F6": "Per case, the unusual move (+0.17 %) is 0.9 times the 0.19 % cost of a trade, so the plain idea cannot beat holding after costs. The top quarter in F5 (+2.15 %) is about 11 times the cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "wide-day strong run, more coins",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "idea": "After a coin has risen over the past 5 days, the larger that 5-day rise and the wider that day's high-low range compared with its average daily range over the past 20 days, the more the coin rises over the next 3 days.",
+      "consequence": "A very wide day at the end of a strong 5-day rise is a reason to join or hold the run for 3 days, while a wide day after a weak rise gives no such reason.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "After a coin has risen over the past 5 days, only while its 60-day return is positive, the larger that 5-day rise and the wider that day's high-low range compared with its average daily range over the past 20 days, the more the coin rises over the next 3 days.",
+      "consequence": "A wide day ending a strong 5-day rise inside a 60-day uptrend is a reason to join the run for 3 days, while the same day in a falling 60-day market is no reason to.",
+      "name": "wide strong run in uptrend",
+      "from": "F4, F5, F6",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.b1.b2.b1_wide-day-strong-run-more-coins",
+    "031-01.b1.b2.b2_wide-strong-run-in-uptrend"
+  ],
+  "no_ideas": null
+}

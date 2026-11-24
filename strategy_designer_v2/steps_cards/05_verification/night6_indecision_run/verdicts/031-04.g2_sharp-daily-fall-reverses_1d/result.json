@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day return minus coin mean on forecast (forecast > 0)",
+    "value": 0.00032777039289403644,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 2.173353671699993
+    },
+    "threshold": "confirm if slope t >= 2 and timing gain > 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "book timing gain before costs (mean daily)",
+    "value": 0.0005410545498600424,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 8514,
+    "distinct days among them": 2199
+  },
+  "decided_by": "The slope's t is 2 or more and the timing gain is above 0.",
+  "reading": "The slope is an OLS with intercept and day-clustered (CR1) standard errors over bars with forecast > 0 that have a next bar in the same window, and the timing gain is the before-cost daily book (position after trade x next-bar return, averaged over coins per day) minus position x coin mean return."
+}

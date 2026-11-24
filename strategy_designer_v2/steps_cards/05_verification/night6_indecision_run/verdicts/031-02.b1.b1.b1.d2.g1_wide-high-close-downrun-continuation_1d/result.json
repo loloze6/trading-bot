@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 3-bar unusual move per case",
+    "value": 0.0056242658527380866,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 0.7642286075737016
+    },
+    "threshold": "mean short-direction unusual move > 0 with day-clustered t >= 2 to confirm; < 0 with t <= -2 to reject; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on raw range multiple",
+    "value": 0.003985557916369555,
+    "passed": true
+  },
+  "counts": {
+    "cases": 625,
+    "cases counted on distinct days": 275
+  },
+  "decided_by": "t between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation from prices (close[t-1]<close[t-6], range over 20-bar mean range incl. the day >= 1.5 using the recorded width where present, (close-low)/(high-low) >= 0.75), active bars whose 20-bar range mean cannot be computed inside the window are left out of the agreement; cases are short bets (rise of -forecast of >= 2 from its low since the last bet), one per 3-bar grid cell of each window, t clusters deviations by UTC day, and the 30-case minimum is counted on distinct days."
+}

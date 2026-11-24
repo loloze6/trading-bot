@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of excess 3-bar return on forecast, clustered by day",
+    "value": 0.0007079091450149888,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 1.4270761779274583
+    },
+    "threshold": "confirm if the slope is > 0 with t >= 2; reject if the slope is < 0 with t <= -2; at least 200 independent cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "independent in-regime grid cases": 2907,
+    "days": 781
+  },
+  "decided_by": "The slope's t = 1.43 lies between -2 and 2 over 2907 cases (inconclusive rule).",
+  "reading": "Situation check: the 5-bar return is computed inside each window from closes, and the first 5 bars of a window are left out because they have no 5-bar history; main measure: the trending regime is read from the record's regime column, the coin's mean 3-bar return is taken over the non-overlapping grid of all its bars in all windows, the t is an OLS slope t with standard errors clustered by UTC day, and the independent cases are the in-regime grid cases with a 3-bar forward return."
+}

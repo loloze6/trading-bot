@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on near_low post-pipeline value",
+    "value": 0.0019117933625494889,
+    "statistic": {
+      "name": "t of the slope, clustered by day",
+      "value": 2.6048282526906457
+    },
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual next-day move (long) of cases with forecast >= 2",
+    "value": 0.007230522318826114,
+    "passed": true
+  },
+  "counts": {
+    "sharp-down-day cases": 492,
+    "days": 200,
+    "cases with forecast >= 2": 478
+  },
+  "decided_by": "The slope's t is 2 or more and the mean unusual move of the cases with forecast >= 2 is above 0.",
+  "reading": "The situation is a 1-day return at or below -2 times the std (ddof 1) of the last 20 daily returns of the window, taking either the std including or excluding the bar, and active bars of a window's first 20 bars where it cannot be computed are left out of the agreement; cases are bars with regime mean_reversion and a next-day return inside the window, the slope t is OLS with standard errors clustered by UTC day (small-sample corrected), and the supporting check uses the forecast column >= 2."
+}

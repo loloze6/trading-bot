@@ -1,0 +1,169 @@
+{
+  "core": {
+    "net_return_pct": 28.218,
+    "sharpe": 2.327,
+    "max_drawdown_pct": -10.812,
+    "trade_count": 16,
+    "win_rate": 50.0,
+    "avg_trade_net_pnl": 17.592973,
+    "fees_paid": 7.856962,
+    "gross_pnl": 289.344531,
+    "net_pnl": 281.487569,
+    "cost_drag_pct": 2.7154,
+    "forecast_return_corr": 0.14232,
+    "forecast_return_corr_pvalue": 0.549473,
+    "forecast_return_corr_pvalue_block_adjusted": 0.557339,
+    "forecast_return_corr_n_eff": 20,
+    "forecast_return_corr_all_bars": 0.019611,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.832717,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.8403,
+    "avg_trade_duration_bars": 3.44,
+    "sigma_bar_bps": 310.6279,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 81.9947,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 4.4321,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.1423, p=0.5573 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 109.2779,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 109.2779,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 10.9278,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.1423, p=0.5573 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "trending": {
+      "bar_count": 27,
+      "avg_forecast": 10.526255,
+      "trade_count": 16,
+      "total_net_pnl": 281.487569
+    },
+    "unknown": {
+      "bar_count": 93,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "5_to_10": {
+      "total_forecasts": 2,
+      "profitable_trades": 2,
+      "success_rate_pct": 100.0,
+      "total_net_pnl_usd": 10.7446,
+      "avg_pnl_per_trade_usd": 5.3723
+    },
+    "10_to_15": {
+      "total_forecasts": 3,
+      "profitable_trades": 3,
+      "success_rate_pct": 100.0,
+      "total_net_pnl_usd": 185.2732,
+      "avg_pnl_per_trade_usd": 61.7577
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 11,
+      "profitable_trades": 3,
+      "success_rate_pct": 27.27,
+      "total_net_pnl_usd": 85.4697,
+      "avg_pnl_per_trade_usd": 7.77
+    }
+  },
+  "dynamic": {
+    "debug_info.components.runup.last_history_value": {
+      "trending": {
+        "mean": 9.287473,
+        "std": 16.384261
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.runup.post_pipeline_value": {
+      "trending": {
+        "mean": 10.526255,
+        "std": 8.364736
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.runup.weight_normalized": {
+      "trending": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.runup.weighted_contribution": {
+      "trending": {
+        "mean": 10.526255,
+        "std": 8.364736
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "trending": {
+      "forward_return_mean": 0.00394978,
+      "forward_return_std": 0.04212325,
+      "n_bars": 26,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00290525,
+      "forward_return_std": 0.0272905,
+      "n_bars": 93,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -11.3832,
+    "sharpe": 2.0359,
+    "sortino": 3.7269,
+    "exposure_pct": 23.3333,
+    "turnover": 14.375971,
+    "n_bars_total": 120,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 15,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2024-04-01 00:00:00",
+        "previous_timestamp": "2024-03-30 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

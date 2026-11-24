@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 3-bar return on positive forecast (day-clustered t)",
+    "value": 0.0018127789679552538,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 1.965790433207828
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return of top third of positive forecasts",
+    "value": 0.03019959924370411,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases with a forecast above 0": 573,
+    "distinct days": 231
+  },
+  "decided_by": "Slope with |t| < 2.",
+  "reading": "Situation taken as raw component > 0 (5-bar return from prices where raw is missing); cases are grid bars 0,3,6,... of each window with forecast > 0 and a 3-bar return inside the window; coin drift is the mean of all its non-overlapping 3-bar grid returns over all windows; slope by OLS with intercept and cluster-robust (by UTC day, CR1) standard error; top third = the floor(n/3) largest positive forecasts; the plan's 'inconclusive' for too few cases is reported as 'not observable'."
+}
