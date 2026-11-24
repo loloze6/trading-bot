@@ -22,22 +22,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1.g1.d1_midweek-gain-lifts-saturday | 031-01.g1.g1_midweek-run-carries-into-saturday | plan | confirmed (+2.37) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 031-01.g1.g1.d1.g1_lagged-weekly-gain-continues-daily | 0.71 | 5.2 |
 | 031-01.g1.g1.d2_midweek-fall-near-yearly-low | 031-01.g1.g1_midweek-run-carries-into-saturday | plan | confirmed (+3.87) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.d2.d1_midweek-fall-volatile-yearly-low, 031-01.g1.g1.d2.d2_midweek-gain-lifts-saturday; 7.g: 031-01.g1.g1.d2.g1_wednesday-reverses-weekend-move, 031-01.g1.g1.d2.g2_high-volatility-down-day-bounce | 1.18 | 6.7 |
 | 031-01.g1.g2_monthly-trend-carries-into-saturday | 031-01.g1_weekly-gains-carry-into-saturday | plan | confirmed (+3.02) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g2.d1_monthly-gain-lifts-saturday, 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday; 7.g: 031-01.g1.g2.g1_weekly-move-carries-into-saturday, 031-01.g1.g2.g2_volatile-weeks-carry-into-saturday | 1.31 | 5.8 |
+| 031-01.g1.g2.d1_monthly-gain-lifts-saturday | 031-01.g1.g2_monthly-trend-carries-into-saturday | plan | confirmed (+2.89) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g2.d1.d1_weekend-lift-needs-fresh-gain, 031-01.g1.g2.d1.d2_strongest-monthly-gains-lift-saturday, 031-01.g1.g2.d1.d3_monthly-gain-lifts-weekend; 7.g: 031-01.g1.g2.d1.g1_thursday-momentum-into-weekend | 1.09 | 5.2 |
 
 ## Consumption
-18 ideas, 19.37 USD, 135.0 minutes in all.
+19 ideas, 20.46 USD, 140.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.84 | 11.9 |
-| step4_backtest | 0.00 | 66.0 |
-| step5_verdict | 3.26 | 11.8 |
+| step3_plan | 1.92 | 12.4 |
+| step4_backtest | 0.00 | 67.5 |
+| step5_verdict | 3.43 | 12.4 |
 | step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 1.35 | 4.1 |
-| step7_7.d | 1.34 | 4.3 |
+| step7_7.d | 1.75 | 5.6 |
 | step7_7.b | 3.50 | 10.2 |
-| step7_7.g | 8.09 | 23.8 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.g | 8.51 | 25.0 |
+| similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 1.8 |

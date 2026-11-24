@@ -2,6 +2,7 @@
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: profitable enough [Sharpe 1.11; Sharpe minus holding's Sharpe 0.5554; Calmar 0.8801]
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: not profitable enough [Sharpe 0.8367; Sharpe minus holding's Sharpe 0.2671; Calmar 0.4164]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: not profitable enough [Sharpe 0.5747; Sharpe minus holding's Sharpe 0.02058; Calmar 0.2472]
+031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: not profitable enough [Sharpe 0.8621; Sharpe minus holding's Sharpe 0.308; Calmar 0.715]
 031-01.g1.g2_monthly-trend-carries-into-saturday_1d: not profitable enough [Sharpe 0.5704; Sharpe minus holding's Sharpe 0.01628; Calmar 0.4434]
 031-01.g1_weekly-gains-carry-into-saturday_1d: profitable enough [Sharpe 1.007; Sharpe minus holding's Sharpe 0.4529; Calmar 1.008]
 031-01_near-yearly-low-keeps-falling_1d: not profitable enough [Sharpe -0.2983; Sharpe minus holding's Sharpe -0.8799; Calmar -0.1855]

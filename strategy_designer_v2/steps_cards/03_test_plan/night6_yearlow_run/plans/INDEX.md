@@ -2,6 +2,7 @@
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g2_monthly-trend-carries-into-saturday_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1_weekly-gains-carry-into-saturday_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01_near-yearly-low-keeps-falling_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
