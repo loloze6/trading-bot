@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9937304075235109,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-removed 48-bar return on forecast, Thursday-23:00 cases",
+    "value": -0.0009646962679469521,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.9964208928920562
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting mean > 0; reject: slope < 0 with t <= -2; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 48-bar return in the forecast's direction",
+    "value": -0.014929294506835738,
+    "passed": false
+  },
+  "counts": {
+    "cases": 312,
+    "active bars": 319,
+    "situation bars with non-zero forecast": 317
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Cases are bars starting Thursday 23:00 UTC with a non-zero forecast and a full 48-bar forward return inside their window; the normal drift is the coin's mean 48-bar return on the non-overlapping grid of all its windows; the fit has an intercept; fewer than 300 cases is reported as not observable."
+}
