@@ -2,3 +2,4 @@
 033-01_rising-market-sharp-drop-rebound_1d: inconclusive (fit: exact) [main: 0.000386453; OLS slope t 1.11237; grid bars with forecast > 0 983, in-profile grid bars 2224, in-profile grid bars with forecast = 0 1241]
 034-01_falling-market-rally-fade_1d: inconclusive (fit: exact) [main: 0.000147473; t of the mean, cases of one day summed 0.0457231; distinct case days 726, cases 1572]
 035-01_rising-market-quieting-swings-rise_1d: inconclusive (fit: adapted) [main: 0.00244267; t of the weighted mean, cases of one day pooled 0.605151; positive-forecast grid cases 1209, distinct days 522, supporting group above median 604, supporting group forecast 0 1015]
+036-01_scaled-rally-week-continuation_1d: inconclusive (fit: adapted) [main: -0.0030477; t of the mean, cases of one day summed -0.671998; distinct case days 854, cases 1757]
