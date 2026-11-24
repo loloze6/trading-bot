@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 30-bar unusual move in the short direction (return minus coin's normal 30-bar drift)",
+    "value": -0.04272640837694476,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.0162398941309552
+    },
+    "threshold": "confirm: mean > 0 with t >= 2.0; reject: mean < 0 with t <= -2.0; at least 30 cases on at least 20 distinct days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 146,
+    "distinct days": 111
+  },
+  "decided_by": "Inconclusive rule: t -1.02 lies between -2.0 and 2.0 (mean -0.0427) over 146 cases on 111 days.",
+  "reading": "The situation is read from the recorded raw z90 (overreach last_history_value) >= 1 with a short forecast, a bar without that recorded value counting as outside the situation since 365-day volatility cannot be rebuilt from the windows' prices; a case is the first bet bar (forecast rising on the short side by >= 2 points from its lowest level since the last bet) in regime mean_reversion in each 30-bar grid cell counted from each window's first row, cases without a 30-bar return inside the window are left out, the normal drift is the coin's mean 30-bar return on the same grid over all its windows, the t is day-clustered (deviations summed per UTC day, with a G/(G-1) correction), and unmet minimum counts give 'not observable'."
+}

@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "031-02_extreme-fall-partly-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3529867,
+  "findings": {
+    "F1": "The main measure is zero, not merely short of the bar: the 52 in-regime 30-day grid cases on 29 days have a mean excess return of +0.02 % (t 0.006); only 44 % beat the coin's mean, and the same cells read at 10, 20, 45 and 60 days give means of +0.8 %, +2.0 %, +2.9 % and \u22121.8 %, with no t above 0.76.",
+    "F2": "The cases split by what the coin did in the last 30 days: in-regime grid cases whose 30-day return was still negative averaged +3.2 % excess (25 cases, 14 days, t 0.47), and those whose 30-day return had already turned up averaged \u22128.4 % (11 cases, 5 days, t \u22121.67), so the two cancel in the main measure.",
+    "F3": "Every in-regime bar, read overlapping and so only descriptive, shows the same split: the three lower quartiles of the 30-day return (means \u221234 %, \u221219 %, \u22126 %) are followed by +9.3 %, +6.7 % and +10.7 % excess over 30 days, and the quartile already up 13 % by +1.2 %. By 10-day return, the up quartile gives \u22120.2 % against +6.5 % to +13.8 % for the others.",
+    "F4": "The still-falling part holds in every coin: in-regime bars with a negative 30-day return are followed by positive excess 30-day returns in all six coins (BTC +4.2 %, ETH +5.8 %, LTC +2.0 %, XMR +14.2 %, XRP +19.2 %, ZEC +7.4 %, 66 to 218 bars each). In-regime bars with a positive 30-day return are mixed (BTC \u22127.3 %, XMR \u22122.2 %, ZEC \u22121.7 %, the others positive).",
+    "F5": "The test could hardly see the gradient, because 73 % of the in-regime grid forecasts sit at the cap of 20: the forecast terciles give only \u22122.0 %, +0.3 % and +1.7 % excess (17 to 18 cases each), while the overlapping in-regime quartiles rise from +0.8 % to +4.7 % to +5.2 %.",
+    "F6": "The cases are few and bunched in time: 52 grid cases fall on only 29 days, and 2019 alone holds 10 cases at \u22128.7 %. The size measure's broader set (81 cases, 66 days) gives an unusual move of +8.21 % at t 1.49, 0.204 of a usual move, which is 42.5 times the 0.19 % cost of a trade. The effect, where it exists, is large against the cost but not yet told from 0."
+  },
+  "ideas": [
+    {
+      "idea": "The further a coin's 90-day return stands below its own usual 90-day move, measured against its own past volatility, the more its price rebounds over the next 30 days, only while its 30-day return is still negative.",
+      "consequence": "A trader buys deep two-to-three-month falls for the rebound only while the coin is still falling over the past month, and refuses the trade once the coin has already bounced over the last 30 days.",
+      "name": "deep fall still falling rebounds",
+      "from": "F1, F2, F3, F4, F6",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ; bar: 1d; period: folds A, B, C, D",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The further a coin's 90-day return stands below its own usual 90-day move, measured against its own past volatility, the more its price rebounds over the next 30 days, and the rebound is larger the further its last 30-day return also stands below zero.",
+      "consequence": "Among coins in an unusual two-to-three-month fall, a trader favours those whose last month is still the weakest, because they carry the overreaction that has not yet unwound.",
+      "name": "graded deep and recent fall",
+      "from": "F2, F3, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1_deep-fall-still-falling-rebounds",
+    "031-02.b2_graded-deep-and-recent-fall"
+  ],
+  "no_ideas": null
+}

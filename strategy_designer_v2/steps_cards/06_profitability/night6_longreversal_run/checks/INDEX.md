@@ -1,0 +1,5 @@
+031-01_extreme-rise-partly-reverses_1d: not profitable enough [Sharpe -0.826; Sharpe minus holding's Sharpe -1.408; Calmar -0.2948]
+031-02.b1_deep-fall-still-falling-rebounds_1d: not profitable enough [Sharpe 0.7421; Sharpe minus holding's Sharpe 0.2093; Calmar 0.4143]
+031-02_extreme-fall-partly-rebounds_1d: not profitable enough [Sharpe 0.7908; Sharpe minus holding's Sharpe 0.2366; Calmar 0.4072]
+031-03_fading-volume-after-rise-reverses_1d: not profitable enough [Sharpe -0.2993; Sharpe minus holding's Sharpe -0.881; Calmar -0.07968]
+031-04_fading-volume-after-fall-rebounds_1d: not profitable enough [Sharpe 0; Sharpe minus holding's Sharpe -0.5696; Calmar 0]

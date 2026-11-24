@@ -1,0 +1,5 @@
+031-01_extreme-rise-partly-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-02.b1_deep-fall-still-falling-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-02_extreme-fall-partly-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-03_fading-volume-after-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-04_fading-volume-after-fall-rebounds_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)

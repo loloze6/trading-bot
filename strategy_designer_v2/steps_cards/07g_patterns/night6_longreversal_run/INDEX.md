@@ -1,0 +1,4 @@
+031-01_extreme-rise-partly-reverses_1d: 1 ideas (2 explorations)
+031-02_extreme-fall-partly-rebounds_1d: no ideas: Over about 30 angles (eleven features at two horizons, slopes at three horizons, coins, years, volatility halves, weekdays and trades), no pattern stood out beyond chance. The best candidate, 14-day continuation over the next 7 days, has a day-clustered t of only 1.45 and flips sign across coins and years, and the Saturday effect (t 2.2) is one of seven weekdays tested.
+031-03_fading-volume-after-rise-reverses_1d: 2 ideas (2 explorations)
+031-04_fading-volume-after-fall-rebounds_1d: no ideas: The book never entered its regime because the 122-bar windows cannot warm up a 365-day volatility (F1). Across the past-move, volume, volatility, range, distance-from-high, one-day-return and weekday angles I looked at, no pattern stood out beyond chance given the number of tests (F2–F6), so no finding supports a new idea.
