@@ -17,6 +17,7 @@
 031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: 1 ideas (2 explorations)
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: no ideas: The result is on the predicted side, but no more data exists beyond the 19 coins and four folds already used, and the findings show no part of one coin's own data where the effect is clear and graded (it comes from market-wide swells, F4, and swings by year, F3), so no amended idea is supported.

@@ -17,6 +17,7 @@
 031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: inconclusive (fit: exact) [main: 0.0260922; t of the weighted mean, cases of one day summed 1.42865; positive-forecast grid cases 1145, distinct days 182]
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: inconclusive (fit: adapted) [main: 0.00271361; day-clustered OLS t of the slope 1.64755; grid cases with forecast above 0 647, trending grid cases 1166]
 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d: confirmed (fit: exact) [main: 0.00110534; OLS slope t 3.71133; cases 1355]
+031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d: confirmed (fit: exact) [main: 0.000405532; OLS t of the slope 5.13284; bars with a non-zero forecast 2918, bars in the slope 2897]
 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: confirmed (fit: exact) [main: 0.00154697; t of the mean 4.13712; bars with a non-zero position 2887, bars in the main measure 2897, bars with z < 0 1355, bars with z > 0 1539]
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: confirmed (fit: exact) [main: 0.00170427; OLS t, standard errors clustered by day 2.37878; grid cases 2448, distinct days 207]
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: inconclusive (fit: adapted) [main: 0.0400087; day-clustered t of the weighted mean 1.70634; distinct case days 141, cases 655]

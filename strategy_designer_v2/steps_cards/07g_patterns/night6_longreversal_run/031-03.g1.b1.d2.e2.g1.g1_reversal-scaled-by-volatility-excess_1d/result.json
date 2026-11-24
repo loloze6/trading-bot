@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3957435,
+  "findings": {
+    "F1": "XMR's next-day reversal comes almost entirely from down days. The fade slope of next-day excess return on minus the volatility-scaled one-day return is 0.0068 (t 3.37, 1133 down days) after down days and 0.0016 (t 0.94, 1282 up days) after up days. Among down days, the largest-fall quintile is followed by +0.95 % (t 2.85, 227) and the next quintile by +0.73 % (t 2.45, 226); the three milder quintiles give between \u22120.22 % and +0.23 %.",
+    "F2": "The book's shorts carry its losses. Short trades average \u22120.81 % net (1370 trades, median \u22120.22 %) against \u22120.13 % for longs (1236 trades, median +0.19 %), which matches the up-day fade being indistinguishable from 0.",
+    "F3": "Where the day closes in its range forecasts the next day. The slope of next-day excess return on close location ((close\u2212low)\u2212(high\u2212close))/(high\u2212low) is \u22120.0076 (t \u22125.10, 2897 bars). The quintile closing nearest the low is followed by +0.85 % (t 4.17, 580) and the one nearest the high by \u22120.60 % (t \u22123.33, 580). The slope is negative in both halves of the windows (t \u22122.81 and \u22124.33) and in 7 of 8 years. On non-overlapping 2-day returns it is \u22120.0072 (t \u22122.57, 1442).",
+    "F4": "The close-location effect is strongest on wide-range days. Its slope is \u22120.0115 (t \u22123.86, 806) in the tercile whose range is 1.6 times its 30-day average, against \u22120.0048 (t \u22121.95) and \u22120.0035 (t \u22121.39) in the narrower terciles. It is also stronger on down days (\u22120.0082, t \u22122.37) than on up days (\u22120.0036, t \u22121.30). It overlaps the scaled return, though: fitted together, close location keeps a slope of \u22120.0031 (t \u22121.43) and the scaled return \u22120.0031 (t \u22122.45).",
+    "F5": "The fade does grow with elevated volatility, as the tested idea says. Its slope is 0.0082 (t 3.87, 454) in the highest volatility-ratio tercile (ratio 1.32), against 0.0025 (t 1.42) and 0.0028 (t 1.38) in the lower two.",
+    "F6": "The reversal lasts only a few days, and the brief's two-to-three-month move shows nothing at these horizons."
+  },
+  "ideas": [
+    {
+      "idea": "The larger XMR's one-day fall against its 30-day daily volatility, the more its price rises over the next day, and more so when its 30-day volatility stands above its six-month norm.",
+      "consequence": "A trader would buy XMR after its sharpest volatility-scaled down days and refuse to short its up days, keeping only the part of the fade that pays.",
+      "name": "XMR fades sharp falls only",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The nearer XMR closes to the low of its day's range, the more its price rises over the next day, and the nearer it closes to the high, the more it falls; the effect grows with how wide the day's range is against its 30-day average range.",
+      "consequence": "A trader would lean against where XMR closed within a wide day, buying closes near the low and selling closes near the high, with more weight the wider the day.",
+      "name": "XMR close-in-range reversal",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1.g1.g1_xmr-fades-sharp-falls-only",
+    "031-03.g1.b1.d2.e2.g1.g1.g2_xmr-close-in-range-reversal"
+  ],
+  "no_ideas": null
+}

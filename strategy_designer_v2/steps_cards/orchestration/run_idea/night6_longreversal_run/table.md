@@ -32,22 +32,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | plan | inconclusive (+1.65) | profitable enough | - | 7.b: 031-03.g1.b1.d2.e2.d2.b1_volume-swell-predicts-two-weeks, 031-03.g1.b1.d2.e2.d2.b2_fading-volume-in-downtrend; 7.e: 031-03.g1.b1.d2.e2.d2.e1_volume-swell-predicts-two-weeks, 031-03.g1.b1.d2.e2.d2.e2_fading-volume-in-downtrend; 7.g: 031-03.g1.b1.d2.e2.d2.g1_volume-swell-any-trend, 031-03.g1.b1.d2.e2.d2.g2_fading-volume-precedes-falls | 1.62 | 12.3 |
 | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | plan | confirmed (+4.14) | not profitable enough (failed: Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound; 7.g: 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess, 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 0.99 | 4.2 |
 | 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | plan | confirmed (+3.71) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-03.g1.b1.d2.e2.g1.d1.g1_xmr-close-below-high-rebound, 031-03.g1.b1.d2.e2.g1.d1.g2_xmr-strong-close-next-day-fade | 0.56 | 3.1 |
+| 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | plan | confirmed (+5.13) | not profitable enough (failed: Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls, 031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls; 7.g: 031-03.g1.b1.d2.e2.g1.g1.g1_xmr-fades-sharp-falls-only, 031-03.g1.b1.d2.e2.g1.g1.g2_xmr-close-in-range-reversal | 1.00 | 4.2 |
 
 ## Consumption
-28 ideas, 31.58 USD, 255.8 minutes in all.
+29 ideas, 32.58 USD, 260.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.35 | 13.9 |
-| step4_backtest | 0.00 | 146.0 |
-| step5_verdict | 5.18 | 18.1 |
+| step3_plan | 2.42 | 14.3 |
+| step4_backtest | 0.00 | 146.5 |
+| step5_verdict | 5.33 | 18.7 |
 | step6_check | 0.00 | 1.4 |
 | chart_files | 0.00 | 0.6 |
-| step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.83 | 6.3 |
+| step7_7.c | 0.00 | 0.1 |
+| step7_7.d | 2.21 | 7.7 |
 | step7_7.e | 0.89 | 2.7 |
 | step7_7.a | 0.31 | 1.1 |
 | step7_7.b | 7.50 | 21.7 |
-| step7_7.g | 13.53 | 40.4 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.g | 13.92 | 41.7 |
+| similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 3.3 |
