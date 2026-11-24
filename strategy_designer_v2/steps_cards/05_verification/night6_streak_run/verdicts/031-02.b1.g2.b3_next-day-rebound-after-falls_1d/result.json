@@ -1,0 +1,28 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "timing gain before costs on forecast>0 bars (position x (next-day return - coin mean)), summed per day across coins, mean over days",
+    "value": 0.0051816794856182884,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 2.388442896300296
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2 and top-minus-bottom < 0"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top third minus bottom third by forecast",
+    "value": 0.006334020235658893,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with forecast > 0": 2199,
+    "bars with forecast > 0": 8514,
+    "bars per third": 2838
+  },
+  "reading": "Days are UTC calendar dates of the bar's timestamp; the 300-day minimum counts distinct dates of forecast>0 bars with a valid next-day return inside their window; thirds are the n//3 highest and n//3 lowest forecast>0 bars pooled across coins after a stable sort by forecast; the excess return removes the coin's mean daily return over all its windows.",
+  "status": "confirmed",
+  "decided_by": "Confirm rule: the daily timing gain has a mean above 0 with t >= 2 and the top third beats the bottom third."
+}

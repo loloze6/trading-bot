@@ -26,22 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.b1.b1.b1_up-streak-continuation-over-20-days | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | inconclusive (+1.29) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1.b1.b1_up-streak-continuation-over-10-days; 7.g: no ideas: Across streaks, forecast size, regime, past 20- and 60-day returns, volatility, daily shocks, weekday and distance from highs, no pattern stood out beyond what the many angles examined would produce by chance; the book's gain is the coins' own drift (F1) carried by a few outlier trades (F2), with no graded effect to build an idea on (F3–F5). | 1.34 | 11.2 |
 | 031-02.b1.g2.b2_unusually-large-falls-rebound | 031-02.b1.g2_volatile-falls-rebound-harder | plan | inconclusive (+1.81) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1.g2.b2.b1_unusual-falls-rebound-more-coins, 031-02.b1.g2.b2.b2_unusual-falls-rebound-next-day; 7.g: no ideas: Across roughly forty angles (scaled 1-, 5- and 20-day returns at 2, 5 and 10 days, streak length, volatility ratio, 20-day return quintiles, weekday, year, coin, and the book's extreme days), the best patterns reach t of only about 2.1 to 2.4. That is what that many looks produce by chance, and none of them grows steadily with its situation or holds across years and coins, so none can carry a new idea. | 0.91 | 4.7 |
 | 031-03.b1.b1.b2_up-streak-continuation-in-two-month-uptrend | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | inconclusive (-1.36) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1.b2.b1_uptrend-streak-continuation-ten-days, 031-03.b1.b1.b2.b2_up-streak-reversal-outside-uptrend; 7.g: 031-03.b1.b1.b2.g1_vol-scaled-monthly-trend-continuation, 031-03.b1.b1.b2.g2_uptrend-streak-giveback | 1.39 | 11.7 |
+| 031-02.b1.g2.b3_next-day-rebound-after-falls | 031-02.b1.g2_volatile-falls-rebound-harder | plan | confirmed (+2.39) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.b1.g2.b3.d1_dip-rebound-in-turbulence, 031-02.b1.g2.b3.d2_dip-rebound-after-stretched-month; 7.g: 031-02.b1.g2.b3.g1_wide-range-fall-next-day-rebound, 031-02.b1.g2.b3.g2_rebound-grows-as-volatility-heats, 031-02.b1.g2.b3.g3_high-volatility-dip-rebound | 1.05 | 5.2 |
 
 ## Consumption
-22 ideas, 23.94 USD, 177.5 minutes in all.
+23 ideas, 24.99 USD, 182.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.72 | 11.4 |
-| step4_backtest | 0.00 | 91.8 |
-| step5_verdict | 3.65 | 12.6 |
+| step3_plan | 2.79 | 11.8 |
+| step4_backtest | 0.00 | 93.4 |
+| step5_verdict | 3.81 | 13.1 |
 | step6_check | 0.00 | 1.2 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.32 | 4.5 |
+| step7_7.d | 1.69 | 5.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 1.15 | 3.3 |
 | step7_7.b | 5.18 | 15.2 |
-| step7_7.g | 9.92 | 28.3 |
+| step7_7.g | 10.37 | 29.6 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 8.3 |

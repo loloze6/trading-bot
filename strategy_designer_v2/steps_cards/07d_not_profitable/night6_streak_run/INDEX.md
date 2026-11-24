@@ -6,6 +6,7 @@
 031-02.b1.d2_rebound-graded-by-turbulence_1d: 3 ideas (2 explorations)
 031-02.b1.g2.b1_volatile-falls-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1.g2.b2_unusually-large-falls-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-02.b1.g2.b3_next-day-rebound-after-falls_1d: 2 ideas (2 explorations)
 031-02.b1.g2_volatile-falls-rebound-harder_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1_sharp-daily-fall-rebounds_1d: 2 ideas (2 explorations)
 031-02_down-streak-length-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

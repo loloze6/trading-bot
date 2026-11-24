@@ -6,6 +6,7 @@
 031-02.b1.d2_rebound-graded-by-turbulence_1d: not profitable enough [Sharpe 0.7744; Sharpe minus holding's Sharpe 0.2203; Calmar 0.6771]
 031-02.b1.g2.b1_volatile-falls-more-coins_1d: not profitable enough [Sharpe 0.628; Sharpe minus holding's Sharpe 0.02765; Calmar 0.4739]
 031-02.b1.g2.b2_unusually-large-falls-rebound_1d: not profitable enough [Sharpe 0.7197; Sharpe minus holding's Sharpe 0.1655; Calmar 0.5971]
+031-02.b1.g2.b3_next-day-rebound-after-falls_1d: not profitable enough [Sharpe 0.7885; Sharpe minus holding's Sharpe 0.2343; Calmar 0.7239]
 031-02.b1.g2_volatile-falls-rebound-harder_1d: not profitable enough [Sharpe 0.7096; Sharpe minus holding's Sharpe 0.1555; Calmar 0.5902]
 031-02.b1_sharp-daily-fall-rebounds_1d: not profitable enough [Sharpe 0.7206; Sharpe minus holding's Sharpe 0.1665; Calmar 0.6041]
 031-02_down-streak-length-reversal_1d: not profitable enough [Sharpe 0.5688; Sharpe minus holding's Sharpe 0.0146; Calmar 0.2754]
