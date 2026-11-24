@@ -24,6 +24,7 @@
 | 031-01.b1.b2.b1_wide-day-strong-run-more-coins_1d | night6_indecision_run | 1d | 031-01.b1.b1_wide-day-extends-run-more-coins_1d (1d) | 0.92 | same period | +0.0050 % (0.59) | 0.44 |
 | 031-01.b1.e1_strong-run-continues-three-days_1d | night6_indecision_run | 1d | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h (1h) | 0.78 | same period | +0.0176 % (1.34) | 0.44 |
 | 031-01.b1.e2_wide-day-in-strong-run_1d | night6_indecision_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.82 | same period | +0.0095 % (1.17) | 0.36 |
+| 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d | night6_indecision_run | 1d | 031-03.b1_wide-day-extends-up-run_1d (1d) | 0.49 | same period | +0.0171 % (2.13) | 0.18 |
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | night6_indecision_run | 1d | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d (1d) | 0.53 | same period | +0.0066 % (0.77) | 0.22 |
 | 031-03.b1_wide-day-extends-up-run_1d | night6_indecision_run | 1d | 031-01.b1.e2_wide-day-in-strong-run_1d (1d) | 0.87 | same period | +0.0004 % (0.06) | 0.23 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
