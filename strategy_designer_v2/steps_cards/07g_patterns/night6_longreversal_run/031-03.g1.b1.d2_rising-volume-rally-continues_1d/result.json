@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.g1.b1.d2_rising-volume-rally-continues_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4432397,
+  "findings": {
+    "F1": "Across all bars, whether the coin is rising or not, the 14-day/30-day volume ratio ranks the next 14 days' excess return in grade. The rank slope is +0.114 with t 3.10 (1530 non-overlapping cases, 131 days). The top quintile, ratio above +0.21, gains +5.1 % over the coin's drift (t 1.88). The bottom quintile, ratio below \u22120.21, loses \u22124.4 % (t \u22122.59). The usual 14-day move is 22.1 %.",
+    "F2": "The tested idea's up-trend condition is not needed. The volume-ratio slope holds when the 14-day return is down: +0.088, t 2.25, 767 cases, 109 days. It also holds when it is up: +0.137, t 2.69, 763 cases, 105 days.",
+    "F3": "Drying volume comes before underperformance, and the tested long-only book never uses this side. With the 14-day return up, the lowest volume-ratio quintile returns \u22125.96 % excess (t \u22123.33, 153 cases, 49 days). With it down, it returns \u22124.9 % (t \u22122.19). The lowest quintile falls short of the other bars in 18 of 19 coins (94.7 %) and has a negative mean in 6 of 8 years.",
+    "F4": "The volume effect is not a volatility effect. The volume ratio and 30-day volatility have a rank correlation of \u22120.05. Within volatility terciles the volume slope stays positive: t 3.59, 2.46 and 1.67 from low to high volatility.",
+    "F5": "The effect also shows at shorter scales. The 14-day/30-day ratio ranks the next 7 days' excess return with t 2.33 (3667 cases, 315 days). A 7-day/30-day ratio ranks the 14-day return with t 2.34. Against a 60-day base the 14-day ratio is weaker: t 0.99, 918 cases.",
+    "F6": "The brief's reversal does not appear. Across 60-day-return quintiles the next 14 days' excess return shows no lean, with every |t| below 0.4 (184 cases per quintile). The 14-day-return quintiles show no monotone lean either: top quintile +3.3 %, t 1.30."
+  },
+  "ideas": [
+    {
+      "idea": "The more a coin's mean daily volume over the last 14 days sits above its mean daily volume over the last 30 days, the more its price rises over the next 14 days, whatever the direction of its own 14-day return.",
+      "consequence": "A trader would buy coins whose recent volume swells above its monthly level, sizing with the swell, in falling stretches as well as rising ones.",
+      "name": "volume swell lifts price",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The further a coin's mean daily volume over the last 14 days has fallen below its mean daily volume over the last 30 days, the more its price falls over the next 14 days.",
+      "consequence": "A trader would short coins whose trading dries up over two weeks, sizing with the drying, or refuse longs in them.",
+      "name": "drying volume precedes falls",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.g1_volume-swell-lifts-price",
+    "031-03.g1.b1.d2.g2_drying-volume-precedes-falls"
+  ],
+  "no_ideas": null
+}
