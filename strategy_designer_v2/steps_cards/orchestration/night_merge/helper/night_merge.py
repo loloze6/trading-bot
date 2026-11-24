@@ -35,7 +35,7 @@ INPUTS = (BOOKS, f"{REGISTER}/register/held.json", f"{REGISTER}/register/returns
 def derived(path):
     """A register file `ideas_similarities_check.py --all` rewrites from its inputs (pages, matrix, comparisons)."""
     return path.startswith(f"{REGISTER}/register/") and not path.startswith(INPUTS)
-COUNT = re.compile(r"There are \d+ classes")   # derived: recomputed from the components file, never merged
+COUNT = re.compile(r"There are (?:\d+|N) classes")   # derived: recomputed from the components file, never merged
 
 
 def git(*args, check=True, root=None):

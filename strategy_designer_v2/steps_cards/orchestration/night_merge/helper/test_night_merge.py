@@ -73,6 +73,7 @@ def test_lines_inserted_on_both_sides_are_kept_and_a_line_changed_on_both_sides_
     _, faults = nm.merge_lines("n = 116\n", "n = 118\n", "n = 117\n")
     assert faults and faults[0].startswith("both sides changed the same lines")
     assert nm.with_count("There are 116 classes.", "class A(X):\nclass B(X):\n") == "There are 2 classes."
+    assert nm.with_count("There are N classes.", "class A(X):\n") == "There are 1 classes."     # the merge's placeholder
     assert any("line lost" in f for f in nm.union_faults("i.md", "a\n", "a\nb\n", "a\nc\n", "a\nb\n"))
 
 
