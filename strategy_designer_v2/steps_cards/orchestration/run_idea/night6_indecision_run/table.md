@@ -28,22 +28,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b1.b1.b1.d2.g1_wide-high-close-downrun-continuation | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day | plan | inconclusive (+0.76) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 031-02.b1.b1.b1.d2.g1.b1_wide-high-close-day-continuation, 031-02.b1.b1.b1.d2.g1.b2_uptrend-wide-day-breakout-continuation; 7.g: 031-02.b1.b1.b1.d2.g1.g1_high-volatility-daily-move-reverses | 1.22 | 10.3 |
 | 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day | plan | confirmed (+2.93) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-02.b1.b1.b1.d1.g1.g1_heavy-volume-continues-uptrend | 0.79 | 11.3 |
 | 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day | plan | confirmed (+2.83) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-02.b1.b1.b1.d1.g2.g1_wider-breakout-day-larger-rise, 031-02.b1.b1.b1.d1.g2.g2_width-times-scaled-trend, 031-02.b1.b1.b1.d1.g2.g3_wide-day-trend-lasts-ten-days | 0.92 | 11.6 |
+| 031-01.b1.b2.b2_wide-strong-run-in-uptrend | 031-01.b1.b2_wide-day-extends-strong-run | plan | inconclusive (+0.68) | profitable enough | - | 7.b: 031-01.b1.b2.b2.b1_wide-run-more-coins, 031-01.b1.b2.b2.b2_wide-run-ten-day-follow-through; 7.e: 031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days, 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues; 7.g: 031-01.b1.b2.b2.g1_wide-red-day-rebounds, 031-01.b1.b2.b2.g2_volatility-scaled-one-day-reversal | 1.39 | 6.5 |
 
 ## Consumption
-24 ideas, 23.56 USD, 190.8 minutes in all.
+25 ideas, 24.95 USD, 197.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.77 | 14.3 |
-| step4_backtest | 0.00 | 90.5 |
-| step5_verdict | 4.41 | 15.3 |
+| step3_plan | 3.84 | 14.7 |
+| step4_backtest | 0.00 | 92.1 |
+| step5_verdict | 4.58 | 15.9 |
 | step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.44 | 1.3 |
-| step7_7.e | 0.41 | 1.1 |
+| step7_7.e | 0.81 | 2.5 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.62 | 10.1 |
-| step7_7.g | 10.91 | 30.9 |
+| step7_7.b | 3.99 | 11.2 |
+| step7_7.g | 11.30 | 32.2 |
 | similarity_check | 0.00 | 0.7 |
 | unseen_test | 0.00 | 25.0 |

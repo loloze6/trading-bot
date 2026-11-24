@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "031-01.b1.b2.b2_wide-strong-run-in-uptrend_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.36690649999999997,
+  "findings": {
+    "F1": "The tested result is on the side the idea predicts but far short of the bar: the mean unusual 3-day move is +0.20 % (t 0.68, 1,484 cases on 825 days), a strength of 0.020 of a usual 7.96 % move, which is 1.1 times the 0.19 % cost of a trade.",
+    "F2": "The grading the idea claims is present, mostly in the strongest cases.",
+    "F3": "The test measured the idea at a shorter horizon than where it shows. Over all cases the mean unusual move grows with the horizon:",
+    "F4": "The effect is mixed across years, and the market's own moves drown it.",
+    "F5": "Among the six coins, ZEC carries most of the 3-day effect.",
+    "F6": "Most of the grading comes from the size of the 5-day rise."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "wide run, more coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "After a coin has risen over the past 5 days, only while its 60-day return is positive, the larger that 5-day rise and the wider that day's high-low range compared with its average daily range over the past 20 days, the more the coin rises over the next 3 days.",
+      "consequence": "A wide day ending a strong 5-day rise inside a 60-day uptrend is a reason to join the run for 3 days, while the same day in a falling 60-day market is no reason to.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "After a coin has risen over the past 5 days, only while its 60-day return is positive, the larger that 5-day rise and the wider that day's high-low range compared with its average daily range over the past 20 days, the more the coin rises over the next 10 days.",
+      "consequence": "A wide day ending a strong 5-day rise inside a 60-day uptrend is a reason to hold the long for about 10 days rather than 3, where the move is larger than a trade's cost.",
+      "name": "wide run, ten-day follow-through",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.b1.b2.b2.b1_wide-run-more-coins",
+    "031-01.b1.b2.b2.b2_wide-run-ten-day-follow-through"
+  ],
+  "no_ideas": null
+}

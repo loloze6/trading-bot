@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move of long cases (return minus coin's normal 3-day drift)",
+    "value": 0.0020283363511995776,
+    "statistic": {
+      "name": "t of the mean, same-day cases pooled",
+      "value": 0.6796804833309121
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and upper-minus-lower > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at median forecast)",
+    "value": 0.008935206696524922,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1484,
+    "distinct days": 825
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "The 60-day and 5-day returns are recomputed from closes inside each window, and on bars too early in a window for that the recorded regime 'trending' stands for the detector's decision; a case is the first long bet (forecast rise of at least 2 points from its lowest level since the last bet, from 0 after a flat) in each 3-bar grid cell of a window with a 3-bar forward return inside the window; the normal drift is the coin's mean non-overlapping 3-bar return over all its windows; the day-pooled t uses the per-day sums of deviations with a D/(D-1) correction; the upper half is forecast above the median, the lower half forecast at or below it."
+}
