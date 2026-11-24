@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6768212,
+  "findings": {
+    "F1": "The one clear pattern the tested idea does not explain is in XMR alone: a large daily move is followed by a move back the next day. The slope of the next day's return on the day's return in units of its 30-day volatility is \u22120.0046 (t \u22124.17, 2153 days). That is about 0.46 % back per unit of volatility, twice the 0.22 % cost of a trade. The slope is negative in 7 of 8 years (2020: \u22120.011, t \u22124.17; 2018: t \u22122.13; 2024: t \u22121.95; 2025 the only exception at +0.0002).",
+    "F2": "XMR's reversal is stronger after falls than after rises (slope \u22120.0075, t \u22122.65, 1006 down days, against \u22120.0021, t \u22121.09, 1145 up days). It is gone over 3 days (slope \u22120.0020, t \u22120.67, 686 cases). It is not a market-wide effect: pooled over all 19 coins the slope is \u22120.0007 (t \u22120.79, 27462 cases). After XMR, the most negative coins are ETH (t \u22122.25), BTC (t \u22121.82) and LTC (t \u22121.76), and DOGE leans the other way (t +2.57). With 19 coins looked at, only XMR's t of \u22124.2 stands clear of chance.",
+    "F3": "The volume swell's lean does not come from price momentum, a drawdown or the volatility level. After removing the 14-day return, the distance from the 30-day high and 30-day volatility from the ratio, its slope is unchanged (0.145 to 0.145 usual moves per standard deviation, t 2.89 to 2.90, 1530 cases, 131 days). Its correlation with the 14-day return is only 0.27.",
+    "F4": "The volume swell's lean is specific to its 14-day against 30-day form and its 14-day horizon. At 14 days its slope is 0.145 (t 2.89), against 0.069 (t 2.03) at 7 days and 0.080 (t 1.63) at 28 days. Other volume ratios read weaker: 7 against 30 days t 1.77, 7 against 60 days t 0.29, 14 against 60 days t 1.23.",
+    "F5": "The volume swell's lean is carried by 2023 and 2024 (slopes 0.217, t 2.71, and 0.378, t 2.95). It is flat or negative in 2018, 2019 and 2022 (t \u22120.47, \u22120.04, \u22120.16). The forecast's quintiles move only at the ends (top +3.4 %, t 1.58; bottom \u22122.8 %, t \u22121.92; middle three within \u00b10.7 %). This matches its size: +0.66 % per case with a t of 1.02.",
+    "F6": "The volume swell's lean looks larger in calm coins (lowest volatility tercile slope 0.183, t 3.76, against 0.131, t 1.61, in the highest). But the interaction itself cannot be told from 0 (slope \u22120.053, t \u22121.21, 1530 cases), so it is not a finding to build on.",
+    "F7": "The brief's own reversal is absent from these bars. Forward 14-day returns show no lean against the 60-day return (slope 0.011, t 0.18, 918 cases) or the 30-day return (t 0.52). The 14-day return leans slightly the same way (0.083, t 1.99).",
+    "F8": "The other angles show nothing that stands out once day-clustered and set against the number of angles looked at:"
+  },
+  "ideas": [
+    {
+      "idea": "The larger XMR's one-day return against its own 30-day daily volatility, the more its price moves back the other way over the next day, more so after a fall than after a rise.",
+      "consequence": "A trader in XMR would fade its large daily moves for one day, leaning harder the larger the move and above all after sharp drops, and would refuse to chase them.",
+      "name": "XMR next-day move reversal",
+      "from": "F1, F2",
+      "data": "instruments: XMR; bar: 1d; period: folds A, B, C, D",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal"
+  ],
+  "no_ideas": null
+}

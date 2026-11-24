@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of forward 14-bar return minus normal 14-bar drift on the forecast, grid bars",
+    "value": 0.0017042739282367358,
+    "statistic": {
+      "name": "OLS t, standard errors clustered by day",
+      "value": 2.3787841438733768
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and timing gain > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "timing gain (book mean daily return minus market-rise gain)",
+    "value": 0.0004335238781989609,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 2448,
+    "distinct days": 207
+  },
+  "decided_by": "Confirm: the slope is positive with t >= 2 and the timing gain is above 0.",
+  "reading": "Slope is an OLS with intercept of (forward 14-bar return minus the coin's mean non-overlapping 14-bar return over all its windows) on the grid-bar forecast, all grid bars with a full 14-bar forward return included, t from day-clustered standard errors; the market-rise gain uses the position held from the previous day's close times the coin's mean daily close return; and the plan's 'fewer cases' rule is reported as 'not observable' per the workflow."
+}

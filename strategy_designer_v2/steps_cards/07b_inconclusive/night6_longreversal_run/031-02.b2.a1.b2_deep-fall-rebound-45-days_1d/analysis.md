@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 031-02.b2.a1.b2_deep-fall-rebound-45-days_1d
+idea tested: 031-02.b2.a1.b2_deep-fall-rebound-45-days
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3719 USD
+---
+## Findings
+- **F1:** The tested lean is indistinguishable from zero: the plan's slope is +0.0016 with a day-clustered t of 0.36 over 488 grid cases on 50 days, and the unusual move per case is +0.80 % (t 0.22, 153 days), only 0.008 of a usual 45-day move of 36 %.
+- **F2:** The small positive reading comes from where the 45-day grid happens to start, not from the idea. Across all 45 possible grid starting offsets, the slope t averages -0.42 and ranges from -1.56 to +1.28. The median slope is -0.0028, and the plan's offset 0 (t 0.36) sits near the top of that range.
+- **F3:** Measuring at another horizon does not reveal the effect. The forecast slope t is -0.23, -0.30, -0.22, +0.36, +0.08 and +0.69 at 10, 20, 30, 45, 60 and 90 days (2872 down to 244 cases). On both sides of the raw 90-day move, every t lies between -0.66 and +1.32.
+- **F4:** The rebound does not grow with the depth of the fall. Over all bars with a positive forecast, the 45-day excess return by forecast quartile is -2.8 %, -1.2 %, -3.4 % and -3.0 % (about 2,270 bars each), and every median is negative (-13.1 % to -5.7 %).
+- **F5:** The sign of the effect flips from year to year with no lasting regime, so it is mixed rather than weak in one place:
+- **F6:** No subset of coins or recent path holds the effect. The slope t is +0.39 on the six default coins (4,995 bars) and -1.06 on the others (4,094). It is +0.50 after a 10-day fall and -1.22 after a 10-day rise.
+- **F7:** The book's gain is the coins' drift rather than the idea. The total move per case is +11.05 %, of which +10.25 % is normal drift. The book's Sharpe exceeds holding's by only 0.018.
+
+## Ideas
+- No ideas: The test already used every coin and fold available, its result sits at zero (F1–F3), the effect has no depth grading (F4), and it flips sign by year with no stable condition where it holds (F5, F6). No amended or more-data version of the idea is supported, and that is the clear answer: no medium-term deep-fall rebound in this data.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

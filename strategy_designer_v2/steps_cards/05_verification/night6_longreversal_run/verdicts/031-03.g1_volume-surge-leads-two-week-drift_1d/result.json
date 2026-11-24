@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of the coin's demeaned 14-bar forward return on the forecast",
+    "value": 0.0007989642561720086,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.5253347474625631
+    },
+    "threshold": "confirm: slope t >= 2 with timing gain > 0; reject: t <= -2; otherwise inconclusive; at least 300 grid cases with non-zero forecast"
+  },
+  "supporting_check": {
+    "name": "timing gain: book mean daily return minus position x coin mean daily return",
+    "value": 0.000437933122781225,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 1152,
+    "grid cases": 1152
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The regression is an OLS with intercept over every grid bar of each window (positions 0, 14, 28, ... with a full 14-bar return inside the window, zero-forecast bars included), each coin's mean 14-bar return is taken over those same grid samples of all its windows, and the timing gain averages the coins per UTC day before averaging over days."
+}

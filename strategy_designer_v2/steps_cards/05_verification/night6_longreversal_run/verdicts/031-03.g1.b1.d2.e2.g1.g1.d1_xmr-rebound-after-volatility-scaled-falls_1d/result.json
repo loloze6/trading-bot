@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return over XMR's mean daily return (bars with forecast > 0)",
+    "value": 0.007003931574453895,
+    "statistic": {
+      "name": "t of the forecast-weighted mean",
+      "value": 3.884926971121166
+    },
+    "threshold": "confirm: > 0 with t >= 2 (and top-third minus bottom-third > 0); reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top third by forecast minus bottom third",
+    "value": 0.008876032710307166,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 1355,
+    "bars with forecast > 0 (incl. without next-day return)": 1366
+  },
+  "decided_by": "The forecast-weighted mean excess return is > 0 with t >= 2 and the top-third minus bottom-third difference is > 0.",
+  "reading": "Bars with forecast > 0 counted are those with a next-day return inside their window; the coin's mean daily return is the mean of all 1-bar returns over all windows; the t of the weighted mean uses the weighted standard error sqrt(n/(n-1) * sum(w^2 (x-m)^2)) / sum(w); thirds are the floor(n/3) lowest and highest forecasts (stable sort); fewer than 100 such bars is reported as not observable."
+}

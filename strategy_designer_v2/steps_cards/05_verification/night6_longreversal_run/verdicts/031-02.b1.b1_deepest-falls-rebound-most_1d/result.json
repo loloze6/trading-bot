@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 30-bar move per bet (return minus coin's normal 30-bar drift, before costs)",
+    "value": 0.03604571638256192,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 0.9906686004165627
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 confirms (with deeper half > shallower half); mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of upper half minus lower half, split at median forecast",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 145,
+    "distinct days": 97
+  },
+  "decided_by": "The day-clustered t lies between -2 and 2.",
+  "reading": "A case is the first bet (forecast rise of at least 2 points from its low since the last bet, from 0 at each window start) in each 30-bar grid cell from the window's first row, with its 30-bar forward return inside the window; the upper half is forecasts strictly above the median and the lower half the rest; the clustered t uses the G/(G-1) small-sample factor; fewer than the minimum cases is reported as not observable."
+}

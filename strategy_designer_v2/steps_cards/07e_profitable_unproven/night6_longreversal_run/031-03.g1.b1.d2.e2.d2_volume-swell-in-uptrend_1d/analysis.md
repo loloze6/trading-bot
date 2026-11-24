@@ -1,0 +1,26 @@
+---
+line: 7.e profitable but not proven
+backtest: 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d
+idea tested: 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4451 USD
+---
+## Findings
+- **F1:** The volume swell (14-day mean volume over 30-day mean, minus 1) predicts the 14-day excess return on all bars, not only above the 50-day mean: the day-clustered t of the slope is 2.97 on all grid cases (n 1530) against 1.92 on trending cases alone (n 746), and 2.39 on the below-50-day cases the book never trades (n 784, slope 0.110, the same as trending's 0.110).
+- **F2:** The strongest single move in the grid sits in the regime the book ignores: below the 50-day mean, the lowest fifth of volume swell (ratio −0.35) is followed by a 14-day excess return of −6.3 % (t −5.29, 197 cases), rising steadily to +1.2 % in the top fifth.
+- **F3:** Above the 50-day mean, the gain is in the swell, not in the trend: grid cases with forecast 0 earn −0.5 % excess over 14 days (t −0.58, 519 cases), while forecast > 0 earns +3.9 % (t 3.08, 647 cases), and the top swell fifth earns +7.3 % (t 3.72, 187 cases).
+- **F4:** About half of the book's gain is the market's own rise: mean daily return 0.000698, of which 0.000343 is the position times the coins' mean daily return and 0.000356 is timing.
+- **F5:** The idea's horizon is about two weeks: the all-bar clustered t of the swell's slope is 2.20 at 7 days, 2.97 at 14 days and 1.93 at 21 days, and the rank correlation is 0.074 at 7 days, 0.161 at 14 days and 0.124 at 28 days.
+- **F6:** The effect is not tied to the past move's direction. The swell's interaction with the sign of the 14-day return has a t of 0.91 (n 1530). The top swell fifth earns +6.2 % after a rise (t 3.36, 195 cases) and +2.6 % after a fall (t 1.53, 111 cases).
+- **F7:** The effect is broad across coins but concentrated in later years. All 19 coins have a positive 14-day rank correlation between swell and excess return (0.016 for TRX to 0.52 for ONDO). By year it is 0.31 to 0.33 in 2023–2024 and near 0 in 2018, 2019 and 2022.
+- **F8:** The book follows the same years: its Sharpe is above 2.3 in 2020, 2023 and 2024, and negative in 2018 (−1.58), 2022 (−0.85) and 2025 (−0.19).
+- **F9:** Its gain rests on a few trades: the top 5 % of its 3610 trades carry 72 % of the summed net trade profit, against a median trade of +2.4 % and a 58 % win share.
+
+## Ideas
+- `031-03.g1.b1.d2.e2.d2.e1_volume-swell-predicts-two-weeks` (from F1, F3, F5, F6, F7): The more a coin's mean daily volume over the last 14 days sits above its mean daily volume over the last 30 days, the higher its return over the next 14 days, and the more it sits below, the lower, whether its close is above or below its 50-day mean.
+- `031-03.g1.b1.d2.e2.d2.e2_fading-volume-in-downtrend` (from F2, F1, F4): The more a coin's mean daily volume over the last 14 days sits below its mean daily volume over the last 30 days while its close is below its mean close of the last 50 days, the more it falls over the next 14 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

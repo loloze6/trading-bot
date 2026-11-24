@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 031-03.g1.b1.d1_volume-surge-with-price-move_1d
+idea tested: 031-03.g1.b1.d1_volume-surge-with-price-move
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3823 USD
+---
+## Findings
+- **F1:** The test's main measure is on the predicted side but short of the bar: the mean unusual 14-day move is +1.13 % with a day-clustered t of 1.70 (2072 cases on 1038 days). The test already used all 19 coins, all four folds and the daily bars, so there is no more data to add.
+- **F2:** The effect shows in the first week and fades after it. My replication of the cases (1997 cases, 1022 days) gives a mean unusual move of +0.14 % (t 0.48) over 3 days, +0.85 % (t 2.02) over 5 days, +1.36 % (t 3.06) over 7 days, +1.41 % (t 2.62) over 10 days, +1.18 % (t 1.78) over 14 days and +0.74 % (t 0.52) over 28 days.
+- **F3:** The second week adds nothing and only adds noise: the unusual move from day 7 to day 14 after the signal is −0.16 % (t −0.33). Measuring at 14 days spends a week of the coin's own swings on a move that was already over.
+- **F4:** Over 7 days the effect holds on both sides and is graded by the forecast.
+- **F5:** Over 7 days the effect is broad but uneven across years. It is positive in all 8 years (2018 to 2025), from +0.02 % in 2019 to +4.49 % in 2021 and +2.28 % in 2024 (t 2.30). It is positive in 84 % of the 19 coins. Over 14 days, 2018, 2019 and 2021 were negative.
+- **F6:** Over 7 days the unusual move of +1.36 % per case is about 6 times the 0.22 % cost of a trade, so a shorter hold would still clear costs.
+
+## Ideas
+- `031-03.g1.b1.d1.b1_volume-confirmed-move-one-week` (from F1, F2, F3, F4, F5, F6): The more a coin's mean daily volume over the last 14 days has risen above its mean daily volume over the last 30 days, the more its price rises over the next 7 days, while its own 14-day return is up. The more that volume has fallen below its 30-day mean, the more its price falls over the next 7 days, while its 14-day return is down.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

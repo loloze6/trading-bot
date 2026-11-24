@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 031-02.b1.b1_deepest-falls-rebound-most_1d
+idea tested: 031-02.b1.b1_deepest-falls-rebound-most
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6209 USD
+---
+## Findings
+- **F1:** The tested rebound is not shown. In the mean_reversion regime the unusual move is -0.46 % over 30 days (t -0.13, 83 cases, 35 days) and +0.37 % over 10 days (t 0.32, 282 cases, 104 days). Only the deepest third of falls is positive at +7.7 % over 30 days, and that is not distinguishable from zero (t 1.26, 26 cases on 16 days). The other two thirds are negative: -3.5 % (t -0.90) and -4.8 % (t -1.18).
+- **F2:** On the up side, a coin's 90-day return predicts more rise, not a reversal. Among bars whose 90-day return is above the coin's average, the slope of the next 10-day unusual move on the standardised 90-day return is +0.157 (t 2.40, 256 cases, 48 days), and +0.192 over 30 days (t 2.18, 80 cases, 12 days). On the down side the 10-day slope is -0.328 (t -1.37), which cannot be told from zero.
+- **F3:** On a 10-day grid, the top fifth of standardised 90-day returns (mean z +1.56) gained +4.7 % over the next 10 days, against -3.3 % for the middle fifth (131 cases per fifth). The top fifth led the other four fifths both through 2021 (+7.8 % against -0.7 % to +3.2 %) and from 2022 (+2.9 % against -2.1 % to -5.0 %).
+- **F4:** Across all bars, past returns lean weakly toward continuation, never reversal, but no single reading clears the bar on its own. Next-30-day slopes on standardised 10-day and 30-day returns are +0.119 (t 1.44, 654 cases) and +0.096 (t 1.46). The top fifth of 30-day returns is followed by +4.6 % unusual over 30 days (t 1.16), the bottom fifth by -6.1 % (t -1.40).
+- **F5:** Saturday (UTC) is the coins' best day.
+- **F6:** The book's profit rests on its tail. The top 2 % of active book days carry 148 % of its summed daily returns and the bottom 2 % take away 113 %. Its trades average +6.5 % net (median +2.2 %, 435 trades), but by year they swing from -2.7 % in 2019 and -1.2 % in 2022 to +13.6 % in 2023 and +12.3 % in 2024.
+
+## Ideas
+- `031-02.b1.b1.g1_90-day-run-ups-keep-rising` (from F2, F3, F4): The further a coin's 90-day return stands above its own usual 90-day move, the more its price keeps rising over the next 10 days, with the extra rise growing with the size of the run-up.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

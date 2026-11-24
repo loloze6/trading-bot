@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 30-day return of in-regime grid cells",
+    "value": 0.00022231625589506628,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 0.0055551615192711516
+    },
+    "threshold": "mean > 0 with t >= 2 over at least 30 cases (confirm); mean < 0 with t <= -2 over at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "mean excess return above minus below median forecast",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "in-regime cases": 52,
+    "days": 29,
+    "active bars": 1680
+  },
+  "decided_by": "The day-clustered t lies between -2 and 2, meeting neither the confirm nor the reject rule.",
+  "reading": "Grid cells are the rows at positions 0, 30, 60, 90 of each window with a forward 30-bar close inside the window; the coin's mean 30-day return is taken over all its grid cells in all windows; the day-clustered t sums the deviations per UTC day with a G/(G-1) correction; the median split compares cases strictly above with cases strictly below the median forecast, ties left out."
+}

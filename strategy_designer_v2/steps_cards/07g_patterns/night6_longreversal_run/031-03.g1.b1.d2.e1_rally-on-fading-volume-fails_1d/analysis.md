@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails_1d
+idea tested: 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4706 USD
+---
+## Findings
+- **F1:** Over the next 14 days, a coin's excess return over its normal drift rises steadily with its 14-day to 30-day mean volume ratio. On the non-overlapping 14-day grid (1530 cases), it goes -4.41 %, -1.93 %, +1.62 %, +0.72 %, +5.14 % from the lowest fifth of the ratio to the highest. In strength that is -0.19 to +0.24 of a usual move. The day-clustered t is -2.57 in the lowest fifth (80 days) and +1.87 in the highest (78 days). The graded product of the standardised ratio and the scaled excess return has a mean of 0.145, with day-clustered t 2.75 over 131 days.
+- **F2:** The volume link holds in every one of the 19 coins, with a positive Spearman correlation in all of them (from 0.016 for TRX to 0.52 for ONDO). It is strongest in 2023, 2024 and 2025 (Spearman 0.32, 0.31, 0.17) and near 0 in 2018, 2019 and 2022 (-0.01, -0.01, -0.01).
+- **F3:** The volume link is not the price trend in disguise. The ratio correlates only 0.26 with the volatility-scaled 28-day return. Once that return is removed, the leftover ratio keeps the same grading: -4.78 % (t -2.68) in its lowest fifth and +4.44 % (t 1.69) in its highest. The 28-day return's own fifths are flat to weak (-2.2 % to +1.5 %, every |t| under 1.9).
+- **F4:** The grading holds on both sides of the 14-day return. After a 14-day rise, the lowest fifth of the volume ratio is followed by -5.96 % excess over 14 days (t -3.30, 49 days) and the highest fifth by +5.75 % (t 1.51). After a 14-day fall, the same fifths give -4.91 % (t -2.17) and +3.83 % (t 1.50). Drying volume precedes weakness whatever the sign of the rise.
+- **F5:** The tested book's own cases caught none of this. Its 1225 cases gave a mean of +0.10 % (t 0.09). Yet the raw ratio's lowest fifth inside rallies moves -5.96 %, about 27 times the 0.22 % cost of a trade. The forecast it used, the ratio standardised over 60 days and triggered on 2-point deepenings, does not track the raw level of the ratio.
+- **F6:** The coins' mean daily return is higher on Saturdays, at +0.47 % (t 2.96, 414 days), than on Mondays (-0.05 %) and Tuesdays (-0.06 %). Many angles were looked at, so this stays at the edge of chance and carries no idea.
+
+## Ideas
+- `031-03.g1.b1.d2.e1.g1_volume-expansion-predicts-continuation` (from F1, F2, F3, F4): The higher a coin's mean daily volume over the last 14 days stands against its mean daily volume over the last 30 days, the more its price rises relative to its normal drift over the next 14 days. The further the 14-day volume falls below the 30-day volume, the more the price falls relative to that drift.
+- `031-03.g1.b1.d2.e1.g2_drying-volume-precedes-weakness` (from F1, F4, F5): The further a coin's mean daily volume over the last 14 days falls below its mean daily volume over the last 30 days, the more its price falls relative to its normal drift over the next 14 days, whether its 14-day return is up or down.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "031-02.b1.b1_deepest-falls-rebound-most_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4041865,
+  "findings": {
+    "F1": "The tested rebound is positive but cannot be told from zero, and its mean is carried by a few outliers. Over 30 days the unusual move is +3.60 % with a day-clustered t of 0.99 (145 cases on 97 days). The median case is \u22122.75 %, only 44.8 % of cases are positive, the 5 %\u201395 % clipped mean is +0.36 %, and the five best cases add up to 142 % of the total.",
+    "F2": "Almost all of the positive mean comes from one coin. XRP gives +40.6 % per case (t 1.77, 16 cases). Without XRP the unusual move is \u22120.98 % (t \u22120.38, 129 cases on 87 days). The other coins split both ways, for example SOL \u221214.7 % (t \u22123.35, 4 cases), BTC \u22129.1 % (t \u22121.67), XMR +13.7 % (t 2.47) and DOGE +10.2 % (t 2.23).",
+    "F3": "The grading the idea depends on is absent.",
+    "F4": "No other horizon shows the effect more clearly. The unusual move is \u22120.10 % at 5 days (t \u22120.13) and \u22120.11 % at 10 days (t \u22120.08). It is +1.8 % at 20 days (t 0.83), +3.6 % at 30 days (t 0.99) and +3.5 % at 45 days (t 0.64).",
+    "F5": "The rebound depends on how much of the fall came in the last 30 days, and that split survives removing XRP.",
+    "F6": "The same split shows against the 30-day low. Cases sitting at their 30-day low earn \u22120.3 % (t \u22120.11, 48 cases). Cases already off the low earn +5.5 % (t 1.31) and +5.6 % (t 0.63).",
+    "F7": "Years alternate sign, so the effect is mixed rather than small and steady. 2022 gives \u221212.1 % (t \u22122.11, 32 cases), 2023 +11.6 % (t 2.34, 35 cases), 2024 +17.8 % (t 1.18) and 2025 \u22129.1 % (t \u22122.14, 29 cases).",
+    "F8": "Cost is not what blocks the idea. The unusual move per case (+3.60 %) is 16 times the 0.22 % cost of a trade, and the total move (+8.76 %) is 39 times. More data would not help much either: the test already used every fold and 15 of the 19 coins, and the four left out exist in fold D only."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's 90-day return stands below its own usual 90-day move, the higher its 30-day return (the less of the fall came in the last 30 days), the more its price rebounds over the next 30 days. A deep 90-day fall whose last 30 days are still falling hardest keeps falling.",
+      "consequence": "A trader buys a deep 90-day fall in proportion to how far the latest month has steadied. He refuses falls that are still accelerating, however deep they are in usual moves.",
+      "name": "steadied falls rebound most",
+      "from": "F1, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.b1.b1_steadied-falls-rebound-most"
+  ],
+  "no_ideas": null
+}

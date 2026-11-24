@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.0,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "slope of 30-day forward return minus coin drift on forecast, regime grid bars",
+    "value": null,
+    "statistic": null,
+    "threshold": "slope t >= 2 (with supporting check) confirms; t <= -2 rejects; between is inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 0,
+    "active bars in situation on long side": 0
+  },
+  "decided_by": "Fewer than 90% of the bars with a non-zero forecast are long bars in the mean_reversion fall regime with volume below its 90-day mean, as the Fidelity's situation requires.",
+  "reading": "The situation is read from the recorded regime (the detector's 365-day volatility cannot be rebuilt inside ~120-bar windows), required long, with the vol_dry raw log ratio below 0 and, where 90 bars of the window exist, a negative 90-day return; the drift is the coin's mean 30-bar return on the non-overlapping grid of all its windows; the slope is pooled OLS with intercept over all coins with CR1 standard errors clustered by calendar day."
+}

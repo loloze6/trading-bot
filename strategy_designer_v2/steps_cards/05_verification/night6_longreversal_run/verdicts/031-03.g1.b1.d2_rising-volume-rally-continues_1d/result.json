@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 14-bar excess return over the coin's mean, cases forecast > 0",
+    "value": 0.04000868989200313,
+    "statistic": {
+      "name": "day-clustered t of the weighted mean",
+      "value": 1.7063412884388316
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and check passes; reject: mean < 0 with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "mean excess upper-half minus lower-half forecast (median split)",
+    "value": 0.035551563504661605,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 141,
+    "cases": 655
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The 14-day return is recomputed as close[t]/close[t-14]-1 inside each window and the swell as the recorded raw vol_swell > 0, active bars whose first 14 rows cannot be evaluated are left out of the agreement; the coin's mean 14-bar return is the mean over all its windows' non-overlapping grid returns; the t clusters weighted deviations by UTC day with a G/(G-1) correction; the median split puts cases above the median forecast in the upper half and the rest (at or below) in the lower half, comparing plain means; the plan's 30-case-day minimum is applied as 'not observable'."
+}

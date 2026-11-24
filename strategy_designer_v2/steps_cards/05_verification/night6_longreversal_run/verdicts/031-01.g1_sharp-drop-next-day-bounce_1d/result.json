@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-bar excess return on forecast (forecast > 0 bars)",
+    "value": 0.00039767709081576163,
+    "statistic": {
+      "name": "day-clustered t of slope",
+      "value": 2.626167773695235
+    },
+    "threshold": "slope > 0 with day-clustered t >= 2 confirms (with check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-bar excess return, day-clustered t",
+    "value": 0.0034983069170999347,
+    "passed": true,
+    "t": 2.4637552873507644
+  },
+  "counts": {
+    "bars with forecast > 0": 8514,
+    "distinct days": 2199
+  },
+  "decided_by": "Confirm: the slope is positive with t >= 2 and the forecast-weighted mean excess return is above 0 with t >= 2.",
+  "reading": "Every bar with forecast > 0 and a next bar in the same window is used; the coin's mean is the mean next-bar return over all its windows; clustered standard errors use the CR1 sandwich with the G/(G-1)*(N-1)/(N-K) correction; the plan's 'fewer is inconclusive' minimum is reported as 'not observable' as the workflow requires."
+}

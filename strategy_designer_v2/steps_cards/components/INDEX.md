@@ -199,3 +199,4 @@ night6_streak_run | 031-04_down-streak-length-continuation_1d | DownStreakLength
 night6_streak_run | 031-04_down-streak-length-continuation_1d | DownStreakLengthRelativeComponent | exists: UpCloseStreakLengthComponent {"base": "mean_streak", "base_window": 365, "max_bars": 365, "side": "down"}
 night6_streak_run | 031-02.b1.d2_rebound-graded-by-turbulence_1d | VolatilityRatioWeightedScaledFall | built: VolatilityRatioWeightedScaledFallComponent {"base_vol_period": 60, "vol_period": 10}
 night6_streak_run | 031-02.b1.g1_long-up-streaks-keep-rising_1d | UpCloseStreakLength | exists: UpCloseStreakLengthComponent {"base": "none", "max_bars": 30, "side": "up"}
+night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d | VolatilityRatioWeightedScaledReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 0, "base_period": 30, "period": 1, "return_scale": "base_std", "vol_period": 5}
