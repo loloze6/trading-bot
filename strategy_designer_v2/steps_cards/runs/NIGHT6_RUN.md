@@ -97,6 +97,17 @@ effects of the four); N2 on none.
 - **Seen in three sessions so far:** the brief's own theme is not confirmed (streaks 0 of 4, yearly low 0 of 8,
   long-horizon reversal 0 direct); what is confirmed comes from step 7's lines and returns to trend continuation and
   next-day rebounds after a fall. To read in the morning against topic 45 (why the research finds momentum).
+- **04:59 Paris, session 3 (indecision after a run) ended on budget** (35.01 USD; 4.1 h; branch night6-indecision,
+  6a79c55b99): 92 ideas (4 from the brief, 88 from step 7), 36 run; step 5: 23 confirmed, 11 inconclusive, 2 mismatch;
+  step 6: 19 profitable enough (17 confirmed); unseen, the 17 confirmed and profitable: 15 hold on both periods. Two
+  directions, both from step 7: continuation (a wide day inside an up run extends it; 12 of the 15; nearest paying
+  books 0.53 to 1.00, mostly tonight's own siblings and older momentum books) and a rebound (a wide day closing near
+  its low rebounds; 3 of the 15; nearest 0.55). The theme itself: 0 of 4 reversal ideas confirmed (scores -0.52 to
+  -1.00). One container restart (about 01:55 Paris) cut a component build, undone and rebuilt; resumed with its
+  budget. One component built (RiseTimesRangeMultiple). The session's reading: N1 pending the portfolio check, not N2
+  (lowest nearest paying book 0.53), N4 for the theme.
+- **The four sessions together:** 140.9 USD, 218 ideas written, 128 run; the four themes unconfirmed as stated (0 of 20
+  of the brief ideas confirmed); 56 confirmed books, all from step 7's lines. Brief number 031 used by all four.
 
 ## Reading
 (in the morning)
