@@ -31,22 +31,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b1.g2.b2.b1_unusual-falls-rebound-more-coins | 031-02.b1.g2.b2_unusually-large-falls-rebound | plan | inconclusive (+1.28) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1.g2.b2.b1.b1_unusual-falls-rebound-next-day; 7.g: no ideas: I compared about 60 slices: fall size, streak length, past 10-to-40-day return, volatility level, weekday, and year and coin splits. The strongest pattern is the momentum slope in F4, which has a t of about 2 and reverses sign by year (F5). At that count of comparisons, nothing stands out from chance, so no finding is strong enough to support a new idea. | 1.05 | 9.9 |
 | 031-01.g1_volatility-scaled-down-day-rebound | 031-01_up-streak-length-reversal | plan | inconclusive (+1.05) | not profitable enough (failed: Calmar) | - | 7.b: 031-01.g1.b1_down-day-rebound-more-coins, 031-01.g1.b2_next-day-down-close-rebound; 7.g: no ideas: Across about 60 angles (streaks, scaled returns of 1 to 30 days, horizons of 3 to 10 days, volatility, range, close location, weekday, coin and window halves), no pattern reached a t that stands out from chance; the up-streak and 7-to-30-day momentum readings (F3, F4) cluster near t 2, are unstable by coin and by half of the windows, and their per-case size is too small against the 0.19 % cost to justify a new idea. | 0.92 | 4.9 |
 | 031-01.g1.b1_down-day-rebound-more-coins | 031-01.g1_volatility-scaled-down-day-rebound | plan | inconclusive (+0.40) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: no ideas: The effect has no clear home: its apparent rebound is the market's own common bounce (F2, F3), and no horizon, side, period, regime or coin shows it clearly (F4, F5), while no further data exists to retest it unchanged (F1).; 7.g: 031-01.g1.b1.g1_down-day-lower-wick-rebound, 031-01.g1.b1.g2_wide-range-down-day-rebound | 1.29 | 10.5 |
+| 031-01.g1.b2_next-day-down-close-rebound | 031-01.g1_volatility-scaled-down-day-rebound | plan | confirmed (+2.73) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.b2.d1_rebound-inside-volatility-bursts, 031-01.g1.b2.d2_volatility-surge-graded-down-close-rebound; 7.g: 031-01.g1.b2.g1_close-near-low-rebounds, 031-01.g1.b2.g2_wide-range-day-rebound | 1.01 | 5.5 |
 
 ## Consumption
-27 ideas, 29.75 USD, 219.1 minutes in all.
+28 ideas, 30.76 USD, 224.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.07 | 13.4 |
-| step4_backtest | 0.00 | 114.4 |
-| step5_verdict | 4.51 | 15.5 |
-| step6_check | 0.00 | 1.6 |
+| step3_plan | 3.14 | 13.8 |
+| step4_backtest | 0.00 | 116.1 |
+| step5_verdict | 4.67 | 16.2 |
+| step6_check | 0.00 | 1.7 |
 | chart_files | 0.00 | 0.6 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 2.35 | 7.6 |
+| step7_7.d | 2.73 | 8.9 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 1.15 | 3.3 |
 | step7_7.b | 6.31 | 18.7 |
-| step7_7.g | 12.36 | 35.0 |
+| step7_7.g | 12.76 | 36.3 |
 | similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 8.3 |

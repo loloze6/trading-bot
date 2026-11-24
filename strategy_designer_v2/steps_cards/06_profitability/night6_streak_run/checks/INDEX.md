@@ -2,6 +2,7 @@
 031-01.b2.b1_long-up-streaks-ten-day-continuation_1d: not profitable enough [Sharpe 0.7444; Sharpe minus holding's Sharpe 0.1627; Calmar 0.5436]
 031-01.b2_long-up-streaks-continue_1d: not profitable enough [Sharpe 0.3763; Sharpe minus holding's Sharpe -0.2053; Calmar 0.1291]
 031-01.g1.b1_down-day-rebound-more-coins_1d: not profitable enough [Sharpe 0.4806; Sharpe minus holding's Sharpe -0.1198; Calmar 0.2288]
+031-01.g1.b2_next-day-down-close-rebound_1d: not profitable enough [Sharpe 0.7936; Sharpe minus holding's Sharpe 0.2394; Calmar 0.7305]
 031-01.g1_volatility-scaled-down-day-rebound_1d: not profitable enough [Sharpe 0.6057; Sharpe minus holding's Sharpe 0.05156; Calmar 0.3635]
 031-01_up-streak-length-reversal_1d: not profitable enough [Sharpe -0.6667; Sharpe minus holding's Sharpe -1.248; Calmar -0.4244]
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: profitable enough [Sharpe 0.7995; Sharpe minus holding's Sharpe 0.2453; Calmar 0.7928]

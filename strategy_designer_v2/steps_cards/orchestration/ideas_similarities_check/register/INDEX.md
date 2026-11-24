@@ -128,6 +128,7 @@ An idea's latest record counts once.
 | 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | c9f81b724 | 2026-11-22T01:21:05 |
 | 026-03_weekend-reversal-exceeds-weekday.d2_sunday-move-fades-monday_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:35:49 |
 | 031-01.b2.b1_long-up-streaks-ten-day-continuation_1d | confirmed | night6_streak_run | 1d | 6 | 81f8c3343 | 2026-11-24T01:20:27 |
+| 031-01.g1.b2_next-day-down-close-rebound_1d | confirmed | night6_streak_run | 1d | 6 | 0638a03ee | 2026-11-24T03:23:47 |
 | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d | paying | night6_streak_run | 1d | 6 | 2b411b783 | 2026-11-24T00:07:14 |
 | 031-02.b1.d2_rebound-graded-by-turbulence_1d | confirmed | night6_streak_run | 1d | 6 | 89990389f | 2026-11-24T02:19:34 |
 | 031-02.b1.g2.b1.b1_volatile-falls-next-day-rebound_1d | confirmed | night6_streak_run | 1d | 19 | bc6ad9abe | 2026-11-24T02:52:24 |

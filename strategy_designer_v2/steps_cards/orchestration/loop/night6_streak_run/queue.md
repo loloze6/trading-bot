@@ -1,56 +1,59 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 33.89 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 34.90 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 031-01.g1.b2_next-day-down-close-rebound | 7.b | 2 | 0.2403 | 0.0801 | candidate |
-| 2 | 031-03.b1.b1.b1.b1_up-streak-continuation-over-10-days | 7.b | 4 | 0.2403 | 0.0481 | candidate |
-| 3 | 031-03.b1.b1.b2.b1_uptrend-streak-continuation-ten-days | 7.b | 4 | 0.2403 | 0.0481 | candidate |
-| 4 | 031-03.b1.b1.e2.b1_scaled-rise-ten-day-continuation | 7.b | 4 | 0.2403 | 0.0481 | candidate |
-| 5 | 031-03.g1_large-up-day-continuation | 7.g | 1 | 0.0962 | 0.0481 | candidate |
-| 6 | 031-04.g1_one-day-volatility-scaled-reversal | 7.g | 1 | 0.0962 | 0.0481 | candidate |
-| 7 | 031-01.g2_next-day-rebound-after-falls | 7.g | 1 | 0.0962 | 0.0481 | candidate |
-| 8 | 031-02.b1.g2.b1.b2_deep-fall-next-day-rebound | 7.b | 4 | 0.2403 | 0.0481 | candidate |
-| 9 | 031-02.b1.g2.b2.b2_unusual-falls-rebound-next-day | 7.b | 4 | 0.2403 | 0.0481 | candidate |
-| 10 | 031-03.b1.b1.b2.b2_up-streak-reversal-outside-uptrend | 7.b | 4 | 0.2403 | 0.0481 | candidate |
-| 11 | 031-03.g2_fast-large-up-day-drift | 7.g | 1 | 0.0962 | 0.0481 | candidate |
-| 12 | 031-04.g2_run-depth-short-horizon-reversal | 7.g | 1 | 0.0962 | 0.0481 | candidate |
-| 13 | 031-02.b1.g2.b2.b1.b1_unusual-falls-rebound-next-day | 7.b | 5 | 0.2403 | 0.0401 | candidate |
-| 14 | 031-02.b1.d2.d1_rebound-only-in-turbulence | 7.d | 3 | 0.2429 | 0.0607 | candidate |
-| 15 | 031-02.b1.d2.d2_turbulent-rebound-held-longer | 7.d | 3 | 0.2429 | 0.0607 | candidate |
-| 16 | 031-02.b1.d2.d3_rebound-held-two-days-only | 7.d | 3 | 0.2429 | 0.0607 | candidate |
-| 17 | 031-01.b2.g1_long-streaks-precede-volatility | 7.g | 2 | 0.0962 | 0.0321 | candidate |
-| 18 | 031-01.b2.b1.d1_up-streaks-inside-uptrend | 7.d | 3 | 0.2429 | 0.0607 | candidate |
-| 19 | 031-01.b2.b1.d2_up-streaks-after-monthly-rise | 7.d | 3 | 0.2429 | 0.0607 | candidate |
-| 20 | 031-01.b2.b1.d3_multi-day-streaks-held-ten-days | 7.d | 3 | 0.2429 | 0.0607 | candidate |
-| 21 | 031-02.b1.g2.b1.b1.d1_volatile-falls-rising-turbulence-rebound | 7.d | 5 | 0.2429 | 0.0405 | candidate |
-| 22 | 031-02.b1.g2.b1.b1.d2_deepest-volatile-falls-rebound | 7.d | 5 | 0.2429 | 0.0405 | candidate |
-| 23 | 031-02.b1.g2.b1.b1.d3_stretched-turbulent-falls-rebound | 7.d | 5 | 0.2429 | 0.0405 | candidate |
-| 24 | 031-02.b1.g1_long-up-streaks-keep-rising | 7.g | 2 | 0.0962 | 0.0321 | candidate |
-| 25 | 031-02.b1.g2.b3.d1_dip-rebound-in-turbulence | 7.d | 4 | 0.2429 | 0.0486 | candidate |
-| 26 | 031-02.b1.g2.b3.d2_dip-rebound-after-stretched-month | 7.d | 4 | 0.2429 | 0.0486 | candidate |
-| 27 | 031-01.g1.b1.g1_down-day-lower-wick-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 28 | 031-02.b1.d1.g1_dip-rebound-grows-with-turbulence | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 29 | 031-02.b1.g2.g1_strong-rises-keep-running | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 30 | 031-03.b1.b1.g1_30-day-trend-rank-continuation | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 31 | 031-01.g1.b1.g2_wide-range-down-day-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 32 | 031-02.b1.d1.g2_long-up-runs-keep-rising | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 33 | 031-03.b1.b1.g2_downtrend-rally-fade | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 34 | 031-03.b1.b1.b2.g1_vol-scaled-monthly-trend-continuation | 7.g | 4 | 0.0962 | 0.0192 | candidate |
-| 35 | 031-03.b1.b1.e2.g1_month-scaled-trend-continuation | 7.g | 4 | 0.0962 | 0.0192 | candidate |
-| 36 | 031-03.b1.b1.b2.g2_uptrend-streak-giveback | 7.g | 4 | 0.0962 | 0.0192 | candidate |
-| 37 | 031-03.b1.b1.e2.g2_one-day-fall-rebound | 7.g | 4 | 0.0962 | 0.0192 | candidate |
-| 38 | 031-02.b1.d2.g1_one-day-rebound-after-unusual-fall | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 39 | 031-02.b1.d2.g2_turbulent-fall-one-day-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 40 | 031-03.b1.b1.e2.e2.g1_extreme-rise-ten-day-continuation | 7.g | 5 | 0.0962 | 0.016 | candidate |
-| 41 | 031-01.b2.b1.g1_next-day-rebound-after-sharp-falls | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 42 | 031-01.b2.b1.g2_near-high-ten-day-continuation | 7.g | 3 | 0.0962 | 0.024 | candidate |
-| 43 | 031-02.b1.g2.b1.b1.g1_heavy-volume-falls-rebound-next-day | 7.g | 5 | 0.0962 | 0.016 | candidate |
-| 44 | 031-02.b1.g2.b1.b1.g2_volume-surprise-predicts-drift | 7.g | 5 | 0.0962 | 0.016 | candidate |
-| 45 | 031-02.b1.g2.b3.g1_wide-range-fall-next-day-rebound | 7.g | 4 | 0.0962 | 0.0192 | candidate |
-| 46 | 031-02.b1.g2.b3.g2_rebound-grows-as-volatility-heats | 7.g | 4 | 0.0962 | 0.0192 | candidate |
-| 47 | 031-02.b1.g2.b3.g3_high-volatility-dip-rebound | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 1 | 031-03.b1.b1.b1.b1_up-streak-continuation-over-10-days | 7.b | 4 | 0.2403 | 0.0481 | candidate |
+| 2 | 031-03.b1.b1.b2.b1_uptrend-streak-continuation-ten-days | 7.b | 4 | 0.2403 | 0.0481 | candidate |
+| 3 | 031-03.b1.b1.e2.b1_scaled-rise-ten-day-continuation | 7.b | 4 | 0.2403 | 0.0481 | candidate |
+| 4 | 031-03.g1_large-up-day-continuation | 7.g | 1 | 0.0962 | 0.0481 | candidate |
+| 5 | 031-04.g1_one-day-volatility-scaled-reversal | 7.g | 1 | 0.0962 | 0.0481 | candidate |
+| 6 | 031-01.g2_next-day-rebound-after-falls | 7.g | 1 | 0.0962 | 0.0481 | candidate |
+| 7 | 031-02.b1.g2.b1.b2_deep-fall-next-day-rebound | 7.b | 4 | 0.2403 | 0.0481 | candidate |
+| 8 | 031-02.b1.g2.b2.b2_unusual-falls-rebound-next-day | 7.b | 4 | 0.2403 | 0.0481 | candidate |
+| 9 | 031-03.b1.b1.b2.b2_up-streak-reversal-outside-uptrend | 7.b | 4 | 0.2403 | 0.0481 | candidate |
+| 10 | 031-03.g2_fast-large-up-day-drift | 7.g | 1 | 0.0962 | 0.0481 | candidate |
+| 11 | 031-04.g2_run-depth-short-horizon-reversal | 7.g | 1 | 0.0962 | 0.0481 | candidate |
+| 12 | 031-02.b1.g2.b2.b1.b1_unusual-falls-rebound-next-day | 7.b | 5 | 0.2403 | 0.0401 | candidate |
+| 13 | 031-02.b1.d2.d1_rebound-only-in-turbulence | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 14 | 031-02.b1.d2.d2_turbulent-rebound-held-longer | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 15 | 031-02.b1.d2.d3_rebound-held-two-days-only | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 16 | 031-01.b2.g1_long-streaks-precede-volatility | 7.g | 2 | 0.0962 | 0.0321 | candidate |
+| 17 | 031-01.b2.b1.d1_up-streaks-inside-uptrend | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 18 | 031-01.b2.b1.d2_up-streaks-after-monthly-rise | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 19 | 031-01.b2.b1.d3_multi-day-streaks-held-ten-days | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 20 | 031-01.g1.b2.d1_rebound-inside-volatility-bursts | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 21 | 031-01.g1.b2.d2_volatility-surge-graded-down-close-rebound | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 22 | 031-02.b1.g2.b1.b1.d1_volatile-falls-rising-turbulence-rebound | 7.d | 5 | 0.2429 | 0.0405 | candidate |
+| 23 | 031-02.b1.g2.b1.b1.d2_deepest-volatile-falls-rebound | 7.d | 5 | 0.2429 | 0.0405 | candidate |
+| 24 | 031-02.b1.g2.b1.b1.d3_stretched-turbulent-falls-rebound | 7.d | 5 | 0.2429 | 0.0405 | candidate |
+| 25 | 031-02.b1.g1_long-up-streaks-keep-rising | 7.g | 2 | 0.0962 | 0.0321 | candidate |
+| 26 | 031-02.b1.g2.b3.d1_dip-rebound-in-turbulence | 7.d | 4 | 0.2429 | 0.0486 | candidate |
+| 27 | 031-02.b1.g2.b3.d2_dip-rebound-after-stretched-month | 7.d | 4 | 0.2429 | 0.0486 | candidate |
+| 28 | 031-01.g1.b1.g1_down-day-lower-wick-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 29 | 031-02.b1.d1.g1_dip-rebound-grows-with-turbulence | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 30 | 031-02.b1.g2.g1_strong-rises-keep-running | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 31 | 031-03.b1.b1.g1_30-day-trend-rank-continuation | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 32 | 031-01.g1.b1.g2_wide-range-down-day-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 33 | 031-02.b1.d1.g2_long-up-runs-keep-rising | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 34 | 031-03.b1.b1.g2_downtrend-rally-fade | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 35 | 031-03.b1.b1.b2.g1_vol-scaled-monthly-trend-continuation | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 36 | 031-03.b1.b1.e2.g1_month-scaled-trend-continuation | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 37 | 031-03.b1.b1.b2.g2_uptrend-streak-giveback | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 38 | 031-03.b1.b1.e2.g2_one-day-fall-rebound | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 39 | 031-02.b1.d2.g1_one-day-rebound-after-unusual-fall | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 40 | 031-02.b1.d2.g2_turbulent-fall-one-day-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 41 | 031-03.b1.b1.e2.e2.g1_extreme-rise-ten-day-continuation | 7.g | 5 | 0.0962 | 0.016 | candidate |
+| 42 | 031-01.b2.b1.g1_next-day-rebound-after-sharp-falls | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 43 | 031-01.b2.b1.g2_near-high-ten-day-continuation | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 44 | 031-01.g1.b2.g1_close-near-low-rebounds | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 45 | 031-02.b1.g2.b1.b1.g1_heavy-volume-falls-rebound-next-day | 7.g | 5 | 0.0962 | 0.016 | candidate |
+| 46 | 031-01.g1.b2.g2_wide-range-day-rebound | 7.g | 3 | 0.0962 | 0.024 | candidate |
+| 47 | 031-02.b1.g2.b1.b1.g2_volume-surprise-predicts-drift | 7.g | 5 | 0.0962 | 0.016 | candidate |
+| 48 | 031-02.b1.g2.b3.g1_wide-range-fall-next-day-rebound | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 49 | 031-02.b1.g2.b3.g2_rebound-grows-as-volatility-heats | 7.g | 4 | 0.0962 | 0.0192 | candidate |
+| 50 | 031-02.b1.g2.b3.g3_high-volatility-dip-rebound | 7.g | 4 | 0.0962 | 0.0192 | candidate |
 | - | 031-01_up-streak-length-reversal | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (+1.08); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 031-02_down-streak-length-reversal | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-1.27); step 6 not profitable enough (failed: Calmar) |
 | - | 031-03_up-streak-length-continuation | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (+1.43); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
@@ -62,6 +65,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-03.b1_up-streak-continuation-more-coins | 7.b | 1 | 0.2403 | 0.1202 | tested: step 5 inconclusive (+0.54); step 6 not profitable enough (failed: Calmar) |
 | - | 031-01.b2.b1_long-up-streaks-ten-day-continuation | 7.b | 2 | 0.2403 | 0.0801 | tested: step 5 confirmed (+3.11); step 6 not profitable enough (failed: Calmar) |
 | - | 031-01.g1.b1_down-day-rebound-more-coins | 7.b | 2 | 0.2403 | 0.0801 | tested: step 5 inconclusive (+0.40); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 031-01.g1.b2_next-day-down-close-rebound | 7.b | 2 | 0.2403 | 0.0801 | tested: step 5 confirmed (+2.73); step 6 not profitable enough (failed: Calmar) |
 | - | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence | 7.d | 2 | 0.2429 | 0.081 | tested: step 5 confirmed (+2.06); step 6 profitable enough  GOAL REACHED |
 | - | 031-02.b1.d2_rebound-graded-by-turbulence | 7.d | 2 | 0.2429 | 0.081 | tested: step 5 confirmed (+2.78); step 6 not profitable enough (failed: Calmar) |
 | - | 031-02.b1.g2_volatile-falls-rebound-harder | 7.g | 2 | 0.0962 | 0.0321 | tested: step 5 inconclusive (+1.47); step 6 not profitable enough (failed: Calmar) |

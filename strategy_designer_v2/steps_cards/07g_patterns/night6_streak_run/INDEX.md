@@ -2,6 +2,7 @@
 031-01.b2.b1_long-up-streaks-ten-day-continuation_1d: 2 ideas (2 explorations)
 031-01.b2_long-up-streaks-continue_1d: 1 ideas (2 explorations)
 031-01.g1.b1_down-day-rebound-more-coins_1d: 2 ideas (3 explorations)
+031-01.g1.b2_next-day-down-close-rebound_1d: 2 ideas (2 explorations)
 031-01.g1_volatility-scaled-down-day-rebound_1d: no ideas: Across about 60 angles (streaks, scaled returns of 1 to 30 days, horizons of 3 to 10 days, volatility, range, close location, weekday, coin and window halves), no pattern reached a t that stands out from chance; the up-streak and 7-to-30-day momentum readings (F3, F4) cluster near t 2, are unstable by coin and by half of the windows, and their per-case size is too small against the 0.19 % cost to justify a new idea.
 031-01_up-streak-length-reversal_1d: 2 ideas (3 explorations)
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: 2 ideas (2 explorations)
