@@ -1,3 +1,4 @@
+031-01.b1_up-streak-reversal-more-coins_1d: not profitable enough [Sharpe -0.7645; Sharpe minus holding's Sharpe -1.345; Calmar -0.4121]
 031-01_up-streak-length-reversal_1d: not profitable enough [Sharpe -0.6667; Sharpe minus holding's Sharpe -1.248; Calmar -0.4244]
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: profitable enough [Sharpe 0.7995; Sharpe minus holding's Sharpe 0.2453; Calmar 0.7928]
 031-02.b1.g2.b1_volatile-falls-more-coins_1d: not profitable enough [Sharpe 0.628; Sharpe minus holding's Sharpe 0.02765; Calmar 0.4739]

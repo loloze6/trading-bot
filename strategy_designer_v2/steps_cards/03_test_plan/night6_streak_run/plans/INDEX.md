@@ -1,3 +1,4 @@
+031-01.b1_up-streak-reversal-more-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 031-01_up-streak-length-reversal_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-02.b1.d2_rebound-graded-by-turbulence_1d: missing-components: The idea sizes the rebound by the fall in 60-day usual moves multiplied by the 10-day over 60-day volatility ratio, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
