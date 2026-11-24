@@ -18,11 +18,9 @@ their risk than any one alone.
 ## B. Make the search find strategies the portfolio does not have (topics 47, 44)
 | # | Objective | Why | What | Status |
 |---|---|---|---|---|
-| P9 | The search favours ideas unlike what the portfolio holds | Night 6: 8 of 10 families re-found the portfolio's own effects (5 the next-day rebound after a fall, 3 trend continuation) | `select_next`'s similarity term measures an idea's line against the portfolio's strategies, not only the paying ones | done 2026-11-24 (ae0c95e349): 66 ideas of past runs move back a group |
-| 1g | **New (night 6; split by the operator).** Why a brief's first ideas fail | Over all runs, 13 of 140 ideas written from a brief are confirmed (9 %), against 418 of 744 of step 7's follow-ups (56 %); night 6: 0 of 16. A theme that gives no real first idea is a wasted brief | Read the 140 first ideas' verdicts by cause (inconclusive, not observable, mismatch, rejected; cases, size, sign) against the follow-ups', then say which of steps 1, 2 and 3 causes it | done 2026-11-24 (topic 47, 1d-12): the effect is not in the data (t median 0.32, 41 % the other way); not the build (mismatch 4 %), not too few cases. The brief's theories are mostly false here |
-| 1h | **New (night 6; split by the operator).** Why the follow-ups drift back to the same effects | Night 6: 8 of 10 families re-found the portfolio's own effects (the next-day rebound after a fall, trend continuation); the four themes were left behind | Measure, by generation and by step 7's line (a to g), how far each confirmed follow-up is from its brief's idea and how close to the effects already held (the similarity register); then say which line or rule causes it. P9 is one possible answer, decided after | done 2026-11-24 (topic 47, 1d-13): not a slow slide; from the first follow-up, what passes step 5 is mostly trend continuation or the next-day rebound (related 47 to 68 % at every generation; night 6: 6 of 7). The search keeps what is confirmed, so it converges there: P9 is the answer |
 | 1f | Every strategy trades only in the situation its idea names | 26 strategies were built before step 3 kept the idea's situation: they are in a position on 98 % of days (median) though their ideas name an event ("heavy-volume days", "the deepest falls"); 8 are already rebuilt | Rebuild the other 18 with today's step 3, then steps 4 to 7 (list: `47_review/ungated_real_books.csv`) | operator (about 35 USD) |
-| 1i | **Done 2026-11-24.** An idea is chosen on some years and checked on others | Step 7 chose ideas on the years step 5 judged them on (topic 31); the verdict needs all 8 years | Step 7 explores 2018-21; step 5 judges on all 8 years and a confirm must point its way on 2022-25 (`common/explore_and_check.md`) | done (795d4409a6): 1 of 64 confirms turned inconclusive on past verdicts |
+| 1j | Follow-ups stay on their brief's theme | The "keep the idea" rule covers line 7.d only; on night 6 the first follow-ups came from lines 7.b and 7.g, which have no such rule, and left every theme (1h) | Extend the rule to lines 7.b and 7.g: a follow-up keeps the brief's situation; a theme with no real effect is closed as "not real" instead of wandering | operator |
+| 1k | Know whether step 2's first ideas improve with the analyst's tools | First ideas are confirmed 9 % of the time, follow-ups 56 % (1g); step 2 sees no data, step 7 explores it | A test on night 6's 4 briefs: step 2 with step 7's rules, without and with exploring (folds B and C only), through steps 3 to 5 | later (about 35 USD) |
 | 1d | Ideas say in which market state their effect works | Real books lose in market states where their effect does not hold (study 1) | Steps 2 and 7 name the state; step 5 measures the effect by state | later (after P10) |
 | 2b | Know how much of a found result is search luck | The n-th variant of an idea holds less on new dates (study 2) | Measure search luck again, now that step 3 builds the idea as stated | next (computing only) |
 | 2e | **New (night 6).** An idea unblocked by a component build is run | Night 6, session 1: an idea waiting for a component was not picked again after the component was built, before the budget ended | Check `select_next`'s order for an unblocked idea | later |
@@ -51,6 +49,7 @@ their risk than any one alone.
 | 6 | One environment for all steps | Simpler runs | One Python for all steps | later |
 | 7 | Faster step 5 | `signal_statistics.py` is slow | Speed it up | later |
 | 10 | Complete records | 431 checks lack the informative measures | Backfill them | later |
+| 3i | **New (P9).** Keep the register small | Comparing every book with the 20 portfolio books added about 195,000 lines of comparison files | Commit the summaries and keep each book's full comparison local, as its returns are | later |
 | 9 | A clean repository | 21 merged branches remain | Delete them (the designer's access is refused) | operator |
 
 ## Done (kept until read)
@@ -64,6 +63,10 @@ their risk than any one alone.
 | N3 | Step 3 builds the idea's situation as stated | built (it is 1b) |
 | N4 | Engine trade statistics without the entry bar | built |
 | 1a, 1c | Phase A by hand; a whole run under N3 | done (night 6) |
+| P9 | The search favours ideas unlike what the portfolio holds | built (ae0c95e349): a parent is weighed against the held books (paying and the portfolio's); 66 ideas of past runs move back a group |
+| 1g | Why a brief's first ideas fail | the effect is not in the data (median t 0.32, 41 % the other way); not the build, not too few cases (topic 47, 1d-12) |
+| 1h | Why the follow-ups drift | from the first follow-up, what passes step 5 is mostly trend continuation or the next-day rebound; the search keeps what is confirmed (topic 47, 1d-13) |
+| 1i | An idea chosen on some years, checked on others | built (795d4409a6): step 7 explores 2018-21; a confirm must point its way on 2022-25; topic 31 decided |
 | 1d-1 to 1d-11 | Why real books do not pay: 11 measurements | done; 1d-11 corrected 2026-11-24 (in-sample strength says little about new dates) |
 | 3, 3c, 3d | 2026 hourly data (6 coins); unseen records readable anywhere; unseen test reruns a period without data | done |
 | 8 | A check-in after a usage-limit reset | done |
