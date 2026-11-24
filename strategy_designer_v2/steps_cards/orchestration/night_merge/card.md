@@ -66,15 +66,26 @@ A branch is fetched from origin when it is there, else taken locally.
 A clean working tree before it starts; each rule's faults (above); a merge with any fault is aborted, the branches
 merged before it stay merged.
 
-## Proof
-Night 6 replayed (`../../runs/NIGHT6_RUN.md`): from the commit before its morning merge, the four branches in the same
-order; the shared files compared with what was committed after the hand repair. Result: see "Done when".
+## Proof (2026-11-25)
+Night 6 replayed (`../../runs/NIGHT6_RUN.md`): from the commit before its morning merge (`36d54fd8e6`), the four
+branches in the same order, against what was committed after the hand repair (`9aac1cb3e5`). The four branches merged
+by rule (0, 8, 10 and 6 conflicts); register rebuilt over 336 books; brief 031 reported used by 4 briefs; cards 141
+tests and bot 1665 passed, as that morning.
+| File | Replay against the hand repair | Why |
+|---|---|---|
+| `strategy_components.py` | identical | |
+| the register's pages and `matrix.csv` | identical | |
+| the catalogue | the replay states the class count once; the hand repair twice (119 and 117) | the defect of night 6's merge |
+| `books.json` | the same 336 books, each entry identical; another order | this side's books, then the other's |
+| the 336 comparisons | the nearest relative identical in all; numbers differ at most 2.5 % (relative) | built from the returns kept locally, which differ between the two machines; not the merge |
+| ZEC hourly data, the P7 files | absent | committed on the branch around the merge, not part of it |
+
+Two defects of the script found by the replay and fixed before it passed: the register's derived files (`matrix.csv`
+first stopped the merge) and the catalogue's count placeholder.
 
 ## Done when
-Its tests pass (`helper/test_night_merge.py`: two sessions merged by rule; a conflict no rule covers stops and
-aborts; class by class; lines kept and a line changed on both sides stopped; brief numbers used twice reported), and
-the night 6 replay gives the hand-repaired files, apart from the differences the replay names. Status: see the replay's
-reading below.
+Its tests pass (`helper/test_night_merge.py`, 6) and the night 6 replay gives the hand-repaired files apart from the
+differences named above. Status: met 2026-11-25.
 
 ## What this function does not do
 It does not renumber briefs used twice (next steps 3e: it reports them), push, or merge into master.
