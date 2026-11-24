@@ -1,0 +1,129 @@
+{
+  "core": {
+    "net_return_pct": -0.452,
+    "sharpe": 0.0,
+    "max_drawdown_pct": -0.456,
+    "trade_count": 1,
+    "win_rate": 0.0,
+    "avg_trade_net_pnl": -4.555671,
+    "fees_paid": 0.065151,
+    "gross_pnl": -4.49052,
+    "net_pnl": -4.555671,
+    "cost_drag_pct": 1.4509,
+    "forecast_return_corr": 0.008822,
+    "forecast_return_corr_pvalue": 0.947594,
+    "forecast_return_corr_pvalue_block_adjusted": 0.947833,
+    "forecast_return_corr_n_eff": 58,
+    "forecast_return_corr_all_bars": 0.016601,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.858096,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 54.0,
+    "sigma_bar_bps": 581.6876,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 37.7098,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 2.0384,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0088, p=0.9478 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -666.4494,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -666.4494,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 66.6449,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_trades=1 < min_n_trades=5 (too few completed trades to trust an average built from them).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 120,
+      "avg_forecast": 1.120985,
+      "trade_count": 1,
+      "total_net_pnl": -4.555671
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -4.5557,
+      "avg_pnl_per_trade_usd": -4.5557
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall90.last_history_value": {
+      "unknown": {
+        "mean": 0.23985,
+        "std": 0.866588
+      }
+    },
+    "debug_info.components.fall90.post_pipeline_value": {
+      "unknown": {
+        "mean": 1.120985,
+        "std": 1.315604
+      }
+    },
+    "debug_info.components.fall90.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.fall90.weighted_contribution": {
+      "unknown": {
+        "mean": 1.120985,
+        "std": 1.315604
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": -0.00148956,
+      "forward_return_std": 0.05816876,
+      "n_bars": 119,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -2.2397,
+    "sharpe": -0.3826,
+    "sortino": -0.5214,
+    "exposure_pct": 45.0,
+    "turnover": 0.130557,
+    "n_bars_total": 120,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 27,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2014-12-26 00:00:00",
+        "previous_timestamp": "2014-12-24 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

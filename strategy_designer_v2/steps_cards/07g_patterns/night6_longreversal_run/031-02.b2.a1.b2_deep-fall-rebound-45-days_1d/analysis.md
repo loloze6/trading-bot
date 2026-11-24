@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 031-02.b2.a1.b2_deep-fall-rebound-45-days_1d
+idea tested: 031-02.b2.a1.b2_deep-fall-rebound-45-days
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4493 USD
+---
+## Findings
+- **F1:** The tested signal shows no grading at 45 days: across the five quintiles of the signed vol-scaled 90-day return, the mean excess 45-day return runs -0.62 %, +5.85 %, +0.74 %, -5.22 % and -0.74 % (|t| ≤ 0.94, about 97 grid cases and 25–35 days each). The deepest-fall quintile (-1.16 usual moves) earns nothing over drift, which matches step 5's unusual move of +0.80 % (t 0.22).
+- **F2:** The book is mostly market exposure, not timing. Its daily returns correlate 0.70 with the coins' mean daily return. On its 20 best days it gains +7.41 % while the coins rise +11.36 %, and on its 20 worst it loses -7.20 % while they fall -11.88 %. It loses in the bear years 2018 (-0.110 %/day, Sharpe -1.13) and 2022 (-0.066 %/day, Sharpe -0.59), and earns in the rising years 2020, 2021, 2023 and 2024 (Sharpe 1.8 to 2.9).
+- **F3:** After a deep 90-day fall, the 45-day excess return depends on the year, not on the depth. It is +37.3 % in 2020 (13 cases), +11.4 % in 2023 (57) and +20.7 % in 2024 (45), but -31.7 % in 2018 (16), -10.9 % in 2019 (23), -13.2 % in 2022 (53) and -3.2 % in 2025 (48).
+- **F4:** Trades held longest do worst. The longest duration quartile (mean 99.7 days) nets +4.1 % with a 44 % win rate, against +16.5 % and +15.8 % for trades of 31 and 60 days. Trades entered on the deepest forecasts (mean 17.9) net +8.3 % on average, against +14.5 % for the shallowest (3.7), so a deeper fall does not bring a larger trade gain.
+- **F5:** A coin's daily fall is followed by a next-day rebound that grows with the size of the fall, measured in units of its 60-day daily volatility. The next day's mean return is:
+- **F6:** The weekday pattern in coin daily returns is real in these numbers but cannot become an idea. Means are +0.42 % on Wednesday (t 4.98), +0.32 % on Friday (t 4.30), +0.40 % on Saturday (t 6.63) and -0.20 % on Thursday (t -2.48), from about 4200 coin-days each. The t's are inflated because the coins move together (F2), and a weekday is an on/off condition rather than a graded situation.
+- **F7:** Neither the prior 20-day return nor the 30-day/120-day volatility ratio grades the excess return over the next 10 or 20 days. The top 20-day-return quintile gets +2.1 % over 10 days (t 1.35) and +3.7 % over 20 days (t 1.19); every other quintile has |t| < 1.8.
+
+## Ideas
+- `031-02.b2.a1.b2.g1_one-day-crash-next-day-rebound` (from F5, F1, F2): The larger a coin's one-day fall, measured in units of its own daily volatility over the past 60 days, the larger its rebound over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

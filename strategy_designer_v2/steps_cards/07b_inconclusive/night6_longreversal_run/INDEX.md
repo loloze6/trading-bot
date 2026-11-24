@@ -4,6 +4,7 @@
 031-02.b1.b2_levelled-off-deep-falls-rebound_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 031-02.b1_deep-fall-still-falling-rebounds_1d: 2 ideas (2 explorations)
 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound_1d: 2 ideas (2 explorations)
+031-02.b2.a1.b2_deep-fall-rebound-45-days_1d: no ideas: The test already used every coin and fold available, its result sits at zero (F1–F3), the effect has no depth grading (F4), and it flips sign by year with no stable condition where it holds (F5, F6). No amended or more-data version of the idea is supported, and that is the clear answer: no medium-term deep-fall rebound in this data.
 031-02.b2.a1_deep-fall-rebound-nineteen-coins_1d: 2 ideas (2 explorations)
 031-02.b2_graded-deep-and-recent-fall_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 031-02_extreme-fall-partly-rebounds_1d: 2 ideas (2 explorations)

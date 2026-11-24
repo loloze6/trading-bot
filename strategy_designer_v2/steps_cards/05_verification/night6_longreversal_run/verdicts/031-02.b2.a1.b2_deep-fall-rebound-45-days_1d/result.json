@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 45-day return on forecast, non-overlapping grid cases, all coins",
+    "value": 0.0015942388453352415,
+    "statistic": {
+      "name": "slope t, same-day cases clustered",
+      "value": 0.36387733478753537
+    },
+    "threshold": "confirm if slope t >= 2 and supporting check passes; reject if slope t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 45-day return over grid cases with forecast > 0, above 0",
+    "value": 0.013952626782719793,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 488,
+    "grid cases with forecast > 0": 265,
+    "distinct days of grid cases with forecast > 0": 37,
+    "distinct days of all grid cases": 50
+  },
+  "decided_by": "Inconclusive rule: the slope t lies between -2 and 2.",
+  "reading": "Situation = raw fall90 value below zero with forecast > 0 (bars with the raw value missing count as not agreeing); grid = positions 0, 45, 90, ... of each window with t+45 inside the window; the coin's mean 45-day return is the mean over all its grid returns in all its windows; the slope is a one-variable OLS with intercept over all grid cases (forecast 0 included) and its t uses a day-clustered standard error (cross-products summed per UTC day, G/(G-1) correction); the plan's 'fewer is inconclusive' minimum is reported as 'not observable' per the workflow."
+}

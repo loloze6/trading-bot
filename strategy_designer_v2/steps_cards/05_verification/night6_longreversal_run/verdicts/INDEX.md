@@ -4,6 +4,7 @@
 031-02.b1.b2_levelled-off-deep-falls-rebound_1d: mismatch: the test does not match its plan (agreement 0.27234) (fit: exact)
 031-02.b1_deep-fall-still-falling-rebounds_1d: inconclusive (fit: exact) [main: 0.0450843; day-clustered t 1.2223; cases 140, distinct days 96, in-regime grid bars 65]
 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound_1d: inconclusive (fit: adapted) [main: -0.0071343; t of the mean, cases of one day taken together (day-clustered) -0.197861; independent case-days 35, cases 85]
+031-02.b2.a1.b2_deep-fall-rebound-45-days_1d: inconclusive (fit: exact) [main: 0.00159424; slope t, same-day cases clustered 0.363877; grid cases 488, grid cases with forecast > 0 265, distinct days of grid cases with forecast > 0 37, distinct days of all grid cases 50]
 031-02.b2.a1_deep-fall-rebound-nineteen-coins_1d: inconclusive (fit: adapted) [main: -0.0071343; t of the mean, cases of one day taken together -0.197861; cases 85, distinct case days 35]
 031-02.b2_graded-deep-and-recent-fall_1d: not observable (fit: adapted) [main: 0.000222316; t of the mean, cases of one day summed together 0.00555516; cases 52, cases on distinct days 29]
 031-02_extreme-fall-partly-rebounds_1d: inconclusive (fit: adapted) [main: 0.000222316; t clustered by day 0.00555516; in-regime cases 52, days 29, active bars 1680]
