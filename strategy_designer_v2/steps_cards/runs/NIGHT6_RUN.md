@@ -109,5 +109,36 @@ effects of the four); N2 on none.
 - **The four sessions together:** 140.9 USD, 218 ideas written, 128 run; the four themes unconfirmed as stated (0 of 20
   of the brief ideas confirmed); 56 confirmed books, all from step 7's lines. Brief number 031 used by all four.
 
-## Reading
-(in the morning)
+## Reading (2026-11-24, about 06:00 Paris; the designer)
+**Merged** into the working branch (the four branches, then a repair: the line-by-line union first used broke
+`trading-bot/strategies/strategy_components.py`; rebuilt by class, each of tonight's 4 components identical to its
+branch, every other class unchanged; the shared indexes with every line once; bot suite 1665 passed, cards 141;
+65a76ddf42), the similarity register rebuilt over its 336 books (9aac1cb3e5).
+
+**Counts:** 140.9 USD, 218 ideas written, 128 run, 56 confirmed (step 5), 40 profitable enough (step 6), 29 confirmed
+and profitable; unseen, of those 29: 18 hold on both periods.
+
+**Portfolio candidates (P7, `topics/44_review/p7_night6_candidates.py`, P1's rule against the 20 fixed books):** 55 of
+the 56 confirmed books earn on their own with a size above 0; they form 10 families; **2 enter**:
+| Family | Book | Step 5 / 6 | In-sample Sharpe | Size (t) | Largest correlation with the portfolio |
+|---|---|---|---|---|---|
+| yearly low 031-01 | a week's gain carries into Saturday | confirmed / pays | 1.01 | +0.87 % (4.0) | 0.32 (003-02) |
+| long reversal 031-03 | volume swells after rises | confirmed / not paying | 0.57 | +0.66 % (1.0) | 0.21 (006-04) |
+The other 8 families repeat books the portfolio holds: next-day rebounds after a fall (011-01, up to 0.94) and trend
+continuation (002-03, 003-02, 0.54 to 0.73).
+
+**Outcome: N1, on two briefs** (the designer's guess: two or three), **not N2** (no book holding on both periods has its
+nearest paying book under 0.25). **For the four themes as written: N4** (none of the briefs' own ideas confirmed:
+streaks 0 of 4, yearly low 0 of 8, long-horizon reversal 0 of the direct ideas, indecision 0 of 4).
+
+**What it shows:** the confirmed books did not come from the themes; they came from step 7's lines, which returned to
+the two effects the research keeps finding (trend continuation; the next-day rebound after a fall) and, twice, to
+something new (a weekday carry, a volume swell). With the aim now "families the portfolio lacks", the search still
+rewards a line for being real and paying, not for being different from what the portfolio holds: 8 of 10 families
+were spent re-finding the portfolio's own effects.
+
+**The one change a practitioner would make:** let the search's order (`select_next`'s similarity term, topic 36's
+formula) measure an idea's line against the portfolio's books rather than against the paying books only, so that a
+line re-finding 011-01 or 002-03 falls back and a line like the weekday carry moves up. A rule on the order, not a gate;
+for the operator (next steps P9). Second: the night sessions' prompt must not launch detached (3f), and brief numbers
+need a rule for parallel sessions (3e).
