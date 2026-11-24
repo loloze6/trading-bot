@@ -1,3 +1,4 @@
 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: not observable (fit: adapted) [main: 0.000581749; OLS slope t 0.673601; entry cases 23]
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h: not observable (fit: exact) [main: 0.0500512; t of the mean 1.637; cases 48]
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue_1h: not observable (fit: exact) [main: 0.0166777; ordinary t of the mean 1.39242; cases over all coins and windows 28]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h: mismatch: the test does not match its plan (agreement 0.875) (fit: exact)
