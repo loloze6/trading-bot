@@ -90,6 +90,8 @@ same strategy or in parallel"):**
   rule written before the run, **equal capital**. In sample only: the candidates were kept for earning on these same
   dates, so these figures are optimistic; P4 judges on the unseen dates.
 
+**P4 read (2026-11-24): outcome B.** The 20 books, equal capital: holds on 2016-17 (Sharpe 1.08, worst fall 11 %), not on 2026 (Sharpe -0.73, -3.1 % a year, worst fall 5 %; holding the coins -14 %, fall 45 %). Falls far smaller than holding, books uncorrelated, but on 2026 the books lose on average; the long-leaning books follow the market, the two with no net lean hold on both. P5 not started. Reading: `runs/PORTFOLIO_UNSEEN_RUN.md`.
+
 **P4** (2026-11-23): the portfolio fixed before its unseen test, its reading rule and expected outcomes written:
 `runs/PORTFOLIO_UNSEEN_RUN.md`. **The combination function, draft** (rules, each with its evidence, and open
 points): `topics/44_review/COMBINATION_STEP_DRAFT.md`.

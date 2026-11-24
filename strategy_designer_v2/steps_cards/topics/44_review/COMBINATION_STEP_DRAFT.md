@@ -57,7 +57,7 @@ on the folds, the same "holds" rule on the unseen dates. No measure or bar of it
 | E7 | Out of fold, equal capital chosen on 3 of 4 folds; the other choice did worse on its held-out fold. | `topics/44_review/p2_out_of_fold_earning.csv` |
 | E8 | One config with weighted components changes the books (an idea off that day hands its weight to the other; one holding period): swing 60 % larger, deeper fall. | `runs/COMBINE_TEST_RUN.md`, method B |
 | E9 | Choosing by results on the same dates inflates them (search luck: the n-th variant holds less; the reversal book paid on the folds and not out of sample). | topic 47 (study 2); topic 44, Seen |
-| E10 | (to come) P4: the fixed portfolio on the unseen dates. | `runs/PORTFOLIO_UNSEEN_RUN.md` |
+| E10 | P4: the fixed portfolio of 20 books holds on 2016-17 (Sharpe 1.08) and not on 2026 (-0.73); its falls are a quarter of holding's and its books uncorrelated, but it follows the market's direction through its long-leaning books; the two books with no net lean hold on both periods. Combining cuts risk; it does not make losing books earn. | `runs/PORTFOLIO_UNSEEN_RUN.md` |
 
 ## Open (for the operator)
 1. **The family's book (R2):** "closest to the idea" may keep a first, unfaithful book over a later repair that trades

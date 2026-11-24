@@ -10,7 +10,7 @@ found by a run or an analysis is added here with its source. Status: **done**, *
 | P1 | The candidates: real, size above 0, earning on its own (Sharpe above 0), one per family, unrelated (under 0.5) | done 2026-11-23 (20 books) | topic 44; `44_review/p1_candidates.py` |
 | P2 | The weights, out of fold | done 2026-11-23: equal capital | `44_review/p2_weights.py` |
 | P3 | In parallel or in one strategy | decided 2026-11-22: in parallel | topic 44 |
-| P4 | The fixed portfolio on the unseen dates | running: 13 daily books read (holds 2016-17, Sharpe 2.25; not 2026, -0.74); the 7 hourly books after the 2026 hourly bars (about 07:30 Paris) | `runs/PORTFOLIO_UNSEEN_RUN.md` |
+| P4 | The fixed portfolio on the unseen dates | done 2026-11-24: **outcome B**, holds on 2016-17 (Sharpe 1.08), not on 2026 (-0.73; -3.1 % a year against -14 % holding); the hourly books add little | `runs/PORTFOLIO_UNSEEN_RUN.md` |
 | P5 | The portfolio layer's card and build (shared code) | operator, only if P4 holds | topic 44 |
 | P6 | The combination function: rules, evidence, open points | operator: draft to review | `44_review/COMBINATION_STEP_DRAFT.md` |
 | P7 | Night 6's books as portfolio candidates (the P1 rule on the new books) | done 2026-11-24: 56 confirmed, 10 families, **2 new candidates** (yearly low 031-01 weekday carry, Sharpe 1.01, largest correlation 0.32; long reversal 031-03 volume swell, 0.57, 0.21); 8 families repeat the portfolio's own | `runs/NIGHT6_RUN.md`; `44_review/p7_night6_candidates.py` |
@@ -45,7 +45,7 @@ found by a run or an analysis is added here with its source. Status: **done**, *
 ## Data and infrastructure
 | # | Step | Status | Detail |
 |---|---|---|---|
-| 3 | 2026 hourly bars for the unseen test | running: 6 coins (BTC, ETH, LTC, XMR, XRP, ZEC), Kraken's 2026 archive then its public trades checked against it (`trading-bot/tools/extend_kraken_hourly.py`) | `runs/PORTFOLIO_UNSEEN_RUN.md` |
+| 3 | 2026 hourly bars for the unseen test | done 2026-11-24: 6 coins (BTC, ETH, LTC, XMR, XRP, ZEC) to 2026-11-17, each 7,704 hours, old rows unchanged, checked against Kraken's archive | `runs/PORTFOLIO_UNSEEN_RUN.md` |
 | 3b | **New 2026-11-24.** The other 13 coins' 2026 hourly bars (the archive part is cheap; the trades part about 10,000 calls) | later, if hourly research resumes | - |
 | 3c | **New 2026-11-24.** Unseen records keep their bars on the machine that ran them only (028-04 had to be rebuilt): `unseen_test` writes the record's chart files, as `run_idea` does in sample | done 2026-11-24 (870bcef8a3): proof, the 13 daily books' readings identical from the chart files | `orchestration/unseen_test/card.md` |
 | 3d | **Done 2026-11-24.** `unseen_test` never reran a period whose record had no window (data not fetched then) | done (072b469688) | `orchestration/unseen_test/card.md` |

@@ -63,5 +63,34 @@ fixes one portfolio now, before any of its unseen results is read, and judges it
 The designer's guess, for the record: B, holding on 2016-2017 (a rising market; most daily books lean long) and not
 on 2026 (a falling market for most coins).
 
-## Reading
-(after the run)
+## Reading (2026-11-24, about 10:35 Paris)
+All 20 books run on both unseen periods (the 7 hourly books after their 2026 bars were fetched: 6 coins, Kraken's 2026
+archive then its public trades, each checked against the archive; `trading-bot/tools/extend_kraken_hourly.py`).
+`topics/44_review/p4_portfolio.py`, `p4_portfolio.csv`, `p4_books.csv`.
+
+| | 2016-17 (rising market) | 2026 (falling market) |
+|---|---|---|
+| **Portfolio: Sharpe** | **1.08: holds** | **-0.73: does not hold** |
+| Portfolio: Calmar, yearly, worst fall | 0.61, +6.7 %, 11.1 % | -0.66, -3.1 %, 4.8 % |
+| Holding the coins: Sharpe, yearly, worst fall | 3.63, x12, 41.1 % | 0.02, -14.2 %, 44.5 % |
+| The books alone: holding / Sharpe above 0 / median Sharpe | 6 / 10 of 20 / 0.30 | 4 / 8 of 20 / -0.08 |
+| Correlation between books (mean) / with holding | 0.01 / 0.50 | 0.00 / 0.06 |
+
+**Outcome B** (the designer's guess): holds on one period only. The portfolio does what combining promises on risk (its
+worst fall 11 % and 5 % against 41 % and 45 % for holding; its books nearly uncorrelated on both periods), but not on
+return: on 2026 its books lose on average (median Sharpe -0.08), and an average of losing books loses less, not
+nothing.
+
+**Where it comes from:**
+- The daily books lean long (002-03, 003-02, 006-04, 011-01, 025-03: long 34 to 81 % of coin-days); they carry 2016-17
+  and lose on 2026. The two books with no net lean, 013-03 and 013-04 (a coin near its recent high, heavy volume below
+  its yearly high), earn on both periods (Sharpe 1.84 and 1.70; 1.94 and 0.87).
+- The 7 hourly books add little: on 2016-17 they take the portfolio's Sharpe from 2.34 (the 14 books read first) to 1.08;
+  1 of the 7 holds on one period (026-03, 2026 only). Their in-sample Sharpe was 0.19 to 0.98.
+- The in-sample result (Calmar 1.37) was selection: the books were kept for earning on those same dates.
+
+**Next (for the operator):** no portfolio layer build (P5 waits). Two questions this answers in part: P8 (a rule on
+market exposure: the books with no net lean held, the leaning ones followed the market) and the candidates (P1's rule
+admits books with an in-sample Sharpe as low as 0.10; the books that held had no lower in-sample strength than those
+that did not, topic 47 1d-11). Note: these unseen periods are now seen for this portfolio; a new rule is judged on new
+dates.
