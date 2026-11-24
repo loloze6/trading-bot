@@ -12,5 +12,6 @@
 031-03.b1.b1.b1_aligned-20-day-continuation_1d: 2 ideas (3 explorations)
 031-03.b1.b1_20-day-continuation-all-coins_1d: 3 ideas (2 explorations)
 031-03.b1_short-horizon-continuation-after-moves_1d: no ideas: Across the forecast, the 5-, 20- and 60-day moves, volatility levels, volatility ratios, weekdays, the day after large moves, coins, years, halves and the book's sides, no pattern stood out from chance once same-day cases were taken together and the many angles weighed (F2–F7). The book's only steady gain was the coins' own rise on its long bars (F1), which is holding the coins, not a new idea.
+031-03.g1_volume-surge-leads-two-week-drift_1d: 2 ideas (2 explorations)
 031-03_fading-volume-after-rise-reverses_1d: 2 ideas (2 explorations)
 031-04_fading-volume-after-fall-rebounds_1d: no ideas: The book never entered its regime because the 122-bar windows cannot warm up a 365-day volatility (F1). Across the past-move, volume, volatility, range, distance-from-high, one-day-return and weekday angles I looked at, no pattern stood out beyond chance given the number of tests (F2–F6), so no finding supports a new idea.

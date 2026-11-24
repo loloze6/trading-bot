@@ -12,5 +12,6 @@
 031-03.b1.b1.b1_aligned-20-day-continuation_1d: 1 ideas (3 explorations)
 031-03.b1.b1_20-day-continuation-all-coins_1d: 1 ideas (2 explorations)
 031-03.b1_short-horizon-continuation-after-moves_1d: 1 ideas (2 explorations)
+031-03.g1_volume-surge-leads-two-week-drift_1d: 2 ideas (2 explorations)
 031-03_fading-volume-after-rise-reverses_1d: 1 ideas (2 explorations)
 031-04_fading-volume-after-fall-rebounds_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)

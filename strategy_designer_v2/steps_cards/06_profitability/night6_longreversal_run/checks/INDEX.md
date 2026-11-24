@@ -12,5 +12,6 @@
 031-03.b1.b1.b1_aligned-20-day-continuation_1d: not profitable enough [Sharpe 0.7334; Sharpe minus holding's Sharpe 0.1259; Calmar 0.4832]
 031-03.b1.b1_20-day-continuation-all-coins_1d: not profitable enough [Sharpe 0.6177; Sharpe minus holding's Sharpe 0.01024; Calmar 0.3821]
 031-03.b1_short-horizon-continuation-after-moves_1d: not profitable enough [Sharpe 0.4435; Sharpe minus holding's Sharpe -0.1107; Calmar 0.1548]
+031-03.g1_volume-surge-leads-two-week-drift_1d: not profitable enough [Sharpe 0.3515; Sharpe minus holding's Sharpe -0.2027; Calmar 0.09048]
 031-03_fading-volume-after-rise-reverses_1d: not profitable enough [Sharpe -0.2993; Sharpe minus holding's Sharpe -0.881; Calmar -0.07968]
 031-04_fading-volume-after-fall-rebounds_1d: not profitable enough [Sharpe 0; Sharpe minus holding's Sharpe -0.5696; Calmar 0]
