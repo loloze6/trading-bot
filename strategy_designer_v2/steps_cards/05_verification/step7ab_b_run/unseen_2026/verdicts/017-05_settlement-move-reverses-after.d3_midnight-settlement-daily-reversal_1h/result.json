@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 24-bar excess return on forecast, settlement bars pooled",
+    "value": -5.69585461689065e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.6469569458414762
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "forecast-signed excess, top third minus bottom third by |forecast|",
+    "value": -0.0014645737338146439,
+    "passed": false
+  },
+  "counts": {
+    "settlement cases with a non-zero forecast": 1905
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Cases are settlement bars (start 23:00 UTC, close 00:00 UTC) with non-zero forecast and a full 24-bar forward return in-window; coin mean 24-bar return from the non-overlapping 0,24,48,... grid of all its windows; thirds are floor(n/3) cases each by |forecast| (stable sort); slope t = slope / its OLS standard error."
+}

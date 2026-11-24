@@ -1,3 +1,4 @@
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d: inconclusive (fit: exact) [main: -0.00176408; t of the mean -1.38488; cases 576]
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d: not observable (fit: exact) [main: 1.0537; OLS slope t 1.0537; grid bars with forecast > 0 299, grid bars in total 478]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h: inconclusive (fit: exact) [main: 0.0093877; ordinary t of the mean 1.55279; grid cases with a positive forecast 450, grid cases with a zero forecast 279, grid cases in product 729]
+017-05_settlement-move-reverses-after.d3_midnight-settlement-daily-reversal_1h: inconclusive (fit: exact) [main: 6.37131e-05; OLS slope t 0.46091; settlement cases with a non-zero forecast 2151]
