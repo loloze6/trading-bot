@@ -1,1 +1,7 @@
 032-01_choppy-upside-break-fades_1d: inconclusive (fit: exact) [main: -0.00870984; t of the mean, cases clustered by day -0.701913; cases 80, distinct days 67]
+032-02.b1_choppy-downside-break-one-day-rebound_1d: inconclusive (fit: exact) [main: 0.0118898; t of the mean, cases of one day together 1.97942; cases 124, distinct days 94]
+032-02_choppy-downside-break-rebounds_1d: inconclusive (fit: exact) [main: -0.0239138; t of the mean, cases clustered by day -1.26509; cases 50, distinct days 36]
+033-01.b1_range-position-more-coins_1d: inconclusive (fit: exact) [main: 0.000424386; t, same-day cases summed (day-clustered) 1.3861; grid cases 7270, distinct days 617]
+033-01_range-position-drift-follows_1d: inconclusive (fit: exact) [main: 0.000531357; OLS t of slope 3.17411; grid cases across the coins 3419, top fifth cases 684, bottom fifth cases 684]
+033-02_upside-break-continues-rising_1d: confirmed (fit: exact) [main: 0.017468; t of the mean, cases pooled by day 2.04949; distinct case days 284, cases 387]
+033-03_downside-break-continues-falling_1d: inconclusive (fit: exact) [main: 0.00775672; t of the mean, cases on the same day pooled 0.668928; cases 232, distinct days 114]

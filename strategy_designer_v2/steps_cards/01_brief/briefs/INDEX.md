@@ -31,3 +31,4 @@
 031_wide-flat-day-ends-run: After a multi-day run, a wide-range day closing near its open shows the push absorbed; the coin reverses over following days. [bar: 1d]
 031_yearly-low-capitulation-or-exhaustion: Question: near its one-year low, does a coin keep falling as holders capitulate or bounce as sellers run out; do breaks below continue? [bar: 1d]
 032_choppy-market-breakouts-fail: In a choppy market, daily closes beyond the recent range return inside over following days, more so the further they broke, as stop-driven overshoots fade. [bar: 1d]
+033_range-position-predicts-drift: The higher a daily close sits in the coin's recent range, the more it rises over following days, as trend and breakout flows arrive late. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: long and short, source: pattern found by line 7.g in backtest 032-01_choppy-upside-break-fades_1d (idea 032-01_choppy-upside-break-fades, brief 032_choppy-market-breakouts-fail)]

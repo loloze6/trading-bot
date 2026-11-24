@@ -1,1 +1,7 @@
 032-01_choppy-upside-break-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02.b1_choppy-downside-break-one-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02_choppy-downside-break-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+033-01.b1_range-position-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+033-01_range-position-drift-follows_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+033-02_upside-break-continues-rising_1d: 2 ideas (3 explorations)
+033-03_downside-break-continues-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

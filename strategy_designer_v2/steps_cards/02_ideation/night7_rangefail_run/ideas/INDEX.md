@@ -1,2 +1,5 @@
 032-01_choppy-upside-break-fades: In a choppy market, a close above the 20-day high falls over the next 5 days, more the further above. [bar: 1d, profile: choppy]
 032-02_choppy-downside-break-rebounds: In a choppy market, a close below the 20-day low rises over the next 5 days, more the further below. [bar: 1d, profile: choppy]
+033-01_range-position-drift-follows: The higher the close within its 20-day range, the more the coin rises over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: long and short]
+033-02_upside-break-continues-rising: A close above the 20-day high rises over the next 5 days, more the further above. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: long and short]
+033-03_downside-break-continues-falling: A close below the 20-day low falls over the next 5 days, more the further below. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: long and short]

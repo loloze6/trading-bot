@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 032-02.b1_choppy-downside-break-one-day-rebound_1d
+idea tested: 032-02.b1_choppy-downside-break-one-day-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2084 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but just short of the bar: the mean next-day unusual move is +1.19 % with t 1.98 (124 cases on 94 distinct days, threshold 2.0), and the supporting slope on the forecast is positive (+0.0040).
+- **F2:** The one-day horizon is where the rebound lives. In folds B and C the 42 cases (29 days) give an unusual move of +2.98 % (t 2.29) over 1 day, +1.69 % (t 1.11) over 2 days, -0.68 % (t -0.27) over 3 days and -2.17 % (t -0.69) over 5 days, so the rebound is given back after the first day, as the idea says.
+- **F3:** The rebound grows with the depth of the break, as the idea predicts. Ranked by depth below the prior 20-day low, the deepest third (mean depth -10.4 %) gains +4.03 % (t 1.48), the middle third (-3.9 %) +2.85 % (t 1.60) and the shallowest third (-1.5 %) +1.35 % (t 1.18), with about 11 cases each.
+- **F4:** The effect is broad rather than held by one part of the data. Five of the six coins have a positive mean next-day move: BTC +0.91 %, LTC +3.78 %, XMR +2.30 %, XRP +4.43 % and ZEC +5.48 %; only ETH is slightly negative (-0.23 %, on 4 cases). Every year 2018 to 2021 is positive, from +0.49 % to +5.83 %. Each subgroup's t is under 2 only because it holds 4 to 15 cases.
+- **F5:** The choppy profile matters and limits the sample. Down breaks in a falling market (recomputed 60-day trend below -10 %) rebound only +0.19 % next day (t 0.19, 166 cases), while those in a choppy market rebound +1.75 % (17 cases). The situation fired on only 42 of 8,761 coin-bars in folds B and C (0.5 %), so a short t comes from too few cases, not from a weak or mixed effect.
+- **F6:** The move per case is large against the cost of a trade: total +1.46 % and unusual +1.35 % per case, 7.6 and 7.0 times the 0.19 % round-trip cost (strength 0.23 of the usual 4.78 % daily move). What is missing is cases, not size.
+
+## Ideas
+- `032-02.b1.b1_choppy-downside-break-rebound` (from F1, F2, F3, F4, F5, F6): In a choppy market, when a coin's daily close is below the lowest low of its prior 20 days, its price rises over the next day, and the further the close sits below that low, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

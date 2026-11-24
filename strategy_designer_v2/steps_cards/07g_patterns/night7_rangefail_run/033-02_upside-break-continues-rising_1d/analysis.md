@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 033-02_upside-break-continues-rising_1d
+idea tested: 033-02_upside-break-continues-rising
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4688 USD
+---
+## Findings
+- **F1:** Over 5 days the unusual move rises with the close's place in its prior 20-day high-low range: -2.11 % (t -1.15, 96 days) for the 0–0.2 band, -1.12 % (t -1.41) for 0.2–0.4, -0.48 % for 0.4–0.6, +1.12 % (t 1.47) for 0.6–0.8, +2.07 % (t 1.74) for 0.8–1.0 and +5.10 % (t 2.31, 66 cases, 39 days) above the range; the correlation between range place and the unusual move is positive in all six coins (0.10 to 0.18, 285 cases each).
+- **F2:** A close above the 20-day high is followed by an unusual move of +11.95 % over 10 days (t 2.96, 33 cases, 18 days), larger than the +5.10 % over 5 days (t 2.31) and the +1.23 % over 3 days (t 0.93); over 20 days it fades to +3.74 % (t 0.66).
+- **F3:** The book's trades held 5.5 to 10 days earned +15.4 % on average (59 trades) and those held 10 to 20 days earned +20.1 % (32), against +1.8 % for trades of 5.5 days or less (242). The edge after a breakout builds over one to two weeks, beyond the 5-bar hold.
+- **F4:** When the coin's 20-day swing is below its usual level (calmer half of 20-day vs 60-day volatility), the range place is graded at both ends: -3.41 % over 5 days for closes in the 0–0.3 band (t -2.03, 71 days), -0.43 % in the middle, +2.65 % in 0.7–1.0 (t 2.05, 64 days) and +6.57 % above the range (t 2.41, 20 days). In the wilder half the middle bands are flat: -2.43 % (t -1.05) for 0–0.3 and +0.44 % (t 0.31) for 0.7–1.0.
+- **F5:** When the coin is swinging more than usual, a close below its 20-day low is followed by an unusual move of -8.77 % over 5 days (t -4.27, 15 cases, 8 days; the top-third agitation cut gives -8.96 %, t -3.82). The same close in a calmer market is followed by +4.60 % (t 1.35). Below the range overall the move is +1.27 % (t 0.44).
+- **F6:** The book's gain sits in a few days: its best 2 % of days (29) carry 170 % of its total gain, with a mean of +2.82 % against the coins' +7.15 % on those days. Its worst 2 % carry -116 %. Trades on XRP average +20.9 % (50 trades), and those on LTC +0.4 % (63).
+- **F7:** Angles that showed no pattern standing out from chance: the next day's unusual move by weekday (all |t| < 1.6); the 20-day return by decile (not monotone: decile 3 -3.33 %, t -2.64, and decile 7 +4.16 %, t 3.03, with flat deciles between); one-day up shocks of more than 2 usual moves (+4.97 %, t 2.11, below the bar after this many angles).
+
+## Ideas
+- `033-02.g1_upside-break-ten-day-rise` (from F2, F3): When a coin closes above its 20-day high, it rises over the next 10 days, and it rises more the further the close sits above that high.
+- `033-02.g2_calm-market-range-drift` (from F1, F4): In a calm market, the higher a coin's daily close sits within its 20-day high-to-low range, the more it rises over the next 5 days, and the lower it sits, the more it falls, with the largest rises after closes above the range.
+- `033-02.g3_agitated-downside-break-continues` (from F5, F1): In an agitated market, when a coin closes below its 20-day low, it falls over the next 5 days, and it falls more the further the close sits below that low.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

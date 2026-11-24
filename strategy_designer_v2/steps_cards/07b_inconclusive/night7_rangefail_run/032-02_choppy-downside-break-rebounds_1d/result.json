@@ -1,0 +1,39 @@
+{
+  "line": "7.b",
+  "backtest": "032-02_choppy-downside-break-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3762321,
+  "findings": {
+    "F1": "Measured where the test measured it, the effect is on the wrong side: on the book's own break bars, the unusual move is -2.10 % over 5 days (t -0.67, 42 cases, 29 days), close to step 5's -2.39 % (t -1.27, 50 cases, 36 days), so more data at 5 days would not turn it positive.",
+    "F2": "The rebound is there, but only over the next day: on the same break bars the unusual move is +2.98 % over 1 day (t 2.29, 42 cases, 29 days), +1.70 % over 2 days (t 1.12), -0.63 % over 3 days (t -0.26) and -2.10 % over 5 days, so the bounce is given back before the plan's 5-day horizon ends.",
+    "F3": "The 1-day rebound holds on the first bar of each break, without counting repeat bars in the same break: +3.06 % (t 2.16, 38 breaks, 26 days), against -0.79 % over 5 days (t -0.27).",
+    "F4": "The 1-day rebound shows in every year and nearly every coin of folds B and C: by year it is +2.2 %, +0.5 %, +3.5 % and +5.8 % (2018 to 2021, all positive), and by coin it is positive on 5 of 6 (BTC +0.9 %, LTC +3.8 %, XMR +2.3 %, XRP +4.4 %, ZEC +5.5 %; ETH -0.2 % on 4 cases), while the 5-day move flips sign by year (2020 -14.5 %, t -1.85; 2021 +4.8 %).",
+    "F5": "The grading by depth is mixed: over 1 day deeper breaks rank with larger rebounds (Spearman of depth below the low against the 1-day unusual move 0.31, p 0.045), but split in halves, the shallow half has the larger mean (+4.97 %, t 2.16, against +1.00 %, t 1.02). Over 5 days depth has no link to the move (Spearman -0.13, p 0.40), which is why the plan's slope was negative (-0.00098).",
+    "F6": "At 1 day the effect is far larger than a trade's cost: a +2.98 % unusual move per case is about 15 times the 0.19 % cost (the coin's 1-day drift is a few hundredths of a percent). At 5 days the total move of -1.82 % is -9.4 times that cost.",
+    "F7": "Situations are rare: the choppy-market downside break covers 8 % of the coins' days in position and gives only about 40 break bars in folds B and C, so any horizon test on these six coins has few cases."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, when a coin's daily close is below the lowest low of its prior 20 days, its price rises over the next day, and the further the close sits below that low, the larger the rise.",
+      "consequence": "A downside break of the range in a choppy market is a one-day rebound to buy, and the position should be gone before the following days give the rebound back.",
+      "name": "choppy downside break, one-day rebound",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1_choppy-downside-break-one-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

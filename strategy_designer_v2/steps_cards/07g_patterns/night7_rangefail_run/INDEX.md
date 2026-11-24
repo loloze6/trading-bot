@@ -1,1 +1,6 @@
 032-01_choppy-upside-break-fades_1d: 1 ideas, 1 discoveries (2 explorations)
+032-02.b1_choppy-downside-break-one-day-rebound_1d: 2 ideas (2 explorations)
+032-02_choppy-downside-break-rebounds_1d: 2 ideas (3 explorations)
+033-01_range-position-drift-follows_1d: 1 ideas (2 explorations)
+033-02_upside-break-continues-rising_1d: 3 ideas (2 explorations)
+033-03_downside-break-continues-falling_1d: 2 ideas (2 explorations)

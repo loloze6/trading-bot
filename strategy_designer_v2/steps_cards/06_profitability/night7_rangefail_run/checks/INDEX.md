@@ -1,1 +1,7 @@
 032-01_choppy-upside-break-fades_1d: not profitable enough [Sharpe -0.4041; Sharpe minus holding's Sharpe -0.9582; Calmar -0.08326]
+032-02.b1_choppy-downside-break-one-day-rebound_1d: not profitable enough [Sharpe 0.3197; Sharpe minus holding's Sharpe -0.2345; Calmar 0.22]
+032-02_choppy-downside-break-rebounds_1d: not profitable enough [Sharpe -0.2195; Sharpe minus holding's Sharpe -0.7737; Calmar -0.05734]
+033-01.b1_range-position-more-coins_1d: not profitable enough [Sharpe 0.7841; Sharpe minus holding's Sharpe 0.1767; Calmar 0.6099]
+033-01_range-position-drift-follows_1d: not profitable enough [Sharpe 0.6484; Sharpe minus holding's Sharpe 0.09422; Calmar 0.4289]
+033-02_upside-break-continues-rising_1d: not profitable enough [Sharpe 0.8739; Sharpe minus holding's Sharpe 0.3197; Calmar 0.7094]
+033-03_downside-break-continues-falling_1d: not profitable enough [Sharpe 0.2099; Sharpe minus holding's Sharpe -0.3442; Calmar 0.07822]
