@@ -6,3 +6,6 @@
 035-02_rising-market-narrowing-ranges-rise: In rising markets, a coin rises over 3 days, more so the narrower its 14-day average daily range against the prior 90 days'. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
 036-01_scaled-rally-week-continuation: A coin rises over the next 7 days, more so the larger its 3-day return in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 036-02_range-scaled-rally-continuation: A coin rises over the next 7 days, more so the larger its 3-day return in units of 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+037-01_falling-market-wide-day-decline: In falling markets, a coin declines over 3 days, more so the wider its daily range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
+037-02_falling-market-range-jump-decline: In falling markets, a coin declines over 3 days, more so the wider its daily range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
+037-03_falling-market-wide-up-day-decline: In falling markets, an up-closing day declines over 3 days, more so the wider its range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
