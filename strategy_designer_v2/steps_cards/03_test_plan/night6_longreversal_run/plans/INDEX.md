@@ -16,6 +16,7 @@
 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: plan (fit: exact) [XMR, 1d, folds A, B, C, D]
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 031-03.g1.b1.g1_volume-confirmed-two-week-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]

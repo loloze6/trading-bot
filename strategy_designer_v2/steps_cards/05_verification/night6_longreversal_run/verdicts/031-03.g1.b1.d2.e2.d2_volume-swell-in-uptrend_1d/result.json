@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 14-bar excess return on forecast, trending grid cases",
+    "value": 0.0027136146809235953,
+    "statistic": {
+      "name": "day-clustered OLS t of the slope",
+      "value": 1.6475505404679254
+    },
+    "threshold": "t >= 2 (with supporting check) confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 14-bar return of grid cases with forecast > 0 (long)",
+    "value": 0.038723932538286515,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast above 0": 647,
+    "trending grid cases": 1166
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The coin's mean 14-bar return is taken over all its windows' grid bars (every regime), the regime is the recorded one, the day-clustered t uses the usual G/(G-1)*(N-1)/(N-K) correction, and the plan's minimum counts are applied as 'not observable'; in the situation check the 50-day mean comes from the window's closes where 50 bars exist, otherwise from the recorded regime."
+}
