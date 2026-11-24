@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue_1d
+idea tested: 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 3
+cost: 0.5114 USD
+---
+## Findings
+- **F1:** The weekend move after the cases is clearly on the predicted side (+1.41 % unusual move per case, t 3.76, 508 cases on 207 days, strength 0.205), but it does not grow with the forecast. By forecast quartile it is +1.86 %, +1.01 %, +0.86 % and +1.92 %. Inside the cases, the slope on the forecast has t 0.50 (Spearman 0.006, 291 Friday cases on 106 days), so the graded part of the idea is what fails the check.
+- **F2:** The volatility condition neither grades nor gates the effect. Across all Fridays, the unusual weekend move by volatility-ratio quintile is +0.14 %, +0.81 %, +0.20 %, +0.11 % and +0.63 %, with no order. Rising Fridays when volatility is calm earn +0.95 % (t 2.94, 106 days), close to the +1.19 % (t 2.55, 112 days) of rising Fridays when volatility is high. By volatility-ratio quartile, the cases earn +0.65 %, +1.11 %, +2.37 % and +0.84 %.
+- **F3:** The 14-day return does grade the weekend move once all Fridays are used, falls included. By 14-day-return quintile the unusual move is -0.76 %, -0.41 %, +0.67 %, +0.55 % and +1.85 % (t 3.27 in the top quintile). The slope of the weekend move on the 14-day return scaled by its 20-day volatility has t 2.83 (top half minus bottom half +1.41 %, Welch t 4.88, 1,224 cases on 205 days). By cutting the falls away and clipping at 0, the test removed the part of the range that carries the gradient.
+- **F4:** Falling Fridays continue down rather than bounce. When volatility is high they earn -0.80 % (t -1.33, 96 days), and the lowest 14-day-return quintile earns -1.26 % when volatility is high and -0.76 % on all Fridays. The rise and the fall are one continuation effect, not a long-only effect.
+- **F5:** The gain of the cases sits mostly in Saturday (+1.01 %, t 3.42), less in Sunday (+0.49 %, t 2.36). It is spread over the six coins (+0.61 % for BTC to +1.80 % for XRP, all positive) and over the eight years (+0.15 % in 2021 to +2.63 % in 2025, all positive), so the effect is broad rather than confined to one part of the data.
+
+## Ideas
+- `031-01.g1.g1.g2.d1.b1_weekend-continuation-of-two-week-moves` (from F1, F2, F3, F4, F5): A coin's 14-day return at Friday's close (UTC) is followed by a move the same way over Saturday and Sunday, and the larger that 14-day return relative to the coin's 20-day volatility, the larger the weekend move in its direction.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

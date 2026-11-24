@@ -28,22 +28,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend | 031-01.g1.g1.g1_two-week-run-carries-weekend | plan | inconclusive (+1.29) | profitable enough | - | 7.b: 031-01.g1.g1.g1.d1.b1_two-week-rise-carries-weekend, 031-01.g1.g1.g1.d1.b2_two-week-rise-carries-week-end; 7.e: 031-01.g1.g1.g1.d1.e1_two-week-rise-lifts-saturday, 031-01.g1.g1.g1.d1.e2_thursday-rise-foreshadows-saturday, 031-01.g1.g1.g1.d1.e3_four-week-rise-carries-weekend; 7.g: 031-01.g1.g1.g1.d1.g1_two-week-rise-carries-saturday, 031-01.g1.g1.g1.d1.g2_saturday-surge-fades-sunday | 1.41 | 6.9 |
 | 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high | 031-01.g1.g1.g1_two-week-run-carries-weekend | plan | inconclusive (+0.99) | profitable enough | - | 7.b: 031-01.g1.g1.g1.d2.b1_weekend-carry-near-high-more-coins, 031-01.g1.g1.g1.d2.b2_two-week-rise-weekend-carry; 7.e: 031-01.g1.g1.g1.d2.e1_friday-trend-carries-into-saturday, 031-01.g1.g1.g1.d2.e2_weekend-carry-graded-by-trend; 7.g: 031-01.g1.g1.g1.d2.g1_friday-trend-carries-into-saturday | 1.54 | 7.8 |
 | 031-01.g1.g1.g2_volatile-weekends-follow-trend | 031-01.g1.g1_midweek-run-carries-into-saturday | plan | confirmed (+3.35) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue; 7.g: 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend, 031-01.g1.g1.g2.g2_calm-volatility-short-term-trend | 1.35 | 6.5 |
+| 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue | 031-01.g1.g1.g2_volatile-weekends-follow-trend | plan | inconclusive (+3.75) | profitable enough | - | 7.b: 031-01.g1.g1.g2.d1.b1_weekend-continuation-of-two-week-moves; 7.e: 031-01.g1.g1.g2.d1.e1_late-week-momentum-into-weekend, 031-01.g1.g1.g2.d1.e2_friday-rise-weekend-continuation; 7.g: 031-01.g1.g1.g2.d1.g1_late-week-scaled-momentum-continues, 031-01.g1.g1.g2.d1.g2_scaled-friday-rise-into-weekend | 1.79 | 7.4 |
 
 ## Consumption
-24 ideas, 27.55 USD, 174.9 minutes in all.
+25 ideas, 29.34 USD, 182.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.35 | 15.0 |
-| step4_backtest | 0.00 | 77.0 |
-| step5_verdict | 4.30 | 15.8 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 2.44 | 15.6 |
+| step4_backtest | 0.00 | 78.5 |
+| step5_verdict | 4.50 | 16.6 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.4 |
-| step7_7.e | 1.15 | 3.9 |
+| step7_7.e | 1.55 | 5.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 1.35 | 4.2 |
 | step7_7.d | 2.85 | 9.0 |
-| step7_7.b | 4.55 | 13.8 |
-| step7_7.g | 11.01 | 33.1 |
+| step7_7.b | 5.07 | 15.2 |
+| step7_7.g | 11.59 | 34.8 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 1.8 |

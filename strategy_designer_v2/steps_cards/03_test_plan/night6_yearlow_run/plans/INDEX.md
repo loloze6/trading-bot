@@ -4,6 +4,7 @@
 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g1.g1_two-week-run-carries-weekend_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-01.g1.g1.g2.d1_volatile-rising-weekends-continue_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
