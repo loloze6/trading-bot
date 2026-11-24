@@ -4,6 +4,7 @@
 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01.g1.g1.g1.g1_two-week-run-carries-saturday_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g1.g2_thursday-run-carries-two-days_1d: 1 ideas (2 explorations)
 031-01.g1.g1.g1_two-week-run-carries-weekend_1d: 2 ideas (3 explorations)
 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
