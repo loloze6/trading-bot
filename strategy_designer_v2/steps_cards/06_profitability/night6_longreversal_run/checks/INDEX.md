@@ -1,3 +1,4 @@
+031-01.g1_sharp-drop-next-day-bounce_1d: not profitable enough [Sharpe 0.7209; Sharpe minus holding's Sharpe 0.1668; Calmar 0.6357]
 031-01_extreme-rise-partly-reverses_1d: not profitable enough [Sharpe -0.826; Sharpe minus holding's Sharpe -1.408; Calmar -0.2948]
 031-02.b1.b1.b1_steadied-falls-rebound-most_1d: not profitable enough [Sharpe -0.4357; Sharpe minus holding's Sharpe -1.027; Calmar -0.1184]
 031-02.b1.b1_deepest-falls-rebound-most_1d: not profitable enough [Sharpe 0.7101; Sharpe minus holding's Sharpe 0.1773; Calmar 0.391]

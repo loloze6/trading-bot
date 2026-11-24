@@ -1,3 +1,4 @@
+031-01.g1_sharp-drop-next-day-bounce_1d: confirmed (fit: exact) [main: 0.000397677; day-clustered t of slope 2.62617; bars with forecast > 0 8514, distinct days 2199]
 031-01_extreme-rise-partly-reverses_1d: inconclusive (fit: adapted) [main: -0.0427264; t of the mean, cases of one day taken together -1.01624; cases 146, distinct days 111]
 031-02.b1.b1.b1_steadied-falls-rebound-most_1d: inconclusive (fit: adapted) [main: -0.00417528; OLS slope t -1.32522; cases 89, cases forecast > 0 19, cases forecast < 0 70, active bars 3113]
 031-02.b1.b1_deepest-falls-rebound-most_1d: inconclusive (fit: adapted) [main: 0.0360457; t of the mean, clustered by day 0.990669; cases 145, distinct days 97]

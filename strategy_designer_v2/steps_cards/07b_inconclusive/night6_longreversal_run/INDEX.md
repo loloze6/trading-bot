@@ -1,3 +1,4 @@
+031-01.g1_sharp-drop-next-day-bounce_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01_extreme-rise-partly-reverses_1d: no ideas: The result sits on the continuation side but cannot be told from zero, and it rests on a few large outliers (F1). No coin, period, recent path, horizon or forecast size shows the predicted reversal (F2–F4), so there is no part of the data to narrow the idea to and no continuation effect large enough to propose instead.
 031-02.b1.b1.b1_steadied-falls-rebound-most_1d: 1 ideas (2 explorations)
 031-02.b1.b1_deepest-falls-rebound-most_1d: 1 ideas (2 explorations)

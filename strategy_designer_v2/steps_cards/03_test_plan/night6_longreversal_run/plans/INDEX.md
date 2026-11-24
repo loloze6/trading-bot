@@ -1,3 +1,4 @@
+031-01.g1_sharp-drop-next-day-bounce_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-01_extreme-rise-partly-reverses_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-02.b1.b1.b1_steadied-falls-rebound-most_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, 1d, folds A, B, C, D]
 031-02.b1.b1_deepest-falls-rebound-most_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, 1d, folds A, B, C, D]
