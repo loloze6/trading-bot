@@ -4,6 +4,7 @@
 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d: inconclusive (fit: adapted) [main: 0.00043925; slope t, clustered by day 1.29301; cases with forecast > 0 1215, distinct Fridays 319]
 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: inconclusive (fit: adapted) [main: 0.000451213; slope t, deviations summed per day (day-clustered) 0.987292; cases 1192, distinct Fridays 317]
 031-01.g1.g1.g1_two-week-run-carries-weekend_1d: confirmed (fit: exact) [main: 0.00609448; t of the mean, cases of one Friday summed across coins 2.97011; distinct Fridays 410, Friday cases (coin x Friday) 2454]
+031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: confirmed (fit: exact) [main: 0.0429135; t of the mean over days 3.35189; distinct Fridays with cases 317, cases 1103, high-volatility Fridays in slope 979, other Fridays in slope 1193]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: confirmed (fit: adapted) [main: 0.00545422; t of the mean, cases of one date summed 3.31152; distinct Fridays with cases 414, cases 2476, regression cases 2459]
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: confirmed (fit: exact) [main: 0.00835242; t of the weighted mean, cases of one day summed 2.88957; cases 1180, days 316]
 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday_1d: inconclusive (fit: adapted) [main: 0.0775323; t of the mean, cases of the same Friday summed 2.58276; cases 1155, distinct Fridays 314]
