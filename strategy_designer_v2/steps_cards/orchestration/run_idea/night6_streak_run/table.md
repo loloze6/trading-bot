@@ -15,22 +15,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03_up-streak-length-continuation | - | plan | inconclusive (+1.43) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 031-03.b1_up-streak-continuation-more-coins; 7.g: 031-03.g1_large-up-day-continuation, 031-03.g2_fast-large-up-day-drift | 0.85 | 5.9 |
 | 031-04_down-streak-length-continuation | - | plan | inconclusive (-0.18) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The test's result is zero (t -0.18) rather than short of the bar, and no coin, year, trend regime, horizon or streak length shows a graded down-streak continuation (F1–F6). So the clear answer is that, in these coins' daily bars, down streaks are not followed by further falls, and the one stray up-streak cell (F7) is too isolated to support an idea.; 7.g: 031-04.g1_one-day-volatility-scaled-reversal, 031-04.g2_run-depth-short-horizon-reversal | 0.84 | 6.1 |
 | 031-01.b1_up-streak-reversal-more-coins | 031-01_up-streak-length-reversal | plan | inconclusive (+0.87) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The test already used every coin and all four folds, so no more daily data is available. The effect is not clearly present in any one part of the data and graded with streak length there (F2, F4, F6, F7). The only significant reading is a 1-day reversal after a single up close (F3, F5), which does not grow with the streak, so no graded idea rests on it.; 7.g: no ideas: Across roughly 90 groupings over 3 rounds (streak length and sign, run size, day's move, 5- and 20-day returns, volatility regime, weekday, year, coin and forecast quartile), the one |t| above 2 (-2.52) was ungraded and sat between neighbours of the opposite sign, which is what chance produces among that many looks. The book's loss is simply the cost of being short a rising market (F1), so no pattern stands out enough to support an idea. | 1.05 | 10.9 |
+| 031-03.b1_up-streak-continuation-more-coins | 031-03_up-streak-length-continuation | plan | inconclusive (+0.54) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1_up-streak-continuation-in-uptrend; 7.g: no ideas: Across about fifteen angles (streak length on both sides, past returns, volatility, daily range absolute and relative, move size by sign, weekday, year, the book's extreme days), the strongest pattern is that a wide range relative to the coin's last 20 days precedes a higher 5-day move, but its pooled t is only 1.81. After that many looks it cannot be told apart from chance, so no finding supports a new idea. | 1.07 | 10.6 |
 
 ## Consumption
-11 ideas, 9.92 USD, 61.6 minutes in all.
+12 ideas, 10.99 USD, 72.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.75 | 5.8 |
-| step4_backtest | 0.00 | 28.8 |
-| step5_verdict | 1.52 | 5.4 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 1.83 | 6.3 |
+| step4_backtest | 0.00 | 36.1 |
+| step5_verdict | 1.72 | 6.1 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.45 | 1.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 2.27 | 7.0 |
-| step7_7.g | 3.93 | 11.1 |
+| step7_7.b | 2.65 | 8.0 |
+| step7_7.g | 4.34 | 12.2 |
 | similarity_check | 0.00 | 0.1 |
 | unseen_test | 0.00 | 0.9 |
