@@ -9031,34 +9031,16 @@ class VolatilityRatioWeightedScaledFallComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.vol_period, self.base_vol_period) + 1
-    A return weighted by recent volatility against the volatility of an earlier stretch, on every bar:
-        R       = (close[t] / close[t - period] - 1) x 100
-        r[j]    = close[j] / close[j-1] - 1
-        s_recent = std (ddof 1) of r[j], j = t - vol_period + 1 .. t
-        s_base   = std (ddof 1) of r[j], j = t - base_lag - base_period + 1 .. t - base_lag
-        raw_value = R x s_recent / s_base
-    Range & sign: unbounded, signed like the period-bar return (0 when it is 0). The size grows with the move and
-    with s_recent / s_base (0 and up, 1 when the two volatilities are equal). At the defaults (48, 48, 168, 48)
-    the recent returns are those of bars t-47 .. t and the base those of bars t-215 .. t-48, adjacent and not
-    overlapping.
-    Warm-up: max(period, vol_period, base_lag + base_period) + 1 rows (217 at the defaults), bar t included.
-    NaN: a NaN close, or a close not above 0, in those rows gives NaN; s_base = 0 gives NaN (never on real bars).
-    Building raises for period < 1, vol_period < 2, base_period < 2, base_lag < 0.
-    base_lag + base_period) + 1 rows of data, the last of which is bar t; no row after bar t is read.
-                f"RecentToPriorVolatilityWeightedReturnComponent: vol_period must be >= 2, got {self.vol_period}")
-                f"RecentToPriorVolatilityWeightedReturnComponent: base_period must be >= 2, got {self.base_period}")
-                f"RecentToPriorVolatilityWeightedReturnComponent: base_lag must be >= 0, got {self.base_lag}")
-        n = len(r)
-        recent = r[n - self.vol_period:]
-        base = r[n - self.base_lag - self.base_period: n - self.base_lag]
-        ret = (c[-1] / c[-1 - self.period] - 1.0) * 100.0
-            self._raw_value = float(ret * s_recent / s_base)
-        self.debug_info = {"return_pct": float(ret), "s_recent": s_recent, "s_base": s_base}
+
+
 class RiseTimesRangeMultipleComponent(SubStrategyComponent):
+    """
     A rise times the current bar's range in multiples of its average bar range, on every bar:
+
         R    = max(0, close[t] / close[t - rise_period] - 1) x 100
         M    = (high[t] - low[t]) / mean(high[i] - low[i], i = t - range_period + 1 .. t)   (bar t included)
         raw_value = R x M          (0.0 when the mean range is 0)
+
     Range and sign: 0 and up, unbounded above, never negative, no direction. The value is 0 when the
     rise_period-bar return is 0 or negative, and 0 for a zero-range bar t. M is at most range_period,
     because the mean includes bar t. The value grows with the rise and with how wide bar t is against
@@ -9068,25 +9050,55 @@ class RiseTimesRangeMultipleComponent(SubStrategyComponent):
     rows, gives NaN, whatever the sign of the move. A close[t - rise_period] not above 0 gives NaN
     (never on real bars). A mean range of 0 gives 0.0, because the range of bar t is then 0 too.
     Building the component raises for a rise_period below 1 or a range_period below 2.
+
     WHY THIS CANNOT LEAK: it reads close[t] and close[t - rise_period], and the high and low of the
     last range_period rows ending at bar t (the last row of data). All of them are known at bar t's close.
+    """
+
     def __init__(self, name="RiseTimesRangeMultiple", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
         self.rise_period = int(self.parameters.get("rise_period", 5))
+        if self.rise_period < 1:
             raise ValueError(f"RiseTimesRangeMultipleComponent: rise_period must be >= 1, got {self.rise_period}")
         self.range_period = int(self.parameters.get("range_period", 20))
         if self.range_period < 2:
             raise ValueError(f"RiseTimesRangeMultipleComponent: range_period must be >= 2, got {self.range_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].astype(float).to_numpy()
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
         c_t = close[-1]
         c_b = close[-(self.rise_period + 1)]
         h = high[-self.range_period:]
         lo = low[-self.range_period:]
         if np.isnan(c_t) or np.isnan(c_b) or np.isnan(h).any() or np.isnan(lo).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
         if not c_b > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
         rise = max(0.0, c_t / c_b - 1.0) * 100.0
         ranges = h - lo
+        mean_range = float(ranges.mean())
         if mean_range == 0.0:
             mult = 0.0
+        else:
             mult = float(ranges[-1]) / mean_range
         self._raw_value = float(rise * mult)
+        self.confidence = 1.0
         self.debug_info = {'rise_pct': rise, 'range_multiple': mult, 'mean_range': mean_range}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
         return max(self.rise_period + 1, self.range_period)
