@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.0,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean excess next-day return of forecast>0 cases",
+    "value": null,
+    "statistic": null,
+    "threshold": "> 0 with t >= 2 to confirm (slope > 0), t <= -2 to reject, over at least 30 distinct days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 0,
+    "distinct case days": null
+  },
+  "decided_by": "Only 0.0% of the bars with a non-zero forecast are long bars on a day whose return ranks in the bottom 5 % of the coin's past daily returns, below the 90 % needed.",
+  "reading": "The rank is recomputed from close-to-close returns inside each window over the past returns available (current included, share of returns at or above it >= 0.95), and where fewer than 20 past returns are visible the recorded regime plus a down day stands for it; the t is the case mean over a standard error with each day's deviations summed into one, and the mean daily return per coin is over all its windows."
+}

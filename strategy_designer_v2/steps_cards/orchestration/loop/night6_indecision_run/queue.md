@@ -1,27 +1,27 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 30.82 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 31.53 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 031-02.g1.b1_deep-down-day-bounce-more-coins | 7.b | 2 | 0.2778 | 0.0926 | candidate |
-| 2 | 031-02.g1.b2_volatile-coins-bounce-after-capitulation | 7.b | 2 | 0.2778 | 0.0926 | candidate |
-| 3 | 031-04.g1_close-at-low-fall-rebounds | 7.g | 1 | 0.1121 | 0.0561 | candidate |
-| 4 | 031-04.g2_sharp-daily-fall-reverses | 7.g | 1 | 0.1121 | 0.0561 | candidate |
-| 5 | 031-01.b1.b2.b2.b1_wide-run-more-coins | 7.b | 4 | 0.2778 | 0.0556 | candidate |
-| 6 | 031-01.b1.b2.b2.b2_wide-run-ten-day-follow-through | 7.b | 4 | 0.2778 | 0.0556 | candidate |
-| 7 | 031-02.b1.b1.b1.d2.g1.b1_wide-high-close-day-continuation | 7.b | 6 | 0.2778 | 0.0397 | candidate |
-| 8 | 031-02.b1.b1.b1.d2.g1.b2_uptrend-wide-day-breakout-continuation | 7.b | 6 | 0.2778 | 0.0397 | candidate |
-| 9 | 031-01.b2.g1_wide-down-day-rejected-rebound | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 10 | 031-02.b1.g1_strong-up-day-carries-forward | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 11 | 031-02.g1.g1_volatile-coin-down-day-bounce | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 12 | 031-02.b1.g2_wide-strong-day-continues-run | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 13 | 031-02.g1.g2_expanded-volatility-down-day-bounce | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 14 | 031-02.b1.g3_deep-down-day-partial-rebound | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 15 | 031-01.g1.g1_large-range-low-close-rebounds | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 16 | 031-01.g1.g2_volatility-scales-wide-low-rebound | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 17 | 031-01.g1.g3_high-close-in-downtrend-fades | 7.g | 2 | 0.1121 | 0.0374 | candidate |
-| 18 | 031-02.b1.b1.g1_wide-day-extends-up-run | 7.g | 3 | 0.1121 | 0.028 | candidate |
+| 1 | 031-02.g1.b2_volatile-coins-bounce-after-capitulation | 7.b | 2 | 0.2756 | 0.0919 | candidate |
+| 2 | 031-04.g1_close-at-low-fall-rebounds | 7.g | 1 | 0.1121 | 0.0561 | candidate |
+| 3 | 031-04.g2_sharp-daily-fall-reverses | 7.g | 1 | 0.1121 | 0.0561 | candidate |
+| 4 | 031-01.b1.b2.b2.b1_wide-run-more-coins | 7.b | 4 | 0.2756 | 0.0551 | candidate |
+| 5 | 031-01.b1.b2.b2.b2_wide-run-ten-day-follow-through | 7.b | 4 | 0.2756 | 0.0551 | candidate |
+| 6 | 031-02.b1.b1.b1.d2.g1.b1_wide-high-close-day-continuation | 7.b | 6 | 0.2756 | 0.0394 | candidate |
+| 7 | 031-02.b1.b1.b1.d2.g1.b2_uptrend-wide-day-breakout-continuation | 7.b | 6 | 0.2756 | 0.0394 | candidate |
+| 8 | 031-01.b2.g1_wide-down-day-rejected-rebound | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 9 | 031-02.b1.g1_strong-up-day-carries-forward | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 10 | 031-02.g1.g1_volatile-coin-down-day-bounce | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 11 | 031-02.b1.g2_wide-strong-day-continues-run | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 12 | 031-02.g1.g2_expanded-volatility-down-day-bounce | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 13 | 031-02.b1.g3_deep-down-day-partial-rebound | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 14 | 031-01.g1.g1_large-range-low-close-rebounds | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 15 | 031-01.g1.g2_volatility-scales-wide-low-rebound | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 16 | 031-01.g1.g3_high-close-in-downtrend-fades | 7.g | 2 | 0.1121 | 0.0374 | candidate |
+| 17 | 031-02.b1.b1.g1_wide-day-extends-up-run | 7.g | 3 | 0.1121 | 0.028 | candidate |
+| 18 | 031-02.g1.b1.g1_wide-range-day-precedes-rise | 7.g | 3 | 0.1121 | 0.028 | candidate |
 | 19 | 031-02.b1.b1.g2_strong-up-day-continues-run | 7.g | 3 | 0.1121 | 0.028 | candidate |
 | 20 | 031-02.b1.b2.g1_wide-day-extends-rising-run | 7.g | 3 | 0.1121 | 0.028 | candidate |
 | 21 | 031-01.g1.d1.g1_low-close-rebounds-when-volatile | 7.g | 3 | 0.1121 | 0.028 | candidate |
@@ -54,24 +54,25 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-02_wide-flat-day-ends-downrun | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-0.52); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 031-03_uprun-size-scales-wide-flat-reversal | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-1.00); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
 | - | 031-04_downrun-size-scales-wide-flat-reversal | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-0.55); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
-| - | 031-01.b1_wide-day-extends-up-run | 7.b | 1 | 0.2778 | 0.1389 | tested: step 5 inconclusive (+1.43); step 6 profitable enough |
-| - | 031-01.b2_wide-doji-continues-strong-run | 7.b | 1 | 0.2778 | 0.1389 | tested: step 5 mismatch; step 6 not profitable enough (failed: Calmar, Trades per day) |
+| - | 031-01.b1_wide-day-extends-up-run | 7.b | 1 | 0.2756 | 0.1378 | tested: step 5 inconclusive (+1.43); step 6 profitable enough |
+| - | 031-01.b2_wide-doji-continues-strong-run | 7.b | 1 | 0.2756 | 0.1378 | tested: step 5 mismatch; step 6 not profitable enough (failed: Calmar, Trades per day) |
 | - | 031-01.g1_wide-day-low-close-rebounds | 7.g | 1 | 0.1121 | 0.0561 | tested: step 5 confirmed (+3.59); step 6 not profitable enough (failed: Calmar) |
-| - | 031-02.b1_wide-flat-day-continues-uprun | 7.b | 1 | 0.2778 | 0.1389 | tested: step 5 inconclusive (+0.92); step 6 not profitable enough (failed: Calmar, Trades per day) |
+| - | 031-02.b1_wide-flat-day-continues-uprun | 7.b | 1 | 0.2756 | 0.1378 | tested: step 5 inconclusive (+0.92); step 6 not profitable enough (failed: Calmar, Trades per day) |
 | - | 031-02.g1_extreme-down-day-next-day-bounce | 7.g | 1 | 0.1121 | 0.0561 | tested: step 5 inconclusive (+1.30); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
-| - | 031-03.b1_wide-day-extends-up-run | 7.b | 1 | 0.2778 | 0.1389 | tested: step 5 confirmed (+2.54); step 6 profitable enough  GOAL REACHED |
-| - | 031-01.b1.b1_wide-day-extends-run-more-coins | 7.b | 2 | 0.2778 | 0.0926 | tested: step 5 confirmed (+2.16); step 6 profitable enough  GOAL REACHED |
-| - | 031-01.b1.b2_wide-day-extends-strong-run | 7.b | 2 | 0.2778 | 0.0926 | tested: step 5 inconclusive (+0.76); step 6 not profitable enough (failed: Calmar) |
+| - | 031-03.b1_wide-day-extends-up-run | 7.b | 1 | 0.2756 | 0.1378 | tested: step 5 confirmed (+2.54); step 6 profitable enough  GOAL REACHED |
+| - | 031-01.b1.b1_wide-day-extends-run-more-coins | 7.b | 2 | 0.2756 | 0.0919 | tested: step 5 confirmed (+2.16); step 6 profitable enough  GOAL REACHED |
+| - | 031-01.b1.b2_wide-day-extends-strong-run | 7.b | 2 | 0.2756 | 0.0919 | tested: step 5 inconclusive (+0.76); step 6 not profitable enough (failed: Calmar) |
 | - | 031-01.b1.e1_strong-run-continues-three-days | 7.e | 2 | 0.7241 | 0.2414 | tested: step 5 confirmed (+4.38); step 6 profitable enough  GOAL REACHED |
 | - | 031-01.b1.e2_wide-day-in-strong-run | 7.e | 2 | 0.7241 | 0.2414 | tested: step 5 confirmed (+2.85); step 6 profitable enough  GOAL REACHED |
 | - | 031-01.g1.d1_rebound-grows-with-volatility | 7.d | 2 | 0.2482 | 0.0827 | tested: step 5 confirmed (+3.59); step 6 profitable enough  GOAL REACHED |
 | - | 031-01.g1.d2_wide-low-close-in-volatile-coins | 7.d | 2 | 0.2482 | 0.0827 | tested: step 5 confirmed (+3.70); step 6 profitable enough  GOAL REACHED |
 | - | 031-01.g1.d3_deeper-wide-day-fall-rebounds-more | 7.d | 2 | 0.2482 | 0.0827 | tested: step 5 confirmed (+2.93); step 6 profitable enough  GOAL REACHED |
-| - | 031-02.b1.b1_wide-flat-uprun-more-coins | 7.b | 2 | 0.2778 | 0.0926 | tested: step 5 inconclusive (+1.29); step 6 not profitable enough (failed: Calmar, Trades per day) |
-| - | 031-02.b1.b2_flat-day-after-strong-rise | 7.b | 2 | 0.2778 | 0.0926 | tested: step 5 confirmed (+2.22); step 6 profitable enough  GOAL REACHED |
-| - | 031-01.b1.b2.b1_wide-day-strong-run-more-coins | 7.b | 3 | 0.2778 | 0.0694 | tested: step 5 confirmed (+2.49); step 6 profitable enough  GOAL REACHED |
-| - | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | 7.b | 3 | 0.2778 | 0.0694 | tested: step 5 inconclusive (+0.68); step 6 profitable enough |
-| - | 031-02.b1.b1.b1_wide-flat-uprun-three-day | 7.b | 3 | 0.2778 | 0.0694 | tested: step 5 confirmed (+3.03); step 6 not profitable enough (failed: Trades per day) |
+| - | 031-02.b1.b1_wide-flat-uprun-more-coins | 7.b | 2 | 0.2756 | 0.0919 | tested: step 5 inconclusive (+1.29); step 6 not profitable enough (failed: Calmar, Trades per day) |
+| - | 031-02.b1.b2_flat-day-after-strong-rise | 7.b | 2 | 0.2756 | 0.0919 | tested: step 5 confirmed (+2.22); step 6 profitable enough  GOAL REACHED |
+| - | 031-02.g1.b1_deep-down-day-bounce-more-coins | 7.b | 2 | 0.2756 | 0.0919 | tested: step 5 mismatch; step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
+| - | 031-01.b1.b2.b1_wide-day-strong-run-more-coins | 7.b | 3 | 0.2756 | 0.0689 | tested: step 5 confirmed (+2.49); step 6 profitable enough  GOAL REACHED |
+| - | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | 7.b | 3 | 0.2756 | 0.0689 | tested: step 5 inconclusive (+0.68); step 6 profitable enough |
+| - | 031-02.b1.b1.b1_wide-flat-uprun-three-day | 7.b | 3 | 0.2756 | 0.0689 | tested: step 5 confirmed (+3.03); step 6 not profitable enough (failed: Trades per day) |
 | - | 031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days | 7.e | 4 | 0.7241 | 0.1448 | tested: step 5 confirmed (+2.46); step 6 not profitable enough (failed: Calmar) |
 | - | 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues | 7.e | 4 | 0.7241 | 0.1448 | tested: step 5 confirmed (+3.73); step 6 profitable enough  GOAL REACHED |
 | - | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day | 7.d | 4 | 0.2482 | 0.0496 | tested: step 5 confirmed (+3.30); step 6 profitable enough  GOAL REACHED |
