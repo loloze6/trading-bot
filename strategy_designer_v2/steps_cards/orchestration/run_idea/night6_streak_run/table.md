@@ -7,7 +7,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02_down-streak-length-reversal | - | plan | inconclusive (-1.27) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1_sharp-daily-fall-rebounds; 7.g: no ideas: The streak length, the past returns, the volatility, the range, the weekday, the year and the book's extreme days all leave no pattern that stands out. Across about 60 groupings the best t's are 2.0 to 2.7, isolated and not graded (F3–F6). The book's profit is the coins' drift held 96 % of the time (F1, F2), not a new effect. | 1.02 | 5.7 |
 | 031-02.b1_sharp-daily-fall-rebounds | 031-02_down-streak-length-reversal | plan | confirmed (+2.28) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.b1.d1_sharp-fall-rebounds-in-turbulence, 031-02.b1.d2_rebound-graded-by-turbulence; 7.g: 031-02.b1.g1_long-up-streaks-keep-rising, 031-02.b1.g2_volatile-falls-rebound-harder | 1.06 | 5.8 |
 | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence | 031-02.b1_sharp-daily-fall-rebounds | plan | confirmed (+2.06) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 031-02.b1.d1.g1_dip-rebound-grows-with-turbulence, 031-02.b1.d1.g2_long-up-runs-keep-rising | 0.61 | 4.7 |
-| 031-02.b1.d2_rebound-graded-by-turbulence | 031-02.b1_sharp-daily-fall-rebounds | missing-components | - | - | - | - | 0.08 | 0.5 |
 | 031-02.b1.g1_long-up-streaks-keep-rising | 031-02.b1_sharp-daily-fall-rebounds | missing-components | - | - | - | - | 0.05 | 0.2 |
 | 031-02.b1.g2_volatile-falls-rebound-harder | 031-02.b1_sharp-daily-fall-rebounds | plan | inconclusive (+1.47) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1.g2.b1_volatile-falls-more-coins, 031-02.b1.g2.b2_unusually-large-falls-rebound, 031-02.b1.g2.b3_next-day-rebound-after-falls; 7.g: 031-02.b1.g2.g1_strong-rises-keep-running | 1.19 | 5.4 |
 | 031-02.b1.g2.b1_volatile-falls-more-coins | 031-02.b1.g2_volatile-falls-rebound-harder | plan | inconclusive (+1.33) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1.g2.b1.b1_volatile-falls-next-day-rebound, 031-02.b1.g2.b1.b2_deep-fall-next-day-rebound; 7.g: no ideas: Across about seventy cells of forecast, streak, past-return, volatility, weekday, year and book-tail splits, no pattern stands out from chance once that many looks are counted. The best candidate, 20-day continuation over 10 days (F4), drops to a |t| of about 1 on most grid offsets and flips sign between years. The book's profit is the coins' own rise held at about 0.43 (F1), which leaves no new effect to propose. | 1.26 | 10.0 |
@@ -23,22 +22,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.b1.b1.e2_short-trend-strength-continuation | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | inconclusive (+1.98) | profitable enough | - | 7.b: 031-03.b1.b1.e2.b1_scaled-rise-ten-day-continuation; 7.e: 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues, 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation; 7.g: 031-03.b1.b1.e2.g1_month-scaled-trend-continuation, 031-03.b1.b1.e2.g2_one-day-fall-rebound | 1.58 | 11.7 |
 | 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues | 031-03.b1.b1.e2_short-trend-strength-continuation | plan | confirmed (+2.65) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: no ideas: Beyond the tested idea itself (F1 to F3), the patterns I found cannot be told from chance given how many angles I looked at. These are the short rebound after scaled falls (F6, t 2.1, not graded), the Friday and Saturday returns (F8, not graded, fading after 2021) and the earlier-in-regime edge (F5, t 1.9). I also looked at streak length, volatility level, the 3-day and 30-day scaled returns, years, regime age, trade duration and entry forecast, and the book around its best and worst days, and none of them supports a new graded idea. | 0.79 | 11.7 |
 | 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation | 031-03.b1.b1.e2_short-trend-strength-continuation | plan | confirmed (+2.71) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-03.b1.b1.e2.e2.g1_extreme-rise-ten-day-continuation | 0.92 | 11.7 |
+| 031-02.b1.d2_rebound-graded-by-turbulence | 031-02.b1_sharp-daily-fall-rebounds | plan | confirmed (+2.78) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.b1.d2.d1_rebound-only-in-turbulence, 031-02.b1.d2.d2_turbulent-rebound-held-longer, 031-02.b1.d2.d3_rebound-held-two-days-only; 7.g: 031-02.b1.d2.g1_one-day-rebound-after-unusual-fall, 031-02.b1.d2.g2_turbulent-fall-one-day-rebound | 1.16 | 6.4 |
 
 ## Consumption
-19 ideas, 19.23 USD, 143.9 minutes in all.
+19 ideas, 20.30 USD, 149.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.41 | 9.7 |
-| step4_backtest | 0.00 | 73.6 |
-| step5_verdict | 2.93 | 10.0 |
+| step3_plan | 2.48 | 10.1 |
+| step4_backtest | 0.00 | 75.5 |
+| step5_verdict | 3.09 | 10.6 |
 | step6_check | 0.00 | 1.0 |
-| chart_files | 0.00 | 0.3 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.88 | 2.9 |
+| step7_7.d | 1.32 | 4.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 1.15 | 3.3 |
 | step7_7.b | 4.01 | 11.9 |
-| step7_7.g | 7.85 | 22.5 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.g | 8.26 | 23.8 |
+| similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 8.3 |
