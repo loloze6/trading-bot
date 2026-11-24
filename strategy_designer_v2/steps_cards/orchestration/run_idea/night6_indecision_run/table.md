@@ -38,22 +38,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.g1_extreme-down-day-next-day-bounce | 031-02_wide-flat-day-ends-downrun | plan | inconclusive (+1.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 031-02.g1.b1_deep-down-day-bounce-more-coins, 031-02.g1.b2_volatile-coins-bounce-after-capitulation; 7.g: 031-02.g1.g1_volatile-coin-down-day-bounce, 031-02.g1.g2_expanded-volatility-down-day-bounce | 1.02 | 5.4 |
 | 031-02.g1.b1_deep-down-day-bounce-more-coins | 031-02.g1_extreme-down-day-next-day-bounce | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.g: 031-02.g1.b1.g1_wide-range-day-precedes-rise | 0.71 | 8.8 |
 | 031-02.g1.b2_volatile-coins-bounce-after-capitulation | 031-02.g1_extreme-down-day-next-day-bounce | plan | confirmed (+2.21) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.g1.b2.d1_capitulation-ending-prior-decline, 031-02.g1.b2.d2_repeated-capitulation-days-bounce, 031-02.g1.b2.d3_depth-graded-capitulation-bounce; 7.g: 031-02.g1.b2.g1_low-close-down-day-bounce, 031-02.g1.b2.g2_dip-in-uptrend-rebounds, 031-02.g1.b2.g3_deeper-selloff-larger-bounce | 1.30 | 6.3 |
+| 031-04.g1_close-at-low-fall-rebounds | 031-04_downrun-size-scales-wide-flat-reversal | plan | confirmed (+2.60) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 031-04.g1.d1_close-at-low-after-a-run, 031-04.g1.d2_run-end-rebound-three-days; 7.g: no ideas: Across roughly thirty angles, no pattern beyond the tested idea stood out enough. The tested angles were the forecast's close location, the size of the fall, the 3- and 5-day horizons, wide flat days in runs, volatility level absolute and relative, weekday, the prior run and year. No result reached a t near 3, and the few near 2 were either not graded (F3, F4), changed sign across years (F5), or vanished under a relative measure (F6). | 1.06 | 5.6 |
 
 ## Consumption
-34 ideas, 32.66 USD, 249.5 minutes in all.
+35 ideas, 33.72 USD, 255.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.69 | 20.3 |
-| step4_backtest | 0.00 | 111.3 |
-| step5_verdict | 6.05 | 21.3 |
+| step3_plan | 4.78 | 20.9 |
+| step4_backtest | 0.00 | 113.0 |
+| step5_verdict | 6.21 | 21.9 |
 | step6_check | 0.00 | 1.3 |
 | chart_files | 0.00 | 0.6 |
 | step7_7.a | 0.00 | 0.1 |
-| step7_7.d | 1.89 | 6.1 |
+| step7_7.d | 2.29 | 7.4 |
 | step7_7.e | 0.81 | 2.5 |
 | step7_7.c | 0.00 | 0.1 |
 | step7_7.b | 4.32 | 12.2 |
-| step7_7.g | 14.90 | 44.0 |
+| step7_7.g | 15.32 | 45.4 |
 | similarity_check | 0.00 | 1.1 |
 | unseen_test | 0.00 | 28.7 |

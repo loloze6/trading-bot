@@ -31,4 +31,5 @@
 031-02_wide-flat-day-ends-downrun_1d: not profitable enough [Sharpe 0.04913; Sharpe minus holding's Sharpe -0.505; Calmar 0.001187]
 031-03.b1_wide-day-extends-up-run_1d: profitable enough [Sharpe 1.03; Sharpe minus holding's Sharpe 0.4758; Calmar 1.099]
 031-03_uprun-size-scales-wide-flat-reversal_1d: not profitable enough [Sharpe -0.6472; Sharpe minus holding's Sharpe -1.201; Calmar -0.1335]
+031-04.g1_close-at-low-fall-rebounds_1d: not profitable enough [Sharpe 0.5476; Sharpe minus holding's Sharpe -0.006615; Calmar 0.5696]
 031-04_downrun-size-scales-wide-flat-reversal_1d: not profitable enough [Sharpe -0.1774; Sharpe minus holding's Sharpe -0.7316; Calmar -0.05175]

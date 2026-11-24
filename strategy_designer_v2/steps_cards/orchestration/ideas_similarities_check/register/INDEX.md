@@ -148,6 +148,7 @@ An idea's latest record counts once.
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | paying | night6_indecision_run | 1d | 6 | b4d4aafd2 | 2026-11-24T01:06:31 |
 | 031-02.g1.b2_volatile-coins-bounce-after-capitulation_1d | confirmed | night6_indecision_run | 1d | 6 | 1e6741ef8 | 2026-11-24T03:47:06 |
 | 031-03.b1_wide-day-extends-up-run_1d | paying | night6_indecision_run | 1d | 6 | 168ab087c | 2026-11-24T00:29:20 |
+| 031-04.g1_close-at-low-fall-rebounds_1d | confirmed | night6_indecision_run | 1d | 6 | b1541fe97 | 2026-11-24T03:51:58 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | 5cec10e5f | 2026-11-18T03:17:55 |

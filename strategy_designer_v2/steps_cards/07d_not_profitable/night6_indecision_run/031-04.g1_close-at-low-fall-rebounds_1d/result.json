@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "031-04.g1_close-at-low-fall-rebounds_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39902899999999997,
+  "findings": {
+    "F1": "The book's whole gain comes from sharp down days that follow a fall of several days. On the 115 cases whose 5-day return up to the day before was below -1 of its 20-day volatility (scaled to 5 days), the next-day unusual move is +2.9 % (t 3.38, 93 cases) and +1.8 % (t 2.40, 22 cases) in the two deepest bands, and the summed position gain is 1.82. The 289 cases without such a prior fall have unusual moves of -0.20 % (t -0.56) and -0.52 % (t -0.91) and a summed gain of only 0.41. This matches the brief's own requirement that a run comes before the day.",
+    "F2": "The prior fall is not an effect of its own. Days with the same 5-day prior fall but no sharp down day show a next-day unusual move of -0.21 % (t -1.44, 1540 cases) and -0.71 % (t -2.17, 272 cases). Days after a sharp down day with no new sharp fall show -0.15 % (t -1.27, 1690 cases). The rebound needs both a prior run and today's sharp fall. Across all cases, the deeper the prior run, the larger the rebound (slope -0.0071 per unit of 5-day volatility, t -2.48, 404 cases).",
+    "F3": "Both failing measures come from the cases without a prior run, which the sizing weighted more heavily. Their mean allocation was 0.68 against 0.55 for the run-down cases, and 1.05 in 2023, when those cases lost 0.42 % a day. The deepest fall of the book (-7.3 %, against a yearly return of +4.2 %, Calmar 0.57) ran over 493 days from w20 to w24. Over that stretch the book lost in w20, w21, w22 and w24 while holding the coins gained (+13 %, +69 %, -6 %, +45 % summed). The non-run cases lost every year from 2022 to 2025 (-1.7 %, -0.4 %, -0.6 %, -0.2 %).",
+    "F4": "Inside the run-down cases, a close nearer the low still adds to the rebound: the close-at-low half earns +3.0 % (t 2.91, 64 cases) and the other half +2.3 % (t 2.44, 51 cases), slope t 1.14. Among cases with no prior run, the close location alone separates a loss of -1.0 % (t -2.18) from a gain of +0.65 % (t 1.77). The tested signal stays useful once the prior run is required.",
+    "F5": "The effect of the run-down cases is far larger than the cost of a trade and lasts beyond one day. Cases after a sharp previous day return +2.7 % the next day (t 4.06, 94 cases) and +2.2 % over three days. Cases in the lowest quartile of the 5-day return including the day return +3.5 % (t 4.20, 117 cases) and +2.0 % over three days. These moves are more than ten times the 0.19 % cost of a trade."
+  },
+  "ideas": [
+    {
+      "idea": "On a day a coin falls sharply against its own 20-day daily volatility after it had already fallen over the previous 5 days, the nearer its close lands to the day's low and the deeper that 5-day fall, the larger its rise over the next day.",
+      "consequence": "A trader would buy sharp closes at the low only when they come after a fall of several days, sized by the depth of that fall, and would stay out of isolated sharp down days.",
+      "name": "close-at-low after a run",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "On a day a coin falls sharply against its own 20-day daily volatility after it had already fallen over the previous 5 days, the nearer its close lands to the day's low, the larger its rise over the next 3 days.",
+      "consequence": "A trader would hold the rebound after a run-ending sharp close at the low for three days rather than one.",
+      "name": "run-end rebound three days",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-04.g1.d1_close-at-low-after-a-run",
+    "031-04.g1.d2_run-end-rebound-three-days"
+  ],
+  "no_ideas": null
+}
