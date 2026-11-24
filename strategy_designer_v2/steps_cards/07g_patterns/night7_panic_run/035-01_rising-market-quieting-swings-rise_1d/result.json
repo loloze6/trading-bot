@@ -1,0 +1,37 @@
+{
+  "line": "7.g",
+  "backtest": "035-01_rising-market-quieting-swings-rise_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38107560000000007,
+  "findings": {
+    "F1": "Inside the rising profile, the coin's 3-day excess return rises with its past 3-day return scaled by its 30-day daily swing. The top fifth of that scaled return is followed by +2.75 % over the next 3 days (t 2.45, 173 non-overlapping cases on 79 days), against +0.69 %, \u22120.29 %, \u22120.71 % and +0.88 % for the lower four fifths. The unscaled 3-day return gives the same top fifth: +1.97 %, t 1.96, 241 cases on 112 days.",
+    "F2": "The pattern in F1 seems to live in the rising profile. Outside it, the top fifth of the scaled 3-day return is followed by \u22120.25 % (t \u22120.34, 256 cases on 115 days). Inside the rising profile, the link is positive in 5 of 6 coins (correlation from +0.02 to +0.31, LTC \u22120.05), and the top fifth's excess return is positive in 8 of 12 windows.",
+    "F3": "Even F1 is only borderline once the number of angles is counted. I looked at about 15 groupings of 5 bins each, plus weekday, and no other cell reached a clustered t above 2.45. Its grading is also not monotone across the lower four fifths.",
+    "F4": "The tested quieting forecast is not graded inside the rising profile. By quintile of the raw recent-to-prior volatility ratio, the 3-day excess returns run +0.58 %, +1.77 % (t 2.35), \u22120.17 %, \u22121.16 % and +0.25 %. The 7-day-against-30-day volatility ratio is flat too (from \u22120.37 % to +1.45 %, no |t| above 1.6).",
+    "F5": "Trade profit does not grow with the entry forecast. The mean net trade by forecast quartile is +6.5 %, +6.4 %, +9.3 % and +5.8 % (about 150 trades each).",
+    "F6": "The book mostly follows the coins rather than timing them. Its daily returns correlate 0.54 with the coins' mean daily return. On its 43 largest gain days the coins rose +7.0 %, and on its 30 largest loss days they fell \u22129.3 %.",
+    "F7": "There is no reliable weekday pattern. Next-day excess returns range from \u22120.49 % on Wednesday to +0.47 % on Thursday, but with returns clustered by day no weekday's t exceeds 1.55 (about 207 days each). Thursday's mean falls to \u22120.02 % in 2021."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, a coin rises more over the next 3 days the larger its return over the last 3 days, measured against its usual daily swing over the last 30 days.",
+      "consequence": "In an uptrend, a trader would lean into a coin that has just made a large rise for its own volatility, and would not buy one whose last days were flat or down.",
+      "name": "rising-market short-term momentum continuation",
+      "from": "F1, F2, F3",
+      "profile": "rising",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "035-01.g1_rising-market-short-term-momentum-continuation"
+  ],
+  "no_ideas": null
+}
