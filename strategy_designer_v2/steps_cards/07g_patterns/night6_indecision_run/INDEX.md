@@ -32,4 +32,5 @@
 031-03.b1_wide-day-extends-up-run_1d: 2 ideas (2 explorations)
 031-03_uprun-size-scales-wide-flat-reversal_1d: no ideas: Across the flat-day, wide-day, run-size, volatility, close-location, move-size, yearly and weekday angles (about 40 groups), no pattern stands out beyond |t| ≈ 2, which is what chance gives over that many looks. The loose hints of 5-day continuation (F2, F3, F4) are not strong or stable enough across years to support a new idea.
 031-04.g1_close-at-low-fall-rebounds_1d: no ideas: Across roughly thirty angles, no pattern beyond the tested idea stood out enough. The tested angles were the forecast's close location, the size of the fall, the 3- and 5-day horizons, wide flat days in runs, volatility level absolute and relative, weekday, the prior run and year. No result reached a t near 3, and the few near 2 were either not graded (F3, F4), changed sign across years (F5), or vanished under a relative measure (F6).
+031-04.g2_sharp-daily-fall-reverses_1d: 3 ideas (2 explorations)
 031-04_downrun-size-scales-wide-flat-reversal_1d: 2 ideas (2 explorations)
