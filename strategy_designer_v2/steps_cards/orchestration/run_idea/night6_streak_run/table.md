@@ -19,22 +19,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.b2_long-up-streaks-continue | 031-01_up-streak-length-reversal | plan | inconclusive (+0.24) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 031-01.b2.b1_long-up-streaks-ten-day-continuation; 7.g: 031-01.b2.g1_long-streaks-precede-volatility | 0.94 | 5.6 |
 | 031-01.b2.b1_long-up-streaks-ten-day-continuation | 031-01.b2_long-up-streaks-continue | plan | confirmed (+3.11) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.b2.b1.d1_up-streaks-inside-uptrend, 031-01.b2.b1.d2_up-streaks-after-monthly-rise, 031-01.b2.b1.d3_multi-day-streaks-held-ten-days; 7.g: 031-01.b2.b1.g1_next-day-rebound-after-sharp-falls, 031-01.b2.b1.g2_near-high-ten-day-continuation | 1.05 | 6.0 |
 | 031-03.b1.b1_up-streak-continuation-in-uptrend | 031-03.b1_up-streak-continuation-more-coins | plan | inconclusive (+1.04) | profitable enough | - | 7.b: 031-03.b1.b1.b1_up-streak-continuation-over-20-days, 031-03.b1.b1.b2_up-streak-continuation-in-two-month-uptrend; 7.e: 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation, 031-03.b1.b1.e2_short-trend-strength-continuation; 7.g: 031-03.b1.b1.g1_30-day-trend-rank-continuation, 031-03.b1.b1.g2_downtrend-rally-fade | 2.05 | 13.6 |
+| 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | confirmed (+2.34) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: Across the forecast's deciles, streaks, last-day moves, volatility levels, volatility ratios, weekdays, years, trades and the book's extreme days, nothing beyond the tested idea stood out from chance once same-day cases were pooled and grid offsets compared. The one bucket with t above 3 reversed sign over a slightly longer horizon and was not graded. | 0.91 | 11.5 |
 
 ## Consumption
-15 ideas, 15.03 USD, 97.4 minutes in all.
+16 ideas, 15.94 USD, 108.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.09 | 7.8 |
-| step4_backtest | 0.00 | 48.5 |
-| step5_verdict | 2.20 | 7.7 |
-| step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 2.16 | 8.2 |
+| step4_backtest | 0.00 | 54.7 |
+| step5_verdict | 2.37 | 8.2 |
+| step6_check | 0.00 | 0.8 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.88 | 2.9 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.71 | 1.9 |
 | step7_7.b | 3.59 | 10.6 |
-| step7_7.g | 5.56 | 15.9 |
+| step7_7.g | 6.23 | 17.6 |
 | similarity_check | 0.00 | 0.2 |
-| unseen_test | 0.00 | 0.9 |
+| unseen_test | 0.00 | 3.4 |
