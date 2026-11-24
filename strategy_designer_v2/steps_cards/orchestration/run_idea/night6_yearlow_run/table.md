@@ -31,15 +31,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue | 031-01.g1.g1.g2_volatile-weekends-follow-trend | plan | inconclusive (+3.75) | profitable enough | - | 7.b: 031-01.g1.g1.g2.d1.b1_weekend-continuation-of-two-week-moves; 7.e: 031-01.g1.g1.g2.d1.e1_late-week-momentum-into-weekend, 031-01.g1.g1.g2.d1.e2_friday-rise-weekend-continuation; 7.g: 031-01.g1.g1.g2.d1.g1_late-week-scaled-momentum-continues, 031-01.g1.g1.g2.d1.g2_scaled-friday-rise-into-weekend | 1.79 | 7.4 |
 | 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend | 031-01.g1.g1.g2_volatile-weekends-follow-trend | plan | confirmed (+2.74) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend, 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum; 7.g: 031-01.g1.g1.g2.g1.g1_saturday-carries-two-week-trend, 031-01.g1.g1.g2.g1.g2_weekend-trend-long-side-only | 1.05 | 5.3 |
 | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend | 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend | plan | confirmed (+4.69) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 031-01.g1.g1.g2.g1.d1.g1_two-week-fall-rebound, 031-01.g1.g1.g2.g1.d1.g2_volatile-one-day-drop-rebound | 0.64 | 4.7 |
+| 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum | 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend | plan | confirmed (+2.75) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 031-01.g1.g1.g2.g1.d2.g1_friday-close-weekly-momentum-into-saturday, 031-01.g1.g1.g2.g1.d2.g2_uptrend-wednesday-momentum-into-thursday-friday | 0.67 | 4.8 |
 
 ## Consumption
-27 ideas, 31.03 USD, 192.3 minutes in all.
+28 ideas, 31.70 USD, 197.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.59 | 16.3 |
-| step4_backtest | 0.00 | 81.4 |
-| step5_verdict | 4.82 | 17.7 |
+| step3_plan | 2.67 | 16.7 |
+| step4_backtest | 0.00 | 82.9 |
+| step5_verdict | 5.01 | 18.5 |
 | step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.e | 1.55 | 5.2 |
@@ -47,6 +48,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.a | 1.35 | 4.2 |
 | step7_7.d | 3.25 | 10.4 |
 | step7_7.b | 5.07 | 15.2 |
-| step7_7.g | 12.40 | 37.6 |
-| similarity_check | 0.00 | 0.4 |
-| unseen_test | 0.00 | 2.6 |
+| step7_7.g | 12.80 | 38.7 |
+| similarity_check | 0.00 | 0.5 |
+| unseen_test | 0.00 | 3.6 |

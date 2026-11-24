@@ -131,6 +131,7 @@ An idea's latest record counts once.
 | 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d | confirmed | night6_yearlow_run | 1d | 6 | eb22780b3 | 2026-11-24T01:46:04 |
 | 031-01.g1.g1.g1_two-week-run-carries-weekend_1d | confirmed | night6_yearlow_run | 1d | 6 | 08579a12a | 2026-11-24T02:04:08 |
 | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d | paying | night6_yearlow_run | 1d | 6 | b05c94263 | 2026-11-24T02:31:37 |
+| 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d | paying | night6_yearlow_run | 1d | 6 | 24b9a28b4 | 2026-11-24T02:36:21 |
 | 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d | confirmed | night6_yearlow_run | 1d | 6 | d48b7d43a | 2026-11-24T02:27:39 |
 | 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d | confirmed | night6_yearlow_run | 1d | 6 | 89e6df051 | 2026-11-24T02:18:26 |
 | 031-01.g1.g1_midweek-run-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | 36c799391 | 2026-11-24T01:35:42 |
