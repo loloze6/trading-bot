@@ -8,6 +8,7 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: 2 ideas (2 explorations)
 031-02_down-streak-length-reversal_1d: no ideas: The streak length, the past returns, the volatility, the range, the weekday, the year and the book's extreme days all leave no pattern that stands out. Across about 60 groupings the best t's are 2.0 to 2.7, isolated and not graded (F3–F6). The book's profit is the coins' drift held 96 % of the time (F1, F2), not a new effect.
 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation_1d: no ideas: Across the forecast's deciles, streaks, last-day moves, volatility levels, volatility ratios, weekdays, years, trades and the book's extreme days, nothing beyond the tested idea stood out from chance once same-day cases were pooled and grid offsets compared. The one bucket with t above 3 reversed sign over a slightly longer horizon and was not graded.
+031-03.b1.b1.e2_short-trend-strength-continuation_1d: 2 ideas (2 explorations)
 031-03.b1.b1_up-streak-continuation-in-uptrend_1d: 2 ideas (2 explorations)
 031-03.b1_up-streak-continuation-more-coins_1d: no ideas: Across about fifteen angles (streak length on both sides, past returns, volatility, daily range absolute and relative, move size by sign, weekday, year, the book's extreme days), the strongest pattern is that a wide range relative to the coin's last 20 days precedes a higher 5-day move, but its pooled t is only 1.81. After that many looks it cannot be told apart from chance, so no finding supports a new idea.
 031-03_up-streak-length-continuation_1d: 2 ideas (2 explorations)
