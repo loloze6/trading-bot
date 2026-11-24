@@ -92,6 +92,21 @@ same strategy or in parallel"):**
 
 **P4 read (2026-11-24): outcome B.** The 20 books, equal capital: holds on 2016-17 (Sharpe 1.08, worst fall 11 %), not on 2026 (Sharpe -0.73, -3.1 % a year, worst fall 5 %; holding the coins -14 %, fall 45 %). Falls far smaller than holding, books uncorrelated, but on 2026 the books lose on average; the long-leaning books follow the market, the two with no net lean hold on both. P5 not started. Reading: `runs/PORTFOLIO_UNSEEN_RUN.md`.
 
+**P10 pilot, the market-profile map (2026-11-24, the operator's idea; `44_review/p10_map.py`, `p10_map.csv`,
+`p10_results.csv`).** Six profiles fixed before any strategy was read (the six coins' 60-day trend: rising, choppy,
+falling; their 30-day swing against its median: calm, agitated; each day labelled at the previous close); each of the 22
+candidates placed by its days in a position, by profile and side.
+- **The strategies are not profile specialists:** their days in a position follow the market's days (002-03: 32, 13, 24,
+  4, 18, 9 % across the six profiles, against 31, 14, 22, 3, 17, 11 % of all days). They differ by side only (11 long,
+  11 short).
+- **Where they earn by profile does not repeat:** of 132 strategy-profile cells, the gain keeps its sign from 2018-21 to
+  2022-25 in 50 %; cells that earned on 2018-21 earn on 2022-25 in 57 %, those that lost in 58 %.
+- **The map's portfolio** (one strategy per filled cell, equal risk per profile: 4 strategies, half in 013-04): Sharpe
+  1.02 on the folds against 1.64 for the 20; 2.24 on 2016-17 against 1.08; -1.06 on 2026 against -0.73. Half long, half
+  short is the same as equal capital here (11 and 11).
+- **Reading:** for these strategies the map cannot guide the combination: they are one-sided and always on. It is a guide
+  for the search: no strategy has a profile as its home; ideas that act in one profile only are the empty cells.
+
 **P4** (2026-11-23): the portfolio fixed before its unseen test, its reading rule and expected outcomes written:
 `runs/PORTFOLIO_UNSEEN_RUN.md`. **The combination function, draft** (rules, each with its evidence, and open
 points): `topics/44_review/COMBINATION_STEP_DRAFT.md`.
