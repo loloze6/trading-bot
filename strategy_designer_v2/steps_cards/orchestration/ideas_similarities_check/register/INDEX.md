@@ -128,6 +128,7 @@ An idea's latest record counts once.
 | 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | c9f81b724 | 2026-11-22T01:21:05 |
 | 026-03_weekend-reversal-exceeds-weekday.d2_sunday-move-fades-monday_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:35:49 |
 | 031-01.g1_sharp-drop-next-day-bounce_1d | confirmed | night6_longreversal_run | 1d | 6 | 8513f0c4b | 2026-11-24T01:53:10 |
+| 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d | confirmed | night6_longreversal_run | 1d | 1 | f24a1f042 | 2026-11-24T03:33:14 |
 | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d | confirmed | night6_longreversal_run | 1d | 19 | b57c524c4 | 2026-11-24T03:05:21 |
 | 031-03.g1.b1.g2_swelling-volume-after-rises_1d | paying | night6_longreversal_run | 1d | 19 | 2d733ab28 | 2026-11-24T02:43:43 |
 | 031-03.g1.b1_volume-surge-more-coins_1d | confirmed | night6_longreversal_run | 1d | 19 | 8cfef7140 | 2026-11-24T02:01:19 |

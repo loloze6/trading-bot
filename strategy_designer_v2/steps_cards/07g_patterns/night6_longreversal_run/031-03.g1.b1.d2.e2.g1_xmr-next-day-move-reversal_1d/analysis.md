@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d
+idea tested: 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4025 USD
+---
+## Findings
+- **F1:** XMR's next-day reversal grows with how far its 30-day volatility sits above its own 180-day median. Across quintiles of that ratio, the slope of next-day return on z runs -0.0027 (t -1.33), -0.0037 (t -1.42), -0.0008 (t -0.29), -0.0067 (t -2.85) and -0.0115 (t -2.96). The z × relative-volatility interaction is -0.0086 (t -2.49), while z alone is +0.0037 (t 1.11) once the interaction is in.
+- **F2:** The relative-volatility concentration holds in both halves of the period, though weaker in the second. Before 2022 the high-relative-volatility slope is -0.0128 (t -3.68, 218 bars) against -0.0038 (t -1.54, 270 bars) otherwise. From 2022 it is -0.0050 (t -1.94, 173 bars) against -0.0011 (t -0.74, 316 bars).
+- **F3:** The reversal also lives where the last 5 days' volatility is high against the 30-day volatility. In the top tercile of that ratio (mean 1.47) the z slope is -0.0054 (t -5.36, 798 bars). In the middle tercile it is -0.0025 (t -1.44), and in the bottom tercile (mean 0.47) it is +0.0008 (t 0.30), so there is no reversal at all when recent days are calm.
+- **F4:** The edge sits in the extreme falls. The lowest z decile (mean z -2.06) is followed by +1.10 % the next day (t 3.41, 240 bars) and the second decile by +0.74 % (t 2.69). The highest decile (mean z +1.96) is followed by only -0.20 % (t -0.67), against an all-bar mean of +0.11 %.
+- **F5:** The reversal is not steady across years and is gone in the latest one. It is strongest in 2020 (slope -0.0110, t -4.55; gain t 3.87) and 2024 (slope -0.0080, t -4.98). In 2025 it turns positive (slope +0.0017, t 0.94; gain t -0.55). Windows w23 and w5 lose about 41 % and 38 % in summed daily book returns, which is what holds the Calmar to 0.487.
+- **F6:** The brief's own horizon shows no lean. Next-20-day returns by quartile of the 60-day return read +3.1 %, -1.3 %, -1.7 % and +3.3 %, all with |t| < 0.8 on 16–17 independent cases each. At 3 and 5 days the next-day fade does not carry: the 5-day quintiles are non-monotonic and the extreme quintiles have |t| ≤ 1.0.
+- **F7:** Where the day closes in its range adds nothing once z is known. Next-day return falls from +0.82 % (t 3.97) in the lowest close-location quintile to -0.50 % (t -2.64) in the highest. But with z and range in the same regression, close location's coefficient is -0.0026 (t -1.27).
+- **F8:** Friday and Saturday bars are followed by gains, but this is a calendar effect with no grading, so it supports no idea. The figures are +0.42 % (t 2.43) and +0.59 % (t 2.96) overall, both positive in each half: Friday t 1.08 and 3.36, Saturday t 1.48 and 2.55.
+
+## Ideas
+- `031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess` (from F1, F2, F4): The larger XMR's one-day return against its 30-day daily volatility, the more its price moves back the other way over the next day. This reversal grows with how far its 30-day volatility stands above its usual level over the past six months.
+- `031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts` (from F3, F4): The larger XMR's one-day return against its 30-day daily volatility, the more it moves back the other way over the next day. This reversal grows with how high its volatility over the past 5 days stands against its 30-day volatility.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

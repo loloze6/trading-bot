@@ -30,22 +30,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | 031-03.g1.b1.d2_rising-volume-rally-continues | plan | confirmed (+2.38) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.d1_volume-swell-long-only, 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend; 7.g: 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | 1.41 | 11.8 |
 | 031-03.g1.b1.d2.e2.d1_volume-swell-long-only | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | plan | inconclusive (+1.43) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.d2.e2.d1.b1_volume-swell-above-trend; 7.g: no ideas: Across the volume ratio, the 60-, 28- and 14-day moves, volatility, distance from the 50-day mean, next-day and 3-day reversals, weekdays and years, no pattern apart from the tested idea's own volume gradient stands out from chance (the best clustered t's are near 2 among roughly fifty looks), so no finding supports a new idea. | 1.06 | 10.2 |
 | 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | plan | inconclusive (+1.65) | profitable enough | - | 7.b: 031-03.g1.b1.d2.e2.d2.b1_volume-swell-predicts-two-weeks, 031-03.g1.b1.d2.e2.d2.b2_fading-volume-in-downtrend; 7.e: 031-03.g1.b1.d2.e2.d2.e1_volume-swell-predicts-two-weeks, 031-03.g1.b1.d2.e2.d2.e2_fading-volume-in-downtrend; 7.g: 031-03.g1.b1.d2.e2.d2.g1_volume-swell-any-trend, 031-03.g1.b1.d2.e2.d2.g2_fading-volume-precedes-falls | 1.62 | 12.3 |
+| 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | plan | confirmed (+4.14) | not profitable enough (failed: Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound; 7.g: 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess, 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 0.99 | 4.2 |
 
 ## Consumption
-26 ideas, 30.04 USD, 248.5 minutes in all.
+27 ideas, 31.03 USD, 252.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.20 | 12.9 |
-| step4_backtest | 0.00 | 145.3 |
-| step5_verdict | 4.91 | 17.1 |
-| step6_check | 0.00 | 1.3 |
-| chart_files | 0.00 | 0.5 |
+| step3_plan | 2.27 | 13.4 |
+| step4_backtest | 0.00 | 145.7 |
+| step5_verdict | 5.06 | 17.7 |
+| step6_check | 0.00 | 1.4 |
+| chart_files | 0.00 | 0.6 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.46 | 4.9 |
+| step7_7.d | 1.83 | 6.2 |
 | step7_7.e | 0.89 | 2.7 |
-| step7_7.a | 0.31 | 1.0 |
+| step7_7.a | 0.31 | 1.1 |
 | step7_7.b | 7.50 | 21.7 |
-| step7_7.g | 12.77 | 37.9 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.g | 13.18 | 39.2 |
+| similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 2.7 |

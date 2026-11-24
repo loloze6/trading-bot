@@ -16,6 +16,7 @@
 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails_1d: not profitable enough [Sharpe -0.4188; Sharpe minus holding's Sharpe -1.026; Calmar -0.1566]
 031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: not profitable enough [Sharpe 0.8314; Sharpe minus holding's Sharpe 0.2239; Calmar 0.5101]
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: profitable enough [Sharpe 1.07; Sharpe minus holding's Sharpe 0.4624; Calmar 1.088]
+031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: not profitable enough [Sharpe 0.7771; Sharpe minus holding's Sharpe 0.3371; Calmar 0.487]
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: not profitable enough [Sharpe 0.5663; Sharpe minus holding's Sharpe -0.04116; Calmar 0.2352]
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: profitable enough [Sharpe 1.112; Sharpe minus holding's Sharpe 0.5048; Calmar 1.049]
 031-03.g1.b1.g1_volume-confirmed-two-week-continuation_1d: not profitable enough [Sharpe 0.6992; Sharpe minus holding's Sharpe 0.1422; Calmar 0.4527]

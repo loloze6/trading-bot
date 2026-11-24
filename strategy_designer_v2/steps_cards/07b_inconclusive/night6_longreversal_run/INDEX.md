@@ -16,6 +16,7 @@
 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails_1d: no ideas: The test already used every coin, fold and the daily bars available. Its result is essentially zero, and no coin, year, regime, horizon or drying depth shows the effect steadily once grid placement is varied (F2–F4), so there is no part of the data to narrow the idea to and no more data to rerun it on.
 031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: 1 ideas (2 explorations)
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: 2 ideas (2 explorations)
+031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: no ideas: The result is on the predicted side, but no more data exists beyond the 19 coins and four folds already used, and the findings show no part of one coin's own data where the effect is clear and graded (it comes from market-wide swells, F4, and swings by year, F3), so no amended idea is supported.
 031-03.g1.b1.g1_volume-confirmed-two-week-continuation_1d: 1 ideas (2 explorations)
