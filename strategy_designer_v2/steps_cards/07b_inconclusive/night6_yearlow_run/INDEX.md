@@ -2,6 +2,7 @@
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (2 explorations)
 031-02.b1.b1_strong-failed-rally-near-low_1d: no ideas: The tested result is essentially zero (t -0.01), so more data is not called for. The only clear pocket is two bear years (F3), which no condition in a coin's own bars reproduces (F4, F5), so there is no part of the data where an amended idea could honestly be placed.
 031-02.b1.b2.b1_failed-rally-longer-horizon_1d: 1 ideas (2 explorations)
+031-02.b1.b2.b2_sharp-rebound-near-low-fails_1d: 1 ideas (2 explorations)
 031-02.b1.b2_failed-rally-more-coins_1d: 2 ideas (2 explorations)
 031-02.b1_failed-rally-near-yearly-low_1d: 2 ideas (3 explorations)
 031-02_near-yearly-low-bounces_1d: 1 ideas (2 explorations)
