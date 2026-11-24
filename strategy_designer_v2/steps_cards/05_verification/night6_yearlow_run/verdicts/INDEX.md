@@ -1,6 +1,7 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: inconclusive (fit: exact) [main: 0.00158173; date-clustered OLS t of the slope 1.07358; grid cases 1495, distinct dates 147, top-quintile cases 299]
 031-01_near-yearly-low-keeps-falling_1d: inconclusive (fit: exact) [main: 0.00235943; OLS slope t 1.7029; non-overlapping cases 806, top-fifth cases 161]
 031-02.b1.b1_strong-failed-rally-near-low_1d: inconclusive (fit: adapted) [main: -0.000278416; day-clustered t -0.00794198; cases 167, cases on distinct days 128, supporting check bars 87]
+031-02.b1.b2.b1_failed-rally-longer-horizon_1d: inconclusive (fit: adapted) [main: 0.00554237; t of the mean, cases summed per day 0.363281; grid cases 344, grid cases on separate days 54, cases with forecast <= -2 30, active bars 15942]
 031-02.b1.b2_failed-rally-more-coins_1d: inconclusive (fit: exact) [main: 0.00309214; t of the mean (cases summed per day) 0.536167; cases 758, distinct days 116, cases with forecast below 0 257]
 031-02.b1_failed-rally-near-yearly-low_1d: inconclusive (fit: adapted) [main: 0.0246805; correlation t (n=410) 0.498674; grid cases with a nonzero forecast 410, grid cases with forecast at or below -2 63]
 031-02_near-yearly-low-bounces_1d: inconclusive (fit: exact) [main: -0.00235943; OLS slope t -1.7029; independent 20-bar cases 806, cases in the top fifth 162, cases in the bottom fifth 162]
