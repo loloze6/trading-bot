@@ -1,79 +1,73 @@
 def explore(data):
     import numpy as np, pandas as pd
-    H = 10
+    bars = data["bars"]; H = 10
     rows = []
-    for coin, ws in data["bars"].items():
+    for coin, ws in bars.items():
         for w, df in ws.items():
-            df = df.sort_values("timestamp")
-            s = pd.Series(df["close"].astype(float).values)
-            n = len(s)
-            ts = pd.to_datetime(df["timestamp"]).reset_index(drop=True)
-            r1 = s.pct_change()
-            vol = pd.Series(df["volume"].astype(float).values)
-            f = pd.DataFrame({
-                "ret1": r1,
-                "ret5": s / s.shift(5) - 1,
-                "ret30": s / s.shift(30) - 1,
-                "vol20": r1.rolling(20).std(),
-                "dlow60": s / s.rolling(60).min().shift(1) - 1,
-                "dhigh60": s / s.rolling(60).max().shift(1) - 1,
-                "relvol": vol / vol.rolling(20).mean().shift(1),
-                "rng": (pd.Series(df["high"].astype(float).values) - pd.Series(df["low"].astype(float).values)) / s,
-                "brk": (df["regime"].values == "mean_reversion").astype(int),
+            d = df.reset_index(drop=True)
+            c = d["close"].astype(float)
+            n = len(c)
+            ret1 = c.pct_change()
+            feat = pd.DataFrame({
+                "lo30": c / c.shift(1).rolling(30).min() - 1,
+                "lo60": c / c.shift(1).rolling(60).min() - 1,
+                "hi30": c / c.shift(1).rolling(30).max() - 1,
+                "r10": c / c.shift(10) - 1,
+                "r1": ret1,
+                "vol20": ret1.rolling(20).std(),
+                "fc": d["forecast"].astype(float),
             })
-            f["clv"] = (s - pd.Series(df["low"].astype(float).values)) / (pd.Series(df["high"].astype(float).values) - pd.Series(df["low"].astype(float).values))
-            for i in range(0, n - H, H):
-                d = f.iloc[i].to_dict()
-                d.update(coin=coin, w=w, wn=int(w[1:]), day=ts[i].normalize(), wd=ts[i].weekday(),
-                         fwd=s[i + H] / s[i] - 1)
-                rows.append(d)
-    g = pd.DataFrame(rows)
-    st = g.groupby("coin")["fwd"].agg(["mean", "std"])
-    g["un"] = g["fwd"] - g["coin"].map(st["mean"])
-    g["strg"] = g["un"] / g["coin"].map(st["std"])
+            ts = pd.to_datetime(d["timestamp"])
+            for p in range(0, n - H, H):
+                r = c.iloc[p + H] / c.iloc[p] - 1
+                row = feat.iloc[p].to_dict()
+                row.update(coin=coin, win=w, fwd=r, day=ts.iloc[p].normalize(), year=ts.iloc[p].year)
+                rows.append(row)
+    X = pd.DataFrame(rows)
+    drift = X.groupby("coin")["fwd"].mean()
+    usual = X.groupby("coin")["fwd"].std()
+    X["un"] = X["fwd"] - X["coin"].map(drift)
+    X["str"] = X["un"] / X["coin"].map(usual)
+    X["vol_rank"] = X.groupby("coin")["vol20"].rank(pct=True)
 
-    def ct(x, days):
-        x = np.asarray(x, float); m = x.mean(); e = x - m
-        S = pd.Series(e).groupby(np.asarray(days)).sum()
-        G = len(S)
-        if G < 2: return np.nan
-        se = np.sqrt((S ** 2).sum()) / len(x) * np.sqrt(G / (G - 1))
-        return m / se
+    def ct(s, days):
+        s = s.dropna(); days = days.loc[s.index]
+        N = len(s); m = s.mean()
+        S = (s - m).groupby(days).sum(); G = len(S)
+        se = np.sqrt(G / (G - 1) * (S ** 2).sum()) / N
+        return m, m / se, N, G
 
-    def quint(col):
-        x = g.dropna(subset=[col]).copy()
-        x["q"] = x.groupby("coin")[col].rank(pct=True)
-        x["q"] = pd.cut(x["q"], [0, .2, .4, .6, .8, 1], labels=[1, 2, 3, 4, 5])
-        out = []
-        for q, y in x.groupby("q", observed=True):
-            e = y[y.wn <= 12]; l = y[y.wn > 12]
-            out.append(dict(q=q, feat_mean=y[col].mean(), un=y.un.mean(), strength=y.strg.mean(),
-                            t=ct(y.un, y.day), n=len(y), days=y.day.nunique(),
-                            un_w1_12=e.un.mean(), un_w13_24=l.un.mean()))
-        return pd.DataFrame(out)
-
-    res = {}
-    for c in ["ret1", "ret5", "ret30", "vol20", "dlow60", "dhigh60", "relvol", "rng", "clv"]:
-        res["q_" + c] = quint(c)
-    b = g.groupby("brk").apply(lambda y: pd.Series(dict(un=y.un.mean(), t=ct(y.un, y.day), n=len(y), days=y.day.nunique())))
-    res["break_vs_not"] = b
-    # weekday of daily returns
-    dd = []
-    for coin, ws in data["days"].items():
-        for w, df in ws.items():
-            x = df[["day", "coin_return"]].dropna().copy(); x["coin"] = coin; dd.append(x)
-    dd = pd.concat(dd); dd["day"] = pd.to_datetime(dd["day"])
-    dd["un"] = dd["coin_return"] - dd.groupby("coin")["coin_return"].transform("mean")
-    dd["wd"] = dd["day"].dt.weekday
-    res["weekday_daily"] = dd.groupby("wd").apply(lambda y: pd.Series(dict(un=y.un.mean(), t=ct(y.un, y.day), n=len(y))))
-    res["coin_drift_10d"] = st
+    out = {}
+    for f in ["lo30", "lo60", "hi30", "r10", "r1", "vol_rank"]:
+        sub = X.dropna(subset=[f]).copy()
+        sub["q"] = sub.groupby("coin")[f].transform(lambda v: pd.qcut(v.rank(method="first"), 5, labels=False))
+        res = []
+        for q, g in sub.groupby("q"):
+            m, t, N, G = ct(g["un"], g["day"])
+            res.append({"q": q, "feat_mean": g[f].mean(), "unusual": m, "t": t, "strength": g["str"].mean(), "N": N, "days": G})
+        out["quintile_" + f] = pd.DataFrame(res)
+    # top-minus-bottom by year for lo30 and r10
+    for f in ["lo30", "r10"]:
+        sub = X.dropna(subset=[f]).copy()
+        sub["q"] = sub.groupby("coin")[f].transform(lambda v: pd.qcut(v.rank(method="first"), 5, labels=False))
+        yy = sub[sub.q.isin([0, 4])].groupby(["year", "q"])["un"].mean().unstack()
+        yy["bottom_minus_top"] = yy[0] - yy[4]
+        out["by_year_" + f] = yy
+    # trades
     tr = []
     for coin, ws in data["trades"].items():
         for w, t in ws.items():
             if len(t): tr.append(t.assign(coin=coin))
     if tr:
-        tr = pd.concat(tr)
-        res["trades"] = pd.Series(dict(n=len(tr), mean_net=tr.net_profit_loss_percent.mean(),
-                                       share_pos=(tr.net_profit_loss_percent > 0).mean(),
-                                       mean_days=tr.duration_minutes.mean() / 1440))
-    return res
+        T = pd.concat(tr)
+        out["trades"] = T.groupby("coin").agg(n=("net_profit_loss_percent", "size"), mean_net=("net_profit_loss_percent", "mean"), entry_fc=("entry_forecast", "mean"))
+    # weekday on daily returns
+    D = []
+    for coin, ws in data["days"].items():
+        for w, d in ws.items():
+            D.append(d.assign(coin=coin))
+    D = pd.concat(D)
+    D["wd"] = pd.to_datetime(D["day"]).dt.weekday
+    D["cu"] = D["coin_return"] - D.groupby("coin")["coin_return"].transform("mean")
+    out["weekday"] = D.groupby("wd")["cu"].agg(["mean", "count", lambda v: v.mean() / v.std() * np.sqrt(len(v))])
+    return out
