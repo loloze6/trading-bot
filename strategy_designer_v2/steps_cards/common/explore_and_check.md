@@ -1,5 +1,9 @@
-Exploring and checking on different years (the operator, 2026-11-24; topic 31). Read by step 7 (`07_common/helper/analyse.py`),
-step 5 (`05_verification/helper/make_verdict.py`) and the operator.
+What "exploring and checking on different years" is (the operator, 2026-11-24; topic 31). Read by step 7
+(`07_common/helper/analyse.py`), step 5 (`05_verification/helper/make_verdict.py`) and the operator.
+
+**An idea is chosen on some years and checked on others.** Step 7 looks at a backtest's results on the exploration
+years before it writes an idea; step 5 judges the idea on every year, and a confirm must also point its way on the years
+step 7 did not look at.
 
 **Why.** Step 7 chooses a new idea after looking at a backtest's results (its explorations). Judged on the same years, the
 chosen idea looks better than it is: a known effect of choosing on the data that judges. Judging on fewer years is not
@@ -24,7 +28,8 @@ real effect keeps its direction on 4 years: on folds A and D alone, 122 of those
     its situation in folds A and D only.
 - One rule for every idea, written by step 2 or by step 7.
 
-**What it costs.** About 2 real effects in 100 (measured above). **What it does not do:** it does not stop the search
+**What it costs.** About 2 real effects in 100 (measured above); on 64 confirmed verdicts rerun, 1 turned inconclusive
+(`05_verification/card.md`, "Variants compared"). **What it does not do:** it does not stop the search
 from finding the effects the portfolio already holds (they are real in every year); that is the order's job
 (`orchestration/select_next/`, the held books).
 

@@ -12,7 +12,8 @@ Step 7 is a set of analysis lines, each with its own objective and its own card:
 | 7.g | `../07g_patterns/` | none | what patterns the bars and the book show |
 
 ## Input (every line)
-One backtest record (its bars, its trades, its book day by day), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book, **the idea's size and what one
+One backtest record (its bars, its trades, its book day by day; its explorations see the exploration folds only, B
+and C: see "How it reads the data"), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book, **the idea's size and what one
 trade cost the backtest** (operator, 2026-11-20): step 5's `size.json` ("not measured" when the verdict has none), and
 the cost of a trade the backtest applied, read from its record (`../common/measures.md`, "The cost of a trade"). Why:
 of 103 confirmed ideas that did not pay, 53 had a move per case smaller than the cost of a trade, and none of those
@@ -22,14 +23,14 @@ paid (`../runs/RETRO_DIAGNOSIS_RUN.md`); a line that does not see it proposes mo
 One analysis per backtest: findings, then ideas, each idea in step 2's format, or "no ideas" with the reason.
 
 ## What an analysis is
-**An analysis is a practitioner's reading of one backtest, for one line's objective: findings drawn from the backtest's own data, each with its numbers, and the ideas they suggest, each resting on named findings.**
+**An analysis is a practitioner's reading of one backtest, for one line's objective: findings drawn from the backtest's own data on the exploration years, each with its numbers, and the ideas they suggest, each resting on named findings.**
 
 - **Findings first, ideas second.** An idea names the findings it rests on; an idea no finding supports is not written.
 - **The ideas are ideas, not test plans.** A test plan is written closed book (step 3), so that it cannot be shaped by data already seen; the analyst has seen the data.
-- **It explores folds B and C only (operator, 2026-11-24; `../common/explore_and_check.md`).** Its explorations see the
-  windows of 2018 to 2021; it is told that folds A and D are kept to check its ideas (step 5's direction check). A
-  backtest not run on its plan's folds is explored whole. Proof: a real analysis (7.g, 0.31 USD) whose exploration
-  results name windows w7 to w18 only.
+- **It chooses on some years; its ideas are checked on others** (operator, 2026-11-24; `../common/explore_and_check.md`).
+  The analyst explores folds B and C (2018 to 2021); step 5 then requires a confirmed idea to point its way on folds A
+  and D (2022 to 2025) too. Why: an idea chosen after looking at results looks better than it is on the years it was
+  chosen from.
 - **It proposes; it changes nothing.** What is done with its ideas is decided outside the step.
 
 ## The fields of an analysis
@@ -83,6 +84,11 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 
 ## The AI
 **How it reads the data.** The model never sees the rows. It writes one Python function per round, `explore(data)`, over three tables: the bars, the trades, the book day by day (`helper/data_description.md`). A separate, isolated process runs it on the record with the venv's Python and returns aggregates only: at most 40 rows per result, every date hidden. At most three rounds, then the answer. Every function and its result are kept.
+- **The exploration folds only.** The tables hold the windows of folds B and C (`exploration_windows`, from the plan's
+  fold order: `common/lib.py`); the description of the record lists those windows, and the request says that folds A
+  and D are kept to check its ideas. A backtest not run on its plan's folds (no `fold_` folder) is explored whole.
+- **What it still reads on every fold:** step 5's verdict, step 6's check and the idea's size of the tested idea:
+  summaries of the parent idea, not of the ideas it will write.
 
 **Closed book,** as in steps 1 to 3 and 5: no tools, no files, no web; what it needs is pasted into the call (the brief, the plan, its config, the verdict, the check, the data description, the earlier rounds).
 
@@ -103,6 +109,9 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 
 ## Variants compared
 - **One call against analyst then deducer,** on the same backtests (exercises 1 and 2): one call kept (blind quality 9 of 16, ideas found again on a rerun 59 % against 42 %, fewer values fitted to the data, cheaper; `validation/reading.md`).
+- **Exploring folds B and C only (2026-11-24):** a real analysis (7.g on 001-01...c1, 2 rounds allowed, 0.31 USD) whose
+  exploration results name windows w7 to w18 only; a test proves the tables and the record's description hold those
+  windows alone (`helper/test_analyse.py`).
 - **To try later:** a fixed query format instead of Python functions, if the functions prove hard to control.
 
 ## Who judges the output
