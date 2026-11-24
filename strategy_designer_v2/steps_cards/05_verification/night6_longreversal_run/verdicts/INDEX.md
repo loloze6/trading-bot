@@ -20,6 +20,7 @@
 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d: confirmed (fit: exact) [main: 0.00700393; t of the forecast-weighted mean 3.88493; bars with forecast > 0 1355, bars with forecast > 0 (incl. without next-day return) 1366]
 031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls_1d: inconclusive (fit: exact) [main: 0.0590885; correlation t 1.82634; grid bars with forecast > 0 436, grid bars 954]
 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d: confirmed (fit: exact) [main: 0.000405532; OLS t of the slope 5.13284; bars with a non-zero forecast 2918, bars in the slope 2897]
+031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d: confirmed (fit: exact) [main: 0.000425769; OLS slope t 5.18031; bars with a non-zero forecast 2894, bars in regression 2897]
 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: confirmed (fit: exact) [main: 0.00154697; t of the mean 4.13712; bars with a non-zero position 2887, bars in the main measure 2897, bars with z < 0 1355, bars with z > 0 1539]
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: confirmed (fit: exact) [main: 0.00170427; OLS t, standard errors clustered by day 2.37878; grid cases 2448, distinct days 207]
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: inconclusive (fit: adapted) [main: 0.0400087; day-clustered t of the weighted mean 1.70634; distinct case days 141, cases 655]

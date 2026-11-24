@@ -20,6 +20,7 @@
 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d: 2 ideas (2 explorations)
+031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d: 2 ideas (3 explorations)
 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: 1 ideas (3 explorations)
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: 2 ideas (2 explorations)

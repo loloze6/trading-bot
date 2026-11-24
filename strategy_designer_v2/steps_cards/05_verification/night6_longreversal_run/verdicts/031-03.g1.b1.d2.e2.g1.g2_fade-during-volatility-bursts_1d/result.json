@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of demeaned next-bar return on forecast",
+    "value": 0.00042576928800812,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.180307540919622
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing gain > 0; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return minus position x coin mean daily return)",
+    "value": 0.0008489377665478746,
+    "passed": true
+  },
+  "counts": {
+    "bars with a non-zero forecast": 2894,
+    "bars in regression": 2897
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing gain is above 0.",
+  "reading": "The 1000-bar minimum is counted on the regression bars (those with a next-bar return in the same window) with a non-zero forecast, and the coin's mean daily return is the mean of all close-to-close daily returns pooled over windows."
+}

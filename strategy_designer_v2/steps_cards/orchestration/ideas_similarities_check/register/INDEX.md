@@ -131,6 +131,7 @@ An idea's latest record counts once.
 | 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d | paying | night6_longreversal_run | 1d | 1 | ebe005c43 | 2026-11-24T03:36:07 |
 | 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d | paying | night6_longreversal_run | 1d | 1 | 739d6d17c | 2026-11-24T03:42:05 |
 | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d | confirmed | night6_longreversal_run | 1d | 1 | ebe005c43 | 2026-11-24T03:39:04 |
+| 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d | confirmed | night6_longreversal_run | 1d | 1 | e0a8d549f | 2026-11-24T03:51:48 |
 | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d | confirmed | night6_longreversal_run | 1d | 1 | f24a1f042 | 2026-11-24T03:33:14 |
 | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d | confirmed | night6_longreversal_run | 1d | 19 | b57c524c4 | 2026-11-24T03:05:21 |
 | 031-03.g1.b1.g2_swelling-volume-after-rises_1d | paying | night6_longreversal_run | 1d | 19 | 2d733ab28 | 2026-11-24T02:43:43 |

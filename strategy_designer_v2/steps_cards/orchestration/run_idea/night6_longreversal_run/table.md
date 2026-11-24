@@ -35,23 +35,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | plan | confirmed (+5.13) | not profitable enough (failed: Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls, 031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls; 7.g: 031-03.g1.b1.d2.e2.g1.g1.g1_xmr-fades-sharp-falls-only, 031-03.g1.b1.d2.e2.g1.g1.g2_xmr-close-in-range-reversal | 1.00 | 4.2 |
 | 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | plan | confirmed (+3.88) | profitable enough | unseen_2016_2017: no data; unseen_2026: holds | 7.g: 031-03.g1.b1.d2.e2.g1.g1.d1.g1_low-close-next-day-rebound, 031-03.g1.b1.d2.e2.g1.g1.d1.g2_high-close-up-day-fade | 0.59 | 3.2 |
 | 031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | plan | inconclusive (+1.83) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.d2.e2.g1.g1.d2.b1_xmr-next-day-fall-rebound, 031-03.g1.b1.d2.e2.g1.g1.d2.b2_xmr-next-day-scaled-reversal; 7.g: 031-03.g1.b1.d2.e2.g1.g1.d2.g1_one-day-scaled-move-reversal, 031-03.g1.b1.d2.e2.g1.g1.d2.g2_close-location-next-day-reversal | 0.96 | 4.2 |
-| 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | missing-components | - | - | - | - | 0.07 | 0.5 |
+| 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | plan | confirmed (+5.18) | not profitable enough (failed: Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.g1.g2.d1_rebound-after-turbulent-falls, 031-03.g1.b1.d2.e2.g1.g2.d2_rebound-grows-with-fall; 7.g: 031-03.g1.b1.d2.e2.g1.g2.g1_xmr-rebound-after-volatile-falls, 031-03.g1.b1.d2.e2.g1.g2.g2_fade-scaled-by-monthly-volatility | 1.84 | 4.8 |
 
 ## Consumption
-32 ideas, 34.20 USD, 267.8 minutes in all.
+32 ideas, 35.97 USD, 272.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.63 | 15.6 |
-| step4_backtest | 0.00 | 147.3 |
-| step5_verdict | 5.60 | 19.8 |
-| step6_check | 0.00 | 1.4 |
+| step3_plan | 3.41 | 16.0 |
+| step4_backtest | 0.00 | 147.7 |
+| step5_verdict | 5.75 | 20.4 |
+| step6_check | 0.00 | 1.5 |
 | chart_files | 0.00 | 0.6 |
 | step7_7.c | 0.00 | 0.1 |
-| step7_7.d | 2.21 | 7.7 |
+| step7_7.d | 2.57 | 8.9 |
 | step7_7.e | 0.89 | 2.7 |
 | step7_7.a | 0.31 | 1.1 |
 | step7_7.b | 7.84 | 23.2 |
-| step7_7.g | 14.71 | 44.3 |
-| similarity_check | 0.00 | 0.4 |
+| step7_7.g | 15.20 | 46.0 |
+| similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 3.8 |
