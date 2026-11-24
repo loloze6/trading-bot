@@ -32,4 +32,5 @@
 031-03.b1_wide-day-extends-up-run_1d: confirmed (fit: adapted) [main: 0.011137; t of the weighted mean, cases on the same day pooled 2.54096; distinct case days 564, cases 890, active bars checked 1201]
 031-03_uprun-size-scales-wide-flat-reversal_1d: inconclusive (fit: adapted) [main: -0.0134535; t of the mean, cases of one day taken together -1.00259; cases 78, distinct days 68]
 031-04.g1_close-at-low-fall-rebounds_1d: confirmed (fit: adapted) [main: 0.00191179; t of the slope, clustered by day 2.60483; sharp-down-day cases 492, days 200, cases with forecast >= 2 478]
+031-04.g2_sharp-daily-fall-reverses_1d: confirmed (fit: exact) [main: 0.00032777; slope t, clustered by day 2.17335; bars with forecast > 0 8514, distinct days among them 2199]
 031-04_downrun-size-scales-wide-flat-reversal_1d: inconclusive (fit: adapted) [main: -0.00114447; slope t, residual scores summed per day -0.550279; independent cases 130, cases with forecast >= 2 41, days with cases 108]

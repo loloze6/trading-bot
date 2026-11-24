@@ -32,4 +32,5 @@
 031-03.b1_wide-day-extends-up-run_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-03_uprun-size-scales-wide-flat-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-04.g1_close-at-low-fall-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+031-04.g2_sharp-daily-fall-reverses_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-04_downrun-size-scales-wide-flat-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
