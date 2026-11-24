@@ -12,6 +12,7 @@
 031-03.b1.b1.b1_aligned-20-day-continuation_1d: inconclusive (fit: exact) [main: 0.0169284; day-clustered t of the mean 1.85196; grid cases 2406, distinct days 289]
 031-03.b1.b1_20-day-continuation-all-coins_1d: inconclusive (fit: adapted) [main: 0.0106098; t of the mean, cases of one day summed as one piece of evidence 1.52295; cases with a nonzero forecast 3598, distinct days 304]
 031-03.b1_short-horizon-continuation-after-moves_1d: inconclusive (fit: exact) [main: 0.000362049; slope t, SE clustered by day 0.654597; grid cases 1691, distinct days 304]
+031-03.g1.b1.d1_volume-surge-with-price-move_1d: inconclusive (fit: exact) [main: 0.0112724; day-clustered t 1.69814; cases 2072, distinct days 1038]
 031-03.g1.b1_volume-surge-more-coins_1d: confirmed (fit: exact) [main: 0.0231811; t of the mean, cases summed per day 2.34169; cases 2448, distinct days 207]
 031-03.g1_volume-surge-leads-two-week-drift_1d: inconclusive (fit: exact) [main: 0.000798964; OLS slope t 1.52533; grid cases with a non-zero forecast 1152, grid cases 1152]
 031-03_fading-volume-after-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00759707; OLS slope t -0.463898; regime grid cases 57, short-bet cases (forecast <= -2) 16]

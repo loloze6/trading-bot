@@ -22,21 +22,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1_sharp-drop-next-day-bounce | 031-01_extreme-rise-partly-reverses | plan | confirmed (+2.63) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.d1_sharp-drop-in-fresh-turbulence; 7.g: 031-01.g1.g1_wide-range-low-close-bounce | 1.03 | 5.4 |
 | 031-03.g1_volume-surge-leads-two-week-drift | 031-03_fading-volume-after-rise-reverses | plan | inconclusive (+1.53) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 031-03.g1.b1_volume-surge-more-coins, 031-03.g1.b2_volume-drought-one-week-fall; 7.g: 031-03.g1.g1_one-day-overreaction-reversal, 031-03.g1.g2_rebound-after-sharp-daily-falls | 0.94 | 5.0 |
 | 031-03.g1.b1_volume-surge-more-coins | 031-03.g1_volume-surge-leads-two-week-drift | plan | confirmed (+2.34) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 031-03.g1.b1.d1_volume-surge-with-price-move, 031-03.g1.b1.d2_rising-volume-rally-continues; 7.g: 031-03.g1.b1.g1_volume-confirmed-two-week-continuation, 031-03.g1.b1.g2_swelling-volume-after-rises | 1.50 | 12.1 |
+| 031-03.g1.b1.d1_volume-surge-with-price-move | 031-03.g1.b1_volume-surge-more-coins | plan | inconclusive (+1.70) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.d1.b1_volume-confirmed-move-one-week; 7.g: 031-03.g1.b1.d1.g1_volume-swell-leads-price | 1.13 | 11.3 |
 
 ## Consumption
-18 ideas, 20.19 USD, 154.8 minutes in all.
+19 ideas, 21.32 USD, 166.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.54 | 9.1 |
-| step4_backtest | 0.00 | 87.0 |
-| step5_verdict | 3.37 | 11.9 |
-| step6_check | 0.00 | 0.8 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 1.62 | 9.5 |
+| step4_backtest | 0.00 | 94.5 |
+| step5_verdict | 3.58 | 12.7 |
+| step6_check | 0.00 | 0.9 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.99 | 3.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.31 | 1.0 |
-| step7_7.b | 5.03 | 14.6 |
-| step7_7.g | 8.95 | 26.6 |
+| step7_7.b | 5.42 | 15.6 |
+| step7_7.g | 9.40 | 28.0 |
 | similarity_check | 0.00 | 0.1 |
