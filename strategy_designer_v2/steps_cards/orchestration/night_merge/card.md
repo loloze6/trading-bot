@@ -44,8 +44,9 @@ Git merges every file it can. A conflict is resolved by the rule of its file; an
 3. **The catalogue's class count:** derived, never merged: recomputed from the merged components file.
 4. **The register's books** (`register/books.json`): merged by key; a book both sessions changed differently stops the
    merge.
-5. **The register's pages** (`INDEX.md`, `MATRIX.md`, `COMPARISONS.md`): rebuilt once at the end
-   (`ideas_similarities_check.py --all`), as they are derived from the books.
+5. **The register's derived files** (every file under `register/` but its inputs: the books, `held.json`, the returns;
+   that is the pages, `matrix.csv`, the comparisons): rebuilt once at the end (`ideas_similarities_check.py --all`).
+   `held.json` is a decision (the held books): a conflict on it stops the merge.
 
 **Checked on every file a rule resolved:** every line of each side kept as often as that side has it (unless the other
 side removed it); no line more often than the two sides' additions allow; the components file parses and defines each

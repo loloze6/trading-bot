@@ -16,7 +16,7 @@ def g(root, *a):
 def repo(tmp_path):
     r = tmp_path / "repo"
     for path, text in ((PY, "class A:\n    pass\n"), (IDX, "001_a: x\n"), (nm.BOOKS, json.dumps([{"key": "k0"}])),
-                       (nm.GENERATED[0], "page\n"), ("other.md", "one\n")):
+                       (f"{nm.REGISTER}/register/INDEX.md", "page\n"), ("other.md", "one\n")):
         (r / path).parent.mkdir(parents=True, exist_ok=True)
         (r / path).write_text(text)
     g(r, "init", "-q", "-b", "work"); g(r, "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A")
@@ -28,7 +28,7 @@ def repo(tmp_path):
         (r / IDX).write_text((r / IDX).read_text() + line + "\n")
         books = json.loads((r / nm.BOOKS).read_text()) + [{"key": key}]
         (r / nm.BOOKS).write_text(json.dumps(books))
-        (r / nm.GENERATED[0]).write_text(f"page {b}\n")
+        (r / f"{nm.REGISTER}/register/INDEX.md").write_text(f"page {b}\n")
         g(r, "commit", "-qam", b)
     g(r, "checkout", "-q", "work")
     return r
@@ -82,3 +82,9 @@ def test_brief_numbers_used_twice_are_reported(tmp_path):
     for n in ("031_a.md", "031_b.md", "032_c.md", "INDEX.md"):
         (d / n).write_text("x")
     assert nm.brief_number_clashes(tmp_path) == {"031": ["031_a", "031_b"]}
+
+
+def test_register_files_derived_from_its_inputs():
+    assert nm.derived(f"{nm.REGISTER}/register/matrix.csv") and nm.derived(f"{nm.REGISTER}/register/comparisons/x.json")
+    assert not nm.derived(nm.BOOKS) and not nm.derived(f"{nm.REGISTER}/register/held.json")
+    assert not nm.derived(f"{nm.REGISTER}/register/returns/a.csv.gz") and not nm.derived("other.md")

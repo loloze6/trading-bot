@@ -11,7 +11,7 @@ stopped and the conflict reported (no guess):
 - the catalogue's class count: derived, recomputed from the components file;
 - every merged file checked: nothing lost, nothing invented, every Python class defined once;
 - the similarity register's list of books: merged by key;
-- the register's generated pages: rebuilt once at the end (`ideas_similarities_check.py --all`).
+- the register's derived files (pages, matrix, comparisons): rebuilt once at the end (`ideas_similarities_check.py --all`).
 Then both test suites. It reports brief numbers used by more than one brief (next steps 3e). It never pushes.
 Card: ../card.md.
 """
@@ -29,7 +29,12 @@ LINES = (                                   # appended to by every session: merg
 )
 REGISTER = f"{SC}/orchestration/ideas_similarities_check"
 BOOKS = f"{REGISTER}/register/books.json"
-GENERATED = tuple(f"{REGISTER}/register/{n}" for n in ("INDEX.md", "MATRIX.md", "COMPARISONS.md"))
+INPUTS = (BOOKS, f"{REGISTER}/register/held.json", f"{REGISTER}/register/returns/")   # what the register is built from
+
+
+def derived(path):
+    """A register file `ideas_similarities_check.py --all` rewrites from its inputs (pages, matrix, comparisons)."""
+    return path.startswith(f"{REGISTER}/register/") and not path.startswith(INPUTS)
 COUNT = re.compile(r"There are \d+ classes")   # derived: recomputed from the components file, never merged
 
 
@@ -186,7 +191,7 @@ def merge_branch(branch, root):
         elif path == BOOKS:
             merged, f = merge_books(base, ours, theirs)
             faults += [f"{path}: {x}" for x in f]
-        elif path in GENERATED:
+        elif derived(path):
             merged = ours                                     # rebuilt at the end
         else:
             faults.append(f"{path}: a conflict no rule covers")
@@ -224,7 +229,7 @@ def main():
             print(f"{b}: NOT merged (the merge was aborted):")
             print("".join(f"  - {f}\n" for f in faults), end="")
             sys.exit(1)
-        touched |= any(c in (BOOKS, *GENERATED) for c in conflicted) or bool(
+        touched |= any(c == BOOKS or derived(c) for c in conflicted) or bool(
             git("diff", "--name-only", "HEAD^1", "HEAD", "--", f"{REGISTER}/register", root=root).strip())
         print(f"{b}: merged ({len(conflicted)} conflicts resolved by rule{': ' + ', '.join(Path(c).name for c in conflicted) if conflicted else ''})")
     if touched:
