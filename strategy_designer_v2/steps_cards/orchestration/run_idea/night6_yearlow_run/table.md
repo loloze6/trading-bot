@@ -26,22 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday | 031-01.g1.g2_monthly-trend-carries-into-saturday | plan | inconclusive (+2.58) | profitable enough | - | 7.b: 031-01.g1.g2.d2.b1_monthly-trend-into-saturday; 7.e: 031-01.g1.g2.d2.e1_weekly-momentum-into-saturday, 031-01.g1.g2.d2.e2_late-week-momentum-continuation, 031-01.g1.g2.d2.e3_monthly-gain-into-weekend; 7.g: 031-01.g1.g2.d2.g1_volatile-one-day-fall-rebound, 031-01.g1.g2.d2.g2_monthly-gain-into-weekend | 1.43 | 7.4 |
 | 031-01.g1.g1.g1_two-week-run-carries-weekend | 031-01.g1.g1_midweek-run-carries-into-saturday | plan | confirmed (+2.97) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend, 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high; 7.g: 031-01.g1.g1.g1.g1_two-week-run-carries-saturday, 031-01.g1.g1.g1.g2_thursday-run-carries-two-days, 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound | 1.36 | 6.2 |
 | 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend | 031-01.g1.g1.g1_two-week-run-carries-weekend | plan | inconclusive (+1.29) | profitable enough | - | 7.b: 031-01.g1.g1.g1.d1.b1_two-week-rise-carries-weekend, 031-01.g1.g1.g1.d1.b2_two-week-rise-carries-week-end; 7.e: 031-01.g1.g1.g1.d1.e1_two-week-rise-lifts-saturday, 031-01.g1.g1.g1.d1.e2_thursday-rise-foreshadows-saturday, 031-01.g1.g1.g1.d1.e3_four-week-rise-carries-weekend; 7.g: 031-01.g1.g1.g1.d1.g1_two-week-rise-carries-saturday, 031-01.g1.g1.g1.d1.g2_saturday-surge-fades-sunday | 1.41 | 6.9 |
+| 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high | 031-01.g1.g1.g1_two-week-run-carries-weekend | plan | inconclusive (+0.99) | profitable enough | - | 7.b: 031-01.g1.g1.g1.d2.b1_weekend-carry-near-high-more-coins, 031-01.g1.g1.g1.d2.b2_two-week-rise-weekend-carry; 7.e: 031-01.g1.g1.g1.d2.e1_friday-trend-carries-into-saturday, 031-01.g1.g1.g1.d2.e2_weekend-carry-graded-by-trend; 7.g: 031-01.g1.g1.g1.d2.g1_friday-trend-carries-into-saturday | 1.54 | 7.8 |
 
 ## Consumption
-22 ideas, 24.66 USD, 160.6 minutes in all.
+23 ideas, 26.20 USD, 168.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.17 | 13.8 |
-| step4_backtest | 0.00 | 72.9 |
-| step5_verdict | 3.94 | 14.3 |
+| step3_plan | 2.25 | 14.4 |
+| step4_backtest | 0.00 | 75.4 |
+| step5_verdict | 4.10 | 14.9 |
 | step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.3 |
-| step7_7.e | 0.77 | 2.7 |
+| chart_files | 0.00 | 0.4 |
+| step7_7.e | 1.15 | 3.9 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 1.35 | 4.2 |
 | step7_7.d | 2.28 | 7.3 |
-| step7_7.b | 4.20 | 12.6 |
-| step7_7.g | 9.95 | 29.8 |
+| step7_7.b | 4.55 | 13.8 |
+| step7_7.g | 10.52 | 31.4 |
 | similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 1.8 |

@@ -2,6 +2,7 @@
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: 1 ideas (2 explorations)
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: 2 ideas (2 explorations)
 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: 1 ideas (3 explorations)
 031-01.g1.g1.g1_two-week-run-carries-weekend_1d: 3 ideas (3 explorations)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (3 explorations)
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: 1 ideas (2 explorations)
