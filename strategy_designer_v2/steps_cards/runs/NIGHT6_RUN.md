@@ -76,6 +76,16 @@ effects of the four); N2 on none.
   process launched detached (setsid nohup) dies with it (03:12 UTC, 20 minutes after the designer's turn ended). The
   saved progress survived (XMR, 200 calls). The download now runs as a background task the session tracks, with a
   monitor, and resumes from its saved progress.
+- **04:37 Paris, session 1 (streaks) ended on budget** (36.72 USD: ideas 32.57, components 4.15; 3.7 h; branch
+  night6-streak, 36c851b40d): 29 ideas (4 from the brief, 25 from step 7), 28 plans (1 waiting for a component built
+  later, not picked again); step 5: 10 confirmed, 18 inconclusive; step 6: 7 profitable enough; confirmed and
+  profitable: 4, of which 2 hold on both unseen periods (volatility-scaled monthly trend continuation: its nearest
+  paying book correlates 0.93; raw-scaled rise continuation: 0.62) and 2 on 2016-17 only. The 6 confirmed not paying
+  fail on Calmar only. The theme itself: the 4 streak ideas all inconclusive; what was confirmed (step 7's offspring)
+  is trend continuation and the next-day rebound after a fall, not streaks. Components built (standing go): 2
+  (UpCloseStreakLength, VolatilityRatioWeightedScaledFall), proof 588 files identical but run ids, times, paths; bot
+  suite passed. No failure, no restart. The session's reading: N1 pending the designer's check against the
+  portfolio (nearest paying correlations 0.50 to 0.93: momentum mostly), not N2, the streak theme not confirmed.
 
 ## Reading
 (in the morning)
