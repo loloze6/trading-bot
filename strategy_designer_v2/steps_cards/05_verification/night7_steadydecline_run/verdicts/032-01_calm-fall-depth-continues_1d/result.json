@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "graded short gain vs drift, (-forecast/10) x -(next-day excess return), per-day sums",
+    "value": 0.005904730473106703,
+    "statistic": {
+      "name": "t of the mean (per-day sums)",
+      "value": 1.4253853551242057
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deepest-third minus shallowest-third next-day excess return (< 0)",
+    "value": -0.004743180175948233,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a non-zero forecast": 1028,
+    "cases (coin-days)": 2484
+  },
+  "decided_by": "The main measure's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The falling calm profile is read from the recorded regime 'unknown' (its detector components are not recorded and the 365-bar volatility percentile cannot be rebuilt inside ~120-bar windows), with the recorded 30-bar change below 0 and a negative forecast; the coin's drift is its mean next-bar return over all its windows; the reported mean and t are over per-day sums of the cases; terciles split the cases ranked by forecast (stable order) into three equal-count groups; the 100-day minimum counts distinct days with a non-zero forecast and a next-day return in the same window."
+}

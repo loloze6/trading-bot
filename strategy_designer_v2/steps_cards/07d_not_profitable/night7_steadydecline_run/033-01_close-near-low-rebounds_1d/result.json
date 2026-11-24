@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "033-01_close-near-low-rebounds_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39203740000000004,
+  "findings": {
+    "F1": "The book loses its gain to sizing and to its short side. It held only 0.107 of the book on average and turned over 0.141 a bar, so it grossed 0.0343 % a bar against about 0.0134 % of costs a bar. Its long bars grossed 0.0555 % each (4324 bars) and its short bars only 0.0135 % (4312 bars), which is about the cost of turning them over. This is why the mean daily return on days in a position (4.7e-05) and the Calmar (0.078) fail.",
+    "F2": "The effect is graded and real on both sides. Next-day excess return rises from -0.42 % (t -3.04, 1554 bars) for closes 10-25 % from the high to +0.46 % (t 2.74, 1160 bars) at 75-90 % and +0.68 % (t 2.82, 526 bars) at 90-100 %. Closes near the low carry the larger move: the extreme low-close cases earn a total move of +0.68 % (848 cases), 3.6 times the 0.19 % trade cost. The extreme high-close shorts earn only +0.25 % (1329 cases), 1.3 times the cost.",
+    "F3": "The effect is about four times stronger after a wide day. Range is measured against the coin's 20-day swing, in terciles. The graded measure (close-from-high minus 0.5) \u00d7 next-day excess is 0.00188 (t 5.39, 2656 bars) in the widest third, against 0.00044 (t 1.79) in the narrowest. Extreme low closes on wide days are followed by +1.01 % (t 3.25, 351 cases), about 5 times the cost of a trade.",
+    "F4": "Wide range alone carries only part of that move. Wide-range days that close away from either extreme are followed by +0.36 % (1870 bars), against +1.01 % when the close also sits near the low. A wide day is in the idea's own theory: the forced late selling pushed the price further from fair value. The high-close shorts barely change with range: +0.34 % narrow and +0.44 % wide.",
+    "F5": "Low-close longs work in falling markets, which this round's data could not check against the market alone. They earn +1.27 % next day in a falling 60-day trend (275 cases), +0.42 % in a rising one (138) and -1.86 % in a choppy one (48 cases, too few to read). By agitation they earn +1.09 % in agitated markets (429) against 0.00 % in calm ones (419). High-close shorts lose -0.53 % in a rising trend (339 cases). The market's own move in these profiles, without the signal, was not measured because the second round failed.",
+    "F6": "The gross gain is positive every year: 0.017 % a bar in 2018, 0.036 % in 2019, 0.063 % in 2020 and 0.021 % in 2021. The book is not resting on one period; it is too small and too diluted by the short side."
+  },
+  "ideas": [
+    {
+      "idea": "The nearer a coin's daily close sits to that day's low, and the wider that day's high-low range against the coin's usual daily swing over the past 20 days, the larger the rise in its price over the next day.",
+      "consequence": "A trader buys a close pinned near the low mainly after a wide day, when forced selling pushed the price furthest below fair value, and gives little weight to the same close after a narrow day.",
+      "name": "wide-day low-close rebound",
+      "from": "F3, F4, F2, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "Among days that close in the lower part of their own high-low range, the nearer the close sits to the day's low, the larger the rise in the coin's price over the next day.",
+      "consequence": "A trader takes only the buying side of the close-location reversal, sized up as the close nears the low, and drops the shorts after high closes, which barely cover their costs.",
+      "name": "low-close rebound, long side",
+      "from": "F1, F2, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-01.d1_wide-day-low-close-rebound",
+    "033-01.d2_low-close-rebound-long-side"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
