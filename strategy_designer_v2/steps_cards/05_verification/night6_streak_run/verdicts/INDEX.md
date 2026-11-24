@@ -1,2 +1,5 @@
+031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: confirmed (fit: exact) [main: 0.000576987; OLS slope t 2.06353; independent grid cases with a positive forecast 1630]
+031-02.b1.g2.b1_volatile-falls-more-coins_1d: inconclusive (fit: exact) [main: 0.000316169; OLS slope t, standard error clustered by day 1.33206; independent case-days 1230, cases 8995, cases with 60-day volatility 4444]
+031-02.b1.g2_volatile-falls-rebound-harder_1d: inconclusive (fit: exact) [main: 0.000243674; slope t, SE clustered by day 1.47322; grid points with a forecast above 0 4217, distinct days of those grid points 1125, grid points in regression 8650, distinct days in regression 1509]
 031-02.b1_sharp-daily-fall-rebounds_1d: confirmed (fit: exact) [main: 0.000614936; OLS slope t, day-clustered (CR1) 2.27923; grid bars with forecast above 0 4217, distinct days 1125]
 031-02_down-streak-length-reversal_1d: inconclusive (fit: exact) [main: -0.000432003; slope t, day-clustered (same-day cases summed) -1.26529; grid bars with a forecast above 0 1759, distinct days of those grid bars 485, grid bars in regression 3419, supporting cases 3232]

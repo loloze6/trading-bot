@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "031-02.b1_sharp-daily-fall-rebounds_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44709600000000005,
+  "findings": {
+    "F1": "The book failed only on its falls (Calmar 0.60 against 0.75). Its daily returns move closely with holding the coins (correlation 0.74), and its deepest fall is -34 % against holding's -81 %. The worst falls came in the bear windows w2 (-34 %), w3 (-32 %) and w14 (-32 %), so the book's falls are the market's falls, cut down rather than avoided.",
+    "F2": "Turbulence decides whether the rebound appears. Turbulence here means the coin's daily moves over the past 10 days against its past 60 days, split in quintiles. In the calmest quintile, falls are followed by a 2-day excess return of -0.76 % (t -3.41, 705 cases), and its falls above one usual move by -2.19 % (51 cases). In the two most turbulent quintiles the same falls are followed by +0.53 % (t 2.07, 739 cases) and +0.68 % (t 2.29, 721 cases), and falls above one usual move by +0.68 % and +1.60 %.",
+    "F3": "The turbulence condition is not an effect of its own. In the most turbulent third, bars without a fall have a 2-day excess return of -0.20 % (t -0.94, 1186 cases), against +0.65 % (t 2.92, 1218 cases) where a fall and turbulence occur together. The joint case gives +0.65 % on 516 distinct days (day-clustered t 1.79) and is positive in 6 of the 8 years. This belongs to the idea's own theory: a sharp drop amid stretched, one-sided flow is the liquidity shock that market makers are paid to absorb.",
+    "F4": "In the actual book, the gain per bar while holding after a fall is +0.41 % in turbulent markets and +0.11 % in calm ones. The position still carried on non-signal bars (mean allocation 0.19) loses -0.07 % per bar in turbulent markets.",
+    "F5": "Small falls do not rebound. Falls under half a usual move give a 2-day excess return of -0.43 % (1694 cases), while falls of 0.5 to 1, 1 to 1.5, 1.5 to 2, 2 to 3 and over 3 usual moves give +0.48 %, +0.88 %, +0.63 %, +0.68 % and +0.59 %. The step from small to medium falls carries most of the grading.",
+    "F6": "In a simplified rebuild of the book (vol-target size, held 2 days, fees included), each restriction to the stronger case cut the deepest fall:",
+    "F7": "A rising market is not a repair, because it earns about as much without the signal. Above the 50-day mean, bars with a fall give +0.25 % (t 1.40) and bars without a fall give +0.18 % (t 1.21)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall on its latest day, measured against the size of its own daily moves over the past 60 days, the more it rises over the next 2 days, only while its daily moves over the past 10 days have been larger than its usual moves over the past 60 days.",
+      "consequence": "A trader buys sharp daily drops for a two-day rebound only when the coin is already turbulent, and stays out after drops in calm markets, which are followed by further losses.",
+      "name": "sharp fall rebounds in turbulence",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall on its latest day, measured against the size of its own daily moves over the past 60 days, the more it rises over the next 2 days, and the more so the larger its daily moves over the past 10 days are against those of the past 60 days.",
+      "consequence": "A trader sizes a two-day rebound trade after a sharp daily drop by both the drop and how turbulent the coin's recent days have been, putting little or nothing on drops after a calm stretch.",
+      "name": "rebound graded by turbulence",
+      "from": "F2, F3, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.d1_sharp-fall-rebounds-in-turbulence",
+    "031-02.b1.d2_rebound-graded-by-turbulence"
+  ],
+  "no_ideas": null
+}
