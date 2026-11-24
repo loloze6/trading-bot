@@ -24,22 +24,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1.g2_monthly-trend-carries-into-saturday | 031-01.g1_weekly-gains-carry-into-saturday | plan | confirmed (+3.02) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g2.d1_monthly-gain-lifts-saturday, 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday; 7.g: 031-01.g1.g2.g1_weekly-move-carries-into-saturday, 031-01.g1.g2.g2_volatile-weeks-carry-into-saturday | 1.31 | 5.8 |
 | 031-01.g1.g2.d1_monthly-gain-lifts-saturday | 031-01.g1.g2_monthly-trend-carries-into-saturday | plan | confirmed (+2.89) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g2.d1.d1_weekend-lift-needs-fresh-gain, 031-01.g1.g2.d1.d2_strongest-monthly-gains-lift-saturday, 031-01.g1.g2.d1.d3_monthly-gain-lifts-weekend; 7.g: 031-01.g1.g2.d1.g1_thursday-momentum-into-weekend | 1.09 | 5.2 |
 | 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday | 031-01.g1.g2_monthly-trend-carries-into-saturday | plan | inconclusive (+2.58) | profitable enough | - | 7.b: 031-01.g1.g2.d2.b1_monthly-trend-into-saturday; 7.e: 031-01.g1.g2.d2.e1_weekly-momentum-into-saturday, 031-01.g1.g2.d2.e2_late-week-momentum-continuation, 031-01.g1.g2.d2.e3_monthly-gain-into-weekend; 7.g: 031-01.g1.g2.d2.g1_volatile-one-day-fall-rebound, 031-01.g1.g2.d2.g2_monthly-gain-into-weekend | 1.43 | 7.4 |
+| 031-01.g1.g1.g1_two-week-run-carries-weekend | 031-01.g1.g1_midweek-run-carries-into-saturday | plan | confirmed (+2.97) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.g1.d1_two-week-rise-carries-weekend, 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high; 7.g: 031-01.g1.g1.g1.g1_two-week-run-carries-saturday, 031-01.g1.g1.g1.g2_thursday-run-carries-two-days, 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound | 1.36 | 6.2 |
 
 ## Consumption
-20 ideas, 21.88 USD, 147.5 minutes in all.
+21 ideas, 23.24 USD, 153.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.01 | 12.9 |
-| step4_backtest | 0.00 | 69.9 |
-| step5_verdict | 3.61 | 13.1 |
+| step3_plan | 2.09 | 13.3 |
+| step4_backtest | 0.00 | 71.4 |
+| step5_verdict | 3.77 | 13.7 |
 | step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.e | 0.38 | 1.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 1.35 | 4.1 |
-| step7_7.d | 1.75 | 5.6 |
+| step7_7.d | 2.28 | 7.3 |
 | step7_7.b | 3.88 | 11.4 |
-| step7_7.g | 8.91 | 26.2 |
+| step7_7.g | 9.49 | 28.1 |
 | similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 1.8 |

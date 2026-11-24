@@ -1,6 +1,7 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: not profitable enough [Sharpe -0.2834; Sharpe minus holding's Sharpe -0.8639; Calmar -0.1791]
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: profitable enough [Sharpe 1.11; Sharpe minus holding's Sharpe 0.5554; Calmar 0.8801]
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: not profitable enough [Sharpe 0.8367; Sharpe minus holding's Sharpe 0.2671; Calmar 0.4164]
+031-01.g1.g1.g1_two-week-run-carries-weekend_1d: not profitable enough [Sharpe 0.6988; Sharpe minus holding's Sharpe 0.1447; Calmar 0.454]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: not profitable enough [Sharpe 0.5747; Sharpe minus holding's Sharpe 0.02058; Calmar 0.2472]
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: not profitable enough [Sharpe 0.8621; Sharpe minus holding's Sharpe 0.308; Calmar 0.715]
 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday_1d: profitable enough [Sharpe 0.8554; Sharpe minus holding's Sharpe 0.2995; Calmar 0.7695]
