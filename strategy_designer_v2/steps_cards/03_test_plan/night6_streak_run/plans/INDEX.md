@@ -1,1 +1,5 @@
 031-01_up-streak-length-reversal_1d: missing-components: The idea needs the count of consecutive higher closes and that count set against the lengths of past up streaks; [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-02.b1_sharp-daily-fall-rebounds_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-02_down-streak-length-reversal_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-03_up-streak-length-continuation_1d: missing-components: The streak length is in the coin's own closes, and a regime plus one graded component could hold the idea. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-04_down-streak-length-continuation_1d: missing-components: The idea needs the length of the current run of lower closes, ranked against the lengths of the coin's down-close [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

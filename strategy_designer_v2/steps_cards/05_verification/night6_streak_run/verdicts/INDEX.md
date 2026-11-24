@@ -1,0 +1,2 @@
+031-02.b1_sharp-daily-fall-rebounds_1d: confirmed (fit: exact) [main: 0.000614936; OLS slope t, day-clustered (CR1) 2.27923; grid bars with forecast above 0 4217, distinct days 1125]
+031-02_down-streak-length-reversal_1d: inconclusive (fit: exact) [main: -0.000432003; slope t, day-clustered (same-day cases summed) -1.26529; grid bars with a forecast above 0 1759, distinct days of those grid bars 485, grid bars in regression 3419, supporting cases 3232]
