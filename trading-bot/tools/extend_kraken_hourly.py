@@ -14,6 +14,9 @@ that coin. Rows already in the cache are never changed. Each added range is reco
 
   python tools/extend_kraken_hourly.py [--until YYYY-MM-DD] [--coins BTC,ETH,...] [--dry-run]
   --until: the last day to add (default: the last day of the daily files, at most yesterday UTC).
+  --coins: the coins, in the order they are done (default: every cached hourly file, by name).
+A stop (a restart, a kill) loses at most SAVE_EVERY calls: the trades' progress is saved in local_data/.extend_hourly/
+and the next call resumes from it.
 
 Why this can't leak: only finished days are written (--until is at most yesterday, UTC); a bar is stamped at its
 hour's start and holds that hour's trades only; the engine hands each bar's decision the rows up to that bar.
@@ -32,6 +35,8 @@ PAIR = {"BTC": "XBT", "DOGE": "XDG"}             # Kraken's own names; the other
 UTC = dt.timezone.utc
 PAUSE = 1.2          # seconds between two trades calls: under Kraken's public limit of about one call a second
 MAX_LIMITED = 5      # rate-limit answers in a row (waits 30 s, doubling to 10 min) before the coin is given up
+SAVE_EVERY = 200     # trades calls between two saves of the progress (a stop resumes from the last save)
+CACHE = Path(__file__).resolve().parents[1] / "local_data" / ".extend_hourly"   # a subfolder: outside git
 
 
 def get(url, headers=None, tries=8):
@@ -97,9 +102,31 @@ def archive_bars(zf, coin):
     return {int(r[0]): tuple(r[1:7]) for r in csv.reader(io.StringIO(raw)) if r}
 
 
+def _save(path, state):
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps({**state, "bars": {h: [str(x) for x in b] for h, b in state["bars"].items()}}))
+    tmp.replace(path)
+
+
+def _load(path):
+    try:
+        d = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    d["bars"] = {int(h): [decimal.Decimal(b[0]), decimal.Decimal(b[1]), decimal.Decimal(b[2]), decimal.Decimal(b[3]),
+                          decimal.Decimal(b[4]), int(b[5])] for h, b in d["bars"].items()}
+    return d
+
+
 def trade_bars(coin, start, end, log):
-    """{hour start: (o, h, l, c, volume, trades)} from Kraken's public trades in [start, end) (unix s)."""
-    bars, since, calls, last_id, limited = {}, int(start * 1e9), 0, -1, 0   # a page repeats the previous page's last trade: by id
+    """{hour start: (o, h, l, c, volume, trades)} from Kraken's public trades in [start, end) (unix s). Progress is
+    saved every SAVE_EVERY calls (local_data/.extend_hourly/, outside git) and resumed from there after a stop."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    cache = CACHE / f"{coin}_{start}_{end}.json"
+    st = _load(cache) or {"bars": {}, "since": int(start * 1e9), "last_id": -1, "calls": 0}
+    if st["calls"]:
+        log(f"  {coin}: resumed after {st['calls']} calls (saved progress)")
+    bars, since, calls, last_id, limited = st["bars"], st["since"], st["calls"], st["last_id"], 0   # a page repeats the previous page's last trade: by id
     while True:
         ans = json.loads(get(TRADES.format(PAIR.get(coin, coin) + "USD", since))); calls += 1
         if ans["error"]:
@@ -124,9 +151,11 @@ def trade_bars(coin, start, end, log):
         if not trades or trades[-1][2] >= end or nxt == since:
             break
         since = nxt
-        if calls % 500 == 0:
-            log(f"  {coin}: {calls} calls, up to {dt.datetime.fromtimestamp(trades[-1][2], UTC):%Y-%m-%d %H:%M}")
+        if calls % SAVE_EVERY == 0:
+            _save(cache, {"bars": bars, "since": since, "last_id": last_id, "calls": calls})
+            log(f"  {dt.datetime.now(UTC):%H:%M} UTC {coin}: {calls} calls, up to {dt.datetime.fromtimestamp(trades[-1][2], UTC):%Y-%m-%d %H:%M}")
         time.sleep(PAUSE)
+    cache.unlink(missing_ok=True)
     return {h: tuple(b) for h, b in bars.items()}, calls
 
 
@@ -185,7 +214,9 @@ def main():
     args = a.parse_args()
     until = min(dt.date.fromisoformat(args.until), yesterday)
     want = {c.strip().upper() for c in args.coins.split(",") if c.strip()}
-    paths = [p for p in sorted(DATA.glob("kraken_*USD_1h.csv")) if not want or p.stem.split("_")[1][:-3] in want]
+    order = [c.strip().upper() for c in args.coins.split(",") if c.strip()]
+    paths = sorted((p for p in DATA.glob("kraken_*USD_1h.csv") if not want or p.stem.split("_")[1][:-3] in want),
+                   key=lambda p: (order.index(p.stem.split("_")[1][:-3]) if order else 0, p.name))   # in the order given
     log = lambda s: print(s, flush=True)
     first_last = min(dt.datetime.strptime(next(reversed(list(csv.reader(p.open(encoding="utf-8")))))[0][:10], "%Y-%m-%d").date() for p in paths)
     quarters = quarters_after(first_last)

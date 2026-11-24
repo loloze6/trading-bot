@@ -35,3 +35,35 @@ def test_same_compares_prices_volume_and_count():
     assert e.same(a, ("537.40000000", "541.04000000", "537.32000000", "541.04000000", "133.08818629", 116))
     assert not e.same(a, ("537.40000000", "541.04000000", "537.32000000", "541.04000000", "133.09818629", 117))
     assert not e.same(a, ("537.41", "541.04", "537.32", "541.04", "133.08818629", 116))
+
+
+def test_a_stopped_fetch_resumes_from_its_saved_progress(monkeypatch, tmp_path):
+    h = 1790755200
+    pages = [{"error": [], "result": {"XXMRZUSD": [[str(10 + i), "1.0", h + 60 * i, "b", "l", "", i + 1]], "last": str(i + 1)}}
+             for i in range(6)] + [{"error": [], "result": {"XXMRZUSD": [["99", "1.0", h + 7200, "b", "l", "", 99]], "last": "99"}}]
+    monkeypatch.setattr(e, "CACHE", tmp_path); monkeypatch.setattr(e, "SAVE_EVERY", 2)
+    monkeypatch.setattr(e.time, "sleep", lambda s: None)
+
+    def feed(stop_after=None):
+        state = {"n": 0}
+        def get(url, headers=None):
+            since = int(url.split("since=")[1].split("&")[0])
+            i = 0 if since == int(h * 1e9) else int(since)      # page i starts after trade id i
+            state["n"] += 1
+            if stop_after is not None and state["n"] > stop_after:
+                raise KeyboardInterrupt                        # the process is stopped
+            return json.dumps(pages[min(i, len(pages) - 1)]).encode()
+        return get
+
+    monkeypatch.setattr(e, "get", feed())
+    whole, _ = e.trade_bars("XMR", h, h + 7200, lambda s: None)
+    assert not list(tmp_path.iterdir())                       # the saved progress is removed at the end
+    monkeypatch.setattr(e, "get", feed(stop_after=5))
+    try:
+        e.trade_bars("XMR", h, h + 7200, lambda s: None)
+    except KeyboardInterrupt:
+        pass
+    assert list(tmp_path.iterdir())                           # progress saved before the stop
+    monkeypatch.setattr(e, "get", feed())
+    resumed, _ = e.trade_bars("XMR", h, h + 7200, lambda s: None)
+    assert resumed == whole
