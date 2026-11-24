@@ -15,6 +15,7 @@
 031-02.b1.g2_volatile-falls-rebound-harder_1d: 1 ideas (3 explorations)
 031-02.b1_sharp-daily-fall-rebounds_1d: 2 ideas (2 explorations)
 031-02_down-streak-length-reversal_1d: no ideas: The streak length, the past returns, the volatility, the range, the weekday, the year and the book's extreme days all leave no pattern that stands out. Across about 60 groupings the best t's are 2.0 to 2.7, isolated and not graded (F3–F6). The book's profit is the coins' drift held 96 % of the time (F1, F2), not a new effect.
+031-03.b1.b1.b1.b1_up-streak-continuation-over-10-days_1d: 2 ideas (3 explorations)
 031-03.b1.b1.b1_up-streak-continuation-over-20-days_1d: no ideas: Across streaks, forecast size, regime, past 20- and 60-day returns, volatility, daily shocks, weekday and distance from highs, no pattern stood out beyond what the many angles examined would produce by chance; the book's gain is the coins' own drift (F1) carried by a few outlier trades (F2), with no graded effect to build an idea on (F3–F5).
 031-03.b1.b1.b2_up-streak-continuation-in-two-month-uptrend_1d: 2 ideas (3 explorations)
 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation_1d: no ideas: Across the forecast's deciles, streaks, last-day moves, volatility levels, volatility ratios, weekdays, years, trades and the book's extreme days, nothing beyond the tested idea stood out from chance once same-day cases were pooled and grid offsets compared. The one bucket with t above 3 reversed sign over a slightly longer horizon and was not graded.
