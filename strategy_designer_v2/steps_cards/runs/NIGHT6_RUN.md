@@ -51,6 +51,20 @@ effects of the four); N2 on none.
 - 00:50 Paris: the four sessions launched (session 1 `session_012maTgWeD1GH4TXz9VJSiU1`, 2 `session_012maTgTihYXqVbsfcvKL5za`,
   3 `session_012maTgU5GYo9zM36Fb7Euy4`, 4 `session_012maTgWBE2Ln9BPLKqXM7jV`), from the working branch at 072b469688.
   The designer checks them at 04:30 Paris (usage limit) and runs P4's hourly part from about 06:45 Paris.
+- **04:58 Paris, session 4 (yearly low) ended on budget** (35.48 USD, 3.1 h; branch night6-yearlow, f5a28f805d): 65 ideas
+  (4 from the brief, 61 from step 7), 32 plans and backtests; step 5: 14 confirmed, 14 inconclusive, 4 not observable;
+  step 6: 9 profitable enough (5 of them confirmed); unseen, the 5 confirmed and profitable: 2016-17 holds 2 of 5,
+  2026 holds 3 of 5, both 1 (volatile down day, next-day rebound: t 1.16 and 0.08; its nearest paying book explains
+  0.39). The theme itself: 0 of 8 yearly-low ideas confirmed (falling near the low t +1.70, the bounce t -1.70, a break
+  below the low too rare: 12 to 18 cases). All 14 confirmed come from step 7's pattern line on 031-01: one family, a
+  week's or month's trend carrying into Thursday to Saturday; all 14 have step 6's Sharpe above 0 (0.57 to 1.31), 9
+  fail step 6 on Calmar only. One container restart (about 01:43 Paris) killed the loop mid-idea; resumed at once,
+  the idea finished from its outputs. The session's reading: N4 for the theme, N1 likely (to check against the
+  portfolio: one family, so about one candidate), N2 not.
+- **Brief numbers collide across branches:** sessions 1 and 4 both wrote brief 031 (each branch numbers from the
+  briefs it has). At the morning merge, the briefs and their ideas' family codes must be renumbered (031, 032, ...),
+  or P7 would take two briefs for one family. A rule for parallel sessions (a brief number range per session, or
+  numbers given at the merge) is a next step.
 
 ## Reading
 (in the morning)
