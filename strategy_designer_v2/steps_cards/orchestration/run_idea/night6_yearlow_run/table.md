@@ -18,22 +18,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b1.b2.b2_sharp-rebound-near-low-fails | 031-02.b1.b2_failed-rally-more-coins | plan | inconclusive (-0.64) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 031-02.b1.b2.b2.b1_yearly-low-break-bounces-back; 7.g: no ideas: Across the regime, past returns at 1 to 60 days, volatility, time in the regime, time since the low, weekday, year and the trades, nothing passed day-clustered t-statistics given how many angles were examined (F1–F5), so no finding supports an idea. | 1.16 | 10.3 |
 | 031-03.b1.a1_yearly-low-break-all-coins | 031-03.b1_deep-yearly-low-break-rebounds | plan | not observable (+1.78) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.a: no ideas: The plan needs at least 30 distinct case days, but the full available data (all 19 coins, folds A to D, daily bars being the longest history) gives 16 days and 18 cases, and no other bar size or coin set the workflow holds can change how rarely this config's forecast reaches a bet inside the roughly 196 grid cells where the situation occurs.; 7.g: no ideas: Across about 40 cells (past returns, 30-day lows and drawdowns, volatility, weekday, year, one-day shocks over 1, 3 and 5 days, and the yearly-low regime itself), only one result beats t 2 once the cases of a day are taken together: the 3-day rebound after a 3-sigma fall at t 2.30. That result is contradicted by its own 1-day and 5-day readings and by the missing grade. Given how many angles were tried, nothing stands out enough to support a new idea, and the tested idea itself needs more cases than these coins and folds contain. | 1.12 | 10.7 |
 | 031-01.g1_weekly-gains-carry-into-saturday | 031-01_near-yearly-low-keeps-falling | plan | confirmed (+3.34) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 031-01.g1.g1_midweek-run-carries-into-saturday, 031-01.g1.g2_monthly-trend-carries-into-saturday | 0.67 | 4.8 |
+| 031-01.g1.g1_midweek-run-carries-into-saturday | 031-01.g1_weekly-gains-carry-into-saturday | plan | confirmed (+3.31) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.d1_midweek-gain-lifts-saturday, 031-01.g1.g1.d2_midweek-fall-near-yearly-low; 7.g: 031-01.g1.g1.g1_two-week-run-carries-weekend, 031-01.g1.g1.g2_volatile-weekends-follow-trend | 1.28 | 6.0 |
 
 ## Consumption
-14 ideas, 14.90 USD, 111.3 minutes in all.
+15 ideas, 16.18 USD, 117.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.43 | 9.3 |
-| step4_backtest | 0.00 | 59.3 |
-| step5_verdict | 2.53 | 9.0 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.54 | 10.0 |
+| step4_backtest | 0.00 | 60.8 |
+| step5_verdict | 2.72 | 9.8 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 1.35 | 4.1 |
-| step7_7.d | 0.00 | 0.0 |
+| step7_7.d | 0.38 | 1.2 |
 | step7_7.b | 3.50 | 10.2 |
-| step7_7.g | 6.10 | 17.7 |
+| step7_7.g | 6.69 | 19.4 |
 | similarity_check | 0.00 | 0.1 |
 | unseen_test | 0.00 | 0.9 |

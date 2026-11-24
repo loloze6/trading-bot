@@ -1,4 +1,5 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: no ideas: The one pattern that stands out against the many angles looked at is the Saturday rise (F3), and it is an on/off calendar condition with no graded situation. Every graded situation examined (nearness to the yearly low, large down days, past returns, volatility, distance from recent lows) was non-monotone or could not be told from chance (F1, F2, F4, F5).
+031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (3 explorations)
 031-01.g1_weekly-gains-carry-into-saturday_1d: 2 ideas (2 explorations)
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (3 explorations)
 031-02.b1.b1_strong-failed-rally-near-low_1d: no ideas: Across the forecast, the regime, the rally gradient, past returns, volatility, weekdays and years, nothing stood out from chance once the cross-coin clustering and the number of angles are accounted for. The only strong year pattern (F6) is the coins' own drift, and the strongest weekday pattern (F5) is neither robust to clustering nor graded.
