@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 20-bar forward return (net of coin drift) on 60-bar return, mean_reversion grid bars, all coins pooled",
+    "value": -0.023478220797885568,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": -0.6405981291653526
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and supporting check > 0; reject: slope > 0 with t >= +2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of short cases, signal direction, net of drift",
+    "value": -0.025775629469618443,
+    "passed": false
+  },
+  "counts": {
+    "grid cases inside the regime": 417,
+    "distinct days": 65,
+    "short cases (supporting check)": 276
+  },
+  "decided_by": "The slope's |t| is below 2 (or cannot be computed): inconclusive.",
+  "reading": "Cases are the mean_reversion bars at window positions 0,20,40,... with a 20-bar forward return inside the window; the 60-bar return is recomputed from closes inside the window only, so grid bars with fewer than 60 prior bars in their window are left out; drift is each coin's mean 20-bar return over its grid in all windows; the slope's t uses day-clustered standard errors; the supporting check uses the grid cases inside the regime with a short forecast; minimum counts are on the regression cases."
+}

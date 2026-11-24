@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x drift-removed 2-bar return on Thursday-close bars",
+    "value": 0.007740744803745031,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 2.9046613590793857
+    },
+    "threshold": "t >= 2 confirms (with the check passing), t <= -2 rejects, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of forecasts, mean drift-removed 2-bar return, above 0",
+    "value": 0.01194809416136602,
+    "passed": true
+  },
+  "counts": {
+    "Thursday cases with a nonzero forecast": 2465,
+    "distinct days": 411
+  },
+  "decided_by": "The main measure's t is >= 2 and the top-minus-bottom-third check is above 0 (confirm rule).",
+  "reading": "Thursday-close bars are bars starting Thursday UTC with a nonzero forecast and a full 2-bar return inside the window (weekly spacing makes them non-overlapping), the drift is each coin's mean 2-bar return on the non-overlapping grid 0,2,4,... of all its windows, and the thirds are the floor(n/3) lowest and highest pooled forecasts."
+}

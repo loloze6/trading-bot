@@ -1,0 +1,21 @@
+---
+line: 7.a not observable
+backtest: 031-04.a1_yearly-low-break-all-coins_1d
+idea tested: 031-04.a1_yearly-low-break-all-coins
+step 5: not observable
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3794 USD
+---
+## Findings
+- **F1:** The situation is not rare: across all 19 coins and 31,541 daily bars, 448 bars closed below the prior 365-day closing low, spread over 196 of 3,308 ten-bar grid cells. Every one of those 196 cells had a positive forecast (share 1.0). Yet step 5 counted only 18 cases on 16 days.
+- **F2:** The config rarely reaches the band that makes a case. On the first break bar of each of the 196 cells the forecast has median 0.19, mean 0.56, 75th percentile 0.54 and max 10.1. A rise of at least 2 points therefore happens in about 18 of 196 break cells (about 9 %). The cause is that the depth is standardised against its own past 365 values, and most of those values are large distances above the low, so a break below the low gives only a small z-score.
+- **F3:** The breaks are spread over many coins: ZEC has 33 break cells, ADA 23, LTC 16, XRP 15, ETH 14, AVAX 13, and every coin has between 2 and 11 more. The shortfall therefore comes from the band, not from too few coins.
+- **F4:** The breaks cluster in a few years: 71 cells in 2022, 54 in 2025, 29 in 2018, 16 in 2019, 14 in 2023, 6 each in 2020 and 2024, and 0 in 2021. In windows, w2 has 43, w24 34 and w14 26, while 8 windows have none. Cases on the same day across coins therefore make up much of the evidence (18 cases on 16 days).
+- **F5:** The outcome varies a lot from case to case. Over the 180 break cells whose 10-bar return stays inside the window, the total 10-bar return has mean +0.49 %, median +0.78 % and standard deviation 14.7 %, against the coins' usual 10-bar move of 15.55 %. The +6.84 % unusual move found on the 18 band cases (t 1.84) is not seen on the break cells as a whole.
+
+## Ideas
+- No ideas: The backtest already used every coin (19) and every fold (A–D) available, and hourly bars cover the same years through 2025 and the same roughly 196 ten-day cells with a break. No available data can lift the count from the 18 cases on 16 days that this config's band admits to the plan's minimum of 30 cases on 20 days. The block is the forecast's standardisation (F2), which rarely gives a 2-point rise inside the 196 break cells, not a lack of data.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

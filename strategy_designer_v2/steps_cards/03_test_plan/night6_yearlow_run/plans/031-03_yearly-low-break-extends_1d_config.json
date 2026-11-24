@@ -1,0 +1,81 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "brk",
+        "class": "strategies.strategy_components.DistanceFromHighComponent",
+        "params": {
+          "period": 365,
+          "source": "close",
+          "exclude_current": 1,
+          "form": "percent",
+          "extreme": "low"
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "brk",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "min_allocation_change": 0.05,
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "depth",
+            "class": "strategies.strategy_components.DistanceFromHighComponent",
+            "params": {
+              "period": 365,
+              "source": "close",
+              "exclude_current": 1,
+              "form": "percent",
+              "extreme": "low"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 365,
+                  "min_periods": 91
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "max": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 10
+  }
+}

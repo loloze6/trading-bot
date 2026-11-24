@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean per-Friday summed gain (forecast/10 x excess 2-bar return)",
+    "value": 0.04291351757043799,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 3.351890946226187
+    },
+    "threshold": "confirm if t >= 2 over >= 100 distinct Fridays; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "high-vol minus other-Fridays slope of excess weekend return on standardised 14-day return (Welch t 1.300)",
+    "value": 0.00029647807977310417,
+    "passed": true
+  },
+  "counts": {
+    "distinct Fridays with cases": 317,
+    "cases": 1103,
+    "high-volatility Fridays in slope": 979,
+    "other Fridays in slope": 1193
+  },
+  "decided_by": "Confirm: main t at least 2 over at least 100 distinct Fridays and slope difference above 0.",
+  "reading": "Friday bars are those whose next bar starts on Saturday (UTC); high-volatility Fridays are read from the recorded regime 'trending'; the situation check recomputes the 20/60 volatility ratio from window closes and falls back to the recorded regime where the window is too short; the coin's mean 2-bar return uses a non-overlapping grid over all its windows; slopes are pooled OLS over coins and their Welch t is (b_high - b_other)/sqrt(se_high^2 + se_other^2)."
+}

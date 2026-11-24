@@ -1,0 +1,44 @@
+{
+  "line": "7.b",
+  "backtest": "031-02.b1.b2_failed-rally-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38651140000000006,
+  "findings": {
+    "F1": "The idea's own side points the wrong way. At 20 days, cases with a forecast below 0 had an excess return of +1.00 % (257 cases, t 0.31), where the idea predicts a fall. The long cases rose by about as much (+0.94 %, 501 cases), so the main measure's +0.0031 (t 0.54, 116 days) is not graded: the Spearman correlation of forecast with excess return is 0.013.",
+    "F2": "Only the coins nearest their yearly low (forecast at or below -3) fall, and the fall grows with the horizon. Their excess return is -0.85 % at 5 days (t -0.68), -2.1 % at 10 days (t -1.13), -2.6 % at 20 days (86 cases, 44 days, t -0.75) and -9.0 % at 40 days (45 cases, 22 days, t -2.40). The milder short cases (forecast between -3 and 0) rose instead: +2.8 % at 20 days and +4.3 % at 40 days.",
+    "F3": "Among the 20-day short cases whose 60-day return is known (53 % of them), the larger the 60-day rally, the larger the fall that follows. Excess return is +3.6 % when the 60-day return is up to 9 %, -0.2 % between 9 % and 21 %, and -6.6 % above 21 % (about 46 cases each).",
+    "F4": "The short side changes sign from year to year. It is negative in 2018 (-13.6 %), 2020 (-6.0 %), 2021 (-2.0 %) and 2022 (-12.2 %), and positive in 2019 (+12.9 %), 2024 (+7.7 %) and 2025 (+7.1 %). This mix is what holds the overall t near 0.",
+    "F5": "No more data is available. The test already used all 19 coins over all four folds, and the hourly bars cover no longer period than the daily ones."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's daily close is to its lowest close of the past 365 days, compared with how close it has usually been over that year, the more it falls over the next 40 days, while its 60-day return is positive.",
+      "consequence": "A coin that has rallied over two months yet sits unusually near its yearly low is a failing recovery over the following weeks, so a trader should refuse to buy it and lean short for about forty days.",
+      "name": "failed rally longer horizon",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "While a coin's daily close sits nearer its lowest close of the past 365 days than it has usually been over that year, the larger its 60-day return, the more it falls over the next 20 days.",
+      "consequence": "A sharp two-month rebound that has still not lifted the coin away from its yearly low is the one to fade, more so the sharper the rebound.",
+      "name": "sharp rebound near low fails",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.b2.b1_failed-rally-longer-horizon",
+    "031-02.b1.b2.b2_sharp-rebound-near-low-fails"
+  ],
+  "no_ideas": null
+}

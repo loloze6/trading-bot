@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3255325,
+  "findings": {
+    "F1": "Step 5's slope is on the side the idea predicts but short of the bar (slope 0.00044, clustered t 1.29, 1215 cases on 319 Fridays), while the level of the effect is clear: Friday cases with a forecast above 0 earn +0.91 % above the coin's 2-day drift (t 3.37 over 291 days, strength 0.136), and Fridays after a 14-day fall earn \u22120.31 % (t \u22121.04, 1041 cases).",
+    "F2": "Over all Fridays, the raw volatility-scaled 14-day rise predicts the weekend's excess return, with a day-clustered slope t of 2.96 (2046 cases, 341 days). The quintiles climb from \u22120.38 % and \u22120.49 % through +0.31 % and +0.43 % to +1.57 % (t 3.79), so the grading spans the whole range of the rise.",
+    "F3": "The test kept only forecasts above 0, which cuts the range in half, and inside that half the gradient is noisy. The clustered slope t is 1.86 on the forecast and 1.61 on the raw rise (1005 cases, 265 days). The forecast quartiles give +0.56 %, +0.34 %, +1.06 % and +1.71 %, so the gradient mostly lives in the top half.",
+    "F4": "The effect is spread across the data, not confined to one part of it, so it is too thin for six coins rather than mixed. Among cases with a forecast above 0, the weekend excess is positive in all 6 coins (+0.21 % for BTC up to +1.37 % for XRP). It is positive in 7 of 8 years (2022: \u22120.19 %). On all Fridays, the per-coin slope on the raw rise is positive for all 6 coins (t from 0.79 for XMR to 3.01 for ETH).",
+    "F5": "The link is not unique to Friday. On a 2-day grid, the clustered slope on the 14-day rise is t 2.49 on Thursdays and 1.71 on Fridays. On Monday to Wednesday it is near 0 (t \u22120.08 to 0.50), and on Saturday and Sunday it is 0 or negative (t \u22120.02 and \u22120.85)."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "two-week rise carries weekend",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ],
+      "idea": "The higher a coin's 14-day rise, measured in its usual daily moves at Friday's close (UTC), the more it rises over the following Saturday and Sunday together.",
+      "consequence": "A trader would hold a coin long through the weekend after a two-week rise, more firmly the larger the rise, and would not take the short weekend bet after a two-week fall, the side that carries the book's deep falls.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The higher a coin's 14-day return, measured in its usual daily moves at Thursday's or Friday's close (UTC), the more it rises over the following two days.",
+      "consequence": "A trader would lean long into the end of the week after a two-week rise, more firmly the larger the rise, and would lean against the coin after a two-week fall.",
+      "name": "two-week rise carries week-end",
+      "from": "F2, F5",
+      "refs": [
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1.g1.g1.d1.b1_two-week-rise-carries-weekend",
+    "031-01.g1.g1.g1.d1.b2_two-week-rise-carries-week-end"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x excess Saturday return over Friday cases",
+    "value": 0.07753232569946712,
+    "statistic": {
+      "name": "t of the mean, cases of the same Friday summed",
+      "value": 2.5827585492372185
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top fifth minus rest of positive cases, excess Saturday return",
+    "value": -0.0009728215218338483,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1155,
+    "distinct Fridays": 314
+  },
+  "decided_by": "Inconclusive rule: t >= 2 but the supporting check (top fifth minus rest above 0) failed.",
+  "reading": "A case is a Friday-start (UTC) bar with forecast > 0 whose next row in the same window is the Saturday bar; the coin's mean daily return is over all next-row returns of all its windows; the day-clustered t sums deviations per Friday with a D/(D-1) correction; the top fifth per coin is the ceil(20%) highest forecasts (stable order on ties); fewer than the plan's minimum counts gives 'not observable'."
+}

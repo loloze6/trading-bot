@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Pearson correlation of forecast with 20-bar forward excess return (non-overlapping grid, nonzero forecast)",
+    "value": 0.024680545025714744,
+    "statistic": {
+      "name": "correlation t (n=410)",
+      "value": 0.49867447449030006
+    },
+    "threshold": "confirm: t >= 2 with supporting check passing; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 20-bar excess return on grid bars with forecast <= -2 is below 0",
+    "value": -0.027707786369992972,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 410,
+    "grid cases with forecast at or below -2": 63
+  },
+  "decided_by": "The correlation's t is between -2 and 2 (inconclusive rule).",
+  "reading": "Cases are pooled over all coins and windows on the 0,20,40,... grid of each window; the coin's mean 20-bar return is the mean over that grid on all its bars in all windows; correlation t is r*sqrt((n-2)/(1-r^2)); the 60-day return for the situation check is recomputed from closes where the window has 60 prior bars, else read from the recorded regime; the expected side is the sign of the dist_low standardised value minus 10; the plan's minimum counts, when unmet, give 'not observable'."
+}

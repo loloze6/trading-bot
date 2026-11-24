@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move per case over 10 bars (return from signal close minus coin's normal 10-bar drift)",
+    "value": 0.07149824687051577,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.4103606275638074
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2; else inconclusive; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with forecast above the median case forecast minus those at or below",
+    "value": 0.02001374290547414,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 12,
+    "cases": 13
+  },
+  "decided_by": "Fewer than 30 distinct case days pooled over all coins and windows (12), the plan's minimum.",
+  "reading": "A case is the first bet (forecast rise of at least 2 points on its side) in each 10-bar grid cell of a window, dropped when its 10-bar return would leave the window; the normal drift is the coin's mean non-overlapping 10-bar return over all its windows; the plan's 'count under 30 distinct case days' is applied as the minimum count giving 'not observable'."
+}

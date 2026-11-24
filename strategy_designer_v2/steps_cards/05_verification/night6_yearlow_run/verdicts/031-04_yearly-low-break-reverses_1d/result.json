@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move after long bets in the mean_reversion regime",
+    "value": 0.07149824687051577,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": 1.4103606275638074
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and deeper half beats shallower; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-break half minus shallower half mean unusual move (split at median forecast)",
+    "value": 0.020013742905474155,
+    "passed": true
+  },
+  "counts": {
+    "cases": 13,
+    "distinct days": 12
+  },
+  "decided_by": "Minimum not reached: 13 cases (need 20) on 12 distinct days (need 15).",
+  "reading": "Cases are the first long bet (forecast rise >= 2 from its lowest level since the last bet, reset at 0) in the mean_reversion regime in each 10-bar grid cell from each window's first row, dropped when the 10-bar return leaves the window; the drift is the coin's mean grid 10-bar return over all windows; the t sums deviations per UTC day with a D/(D-1) correction; the deeper half is forecast above the median and the shallower half forecast at or below it; the plan's 'fewer than 20 cases or 15 days' minimum is reported as not observable."
+}

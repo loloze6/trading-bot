@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered OLS slope of excess 2-bar return on forecast (Friday-close, forecast > 0)",
+    "value": 0.00043924999226704995,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 1.2930079890492188
+    },
+    "threshold": "slope t >= 2 confirms (with weighted mean excess > 0); slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 2-bar return > 0",
+    "value": 0.010724635657975573,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 1215,
+    "distinct Fridays": 319
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Friday-close bars are the daily bars opening on Friday UTC (next bar Saturday); all such bars with forecast > 0 in the trending regime are used (weekly cases never overlap), the coin's mean 2-bar return is taken on each window's non-overlapping 0,2,4,... grid pooled over windows, the slope t uses CR1 standard errors clustered by date, and the plan's minimum counts not reached give 'not observable'."
+}

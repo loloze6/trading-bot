@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "031-01.g1.g1.g1.g1_two-week-run-carries-saturday_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40501780000000004,
+  "findings": {
+    "F1": "The book's Calmar failure comes from its short side: in a rebuild of the Saturday book by side, the deepest fall lasted 97 Saturdays and lost 12.8 %, of which shorts lost 12.2 % and longs 0.6 %. Over the whole period the short-only part returned \u22122.2 % a year with a \u221221.3 % deepest fall, while the long-only part returned +11.3 % a year with a \u22129.7 % deepest fall (Calmar 1.17 against the rule's 0.75; full book 0.52).",
+    "F2": "Only the rise side of the signal carries the effect. After a two-week rise (positive Friday forecast), Saturday moved +0.88 % in the signal's direction (t 6.73, 1221 cases). After a two-week fall (negative forecast), the move in the signal's direction was +0.02 % (t 0.22, 1256 cases). A short therefore captures far less than the 0.19 % a trade costs, while a long captures 4.6 times that cost.",
+    "F3": "The long side is graded. Saturday's return rises across the terciles of the positive forecast: +0.54 %, +0.81 % and +1.29 % (407 cases each). Across the six sextiles of the whole forecast, the move in the signal's direction is +1.35 % (t 5.03) in the top sextile and +0.09 % (t 0.55) in the bottom one.",
+    "F4": "The effect is specific to Friday's close. A positive 14-day return in usual moves is followed by +0.90 % the next day when taken on Friday (t 6.19, 1011 cases), against +0.25 % to +0.45 % on Tuesday, Thursday and Saturday, and \u22120.08 % on Monday.",
+    "F5": "On the long side, Saturday's rise is largest when the 60-day return is also positive: +1.21 % (404 cases, t 4.97), against +0.58 % when the 60-day return is negative (218 cases). The 60-day condition alone earns nothing: on Fridays with a positive 60-day return but no two-week rise, Saturday's return is \u22120.00 % (222 cases). The longer trend therefore strengthens the idea's own momentum story rather than being an effect of its own.",
+    "F6": "The long side earned in seven of eight years, with mean Saturday returns of +0.51 % to +1.55 %. The exception was 2023, at \u22120.25 % (164 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "After a two-week rise, the larger a coin's 14-day return measured in its usual daily moves at Friday's close (UTC), the more the coin rises over the following Saturday alone (the next 1 day).",
+      "consequence": "A trader would buy only after a two-week rise, hold through Saturday sized by the run's strength, and take no short after two-week falls, which carry the book's deepest losses and earn less than their cost.",
+      "name": "two-week rise lifts Saturday",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "While a coin's 60-day return is positive, the larger its 14-day rise measured in its usual daily moves at Friday's close (UTC), the more it rises over the following Saturday alone (the next 1 day).",
+      "consequence": "A trader would carry the strongest Saturday longs when the two-week run sits inside a rising 60-day trend, where the move per case is about six times the cost of a trade.",
+      "name": "trend-backed run lifts Saturday",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1.g1.g1.g1.d1_two-week-rise-lifts-saturday",
+    "031-01.g1.g1.g1.g1.d2_trend-backed-run-lifts-saturday"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move of long cases (return minus coin's 10-bar drift), before costs",
+    "value": 0.06841441870582031,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.7792986706175589
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 on >= 30 distinct days and slope > 0; reject: mean < 0 with t <= -2 on >= 30 days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on signal-bar forecast",
+    "value": 0.0009606172122390047,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 16,
+    "cases": 18
+  },
+  "decided_by": "Fewer than 30 distinct case days over all coins and windows (16).",
+  "reading": "The situation is read from the recorded break_depth raw value (same component and parameters as the detector's yl), with missing values counted as outside the situation; a case is the first bet (long forecast rise of at least 2 points from its lowest level since the last bet, from 0 after a flat) in each 10-bar grid cell of a window, cases without 10 bars ahead in the window are dropped, the drift is the mean of the coin's non-overlapping 10-bar grid returns over all its windows, the t clusters cases by UTC day with a D/(D-1) correction, and the slope is an OLS of the unusual move on the signal bar's forecast."
+}

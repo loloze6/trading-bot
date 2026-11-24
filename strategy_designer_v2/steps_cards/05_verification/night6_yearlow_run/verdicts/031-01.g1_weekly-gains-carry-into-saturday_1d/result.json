@@ -1,0 +1,30 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (next-bar return - coin mean daily return), trending bars with forecast > 0",
+    "value": 0.00892490595216603,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 3.338377922413924
+    },
+    "threshold": "confirm: above 0 with t >= 2 (and supporting check positive); reject: below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Saturday excess return, top third of positive Friday forecasts minus Friday forecast 0",
+    "value": 0.013070933825524027,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a positive forecast": 319,
+    "main measure cases": 1245,
+    "days of main measure cases": 316,
+    "top-third Friday bars": 415,
+    "zero-forecast Friday bars": 1234
+  },
+  "decided_by": "The main measure is above 0 with t >= 2 and the supporting check is positive.",
+  "reading": "The coming bar is the bar opening at timestamp + 1 day, so the situation is a Friday-UTC bar with a positive 5-bar return (recorded raw value, else recomputed in-window), expected long; Friday bars for the supporting check are those same bars; the top third is above the 2/3 quantile of positive Friday forecasts pooled over coins; the day-clustered t sums deviations per UTC date with a D/(D-1) correction; distinct days with a positive forecast count UTC dates of any bar with forecast > 0."
+}

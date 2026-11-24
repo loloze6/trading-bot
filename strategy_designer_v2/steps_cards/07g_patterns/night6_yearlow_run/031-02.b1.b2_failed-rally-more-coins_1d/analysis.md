@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 031-02.b1.b2_failed-rally-more-coins_1d
+idea tested: 031-02.b1.b2_failed-rally-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4325 USD
+---
+## Findings
+- **F1:** The short side of the tested idea is wrong-signed: in trending-regime cases on the 20-day grid, cases with a negative forecast (nearer the yearly low than usual) had a mean excess 20-day return of +1.00 % (t 0.31, 257 cases, 77 days), almost the same as positive-forecast cases at +0.94 % (t 0.44, 501 cases, 98 days). Over 5 days the two sides were -0.38 % (t -0.51, 1051 cases) and +0.63 % (t 1.16, 2054 cases), also not distinguishable.
+- **F2:** The book's trades split sharply by side, before reading any significance: 474 long trades averaged +15.6 % net with a median of -2.4 %, so a few large winners carry them, while 367 short trades averaged -6.0 % net with a median of -1.1 %.
+- **F3:** The book's worst 2 % of days fell on days when holding the coins lost a mean of -6.9 % (58 days), and its daily returns correlate 0.31 with holding. Its losses come mostly from long exposure during broad sell-offs, not from the timing of the shorts.
+- **F4:** The raw distance above the 365-day closing low does not grade the next 20 days inside the trending regime: the quintile means run +0.7 %, +1.0 %, +4.1 %, -0.9 % and -0.1 %, with every |t| at most 1.29 (about 151 cases each). The standardised distance shows the same, with quintile means of -0.5 % to +2.8 % and every |t| below 0.87.
+- **F5:** None of the other angles stands out from chance. These were the 20-day return quintiles (|t| at most 1.31 at 20 days, 1.82 at 5 days), volatility quintiles (|t| at most 1.27), the regime crossed with the sign of the 20-day return (|t| at most 1.26), the next-day return after a large one-day move (|t| at most 1.61), where the close sits in the day's range (|t| at most 0.98), and weekday (the largest is Thursday at -0.43 %, t -1.91, 343 days, one of seven weekdays). With about 40 groups examined, a |t| near 2 is what chance alone produces.
+
+## Ideas
+- No ideas: Across the forecast, positions, trades, regimes, volatility, past-return quintiles, the distance to the yearly low, large one-day moves, close location and weekday, no group's excess return reached |t| 2 against roughly 40 comparisons. The only clear pattern is that the book's gains come from a few large long trades and its losses from broad market falls (F2, F3), which is a property of this book rather than a graded pattern in one coin's bars.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

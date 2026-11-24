@@ -1,0 +1,19 @@
+{
+  "line": "7.a",
+  "backtest": "031-03.b1.a1_yearly-low-break-all-coins_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37830620000000004,
+  "findings": {
+    "F1": "Over all 19 coins and 4 folds (259 coin-windows, 31,541 daily bars, 3,106 ten-day grid cells), the test found only 18 cases on 16 distinct days, against the plan's minimum of 30 distinct days. This is what made the idea unobservable.",
+    "F2": "The situation itself is not that rare: closes below the prior 365-day closing low occur on 448 bars (1.4 % of bars), in 273 separate episodes, across 196 grid cells. Only 18 of those 196 cells (9 %) produced a case, because the forecast rarely rises by the 2-point band.",
+    "F3": "On the 448 bars in the situation, the forecast is small. Its median is 0.16 and its 75th percentile 0.51, and only 21 bars exceed 2. The standardised break depth (raw median \u22123.1 %, quartiles \u22126.1 % to \u22121.3 %) maps most breaks to a forecast too small to count as a bet; the 18 cases had a mean raw depth of \u221214.5 % and a mean forecast of 4.1.",
+    "F4": "The situation is spread unevenly across years and coins. Situation bars number 156 in 2022, 125 in 2025 and 87 in 2018, but 0 in 2021 and 8 in 2020. Cases come mostly from ZEC (8 of 18); 10 coins (AVAX, DOGE, ETH, INJ, LINK, LTC, ONDO, SOL, SUI, UNI, TRX among them) give none.",
+    "F5": "The cases that exist point one way but vary widely. The mean unusual 10-day move is +6.84 % (sd 16.0 %, median +5.0 %), 78 % are positive, and year means range from \u22125.5 % (2023, 2 cases) to +25.5 % (2024, 3 cases). At that mean and spread about 22 independent cases would give t = 2, so the shortfall is in the count of distinct days, not in the noise.",
+    "F6": "The test already uses every coin and every fold the data offers on daily bars, and the daily files end later than the hourly ones. More coins or more periods cannot add cases. Another bar size keeps the same 10-day grid and the same real-time 365-day standardisation of the depth, so it cannot multiply cases: at most about 196 cells contain the situation at all."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The plan needs at least 30 distinct case days, but the full available data (all 19 coins, folds A to D, daily bars being the longest history) gives 16 days and 18 cases, and no other bar size or coin set the workflow holds can change how rarely this config's forecast reaches a bet inside the roughly 196 grid cells where the situation occurs."
+}

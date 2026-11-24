@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the daily-summed forecast/10 x excess next-bar return on Friday-close trending cases",
+    "value": 0.0324785444214834,
+    "statistic": {
+      "name": "t of the mean across days",
+      "value": 3.0248258497636256
+    },
+    "threshold": "t of 2 or more confirms (with top-minus-bottom above 0); t of -2 or less rejects; at least 200 distinct Friday days"
+  },
+  "supporting_check": {
+    "name": "Saturday excess return, top third minus bottom third of forecast (Welch t 4.951)",
+    "value": 0.01007063891487896,
+    "passed": true
+  },
+  "counts": {
+    "distinct Friday days with cases": 414,
+    "coin-cases": 2478,
+    "cases per third": 826
+  },
+  "decided_by": "The main measure's t is 2 or more and the top-minus-bottom difference is above 0.",
+  "reading": "Cases are all Friday-start bars with regime 'trending' and a next bar in the same window (forecast 0 included), the coin's mean is its mean next-bar return over all windows, the thirds are the lowest and highest floor(n/3) cases pooled across coins by forecast (stable sort), and only the 200-day minimum is applied as a hard count since the 2,000 coin-cases is stated as 'about'."
+}

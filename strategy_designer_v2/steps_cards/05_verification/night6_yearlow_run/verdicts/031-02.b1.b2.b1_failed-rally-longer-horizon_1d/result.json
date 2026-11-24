@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x drift-removed 40-bar forward return on grid cases",
+    "value": 0.005542368880862607,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 0.363281201897775
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 40-bar return when forecast <= -2 below 0",
+    "value": -0.13015442601376798,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 344,
+    "grid cases on separate days": 54,
+    "cases with forecast <= -2": 30,
+    "active bars": 15942
+  },
+  "decided_by": "The t is between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "The 60-day return is recomputed from closes inside the window where 60 prior bars exist and taken from the recorded regime (mean_reversion) on earlier bars; the expected side is graded as the Fidelity's comparison says (short when the standardised low proximity is above its usual level 10, long when below, read from low_prox post_pipeline_value since the 365-bar standardise history is not in the record); grid cases are positions 0, 40, 80, ... of each window with a full 40-bar forward return inside the window; the drift is the coin's mean 40-bar return over the same grid of all its windows; the t is clustered by day (deviations summed per day); the plan's 'fewer than 30 grid cases on separate days' is applied as a minimum count of 30 distinct days, reported as not observable; a check with no case at forecast <= -2 counts as failed."
+}

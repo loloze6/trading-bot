@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (Saturday return - coin mean daily return) over Friday cases",
+    "value": 0.005454219207078648,
+    "statistic": {
+      "name": "t of the mean, cases of one date summed",
+      "value": 3.311515237510324
+    },
+    "threshold": "confirm: mean > 0 with date-clustered t >= 2 and positive forecast coefficient; reject: mean < 0 with t <= -2; at least 100 distinct Fridays with cases"
+  },
+  "supporting_check": {
+    "name": "forecast coefficient in OLS of Saturday excess return on forecast and Friday return",
+    "value": 0.00040981737165903285,
+    "passed": true
+  },
+  "counts": {
+    "distinct Fridays with cases": 414,
+    "cases": 2476,
+    "regression cases": 2459
+  },
+  "decided_by": "The main measure is positive with t >= 2 and the forecast's regression coefficient is positive.",
+  "reading": "Friday is the bar whose UTC start timestamp is a Friday and the Monday-to-Thursday side is taken from close[t-1]/close[t-4]-1 (falling back on the sign of the raw mon_thu value when those bars are missing); the date-summed t is the cluster-robust t of the mean (deviations summed per date, G/(G-1) correction); the regression uses OLS with an intercept on cases with Friday's return available; and the plan's minimum of 100 distinct Fridays is applied as 'not observable' when unmet."
+}

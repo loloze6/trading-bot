@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 20-bar short gain on |forecast|",
+    "value": 0.0023594306043874234,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.7029014777509117
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with top-fifth check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted short gain of the top fifth of |forecast|",
+    "value": 0.048759057747121394,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 806,
+    "top-fifth cases": 161
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Cases are grid positions 0, 20, 40, ... of each window with a 20-bar forward close in the same window, all kept including |forecast| 0, drift is each coin's mean 20-bar grid return over all its windows, and the top fifth is the floor(n/5) pooled cases with the largest |forecast|."
+}

@@ -1,0 +1,29 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 2-bar excess return on rise14 post_pipeline_value, uptrend Thursday cases",
+    "value": 0.0007750324322755584,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 0.7201294444525685
+    },
+    "threshold": "slope t >= 2 (with forecast-weighted mean excess > 0) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean 2-bar excess return > 0",
+    "value": 0.010236737861614668,
+    "passed": true
+  },
+  "counts": {
+    "uptrend Thursday cases with forecast above 0": 77,
+    "distinct Thursdays of those cases": 24,
+    "uptrend Thursday cases (all, incl. forecast 0)": 127,
+    "distinct days (clusters)": 32
+  },
+  "decided_by": "The plan's minimum is not reached: 77 uptrend Thursday cases with a forecast above 0 (100 needed) over 24 distinct Thursdays (60 needed).",
+  "reading": "Thursday-close bars are the bars whose UTC start is a Thursday (next bar a Friday); the 60-day uptrend is close above the close of the bar 60 days earlier in the same window, and active bars where that bar is not in the window are left out of the agreement; the coin's mean 2-bar return uses the non-overlapping grid 0,2,4,... of every window; cases are pooled over all coins with an OLS slope (with intercept) whose t uses a cluster-by-day robust variance with the usual G/(G-1)(N-1)/(N-K) correction; the plan's minimum counts, read on cases with forecast above 0, give 'not observable' when unmet."
+}
