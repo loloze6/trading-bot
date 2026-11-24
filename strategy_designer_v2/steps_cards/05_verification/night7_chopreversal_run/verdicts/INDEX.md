@@ -1,1 +1,6 @@
 032-01_choppy-agitated-weekly-rise-reverts_1d: inconclusive (fit: exact) [main: -0.134985; t of Pearson correlation -1.29957; grid cases with a forecast below 0 93]
+032-02_choppy-agitated-weekly-fall-reverts_1d: inconclusive (fit: adapted) [main: -0.00099226; day-clustered slope t -0.536329; independent positive-forecast grid cells (day-clustered) 70, positive-forecast grid cells 99]
+033-01_scaled-daily-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000397677; slope t, day-clustered 2.62632; distinct days with forecast > 0 2199, cases (coin-days with forecast > 0) 8514]
+034-01_agitated-scaled-fall-next-day-rebound_1d: inconclusive (fit: exact) [main: 0.000489291; t of slope, cases of one day taken together 1.89384; cases with forecast > 0 3753, distinct days 1449]
+035-01_falling-agitated-scaled-fall-rebound_1d: confirmed (fit: exact) [main: 0.0010552; t of the OLS slope, day-clustered (CR1) 2.62033; bars with forecast > 0 1468, distinct days 702, bars in top third 490]
+036-01_agitated-scaled-fall-three-day-rebound_1d: inconclusive (fit: exact) [main: 0.000464641; day-clustered OLS slope t 0.718234; cases 1192, days 479]

@@ -1,0 +1,1 @@
+035-01_falling-agitated-scaled-fall-rebound_1d: inconclusive (fit: exact) [main: 1.516e-05; t of the OLS slope, day-clustered (CR1) 0.00998364; bars with forecast > 0 216, distinct days 91, bars in top third 72]

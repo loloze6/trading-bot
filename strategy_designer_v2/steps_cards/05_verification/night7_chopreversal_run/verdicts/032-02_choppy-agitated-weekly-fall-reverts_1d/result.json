@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered slope of 7-bar excess return on forecast (forecast > 0 grid cells)",
+    "value": -0.0009922604788004075,
+    "statistic": {
+      "name": "day-clustered slope t",
+      "value": -0.5363291720612199
+    },
+    "threshold": "confirm: slope t >= 2 with mean excess > 0; reject: slope t <= -2; at least 30 day-clustered positive-forecast cells"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return over positive-forecast cells > 0",
+    "value": 0.002025006750031872,
+    "passed": true
+  },
+  "counts": {
+    "independent positive-forecast grid cells (day-clustered)": 70,
+    "positive-forecast grid cells": 99
+  },
+  "decided_by": "Slope t between -2 and 2: the plan's inconclusive rule.",
+  "reading": "Situation taken as a negative raw 7-bar return (fall7 last_history_value, recomputed from closes where missing) with a positive forecast, the choppy agitated profile being enforced by the regime and not re-checked; grid cells at positions 0,7,14,... of each window with a full 7-bar forward return inside the window; normal drift = mean of the coin's grid 7-bar returns over all its windows; slope from OLS with intercept and day-clustered (CR1) standard error; the 30-cell minimum counted as distinct days, and its shortfall reported as not observable."
+}

@@ -1,1 +1,6 @@
 032-01_choppy-agitated-weekly-rise-reverts_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02_choppy-agitated-weekly-fall-reverts_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+033-01_scaled-daily-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+034-01_agitated-scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+035-01_falling-agitated-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+036-01_agitated-scaled-fall-three-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

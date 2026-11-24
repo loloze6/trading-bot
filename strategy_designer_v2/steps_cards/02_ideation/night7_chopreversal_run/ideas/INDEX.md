@@ -1,3 +1,8 @@
 032-01_choppy-agitated-weekly-rise-reverts: In a choppy agitated market, a larger 7-day rise is followed by a larger fall over the next 7 days. [bar: 1d, profile: choppy agitated]
 032-02_choppy-agitated-weekly-fall-reverts: In a choppy agitated market, a larger 7-day fall is followed by a larger rise over the next 7 days. [bar: 1d, profile: choppy agitated]
 033-01_scaled-daily-fall-next-day-rebound: The larger a one-day fall relative to the coin's 30-day daily swing, the larger its rise over the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+034-01_agitated-scaled-fall-next-day-rebound: In an agitated market, a larger one-day fall relative to the 30-day daily swing is followed by a larger rise next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: agitated]
+035-01_falling-agitated-scaled-fall-rebound: In a falling agitated market, a larger one-day fall relative to the 30-day daily swing is followed by a larger rise next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
+036-01_agitated-scaled-fall-three-day-rebound: In an agitated market, a larger one-day fall relative to the 30-day daily swing is followed by a larger rise over three days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: agitated]
+036-02_agitated-scaled-fall-delayed-rebound: In an agitated market, a larger scaled one-day fall is followed by a larger rise over the second and third days after it. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: agitated]
+037-01_agitated-ordinary-rise-next-day-giveback: In an agitated market, a larger one-day rise within the 30-day daily swing is followed by a larger fall next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: agitated]

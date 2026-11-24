@@ -1,0 +1,1 @@
+035-01_falling-agitated-scaled-fall-rebound_1d: not observable (fit: exact) [main: 0.000600588; t of the OLS slope, day-clustered (CR1) 0.291901; bars with forecast > 0 19, distinct days 19, bars in top third 7]

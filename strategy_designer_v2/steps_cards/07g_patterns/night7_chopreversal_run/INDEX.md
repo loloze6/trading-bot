@@ -1,1 +1,5 @@
 032-01_choppy-agitated-weekly-rise-reverts_1d: 1 ideas, 1 discoveries (2 explorations)
+032-02_choppy-agitated-weekly-fall-reverts_1d: 0 ideas, 3 discoveries (2 explorations)
+033-01_scaled-daily-fall-next-day-rebound_1d: 2 ideas (2 explorations)
+034-01_agitated-scaled-fall-next-day-rebound_1d: 4 ideas, 1 discoveries (2 explorations)
+035-01_falling-agitated-scaled-fall-rebound_1d: 2 ideas (2 explorations)

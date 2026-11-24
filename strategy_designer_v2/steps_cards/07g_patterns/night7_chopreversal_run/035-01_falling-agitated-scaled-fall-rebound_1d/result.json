@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "035-01_falling-agitated-scaled-fall-rebound_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4111053,
+  "findings": {
+    "F1": "In the falling, agitated profile, the rebound grows with the day's scaled fall only when the day before was also down: the slope of the next-day excess return on the scaled fall is 0.0327 (t 5.08; 219 bars on 123 days) after a down day, against 0.0035 (t 0.36; 303 bars on 127 days) after an up day.",
+    "F2": "The same split shows in the largest falls, those beyond 1.5 of the 30-day swing: they are followed by +5.56 % (t 3.64; 23 bars on 13 days) when the previous day was down, against +2.16 % (t 0.94; 28 bars on 15 days) when it was up. For falls of 0.75 to 1.5 swings the figures are +2.14 % (t 2.32) against +0.62 % (t 0.95).",
+    "F3": "In the falling, agitated profile, the fall's size also grades the return over the next two days: the slope of the two-day excess return on the one-day scaled fall is 0.0149 (t 2.43; 520 bars on 212 days). The two-day scaled fall grades the next day: slope 0.0248 (t 2.31; 554 bars on 218 days).",
+    "F4": "In the falling, agitated profile, up days carry no graded effect: the next-day slope on the scaled rise is 0.0015 (t 0.23; 500 bars on 195 days). Outside that profile, a fall's size does not grade the next day in rising markets: slope 0.0035 (t 0.72) with the 30-day swing below the 90-day swing, and 0.0080 (t 0.84) with it above.",
+    "F5": "The book's profit sits in a few days. Its best 5 % of days sum to 158 % of its total gain. On its best 2 % of days the coins rose +8.6 % on average the same day, and on its worst 2 % they fell -6.6 %. Its gain comes from a few sharp rebounds in windows w14, w16 and w18, where 38 to 49 % of bars are in the falling, agitated profile.",
+    "F6": "Other angles did not stand out against the number of angles I looked at, so they are not findings: weekday (per-weekday t from -0.2 to 2.1 with 7 to 18 days each), where the fall closes in its day's range (+1.47 % with t 2.22 and +1.91 % with t 2.07, with no gradient), and the 30-day against 90-day swing within the profile (t 0.03 and 0.19)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, when a coin's down day follows another down day, the larger that day's fall relative to its 30-day daily swing, the larger its rise over the next day.",
+      "consequence": "The rebound to buy is the one after a second consecutive sharp down day in a falling, agitated market, when forced selling has run two days, not after a single down day following an up day.",
+      "name": "second down day rebound",
+      "from": "F1, F2, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall relative to its 30-day daily swing, the larger its rise over the next two days.",
+      "consequence": "The discount left by a sharp down day in a falling, agitated market takes two days to recover, so a trader holding the rebound two days captures more of it per trade.",
+      "name": "scaled fall two-day rebound",
+      "from": "F3, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "035-01.g1_second-down-day-rebound",
+    "035-01.g2_scaled-fall-two-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

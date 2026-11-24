@@ -1,0 +1,50 @@
+{
+  "line": "7.d",
+  "backtest": "033-01_scaled-daily-fall-next-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4368355,
+  "findings": {
+    "F1": "The effect lives in agitated markets only. Here \"agitated\" means the coin's 30-day swing is above its median over folds B and C, which stands in for the past-year median. On signal days in agitated markets, the next-day move beyond drift is +0.57 % (t 3.75, 1795 cases; t 2.06 with each day's cases taken together, 655 days). On signal days in calm markets it is +0.07 % (t 0.71, 2475 cases; t 0.39 by day, 785 days).",
+    "F2": "In agitated markets the rebound grows with the fall, as the idea says. Falls beyond 2 usual moves are followed by +4.29 % (t 4.78, 68 cases), falls of 1 to 2 by +1.21 % (t 3.29, 350), and falls of 0 to 1 by +0.11 % to +0.30 % (t 0.44 and 1.35). In calm markets there is no grading: +0.25 %, +0.24 %, +0.20 % and \u22120.07 %, all with |t| < 1.",
+    "F3": "Agitation is not an effect on its own. On agitated bars without the signal, the next day is \u22120.42 % against drift (t \u22123.17, 1831 cases), against +0.57 % on agitated bars with the signal. So the condition only selects where the forced-selling rebound is large, which fits the theory: a fall that is outsized in a swinging, leveraged market is the one that triggers liquidations.",
+    "F4": "The failing Calmar comes from the calm half of the book. In an approximate rebuild (cost of 0.095 % per side on each position change), the full book has a yearly return of +27.3 %, a deepest fall of \u221227.6 % and a Calmar of 0.99. Keeping positions only in agitated markets gives +20.2 %, a deepest fall of \u221210.9 % and a Calmar of 1.86 (Sharpe 1.39 against 1.00), while holding on 20 % of coin-days instead of 48 %.",
+    "F5": "The recorded book's deepest fall is \u221227.7 %. It sits in w9, where the book lost 16.8 % while the coins fell 31.0 %. In calm markets the signal lost in 6 of 12 windows, for example w7 at \u22120.68 % (t \u22122.37) and w12 at \u22120.72 % (t \u22122.25). In agitated markets it was negative in only 3 of 12 windows, and none of those had |t| > 1.5.",
+    "F6": "Falling, agitated markets carry the strongest per-case rebound, +0.76 % (t 3.54, 636 cases), against \u22120.47 % (t \u22122.35, 453) in falling, calm markets. The book restricted to falling, agitated markets has a Calmar of 1.30 (yearly return +9.9 %, deepest fall \u22127.6 %) but holds on only 7 % of coin-days."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, the larger a coin's one-day fall measured against the standard deviation of its daily returns over the past 30 days, the larger its rise over the next day.",
+      "consequence": "A trader buys outsized one-day falls only while the coin is swinging more than usual for it, and stays out of the calm-market falls that carry the book's drawdowns without a reliable rebound.",
+      "name": "agitated outsized fall rebound",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall measured against the standard deviation of its daily returns over the past 30 days, the larger its rise over the next day.",
+      "consequence": "A trader buys outsized one-day falls mainly when the coin has been falling for weeks and swinging hard, where forced selling is heaviest and the rebound largest.",
+      "name": "falling agitated fall rebound",
+      "from": "F1, F3, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-01.d1_agitated-outsized-fall-rebound",
+    "033-01.d2_falling-agitated-fall-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
