@@ -1,6 +1,7 @@
 031-01.b1.e1_strong-run-continues-three-days_1d: confirmed (fit: adapted) [main: 0.00072065; OLS slope t 4.38372; grid bars with a forecast above 0 2907, grid bars 5723]
 031-01.b1.e2_wide-day-in-strong-run_1d: confirmed (fit: adapted) [main: 0.0157157; t of the mean, same-day cases taken together 2.8516; top-fifth cases on separate days 291, top-fifth cases 582, bottom-fifth in-rise cases 582, in-rise grid bars 2907]
 031-01.b1_wide-day-extends-up-run_1d: inconclusive (fit: exact) [main: 0.000707909; OLS slope t, day-clustered 1.42708; independent in-regime grid cases 2907, days 781]
+031-01.b2_wide-doji-continues-strong-run_1d: mismatch: the test does not match its plan (agreement 0.802198) (fit: adapted)
 031-01_wide-flat-day-ends-uprun_1d: inconclusive (fit: adapted) [main: -0.012447; t of the mean, same-day cases taken together -0.929333; cases 86, days 74, active bars 87]
 031-02.b1_wide-flat-day-continues-uprun_1d: inconclusive (fit: adapted) [main: 0.0191189; t of the mean, cases of one day pooled 0.922075; cases 77, distinct days 68]
 031-02_wide-flat-day-ends-downrun_1d: inconclusive (fit: adapted) [main: -0.00503015; t of the mean, cases of one day clustered -0.523009; cases 197, days 148]
