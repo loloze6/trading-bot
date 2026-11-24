@@ -9,6 +9,7 @@
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: profitable enough [Sharpe 1.263; Sharpe minus holding's Sharpe 0.6551; Calmar 0.9545]
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: profitable enough [Sharpe 1.292; Sharpe minus holding's Sharpe 0.6842; Calmar 1.274]
 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: profitable enough [Sharpe 1.166; Sharpe minus holding's Sharpe 0.5581; Calmar 1.106]
+031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d: profitable enough [Sharpe 1.253; Sharpe minus holding's Sharpe 0.6451; Calmar 1.388]
 031-02.b1.b1.b1_wide-flat-uprun-three-day_1d: not profitable enough [Sharpe 1.011; Sharpe minus holding's Sharpe 0.4036; Calmar 0.752]
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: not profitable enough [Sharpe 0.7983; Sharpe minus holding's Sharpe 0.1908; Calmar 0.6458]
 031-02.b1.b2_flat-day-after-strong-rise_1d: profitable enough [Sharpe 1.044; Sharpe minus holding's Sharpe 0.4895; Calmar 0.9058]

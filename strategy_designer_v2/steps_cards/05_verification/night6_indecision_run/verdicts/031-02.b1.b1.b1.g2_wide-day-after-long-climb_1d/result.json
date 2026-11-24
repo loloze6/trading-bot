@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of excess 3-bar return on forecast (day-clustered)",
+    "value": 3.185380367178232,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 3.185380367178232
+    },
+    "threshold": "confirm if t >= 2 (with forecast-weighted mean excess > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 3-bar return > 0",
+    "value": 0.022583313458972694,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1159,
+    "distinct days": 402
+  },
+  "decided_by": "The slope's t is >= 2 and the forecast-weighted mean excess return is above 0.",
+  "reading": "Situation recomputed as (high-low) of bar t over the mean high-low of the 20 bars ending at t inside each window, on the active bars where it can be computed, with the expected side long and the raw 20-day rise positive where recorded; the slope's t is an OLS slope (with intercept) of excess 3-bar return on forecast with standard errors clustered by calendar day (scores summed per day, small-sample corrected), and the coin's mean 3-bar return is the mean over its non-overlapping 3-bar grid returns of all its windows."
+}

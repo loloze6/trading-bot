@@ -9,6 +9,7 @@
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-02.b1.b1.b1_wide-flat-uprun-three-day_1d: 2 ideas (2 explorations)
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1.b2_flat-day-after-strong-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
