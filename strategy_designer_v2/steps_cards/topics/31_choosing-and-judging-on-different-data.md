@@ -16,6 +16,15 @@ Should the years an idea is chosen on differ from the years it is judged on, to 
   (topic 20).
 - No design of folds varying per run is found in this workflow's cards, run briefs or commits.
 
+- **The fold reduction's impact, measured (2026-11-24, the operator; `47_review/folds_power.py`, `folds_power.csv`):** the
+  idea's size and its day-clustered t (the verdict's bar t >= 2) recomputed for the 277 confirmed books of the register
+  on all four folds and on every subset of 3, 2 and 1 folds. Of the 125 books sure on 8 years, sure again on 6 years
+  71 %, on 4 years 49 %, on 2 years 25 % (daily books 69, 47, 24 %; hourly 76, 54, 30 %); median t 1.77, 1.61, 1.34,
+  0.95, close to the square root of the years (0.87, 0.71, 0.50 of the 8-year t). So halving the years halves the
+  confirmations of real effects: the reason all four folds were adopted holds. But the direction survives: of the books
+  sure on 8 years, the effect keeps its sign on 6 years in 100 %, on 4 years in 99 % (t >= 1: 87 %), on 2 years in 93 %.
+  A check of the sign on the 2 folds the analyst did not see would cost almost no real effect.
+
 ## Why it matters
 A verdict on the years an idea was picked from can be partly luck; it would show as profitable ideas failing on unseen
 dates.
