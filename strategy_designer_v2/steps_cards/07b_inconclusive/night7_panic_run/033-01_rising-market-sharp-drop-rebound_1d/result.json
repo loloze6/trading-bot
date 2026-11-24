@@ -1,0 +1,40 @@
+{
+  "line": "7.b",
+  "backtest": "033-01_rising-market-sharp-drop-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2075079,
+  "findings": {
+    "F1": "Step 5's result is on the side the idea predicts but short of the bar. The slope of the 3-day excess return on the forecast is +0.000386 with t 1.11 over 2224 in-profile grid bars, and the supporting difference is +0.42 %. The size is +0.24 % per case, a strength of 0.035 with t 0.65 over 799 days, so the effect is real in sign but too small to separate from noise on six coins.",
+    "F2": "In folds B and C, the in-profile 3-day slope is +0.00088 with t 1.75 over 1237 grid bars. All six coins point the same way (slopes +0.0004 to +0.0021), but each is weak on its own (t 0.31 for LTC to 1.16 for XRP). This is a consistent effect that each coin has too few cases to show.",
+    "F3": "The effect varies by period. The window slopes range from t +3.17 (w10) and +2.65 (w17) to -2.50 (w16) and -1.36 (w13), so a few windows' market moves add noise around a positive mean.",
+    "F4": "In-profile, a down day is followed by a mean 3-day excess return of +1.31 % (439 cases), against -0.33 % after an up day (798 cases). This puts the rebound on the side the idea names.",
+    "F5": "The grading is uneven. Falls of 1.5 to 2 usual swings are followed by +4.7 % excess (t 2.65, 34 cases) and falls of 1 to 1.5 swings by +3.4 % (t 1.67, 52 cases). Falls of 0.5 to 1 swing are followed by -0.02 % (118 cases) and falls beyond 2 swings by +0.46 % (14 cases). The few large falls carry most of the effect, and there are too few of them on six coins.",
+    "F6": "Within the profile, the plan's 3-day horizon looks right. The slope is positive at 1 day (t 2.45, 3773 cases) and at 3 days (t 1.75), then turns negative at 5 days (t -2.41, 746 cases). The rebound is over by about 3 days and partly undone afterwards.",
+    "F7": "When the 60-day trend is recomputed from the prices, the 3-day slope on the scaled fall is clearest in a rising market (t 2.50, 531 cases), against t 1.48 in a choppy market and t 0.39 in a falling one. This supports the brief's tie to rising markets at this horizon, though only on a recomputed trend over folds B and C."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "rising-market dip rebound, more coins",
+      "from": "F1, F2, F4, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5",
+        "F7"
+      ],
+      "idea": "In a rising market, a down day is followed by a rise over the next 3 days, and the rise is larger the more that day's fall exceeds the coin's usual daily swing (the standard deviation of its daily returns over the past 30 days).",
+      "consequence": "In a rising market, forced or mechanical selling on a sharp down day overshoots, and waiting buyers lift the price back, more so after a bigger overshoot.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "rising"
+    }
+  ],
+  "idea_ids": [
+    "033-01.b1_rising-market-dip-rebound-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

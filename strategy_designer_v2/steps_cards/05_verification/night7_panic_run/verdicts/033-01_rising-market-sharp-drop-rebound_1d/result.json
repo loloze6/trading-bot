@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-day forward return minus coin's normal 3-day drift on forecast, in-profile grid bars",
+    "value": 0.0003864534018347925,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.1123677379217507
+    },
+    "threshold": "confirm: slope t >= 2 with supporting difference > 0; reject: slope t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean 3-day forward return after forecast > 0 minus after in-profile forecast = 0",
+    "value": 0.004229628504672104,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 983,
+    "in-profile grid bars": 2224,
+    "in-profile grid bars with forecast = 0": 1241
+  },
+  "decided_by": "Inconclusive rule: slope t between -2 and 2.",
+  "reading": "Rising market read as regime 'unknown' (the detector's recorded decision, its component not being recorded) and a down day as a negative raw scaled_fall value; one pooled regression over all coins and windows with OLS t; the normal drift is each coin's mean 3-bar return over the non-overlapping grid of all its windows (all bars); the supporting difference uses raw forward returns on in-profile grid bars; grid bars without a 3-bar forward return in their window are left out."
+}
