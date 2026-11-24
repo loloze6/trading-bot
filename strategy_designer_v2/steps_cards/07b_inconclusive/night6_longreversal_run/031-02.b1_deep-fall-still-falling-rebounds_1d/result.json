@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "031-02.b1_deep-fall-still-falling-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4304299,
+  "findings": {
+    "F1": "The tested mean unusual 30-day move of +4.35 % (t 1.19, 140 cases on 97 days) rests on a few outliers. The median case is \u22121.7 % and only 47 % of cases rise more than usual. The five largest cases, three of them XRP (+330 %, +157 %, +127 %), carry 120 % of the sum. Without those five the mean is \u22120.9 %, and clipped at the 5th and 95th percentiles it is +1.1 % with t 0.51.",
+    "F2": "The effect does show in the deepest falls. When the raw 90-day return is in the third most below the coin's usual 90-day move (47 cases, 36 days), the unusual 30-day move is +6.7 % with t 2.52. It stays +6.6 % with t 2.51 after clipping the extremes, and 57 % of these cases rise. The middle third gives +2.7 % (t 0.34) and the shallowest third +3.6 % (t 0.60).",
+    "F3": "The test's forecast does not rank cases by depth of fall. It standardises the scaled fall against the coin's own past values, and its Spearman correlation with the excess move is \u22120.013 in step 5 (0.11 on cases here). The raw scaled 90-day return ranks cases in the idea's direction: Spearman \u22120.13, so deeper falls are followed by larger moves.",
+    "F4": "The \"still falling over 30 days\" condition works against the idea. Among cases with a known 30-day return (97), the closer that return is to zero, the larger the rebound: Spearman 0.25, p 0.015. Cases still falling hardest over 30 days give \u22126.2 % (t \u22121.14; \u22125.8 % clipped). Cases with the smallest 30-day fall give +20.6 % (t 1.78; +8.5 % clipped, t 1.81).",
+    "F5": "The result is also mixed over time. The yearly means are \u22128.9 % in 2022 (36 cases, t \u22121.96) and \u221210.2 % in 2025 (26 cases, t \u22122.52). Against them are +13.9 % in 2023 (t 2.77) and +21.5 % in 2024 (t 1.51). By coin, DOGE (+12.3 %), XMR (+11.7 %) and XRP (+44.5 %) are positive, while BTC, ETH, LTC, ZEC, ADA, SOL and AVAX are negative.",
+    "F6": "There is no clear horizon effect, and nearly all the data was already used. At 20 days the move is +4.0 % with t 1.48, close to the 30-day result (t 1.19). The test used all 15 coins over all four folds; only NEAR, SUI, TAO and ONDO, in fold D alone, are left. More data cannot fix an effect that F1 shows is mostly outliers."
+  },
+  "ideas": [
+    {
+      "idea": "The further a coin's 90-day return stands below its own usual 90-day move, measured against its own past volatility, the more its price rebounds over the next 30 days, with the rebound growing most strongly among the deepest of these falls measured directly in usual 90-day moves.",
+      "consequence": "A trader sizes a rebound buy by how many usual 90-day moves the coin has fallen, putting most weight on the very deepest falls, rather than by how unusual the fall is against the coin's own history of such readings.",
+      "name": "deepest falls rebound most",
+      "from": "F2, F3, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "Among coins whose 90-day return stands far below their own usual 90-day move, the smaller the coin's fall over its last 30 days, the more its price rebounds over the next 30 days.",
+      "consequence": "A trader prefers deep two-to-three-month falls whose last month has levelled off, and is wary of those still dropping hard over the past 30 days.",
+      "name": "levelled-off deep falls rebound",
+      "from": "F4, F1, F5",
+      "refs": [
+        "F4",
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.b1_deepest-falls-rebound-most",
+    "031-02.b1.b2_levelled-off-deep-falls-rebound"
+  ],
+  "no_ideas": null
+}
