@@ -1,6 +1,6 @@
 # Topic 31: Choosing and judging an idea on different data (folds)
 
-Status: open  
+Status: decided 2026-11-24 (built: 795d4409a6, caf071fb1b)  
 Where: research: step 7, step 5, the folds  
 Opened: 2026-11-19 (operator, from topic 30)
 
@@ -54,6 +54,7 @@ fail there, the split becomes worth its cost.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-24 | Step 7 explores folds B and C (2018-21); step 5 judges on every fold and checks a confirm's direction on folds A and D (2022-25), not judged under 100 cases or 30 days (`common/explore_and_check.md`) | the operator ("go"), on the designer's logical case | choosing after looking flatters an idea on the years it was chosen from; the verdict keeps its 8 years; a real effect keeps its direction on 4 years (98 %) | splitting the verdict's years (half the real effects lost); a higher bar by the cases tried, rotation, other coins, a fold kept out (topic 31, measured or reasoned 2026-11-24) |
 | 2026-11-19 | Noted; no change to the folds now | operator's ok, on the design session's proposal | the years still matter on 1h (markets, profitability); the unseen test shows first whether choice bias bites | fewer folds on 1h; folds per run |
 
 ## Status and next
