@@ -1,1 +1,2 @@
 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: inconclusive (fit: exact) [main: 0.00251844; t of the mean 0.368028; bets (trending, |forecast| >= 2) 163, cases with a full 48 bars left inside their window 161]
+026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h: not observable (fit: exact) [main: 0.00807865; t of the mean 0.921995; cases 46]
