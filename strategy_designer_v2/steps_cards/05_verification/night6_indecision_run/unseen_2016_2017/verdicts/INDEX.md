@@ -6,5 +6,6 @@
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: inconclusive (fit: exact) [main: -0.00520776; t of the mean, cases grouped by day -0.296185; cases 59, days 56]
 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: inconclusive (fit: exact) [main: 0.00234395; t of slope, day-clustered 1.78039; regime grid cases 557, days 230]
 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d: inconclusive (fit: adapted) [main: 1.24978; day-clustered OLS slope t 1.24978; cases 176, distinct days 97]
+031-02.b1.b1.b1.g3_heavy-volume-extends-up-run_1d: inconclusive (fit: adapted) [main: 0.000646697; slope t, cases of one day summed (day-clustered) 0.581129; regime grid cases 557, regime grid cases with forecast > 0 256, regime grid cases with forecast = 0 301, days 230]
 031-02.b1.b2_flat-day-after-strong-rise_1d: inconclusive (fit: adapted) [main: 0.0375037; t of the mean, cases of one day pooled 1.09381; cases 52, days 50]
 031-03.b1_wide-day-extends-up-run_1d: confirmed (fit: adapted) [main: 0.0329259; t of the weighted mean, cases on the same day pooled 2.23725; distinct case days 161, cases 210, active bars checked 376]

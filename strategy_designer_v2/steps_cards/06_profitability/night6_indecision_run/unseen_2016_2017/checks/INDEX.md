@@ -6,5 +6,6 @@
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: not profitable enough [Sharpe 1.869; Sharpe minus holding's Sharpe -1.882; Calmar 2.635]
 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: not profitable enough [Sharpe 2.99; Sharpe minus holding's Sharpe -0.761; Calmar 7.781]
 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d: not profitable enough [Sharpe 2.622; Sharpe minus holding's Sharpe -1.129; Calmar 5.219]
+031-02.b1.b1.b1.g3_heavy-volume-extends-up-run_1d: not profitable enough [Sharpe 2.336; Sharpe minus holding's Sharpe -1.415; Calmar 5.729]
 031-02.b1.b2_flat-day-after-strong-rise_1d: not profitable enough [Sharpe 2.369; Sharpe minus holding's Sharpe -1.382; Calmar 4.041]
 031-03.b1_wide-day-extends-up-run_1d: not profitable enough [Sharpe 2.359; Sharpe minus holding's Sharpe -1.393; Calmar 4.504]

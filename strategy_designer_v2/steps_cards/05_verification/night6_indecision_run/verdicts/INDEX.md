@@ -10,6 +10,7 @@
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: confirmed (fit: exact) [main: 0.016663; t of the mean, cases grouped by day 3.15665; cases 490, days 352]
 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: confirmed (fit: exact) [main: 0.00119279; t of slope, day-clustered 2.44252; regime grid cases 6105, days 851]
 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d: confirmed (fit: adapted) [main: 3.18538; day-clustered OLS slope t 3.18538; cases 1159, distinct days 402]
+031-02.b1.b1.b1.g3_heavy-volume-extends-up-run_1d: confirmed (fit: adapted) [main: 0.000852571; slope t, cases of one day summed (day-clustered) 2.71655; regime grid cases 6105, regime grid cases with forecast > 0 2622, regime grid cases with forecast = 0 3483, days 851]
 031-02.b1.b1.b1_wide-flat-uprun-three-day_1d: confirmed (fit: adapted) [main: 0.0299187; t of the mean, cases clustered by day 3.02788; cases 201, distinct days 147]
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: inconclusive (fit: adapted) [main: 0.0223777; t of the mean, cases of one day summed together 1.29214; cases 181, distinct case days 134]
 031-02.b1.b2_flat-day-after-strong-rise_1d: confirmed (fit: adapted) [main: 0.0308541; t of the mean, cases of one day pooled 2.22283; cases 202, days 179]
