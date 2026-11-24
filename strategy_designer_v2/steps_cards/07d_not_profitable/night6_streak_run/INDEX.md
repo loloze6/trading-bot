@@ -7,6 +7,7 @@
 031-02.b1.g2_volatile-falls-rebound-harder_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1_sharp-daily-fall-rebounds_1d: 2 ideas (2 explorations)
 031-02_down-streak-length-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-03.b1.b1_up-streak-continuation-in-uptrend_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-03.b1_up-streak-continuation-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-03_up-streak-length-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-04_down-streak-length-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

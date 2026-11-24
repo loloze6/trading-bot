@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 031-03.b1.b1_up-streak-continuation-in-uptrend_1d
+idea tested: 031-03.b1.b1_up-streak-continuation-in-uptrend
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4646 USD
+---
+## Findings
+- **F1:** Across the five 5-day sampling grids, the 5-day move after a bar rose with the coin's 30-day return percentile every time (slope +0.021 to +0.031 per unit of percentile, t 1.63, 2.18, 2.36, 1.72 and 1.63, about 4,400 to 4,600 cases on about 450 days each). The 30-day quintiles ran -0.42 %, -1.24 %, -0.61 %, +0.43 % and +1.22 % above the drift (top quintile t 1.64; second quintile t -2.14). This is a 30-day trend effect, not a streak effect.
+- **F2:** The streak length itself carried no graded effect on the next 5 days. Up-streaks of 1 to 5 or more days gave +0.11 %, -0.11 %, +1.10 %, -0.91 % and -0.07 % above the drift (all |t| < 1, 168 to 1,451 cases). Down-streaks were not ordered either: -0.49 %, +0.03 %, +1.49 %, -2.94 % and -1.30 %. This matches the idea's inconclusive verdict (+0.38 %, t 1.04, 1,136 days).
+- **F3:** When the 30-day return was negative, the 5-day move fell as the 5-day return ranked higher. By quintile it ran -0.25 %, -0.47 %, -0.40 %, -0.78 % and -2.32 % below the drift (top quintile t -2.25, 452 cases on 143 days). The slope on the 5-day percentile was negative on all five grids (t -0.22 to -1.22), and so was the slope on the 10-day percentile (t -0.33 to -1.64). After about 60 groupings, this pattern is suggestive, not decisive.
+- **F4:** When the 30-day return was positive, the 5-day-return slope was positive on four grids out of five (t 0.83, 2.50, 3.66, 1.54) and negative on the fifth (t -0.86). The same cut in the top 5-day quintile gave +1.57 % (t 1.87, 654 cases on 213 days). It is unstable across grids, so it is not counted as a finding of its own.
+- **F5:** The book's gain is not where the idea puts it.
+- **F6:** Neither weekday nor relative volatility stood out. Weekday means ranged from -2.04 % (Sunday, t -1.94) to +2.02 % (Tuesday, t 1.64) over about 88 days each. Volatility quintiles all had |t| ≤ 1.01.
+
+## Ideas
+- `031-03.b1.b1.g1_30-day-trend-rank-continuation` (from F1, F5): The higher a coin's 30-day return ranks among its own 30-day returns of the past year, the more the coin rises over the next 5 days.
+- `031-03.b1.b1.g2_downtrend-rally-fade` (from F3, F1): While a coin's 30-day return is negative, the higher its 5-day return ranks among its own 5-day returns of the past year, the more the coin falls over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
