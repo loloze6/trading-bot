@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed 14-bar forward return minus coin's mean 14-bar return, on 14-bar grid",
+    "value": 0.008966192489923367,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": 1.3530947764253711
+    },
+    "threshold": "mean > 0 with t >= 2 confirms (with both regime means > 0); mean < 0 with t <= -2 rejects; min 100 cases, 30 per regime"
+  },
+  "supporting_check": {
+    "name": "mean > 0 in both trending and mean_reversion cases",
+    "value": 0.0034397680115487816,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2048,
+    "trending cases": 960,
+    "mean_reversion cases": 1088,
+    "days": 207
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Cases are assigned to a regime by the recorded regime on the grid bar, the coin's mean is over its 14-bar grid returns in all windows, the t sums same-day deviations into one per day, and the plan's 'too few cases' rule is reported as not observable; supporting-check value is the smaller regime mean."
+}

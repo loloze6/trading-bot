@@ -14,6 +14,7 @@
 031-03.b1_short-horizon-continuation-after-moves_1d: not profitable enough [Sharpe 0.4435; Sharpe minus holding's Sharpe -0.1107; Calmar 0.1548]
 031-03.g1.b1.d1_volume-surge-with-price-move_1d: not profitable enough [Sharpe 0.7377; Sharpe minus holding's Sharpe 0.1302; Calmar 0.3443]
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: profitable enough [Sharpe 1.112; Sharpe minus holding's Sharpe 0.5048; Calmar 1.049]
+031-03.g1.b1.g1_volume-confirmed-two-week-continuation_1d: not profitable enough [Sharpe 0.6992; Sharpe minus holding's Sharpe 0.1422; Calmar 0.4527]
 031-03.g1.b1_volume-surge-more-coins_1d: not profitable enough [Sharpe 0.5663; Sharpe minus holding's Sharpe -0.04116; Calmar 0.2352]
 031-03.g1_volume-surge-leads-two-week-drift_1d: not profitable enough [Sharpe 0.3515; Sharpe minus holding's Sharpe -0.2027; Calmar 0.09048]
 031-03_fading-volume-after-rise-reverses_1d: not profitable enough [Sharpe -0.2993; Sharpe minus holding's Sharpe -0.881; Calmar -0.07968]

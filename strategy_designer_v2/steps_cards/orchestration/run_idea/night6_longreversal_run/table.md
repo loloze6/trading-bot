@@ -24,21 +24,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.g1.b1_volume-surge-more-coins | 031-03.g1_volume-surge-leads-two-week-drift | plan | confirmed (+2.34) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 031-03.g1.b1.d1_volume-surge-with-price-move, 031-03.g1.b1.d2_rising-volume-rally-continues; 7.g: 031-03.g1.b1.g1_volume-confirmed-two-week-continuation, 031-03.g1.b1.g2_swelling-volume-after-rises | 1.50 | 12.1 |
 | 031-03.g1.b1.d1_volume-surge-with-price-move | 031-03.g1.b1_volume-surge-more-coins | plan | inconclusive (+1.70) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.d1.b1_volume-confirmed-move-one-week; 7.g: 031-03.g1.b1.d1.g1_volume-swell-leads-price | 1.13 | 11.3 |
 | 031-03.g1.b1.d2_rising-volume-rally-continues | 031-03.g1.b1_volume-surge-more-coins | plan | inconclusive (+1.71) | profitable enough | - | 7.b: no ideas: The result is on the predicted side, but no more data exists beyond the 19 coins and four folds already used, and the findings show no part of one coin's own data where the effect is clear and graded (it comes from market-wide swells, F4, and swings by year, F3), so no amended idea is supported.; 7.e: 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails, 031-03.g1.b1.d2.e2_volume-swell-predicts-rise; 7.g: 031-03.g1.b1.d2.g1_volume-swell-lifts-price, 031-03.g1.b1.d2.g2_drying-volume-precedes-falls | 1.54 | 12.1 |
+| 031-03.g1.b1.g1_volume-confirmed-two-week-continuation | 031-03.g1.b1_volume-surge-more-coins | plan | inconclusive (+1.35) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.g1.b1_volume-swelled-rise-continues-weekly; 7.g: 031-03.g1.b1.g1.g1_volume-swell-predicts-direction | 1.21 | 13.2 |
 
 ## Consumption
-20 ideas, 22.86 USD, 178.2 minutes in all.
+21 ideas, 24.07 USD, 191.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.70 | 10.0 |
-| step4_backtest | 0.00 | 101.9 |
-| step5_verdict | 3.77 | 13.3 |
-| step6_check | 0.00 | 0.9 |
+| step3_plan | 1.84 | 10.9 |
+| step4_backtest | 0.00 | 111.0 |
+| step5_verdict | 3.97 | 14.0 |
+| step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.99 | 3.3 |
 | step7_7.e | 0.45 | 1.3 |
 | step7_7.a | 0.31 | 1.0 |
-| step7_7.b | 5.81 | 16.6 |
-| step7_7.g | 9.84 | 29.3 |
+| step7_7.b | 6.22 | 17.7 |
+| step7_7.g | 10.30 | 30.5 |
 | similarity_check | 0.00 | 0.1 |
