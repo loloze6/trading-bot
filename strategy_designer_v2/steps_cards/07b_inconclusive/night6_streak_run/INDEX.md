@@ -1,6 +1,7 @@
 031-01.b1_up-streak-reversal-more-coins_1d: no ideas: The test already used every coin and all four folds, so no more daily data is available. The effect is not clearly present in any one part of the data and graded with streak length there (F2, F4, F6, F7). The only significant reading is a 1-day reversal after a single up close (F3, F5), which does not grow with the streak, so no graded idea rests on it.
 031-01.b2.b1_long-up-streaks-ten-day-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.b2_long-up-streaks-continue_1d: 1 ideas (2 explorations)
+031-01.g1.b1_down-day-rebound-more-coins_1d: no ideas: The effect has no clear home: its apparent rebound is the market's own common bounce (F2, F3), and no horizon, side, period, regime or coin shows it clearly (F4, F5), while no further data exists to retest it unchanged (F1).
 031-01.g1_volatility-scaled-down-day-rebound_1d: 2 ideas (2 explorations)
 031-01_up-streak-length-reversal_1d: 2 ideas (2 explorations)
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
