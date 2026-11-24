@@ -9,6 +9,7 @@
 031-01.b1_wide-day-extends-up-run_1d: profitable enough [Sharpe 0.9011; Sharpe minus holding's Sharpe 0.347; Calmar 0.7564]
 031-01.b2_wide-doji-continues-strong-run_1d: not profitable enough [Sharpe 0.8284; Sharpe minus holding's Sharpe 0.2742; Calmar 0.6173]
 031-01.g1.d1_rebound-grows-with-volatility_1d: profitable enough [Sharpe 1.059; Sharpe minus holding's Sharpe 0.5052; Calmar 0.9559]
+031-01.g1.d2_wide-low-close-in-volatile-coins_1d: profitable enough [Sharpe 1.044; Sharpe minus holding's Sharpe 0.4902; Calmar 1.033]
 031-01.g1_wide-day-low-close-rebounds_1d: not profitable enough [Sharpe 0.9644; Sharpe minus holding's Sharpe 0.4102; Calmar 0.6944]
 031-01_wide-flat-day-ends-uprun_1d: not profitable enough [Sharpe -0.4823; Sharpe minus holding's Sharpe -1.036; Calmar -0.1241]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: profitable enough [Sharpe 1.222; Sharpe minus holding's Sharpe 0.6145; Calmar 1.01]

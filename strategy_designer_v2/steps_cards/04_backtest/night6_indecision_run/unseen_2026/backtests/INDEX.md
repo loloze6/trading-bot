@@ -4,6 +4,7 @@
 031-01.b1.e1_strong-run-continues-three-days_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1d, windows unseen_2026]
 031-01.b1.e2_wide-day-in-strong-run_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1d, windows unseen_2026]
 031-01.g1.d1_rebound-grows-with-volatility_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1d, windows unseen_2026]
+031-01.g1.d2_wide-low-close-in-volatile-coins_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1d, windows unseen_2026]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3; ADAUSD 3/3; DOGEUSD 3/3; LINKUSD 3/3; TRXUSD 3/3; UNIUSD 3/3; AAVEUSD 3/3; AVAXUSD 3/3; SOLUSD 3/3; INJUSD 3/3; NEARUSD 3/3; SUIUSD 3/3; TAOUSD 3/3; ONDOUSD 3/3 [1d, windows unseen_2026]
 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3; ADAUSD 3/3; DOGEUSD 3/3; LINKUSD 3/3; TRXUSD 3/3; UNIUSD 3/3; AAVEUSD 3/3; AVAXUSD 3/3; SOLUSD 3/3; INJUSD 3/3; NEARUSD 3/3; SUIUSD 3/3; TAOUSD 3/3; ONDOUSD 3/3 [1d, windows unseen_2026]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3; ADAUSD 3/3; DOGEUSD 3/3; LINKUSD 3/3; TRXUSD 3/3; UNIUSD 3/3; AAVEUSD 3/3; AVAXUSD 3/3; SOLUSD 3/3; INJUSD 3/3; NEARUSD 3/3; SUIUSD 3/3; TAOUSD 3/3; ONDOUSD 3/3 [1d, windows unseen_2026]

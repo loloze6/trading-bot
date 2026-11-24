@@ -9,6 +9,7 @@
 031-01.b1_wide-day-extends-up-run_1d: no ideas: Of the angles examined (past 1-, 5- and 20-day returns, range ratio, close location, body, volatility, run direction with wide/flat days, weekday, year, positions, trades by forecast, and the book against holding), no pattern stands out beyond what about 75 cells would give by chance (largest |t| 2.76, none graded). The book's profit is explained by the market's rise (F1–F3), not by a separate effect that a new idea could take up.
 031-01.b2_wide-doji-continues-strong-run_1d: 1 ideas (2 explorations)
 031-01.g1.d1_rebound-grows-with-volatility_1d: 3 ideas (2 explorations)
+031-01.g1.d2_wide-low-close-in-volatile-coins_1d: 2 ideas (2 explorations)
 031-01.g1_wide-day-low-close-rebounds_1d: 3 ideas (2 explorations)
 031-01_wide-flat-day-ends-uprun_1d: 1 ideas (2 explorations)
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: 1 ideas (2 explorations)
