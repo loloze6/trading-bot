@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered t of the slope of 2-day forward return minus normal drift on forecast (forecast > 0, non-overlapping 2-bar grid)",
+    "value": 1.2787818546923944,
+    "statistic": {
+      "name": "day-clustered t of the OLS slope",
+      "value": 1.2787818546923944
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 100 cases over at least 50 days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases with forecast > 0": 8995,
+    "distinct days": 1230
+  },
+  "decided_by": "The slope's day-clustered t lies between -2 and 2 (inconclusive rule).",
+  "reading": "OLS with intercept of excess 2-day return on forecast over grid bars (positions 0, 2, 4, ... of each window with a forward close in the window) with forecast > 0, the normal drift being the coin's mean 2-day return over all its windows' grid bars, day-clustered standard errors with the usual CR1 small-sample correction, and the plan's too-few-cases case reported as 'not observable' as the workflow requires."
+}
