@@ -4,5 +4,6 @@
 031-01.b1.e2_wide-day-in-strong-run_1d: inconclusive (fit: adapted) [main: 0.0362285; t of the mean, same-day cases taken together 1.84184; top-fifth cases on separate days 73, top-fifth cases 115, bottom-fifth in-rise cases 115, in-rise grid bars 573]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: inconclusive (fit: exact) [main: 0.0222924; t of the mean, cases of one day taken together 1.53033; cases 151, distinct days 111]
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: inconclusive (fit: exact) [main: -0.00520776; t of the mean, cases grouped by day -0.296185; cases 59, days 56]
+031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: inconclusive (fit: exact) [main: 0.00234395; t of slope, day-clustered 1.78039; regime grid cases 557, days 230]
 031-02.b1.b2_flat-day-after-strong-rise_1d: inconclusive (fit: adapted) [main: 0.0375037; t of the mean, cases of one day pooled 1.09381; cases 52, days 50]
 031-03.b1_wide-day-extends-up-run_1d: confirmed (fit: adapted) [main: 0.0329259; t of the weighted mean, cases on the same day pooled 2.23725; distinct case days 161, cases 210, active bars checked 376]

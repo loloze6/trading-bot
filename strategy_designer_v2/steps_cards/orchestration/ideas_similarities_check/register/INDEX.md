@@ -133,6 +133,7 @@ An idea's latest record counts once.
 | 031-01.b1.e2_wide-day-in-strong-run_1d | paying | night6_indecision_run | 1d | 6 | 267236fa9 | 2026-11-24T00:20:10 |
 | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d | paying | night6_indecision_run | 1d | 19 | 2deaecb62 | 2026-11-24T01:31:54 |
 | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d | paying | night6_indecision_run | 1d | 19 | cd5058000 | 2026-11-24T01:43:00 |
+| 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d | paying | night6_indecision_run | 1d | 19 | 72d11f6bf | 2026-11-24T01:54:14 |
 | 031-02.b1.b1.b1_wide-flat-uprun-three-day_1d | confirmed | night6_indecision_run | 1d | 19 | 39932a50c | 2026-11-24T01:23:07 |
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | paying | night6_indecision_run | 1d | 6 | b4d4aafd2 | 2026-11-24T01:06:31 |
 | 031-03.b1_wide-day-extends-up-run_1d | paying | night6_indecision_run | 1d | 6 | 168ab087c | 2026-11-24T00:29:20 |

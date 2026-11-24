@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 3-bar forward return on forecast (regime bars, 3-bar grid)",
+    "value": 0.0011927857067792905,
+    "statistic": {
+      "name": "t of slope, day-clustered",
+      "value": 2.442517598095778
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 3-bar return, top third minus bottom third of forecasts",
+    "value": 0.011214742615549396,
+    "passed": true
+  },
+  "counts": {
+    "regime grid cases": 6105,
+    "days": 851
+  },
+  "decided_by": "The slope is above 0 with t >= 2 and the top-minus-bottom-third check is above 0.",
+  "reading": "Situation check uses close[t]/close[t-6]-1 > 0 inside each window, leaving out active bars of a window's first 6 rows where it cannot be computed; regime bars are rows with regime == 'trending'; the coin's normal 3-bar drift is its mean 3-bar return over the non-overlapping grid (positions 0,3,6,...) of all its windows; the slope is OLS of drift-adjusted return on forecast with a day-clustered standard error (CR1 G/(G-1) scaling, days by UTC date); top and bottom thirds are the n//3 highest and lowest forecasts by rank (ties broken by coin, window, time); the plan's 'fewer than 300 cases' rule is reported as 'not observable'."
+}
