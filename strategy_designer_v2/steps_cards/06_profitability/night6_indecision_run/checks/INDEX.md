@@ -7,6 +7,7 @@
 031-01.b2_wide-doji-continues-strong-run_1d: not profitable enough [Sharpe 0.8284; Sharpe minus holding's Sharpe 0.2742; Calmar 0.6173]
 031-01_wide-flat-day-ends-uprun_1d: not profitable enough [Sharpe -0.4823; Sharpe minus holding's Sharpe -1.036; Calmar -0.1241]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: profitable enough [Sharpe 1.222; Sharpe minus holding's Sharpe 0.6145; Calmar 1.01]
+031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d: profitable enough [Sharpe 1.253; Sharpe minus holding's Sharpe 0.6451; Calmar 1.388]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: profitable enough [Sharpe 1.263; Sharpe minus holding's Sharpe 0.6551; Calmar 0.9545]
 031-02.b1.b1.b1.d2.g1_wide-high-close-downrun-continuation_1d: not profitable enough [Sharpe -0.119; Sharpe minus holding's Sharpe -0.7264; Calmar -0.04905]
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: profitable enough [Sharpe 1.292; Sharpe minus holding's Sharpe 0.6842; Calmar 1.274]

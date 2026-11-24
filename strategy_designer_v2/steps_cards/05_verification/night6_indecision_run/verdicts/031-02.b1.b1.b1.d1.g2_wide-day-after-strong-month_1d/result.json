@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move after the cases (return minus the coin's normal 3-bar drift)",
+    "value": 0.010459863649841143,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 2.826301945286153
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and upper half beats lower half; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at median forecast)",
+    "value": 0.006723421069058155,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2037,
+    "distinct days": 919,
+    "upper half cases": 1018,
+    "lower half cases": 1019
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the upper half beats the lower half.",
+  "reading": "The situation is a bar whose high-low range is at least 1.5 times the mean range of the last 20 bars (today included) within the window, with the regime column used where 20 recorded bars are not yet available, and a positive raw 20-day rise where recorded, on the long side; a case is the first bet (forecast rise of at least 2 points from its lowest long level since the last bet, from 0 after a flat) in each 3-bar grid cell of a window, with a full 3-bar return inside the window; the drift is the mean non-overlapping 3-bar return of the coin over all its windows; the t sums the deviations per UTC day; the upper half is the cases with forecast above the median, the lower half the rest."
+}

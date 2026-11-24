@@ -25,6 +25,7 @@
 | 031-01.b1.e1_strong-run-continues-three-days_1d | night6_indecision_run | 1d | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h (1h) | 0.78 | same period | +0.0176 % (1.34) | 0.44 |
 | 031-01.b1.e2_wide-day-in-strong-run_1d | night6_indecision_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.82 | same period | +0.0095 % (1.17) | 0.36 |
 | 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d | night6_indecision_run | 1d | 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d (1d) | 0.84 | same period | +0.0028 % (0.51) | 0.28 |
+| 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d | night6_indecision_run | 1d | 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d (1d) | 1.00 | same period | -0.0000 % (-54.14) | 0.25 |
 | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d | night6_indecision_run | 1d | 031-03.b1_wide-day-extends-up-run_1d (1d) | 0.49 | same period | +0.0171 % (2.13) | 0.18 |
 | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d | night6_indecision_run | 1d | 031-02.b1.b2_flat-day-after-strong-rise_1d (1d) | 0.34 | same period | +0.0131 % (2.37) | 0.15 |
 | 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d | night6_indecision_run | 1d | 031-01.b1.b1_wide-day-extends-run-more-coins_1d (1d) | 0.95 | same period | +0.0089 % (1.51) | 0.51 |
