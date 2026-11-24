@@ -1,0 +1,1 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1h, windows unseen_2026]

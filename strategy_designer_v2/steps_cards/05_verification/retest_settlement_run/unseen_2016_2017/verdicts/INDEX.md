@@ -1,0 +1,1 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: inconclusive (fit: exact) [main: -1.69553; OLS slope t -1.69553; grid cases 2209, grid cases with a non-zero forecast 2178]

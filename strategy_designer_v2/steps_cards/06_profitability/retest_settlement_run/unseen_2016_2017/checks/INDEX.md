@@ -1,0 +1,1 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: not profitable enough [Sharpe -1.963; Sharpe minus holding's Sharpe -5.198; Calmar -0.8561]
