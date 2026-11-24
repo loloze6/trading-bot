@@ -1,3 +1,4 @@
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (3 explorations)
 031-02_near-yearly-low-bounces_1d: 1 ideas (3 explorations)
 031-03_yearly-low-break-extends_1d: no ideas: The data gives no stable pattern to build on. The breaks are few (24 grid cases on 13 days), the hints of a post-break bounce (F1, F2, F6) and of a falling break day continuing (F4) all have t below 2, and none of the bar-wide angles I examined (F5) stands out from chance after that many looks.
+031-04_yearly-low-break-reverses_1d: no ideas: Across momentum over 5 to 30 days, range position, volatility, weekday, year and the regime's cases, no pattern stood out beyond chance: the best graded slope had a day-clustered t of 1.43 and flipped sign across years, and the two notable weekdays are the expected extremes of many comparisons.
