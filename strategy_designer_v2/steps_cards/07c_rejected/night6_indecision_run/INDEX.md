@@ -1,5 +1,6 @@
 031-01.b1.b1_wide-day-extends-run-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.b1.b2.b1_wide-day-strong-run-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.b1.b2.b2_wide-strong-run-in-uptrend_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01.b1.b2_wide-day-extends-strong-run_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-01.b1.e1_strong-run-continues-three-days_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
