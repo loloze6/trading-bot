@@ -32,22 +32,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | plan | confirmed (+2.46) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.b1.b2.b2.e1.d1_scaled-trend-while-still-rising, 031-01.b1.b2.b2.e1.d2_trend-graded-by-recent-push; 7.g: no ideas: I looked at more than 25 angles: the forecast's quintiles, 5-, 20- and 60-day returns, volatility level and ratio, range width, body, close location, the brief's wide-flat days, years, weekdays, 1- to 5-day reversal and continuation, per-coin and per-trend splits, and trades by length and entry forecast. No pattern stands out enough to count. The best one, the one-day rebound after a large volatility-scaled fall (F3, +0.39 % against a 0.19 % trade cost), has a day-clustered t of only 2.14 and fades within three days. The others are under t 2 once same-day cases are taken together, or are calendar effects with overstated t's. | 1.00 | 5.4 |
 | 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | plan | confirmed (+3.73) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.b1.b2.b2.e2.g1_one-day-fall-bounces-back | 0.61 | 4.8 |
 | 031-01.g1_wide-day-low-close-rebounds | 031-01_wide-flat-day-ends-uprun | plan | confirmed (+3.59) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.d1_rebound-grows-with-volatility, 031-01.g1.d2_wide-low-close-in-volatile-coins, 031-01.g1.d3_deeper-wide-day-fall-rebounds-more; 7.g: 031-01.g1.g1_large-range-low-close-rebounds, 031-01.g1.g2_volatility-scales-wide-low-rebound, 031-01.g1.g3_high-close-in-downtrend-fades | 1.10 | 5.6 |
+| 031-01.g1.d1_rebound-grows-with-volatility | 031-01.g1_wide-day-low-close-rebounds | plan | confirmed (+3.59) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.g1.d1.g1_low-close-rebounds-when-volatile, 031-01.g1.d1.g2_rebound-grows-with-range-width, 031-01.g1.d1.g3_volatile-sharp-drops-rebound-next | 0.65 | 5.2 |
 
 ## Consumption
-28 ideas, 27.66 USD, 213.1 minutes in all.
+29 ideas, 28.30 USD, 218.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.07 | 16.1 |
-| step4_backtest | 0.00 | 97.0 |
-| step5_verdict | 5.04 | 17.6 |
-| step6_check | 0.00 | 1.1 |
+| step3_plan | 4.16 | 16.6 |
+| step4_backtest | 0.00 | 98.7 |
+| step5_verdict | 5.21 | 18.3 |
+| step6_check | 0.00 | 1.2 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 1.26 | 4.1 |
 | step7_7.e | 0.81 | 2.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 3.99 | 11.2 |
-| step7_7.g | 12.50 | 36.2 |
+| step7_7.g | 12.89 | 37.5 |
 | similarity_check | 0.00 | 0.9 |
-| unseen_test | 0.00 | 25.9 |
+| unseen_test | 0.00 | 26.8 |

@@ -3,6 +3,7 @@
 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d: not profitable enough [Sharpe 0.9095; Sharpe minus holding's Sharpe 0.8115; Calmar 1.888]
 031-01.b1.e1_strong-run-continues-three-days_1d: not profitable enough [Sharpe 0.5505; Sharpe minus holding's Sharpe 0.4524; Calmar 0.6022]
 031-01.b1.e2_wide-day-in-strong-run_1d: not profitable enough [Sharpe 0.7224; Sharpe minus holding's Sharpe 0.6243; Calmar 0.8304]
+031-01.g1.d1_rebound-grows-with-volatility_1d: profitable enough [Sharpe 0.9605; Sharpe minus holding's Sharpe 0.8625; Calmar 2.319]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: not profitable enough [Sharpe 1.321; Sharpe minus holding's Sharpe 1.254; Calmar 2.383]
 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d: not profitable enough [Sharpe 1.415; Sharpe minus holding's Sharpe 1.348; Calmar 2.509]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: not profitable enough [Sharpe 0.1425; Sharpe minus holding's Sharpe 0.0761; Calmar 0.1714]

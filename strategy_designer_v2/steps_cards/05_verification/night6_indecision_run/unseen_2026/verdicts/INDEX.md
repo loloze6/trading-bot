@@ -3,6 +3,7 @@
 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d: inconclusive (fit: exact) [main: 0.0013101; OLS slope t 1.92233; grid bars in trending with forecast above 0 163, grid bars in trending 289]
 031-01.b1.e1_strong-run-continues-three-days_1d: inconclusive (fit: adapted) [main: 0.000563138; OLS slope t 1.32296; grid bars with a forecast above 0 283, grid bars 624]
 031-01.b1.e2_wide-day-in-strong-run_1d: inconclusive (fit: adapted) [main: 0.0222447; t of the mean, same-day cases taken together 1.23426; top-fifth cases on separate days 32, top-fifth cases 57, bottom-fifth in-rise cases 57, in-rise grid bars 283]
+031-01.g1.d1_rebound-grows-with-volatility_1d: inconclusive (fit: adapted) [main: 0.0120101; t of the mean, cases of one day pooled 1.0805; cases (signal days) 78, distinct days 48, cases above median 39, cases below median 39]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: inconclusive (fit: exact) [main: 0.00803582; t of the mean, cases clustered by day 0.913715; cases 357, distinct days 138]
 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d: inconclusive (fit: adapted) [main: 0.0117528; t of the mean, cases pooled by day 1.11926; cases 312, distinct days 125, upper half cases 156, lower half cases 156]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: inconclusive (fit: exact) [main: -0.00107519; t of the mean, cases of one day taken together -0.101408; cases 155, distinct days 87]
