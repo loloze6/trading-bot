@@ -1,0 +1,50 @@
+What a market profile is (the operator, 2026-11-24; topic 49). Designed, not yet read by a step: steps 1, 2, 3, 5 and 7
+will read it once topic 49 is built.
+
+**A market profile is the kind of market a coin is in, read from its own recent bars: which way it has been going, and
+how much it has been swinging.** Traders use it to say "this works in a rising, calm market" or "only in a falling,
+agitated one". An idea that names a profile says where its effect lives; a strategy built from it holds positions only
+in that profile.
+
+**Its two elements, both read on the coin's own bars at a bar's close** (each coin is tested on its own bars only:
+`idea_definition.md`):
+- **The trend:** the coin's return over the last 60 days.
+  - **rising:** above +10 %;
+  - **falling:** below -10 %;
+  - **choppy:** between the two.
+- **The agitation:** the coin's swing over the last 30 days (the standard deviation of its daily returns) against its
+  swing over the past year.
+  - **agitated:** above the past year's median (more swinging than usual for this coin);
+  - **calm:** at or below it.
+
+**The six profiles:** rising calm, rising agitated, choppy calm, choppy agitated, falling calm, falling agitated.
+
+**When it is known:** at a bar's close, from that bar and the bars before it only. Times are in days, so a profile means
+the same on daily and on hourly bars (60 days is 1,440 hourly bars).
+
+**How often each profile occurs** (the six core coins together, 2016 to 2026, measured with the six coins' average on
+2026-11-24, `topics/44_review/p10_map.py`): rising calm 31 %, rising agitated 14 %, choppy calm 22 %, choppy agitated 3 %,
+falling calm 17 %, falling agitated 11 %. A coin's own profile matches that average's on 46 to 63 % of days (its trend
+on 61 to 75 %): coins move together, but not always in the same profile.
+
+**Terms built on it:**
+- **An idea's profile:** the profile an idea names as the place its effect lives ("in a falling, agitated market, a
+  sharp one-day fall rebounds over the next two days"). At most one; an idea that names none acts in every profile.
+- **A profile specialist:** a strategy whose positions are all in one profile: the book of an idea that names its
+  profile, built with that profile as its regime (`forecast.md`: a regime limits where a position exists; inside it
+  the forecast is graded).
+- **A strategy's home:** the profiles and side where it holds its positions (its share of its days in a position, by
+  profile and side). Today's strategies have no home: their days in a position follow the market's own days in every
+  profile (topic 44, P10 pilot).
+- **The profile map:** every confirmed strategy placed by its home. A filled cell is a profile and side some strategy
+  specialises in; an empty cell is a place no strategy acts in on purpose: a target for the next briefs.
+
+**How step 3 builds a profile** (existing components, no new engine code; the exact settings are part of topic 49's
+build):
+- the trend: `PriceEvolutionComponent` over 60 days;
+- the agitation: `VolatilityPercentileRegimeComponent` with a 30-day swing ranked over 365 days, without smoothing
+  (agitated above 0.5: above the past year's median);
+- the profile: a `threshold_rules` regime on the two.
+
+**Why this cannot leak:** both elements use closes up to the bar being decided; the past year's median uses that year
+only.
