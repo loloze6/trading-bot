@@ -1,0 +1,83 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "wd",
+        "class": "strategies.strategy_components.WeekdayComponent",
+        "params": {}
+      },
+      {
+        "id": "rise",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 14
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "wd",
+              "op": "between",
+              "low": 4.5,
+              "high": 5.5
+            },
+            {
+              "id": "rise",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "near_high",
+            "class": "strategies.strategy_components.DistanceFromHighComponent",
+            "params": {
+              "period": 365,
+              "source": "high",
+              "exclude_current": 0,
+              "form": "proximity",
+              "power": 1.0,
+              "extreme": "high"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 365,
+                  "min_periods": 91
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 2
+  },
+  "aux_feeds": []
+}
