@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of the 20-bar excess forward return on the forecast (non-overlapping grid)",
+    "value": 0.0015817261735466817,
+    "statistic": {
+      "name": "date-clustered OLS t of the slope",
+      "value": 1.07357764493062
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-quintile check passed; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 20-bar return of the top quintile of |forecast| below 0",
+    "value": -0.03257435587542004,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1495,
+    "distinct dates": 147,
+    "top-quintile cases": 299
+  },
+  "decided_by": "Inconclusive rule: the slope's |t| is below 2.",
+  "reading": "Grid = rows 0, 20, 40, ... of each window with the forward return inside the window; excess = return minus the coin's mean grid 20-bar return over all its windows; all grid cases with a forecast are used (zero forecasts included); OLS with intercept, t from date-clustered standard errors (cases of one date pooled, G/(G-1) correction); top quintile = cases with |forecast| at or above its 80th percentile."
+}

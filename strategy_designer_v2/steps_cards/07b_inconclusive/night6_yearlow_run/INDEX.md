@@ -1,3 +1,4 @@
+031-01.b1_near-yearly-low-falls-all-coins_1d: no ideas: The slope is on the idea's side but small at every horizon (F1), the test already used all available coins and folds, and the effect is not graded in proximity (F2–F4) and appears in no stable coin, year or horizon subset, only in market-phase swings that flip sign (F5, F6), so no amended idea has a finding to rest on.
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (2 explorations)
 031-02_near-yearly-low-bounces_1d: 1 ideas (2 explorations)
 031-03_yearly-low-break-extends_1d: 1 ideas (2 explorations)

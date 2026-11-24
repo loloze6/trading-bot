@@ -1,3 +1,4 @@
+031-01.b1_near-yearly-low-falls-all-coins_1d: inconclusive (fit: exact) [main: 0.00158173; date-clustered OLS t of the slope 1.07358; grid cases 1495, distinct dates 147, top-quintile cases 299]
 031-01_near-yearly-low-keeps-falling_1d: inconclusive (fit: exact) [main: 0.00235943; OLS slope t 1.7029; non-overlapping cases 806, top-fifth cases 161]
 031-02_near-yearly-low-bounces_1d: inconclusive (fit: exact) [main: -0.00235943; OLS slope t -1.7029; independent 20-bar cases 806, cases in the top fifth 162, cases in the bottom fifth 162]
 031-03_yearly-low-break-extends_1d: inconclusive (fit: exact) [main: 0.000161299; t of the mean, cases of one day taken together 0.00681091; cases 77, distinct days 57]
