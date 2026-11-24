@@ -4,6 +4,7 @@
 031-01_up-streak-length-reversal_1d: inconclusive (fit: adapted) [main: 0.00321418; t of the mean, cases clustered by day 1.08379; cases 3132, days 1206]
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: confirmed (fit: exact) [main: 0.000576987; OLS slope t 2.06353; independent grid cases with a positive forecast 1630]
 031-02.b1.d2_rebound-graded-by-turbulence_1d: confirmed (fit: exact) [main: 0.00060665; slope t, day-clustered 2.77743; grid bars with forecast > 0 4217, distinct days 1125]
+031-02.b1.g2.b1.b1_volatile-falls-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000290295; day-clustered OLS t 2.38358; cases with forecast > 0 18028, distinct days 2405]
 031-02.b1.g2.b1_volatile-falls-more-coins_1d: inconclusive (fit: exact) [main: 0.000316169; OLS slope t, standard error clustered by day 1.33206; independent case-days 1230, cases 8995, cases with 60-day volatility 4444]
 031-02.b1.g2.b2_unusually-large-falls-rebound_1d: inconclusive (fit: adapted) [main: 0.0003902; slope t, cases summed per day (day-clustered) 1.80899; grid bars with a positive forecast 4217, distinct days of those grid bars 1125, grid bars (all) 8650, distinct days (all grid bars) 1509]
 031-02.b1.g2.b3_next-day-rebound-after-falls_1d: confirmed (fit: exact) [main: 0.00518168; t of the mean over days 2.38844; distinct days with forecast > 0 2199, bars with forecast > 0 8514, bars per third 2838]

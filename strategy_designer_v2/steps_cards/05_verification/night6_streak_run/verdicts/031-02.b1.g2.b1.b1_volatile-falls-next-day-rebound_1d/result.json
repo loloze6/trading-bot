@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess next-day return on forecast (forecast > 0, pooled)",
+    "value": 0.00029029494139340835,
+    "statistic": {
+      "name": "day-clustered OLS t",
+      "value": 2.383584012026857
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 and supporting check passes; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return, top fifth minus bottom fifth of forecasts",
+    "value": 0.004785797613550963,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 18028,
+    "distinct days": 2405
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top fifth's mean excess return is above the bottom fifth's (confirm rule).",
+  "reading": "The situation is a down day (close below the previous close in the same window, or a positive raw component value on a window's first bar) on the long side; the slope is an OLS fit with intercept whose t uses standard errors clustered by UTC day (with the usual G/(G-1)*(N-1)/(N-K) correction); the top and bottom fifths are the highest and lowest floor(n/5) cases by forecast, ties broken stably by record order."
+}

@@ -1,0 +1,105 @@
+{
+  "run_id": "20261124T025435Z_932fe70f",
+  "created_utc": "2026-11-24T02:54:36.249279+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "vol_fall",
+              "class": "strategies.strategy_components.VolatilityWeightedFallComponent",
+              "params": {
+                "vol_period": 60
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 61,
+                    "min_periods": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 1
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "932fe70f6ac05af8ac013a81904b71dca7ebd450846f62bf9b2b468047b2a0cf",
+  "data": {
+    "symbols": [
+      "TRXUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2021-03-23 00:00:00",
+    "end": "2021-12-31 00:00:00",
+    "bar_count": 284,
+    "data_sha256": "a07163693b41f2375d235944752ff5477be7cbe32aa3a5e0e00852ce48f4c05b"
+  },
+  "git_sha": "bc6ad9abe12283ec1887464b5da57af7c1bd5b84-dirty",
+  "engine": {
+    "lookback": 62,
+    "warmup": 62
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}
