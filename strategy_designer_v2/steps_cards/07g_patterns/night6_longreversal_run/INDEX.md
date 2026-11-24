@@ -14,6 +14,7 @@
 031-03.b1_short-horizon-continuation-after-moves_1d: no ideas: Across the forecast, the 5-, 20- and 60-day moves, volatility levels, volatility ratios, weekdays, the day after large moves, coins, years, halves and the book's sides, no pattern stood out from chance once same-day cases were taken together and the many angles weighed (F2–F7). The book's only steady gain was the coins' own rise on its long bars (F1), which is holding the coins, not a new idea.
 031-03.g1.b1.d1_volume-surge-with-price-move_1d: 1 ideas (2 explorations)
 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails_1d: 2 ideas (2 explorations)
+031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: no ideas: Across the volume ratio, the 60-, 28- and 14-day moves, volatility, distance from the 50-day mean, next-day and 3-day reversals, weekdays and years, no pattern apart from the tested idea's own volume gradient stands out from chance (the best clustered t's are near 2 among roughly fifty looks), so no finding supports a new idea.
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: 1 ideas (3 explorations)
 031-03.g1.b1.d2_rising-volume-rally-continues_1d: 2 ideas (2 explorations)
 031-03.g1.b1.g1_volume-confirmed-two-week-continuation_1d: 1 ideas (2 explorations)

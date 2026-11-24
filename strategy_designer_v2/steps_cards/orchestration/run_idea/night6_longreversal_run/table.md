@@ -28,22 +28,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.g1.b1.g2_swelling-volume-after-rises | 031-03.g1.b1_volume-surge-more-coins | plan | confirmed (+2.07) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 031-03.g1.b1.g2.g1_swelling-volume-after-falls, 031-03.g1.b1.g2.g2_drying-volume-precedes-falls | 0.69 | 11.8 |
 | 031-03.g1.b1.d2.e1_rally-on-fading-volume-fails | 031-03.g1.b1.d2_rising-volume-rally-continues | plan | inconclusive (+0.09) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The test already used every coin, fold and the daily bars available. Its result is essentially zero, and no coin, year, regime, horizon or drying depth shows the effect steadily once grid placement is varied (F2–F4), so there is no part of the data to narrow the idea to and no more data to rerun it on.; 7.g: 031-03.g1.b1.d2.e1.g1_volume-expansion-predicts-continuation, 031-03.g1.b1.d2.e1.g2_drying-volume-precedes-weakness | 1.18 | 11.0 |
 | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | 031-03.g1.b1.d2_rising-volume-rally-continues | plan | confirmed (+2.38) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 031-03.g1.b1.d2.e2.d1_volume-swell-long-only, 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend; 7.g: 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal | 1.41 | 11.8 |
+| 031-03.g1.b1.d2.e2.d1_volume-swell-long-only | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise | plan | inconclusive (+1.43) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.g1.b1.d2.e2.d1.b1_volume-swell-above-trend; 7.g: no ideas: Across the volume ratio, the 60-, 28- and 14-day moves, volatility, distance from the 50-day mean, next-day and 3-day reversals, weekdays and years, no pattern apart from the tested idea's own volume gradient stands out from chance (the best clustered t's are near 2 among roughly fifty looks), so no finding supports a new idea. | 1.06 | 10.2 |
 
 ## Consumption
-24 ideas, 27.35 USD, 226.0 minutes in all.
+25 ideas, 28.42 USD, 236.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.06 | 12.2 |
-| step4_backtest | 0.00 | 131.7 |
-| step5_verdict | 4.56 | 16.0 |
-| step6_check | 0.00 | 1.2 |
+| step3_plan | 2.12 | 12.5 |
+| step4_backtest | 0.00 | 138.5 |
+| step5_verdict | 4.72 | 16.5 |
+| step6_check | 0.00 | 1.3 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.46 | 4.9 |
 | step7_7.e | 0.45 | 1.3 |
 | step7_7.a | 0.31 | 1.0 |
-| step7_7.b | 6.64 | 19.0 |
-| step7_7.g | 11.88 | 35.1 |
+| step7_7.b | 7.04 | 20.2 |
+| step7_7.g | 12.31 | 36.5 |
 | similarity_check | 0.00 | 0.2 |
 | unseen_test | 0.00 | 2.7 |
