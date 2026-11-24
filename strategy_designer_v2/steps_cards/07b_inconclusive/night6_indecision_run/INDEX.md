@@ -4,6 +4,7 @@
 031-01.b1_wide-day-extends-up-run_1d: 2 ideas (2 explorations)
 031-01.b2_wide-doji-continues-strong-run_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 031-01_wide-flat-day-ends-uprun_1d: 2 ideas (2 explorations)
+031-02.b1.b1_wide-flat-uprun-more-coins_1d: 1 ideas (3 explorations)
 031-02.b1_wide-flat-day-continues-uprun_1d: 2 ideas (2 explorations)
 031-02_wide-flat-day-ends-downrun_1d: 1 ideas (2 explorations)
 031-03.b1_wide-day-extends-up-run_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
