@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar return of long bets (minus coin's normal 10-bar drift)",
+    "value": 0.01911892496933648,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.9220754879346977
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and slope on forecast > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 10-bar return on signal forecast",
+    "value": 0.0011232171911537278,
+    "passed": true
+  },
+  "counts": {
+    "cases": 77,
+    "distinct days": 68
+  },
+  "decided_by": "The day-pooled t is between -2 and 2 (inconclusive rule).",
+  "reading": "Situation recomputed from prices (rise from the recorded prior_rise raw value where present), active bars whose 20-bar range mean cannot be formed inside the window are left out of the agreement; a case is the first long bet (forecast rise >= 2 from its lowest long level since the last bet, from 0 after flat) in each 10-bar grid cell of a window counted from its first row, cases without 10 bars left in the window are dropped, the day-pooled t uses a D/(D-1) correction, and the plan's 'fewer than 30 cases or days' minimum is reported as not observable."
+}

@@ -2,6 +2,7 @@
 031-01.b1.e2_wide-day-in-strong-run_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.b1_wide-day-extends-up-run_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01_wide-flat-day-ends-uprun_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-02.b1_wide-flat-day-continues-uprun_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02_wide-flat-day-ends-downrun_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-03_uprun-size-scales-wide-flat-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-04_downrun-size-scales-wide-flat-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

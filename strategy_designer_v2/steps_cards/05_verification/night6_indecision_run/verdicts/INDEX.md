@@ -2,6 +2,7 @@
 031-01.b1.e2_wide-day-in-strong-run_1d: confirmed (fit: adapted) [main: 0.0157157; t of the mean, same-day cases taken together 2.8516; top-fifth cases on separate days 291, top-fifth cases 582, bottom-fifth in-rise cases 582, in-rise grid bars 2907]
 031-01.b1_wide-day-extends-up-run_1d: inconclusive (fit: exact) [main: 0.000707909; OLS slope t, day-clustered 1.42708; independent in-regime grid cases 2907, days 781]
 031-01_wide-flat-day-ends-uprun_1d: inconclusive (fit: adapted) [main: -0.012447; t of the mean, same-day cases taken together -0.929333; cases 86, days 74, active bars 87]
+031-02.b1_wide-flat-day-continues-uprun_1d: inconclusive (fit: adapted) [main: 0.0191189; t of the mean, cases of one day pooled 0.922075; cases 77, distinct days 68]
 031-02_wide-flat-day-ends-downrun_1d: inconclusive (fit: adapted) [main: -0.00503015; t of the mean, cases of one day clustered -0.523009; cases 197, days 148]
 031-03_uprun-size-scales-wide-flat-reversal_1d: inconclusive (fit: adapted) [main: -0.0134535; t of the mean, cases of one day taken together -1.00259; cases 78, distinct days 68]
 031-04_downrun-size-scales-wide-flat-reversal_1d: inconclusive (fit: adapted) [main: -0.00114447; slope t, residual scores summed per day -0.550279; independent cases 130, cases with forecast >= 2 41, days with cases 108]
