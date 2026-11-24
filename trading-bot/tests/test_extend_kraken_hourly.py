@@ -67,3 +67,13 @@ def test_a_stopped_fetch_resumes_from_its_saved_progress(monkeypatch, tmp_path):
     monkeypatch.setattr(e, "get", feed())
     resumed, _ = e.trade_bars("XMR", h, h + 7200, lambda s: None)
     assert resumed == whole
+
+
+def test_a_file_already_extended_is_left_as_it_is(tmp_path):
+    f = tmp_path / "kraken_XMRUSD_1h.csv"
+    f.write_text("timestamp,open,high,low,close,volume,close_time,quote_asset_volume,number_of_trades,a,b,ignore\n"
+                 "2026-11-17 23:00:00,1.0,1.0,1.0,1.0,1.0,2026-11-17 23:59:59.999,1.0,1,,,0\n")
+    before = f.read_text()
+    import datetime as dt
+    msg = e.extend(f, dt.date(2026, 11, 17), [], False, lambda s: None)
+    assert "nothing to add" in msg and f.read_text() == before

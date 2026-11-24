@@ -170,6 +170,8 @@ def extend(path, until, quarters, dry_run, log):
     last_t = int(dt.datetime.strptime(next(reversed(list(csv.reader(path.open(encoding="utf-8"))))) [0],
                                       "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC).timestamp())
     end_t = int(dt.datetime.combine(until + dt.timedelta(days=1), dt.time(), UTC).timestamp())
+    if last_t >= end_t - 3600:
+        return f"{coin}: already up to {dt.datetime.fromtimestamp(last_t, UTC):%Y-%m-%d %H:%M}: nothing to add"
     add, ranges, last_arch = [], [], None
     for y, q, first, last in quarters:
         if first > until: break
@@ -193,7 +195,7 @@ def extend(path, until, quarters, dry_run, log):
                        f"(first {dt.datetime.fromtimestamp(min(bad), UTC):%H:%M})")
         else:
             tb, more = trade_bars(coin, c0 + 86400, end_t, log); calls += more
-            new = [row(t, *tb[t]) for t in sorted(tb)]
+            new = [row(t, *tb[t]) for t in sorted(tb) if t > last_t]   # never an hour the file already has
             add += new; ranges.append((t_from, until, "Kraken public trades, made into hourly bars (tools/extend_kraken_hourly.py)"))
             msg.append(f"trades {len(new)} hours ({calls} calls; {check_day} rebuilt from trades equals the archive, {len(ref)} hours)")
     if add and not dry_run:
