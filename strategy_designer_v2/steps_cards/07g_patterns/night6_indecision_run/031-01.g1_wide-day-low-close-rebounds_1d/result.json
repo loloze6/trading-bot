@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "031-01.g1_wide-day-low-close-rebounds_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4077371,
+  "findings": {
+    "F1": "Across all days that close in the bottom quarter of their range, the next-day return above the coin's mean rises with the day's range as a share of its close, by per-coin quintile: \u22120.07 % (t \u22120.38, 704 cases), \u22120.28 %, +0.05 %, +0.49 % (t 1.72), then +1.45 % in the top quintile (t 3.77, 711 cases, 332 days). The size of the range in price terms grades the rebound, not only the range against its 20-day mean.",
+    "F2": "Among the tested situation's own days (range \u2265 1.5\u00d7 its 20-day mean, close in the bottom quarter), the next-day excess return depends on volatility. By the coin's 20-day volatility tercile it is \u22120.13 % (t \u22120.30, 178 cases), +0.64 % (t 1.54), then +3.30 % in the top tercile (t 3.52, 160 cases, 99 days). By range-to-close quartile it is \u22120.17 %, +0.80 %, +1.14 %, then +2.99 % (t 2.39, 132 cases).",
+    "F3": "After a prior 5-day fall (5-day return z < \u22120.5, the day excluded), a day closing in the top quarter of its range is followed by a below-mean next day. This holds at every range level: \u22120.77 % (t \u22123.14, 704 cases, 408 days) for ranges under the 20-day mean, \u22120.80 % (t \u22122.31) for 1\u20131.5\u00d7, and \u22122.27 % (t \u22122.39, 66 cases) above 2\u00d7.",
+    "F4": "On wide days (\u2265 1.5\u00d7) that close near the high, the next-day excess return deepens as the prior 5-day fall deepens. By prior 5-day z it is +0.26 % (z > 1.5), \u22120.21 %, +0.06 %, \u22120.67 % (t \u22121.37), then \u22122.55 % for z < \u22121.5 (t \u22122.28, 61 cases, 36 days). It is negative on all 6 coins after a fall, from \u22120.68 % to \u22122.36 % (ETH t \u22122.92).",
+    "F5": "The book's in-position bars average +1.00 % (608 bars), and the top 10 % of those bars carry 106 % of its total gain. By the coin's volatility tercile the in-position bar mean is +0.02 %, +0.67 %, then +2.07 %, so the book earns almost only when the coin is volatile.",
+    "F6": "The tested rebound is uneven across years: from +0.10 % (2024, t 0.11) to +3.28 % (2020, t 1.87), with no year above t 2. The whole effect rests on pooling the years and on the volatile cases above."
+  },
+  "ideas": [
+    {
+      "idea": "After a day that closes near its low, the coin rises over the next 1 day. The wider that day's high-low range as a share of its closing price, the larger the rise.",
+      "consequence": "A low close on a day with a large range in price terms is a reason to buy for one day, and a low close on a small-range day is a reason to stay out.",
+      "name": "large-range low close rebounds",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "On a day whose range is wide against its 20-day average and whose close lands near its low, the next-day rise is larger the higher the coin's 20-day volatility of daily returns.",
+      "consequence": "The wide-low-close rebound is worth trading when the coin is volatile and worth refusing when it is calm.",
+      "name": "volatility scales wide-low rebound",
+      "from": "F2, F5",
+      "refs": [
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "After a coin has fallen over the past 5 days, a day that closes near its high is followed by a fall over the next 1 day. The deeper the 5-day fall and the nearer the close to the day's high, the larger the next day's fall.",
+      "consequence": "A strong close inside a falling week is a reason to refuse a long opened at that close, or to short it for one day.",
+      "name": "high close in downtrend fades",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1.g1_large-range-low-close-rebounds",
+    "031-01.g1.g2_volatility-scales-wide-low-rebound",
+    "031-01.g1.g3_high-close-in-downtrend-fades"
+  ],
+  "no_ideas": null
+}
