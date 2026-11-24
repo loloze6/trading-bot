@@ -7,6 +7,7 @@
 031-02.b2.a1_deep-fall-rebound-nineteen-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b2_graded-deep-and-recent-fall_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 031-02_extreme-fall-partly-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-03.b1.b1.b1_aligned-20-day-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-03.b1.b1_20-day-continuation-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-03.b1_short-horizon-continuation-after-moves_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-03_fading-volume-after-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

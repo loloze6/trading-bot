@@ -17,20 +17,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b2.a1_deep-fall-rebound-nineteen-coins | 031-02.b2_graded-deep-and-recent-fall | plan | inconclusive (-0.20) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound, 031-02.b2.a1.b2_deep-fall-rebound-45-days; 7.g: no ideas: The only pattern that stands out after this many angles is a Saturday rise (F1, F2), which is a fixed calendar condition with no grading. Everything graded (forecast parts, past returns, volatility, recent week inside the regime; F3–F5) cannot be told from chance, so no graded, one-direction idea is supported. | 1.16 | 11.4 |
 | 031-02.b1.b1.b1_steadied-falls-rebound-most | 031-02.b1.b1_deepest-falls-rebound-most | plan | inconclusive (-1.33) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 031-02.b1.b1.b1.b1_monthly-losers-keep-falling; 7.g: 031-02.b1.b1.b1.g1_monthly-trend-carries-next-week | 1.08 | 9.3 |
 | 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound | 031-02.b2.a1_deep-fall-rebound-nineteen-coins | plan | inconclusive (-0.20) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b2.a1.b1.b1_still-falling-deep-fall-rebound, 031-02.b2.a1.b1.b2_failed-bounce-after-deep-fall; 7.g: 031-02.b2.a1.b1.g1_volatility-compression-precedes-weakness, 031-02.b2.a1.b1.g2_calm-coins-outperform-next-month, 031-02.b2.a1.b1.g3_near-high-continuation-over-month | 1.40 | 12.2 |
+| 031-03.b1.b1.b1_aligned-20-day-continuation | 031-03.b1.b1_20-day-continuation-all-coins | plan | inconclusive (+1.85) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1.b1.b1_aligned-20-day-rise-continuation; 7.g: 031-03.b1.b1.b1.g1_calm-coins-near-highs-continue, 031-03.b1.b1.b1.g2_calm-upside-20-day-continuation | 1.44 | 10.5 |
 
 ## Consumption
-13 ideas, 14.20 USD, 110.5 minutes in all.
+14 ideas, 15.64 USD, 121.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.18 | 7.1 |
-| step4_backtest | 0.00 | 62.5 |
-| step5_verdict | 2.50 | 8.9 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 1.26 | 7.5 |
+| step4_backtest | 0.00 | 68.9 |
+| step5_verdict | 2.70 | 9.6 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.31 | 1.0 |
-| step7_7.b | 3.78 | 11.3 |
-| step7_7.g | 6.44 | 18.9 |
+| step7_7.b | 4.34 | 12.6 |
+| step7_7.g | 7.04 | 20.4 |

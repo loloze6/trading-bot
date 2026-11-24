@@ -7,6 +7,7 @@
 031-02.b2.a1_deep-fall-rebound-nineteen-coins_1d: inconclusive (fit: adapted) [main: -0.0071343; t of the mean, cases of one day taken together -0.197861; cases 85, distinct case days 35]
 031-02.b2_graded-deep-and-recent-fall_1d: not observable (fit: adapted) [main: 0.000222316; t of the mean, cases of one day summed together 0.00555516; cases 52, cases on distinct days 29]
 031-02_extreme-fall-partly-rebounds_1d: inconclusive (fit: adapted) [main: 0.000222316; t clustered by day 0.00555516; in-regime cases 52, days 29, active bars 1680]
+031-03.b1.b1.b1_aligned-20-day-continuation_1d: inconclusive (fit: exact) [main: 0.0169284; day-clustered t of the mean 1.85196; grid cases 2406, distinct days 289]
 031-03.b1.b1_20-day-continuation-all-coins_1d: inconclusive (fit: adapted) [main: 0.0106098; t of the mean, cases of one day summed as one piece of evidence 1.52295; cases with a nonzero forecast 3598, distinct days 304]
 031-03.b1_short-horizon-continuation-after-moves_1d: inconclusive (fit: exact) [main: 0.000362049; slope t, SE clustered by day 0.654597; grid cases 1691, distinct days 304]
 031-03_fading-volume-after-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00759707; OLS slope t -0.463898; regime grid cases 57, short-bet cases (forecast <= -2) 16]
