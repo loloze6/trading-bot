@@ -34,5 +34,26 @@ Each session: `run_brief --theme` with its theme and budget, on branch `night7-<
 (`ccr-6624e33e-aakrpv`), by `NIGHT_RULES.md`. Brief numbers (3e) are not yet ruled: the sessions will number from the
 same list, so the morning merge reports the numbers used twice and the reading names briefs by their full file name.
 
+## The control arm (added 2026-11-25 about 00:30 Paris, before its runs)
+**The operator (about 00:30 Paris):** "You even have until 250 to spend ... In the morning we will look at results and
+advise if such major change is useful and going into the good direction. If not we might reverse." To judge the change
+by evidence, the same four themes also run on the code before topics 49 and 50 were built (`bf8dd5bff2`: no profile
+line, no theme rule, no discoveries; P9 and the folds rule as today): 4 sessions, 25 USD each (night total 240 USD).
+
+| Session | Run | Branch | Theme | Budget |
+|---|---|---|---|---|
+| C1 | `night7c_rangefail_run` | `night7c-rangefail` | as session 1 | 25 USD |
+| C2 | `night7c_chopreversal_run` | `night7c-chopreversal` | as session 2 | 25 USD |
+| C3 | `night7c_steadydecline_run` | `night7c-steadydecline` | as session 3 | 25 USD |
+| C4 | `night7c_panic_run` | `night7c-panic` | as session 4 | 25 USD |
+
+**The comparison, fixed now:** each new-code run cut at its first 25 USD (`loop.jsonl`'s spend) against its control,
+theme by theme, on: confirmed ideas; confirmed books earning on their own (step 6's Sharpe above 0); of those, unrelated
+to the portfolio's 20 (correlation under 0.5): the portfolio candidates; follow-ups on the brief's theme (by
+`common/theme.md`); the brief's answer (real, not real, open). **The change goes the good way** if the new code gives
+at least as many portfolio candidates in total and more ideas on the theme; it is **not useful** if it gives fewer
+candidates and no clearer answers. Four themes are few: the reading says so, and gives the counts.
+The control branches are read in place, not merged.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
