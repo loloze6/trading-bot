@@ -3,6 +3,7 @@
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: 2 ideas (2 explorations)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (2 explorations)
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: 3 ideas (2 explorations)
+031-01.g1.g2.d2_outsized-monthly-gain-into-saturday_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 031-01.g1.g2_monthly-trend-carries-into-saturday_1d: 2 ideas (3 explorations)
 031-01.g1_weekly-gains-carry-into-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01_near-yearly-low-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

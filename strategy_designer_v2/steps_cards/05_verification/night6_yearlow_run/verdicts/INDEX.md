@@ -3,6 +3,7 @@
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: confirmed (fit: exact) [main: 0.00696484; t of the mean, cases grouped by day 3.87165; days 404, short-side cases 813, cases 1992]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: confirmed (fit: adapted) [main: 0.00545422; t of the mean, cases of one date summed 3.31152; distinct Fridays with cases 414, cases 2476, regression cases 2459]
 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: confirmed (fit: exact) [main: 0.00835242; t of the weighted mean, cases of one day summed 2.88957; cases 1180, days 316]
+031-01.g1.g2.d2_outsized-monthly-gain-into-saturday_1d: inconclusive (fit: adapted) [main: 0.0775323; t of the mean, cases of the same Friday summed 2.58276; cases 1155, distinct Fridays 314]
 031-01.g1.g2_monthly-trend-carries-into-saturday_1d: confirmed (fit: exact) [main: 0.0324785; t of the mean across days 3.02483; distinct Friday days with cases 414, coin-cases 2478, cases per third 826]
 031-01.g1_weekly-gains-carry-into-saturday_1d: confirmed (fit: adapted) [main: 0.00892491; t of the mean, cases of one day summed 3.33838; distinct days with a positive forecast 319, main measure cases 1245, days of main measure cases 316, top-third Friday bars 415, zero-forecast Friday bars 1234]
 031-01_near-yearly-low-keeps-falling_1d: inconclusive (fit: exact) [main: 0.00235943; OLS slope t 1.7029; non-overlapping cases 806, top-fifth cases 161]
