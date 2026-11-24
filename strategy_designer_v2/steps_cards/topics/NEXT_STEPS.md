@@ -1,62 +1,63 @@
 # Next steps: the one list (the operator, 2026-11-24: "the next step table list is our line")
 
-One line per step, its status and where its detail lives. Done steps stay until the operator has read them; a new step
-found by a run or an analysis is added here with its source. Status: **done**, **running**, **next** (can go now),
-**operator** (waits for the operator's decision), **later** (kept, not now).
+The plan, by objective. One line per step: what it serves (objective), why (the evidence that asks for it), what is
+done, and its status. A step found by a run or an analysis is added with its source. Status: **next** (can go now),
+**operator** (waits for the operator's decision), **later** (kept, not now), **done**.
 
-## Portfolio (topic 44)
-| # | Step | Status | Detail |
-|---|---|---|---|
-| P1 | The candidates: real, size above 0, earning on its own (Sharpe above 0), one per family, unrelated (under 0.5) | done 2026-11-23 (20 books) | topic 44; `44_review/p1_candidates.py` |
-| P2 | The weights, out of fold | done 2026-11-23: equal capital | `44_review/p2_weights.py` |
-| P3 | In parallel or in one strategy | decided 2026-11-22: in parallel | topic 44 |
-| P4 | The fixed portfolio on the unseen dates | done 2026-11-24: **outcome B**, holds on 2016-17 (Sharpe 1.08), not on 2026 (-0.73; -3.1 % a year against -14 % holding); the hourly books add little | `runs/PORTFOLIO_UNSEEN_RUN.md` |
-| P5 | The portfolio layer's card and build (shared code) | operator, only if P4 holds | topic 44 |
-| P6 | The combination function: rules, evidence, open points | operator: draft to review | `44_review/COMBINATION_STEP_DRAFT.md` |
-| P7 | Night 6's books as portfolio candidates (the P1 rule on the new books) | done 2026-11-24: 56 confirmed, 10 families, **2 new candidates** (yearly low 031-01 weekday carry, Sharpe 1.01, largest correlation 0.32; long reversal 031-03 volume swell, 0.57, 0.21); 8 families repeat the portfolio's own | `runs/NIGHT6_RUN.md`; `44_review/p7_night6_candidates.py` |
-| P9 | **New 2026-11-24 (night 6).** The search's order measures a line against the portfolio's books, not only the paying ones (`select_next`'s similarity term): 8 of night 6's 10 families re-found the portfolio's own effects | operator | `runs/NIGHT6_RUN.md` |
-| P8 | **New 2026-11-24 (P4, daily books).** The portfolio is mostly a bet on the market's direction: its daily returns correlate 0.70 with holding its coins in 2016-17 and 0.49 in 2026; the long-leaning books (long 52-81 % of coin-days) earn in 2016-17 and lose in 2026, the short-leaning ones the reverse; the two books with no net lean (013-03, 013-04) earn in both (Sharpe 1.84 and 1.70; 1.94 and 0.87). A rule on market exposure (a book's correlation with holding its coins as a P1 condition, or a portfolio-level hedge) is the next design question. **Caution:** the portfolio's unseen periods are now seen; such a rule is designed on the folds and can only be judged on new dates (the holdout, or paper trading) | replaced by P10 | `runs/PORTFOLIO_UNSEEN_RUN.md` (reading) |
+**The aim:** strategies that earn on years the research never used, combined so that together they earn more for
+their risk than any one alone.
 
-| P10 | **New 2026-11-24 (the operator: "we are still missing a way to combine ideas without betting randomly on a combination; a logical approach").** One method, standard in portfolio building, replacing P8's open question: (1) split each book's daily return into its market part (what it earns from the coins' common move, measured on the folds) and its idea part (the rest); (2) choose books by their idea part, not their total; (3) set the portfolio's total market part by one written rule (for example near zero) instead of the sum of what each book happens to hold; (4) the weights by P2's out-of-fold rule. Designed and measured on the folds only; judged on new dates (the holdout or paper trading), since P4's unseen dates are now seen. P8's evidence: the two books with no net lean were the only ones holding on both periods | next (design and measure on the folds: no model cost); the method for the operator before any build | topic 44; `runs/PORTFOLIO_UNSEEN_RUN.md` |
+## A. Combine strategies by a logical rule, not by chance (topic 44)
+| # | Objective | Why | What | Status |
+|---|---|---|---|---|
+| P10 | Choose and weight the portfolio's strategies by one written method | P4: the 20 strategies together held on 2016-17 (Sharpe 1.08) and failed on 2026 (-0.73); the portfolio's bet on the market's direction came out by chance (correlation with holding 0.50, then 0.06); the two strategies with no net lean were the only ones to hold on both periods | (1) split each strategy's daily return into its market part (what it earns from the coins' common move) and its idea part (the rest), on the folds; (2) choose strategies by their idea part; (3) set the portfolio's total market part by one rule (for example near zero); (4) weights by P2's out-of-fold rule. Judged on new dates (holdout or paper trading): P4's unseen dates are now seen | next (computing only; the operator's go on the method) |
+| P6 | Agree the combination method's rules before any build | The method must be one standard, not a patch per finding | Review `44_review/COMBINATION_STEP_DRAFT.md` (7 rules, each with its evidence; 5 open points), updated with P10 | operator |
+| P5 | Run several strategies in one bot | Needed for live trading of a portfolio | The portfolio layer's card and build (shared code) | later: only once a portfolio holds on new dates |
 
-## The research workflow (topic 47)
-| # | Step | Status | Detail |
-|---|---|---|---|
-| N2 | Step 5: the gain beyond the drift at the idea's horizon, with its t by day | done 2026-11-23 | topic 47 |
-| N3 | Step 3: the book trades the idea's situation | done 2026-11-23 | `runs/STEP3_SITUATION_RUN.md` |
-| N4 | The engine's excursions without the entry bar | done 2026-11-23 | topic 48 |
-| 1c | A run read problem by problem, under N3 | done 2026-11-24 (night 6, the first whole run under N3): 56 confirmed of 128 run; the themes not confirmed, step 7's lines found the books | `runs/NIGHT6_RUN.md` |
-| 1d | Ideas name the market state their effect works in | later (reconsider after P4) | topic 47 |
-| 1e | **New 2026-11-24.** The rule "an idea is about one coin's own bars, never the market or another coin" (`common/idea_definition.md`, step 1's prompt): books fail by market timing (1d-3, 1d-6); an idea about a coin against the market could avoid it, but needs the rule changed (and the engine to read a second series) | operator | `runs/NIGHT6_RUN.md` |
-| 1f | **New 2026-11-24.** The 26 real books built before N3 with their situation graded away, rebuilt under N3 (steps 3 to 7): faithful books for the families the portfolio holds (draft's open point 1) | operator: the list is written (`47_review/ungated_real_books.csv`: 26 books, 13 absorption, 7 settlement, 6 learned; in a position 98 % of days, median; 8 of them already rebuilt by phase A and the N3 test); the other 18 through steps 3 to 7 under N3 cost about 2 USD each (about 35 USD) | topic 47 phase A |
-| 2a | `select_next`: breadth over depth | later (with 1b/1c reading) | topic 47 |
-| 2b | Search luck measured again | after 1c | topic 47 |
-| 2c | A stricter bar for books found after many tries | after 2b, only if needed | topic 47 |
-| 2d | The luck measure split by kind of idea | when enough books have an unseen test (P4 adds 20) | topic 47 |
-| 1d-11u | **Done 2026-11-24.** 1d-11 measured again with P4's 13 daily books: in-sample strength says little about holding (0.40, was 0.18) | done | topic 47 |
+## B. Make the search find strategies the portfolio does not have (topics 47, 44)
+| # | Objective | Why | What | Status |
+|---|---|---|---|---|
+| P9 | The search favours ideas unlike what the portfolio holds | Night 6: 8 of 10 families re-found the portfolio's own effects (5 the next-day rebound after a fall, 3 trend continuation) | `select_next`'s similarity term measures an idea's line against the portfolio's strategies, not only the paying ones | operator |
+| 1f | Every strategy trades only in the situation its idea names | 26 strategies were built before step 3 kept the idea's situation: they are in a position on 98 % of days (median) though their ideas name an event ("heavy-volume days", "the deepest falls"); 8 are already rebuilt | Rebuild the other 18 with today's step 3, then steps 4 to 7 (list: `47_review/ungated_real_books.csv`) | operator (about 35 USD) |
+| 1d | Ideas say in which market state their effect works | Real books lose in market states where their effect does not hold (study 1) | Steps 2 and 7 name the state; step 5 measures the effect by state | later (after P10) |
+| 2b | Know how much of a found result is search luck | The n-th variant of an idea holds less on new dates (study 2) | Measure search luck again, now that step 3 builds the idea as stated | next (computing only) |
+| 2a | Stop deepening a line that keeps failing | Deep lines hold less (study 2) | `select_next`: a branch failing the same check again is left | later (after 2b) |
+| 2c | A fair bar for strategies found after many tries | Search luck grows with the tries | A stricter bar for deep strategies | only if 2b asks for it |
+| 2d | Know whether luck differs by kind of idea | Momentum and other ideas may differ | Split the luck measure by kind | when enough strategies have an unseen test |
 
-## Trades (topic 48, parked)
-| # | Step | Status |
+## C. Better trades inside a strategy (topic 48, parked)
+| # | Objective | Why | What | Status |
+|---|---|---|---|---|
+| 13 | Keep winners, cut what costs | Out of fold, moving the stop to the entry after +1 % lifted the daily mean trade (0.97 % to 1.21 %); hourly books lose on their short side | A real backtest of "stop to entry after +1 %" and of long only on hourly books | later |
+| 16 | Hold a trade as long as the idea's gain lasts | The idea's gain peaks within days and then fades | The holding time set from the gain curve | later |
+| 17 | Fewer trades for the same idea | 19 % of daily trades reopen the same coin and side within 3 bars and earn less | Merge re-entries | later |
+| 18 | Know whether hourly is daily done more often | Hourly books lose to turnover | The x24 test: a daily strategy against its hourly version | later |
+| 19 | Resume the trade analysis | Two points left to discuss ("most ideas pay their cost"; daily against hourly) | Topic 48 | operator |
+
+## D. Keep the research machinery reliable
+| # | Objective | Why | What | Status |
+|---|---|---|---|---|
+| 3e | Parallel night sessions do not mix their briefs | Night 6: the four sessions all numbered their brief 031 | A rule: numbers given at the merge, or a range per session | operator (before the next night) |
+| 3f | Night jobs survive the cloud's container reclaim | Night 6: a detached process died when an idle container was reclaimed | Night sessions run long jobs as tracked background tasks, saving their progress | next (the next night's instructions) |
+| 3b | Hourly research has 2026 data on every coin | Only 6 coins have 2026 hourly bars | The other 13 coins (about 10,000 trade calls) | later (if hourly research resumes) |
+| 4 | Similarity sees when two strategies are in a position together | Agreed with the operator | Days both in a position, in the similarity check | later |
+| 6 | One environment for all steps | Simpler runs | One Python for all steps | later |
+| 7 | Faster step 5 | `signal_statistics.py` is slow | Speed it up | later |
+| 10 | Complete records | 431 checks lack the informative measures | Backfill them | later |
+| 9 | A clean repository | 21 merged branches remain | Delete them (the designer's access is refused) | operator |
+
+## Done (kept until read)
+| # | Objective | Result |
 |---|---|---|
-| 13 | A real backtest of "stop to the entry after +1 %" and of long only on hourly books | later |
-| 16 | A horizon set from the gain curve | later |
-| 17 | Merging re-entries | later |
-| 18 | The x24 test (a daily book against its hourly version) | later |
-| 19 | Resume topic 48 with its two points to discuss | operator |
-
-## Data and infrastructure
-| # | Step | Status | Detail |
-|---|---|---|---|
-| 3 | 2026 hourly bars for the unseen test | done 2026-11-24: 6 coins (BTC, ETH, LTC, XMR, XRP, ZEC) to 2026-11-17, each 7,704 hours, old rows unchanged, checked against Kraken's archive | `runs/PORTFOLIO_UNSEEN_RUN.md` |
-| 3b | **New 2026-11-24.** The other 13 coins' 2026 hourly bars (the archive part is cheap; the trades part about 10,000 calls) | later, if hourly research resumes | - |
-| 3c | **New 2026-11-24.** Unseen records keep their bars on the machine that ran them only (028-04 had to be rebuilt): `unseen_test` writes the record's chart files, as `run_idea` does in sample | done 2026-11-24 (870bcef8a3): proof, the 13 daily books' readings identical from the chart files | `orchestration/unseen_test/card.md` |
-| 3d | **Done 2026-11-24.** `unseen_test` never reran a period whose record had no window (data not fetched then) | done (072b469688) | `orchestration/unseen_test/card.md` |
-| 3e | **New 2026-11-24 (night 6).** Parallel sessions give the same brief number to different briefs (sessions 1 and 4: both 031); the family code, which P1 groups by, then mixes two briefs. A rule: numbers given at the merge, or a number range per session | next (at the morning merge, renumber by hand; the rule for the operator) | `runs/NIGHT6_RUN.md` |
-| 3f | **New 2026-11-24.** An idle cloud session's container is reclaimed, and a detached process (setsid nohup) dies with it: long jobs (data downloads, loops) run as tracked background tasks with a monitor, and save their progress (the hourly tool does; the loop resumes from its files). The night sessions' prompt says "detached": to change for the next night | next (next night's prompt) | `runs/NIGHT6_RUN.md` |
-| 4 | Similarity: days both in a position | later (agreed) | topic 44 |
-| 6 | One Python for all steps | later | - |
-| 7 | The slow `signal_statistics.py` | later | - |
-| 8 | A check-in after a usage-limit reset | done for night 6 (the designer's scheduled check-ins) | `runs/NIGHT6_RUN.md` |
-| 9 | Delete the 21 merged branches | operator (the designer's token is refused) | - |
-| 10 | Backfill the informative measures (431 checks) | later | - |
-| 11 | The designer's answer on step 7's cost paragraph ("what didn't it reduce?") | answered 2026-11-24: "it" was the share of line 7.d's findings that put a book's failure on the trading cost; removing the cost from 7.d's sentence left it at 7 of 22 findings (4 of 20 before), on 3 books. The cost still reaches every line through the analyst's cost-of-a-trade input and the shared size-against-cost paragraph; changing those is a separate decision with its own test | operator |
+| P1-P4 | A first portfolio, chosen and judged by fixed rules | 20 strategies, equal capital, side by side; holds on 2016-17, fails on 2026 (`runs/PORTFOLIO_UNSEEN_RUN.md`) |
+| P7 | Night 6's strategies as candidates | 2 new candidates (weekday carry; volume swell) |
+| P8 | A rule on the market bet | replaced by P10 |
+| N1 | Combinations on unseen dates | replaced by P1-P4 |
+| N2 | Step 5 measures the idea's gain beyond the drift | built |
+| N3 | Step 3 builds the idea's situation as stated | built (it is 1b) |
+| N4 | Engine trade statistics without the entry bar | built |
+| 1a, 1c | Phase A by hand; a whole run under N3 | done (night 6) |
+| 1d-1 to 1d-11 | Why real books do not pay: 11 measurements | done; 1d-11 corrected 2026-11-24 (in-sample strength says little about new dates) |
+| 3, 3c, 3d | 2026 hourly data (6 coins); unseen records readable anywhere; unseen test reruns a period without data | done |
+| 8 | A check-in after a usage-limit reset | done |
+| 11 | The answer on step 7's cost paragraph | "it" was the share of line 7.d's findings blaming the trading cost: 7 of 22 after the change (4 of 20 before); the cost still reaches every line through the analyst's cost input and the shared size-against-cost paragraph |
