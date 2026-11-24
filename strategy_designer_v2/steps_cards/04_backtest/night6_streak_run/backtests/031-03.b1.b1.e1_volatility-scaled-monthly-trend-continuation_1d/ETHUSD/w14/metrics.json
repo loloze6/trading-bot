@@ -1,0 +1,126 @@
+{
+  "core": {
+    "net_return_pct": -19.572,
+    "sharpe": -2.645,
+    "max_drawdown_pct": -19.582,
+    "trade_count": 3,
+    "win_rate": 0.0,
+    "avg_trade_net_pnl": -65.273302,
+    "fees_paid": 0.669945,
+    "gross_pnl": -195.14996,
+    "net_pnl": -195.819905,
+    "cost_drag_pct": 0.3433,
+    "forecast_return_corr": -0.473289,
+    "forecast_return_corr_pvalue": 0.040685,
+    "forecast_return_corr_pvalue_block_adjusted": 0.058337,
+    "forecast_return_corr_n_eff": 19,
+    "forecast_return_corr_all_bars": -0.176888,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.054669,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 9.0,
+    "sigma_bar_bps": 611.5075,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 868.2593,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 46.9329,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "refine_inverted_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.4733 (negative, significant at p=0.0583). Signal direction is inverted -- flip polarity.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -1934.7113,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -1934.7113,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 193.4711,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_trades=3 < min_n_trades=5 (too few completed trades to trust an average built from them).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 122,
+      "avg_forecast": 0.668088,
+      "trade_count": 3,
+      "total_net_pnl": -195.819905
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -20.0864,
+      "avg_pnl_per_trade_usd": -20.0864
+    },
+    "5_to_10": {
+      "total_forecasts": 2,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -175.7335,
+      "avg_pnl_per_trade_usd": -87.8668
+    }
+  },
+  "dynamic": {
+    "debug_info.components.vol_scaled_mom.last_history_value": {
+      "unknown": {
+        "mean": -0.76593,
+        "std": 0.77488
+      }
+    },
+    "debug_info.components.vol_scaled_mom.post_pipeline_value": {
+      "unknown": {
+        "mean": 0.668088,
+        "std": 1.796068
+      }
+    },
+    "debug_info.components.vol_scaled_mom.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.vol_scaled_mom.weighted_contribution": {
+      "unknown": {
+        "mean": 0.668088,
+        "std": 1.796068
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": -0.00482468,
+      "forward_return_std": 0.06115075,
+      "n_bars": 121,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -21.8572,
+    "sharpe": -3.274,
+    "sortino": -3.5063,
+    "exposure_pct": 22.1311,
+    "turnover": 1.495673,
+    "n_bars_total": 122,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 21,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
