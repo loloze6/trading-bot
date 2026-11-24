@@ -25,6 +25,7 @@
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: 2 ideas (2 explorations)
 031-02.b1.b2_flat-day-after-strong-rise_1d: 1 ideas (2 explorations)
 031-02.b1_wide-flat-day-continues-uprun_1d: 3 ideas (3 explorations)
+031-02.g1_extreme-down-day-next-day-bounce_1d: 2 ideas (2 explorations)
 031-02_wide-flat-day-ends-downrun_1d: 1 ideas (3 explorations)
 031-03.b1_wide-day-extends-up-run_1d: 2 ideas (2 explorations)
 031-03_uprun-size-scales-wide-flat-reversal_1d: no ideas: Across the flat-day, wide-day, run-size, volatility, close-location, move-size, yearly and weekday angles (about 40 groups), no pattern stands out beyond |t| ≈ 2, which is what chance gives over that many looks. The loose hints of 5-day continuation (F2, F3, F4) are not strong or stable enough across years to support a new idea.

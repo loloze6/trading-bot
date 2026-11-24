@@ -25,6 +25,7 @@
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: inconclusive (fit: adapted) [main: 0.0223777; t of the mean, cases of one day summed together 1.29214; cases 181, distinct case days 134]
 031-02.b1.b2_flat-day-after-strong-rise_1d: confirmed (fit: adapted) [main: 0.0308541; t of the mean, cases of one day pooled 2.22283; cases 202, days 179]
 031-02.b1_wide-flat-day-continues-uprun_1d: inconclusive (fit: adapted) [main: 0.0191189; t of the mean, cases of one day pooled 0.922075; cases 77, distinct days 68]
+031-02.g1_extreme-down-day-next-day-bounce_1d: inconclusive (fit: adapted) [main: 0.00687924; t of the mean, cases of one day summed 1.30228; independent case-days 200, cases 492]
 031-02_wide-flat-day-ends-downrun_1d: inconclusive (fit: adapted) [main: -0.00503015; t of the mean, cases of one day clustered -0.523009; cases 197, days 148]
 031-03.b1_wide-day-extends-up-run_1d: confirmed (fit: adapted) [main: 0.011137; t of the weighted mean, cases on the same day pooled 2.54096; distinct case days 564, cases 890, active bars checked 1201]
 031-03_uprun-size-scales-wide-flat-reversal_1d: inconclusive (fit: adapted) [main: -0.0134535; t of the mean, cases of one day taken together -1.00259; cases 78, distinct days 68]
