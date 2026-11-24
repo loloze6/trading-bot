@@ -7,6 +7,7 @@
 031-01.b2_wide-doji-continues-strong-run_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 031-01_wide-flat-day-ends-uprun_1d: 2 ideas (2 explorations)
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+031-02.b1.b1.b1.d2.g1_wide-high-close-downrun-continuation_1d: 2 ideas (2 explorations)
 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-02.b1.b1.b1.g1_wide-day-extends-up-run_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
