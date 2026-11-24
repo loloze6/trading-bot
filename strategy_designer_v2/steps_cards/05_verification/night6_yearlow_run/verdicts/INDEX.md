@@ -6,6 +6,7 @@
 031-02.b1.b2_failed-rally-more-coins_1d: inconclusive (fit: exact) [main: 0.00309214; t of the mean (cases summed per day) 0.536167; cases 758, distinct days 116, cases with forecast below 0 257]
 031-02.b1_failed-rally-near-yearly-low_1d: inconclusive (fit: adapted) [main: 0.0246805; correlation t (n=410) 0.498674; grid cases with a nonzero forecast 410, grid cases with forecast at or below -2 63]
 031-02_near-yearly-low-bounces_1d: inconclusive (fit: exact) [main: -0.00235943; OLS slope t -1.7029; independent 20-bar cases 806, cases in the top fifth 162, cases in the bottom fifth 162]
+031-03.b1.a1_yearly-low-break-all-coins_1d: not observable (fit: exact) [main: 0.0684144; t of the mean, cases of one day together 1.7793; distinct case days 16, cases 18]
 031-03.b1_deep-yearly-low-break-rebounds_1d: not observable (fit: exact) [main: 0.0714982; t of the mean, cases of one day taken together 1.41036; distinct case days 12, cases 13]
 031-03_yearly-low-break-extends_1d: inconclusive (fit: exact) [main: 0.000161299; t of the mean, cases of one day taken together 0.00681091; cases 77, distinct days 57]
 031-04.a1_yearly-low-break-all-coins_1d: not observable (fit: adapted) [main: 0.0684144; t of the mean, cases of one day summed 1.7793; cases 18, distinct days 16]

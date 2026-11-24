@@ -16,20 +16,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b1.b2_failed-rally-more-coins | 031-02.b1_failed-rally-near-yearly-low | plan | inconclusive (+0.54) | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.b: 031-02.b1.b2.b1_failed-rally-longer-horizon, 031-02.b1.b2.b2_sharp-rebound-near-low-fails; 7.g: no ideas: Across the forecast, positions, trades, regimes, volatility, past-return quintiles, the distance to the yearly low, large one-day moves, close location and weekday, no group's excess return reached |t| 2 against roughly 40 comparisons. The only clear pattern is that the book's gains come from a few large long trades and its losses from broad market falls (F2, F3), which is a property of this book rather than a graded pattern in one coin's bars. | 1.11 | 10.6 |
 | 031-02.b1.b2.b1_failed-rally-longer-horizon | 031-02.b1.b2_failed-rally-more-coins | plan | inconclusive (+0.36) | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.b: 031-02.b1.b2.b1.b1_failed-rally-near-side; 7.g: no ideas: Across nearness to the yearly low, past returns over 5 to 40 days, volatility and range over 10 to 40 days, volatility ratio, weekday, year and coin group, at horizons from 5 to 60 days, nothing stood out beyond t 2.4. That is below what about fifty tests require, and the best pattern (F1) vanishes at the neighbouring horizons and reverses in three of eight years. | 1.20 | 10.5 |
 | 031-02.b1.b2.b2_sharp-rebound-near-low-fails | 031-02.b1.b2_failed-rally-more-coins | plan | inconclusive (-0.64) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 031-02.b1.b2.b2.b1_yearly-low-break-bounces-back; 7.g: no ideas: Across the regime, past returns at 1 to 60 days, volatility, time in the regime, time since the low, weekday, year and the trades, nothing passed day-clustered t-statistics given how many angles were examined (F1–F5), so no finding supports an idea. | 1.16 | 10.3 |
+| 031-03.b1.a1_yearly-low-break-all-coins | 031-03.b1_deep-yearly-low-break-rebounds | plan | not observable (+1.78) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.a: no ideas: The plan needs at least 30 distinct case days, but the full available data (all 19 coins, folds A to D, daily bars being the longest history) gives 16 days and 18 cases, and no other bar size or coin set the workflow holds can change how rarely this config's forecast reaches a bet inside the roughly 196 grid cells where the situation occurs.; 7.g: no ideas: Across about 40 cells (past returns, 30-day lows and drawdowns, volatility, weekday, year, one-day shocks over 1, 3 and 5 days, and the yearly-low regime itself), only one result beats t 2 once the cases of a day are taken together: the 3-day rebound after a 3-sigma fall at t 2.30. That result is contradicted by its own 1-day and 5-day readings and by the missing grade. Given how many angles were tried, nothing stands out enough to support a new idea, and the tested idea itself needs more cases than these coins and folds contain. | 1.12 | 10.7 |
 
 ## Consumption
-12 ideas, 13.12 USD, 95.8 minutes in all.
+13 ideas, 14.23 USD, 106.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.22 | 7.9 |
-| step4_backtest | 0.00 | 51.2 |
-| step5_verdict | 2.18 | 7.8 |
+| step3_plan | 1.36 | 8.9 |
+| step4_backtest | 0.00 | 57.9 |
+| step5_verdict | 2.36 | 8.4 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.a | 0.97 | 3.0 |
+| step7_7.a | 1.35 | 4.1 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.b | 3.50 | 10.2 |
-| step7_7.g | 5.25 | 15.2 |
+| step7_7.g | 5.67 | 16.3 |
