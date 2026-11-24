@@ -1,0 +1,35 @@
+{
+  "line": "7.a",
+  "backtest": "031-03.b1_deep-yearly-low-break-rebounds_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.21342139999999998,
+  "findings": {
+    "F1": "The yearly-low break is not rare in the bars, but the plan's cases are: the coins spent 227 bars in the break regime over 144 separate episodes (BTC 30/18, ETH 41/23, LTC 37/22, XMR 21/14, XRP 27/21, ZEC 71/46). These produced only 13 cases on 12 distinct days, against the plan's minimum of 30 days.",
+    "F2": "The config rarely makes the forecast jump by the band of 2 points that defines a case. Inside the regime the forecast is positive on all 227 bars, but its median is 0.13, its 75th percentile 0.41 and its maximum 10.1, while the raw depth below the old low has a median of -3.0 % (range -27.2 % to -0.02 %).",
+    "F3": "Cases are spread thinly over years, about 0.28 per coin-year on 6 coins over about 8 years: 0 in 2018 (despite 87 regime bars), 3 in 2019, 2 in 2020, 0 in 2021 (0 regime bars), 2 in 2022 (73 regime bars), 2 in 2023, 3 in 2024 and 0 in 2025. ZEC gives 7 of the 13 cases and ETH and LTC none.",
+    "F4": "The horizon is not what limits the count. Windows hold about 122 daily bars (119 to 123), so a 10-day horizon fits about 12 times per window, and the cases that were observed did not lose their bars to window ends.",
+    "F5": "The outcome varies widely from case to case. The mean unusual move is +7.15 % (0.45 of a usual 14.49 % 10-day move) with a t of 1.47 on 12 days, which implies a per-day spread of about 17 %. Even if the effect is real at this size, roughly 22 or more independent case days would be needed for a t of 2, and the plan asks for 30."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "yearly-low break, all coins",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ],
+      "idea": "When a coin's daily close falls below the lowest close of the prior 365 days, it rises more than its usual drift over the next 10 days, and the further the close is below that old low, the larger the rise.",
+      "consequence": "A deep break of the yearly low is a reason to refuse a short and to consider buying the exhausted selling, rather than chasing the breakdown.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1.a1_yearly-low-break-all-coins"
+  ],
+  "no_ideas": null
+}

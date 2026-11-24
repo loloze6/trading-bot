@@ -2,5 +2,6 @@
 031-01_near-yearly-low-keeps-falling_1d: inconclusive (fit: exact) [main: 0.00235943; OLS slope t 1.7029; non-overlapping cases 806, top-fifth cases 161]
 031-02.b1_failed-rally-near-yearly-low_1d: inconclusive (fit: adapted) [main: 0.0246805; correlation t (n=410) 0.498674; grid cases with a nonzero forecast 410, grid cases with forecast at or below -2 63]
 031-02_near-yearly-low-bounces_1d: inconclusive (fit: exact) [main: -0.00235943; OLS slope t -1.7029; independent 20-bar cases 806, cases in the top fifth 162, cases in the bottom fifth 162]
+031-03.b1_deep-yearly-low-break-rebounds_1d: not observable (fit: exact) [main: 0.0714982; t of the mean, cases of one day taken together 1.41036; distinct case days 12, cases 13]
 031-03_yearly-low-break-extends_1d: inconclusive (fit: exact) [main: 0.000161299; t of the mean, cases of one day taken together 0.00681091; cases 77, distinct days 57]
 031-04_yearly-low-break-reverses_1d: not observable (fit: exact) [main: 0.0714982; t of the mean, same-day cases summed 1.41036; cases 13, distinct days 12]
