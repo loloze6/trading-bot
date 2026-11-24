@@ -83,6 +83,13 @@ def main():
             print(f"not researchable: {' '.join(nr.group(1).split())}")
             print(f"cost: {cost:.4f} USD, attempts: {attempt}")
             return
+        # A source whose only theory is already in the index (2026-11-24, topic 50: a discovery found again in another
+        # backtest): no brief, the existing one named, rather than another theory the source does not state.
+        ai = re.search(r"^already-indexed:\s*(\S+)", text, re.M)
+        if ai and not re.match(r"\s*---", text):
+            print(f"already indexed: {ai.group(1).strip()}")
+            print(f"cost: {cost:.4f} USD, attempts: {attempt}")
+            return
         try:
             header, body, short, summary, bracket, others = parse(text, bool(args.source))
             break

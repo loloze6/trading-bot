@@ -34,3 +34,10 @@ def test_refused_before_any_call(tmp_path):
     assert "exactly one" in run(str(brief), "--theme", "t", "--run", "x_run", "--python", "p").stderr
     assert "no brief file" in run(str(tmp_path / "nope.md"), "--run", "x_run", "--python", "p").stderr
     assert "positive" in run(str(brief), "--run", "x_run", "--python", "p", "--budget", "0").stderr
+
+
+def test_step_1_answers_read_by_write_brief():
+    # topic 50: a source whose only theory is already a brief gets no new brief; the existing one is named
+    out = "already indexed: 033_swing-scaled-fall-next-day-rebound\ncost: 0.06 USD, attempts: 1\n"
+    assert rb.ALREADY_INDEXED.search(out).group(1) == "033_swing-scaled-fall-next-day-rebound"
+    assert not rb.BRIEF_LINE.search(out) and not rb.NOT_RESEARCHABLE.search(out)

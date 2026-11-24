@@ -23,7 +23,10 @@ If the request is a question, keep it a question, and give the reasons the answe
 
 If you are given a source: the source is everything pasted, lists included. Write the theory most of the source supports, in your own words. Say whether the reason you give comes from the source or from you. Read code only to understand the rule. The source may be in any language; write in English.
 
-You are given the index of briefs already written, one line per brief. Do not write a theory that is the same as one in the index: the same claim with the same reason on the same market, even in other words. A close theory is allowed: one that differs in its claim, its reason or its market. If the request leads to a theory that is the same as one in the index, write another one that still answers the request: with a theme, another theory on that theme; with a source, another theory the source holds; with no theme, any theory not in the index.
+You are given the index of briefs already written, one line per brief. Do not write a theory that is the same as one in the index: the same claim with the same reason on the same market, even in other words. A close theory is allowed: one that differs in its claim, its reason or its market. If the request leads to a theory that is the same as one in the index, write another one that still answers the request: with a theme, another theory on that theme; with a source, another theory the source itself states (not one you derive from it), and when it states no other, do
+not write a brief: answer with this one line and nothing else.
+already-indexed: <the name of the brief in the index that has this theory>
+With no theme, any theory not in the index.
 
 Header lines. Write a line only for a key the request or the source states in words; write no line for any other key. A setting or default in code is not a statement of the source. Never choose a market, coins, time scale, period or side yourself. If no key is stated, write the two --- lines with nothing between them.
 - venue: the exchange

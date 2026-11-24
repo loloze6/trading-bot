@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "031-03_fading-volume-after-rise-reverses_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3691643,
+  "findings": {
+    "F1": "The tested result is on the opposite side, not merely short of the bar. Step 5's slope of 30-day excess return on the forecast is -0.0076 (t -0.46, 57 cases), so a deeper volume drop came with a higher return. Its 16 short-bet cases have a mean excess return of +6.07 %, against the short the idea predicts.",
+    "F2": "In folds B and C, the regime cases kept rising rather than reversing. On the 30-day grid, 28 cases have a mean excess return of +4.32 % (t 0.64, strength +0.25). On the 10-day grid, 99 cases average +2.39 % (t 1.00). So an extreme 90-day rise was followed by continuation on average, not by the fall the idea needs.",
+    "F3": "The volume relation runs against the idea, and it is the only clear signal in the data. Regressing the 30-day excess return on the raw 14-day/90-day volume ratio inside the regime gives a slope of -0.22 (t -2.19, 28 cases, correlation -0.40). On the 15-day grid it gives -0.14 (t -2.20, 68 cases), and on the 10-day grid -0.069 (t -1.52, 99 cases). So the higher recent volume is against the run's average, the lower the return that follows.",
+    "F4": "The fall shows only where recent volume is well above the run's average, which is exactly where the test's clipped forecast was 0. On the 30-day grid, cases with a volume ratio above +0.3 average -5.93 % excess (8 cases, strength -0.13). Every bucket below +0.3 averages +2.6 % to +9.3 %. Cases with a zero forecast average +5.71 % (19 cases) and short-forecast cases +1.39 % (9 cases).",
+    "F5": "Among the volume-drop cases alone, the effect is reversed outright. The slope on the volume ratio is -2.62 (t -3.11, 9 cases at 30 days), meaning a deeper drop came with a higher return, which is continuation on quieting volume.",
+    "F6": "The effect is mixed across coins and periods.",
+    "F7": "The book lost money. Its Sharpe was -0.30 and its yearly return -2.4 % over 7.94 years, from a position on 15 % of coin-days. The size per case was a -2.79 % unusual move (t -0.69, 45 days) against a 0.19 % trade cost, so the failure is the effect's sign and noise, not cost."
+  },
+  "ideas": [
+    {
+      "idea": "After an unusually large 90-day rise, the more a coin's volume over the last 14 days has risen above its average daily volume during the run, the more its price falls over the next 15 days.",
+      "consequence": "A climax of trading on top of an extreme rise marks the overreaction's last buyers, so a trader shorts or trims in proportion to that volume surge rather than to its fading.",
+      "name": "volume climax after rise",
+      "from": "F1, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1_volume-climax-after-rise"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

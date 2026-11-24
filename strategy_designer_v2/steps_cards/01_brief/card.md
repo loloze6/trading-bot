@@ -86,7 +86,9 @@ one market profile only, named by its trend, its agitation or both ("in a fallin
 
 **A source may be a discovery** (operator, 2026-11-24; topic 50): a pattern off its brief's theme that line 7.e or 7.g
 found (`../common/theme.md`). The loop calls this step with it as the source: the brief states the pattern's theory in
-its own words, without the numbers, and gets its own number.
+its own words, without the numbers, and gets its own number. **When a source's theory is already in the index** and
+the source states no other, the answer is one line, `already-indexed: <brief>`, and no brief is written (2026-11-24,
+topic 50's proof: given a pattern already written as brief 033, the step invented a variant the source never showed).
 
 **Closed book.** One model call: no tools, no files, no web, no repository, an empty working folder, no settings. The index and the source are pasted into the call. One note cannot be removed in this cloud environment: an account note with the operator's email. It says nothing of trading or the pipeline.
 

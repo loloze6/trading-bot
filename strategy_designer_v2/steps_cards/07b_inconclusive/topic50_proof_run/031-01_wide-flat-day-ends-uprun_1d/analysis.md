@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 031-01_wide-flat-day-ends-uprun_1d
+idea tested: 031-01_wide-flat-day-ends-uprun
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3847 USD
+---
+## Findings
+- **F1:** The test's result is on the side opposite to the idea. In folds B and C, the strict situation (a 5-day rise, a range at least 1.5x the 20-day mean and a body at most 10 % of the range) is followed by a 5-day unusual move of +3.0 % upward, not a fall: 38 cases on 32 days, t 1.63, 63 % of cases up. Over 3 days the rise is +3.6 % (t 2.25, 39 cases), so the verdict's -1.24 % (t -0.93) is a muted continuation, not a weak reversal.
+- **F2:** The continuation grows with the size of the 5-day rise that came before. In the strict situation, the top tercile of 5-day rises (mean rise +36.7 %) is followed by +7.7 % over 5 days, against about 0 % (-0.03 % short) in the bottom tercile (+5.1 % rise); Spearman of 5-day rise against the 5-day unusual move is +0.25. In the looser version (range at least 1.2x, body at most 30 %), rises above the median are followed by +3.0 % (t 2.60, 84 cases on 66 days), and rises below it by -0.3 % (t -0.24, 99 cases).
+- **F3:** The plan's grading by range points the wrong way. In the strict situation, the narrowest third of wide days (range 1.63x) is followed by +9.3 % upward, and the widest third (3.03x) by -0.5 %; Spearman of range ratio against the 5-day unusual move is -0.45. Flatness adds little (Spearman -0.13). The supporting check "passed" only because a larger short forecast meant less of the continuation it bets against.
+- **F4:** The continuation is uneven across the data. Window w11 alone holds 8 of the 38 strict cases, at +13.7 % each, and the other 30 cases average about +0.2 %. XRP (+1.0 % short, 8 cases) and ZEC (+0.4 % short, 10 cases) show no continuation, while ETH (+9.2 %, 7 cases) and XMR (+7.1 %, 4 cases) carry it. The effect is real only if the folds A and D check holds it.
+- **F5:** The mirror shows the same continuation, not a rebound. After a 5-day fall, wide flat days (loose definition) are followed by a further 2.6 % fall over 5 days (t -1.67, 125 cases on 82 days). The strict version has 11 cases, too few to read (-3.5 %).
+- **F6:** The move is large against costs. The strict situation's raw 3-day move is 3.6 % and its total 5-day move 1.84 % in absolute value, against 0.19 % per trade. Size is not the obstacle; the side is.
+
+## Ideas
+- `031-01.b2_wide-flat-day-continues-uprun` (from F1, F2, F3, F6): After a coin has risen over the past 5 days, a day whose range is wide compared with its average daily range over the past 20 days, but whose close lands near its open, is followed by a further rise over the next 5 days. The larger the coin's 5-day rise before that day, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

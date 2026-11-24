@@ -21,6 +21,7 @@ BRIEFS = STEPS / "01_brief" / "briefs"          # step 1's list of every brief: 
 LOOP = ORCH / "loop" / "helper" / "loop.py"
 BRIEF_LINE = re.compile(r"^brief:\s*(\S+\.md)\s*$", re.M)
 NOT_RESEARCHABLE = re.compile(r"^not researchable:\s*(.+)$", re.M)
+ALREADY_INDEXED = re.compile(r"^already indexed:\s*(.+)$", re.M)
 
 
 def brief_number(brief):
@@ -50,9 +51,11 @@ def write_brief(run, theme=None, source=None, model=None):
     j = Journal(ORCH / "run_brief" / run, run, "step1_" + re.sub(r"\W+", "-", (theme or Path(source).stem))[:40].strip("-"))
     out, _ = j.step("step1_brief", [STEPS / "01_brief/helper/make_brief.py", *what, "--briefs-dir", BRIEFS]
                     + (["--model", model] if model else []), [BRIEFS / "INDEX.md"])
-    nr, b = NOT_RESEARCHABLE.search(out), BRIEF_LINE.search(out)
+    nr, ai, b = NOT_RESEARCHABLE.search(out), ALREADY_INDEXED.search(out), BRIEF_LINE.search(out)
     if nr:
         return None, f"step 1: not researchable: {nr.group(1)}"
+    if ai:
+        return None, f"step 1: already indexed: {ai.group(1)} (the source's theory is already a brief)"
     if not b:
         return None, f"step 1 wrote no brief: {' '.join(out.split())[-300:]}"
     return Path(b.group(1)), None
