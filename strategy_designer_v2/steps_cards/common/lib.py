@@ -169,3 +169,41 @@ def idea_fields(text):
             sys.exit(f"the idea file has no '{f}:' line")
         lines.append(f"{f}: {m.group(1).strip()}")
     return "---\n" + "".join(l + "\n" for l in kept) + "---\n" + "".join(l + "\n" for l in lines)
+
+
+# Exploring and checking on different years (common/explore_and_check.md).
+EXPLORATION_FOLDS = ("B", "C")      # 2018 to 2021: what step 7 explores
+CHECK_FOLDS = ("A", "D")            # 2022 to 2025: step 5's direction check
+FOLDS_FILE = COMMON.parents[2] / "trading-bot" / "config" / "folds.yaml"
+
+
+def plan_folds(plan_text):
+    """The plan's folds in its order ('data-period: folds A, B, C, D'); () when the plan names none."""
+    m = re.search(r"^data-period:\s*folds?\s+([A-Z](?:\s*,\s*[A-Z])*)\s*$", plan_text, re.M)
+    return tuple(f.strip() for f in m.group(1).split(",")) if m else ()
+
+
+def fold_windows(plan_text, folds_file=FOLDS_FILE):
+    """{fold: [window names]}: a record names its windows w1..wN in the plan's fold order (04_backtest/card.md), each
+    fold holding its windows in folds.yaml's count. Reads the count only, never a date."""
+    import yaml
+    counts = {k: len(v) for k, v in yaml.safe_load(folds_file.read_text())["folds"].items()}
+    out, n = {}, 0
+    for f in plan_folds(plan_text):
+        out[f] = [f"w{i}" for i in range(n + 1, n + counts.get(f, 0) + 1)]
+        n += counts.get(f, 0)
+    return out
+
+
+def ran_on_folds(record):
+    """True when the backtest ran on its plan's folds (a coin's `fold_<X>` folder), not on other windows (`--windows`,
+    the unseen dates)."""
+    return any(p.is_dir() for p in Path(record).glob("*/fold_*"))
+
+
+def windows_of(plan_text, folds, record=None):
+    """The window names of these folds in this plan; empty when the record did not run on its folds."""
+    if record is not None and not ran_on_folds(record):
+        return []
+    fw = fold_windows(plan_text)
+    return [w for f in folds for w in fw.get(f, [])]

@@ -39,3 +39,36 @@ def test_the_size_line_says_how_sure_the_size_is_and_reads_an_older_size_too():
     assert "(t " not in m.size_line(old) and "+0.40 % per case" in m.size_line(old)   # written before 2026-11-23
     new = dict(old, unusual_move_t=2.345, case_days=7)
     assert "+0.40 % (t 2.35, the cases of one day together: 7 days)" in m.size_line(new)
+
+
+def test_the_direction_check_on_the_check_folds():
+    full = {"main_measure": {"value": 0.004}}
+    same = {"main_measure": {"value": 0.002}, "counts": {"cases": 400, "days": 300}}
+    other = {"main_measure": {"value": -0.001}, "counts": {"cases": 400, "days": 300}}
+    few = {"main_measure": {"value": -0.003}, "counts": {"cases": 40, "days": 25}}
+    assert m.direction_check(full, same)[0] is True
+    assert m.direction_check(full, other)[0] is False
+    assert m.direction_check(full, few)[0] is None            # too few cases: not judged, the verdict stands
+    assert m.direction_check(full, None)[0] is None           # the measure could not run on the check folds alone
+    assert m.direction_check({"main_measure": {"value": -0.004}}, other)[0] is True   # a negative main measure, same way
+
+
+def test_the_check_folds_windows_follow_the_plans_fold_order(tmp_path):
+    import lib
+    plan = "---\ndata-period: folds A, B, C, D\n---\n"
+    rec = tmp_path / "rec"
+    (rec / "BTCUSD" / "fold_A").mkdir(parents=True)
+    assert lib.windows_of(plan, lib.CHECK_FOLDS, rec) == [f"w{i}" for i in list(range(1, 7)) + list(range(19, 25))]
+    assert lib.windows_of(plan, lib.EXPLORATION_FOLDS, rec) == [f"w{i}" for i in range(7, 19)]
+    unseen = tmp_path / "unseen"; (unseen / "BTCUSD" / "windows").mkdir(parents=True)
+    assert lib.windows_of(plan, lib.CHECK_FOLDS, unseen) == []   # an unseen-dates record: no check
+
+
+def test_the_check_reads_the_measures_own_count_names():
+    full = {"main_measure": {"value": 0.004}}
+    named = {"main_measure": {"value": 0.002}, "counts": {"grid cases with forecast > 0": 500, "distinct days": 200}}
+    unnamed = {"main_measure": {"value": -0.002}, "counts": {"active bars": 900}}
+    few_days = {"main_measure": {"value": -0.002}, "counts": {"independent cases": 500, "distinct days": 12}}
+    assert m.direction_check(full, named)[0] is True
+    assert m.direction_check(full, unnamed)[0] is False        # no count names cases: the smallest count is taken
+    assert m.direction_check(full, few_days)[0] is None

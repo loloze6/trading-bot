@@ -26,6 +26,10 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 
 - **Findings first, ideas second.** An idea names the findings it rests on; an idea no finding supports is not written.
 - **The ideas are ideas, not test plans.** A test plan is written closed book (step 3), so that it cannot be shaped by data already seen; the analyst has seen the data.
+- **It explores folds B and C only (operator, 2026-11-24; `../common/explore_and_check.md`).** Its explorations see the
+  windows of 2018 to 2021; it is told that folds A and D are kept to check its ideas (step 5's direction check). A
+  backtest not run on its plan's folds is explored whole. Proof: a real analysis (7.g, 0.31 USD) whose exploration
+  results name windows w7 to w18 only.
 - **It proposes; it changes nothing.** What is done with its ideas is decided outside the step.
 
 ## The fields of an analysis

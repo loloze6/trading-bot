@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, EXPLORATION_FOLDS, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -33,9 +33,12 @@ RUNNER = r'''
 import glob, gzip, json, os, re, sys
 import numpy as np, pandas as pd
 record, script, cap_rows, cap_chars = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+only = set(sys.argv[5].split(",")) if len(sys.argv) > 5 and sys.argv[5] else None   # the exploration folds' windows
 data = {"bars": {}, "trades": {}, "days": {}}
 for coin in sorted(d for d in os.listdir(record) if os.path.isdir(os.path.join(record, d))):
     for f in sorted(glob.glob(os.path.join(record, coin, "w*", "bars.csv.gz")), key=lambda p: int(p.split(os.sep)[-2][1:])):
+        if only is not None and f.split(os.sep)[-2] not in only:
+            continue
         w = f.split(os.sep)[-2]
         b = pd.read_csv(f, low_memory=False)
         b["timestamp"] = pd.to_datetime(b["timestamp"], utc=True)
@@ -79,12 +82,13 @@ def entry_met(entry, s5, s6):
             and (not entry.get("step6_in") or s6 in entry["step6_in"]))
 
 
-def data_summary(record):
-    """Coins, windows and rows of this record, and the bars' columns (names only, no values)."""
+def data_summary(record, only=None):
+    """Coins, windows and rows of this record (only these windows when given), and the bars' columns (names only, no
+    values)."""
     import gzip
     lines, cols = [], None
     for coin in sorted(p for p in record.iterdir() if p.is_dir()):
-        ws = sorted(coin.glob("w*/bars.csv.gz"), key=lambda p: int(p.parent.name[1:]))
+        ws = sorted((w for w in coin.glob("w*/bars.csv.gz") if not only or w.parent.name in only), key=lambda p: int(p.parent.name[1:]))
         if not ws:
             continue
         rows = []
@@ -98,12 +102,19 @@ def data_summary(record):
     return "\n".join(lines) + "\nBars columns: " + ", ".join(keep)
 
 
-def run_explore(python, record, code):
+def exploration_windows(plan_text, record):
+    """The windows step 7 explores (common/explore_and_check.md): the exploration folds' windows; every window when the
+    record did not run on its plan's folds or the plan has no exploration fold."""
+    return windows_of(plan_text, EXPLORATION_FOLDS, record) or None
+
+
+def run_explore(python, record, code, only=None):
     with tempfile.TemporaryDirectory() as tmp:
         script, runner = Path(tmp) / "explore.py", Path(tmp) / "runner.py"
         script.write_text(code)
         runner.write_text(RUNNER)
-        r = subprocess.run([python, "-I", str(runner), str(record), str(script), str(ROW_CAP), str(CHAR_CAP)], cwd=tmp,
+        r = subprocess.run([python, "-I", str(runner), str(record), str(script), str(ROW_CAP), str(CHAR_CAP)]
+                           + ([",".join(only)] if only else []), cwd=tmp,
                            capture_output=True, text=True, timeout=1200)
     out = r.stdout if r.returncode == 0 else "The function failed: " + (r.stderr.strip().splitlines() or ["no output"])[-1][:500]
     out = re.sub(r"(/[\w.\-]+)+/([\w.\-]+)", r"\2", out.replace(str(record), "<record>"))   # no folder names reach the model
@@ -285,11 +296,16 @@ def main():
     no_paths = lambda f: "".join(l for l in f.read_text().splitlines(True) if not re.match(r"(Plan|Record|Measure|Rule):", l))
     idea_file = args.idea or next(iter(sorted(HERE.parents[1].glob(f"**/{h.get('idea', '')}.md"))), None)
     idea_text = idea_fields(idea_file.read_text()) if idea_file and idea_file.exists() else "(not found)"
+    only = exploration_windows(plan_text, record)
+    explore_note = (f"Your explorations see folds {', '.join(EXPLORATION_FOLDS)} of this backtest only (windows {only[0]} to {only[-1]}); "
+                    f"folds {', '.join(CHECK_FOLDS)} are kept to check the ideas you propose (common/explore_and_check.md): "
+                    "step 5 judges an idea on every fold and requires it to point the same way on those it does not show you."
+                    if only else "Your explorations see every window of this backtest.")
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record)}\n"
-               f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
+               f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n{explore_note}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record, only)}\n")
     line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
               + (HERE / "output_one_call.md").read_text()
@@ -308,7 +324,7 @@ def main():
         code = code_of(text)
         if code and not last:
             rounds_used += 1
-            result = run_explore(args.python, record, code)
+            result = run_explore(args.python, record, code, only)
             write_atomic(d / "exploration" / f"round_{rounds_used}.py", code)
             write_atomic(d / "exploration" / f"round_{rounds_used}_result.txt", result + "\n")
             transcript += f"\n[EXPLORATION, ROUND {rounds_used}]\n```python\n{code}```\n[ITS RESULT]\n{result}\n"

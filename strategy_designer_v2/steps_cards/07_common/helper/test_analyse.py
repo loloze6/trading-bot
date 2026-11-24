@@ -71,3 +71,22 @@ def test_the_analyst_reads_how_sure_the_size_is(tmp_path):
     f.write_text(json.dumps(base)); assert "how sure" not in a.size_and_cost(f, rec)
     f.write_text(json.dumps(dict(base, unusual_move_t=-1.5, case_days=9)))
     assert "+0.40 % (how sure: t -1.50, the cases of one day taken together, 9 days)" in a.size_and_cost(f, rec)
+
+
+def test_explorations_see_the_exploration_folds_only(tmp_path):
+    import gzip
+    plan = "---\ndata-period: folds A, B, C, D\n---\n"
+    rec = tmp_path / "rec"
+    (rec / "BTCUSD" / "fold_A").mkdir(parents=True)
+    for w in ("w1", "w7", "w18", "w19"):
+        (rec / "BTCUSD" / w).mkdir()
+        with gzip.open(rec / "BTCUSD" / w / "bars.csv.gz", "wt") as f:
+            f.write("timestamp,close,postRebalance_total_value\n2020-01-01,1,100\n2020-01-02,2,101\n")
+    only = a.exploration_windows(plan, rec)
+    assert only == [f"w{i}" for i in range(7, 19)]
+    code = "def explore(data):\n    import pandas as pd\n    return {'windows': pd.Series(sorted(data['bars']['BTCUSD']))}\n"
+    out = a.run_explore(sys.executable, rec, code, only)
+    assert "w7" in out and "w18" in out and "w1 " not in out.replace("w18", "") and "w19" not in out
+    assert "w1" in a.run_explore(sys.executable, rec, code)          # without the restriction every window is seen
+    summary = a.data_summary(rec, only)
+    assert "w7" in summary and "w18" in summary and "w19" not in summary and "(w1," not in summary

@@ -23,6 +23,13 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
   - inconclusive: no action yet.
 
   It is not written out again.
+- **The direction check (operator, 2026-11-24; `../common/explore_and_check.md`).** A verdict "confirmed" on every fold
+  is checked once more: the same measure on folds A and D alone (2022 to 2025), the years step 7 does not explore. If it
+  points the other way there, the status becomes "inconclusive"; with too few cases there (under 100 cases or 30 days,
+  read from the measure's own counts), or on a record not run on the plan's folds (an unseen-dates record), it is "not
+  judged" and the verdict stands. Recorded in `result.json` (`direction_check`) and in `verdict.md`. Proof: 71 verdicts
+  rerun with their own measure, every field identical; of the 64 confirmed, 60 agree, 3 not judged, 1 disagrees (an
+  effect of 2018 to 2021 only).
 - **The verdict is about the idea's reality, judged before costs.** Whether the book pays is branch 3's question (`06_profitability`).
 - **Next to the verdict, the idea's size** (operator, 2026-11-20): how large its effect is, not only whether it exists.
   Computed by code from the record's prices and forecast (`../common/measures.md`, "The size of an idea";
