@@ -1,5 +1,6 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: not profitable enough [Sharpe -0.2834; Sharpe minus holding's Sharpe -0.8639; Calmar -0.1791]
 031-01_near-yearly-low-keeps-falling_1d: not profitable enough [Sharpe -0.2983; Sharpe minus holding's Sharpe -0.8799; Calmar -0.1855]
+031-02.b1.b1_strong-failed-rally-near-low_1d: not profitable enough [Sharpe -0.3485; Sharpe minus holding's Sharpe -0.9464; Calmar -0.125]
 031-02.b1_failed-rally-near-yearly-low_1d: not profitable enough [Sharpe 0.8794; Sharpe minus holding's Sharpe 0.2977; Calmar 0.5778]
 031-02_near-yearly-low-bounces_1d: not profitable enough [Sharpe 0.2552; Sharpe minus holding's Sharpe -0.3265; Calmar 0.03265]
 031-03.b1_deep-yearly-low-break-rebounds_1d: not profitable enough [Sharpe 0.6565; Sharpe minus holding's Sharpe 0.07485; Calmar 0.7495]
