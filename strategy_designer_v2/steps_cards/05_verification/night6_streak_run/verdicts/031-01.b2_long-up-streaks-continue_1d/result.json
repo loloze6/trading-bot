@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-bar forward return minus coin's normal drift on forecast, pooled non-overlapping grid",
+    "value": 3.245141244414689e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.23889050102554776
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2; else inconclusive; at least 300 grid bars with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "mean 3-bar return minus normal drift on grid bars with forecast >= 10, above 0",
+    "value": -5.4559618532919874e-05,
+    "passed": false
+  },
+  "counts": {
+    "grid bars with forecast > 0": 2931,
+    "grid bars (all, in the regression)": 5566,
+    "grid bars with forecast >= 10": 2306
+  },
+  "decided_by": "The slope has |t| < 2.",
+  "reading": "The slope is an ordinary least-squares regression with intercept of the excess return on the forecast over all pooled grid bars (forecast 0 included), the normal drift is each coin's mean 3-bar grid return over all its windows, a supporting check with no grid bar at forecast >= 10 counts as failed, and the plan's minimum of 300 yields 'not observable' as the workflow requires."
+}

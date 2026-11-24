@@ -1,4 +1,5 @@
 031-01.b1_up-streak-reversal-more-coins_1d: inconclusive (fit: adapted) [main: 0.00269177; t of the mean, cases of one day pooled 0.865926; distinct case days 1362, cases 5838]
+031-01.b2_long-up-streaks-continue_1d: inconclusive (fit: exact) [main: 3.24514e-05; OLS slope t 0.238891; grid bars with forecast > 0 2931, grid bars (all, in the regression) 5566, grid bars with forecast >= 10 2306]
 031-01_up-streak-length-reversal_1d: inconclusive (fit: adapted) [main: 0.00321418; t of the mean, cases clustered by day 1.08379; cases 3132, days 1206]
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: confirmed (fit: exact) [main: 0.000576987; OLS slope t 2.06353; independent grid cases with a positive forecast 1630]
 031-02.b1.g2.b1_volatile-falls-more-coins_1d: inconclusive (fit: exact) [main: 0.000316169; OLS slope t, standard error clustered by day 1.33206; independent case-days 1230, cases 8995, cases with 60-day volatility 4444]

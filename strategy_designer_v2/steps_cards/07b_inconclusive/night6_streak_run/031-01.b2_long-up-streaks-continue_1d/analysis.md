@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 031-01.b2_long-up-streaks-continue_1d
+idea tested: 031-01.b2_long-up-streaks-continue
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3345 USD
+---
+## Findings
+- **F1:** The forecast saturates and so loses the idea's grading. Its mean is 10.7 on 1-day up streaks, 18.9 on 2-day streaks, 19.97 on 3-day streaks and exactly 20 on every streak of 4 days or more, so it mainly separates 1-day from 2-day streaks. The 3-day excess return does not grow across that step: 1-day −0.32 % (t −1.57, 1513 cases), 2-day −0.26 % (t −0.90, 705). Where the excess does grow, the forecast cannot see it: 4 days +1.03 % (t 1.54, 166), 5 days +1.87 % (t 2.04, 64), 6 or more +1.54 % (t 1.98, 66).
+- **F2:** The plan's 3-day horizon is the weakest place to look. The slope of excess return on raw up-streak length (capped at 8) has t 1.73 at 3 days, 1.57 at 5 days, 3.33 at 7 days and 2.96 at 10 days. Leaving out 2021, the slope still has t 2.76 at 7 days and 3.08 at 10 days (1646 cases at 10 days).
+- **F3:** Over the next 10 days, up streaks of 3 days or more are followed by a positive excess return in 5 of 6 coins (XMR +5.2 %, t 2.51, 34 cases; LTC +4.9 %, t 1.76; XRP +4.7 %, t 1.56; ETH −0.7 %). The excess is positive in all 8 years (2023 +4.0 %, 2024 +3.4 %, 2025 +5.5 %). The cases are few, so day-clustered t's stay mostly under 2.
+- **F4:** The tested result is on the predicted side but indistinguishable from zero (slope 3.2e-5, t 0.24, 5566 grid bars). The idea's size is −0.29 % per case (t −1.51). Most of the 4610 forecast > 0 cases are 1- and 2-day streaks, where the excess is negative (F1), and they drown the long-streak cases (296 at 3 days).
+- **F5:** Over 3 days the effect for forecast > 0 swings with the market year: 2021 +1.09 % (t 2.08), 2018 −1.15 % (t −1.76), 2022 −0.50 % (t −1.40). For up streaks of 4 days or more, the excess is positive in 6 of 8 years (2020 +3.9 %, t 3.26; 2024 +2.7 %, t 2.52).
+
+## Ideas
+- `031-01.b2.b1_long-up-streaks-ten-day-continuation` (from F1, F2, F3, F4, F5): The more days in a row a coin has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it rises over the next 10 days, with the rise still growing among the coin's longest streaks.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
