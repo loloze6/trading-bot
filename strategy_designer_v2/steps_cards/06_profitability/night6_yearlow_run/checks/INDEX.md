@@ -5,6 +5,7 @@
 031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: profitable enough [Sharpe 1.134; Sharpe minus holding's Sharpe 0.5526; Calmar 1.383]
 031-01.g1.g1.g1_two-week-run-carries-weekend_1d: not profitable enough [Sharpe 0.6988; Sharpe minus holding's Sharpe 0.1447; Calmar 0.454]
 031-01.g1.g1.g2.d1_volatile-rising-weekends-continue_1d: profitable enough [Sharpe 1.07; Sharpe minus holding's Sharpe 0.5157; Calmar 1.239]
+031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: profitable enough [Sharpe 1.31; Sharpe minus holding's Sharpe 0.7554; Calmar 1.712]
 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d: not profitable enough [Sharpe 0.6806; Sharpe minus holding's Sharpe 0.1265; Calmar 0.4777]
 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: not profitable enough [Sharpe 0.8749; Sharpe minus holding's Sharpe 0.3207; Calmar 0.5775]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: not profitable enough [Sharpe 0.5747; Sharpe minus holding's Sharpe 0.02058; Calmar 0.2472]
