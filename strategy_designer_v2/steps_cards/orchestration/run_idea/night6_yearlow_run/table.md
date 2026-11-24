@@ -33,22 +33,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend | 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend | plan | confirmed (+4.69) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 031-01.g1.g1.g2.g1.d1.g1_two-week-fall-rebound, 031-01.g1.g1.g2.g1.d1.g2_volatile-one-day-drop-rebound | 0.64 | 4.7 |
 | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum | 031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend | plan | confirmed (+2.75) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 031-01.g1.g1.g2.g1.d2.g1_friday-close-weekly-momentum-into-saturday, 031-01.g1.g1.g2.g1.d2.g2_uptrend-wednesday-momentum-into-thursday-friday | 0.67 | 4.8 |
 | 031-01.g1.g1.g2.g2_calm-volatility-short-term-trend | 031-01.g1.g1.g2_volatile-weekends-follow-trend | plan | inconclusive (+3.53) | not profitable enough (failed: Calmar) | - | 7.b: 031-01.g1.g1.g2.g2.b1_calm-trend-on-all-coins, 031-01.g1.g1.g2.g2.b2_calm-rises-keep-rising; 7.g: 031-01.g1.g1.g2.g2.g1_heavy-volume-down-day-rebound, 031-01.g1.g1.g2.g2.g2_heavy-active-day-lifts-returns | 0.88 | 4.9 |
+| 031-01.g1.g1.g1.g1_two-week-run-carries-saturday | 031-01.g1.g1.g1_two-week-run-carries-weekend | plan | confirmed (+3.52) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.g1.g1.g1.d1_two-week-rise-lifts-saturday, 031-01.g1.g1.g1.g1.d2_trend-backed-run-lifts-saturday; 7.g: 031-01.g1.g1.g1.g1.g1_volatile-day-drop-rebounds-next-day, 031-01.g1.g1.g1.g1.g2_friday-rise-carries-saturday-long | 1.11 | 5.5 |
 
 ## Consumption
-29 ideas, 32.57 USD, 202.0 minutes in all.
+30 ideas, 33.68 USD, 207.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.75 | 17.2 |
-| step4_backtest | 0.00 | 84.4 |
-| step5_verdict | 5.19 | 19.1 |
+| step3_plan | 2.82 | 17.6 |
+| step4_backtest | 0.00 | 86.1 |
+| step5_verdict | 5.35 | 19.7 |
 | step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.e | 1.55 | 5.2 |
-| step7_7.c | 0.00 | 0.0 |
+| step7_7.c | 0.00 | 0.1 |
 | step7_7.a | 1.35 | 4.2 |
-| step7_7.d | 3.25 | 10.4 |
+| step7_7.d | 3.66 | 11.6 |
 | step7_7.b | 5.27 | 16.0 |
-| step7_7.g | 13.21 | 40.1 |
+| step7_7.g | 13.68 | 41.6 |
 | similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 3.6 |
