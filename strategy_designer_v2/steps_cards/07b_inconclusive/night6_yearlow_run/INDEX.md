@@ -1,6 +1,7 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: no ideas: The slope is on the idea's side but small at every horizon (F1), the test already used all available coins and folds, and the effect is not graded in proximity (F2–F4) and appears in no stable coin, year or horizon subset, only in market-phase swings that flip sign (F5, F6), so no amended idea has a finding to rest on.
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (2 explorations)
 031-02.b1.b1_strong-failed-rally-near-low_1d: no ideas: The tested result is essentially zero (t -0.01), so more data is not called for. The only clear pocket is two bear years (F3), which no condition in a coin's own bars reproduces (F4, F5), so there is no part of the data where an amended idea could honestly be placed.
+031-02.b1.b2_failed-rally-more-coins_1d: 2 ideas (2 explorations)
 031-02.b1_failed-rally-near-yearly-low_1d: 2 ideas (3 explorations)
 031-02_near-yearly-low-bounces_1d: 1 ideas (2 explorations)
 031-03.b1_deep-yearly-low-break-rebounds_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)

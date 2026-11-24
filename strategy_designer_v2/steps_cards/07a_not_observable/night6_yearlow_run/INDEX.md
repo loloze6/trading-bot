@@ -1,6 +1,7 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-01_near-yearly-low-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1.b1_strong-failed-rally-near-low_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-02.b1.b2_failed-rally-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1_failed-rally-near-yearly-low_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02_near-yearly-low-bounces_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-03.b1_deep-yearly-low-break-rebounds_1d: 1 ideas (1 explorations)
