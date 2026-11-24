@@ -72,5 +72,14 @@ The control branches are read in place, not merged.
   it brief 033. Not changed during the night (the sessions run the code they cloned); the reading counts the spend on
   such briefs, and the fix is proposed in the morning.
 
+- **00:46 Paris:** the 4 new-code sessions alive and progressing, no fault (steadydecline and panic 5 turns each, 3
+  confirmed in steadydecline; 11 discoveries turned into briefs). **The 4 control sessions had never started:** the
+  cloud refused the short commit id (`bf8dd5bff2`: "ref not found"), nothing spent; archived and relaunched at 00:48
+  Paris with the full id, all four running. They start about 30 minutes after the new-code sessions; the comparison at
+  equal spend is not affected.
+- **00:50 Paris, 3g proven:** night 6's merge replayed with `night_merge` (its card): the components file and the
+  register's pages identical to the hand repair, the catalogue right where the hand repair was wrong. It will merge
+  night 7.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
