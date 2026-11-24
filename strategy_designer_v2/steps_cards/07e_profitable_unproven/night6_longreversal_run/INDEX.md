@@ -3,6 +3,7 @@
 031-02.b1.b1_deepest-falls-rebound-most_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b1.b2_levelled-off-deep-falls-rebound_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 031-02.b1_deep-fall-still-falling-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b2.a1_deep-fall-rebound-nineteen-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-02.b2_graded-deep-and-recent-fall_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 031-02_extreme-fall-partly-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

@@ -3,6 +3,7 @@
 031-02.b1.b1_deepest-falls-rebound-most_1d: not profitable enough [Sharpe 0.7101; Sharpe minus holding's Sharpe 0.1773; Calmar 0.391]
 031-02.b1.b2_levelled-off-deep-falls-rebound_1d: not profitable enough [Sharpe -0.1816; Sharpe minus holding's Sharpe -0.7508; Calmar -0.05778]
 031-02.b1_deep-fall-still-falling-rebounds_1d: not profitable enough [Sharpe 0.7421; Sharpe minus holding's Sharpe 0.2093; Calmar 0.4143]
+031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound_1d: not profitable enough [Sharpe 0.7136; Sharpe minus holding's Sharpe 0.2037; Calmar 0.3936]
 031-02.b2.a1_deep-fall-rebound-nineteen-coins_1d: not profitable enough [Sharpe 0.7311; Sharpe minus holding's Sharpe 0.2212; Calmar 0.4135]
 031-02.b2_graded-deep-and-recent-fall_1d: not profitable enough [Sharpe 0.8431; Sharpe minus holding's Sharpe 0.2889; Calmar 0.423]
 031-02_extreme-fall-partly-rebounds_1d: not profitable enough [Sharpe 0.7908; Sharpe minus holding's Sharpe 0.2366; Calmar 0.4072]

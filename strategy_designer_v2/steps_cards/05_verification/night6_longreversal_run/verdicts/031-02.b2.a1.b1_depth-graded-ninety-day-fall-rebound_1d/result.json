@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 30-day return after positive-forecast mean_reversion cases (minus the coin's mean 30-day return)",
+    "value": -0.007134301178270328,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together (day-clustered)",
+      "value": -0.1978608506230225
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; else inconclusive; at least 30 independent case-days"
+  },
+  "supporting_check": {
+    "name": "mean excess return of larger-forecast half minus smaller-forecast half > 0",
+    "value": 0.0018230175787752904,
+    "passed": true
+  },
+  "counts": {
+    "independent case-days": 35,
+    "cases": 85
+  },
+  "decided_by": "The day-clustered t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are grid bars (positions 0, 30, 60, ... of each window with a full 30 bars ahead) whose regime is mean_reversion and forecast > 0; the coin's mean 30-day return is taken on the same grid over all its windows; the t sums the cases' deviations per UTC day with a G/(G-1) correction; with an odd number of cases the middle-forecast case is left out of both halves."
+}
