@@ -1,5 +1,6 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: no ideas: The one pattern that stands out against the many angles looked at is the Saturday rise (F3), and it is an on/off calendar condition with no graded situation. Every graded situation examined (nearness to the yearly low, large down days, past returns, volatility, distance from recent lows) was non-monotone or could not be told from chance (F1, F2, F4, F5).
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: 1 ideas (2 explorations)
+031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: 2 ideas (2 explorations)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (3 explorations)
 031-01.g1_weekly-gains-carry-into-saturday_1d: 2 ideas (2 explorations)
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (3 explorations)

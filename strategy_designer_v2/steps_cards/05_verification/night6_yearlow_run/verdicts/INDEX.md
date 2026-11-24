@@ -1,5 +1,6 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: inconclusive (fit: exact) [main: 0.00158173; date-clustered OLS t of the slope 1.07358; grid cases 1495, distinct dates 147, top-quintile cases 299]
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: confirmed (fit: exact) [main: 0.000461406; slope t, residuals summed per Saturday 2.36825; Friday cases with forecast > 0 1197, distinct Saturdays 312]
+031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: confirmed (fit: exact) [main: 0.00696484; t of the mean, cases grouped by day 3.87165; days 404, short-side cases 813, cases 1992]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: confirmed (fit: adapted) [main: 0.00545422; t of the mean, cases of one date summed 3.31152; distinct Fridays with cases 414, cases 2476, regression cases 2459]
 031-01.g1_weekly-gains-carry-into-saturday_1d: confirmed (fit: adapted) [main: 0.00892491; t of the mean, cases of one day summed 3.33838; distinct days with a positive forecast 319, main measure cases 1245, days of main measure cases 316, top-third Friday bars 415, zero-forecast Friday bars 1234]
 031-01_near-yearly-low-keeps-falling_1d: inconclusive (fit: exact) [main: 0.00235943; OLS slope t 1.7029; non-overlapping cases 806, top-fifth cases 161]

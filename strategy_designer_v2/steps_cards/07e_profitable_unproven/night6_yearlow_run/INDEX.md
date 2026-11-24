@@ -1,5 +1,6 @@
 031-01.b1_near-yearly-low-falls-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-01.g1_weekly-gains-carry-into-saturday_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01_near-yearly-low-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
