@@ -127,6 +127,7 @@ An idea's latest record counts once.
 | 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h | confirmed | night4_weekend_run | 1h | 6 | 54a2cf3b0 | 2026-11-22T00:52:26 |
 | 026-03_weekend-reversal-exceeds-weekday.d1_sunday-move-reverses-early-week_1h | confirmed | night4_weekend_run | 1h | 6 | c9f81b724 | 2026-11-22T01:21:05 |
 | 026-03_weekend-reversal-exceeds-weekday.d2_sunday-move-fades-monday_1h | confirmed | night4_weekend_run | 1h | 6 | cfe3cbe2d | 2026-11-22T06:35:49 |
+| 031-01.b1.b1_wide-day-extends-run-more-coins_1d | paying | night6_indecision_run | 1d | 19 | df3e8f223 | 2026-11-24T00:37:42 |
 | 031-01.b1.e1_strong-run-continues-three-days_1d | paying | night6_indecision_run | 1d | 6 | 267236fa9 | 2026-11-24T00:15:11 |
 | 031-01.b1.e2_wide-day-in-strong-run_1d | paying | night6_indecision_run | 1d | 6 | 267236fa9 | 2026-11-24T00:20:10 |
 | 031-03.b1_wide-day-extends-up-run_1d | paying | night6_indecision_run | 1d | 6 | 168ab087c | 2026-11-24T00:29:20 |

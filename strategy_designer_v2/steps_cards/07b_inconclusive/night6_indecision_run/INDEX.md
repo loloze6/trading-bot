@@ -1,3 +1,4 @@
+031-01.b1.b1_wide-day-extends-run-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.b1.e1_strong-run-continues-three-days_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.b1.e2_wide-day-in-strong-run_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-01.b1_wide-day-extends-up-run_1d: 2 ideas (2 explorations)
