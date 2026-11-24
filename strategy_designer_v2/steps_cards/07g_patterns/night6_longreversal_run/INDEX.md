@@ -1,3 +1,4 @@
+031-01.g1_sharp-drop-next-day-bounce_1d: 1 ideas (2 explorations)
 031-01_extreme-rise-partly-reverses_1d: 1 ideas (2 explorations)
 031-02.b1.b1.b1_steadied-falls-rebound-most_1d: 1 ideas (2 explorations)
 031-02.b1.b1_deepest-falls-rebound-most_1d: 1 ideas (3 explorations)

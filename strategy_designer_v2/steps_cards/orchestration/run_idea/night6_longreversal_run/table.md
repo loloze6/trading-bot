@@ -19,20 +19,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound | 031-02.b2.a1_deep-fall-rebound-nineteen-coins | plan | inconclusive (-0.20) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b2.a1.b1.b1_still-falling-deep-fall-rebound, 031-02.b2.a1.b1.b2_failed-bounce-after-deep-fall; 7.g: 031-02.b2.a1.b1.g1_volatility-compression-precedes-weakness, 031-02.b2.a1.b1.g2_calm-coins-outperform-next-month, 031-02.b2.a1.b1.g3_near-high-continuation-over-month | 1.40 | 12.2 |
 | 031-03.b1.b1.b1_aligned-20-day-continuation | 031-03.b1.b1_20-day-continuation-all-coins | plan | inconclusive (+1.85) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1.b1.b1_aligned-20-day-rise-continuation; 7.g: 031-03.b1.b1.b1.g1_calm-coins-near-highs-continue, 031-03.b1.b1.b1.g2_calm-upside-20-day-continuation | 1.44 | 10.5 |
 | 031-02.b2.a1.b2_deep-fall-rebound-45-days | 031-02.b2.a1_deep-fall-rebound-nineteen-coins | plan | inconclusive (+0.36) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The test already used every coin and fold available, its result sits at zero (F1–F3), the effect has no depth grading (F4), and it flips sign by year with no stable condition where it holds (F5, F6). No amended or more-data version of the idea is supported, and that is the clear answer: no medium-term deep-fall rebound in this data.; 7.g: 031-02.b2.a1.b2.g1_one-day-crash-next-day-rebound | 1.08 | 11.2 |
+| 031-01.g1_sharp-drop-next-day-bounce | 031-01_extreme-rise-partly-reverses | plan | confirmed (+2.63) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.g1.d1_sharp-drop-in-fresh-turbulence; 7.g: 031-01.g1.g1_wide-range-low-close-bounce | 1.03 | 5.4 |
 
 ## Consumption
-15 ideas, 16.72 USD, 132.3 minutes in all.
+16 ideas, 17.75 USD, 137.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.34 | 8.0 |
-| step4_backtest | 0.00 | 76.7 |
-| step5_verdict | 2.87 | 10.1 |
-| step6_check | 0.00 | 0.6 |
+| step3_plan | 1.41 | 8.4 |
+| step4_backtest | 0.00 | 78.4 |
+| step5_verdict | 3.03 | 10.7 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.00 | 0.0 |
+| step7_7.d | 0.40 | 1.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.31 | 1.0 |
 | step7_7.b | 4.71 | 13.6 |
-| step7_7.g | 7.49 | 21.8 |
+| step7_7.g | 7.89 | 23.2 |
+| similarity_check | 0.00 | 0.0 |
