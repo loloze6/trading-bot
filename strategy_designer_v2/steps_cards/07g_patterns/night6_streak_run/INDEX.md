@@ -4,3 +4,4 @@
 031-02.b1.g2_volatile-falls-rebound-harder_1d: 1 ideas (3 explorations)
 031-02.b1_sharp-daily-fall-rebounds_1d: 2 ideas (2 explorations)
 031-02_down-streak-length-reversal_1d: no ideas: The streak length, the past returns, the volatility, the range, the weekday, the year and the book's extreme days all leave no pattern that stands out. Across about 60 groupings the best t's are 2.0 to 2.7, isolated and not graded (F3–F6). The book's profit is the coins' drift held 96 % of the time (F1, F2), not a new effect.
+031-03_up-streak-length-continuation_1d: 2 ideas (2 explorations)
