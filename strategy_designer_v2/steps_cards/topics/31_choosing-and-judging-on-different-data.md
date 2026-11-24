@@ -25,6 +25,17 @@ Should the years an idea is chosen on differ from the years it is judged on, to 
   sure on 8 years, the effect keeps its sign on 6 years in 100 %, on 4 years in 99 % (t >= 1: 87 %), on 2 years in 93 %.
   A check of the sign on the 2 folds the analyst did not see would cost almost no real effect.
 
+- **Three rules tested on past ideas (2026-11-24, the operator: "test the best 3 in parallel"; `47_review/fold_rules_test.py`,
+  `fold_rules_test.csv`; no model call):** the 271 confirmed follow-ups with a register record, 62 of them tested on the
+  unseen dates. T1, the effect points its own way on the newer folds (2022-25): keeps 82 %; holds on both unseen periods
+  46 % kept, 62 % removed (8 tested). T2, a higher bar for the cases step 7 compared (median 98 rows seen per analysis,
+  so a bar near t 3.5): keeps 45 %; holds 33 % kept, 39 % removed. T3, both: keeps 39 %; holds 27 % kept, 42 % removed.
+  None keeps the ideas that hold better than those it removes; the samples are small (8 to 19 removed ideas tested),
+  and T1 is weaker in retrospect than live (step 7 saw the newer years). The net lean does not explain it either: the
+  long-leaning follow-ups held more often (61 %, 36 tested) than those with no lean (35 %, 23). Reading: on past
+  evidence, no fold rule tried predicts which ideas hold on the two short unseen periods; nor did in-sample strength
+  (topic 47, 1d-11). No change to the folds on this evidence.
+
 ## Why it matters
 A verdict on the years an idea was picked from can be partly luck; it would show as profitable ideas failing on unseen
 dates.
