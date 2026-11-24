@@ -1,13 +1,13 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 17.92 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 18.64 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day | 7.d | 4 | 0.2429 | 0.0486 | candidate |
-| 2 | 031-02.b1.b1.b1.g1_wide-day-extends-up-run | 7.g | 4 | 0.098 | 0.0196 | candidate |
-| 3 | 031-02.b1.b1.b1.g2_wide-day-after-long-climb | 7.g | 4 | 0.098 | 0.0196 | candidate |
-| 4 | 031-02.b1.b1.b1.g3_heavy-volume-extends-up-run | 7.g | 4 | 0.098 | 0.0196 | candidate |
+| 1 | 031-02.b1.b1.b1.g1_wide-day-extends-up-run | 7.g | 4 | 0.098 | 0.0196 | candidate |
+| 2 | 031-02.b1.b1.b1.g2_wide-day-after-long-climb | 7.g | 4 | 0.098 | 0.0196 | candidate |
+| 3 | 031-02.b1.b1.b1.g3_heavy-volume-extends-up-run | 7.g | 4 | 0.098 | 0.0196 | candidate |
+| 4 | 031-02.b1.b1.b1.d2.g1_wide-high-close-downrun-continuation | 7.g | 5 | 0.098 | 0.0163 | candidate |
 | 5 | 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend | 7.g | 5 | 0.098 | 0.0163 | candidate |
 | 6 | 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month | 7.g | 5 | 0.098 | 0.0163 | candidate |
 | 7 | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | 7.b | 3 | 0.2778 | 0.0694 | candidate |
@@ -45,3 +45,4 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-01.b1.b2.b1_wide-day-strong-run-more-coins | 7.b | 3 | 0.2778 | 0.0694 | tested: step 5 confirmed (+2.49); step 6 profitable enough  GOAL REACHED |
 | - | 031-02.b1.b1.b1_wide-flat-uprun-three-day | 7.b | 3 | 0.2778 | 0.0694 | tested: step 5 confirmed (+3.03); step 6 not profitable enough (failed: Trades per day) |
 | - | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day | 7.d | 4 | 0.2429 | 0.0486 | tested: step 5 confirmed (+3.30); step 6 profitable enough  GOAL REACHED |
+| - | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day | 7.d | 4 | 0.2429 | 0.0486 | tested: step 5 confirmed (+3.16); step 6 profitable enough  GOAL REACHED |

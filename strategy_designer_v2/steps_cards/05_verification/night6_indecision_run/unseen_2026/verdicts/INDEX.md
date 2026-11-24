@@ -3,5 +3,6 @@
 031-01.b1.e1_strong-run-continues-three-days_1d: inconclusive (fit: adapted) [main: 0.000563138; OLS slope t 1.32296; grid bars with a forecast above 0 283, grid bars 624]
 031-01.b1.e2_wide-day-in-strong-run_1d: inconclusive (fit: adapted) [main: 0.0222447; t of the mean, same-day cases taken together 1.23426; top-fifth cases on separate days 32, top-fifth cases 57, bottom-fifth in-rise cases 57, in-rise grid bars 283]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: inconclusive (fit: exact) [main: -0.00107519; t of the mean, cases of one day taken together -0.101408; cases 155, distinct days 87]
+031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: inconclusive (fit: exact) [main: -0.00166467; t of the mean, cases grouped by day -0.130426; cases 75, days 50]
 031-02.b1.b2_flat-day-after-strong-rise_1d: not observable (fit: adapted) [main: 0.0332569; t of the mean, cases of one day pooled 0.99587; cases 15, days 15]
 031-03.b1_wide-day-extends-up-run_1d: inconclusive (fit: adapted) [main: 0.00606643; t of the weighted mean, cases on the same day pooled 0.465707; distinct case days 64, cases 98, active bars checked 110]

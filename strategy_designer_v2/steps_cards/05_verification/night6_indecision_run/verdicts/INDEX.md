@@ -7,6 +7,7 @@
 031-01.b2_wide-doji-continues-strong-run_1d: mismatch: the test does not match its plan (agreement 0.802198) (fit: adapted)
 031-01_wide-flat-day-ends-uprun_1d: inconclusive (fit: adapted) [main: -0.012447; t of the mean, same-day cases taken together -0.929333; cases 86, days 74, active bars 87]
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: confirmed (fit: exact) [main: 0.0149906; t of the mean, cases of one day taken together 3.30389; cases 1126, distinct days 597]
+031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: confirmed (fit: exact) [main: 0.016663; t of the mean, cases grouped by day 3.15665; cases 490, days 352]
 031-02.b1.b1.b1_wide-flat-uprun-three-day_1d: confirmed (fit: adapted) [main: 0.0299187; t of the mean, cases clustered by day 3.02788; cases 201, distinct days 147]
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: inconclusive (fit: adapted) [main: 0.0223777; t of the mean, cases of one day summed together 1.29214; cases 181, distinct case days 134]
 031-02.b1.b2_flat-day-after-strong-rise_1d: confirmed (fit: adapted) [main: 0.0308541; t of the mean, cases of one day pooled 2.22283; cases 202, days 179]

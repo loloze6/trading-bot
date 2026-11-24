@@ -7,6 +7,7 @@
 031-01.b2_wide-doji-continues-strong-run_1d: 1 ideas (2 explorations)
 031-01_wide-flat-day-ends-uprun_1d: 1 ideas (2 explorations)
 031-02.b1.b1.b1.d1_small-body-wide-uprun-day_1d: 2 ideas (2 explorations)
+031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d: 1 ideas (2 explorations)
 031-02.b1.b1.b1_wide-flat-uprun-three-day_1d: 3 ideas (2 explorations)
 031-02.b1.b1_wide-flat-uprun-more-coins_1d: 2 ideas (2 explorations)
 031-02.b1.b2_flat-day-after-strong-rise_1d: 1 ideas (2 explorations)
