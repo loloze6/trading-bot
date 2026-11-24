@@ -12,15 +12,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.b1.e1_strong-run-continues-three-days | 031-01.b1_wide-day-extends-up-run | plan | confirmed (+4.38) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.b1.e1.g1_wide-down-day-rebounds, 031-01.b1.e1.g2_rejected-low-rebounds-higher | 0.75 | 4.6 |
 | 031-01.b1.e2_wide-day-in-strong-run | 031-01.b1_wide-day-extends-up-run | plan | confirmed (+2.85) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: About 40 cells were examined (range fifths by run direction, body and close location on wide days, size of the day's move, volatility-scaled run strength, volatility level, weekday, forecast fifths, coin). None of them shows a graded pattern outside the tested idea that survives this many looks and the correlation between coins. The strongest, the run-strength top-fifth step (F1), is a step rather than a slope and is already contained in the tested idea's rise-strength component. The weekday effect (F5) is unclustered and an on/off condition, not a graded situation. | 0.64 | 4.9 |
 | 031-02.b1_wide-flat-day-continues-uprun | 031-02_wide-flat-day-ends-downrun | plan | inconclusive (+0.92) | not profitable enough (failed: Calmar, Trades per day) | - | 7.b: 031-02.b1.b1_wide-flat-uprun-more-coins, 031-02.b1.b2_flat-day-after-strong-rise; 7.g: 031-02.b1.g1_strong-up-day-carries-forward, 031-02.b1.g2_wide-strong-day-continues-run, 031-02.b1.g3_deep-down-day-partial-rebound | 1.23 | 5.6 |
+| 031-03.b1_wide-day-extends-up-run | 031-03_uprun-size-scales-wide-flat-reversal | plan | confirmed (+2.54) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-03.b1.g1_wide-down-day-rebounds, 031-03.b1.g2_wide-day-capitulation-reverses | 0.61 | 4.4 |
 
 ## Consumption
-8 ideas, 9.14 USD, 41.6 minutes in all.
+9 ideas, 9.75 USD, 46.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.50 | 5.0 |
-| step4_backtest | 0.00 | 11.9 |
-| step5_verdict | 1.39 | 4.9 |
+| step3_plan | 1.58 | 5.4 |
+| step4_backtest | 0.00 | 13.3 |
+| step5_verdict | 1.55 | 5.5 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
@@ -28,6 +29,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.e | 0.41 | 1.1 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 2.25 | 6.5 |
-| step7_7.g | 3.60 | 10.2 |
+| step7_7.g | 3.96 | 11.2 |
 | similarity_check | 0.00 | 0.1 |
-| unseen_test | 0.00 | 1.7 |
+| unseen_test | 0.00 | 2.5 |

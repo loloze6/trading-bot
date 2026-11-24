@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.b1_wide-day-extends-up-run_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3631896,
+  "findings": {
+    "F1": "On down days, the coin's unusual 3-day move (in units of its usual 3-day move) rises with the log of the day's range over its 20-day mean range, with slope 0.134 (t 3.23, 2245 non-overlapping cases); on up days the slope is -0.035 (t -1.00, 2470 cases), so the widening effect belongs to falling days.",
+    "F2": "Across down days, the unusual 3-day move climbs with the range ratio: -0.09 % at a ratio of 0.8 or less (414 days), -0.21 % at 0.8\u20131.2, +0.38 % at 1.2\u20131.6, +2.20 % at 1.6\u20132.2 (strength 0.24, t 2.14, 96 days) and +2.28 % above 2.2 (strength 0.27, t 1.49, 39 days).",
+    "F3": "Among down days with a range ratio of at least 1.3, the third with the largest one-day drop is followed by a +3.22 % unusual 3-day move (strength 0.38, t 2.67, 68 days), against +0.55 % for the middle third (t 0.60, 96 days) and +0.86 % for the smallest drops (t 0.97, 99 days).",
+    "F4": "Wide down days (ratio 1.6 or more) are followed by a positive unusual 3-day move in all 6 coins, from +0.37 % (ETH, 46 days) to +4.34 % (ZEC, 41 days; LTC +2.64 % t 1.98, XMR +2.74 % t 2.16), and in 7 of 8 years, the exception being 2018 (-1.95 %, 10 days).",
+    "F5": "The days with the widest ranges (ratio above 2.0) split by the day's direction: after a down day the unusual 3-day move is +3.35 % (t 2.23, 60 days), after an up day it is -0.58 % (t -0.51, 99 days). The tested idea's rise after wide days is therefore carried more by wide falling days than by up-runs.",
+    "F6": "The tested idea's own gradation is uneven. On wide days the top quintile of 5-day rises gives +2.22 % (t 2.26, 147 days), but the 4th quintile gives +0.03 % (t 0.06, 81 days) and the lowest quintile +0.42 % (89 days). On wide days after a 5-day rise, XMR goes the other way (-0.42 %, 49 days), and so do 2018 (-4.33 %) and 2023 (-0.82 %).",
+    "F7": "I also looked at close location within wide days, at 20-day volatility terciles crossed with the sign of the 5-day return, and at the book's mean daily return by weekday (from -0.03 % on day 3 to +0.13 % on day 5, each about 414 days at a daily standard deviation of about 1 %). None of these stood out from chance given how many cells I examined."
+  },
+  "ideas": [
+    {
+      "idea": "On a day when a coin falls, the wider that day's high-low range compared with its 20-day average daily range, the larger the coin's rise over the next 3 days.",
+      "consequence": "A wide-range down day is a reason to buy the coin for the next 3 days rather than sell into it, and the wider the day, the stronger that reason.",
+      "name": "wide down day rebounds",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "On a day whose range is wide compared with its 20-day average daily range, the larger the coin's one-day fall, the larger its rise over the next 3 days.",
+      "consequence": "A deep fall on a wide-range day is a reason to take a long for the next 3 days and a reason to refuse a short on it.",
+      "name": "wide-day capitulation reverses",
+      "from": "F3, F1, F5",
+      "refs": [
+        "F3",
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1.g1_wide-down-day-rebounds",
+    "031-03.b1.g2_wide-day-capitulation-reverses"
+  ],
+  "no_ideas": null
+}
