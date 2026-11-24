@@ -1,0 +1,1 @@
+026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: not observable (fit: exact) [main: -0.000448586; t of the mean -0.0372027; bets (trending, |forecast| >= 2) 94, cases with a full 48 bars left inside their window 92]
