@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of excess 3-bar return on forecast, trending grid bars",
+    "value": 0.0013100978896162464,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.9223335240385135
+    },
+    "threshold": "confirm if t >= 2 (with forecast-weighted mean excess > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 3-bar return",
+    "value": 0.015295535637221734,
+    "passed": true
+  },
+  "counts": {
+    "grid bars in trending with forecast above 0": 163,
+    "grid bars in trending": 289
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The 60-day return is recomputed from the window's closes where 60 prior bars exist and taken as regime 'trending' otherwise, the 5-day rise is the recorded rise5 raw value; the normal 3-bar drift is each coin's mean 3-bar return over the non-overlapping grid of all its windows and all regimes, the slope t is the OLS slope t pooled over all coins and windows, and the plan's 100-bar minimum is applied as 'not observable'."
+}

@@ -22,6 +22,7 @@
 | 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | night4_volumehour_run | 1h | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d (1d) | 0.49 | same period | +0.0104 % (0.53) | 0.22 |
 | 031-01.b1.b1_wide-day-extends-run-more-coins_1d | night6_indecision_run | 1d | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d1_range-expansion-in-uptrends.b1_range-expansion-uptrend-more-coins_1d (1d) | 0.77 | same period | +0.0103 % (0.82) | 0.52 |
 | 031-01.b1.b2.b1_wide-day-strong-run-more-coins_1d | night6_indecision_run | 1d | 031-01.b1.b1_wide-day-extends-run-more-coins_1d (1d) | 0.92 | same period | +0.0050 % (0.59) | 0.44 |
+| 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d | night6_indecision_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.78 | same period | +0.0061 % (0.54) | 0.32 |
 | 031-01.b1.e1_strong-run-continues-three-days_1d | night6_indecision_run | 1d | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h (1h) | 0.78 | same period | +0.0176 % (1.34) | 0.44 |
 | 031-01.b1.e2_wide-day-in-strong-run_1d | night6_indecision_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.82 | same period | +0.0095 % (1.17) | 0.36 |
 | 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d | night6_indecision_run | 1d | 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d (1d) | 0.84 | same period | +0.0028 % (0.51) | 0.28 |

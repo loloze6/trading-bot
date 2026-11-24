@@ -130,6 +130,7 @@ An idea's latest record counts once.
 | 031-01.b1.b1_wide-day-extends-run-more-coins_1d | paying | night6_indecision_run | 1d | 19 | df3e8f223 | 2026-11-24T00:37:42 |
 | 031-01.b1.b2.b1_wide-day-strong-run-more-coins_1d | paying | night6_indecision_run | 1d | 19 | 5e6ac381c | 2026-11-24T01:11:29 |
 | 031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days_1d | confirmed | night6_indecision_run | 1d | 6 | 6cfae7d16 | 2026-11-24T03:04:43 |
+| 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d | paying | night6_indecision_run | 1d | 6 | 24d36b592 | 2026-11-24T03:08:44 |
 | 031-01.b1.e1_strong-run-continues-three-days_1d | paying | night6_indecision_run | 1d | 6 | 267236fa9 | 2026-11-24T00:15:11 |
 | 031-01.b1.e2_wide-day-in-strong-run_1d | paying | night6_indecision_run | 1d | 6 | 267236fa9 | 2026-11-24T00:20:10 |
 | 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d | paying | night6_indecision_run | 1d | 19 | c7a53104b | 2026-11-24T02:37:54 |

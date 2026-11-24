@@ -1,5 +1,6 @@
 031-01.b1.b1_wide-day-extends-run-more-coins_1d: inconclusive (fit: adapted) [main: 0.00114125; t clustered by day 0.93974; trending grid cases 895, distinct days 97]
 031-01.b1.b2.b1_wide-day-strong-run-more-coins_1d: not observable (fit: exact) [main: 0.000648603; OLS slope t, clustered by day 0.988513; non-overlapping cases with a forecast above 0 895, distinct days 97]
+031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d: inconclusive (fit: exact) [main: 0.0013101; OLS slope t 1.92233; grid bars in trending with forecast above 0 163, grid bars in trending 289]
 031-01.b1.e1_strong-run-continues-three-days_1d: inconclusive (fit: adapted) [main: 0.000563138; OLS slope t 1.32296; grid bars with a forecast above 0 283, grid bars 624]
 031-01.b1.e2_wide-day-in-strong-run_1d: inconclusive (fit: adapted) [main: 0.0222447; t of the mean, same-day cases taken together 1.23426; top-fifth cases on separate days 32, top-fifth cases 57, bottom-fifth in-rise cases 57, in-rise grid bars 283]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: inconclusive (fit: exact) [main: 0.00803582; t of the mean, cases clustered by day 0.913715; cases 357, distinct days 138]

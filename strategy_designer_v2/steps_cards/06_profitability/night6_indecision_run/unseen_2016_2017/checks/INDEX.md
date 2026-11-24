@@ -1,5 +1,6 @@
 031-01.b1.b1_wide-day-extends-run-more-coins_1d: not profitable enough [Sharpe 3.086; Sharpe minus holding's Sharpe -0.6647; Calmar 6.94]
 031-01.b1.b2.b1_wide-day-strong-run-more-coins_1d: not profitable enough [Sharpe 3.06; Sharpe minus holding's Sharpe -0.6909; Calmar 10.21]
+031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d: not profitable enough [Sharpe 2.814; Sharpe minus holding's Sharpe -0.9375; Calmar 7.839]
 031-01.b1.e1_strong-run-continues-three-days_1d: not profitable enough [Sharpe 2.942; Sharpe minus holding's Sharpe -0.809; Calmar 8.203]
 031-01.b1.e2_wide-day-in-strong-run_1d: not profitable enough [Sharpe 2.558; Sharpe minus holding's Sharpe -1.193; Calmar 4.654]
 031-02.b1.b1.b1.d1.g1_wide-day-continues-uptrend_1d: not profitable enough [Sharpe 2.508; Sharpe minus holding's Sharpe -1.243; Calmar 3.707]

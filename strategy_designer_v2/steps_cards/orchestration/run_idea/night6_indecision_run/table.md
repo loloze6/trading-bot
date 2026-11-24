@@ -30,15 +30,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month | 031-02.b1.b1.b1.d1_small-body-wide-uprun-day | plan | confirmed (+2.83) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-02.b1.b1.b1.d1.g2.g1_wider-breakout-day-larger-rise, 031-02.b1.b1.b1.d1.g2.g2_width-times-scaled-trend, 031-02.b1.b1.b1.d1.g2.g3_wide-day-trend-lasts-ten-days | 0.92 | 11.6 |
 | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | 031-01.b1.b2_wide-day-extends-strong-run | plan | inconclusive (+0.68) | profitable enough | - | 7.b: 031-01.b1.b2.b2.b1_wide-run-more-coins, 031-01.b1.b2.b2.b2_wide-run-ten-day-follow-through; 7.e: 031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days, 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues; 7.g: 031-01.b1.b2.b2.g1_wide-red-day-rebounds, 031-01.b1.b2.b2.g2_volatility-scaled-one-day-reversal | 1.39 | 6.5 |
 | 031-01.b1.b2.b2.e1_20-day-trend-carries-ten-days | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | plan | confirmed (+2.46) | not profitable enough (failed: Calmar) | - | 7.d: 031-01.b1.b2.b2.e1.d1_scaled-trend-while-still-rising, 031-01.b1.b2.b2.e1.d2_trend-graded-by-recent-push; 7.g: no ideas: I looked at more than 25 angles: the forecast's quintiles, 5-, 20- and 60-day returns, volatility level and ratio, range width, body, close location, the brief's wide-flat days, years, weekdays, 1- to 5-day reversal and continuation, per-coin and per-trend splits, and trades by length and entry forecast. No pattern stands out enough to count. The best one, the one-day rebound after a large volatility-scaled fall (F3, +0.39 % against a 0.19 % trade cost), has a day-clustered t of only 2.14 and fades within three days. The others are under t 2 once same-day cases are taken together, or are calendar effects with overstated t's. | 1.00 | 5.4 |
+| 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues | 031-01.b1.b2.b2_wide-strong-run-in-uptrend | plan | confirmed (+3.73) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-01.b1.b2.b2.e2.g1_one-day-fall-bounces-back | 0.61 | 4.8 |
 
 ## Consumption
-26 ideas, 25.95 USD, 202.8 minutes in all.
+27 ideas, 26.56 USD, 207.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.90 | 15.1 |
-| step4_backtest | 0.00 | 93.8 |
-| step5_verdict | 4.74 | 16.5 |
+| step3_plan | 3.97 | 15.5 |
+| step4_backtest | 0.00 | 95.4 |
+| step5_verdict | 4.88 | 17.0 |
 | step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
@@ -46,6 +47,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.e | 0.81 | 2.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 3.99 | 11.2 |
-| step7_7.g | 11.70 | 33.5 |
+| step7_7.g | 12.09 | 34.8 |
 | similarity_check | 0.00 | 0.8 |
-| unseen_test | 0.00 | 25.0 |
+| unseen_test | 0.00 | 25.9 |
