@@ -10,6 +10,7 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: confirmed (fit: exact) [main: 0.000614936; OLS slope t, day-clustered (CR1) 2.27923; grid bars with forecast above 0 4217, distinct days 1125]
 031-02_down-streak-length-reversal_1d: inconclusive (fit: exact) [main: -0.000432003; slope t, day-clustered (same-day cases summed) -1.26529; grid bars with a forecast above 0 1759, distinct days of those grid bars 485, grid bars in regression 3419, supporting cases 3232]
 031-03.b1.b1.b1_up-streak-continuation-over-20-days_1d: inconclusive (fit: exact) [main: 0.0180974; t of the mean, cases summed per day 1.29429; cases 1071, distinct case days 449]
+031-03.b1.b1.b2_up-streak-continuation-in-two-month-uptrend_1d: inconclusive (fit: adapted) [main: -0.00358849; slope t, cases of one day clustered -1.36245; grid cases in the regime with a forecast above 0 305, distinct days 73, trending grid bars in the slope 545, supporting cases 844]
 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation_1d: confirmed (fit: exact) [main: 0.00188198; OLS slope t, day-clustered 2.34309; grid cases in total 3551, grid cases with forecast > 0 1723, days 304]
 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues_1d: confirmed (fit: adapted) [main: 0.0211672; t of the mean, cases pooled by day 2.65188; distinct case days 611, cases 1178]
 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation_1d: confirmed (fit: adapted) [main: 0.0268663; t of the mean, cases of one day taken together 2.7123; distinct case days 307, cases 489]
