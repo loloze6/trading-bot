@@ -1,21 +1,24 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 18.06 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 19.37 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 031-01.g1.g2_monthly-trend-carries-into-saturday | 7.g | 2 | 0.1058 | 0.0353 | candidate |
-| 2 | 031-01.g1.g1.g1_two-week-run-carries-weekend | 7.g | 3 | 0.1058 | 0.0264 | candidate |
-| 3 | 031-01.g1.g1.g2_volatile-weekends-follow-trend | 7.g | 3 | 0.1058 | 0.0264 | candidate |
-| 4 | 031-02.g1_weekend-continues-the-week-s-move | 7.g | 1 | 0.1058 | 0.0529 | candidate |
-| 5 | 031-02.b1.b2.b1.b1_failed-rally-near-side | 7.b | 4 | 0.2419 | 0.0484 | candidate |
-| 6 | 031-02.b1.b2.b2.b1_yearly-low-break-bounces-back | 7.b | 4 | 0.2419 | 0.0484 | candidate |
-| 7 | 031-01.g1.g1.d2.d1_midweek-fall-volatile-yearly-low | 7.d | 4 | 0.2429 | 0.0486 | candidate |
-| 8 | 031-02.b1.g1_next-day-reversal-in-downtrends | 7.g | 2 | 0.1058 | 0.0353 | candidate |
-| 9 | 031-04.a1.g1_wide-range-day-rebound | 7.g | 2 | 0.1058 | 0.0353 | candidate |
-| 10 | 031-01.g1.g1.d2.g1_wednesday-reverses-weekend-move | 7.g | 4 | 0.1058 | 0.0212 | candidate |
-| 11 | 031-01.g1.g1.d2.g2_high-volatility-down-day-bounce | 7.g | 4 | 0.1058 | 0.0212 | candidate |
-| 12 | 031-01.g1.g1.d1.g1_lagged-weekly-gain-continues-daily | 7.g | 4 | 0.1058 | 0.0212 | candidate |
+| 1 | 031-01.g1.g2.d1_monthly-gain-lifts-saturday | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 2 | 031-01.g1.g2.d2_outsized-monthly-gain-into-saturday | 7.d | 3 | 0.2429 | 0.0607 | candidate |
+| 3 | 031-01.g1.g1.g1_two-week-run-carries-weekend | 7.g | 3 | 0.1058 | 0.0264 | candidate |
+| 4 | 031-01.g1.g1.g2_volatile-weekends-follow-trend | 7.g | 3 | 0.1058 | 0.0264 | candidate |
+| 5 | 031-01.g1.g2.g1_weekly-move-carries-into-saturday | 7.g | 3 | 0.1058 | 0.0264 | candidate |
+| 6 | 031-01.g1.g2.g2_volatile-weeks-carry-into-saturday | 7.g | 3 | 0.1058 | 0.0264 | candidate |
+| 7 | 031-02.g1_weekend-continues-the-week-s-move | 7.g | 1 | 0.1058 | 0.0529 | candidate |
+| 8 | 031-02.b1.b2.b1.b1_failed-rally-near-side | 7.b | 4 | 0.2419 | 0.0484 | candidate |
+| 9 | 031-02.b1.b2.b2.b1_yearly-low-break-bounces-back | 7.b | 4 | 0.2419 | 0.0484 | candidate |
+| 10 | 031-01.g1.g1.d2.d1_midweek-fall-volatile-yearly-low | 7.d | 4 | 0.2429 | 0.0486 | candidate |
+| 11 | 031-02.b1.g1_next-day-reversal-in-downtrends | 7.g | 2 | 0.1058 | 0.0353 | candidate |
+| 12 | 031-04.a1.g1_wide-range-day-rebound | 7.g | 2 | 0.1058 | 0.0353 | candidate |
+| 13 | 031-01.g1.g1.d2.g1_wednesday-reverses-weekend-move | 7.g | 4 | 0.1058 | 0.0212 | candidate |
+| 14 | 031-01.g1.g1.d2.g2_high-volatility-down-day-bounce | 7.g | 4 | 0.1058 | 0.0212 | candidate |
+| 15 | 031-01.g1.g1.d1.g1_lagged-weekly-gain-continues-daily | 7.g | 4 | 0.1058 | 0.0212 | candidate |
 | - | 031-01_near-yearly-low-keeps-falling | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (+1.70); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 031-02_near-yearly-low-bounces | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (-1.70); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 031-03_yearly-low-break-extends | step 2 | 0 | 0.1351 | 0.1351 | tested: step 5 inconclusive (+0.01); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
@@ -26,6 +29,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-03.b1_deep-yearly-low-break-rebounds | 7.b | 1 | 0.2419 | 0.121 | tested: step 5 not observable (+1.41); step 6 not profitable enough (failed: Calmar, Trades per day) |
 | - | 031-04.a1_yearly-low-break-all-coins | 7.a | 1 | 0.1429 | 0.0714 | tested: step 5 not observable (+1.78); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) |
 | - | 031-01.g1.g1_midweek-run-carries-into-saturday | 7.g | 2 | 0.1058 | 0.0353 | tested: step 5 confirmed (+3.31); step 6 not profitable enough (failed: Calmar) |
+| - | 031-01.g1.g2_monthly-trend-carries-into-saturday | 7.g | 2 | 0.1058 | 0.0353 | tested: step 5 confirmed (+3.02); step 6 not profitable enough (failed: Calmar) |
 | - | 031-02.b1.b1_strong-failed-rally-near-low | 7.b | 2 | 0.2419 | 0.0806 | tested: step 5 inconclusive (-0.01); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 031-02.b1.b2_failed-rally-more-coins | 7.b | 2 | 0.2419 | 0.0806 | tested: step 5 inconclusive (+0.54); step 6 not profitable enough (failed: Mean daily return, on days in a position, Calmar) |
 | - | 031-03.b1.a1_yearly-low-break-all-coins | 7.a | 2 | 0.1429 | 0.0476 | tested: step 5 not observable (+1.78); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) |

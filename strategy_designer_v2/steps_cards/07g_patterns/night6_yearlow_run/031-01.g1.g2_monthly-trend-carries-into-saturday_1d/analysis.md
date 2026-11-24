@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 031-01.g1.g2_monthly-trend-carries-into-saturday_1d
+idea tested: 031-01.g1.g2_monthly-trend-carries-into-saturday
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5345 USD
+---
+## Findings
+- **F1:** At Friday's close, the last 5 days carry the Saturday effect, not the month: the coin's 5-day return in units of its 20-day volatility, times Saturday's excess return, averages 75 bp with t 3.44 (345 days, 2070 cases), against 54.7 bp with t 2.56 for the 20-day return. In a joint fit with day-clustered t, the 5-day return gets 69 bp per unit (t 3.68) and the earlier 15 days get 10 bp per unit (t 0.61).
+- **F2:** Saturday's excess return rises steadily across the quintiles of Friday's scaled 5-day return: −58 bp (t −1.48), −30 bp (t −1.35), +34 bp (t 2.03), +79 bp (t 3.20) and +98 bp (t 2.61), with 414 cases per quintile. The top quintile's move is about five times the 0.19 % cost of a trade.
+- **F3:** The 5-day effect appears only at Friday's close: the same product has a day-clustered t between −1.52 and +0.98 on every other weekday, and −0.95 on Thursday → Friday.
+- **F4:** The Friday effect grows with the coin's 20-day volatility. By per-coin volatility tercile, the 5-day product is 26.6 bp (t 1.06), 58.5 bp (t 2.01) and 140.1 bp (t 2.95). The 20-day product is 70.7 bp (t 0.83), 124.1 bp (t 1.65) and 291.4 bp (t 2.25).
+- **F5:** Coins with larger moves carry more of the effect: the Friday 20-day product per coin runs from 5.6 bp (t 0.40) for BTC to 118.7 bp (t 2.42) for ZEC, with XRP at 91.8 bp (t 1.77).
+- **F6:** The effect is weaker over the whole weekend than on Saturday alone. Friday's 5-day product over Saturday and Sunday together is 46.5 bp (t 1.93, 341 days), against 75 bp over Saturday alone, so Sunday gives back part of the move.
+- **F7:** The effect and the book fail in the same years. In 2023 the Friday 5-day product is −25.3 bp (t −1.07) and the 20-day product is −116 bp (t −1.93), and the book's Sharpe is −0.77. In 2019 the book's Sharpe is −0.80. This weak spell, rather than the size of the move per case, is what holds Calmar at 0.44.
+- **F8:** Two other patterns do not stand out after this many angles. Saturday's excess return after any Friday close is +30 bp with day-clustered t 2.09 (414 days), and the prior-day reversal has t 2.01 over 2418 days, with no year above t 1.75.
+
+## Ideas
+- `031-01.g1.g2.g1_weekly-move-carries-into-saturday` (from F1, F2, F3): The higher a coin's return over the past 5 days at Friday's close (UTC), measured against its usual daily move, the more it rises over the next day, Saturday.
+- `031-01.g1.g2.g2_volatile-weeks-carry-into-saturday` (from F4, F5, F1): The more volatile a coin's past 20 days at Friday's close (UTC), the more its 5-day return at that close carries in the same direction over the next day, Saturday.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

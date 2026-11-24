@@ -2,6 +2,7 @@
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+031-01.g1.g2_monthly-trend-carries-into-saturday_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 031-01.g1_weekly-gains-carry-into-saturday_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 031-01_near-yearly-low-keeps-falling_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 23/24 (1 not run: the engine stopped) [1d, folds A, B, C, D]
 031-02.b1.b1_strong-failed-rally-near-low_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 22/24 (2 not run: the engine stopped); XMRUSD 20/24 (4 not run: the engine stopped); XRPUSD 13/24 (11 not run: the engine stopped); ZECUSD 21/24 (3 not run: the engine stopped) [1d, folds A, B, C, D]

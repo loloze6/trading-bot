@@ -2,6 +2,7 @@
 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: 1 ideas (2 explorations)
 031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: 2 ideas (2 explorations)
 031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (3 explorations)
+031-01.g1.g2_monthly-trend-carries-into-saturday_1d: 2 ideas (3 explorations)
 031-01.g1_weekly-gains-carry-into-saturday_1d: 2 ideas (2 explorations)
 031-01_near-yearly-low-keeps-falling_1d: 1 ideas (3 explorations)
 031-02.b1.b1_strong-failed-rally-near-low_1d: no ideas: Across the forecast, the regime, the rally gradient, past returns, volatility, weekdays and years, nothing stood out from chance once the cross-coin clustering and the number of angles are accounted for. The only strong year pattern (F6) is the coins' own drift, and the strongest weekday pattern (F5) is neither robust to clustering nor graded.
