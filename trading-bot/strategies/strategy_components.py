@@ -8845,3 +8845,74 @@ class MeanAbsScaledReturnTimesVolatilityComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.window + self.period, self.vol_period + 1)
+
+
+class RiseTimesRangeMultipleComponent(SubStrategyComponent):
+    """
+    A rise times the current bar's range in multiples of its average bar range, on every bar:
+
+        R    = max(0, close[t] / close[t - rise_period] - 1) x 100
+        M    = (high[t] - low[t]) / mean(high[i] - low[i], i = t - range_period + 1 .. t)   (bar t included)
+        raw_value = R x M          (0.0 when the mean range is 0)
+
+    Range and sign: 0 and up, unbounded above, never negative, no direction. The value is 0 when the
+    rise_period-bar return is 0 or negative, and 0 for a zero-range bar t. M is at most range_period,
+    because the mean includes bar t. The value grows with the rise and with how wide bar t is against
+    its average. It is continuous in the prices.
+    Warm-up: max(rise_period + 1, range_period) rows, bar t included (20 at the defaults).
+    NaN: a NaN close at bar t or at bar t - rise_period, or a NaN high or low in the last range_period
+    rows, gives NaN, whatever the sign of the move. A close[t - rise_period] not above 0 gives NaN
+    (never on real bars). A mean range of 0 gives 0.0, because the range of bar t is then 0 too.
+    Building the component raises for a rise_period below 1 or a range_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads close[t] and close[t - rise_period], and the high and low of the
+    last range_period rows ending at bar t (the last row of data). All of them are known at bar t's close.
+    """
+
+    def __init__(self, name="RiseTimesRangeMultiple", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.rise_period = int(self.parameters.get("rise_period", 5))
+        if self.rise_period < 1:
+            raise ValueError(f"RiseTimesRangeMultipleComponent: rise_period must be >= 1, got {self.rise_period}")
+        self.range_period = int(self.parameters.get("range_period", 20))
+        if self.range_period < 2:
+            raise ValueError(f"RiseTimesRangeMultipleComponent: range_period must be >= 2, got {self.range_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].astype(float).to_numpy()
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        c_t = close[-1]
+        c_b = close[-(self.rise_period + 1)]
+        h = high[-self.range_period:]
+        lo = low[-self.range_period:]
+        if np.isnan(c_t) or np.isnan(c_b) or np.isnan(h).any() or np.isnan(lo).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        if not c_b > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rise = max(0.0, c_t / c_b - 1.0) * 100.0
+        ranges = h - lo
+        mean_range = float(ranges.mean())
+        if mean_range == 0.0:
+            mult = 0.0
+        else:
+            mult = float(ranges[-1]) / mean_range
+        self._raw_value = float(rise * mult)
+        self.confidence = 1.0
+        self.debug_info = {'rise_pct': rise, 'range_multiple': mult, 'mean_range': mean_range}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.rise_period + 1, self.range_period)
