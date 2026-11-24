@@ -49,6 +49,7 @@ found by a run or an analysis is added here with its source. Status: **done**, *
 | 3c | **New 2026-11-24.** Unseen records keep their bars on the machine that ran them only (028-04 had to be rebuilt): `unseen_test` writes the record's chart files, as `run_idea` does in sample | done 2026-11-24 (870bcef8a3): proof, the 13 daily books' readings identical from the chart files | `orchestration/unseen_test/card.md` |
 | 3d | **Done 2026-11-24.** `unseen_test` never reran a period whose record had no window (data not fetched then) | done (072b469688) | `orchestration/unseen_test/card.md` |
 | 3e | **New 2026-11-24 (night 6).** Parallel sessions give the same brief number to different briefs (sessions 1 and 4: both 031); the family code, which P1 groups by, then mixes two briefs. A rule: numbers given at the merge, or a number range per session | next (at the morning merge, renumber by hand; the rule for the operator) | `runs/NIGHT6_RUN.md` |
+| 3f | **New 2026-11-24.** An idle cloud session's container is reclaimed, and a detached process (setsid nohup) dies with it: long jobs (data downloads, loops) run as tracked background tasks with a monitor, and save their progress (the hourly tool does; the loop resumes from its files). The night sessions' prompt says "detached": to change for the next night | next (next night's prompt) | `runs/NIGHT6_RUN.md` |
 | 4 | Similarity: days both in a position | later (agreed) | topic 44 |
 | 6 | One Python for all steps | later | - |
 | 7 | The slow `signal_statistics.py` | later | - |

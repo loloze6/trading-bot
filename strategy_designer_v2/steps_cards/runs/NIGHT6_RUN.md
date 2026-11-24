@@ -71,6 +71,11 @@ effects of the four); N2 on none.
   and never appends an hour a file already has (tests; ce60e63798, d3a7855cd8). Relaunched at 04:07 Paris, smallest
   coins first; watchdog check-ins at 05:30 and 07:30 Paris relaunch it if another restart stops it. P4's hourly part
   moves later (about 09:00 to 10:00 Paris).
+- **04:31 Paris check-in:** sessions 1 to 3 working (updated within the last 5 minutes); session 4 done. The designer's
+  container restarted again (up 0 min at 04:31): the cause is the cloud reclaiming an idle session's container; a
+  process launched detached (setsid nohup) dies with it (03:12 UTC, 20 minutes after the designer's turn ended). The
+  saved progress survived (XMR, 200 calls). The download now runs as a background task the session tracks, with a
+  monitor, and resumes from its saved progress.
 
 ## Reading
 (in the morning)
