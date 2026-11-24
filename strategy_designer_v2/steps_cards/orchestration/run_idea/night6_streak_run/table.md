@@ -23,22 +23,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues | 031-03.b1.b1.e2_short-trend-strength-continuation | plan | confirmed (+2.65) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: no ideas: Beyond the tested idea itself (F1 to F3), the patterns I found cannot be told from chance given how many angles I looked at. These are the short rebound after scaled falls (F6, t 2.1, not graded), the Friday and Saturday returns (F8, not graded, fading after 2021) and the earlier-in-regime edge (F5, t 1.9). I also looked at streak length, volatility level, the 3-day and 30-day scaled returns, years, regime age, trade duration and entry forecast, and the book around its best and worst days, and none of them supports a new graded idea. | 0.79 | 11.7 |
 | 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation | 031-03.b1.b1.e2_short-trend-strength-continuation | plan | confirmed (+2.71) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-03.b1.b1.e2.e2.g1_extreme-rise-ten-day-continuation | 0.92 | 11.7 |
 | 031-02.b1.d2_rebound-graded-by-turbulence | 031-02.b1_sharp-daily-fall-rebounds | plan | confirmed (+2.78) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.b1.d2.d1_rebound-only-in-turbulence, 031-02.b1.d2.d2_turbulent-rebound-held-longer, 031-02.b1.d2.d3_rebound-held-two-days-only; 7.g: 031-02.b1.d2.g1_one-day-rebound-after-unusual-fall, 031-02.b1.d2.g2_turbulent-fall-one-day-rebound | 1.16 | 6.4 |
+| 031-03.b1.b1.b1_up-streak-continuation-over-20-days | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | inconclusive (+1.29) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1.b1.b1_up-streak-continuation-over-10-days; 7.g: no ideas: Across streaks, forecast size, regime, past 20- and 60-day returns, volatility, daily shocks, weekday and distance from highs, no pattern stood out beyond what the many angles examined would produce by chance; the book's gain is the coins' own drift (F1) carried by a few outlier trades (F2), with no graded effect to build an idea on (F3–F5). | 1.34 | 11.2 |
 
 ## Consumption
-19 ideas, 20.30 USD, 149.9 minutes in all.
+20 ideas, 21.64 USD, 161.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.48 | 10.1 |
-| step4_backtest | 0.00 | 75.5 |
-| step5_verdict | 3.09 | 10.6 |
-| step6_check | 0.00 | 1.0 |
+| step3_plan | 2.57 | 10.6 |
+| step4_backtest | 0.00 | 82.7 |
+| step5_verdict | 3.29 | 11.3 |
+| step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.32 | 4.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 1.15 | 3.3 |
-| step7_7.b | 4.01 | 11.9 |
-| step7_7.g | 8.26 | 23.8 |
+| step7_7.b | 4.41 | 13.0 |
+| step7_7.g | 8.91 | 25.4 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 8.3 |

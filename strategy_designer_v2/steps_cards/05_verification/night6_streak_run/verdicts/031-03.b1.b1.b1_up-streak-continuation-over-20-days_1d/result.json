@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 20-bar move of cases (forecast rise >= 2), before costs",
+    "value": 0.01809744551744368,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.29429276828755
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and top-third minus bottom-third > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean unusual move (by forecast size)",
+    "value": 0.008448850479264865,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1071,
+    "distinct case days": 449
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed).",
+  "reading": "Situation = 30-day close return > 0 (recomputed inside each window, active bars of a window's first 30 rows left out of the check) and raw streak rank > 0, expected side long; a case is the first long bet (forecast rise >= 2 from its low since the last bet, from 0 after a flat) in each 20-bar grid cell of a window, its return taken from that bar's close 20 bars on inside the window, the drift is the mean non-overlapping 20-bar grid return over all the coin's windows, t uses day-clustered deviations, and the thirds are the first and last n//3 cases sorted by forecast value at the signal bar."
+}
