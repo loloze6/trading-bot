@@ -8,6 +8,7 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 031-02_down-streak-length-reversal_1d: 1 ideas (2 explorations)
 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+031-03.b1.b1.e2.e1_extreme-scaled-rise-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 031-03.b1.b1.e2_short-trend-strength-continuation_1d: 1 ideas (2 explorations)
 031-03.b1.b1_up-streak-continuation-in-uptrend_1d: 2 ideas (3 explorations)
 031-03.b1_up-streak-continuation-more-coins_1d: 1 ideas (2 explorations)

@@ -8,6 +8,7 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: confirmed (fit: exact) [main: 0.000614936; OLS slope t, day-clustered (CR1) 2.27923; grid bars with forecast above 0 4217, distinct days 1125]
 031-02_down-streak-length-reversal_1d: inconclusive (fit: exact) [main: -0.000432003; slope t, day-clustered (same-day cases summed) -1.26529; grid bars with a forecast above 0 1759, distinct days of those grid bars 485, grid bars in regression 3419, supporting cases 3232]
 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation_1d: confirmed (fit: exact) [main: 0.00188198; OLS slope t, day-clustered 2.34309; grid cases in total 3551, grid cases with forecast > 0 1723, days 304]
+031-03.b1.b1.e2.e1_extreme-scaled-rise-continues_1d: confirmed (fit: adapted) [main: 0.0211672; t of the mean, cases pooled by day 2.65188; distinct case days 611, cases 1178]
 031-03.b1.b1.e2_short-trend-strength-continuation_1d: inconclusive (fit: exact) [main: 0.00106411; OLS slope t, errors clustered by day 1.98209; grid bars with a positive forecast 3587, cases 3643]
 031-03.b1.b1_up-streak-continuation-in-uptrend_1d: inconclusive (fit: exact) [main: 0.00377157; t of the mean, cases clustered by day 1.03797; cases 3360, distinct days 1136]
 031-03.b1_up-streak-continuation-more-coins_1d: inconclusive (fit: exact) [main: 0.000184432; slope t, cases of one day pooled (day-clustered) 0.538864; grid bars with forecast > 0 3035, distinct days of grid bars with forecast > 0 478, grid bars in regression 6157, cases (bets on the 5-bar grid) 5838, days in regression (clusters) 617]
