@@ -7,4 +7,4 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-02_down-streak-length-reversal_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 031-03_up-streak-length-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-031-04_down-streak-length-continuation_1d: missing-components: The idea needs the length of the current run of lower closes, ranked against the lengths of the coin's down-close [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-04_down-streak-length-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

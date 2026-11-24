@@ -5,3 +5,4 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: not profitable enough [Sharpe 0.7206; Sharpe minus holding's Sharpe 0.1665; Calmar 0.6041]
 031-02_down-streak-length-reversal_1d: not profitable enough [Sharpe 0.5688; Sharpe minus holding's Sharpe 0.0146; Calmar 0.2754]
 031-03_up-streak-length-continuation_1d: not profitable enough [Sharpe 0.5803; Sharpe minus holding's Sharpe -0.001406; Calmar 0.2975]
+031-04_down-streak-length-continuation_1d: not profitable enough [Sharpe -0.6541; Sharpe minus holding's Sharpe -1.236; Calmar -0.398]

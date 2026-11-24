@@ -5,3 +5,4 @@
 031-02.b1_sharp-daily-fall-rebounds_1d: confirmed (fit: exact) [main: 0.000614936; OLS slope t, day-clustered (CR1) 2.27923; grid bars with forecast above 0 4217, distinct days 1125]
 031-02_down-streak-length-reversal_1d: inconclusive (fit: exact) [main: -0.000432003; slope t, day-clustered (same-day cases summed) -1.26529; grid bars with a forecast above 0 1759, distinct days of those grid bars 485, grid bars in regression 3419, supporting cases 3232]
 031-03_up-streak-length-continuation_1d: inconclusive (fit: exact) [main: 0.000488953; OLS slope t, clustered by day 1.42674; grid bars with a positive forecast 1612, distinct days of grid bars with a positive forecast 456, grid bars in the sample 3326, distinct days in the sample 617]
+031-04_down-streak-length-continuation_1d: inconclusive (fit: exact) [main: -0.000582245; t of the mean, same-day cases summed -0.184695; cases 3143, distinct case days 1187]
