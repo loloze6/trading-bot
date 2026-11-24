@@ -31,3 +31,4 @@
 031_wide-flat-day-ends-run: After a multi-day run, a wide-range day closing near its open shows the push absorbed; the coin reverses over following days. [bar: 1d]
 031_yearly-low-capitulation-or-exhaustion: Question: near its one-year low, does a coin keep falling as holders capitulate or bounce as sellers run out; do breaks below continue? [bar: 1d]
 032_monthly-low-in-falling-agitated: Question: in a falling, agitated market, does a coin's new one-month low lead to more falling via forced-selling cascades, or a rebound as sellers run out? [bar: 1d]
+033_dip-buying-in-rising-markets: In a rising market, a sharp down day rebounds over the next days, scaling with the fall's size in usual swings, as waiting dip-buyers absorb forced selling. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, source: line 7.g patterns, backtest 032-01_monthly-low-break-cascade_1d (idea 032-01_monthly-low-break-cascade, brief 032_monthly-low-in-falling-agitated)]
