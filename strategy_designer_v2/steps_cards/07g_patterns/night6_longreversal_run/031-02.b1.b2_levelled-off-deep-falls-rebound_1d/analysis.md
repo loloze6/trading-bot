@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 031-02.b1.b2_levelled-off-deep-falls-rebound_1d
+idea tested: 031-02.b1.b2_levelled-off-deep-falls-rebound
+step 5: mismatch
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6167 USD
+---
+## Findings
+- **F1:** The tested situation almost never occurred. Only 235 of 29,715 bars (0.8 %) were in the mean_reversion regime, which gives 8 non-overlapping 30-day cases, 4 per half. The main measure is Welch t -1.02 on those 8 cases, below the 40 cases the plan needs.
+- **F2:** On those 8 deep-fall cases the coin rose 24.9 % more than its drift over the next 30 days (t 2.53, not grouped by day). This lean is the brief's rebound, but 8 cases cannot be told from a few market-wide days.
+- **F3:** The book's forecast inside the situation was mostly short (mean forecast -1.13, mean position -0.05), and its shorts lost. There were 39 short trades with mean net -15.7 %, median -7.4 % and 15 % winners. The 22 shorts entered at forecasts between -10 and -5 lost 18.7 % on average, while the 14 longs made +6.8 % on average with 64 % winners.
+- **F4:** Deep 90-day falls measured another way did not rebound. When the 90-day log return is scaled by 60-day daily volatility, the coins' lowest-quintile cases (45 non-overlapping 30-day cases) ended 6.3 % to 13.7 % below drift by depth tercile, so the rebound in F2 depends on how "far below usual" is measured.
+- **F5:** The 30-day return leaned toward continuation over the next 7 days, but this does not stand out once days are grouped. The top-minus-bottom quintile difference is 3.1 % with Welch t 3.76 on 2,926 cases, and the sign held in 7 of 8 years. Grouped by day, the slope t is 1.42 (1,950 cases on 211 days) and the top quintile's t is 1.92.
+- **F6:** The 30-day return also leaned toward continuation over the next 30 days, but the top-minus-bottom quintile difference of 8.3 % has a t of only 1.85 (676 cases), and 2024 went the other way (-7.1 %).
+- **F7:** One-day reversal is visible case by case but not once grouped by day. The rank correlation of the 1-day return with the next day is -0.05 on 24,591 cases, yet the grouped-by-day t of every volatility-scaled decile lies between -1.7 and +1.1 (2,418 days).
+- **F8:** No weekday or volatility level stands out given the number of angles tried. On the cross-coin daily mean, Saturday's t is +2.09 and Thursday's -1.75 (about 414 days each). Across the 7-day-forward volatility quintiles every |t| is below 1.6.
+
+## Ideas
+- No ideas: Across the regime, forecast, trades, momentum at 7 to 90 days, 1-day reversal, volatility level and weekday, nothing stands out from chance once cases are grouped by day and the number of angles is counted, so none supports a new idea.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 30-bar forward excess return on forecast, regime mean_reversion, non-overlapping 30-bar grid",
+    "value": -0.0041752803670339145,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.325219770694577
+    },
+    "threshold": "confirm: slope t >= 2 with supporting check positive and >= 40 cases; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess return forecast>0 minus forecast<0",
+    "value": -0.10178231729376708,
+    "passed": false
+  },
+  "counts": {
+    "cases": 89,
+    "cases forecast > 0": 19,
+    "cases forecast < 0": 70,
+    "active bars": 3113
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The regime detector's r90 component is not recorded and cannot be rebuilt from ~122-bar windows (it needs 90+365 bars), so the situation is read from the detector's own `regime` == mean_reversion and the expected side is the sign of the 30-day return (ret30 last_history_value, else recomputed from closes); the grid is rows 0, 30, 60, ... of each window, all regime bars on it with a forward return are cases (forecast 0 included in the regression), the coin's mean 30-bar return is the mean over the same grid of all its windows and all regimes, and the plan's 40-case minimum is applied as 'not observable'."
+}

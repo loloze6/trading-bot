@@ -13,20 +13,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b2_graded-deep-and-recent-fall | 031-02_extreme-fall-partly-rebounds | plan | not observable (+0.01) | not profitable enough (failed: Calmar) | - | 7.a: 031-02.b2.a1_deep-fall-rebound-nineteen-coins; 7.g: 031-02.b2.g1_short-horizon-scaled-trend-continuation, 031-02.b2.g2_quiet-market-trend-continuation | 1.23 | 7.1 |
 | 031-02.b1.b1_deepest-falls-rebound-most | 031-02.b1_deep-fall-still-falling-rebounds | plan | inconclusive (+0.99) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1.b1.b1_steadied-falls-rebound-most; 7.g: 031-02.b1.b1.g1_90-day-run-ups-keep-rising | 1.30 | 10.6 |
 | 031-03.b1.b1_20-day-continuation-all-coins | 031-03.b1_short-horizon-continuation-after-moves | plan | inconclusive (+1.52) | not profitable enough (failed: Calmar) | - | 7.b: 031-03.b1.b1.b1_aligned-20-day-continuation; 7.g: 031-03.b1.b1.g1_volatility-scaled-monthly-continuation, 031-03.b1.b1.g2_direction-not-size-turbulent-coins, 031-03.b1.b1.g3_long-side-volatile-continuation | 1.08 | 10.3 |
+| 031-02.b1.b2_levelled-off-deep-falls-rebound | 031-02.b1_deep-fall-still-falling-rebounds | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.g: no ideas: Across the regime, forecast, trades, momentum at 7 to 90 days, 1-day reversal, volatility level and weekday, nothing stands out from chance once cases are grouped by day and the number of angles is counted, so none supports a new idea. | 0.93 | 9.1 |
+| 031-02.b2.a1_deep-fall-rebound-nineteen-coins | 031-02.b2_graded-deep-and-recent-fall | plan | inconclusive (-0.20) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound, 031-02.b2.a1.b2_deep-fall-rebound-45-days; 7.g: no ideas: The only pattern that stands out after this many angles is a Saturday rise (F1, F2), which is a fixed calendar condition with no grading. Everything graded (forecast parts, past returns, volatility, recent week inside the regime; F3–F5) cannot be told from chance, so no graded, one-direction idea is supported. | 1.16 | 11.4 |
+| 031-02.b1.b1.b1_steadied-falls-rebound-most | 031-02.b1.b1_deepest-falls-rebound-most | plan | inconclusive (-1.33) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 031-02.b1.b1.b1.b1_monthly-losers-keep-falling; 7.g: 031-02.b1.b1.b1.g1_monthly-trend-carries-next-week | 1.08 | 9.3 |
 
 ## Consumption
-9 ideas, 9.64 USD, 68.5 minutes in all.
+12 ideas, 12.81 USD, 98.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.78 | 4.6 |
-| step4_backtest | 0.00 | 35.5 |
-| step5_verdict | 1.77 | 6.5 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 1.09 | 6.6 |
+| step4_backtest | 0.00 | 54.7 |
+| step5_verdict | 2.31 | 8.3 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.31 | 1.0 |
-| step7_7.b | 2.57 | 7.8 |
-| step7_7.g | 4.21 | 12.4 |
+| step7_7.b | 3.39 | 10.2 |
+| step7_7.g | 5.71 | 16.8 |
