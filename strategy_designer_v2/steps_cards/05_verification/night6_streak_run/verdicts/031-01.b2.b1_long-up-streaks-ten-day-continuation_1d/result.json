@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-day excess return (over coin drift) on forecast, pooled non-overlapping grid",
+    "value": 0.002912124054171189,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.1074780735084353
+    },
+    "threshold": "confirm: slope t >= 2 with top-fifth difference > 0; reject: slope t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess return of top fifth of positive-forecast cases minus rest of positive-forecast cases",
+    "value": 0.04394236993137679,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1646,
+    "grid cases with forecast above 0": 807,
+    "top fifth": 161
+  },
+  "decided_by": "Slope t is 2 or more and the top-fifth minus rest difference is above 0 (confirm rule).",
+  "reading": "Drift is each coin's mean 10-bar return over its grid cases in all windows, the slope comes from an OLS with intercept on all grid cases, and the top fifth is the round(n/5) highest-forecast positive cases (ties kept in time order)."
+}

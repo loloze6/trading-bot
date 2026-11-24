@@ -1,4 +1,5 @@
 031-01.b1_up-streak-reversal-more-coins_1d: no ideas: Across roughly 90 groupings over 3 rounds (streak length and sign, run size, day's move, 5- and 20-day returns, volatility regime, weekday, year, coin and forecast quartile), the one |t| above 2 (-2.52) was ungraded and sat between neighbours of the opposite sign, which is what chance produces among that many looks. The book's loss is simply the cost of being short a rising market (F1), so no pattern stands out enough to support an idea.
+031-01.b2.b1_long-up-streaks-ten-day-continuation_1d: 2 ideas (2 explorations)
 031-01.b2_long-up-streaks-continue_1d: 1 ideas (2 explorations)
 031-01_up-streak-length-reversal_1d: 2 ideas (3 explorations)
 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d: 2 ideas (2 explorations)
