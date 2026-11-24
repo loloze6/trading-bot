@@ -16,23 +16,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-01.b2_wide-doji-continues-strong-run | 031-01_wide-flat-day-ends-uprun | plan | mismatch | not profitable enough (failed: Calmar, Trades per day) | - | 7.g: 031-01.b2.g1_wide-down-day-rejected-rebound | 0.66 | 3.8 |
 | 031-01.b1.b1_wide-day-extends-run-more-coins | 031-01.b1_wide-day-extends-up-run | plan | confirmed (+2.16) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: Across about 80 cells (range, close location, body, run, 5- and 20-day returns, volatility, weekday, year, and 3- and 6-day horizons), no pattern beyond the tested idea is both graded and clearly stronger than chance; the best cells reach only |t| about 2, which so many looks would produce by chance. | 0.68 | 9.9 |
 | 031-02.b1.b1_wide-flat-uprun-more-coins | 031-02.b1_wide-flat-day-continues-uprun | plan | inconclusive (+1.29) | not profitable enough (failed: Calmar, Trades per day) | - | 7.b: 031-02.b1.b1.b1_wide-flat-uprun-three-day; 7.g: 031-02.b1.b1.g1_wide-day-extends-up-run, 031-02.b1.b1.g2_strong-up-day-continues-run | 1.32 | 9.3 |
-| 031-01.b1.b2_wide-day-extends-strong-run | 031-01.b1_wide-day-extends-up-run | missing-components | - | - | - | - | 0.08 | 0.5 |
+| 031-01.b1.b2_wide-day-extends-strong-run | 031-01.b1_wide-day-extends-up-run | plan | inconclusive (+0.76) | not profitable enough (failed: Calmar) | - | 7.b: 031-01.b1.b2.b1_wide-day-strong-run-more-coins, 031-01.b1.b2.b2_wide-strong-run-in-uptrend; 7.g: no ideas: Across range, run, body, close location, trend, volatility, weekday, position and year, no pattern reached a t of 2 (largest 1.92 among about fifty groups), so no finding stands out enough from chance to support a new idea. | 1.71 | 5.2 |
 
 ## Consumption
-13 ideas, 12.48 USD, 69.5 minutes in all.
+13 ideas, 14.12 USD, 74.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.93 | 7.5 |
-| step4_backtest | 0.00 | 25.4 |
-| step5_verdict | 2.10 | 7.3 |
+| step3_plan | 2.72 | 8.0 |
+| step4_backtest | 0.00 | 27.0 |
+| step5_verdict | 2.27 | 7.9 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.41 | 1.1 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 2.84 | 7.9 |
-| step7_7.g | 5.20 | 14.8 |
+| step7_7.b | 3.18 | 8.9 |
+| step7_7.g | 5.53 | 15.8 |
 | similarity_check | 0.00 | 0.2 |
 | unseen_test | 0.00 | 4.7 |
