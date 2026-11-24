@@ -8845,3 +8845,177 @@ class MeanAbsScaledReturnTimesVolatilityComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.window + self.period, self.vol_period + 1)
+
+
+class UpCloseStreakLengthComponent(SubStrategyComponent):
+    """
+    Length of the current streak of closes on one side, optionally against the coin's completed streaks.
+
+        moved(i) = close[i] > close[i-1]   (side "up", default)
+        moved(i) = close[i] < close[i-1]   (side "down")
+        n = number of consecutive bars i ending at t (bar t included) with moved(i), capped at max_bars;
+            n = 0 when bar t did not move to the counted side.
+        A completed streak is a maximal run of moved bars inside bars t-base_window+1 .. t. It counts when
+        the bar before its first bar is inside that window and did not move, and the bar after its last bar
+        is at or before t and did not move, so the open streak ending at t is excluded. K is the number of
+        completed streaks; their lengths are uncapped.
+        base "none" (default):  raw_value = n
+        base "mean_streak":     raw_value = n / mean(completed lengths)
+        base "rank":            raw_value = (number of completed lengths <= n) / K
+        Every base gives 0 when n = 0.
+
+    Range: "none" 0 .. max_bars, integers; "mean_streak" 0 .. max_bars; "rank" 0 .. 1. Never negative, no direction.
+    side "up" with any base is the original output, unchanged. "down" is the run of lower closes.
+    A flat bar ends either streak.
+    Warm-up: max_bars + 1 rows with "none"; max(max_bars, base_window) + 1 rows with "mean_streak" or "rank".
+    NaN: a NaN close in those rows gives NaN. With "mean_streak" or "rank", no completed streak while n > 0
+    gives NaN (never on real bars).
+    Building the component raises for max_bars < 1, an unknown base, base_window < 3, or a side other than
+    "up" or "down".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last (warm-up) rows of data, the last row
+    being bar t; no row after t exists in the data it is given.
+    """
+
+    def __init__(self, name="Close streak length", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(f"UpCloseStreakLengthComponent: max_bars must be >= 1, got {self.max_bars}")
+        self.base = self.parameters.get("base", "none")
+        if self.base not in ("none", "mean_streak", "rank"):
+            raise ValueError(
+                f"UpCloseStreakLengthComponent: base must be 'none', 'mean_streak' or 'rank', got {self.base!r}")
+        self.base_window = int(self.parameters.get("base_window", 365))
+        if self.base_window < 3:
+            raise ValueError(f"UpCloseStreakLengthComponent: base_window must be >= 3, got {self.base_window}")
+        self.side = self.parameters.get("side", "up")
+        if self.side not in ("up", "down"):
+            raise ValueError(f"UpCloseStreakLengthComponent: side must be 'up' or 'down', got {self.side!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        need = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-need:]
+        self.confidence = 1.0
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            return
+        if self.side == "up":
+            moved = c[1:] > c[:-1]
+        else:
+            moved = c[1:] < c[:-1]
+        # moved[k] is the move of bar (k+1) of c; moved[-1] is bar t
+        n = 0
+        k = len(moved) - 1
+        while n < self.max_bars and k >= 0 and moved[k]:
+            n += 1
+            k -= 1
+        if self.base == "none":
+            self._raw_value = float(n)
+            self.debug_info = {'n': n, 'side': self.side}
+            return
+        if n == 0:
+            self._raw_value = 0.0
+            self.debug_info = {'n': 0, 'side': self.side}
+            return
+        w = moved[-self.base_window:]
+        m = len(w)
+        lengths = []
+        a = 0
+        while a < m:
+            if w[a]:
+                b = a
+                while b + 1 < m and w[b + 1]:
+                    b += 1
+                if a >= 1 and b + 1 <= m - 1:
+                    lengths.append(b - a + 1)
+                a = b + 1
+            else:
+                a += 1
+        if len(lengths) == 0:
+            self._raw_value = float("nan")
+            return
+        lengths = np.asarray(lengths, dtype=float)
+        if self.base == "mean_streak":
+            self._raw_value = float(n / lengths.mean())
+        else:
+            self._raw_value = float(np.sum(lengths <= n) / len(lengths))
+        self.debug_info = {'n': n, 'side': self.side, 'completed_streaks': int(len(lengths))}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        if self.base == "none":
+            return self.max_bars + 1
+        return max(self.max_bars, self.base_window) + 1
+
+
+class VolatilityRatioWeightedScaledFallComponent(SubStrategyComponent):
+    """
+    The day's fall in usual base-window moves, weighted by recent over base volatility:
+
+        r[j] = close[j] / close[j-1] - 1
+        s_recent = std (ddof 1) of r[t-vol_period+1 .. t]        (bar t's return included)
+        s_base   = std (ddof 1) of r[t-base_vol_period+1 .. t]   (bar t's return included)
+        raw_value = max(0, -r[t]) / s_base * s_recent / s_base
+        raw_value = 0.0 when s_base = 0 (every base return equal: never on real bars; the fall is then 0 too)
+
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 on up and flat bars. It grows with
+    the fall in usual base moves and with s_recent / s_base (1 at equal volatility).
+    Warm-up: max(vol_period, base_vol_period) + 1 rows, bar t included.
+
+    NaN: a NaN close in the last max(vol_period, base_vol_period) + 1 rows gives NaN, and so does a close not
+    above 0 there (never on real bars).
+    Building raises for vol_period < 2 or base_vol_period < 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(vol_period, base_vol_period) + 1 rows
+    of data, the last row being bar t; every close is known at its bar's close.
+    """
+
+    def __init__(self, name="VolRatioScaledFall", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 10))
+        self.base_vol_period = int(self.parameters.get("base_vol_period", 60))
+        if self.vol_period < 2:
+            raise ValueError(f"VolatilityRatioWeightedScaledFallComponent: vol_period must be >= 2, got {self.vol_period}")
+        if self.base_vol_period < 2:
+            raise ValueError(
+                f"VolatilityRatioWeightedScaledFallComponent: base_vol_period must be >= 2, got {self.base_vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = max(self.vol_period, self.base_vol_period)
+        c = data["close"].astype(float).to_numpy()[-(n + 1):]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[1:] / c[:-1] - 1.0
+        s_recent = float(np.std(r[-self.vol_period:], ddof=1))
+        s_base = float(np.std(r[-self.base_vol_period:], ddof=1))
+        fall = max(0.0, -float(r[-1]))
+        if not s_base > 0:
+            value = 0.0
+        else:
+            value = fall / s_base * s_recent / s_base
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {"fall": fall, "s_recent": s_recent, "s_base": s_base}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.vol_period, self.base_vol_period) + 1

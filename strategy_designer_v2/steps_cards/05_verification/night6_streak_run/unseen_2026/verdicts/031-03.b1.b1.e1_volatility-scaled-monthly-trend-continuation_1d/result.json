@@ -1,0 +1,24 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar excess return on post_pipeline_value (non-overlapping grid, before costs)",
+    "value": 0.002849019977161081,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 1.2874654424760261
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases in total": 570,
+    "grid cases with forecast > 0": 283,
+    "days": 30
+  },
+  "decided_by": "The plan's minimum count is not reached: 570 grid cases in total (fewer than 1000).",
+  "reading": "The coin's mean 10-bar return is the mean of its non-overlapping grid returns over all its windows; 'pooling cases of the same day' is read as a day-clustered standard error for the OLS slope (each day's sum of x-deviation times residual taken as one piece of evidence); grid cases need a forward return inside the window and a recorded post_pipeline_value."
+}

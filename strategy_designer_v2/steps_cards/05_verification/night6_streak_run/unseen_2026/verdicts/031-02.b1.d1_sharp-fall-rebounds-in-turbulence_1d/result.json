@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 2-bar excess return on forecast (grid bars with forecast > 0)",
+    "value": -0.001033688515626044,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.1958410594845783
+    },
+    "threshold": "confirm if slope t >= 2 with mean excess > 0; reject if slope t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return on the same bars",
+    "value": -0.001953511488217538,
+    "passed": false
+  },
+  "counts": {
+    "independent grid cases with a positive forecast": 159
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "Situation = 10-day over 60-day return std (ddof 1, last 60 including the last 10) above 1, recomputed from in-window closes, falling back to the recorded regime on bars without 60 in-window returns, and raw fall component below 0, on the long side; drift = the coin's mean 2-bar return on the non-overlapping grid of all its windows; slope t from a pooled OLS with intercept of excess return on forecast; the plan's 30-case minimum is applied as 'not observable' per the workflow."
+}

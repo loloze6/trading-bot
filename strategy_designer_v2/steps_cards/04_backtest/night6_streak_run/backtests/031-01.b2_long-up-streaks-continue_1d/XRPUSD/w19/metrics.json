@@ -1,0 +1,137 @@
+{
+  "core": {
+    "net_return_pct": -25.736,
+    "sharpe": -2.155,
+    "max_drawdown_pct": -25.188,
+    "trade_count": 55,
+    "win_rate": 36.36,
+    "avg_trade_net_pnl": -4.684059,
+    "fees_paid": 12.772753,
+    "gross_pnl": -244.85049,
+    "net_pnl": -257.623243,
+    "cost_drag_pct": 5.2166,
+    "forecast_return_corr": -0.111336,
+    "forecast_return_corr_pvalue": 0.405385,
+    "forecast_return_corr_pvalue_block_adjusted": 0.408981,
+    "forecast_return_corr_n_eff": 58,
+    "forecast_return_corr_all_bars": -0.127208,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.168831,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 5.58,
+    "sigma_bar_bps": 367.8141,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 96.7344,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 5.2289,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.1113, p=0.4090 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -112.2784,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -112.2784,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 11.2278,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=-0.1113, p=0.4090 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 121,
+      "avg_forecast": 6.7693,
+      "trade_count": 55,
+      "total_net_pnl": -257.623243
+    }
+  },
+  "forecast_bins": {
+    "10_to_15": {
+      "total_forecasts": 29,
+      "profitable_trades": 15,
+      "success_rate_pct": 51.72,
+      "total_net_pnl_usd": -256.5043,
+      "avg_pnl_per_trade_usd": -8.845
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 26,
+      "profitable_trades": 5,
+      "success_rate_pct": 19.23,
+      "total_net_pnl_usd": -1.119,
+      "avg_pnl_per_trade_usd": -0.043
+    }
+  },
+  "dynamic": {
+    "debug_info.components.up_streak_rel.last_history_value": {
+      "unknown": {
+        "mean": 0.40317,
+        "std": 0.503476
+      }
+    },
+    "debug_info.components.up_streak_rel.post_pipeline_value": {
+      "unknown": {
+        "mean": 6.7693,
+        "std": 7.773637
+      }
+    },
+    "debug_info.components.up_streak_rel.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.up_streak_rel.weighted_contribution": {
+      "unknown": {
+        "mean": 6.7693,
+        "std": 7.773637
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": -0.00125887,
+      "forward_return_std": 0.03678141,
+      "n_bars": 120,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -29.8802,
+    "sharpe": -1.4047,
+    "sortino": -1.9269,
+    "exposure_pct": 87.6033,
+    "turnover": 29.455378,
+    "n_bars_total": 121,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 71,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2022-05-13 00:00:00",
+        "previous_timestamp": "2022-05-10 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 259200.0,
+        "bars_missing": 2,
+        "tier": "middle",
+        "active_tier": "middle"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

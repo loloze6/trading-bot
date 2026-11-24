@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of drift-removed, usual-move-scaled 3-day return on forecast",
+    "value": 0.00401322669755831,
+    "statistic": {
+      "name": "day-clustered t of slope",
+      "value": 1.0509363800973823
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, between is inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual 3-day move of long cases (forecast rises >= 2 points)",
+    "value": 0.0009709363926888877,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with a forecast above 0": 2718,
+    "grid bars": 5723,
+    "cases": 4415,
+    "days with cases": 1471,
+    "days clustered": 1034
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The regression has an intercept and uses a CR1 day-clustered standard error on grid bars 0,3,6,... of each window with a full 3-bar return, drift and usual move are the mean and std of those same non-overlapping 3-day returns per coin over all windows, cases are read once per 3-bar grid cell (first case in the cell), and the plan's 'fewer than 100 grid bars with a forecast above 0' is reported as not observable."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of excess 2-day return on post_pipeline forecast, cases with positive forecast, day-clustered",
+    "value": 0.0003161688794907345,
+    "statistic": {
+      "name": "OLS slope t, standard error clustered by day",
+      "value": 1.3320570446958726
+    },
+    "threshold": "t >= 2 confirms (with supporting check); t <= -2 rejects; otherwise inconclusive; fewer than 100 independent case-days not observable"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-day return, high minus low 60-day volatility (median split)",
+    "value": 0.0005658323140804693,
+    "passed": true
+  },
+  "counts": {
+    "independent case-days": 1230,
+    "cases": 8995,
+    "cases with 60-day volatility": 4444
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Cases are grid bars (positions 0, 2, 4, ... of each window) with forecast > 0; the coin's mean 2-day return is taken on that same grid over all its windows; 'the cases of one day pooled' is read as a standard error clustered by calendar day (UTC), with independent case-days the number of distinct days; the 60-day volatility is the ddof-1 standard deviation of the last 60 daily close returns inside the window (cases without 60 returns left out of the check), high meaning strictly above the median; the plan's fewer-than-100-case-days minimum is reported as not observable; the situation is a positive raw fall_vol value with a lower close, on the long side."
+}

@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "031-01_up-streak-length-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5020054,
+  "findings": {
+    "F1": "The book lost because it was short almost all the time, not because the timing was wrong: its mean position ran from -0.70 (ZEC) to -1.14 (BTC). Its daily returns correlated -0.91 with the coins'. Of its mean daily return of -0.105 %, -0.111 % came from the coins' own rise and +0.011 % from timing.",
+    "F2": "The tested situation, the up streak, predicts nothing. By coin, the Spearman correlation between streak length and the unusual 5-day move runs only from -0.050 (BTC) to +0.043 (ZEC). Streaks of +3, +4 and +5 days show unusual moves of +1.41 % (t 1.70), -0.25 % (t -0.23) and +0.28 % (t 0.28), with no grading and no reversal.",
+    "F3": "The size of a down day, scaled by the coin's 60-day daily volatility, grades the rebound that follows. The Spearman correlation between the fall's size and the next unusual move is +0.075 over 1 day (4190 cases, p 1e-6), +0.069 over 2 days (2022 cases, p 0.002) and +0.084 over 3 days (1293 cases, p 0.002). It is positive on all six coins, from +0.033 (ZEC) to +0.137 (XMR, p 0.0004) and +0.128 (XRP, p 0.0009).",
+    "F4": "The unusual move falls steadily across the deciles of the volatility-scaled daily return. Over 3 days the lowest decile is followed by +1.28 % (280 cases, 105 days, day-clustered t 1.29), the next by +0.71 %, and the 7th to 9th deciles by -0.60 %, -0.57 % and -0.89 %. Over 1 day the bottom decile shows +0.58 % (t 1.64, 308 days) and the bottom quintile +0.39 % (t 3.14, 1703 cases), positive on all six coins (XMR +0.97 %, t 3.72) and in 7 of 8 years.",
+    "F5": "Large up days are not followed by a giveback. The top quintile of the volatility-scaled daily return shows -0.09 % over the next day (1703 cases, 678 days, t -0.52). Over 5 days the top quintile shows +1.52 % (t 2.31), which is the opposite of the tested reversal.",
+    "F6": "The weekday patterns do not hold together across horizons, so I count them as chance given how many angles I looked at. Monday is +1.34 % over 5 days (t 2.67) but -0.22 % over 1 day (t -2.32). The Monday/Tuesday gap changes sign between coins and between years."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall, measured against its own daily volatility over the past 60 days, the more it rises above its normal drift over the next 3 days.",
+      "consequence": "A sharp, volatility-adjusted down close is a reason to buy the coin for a few days, and a reason to refuse a fresh short on it, more firmly the deeper the fall.",
+      "name": "volatility-scaled down-day rebound",
+      "from": "F3, F4, F5, F2",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day fall, measured against its own daily volatility over the past 60 days, the more it rises above its normal drift over the next day.",
+      "consequence": "The rebound after a deep down close is largest in the first day, so a trader buying the fall gains most by acting at that close rather than waiting.",
+      "name": "next-day rebound after falls",
+      "from": "F3, F4, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1_volatility-scaled-down-day-rebound",
+    "031-01.g2_next-day-rebound-after-falls"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,57 @@
+{
+  "line": "7.g",
+  "backtest": "031-02.b1.g2.b3_next-day-rebound-after-falls_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44946870000000005,
+  "findings": {
+    "F1": "On down days the next-day excess return grows with the day's high-low range measured in 60-day standard deviations of daily returns: \u22120.184 % (t \u22121.08, 706 days) in the narrowest fifth, rising through +0.069 % and +0.140 % to +0.882 % (t 3.41, day-clustered, 1648 cases on 596 days) in the widest fifth. On up days the same widest fifth gives \u22120.324 % (t \u22121.43), so the effect belongs to falls.",
+    "F2": "The rebound after falls (latest day below \u22120.5 standard deviations) is graded by the coin's 10-day volatility against its 60-day volatility: \u22120.167 % (t \u22120.79, 580 days) when the last 10 days are calmer, +0.389 % (t 1.96, 668 days) when they are about the same, and +0.947 % (t 3.28, 578 days) when they are hotter.",
+    "F3": "Falls taken when the coin's 60-day volatility is in its own highest third rebound +0.861 % the next day (t 2.53, 521 days), against +0.152 % and +0.199 % in the lower two thirds. The rebound is positive in all six coins (+0.58 % BTC to +1.37 % XMR) and in every year with data except 2022 (\u22120.14 %).",
+    "F4": "Sorting down days by their raw percentage fall, with no volatility scaling, gives the same grading: +0.690 % (t 2.42, 614 days) after the largest fifth of falls and +0.292 % after the next, down to \u22120.223 % and \u22120.077 % after the smallest. The days with the largest falls also cluster on fewer calendar days (614 against about 1100), which points to market-wide volatile episodes.",
+    "F5": "Down days that close in the lowest fifth of their high-low range rise +0.349 % the next day (t 2.24, 1252 days), against \u22120.217 % and \u22120.785 % for down days closing in the upper fifths. This is weaker than F1 to F3 given the number of angles looked at.",
+    "F6": "The tested signal's edge (+0.19 % unusual move per case, about 1.0 times the 0.19 % cost) is concentrated: falls on wide-range days, on volatility-heating days or in high-volatility thirds carry an unusual next-day move of about +0.86 % to +0.95 %, roughly 4.5 to 5 times the cost of a trade.",
+    "F7": "After a coin's 10-day return falls to its lowest tenth in 60-day volatility units, the 5-day excess return is +1.70 %, but with t 1.48 on 108 days it cannot be told from chance. The same holds for signal-day weekday effects (Friday +0.305 %, Wednesday \u22120.299 %, not day-clustered and one of many angles), which I do not use."
+  },
+  "ideas": [
+    {
+      "idea": "The wider a coin's high-low range on a day it closes down, measured against the standard deviation of its daily returns over the past 60 days, the more the coin rises over the next 1 day.",
+      "consequence": "A trader buying a fall should favour falls made on wide, violent days and refuse the rebound trade after narrow, quiet down days.",
+      "name": "wide-range fall next-day rebound",
+      "from": "F1, F5, F6",
+      "refs": [
+        "F1",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall on its latest day, the more it rises over the next 1 day, and this rebound is larger the higher the standard deviation of the coin's daily returns over the past 10 days stands against that over the past 60 days.",
+      "consequence": "A trader should expect a dip to rebound strongly when the coin's volatility is heating up, and expect no rebound when the coin has recently been calmer than usual.",
+      "name": "rebound grows as volatility heats",
+      "from": "F2, F6",
+      "refs": [
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall on its latest day, the more it rises over the next 1 day, and this rebound is larger the higher the coin's 60-day standard deviation of daily returns stands against its own past values.",
+      "consequence": "A trader should size dip-buying up in the coin's high-volatility periods, where the next-day rebound is several times the cost of a trade, and treat dips in calm periods as no edge.",
+      "name": "high-volatility dip rebound",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.g2.b3.g1_wide-range-fall-next-day-rebound",
+    "031-02.b1.g2.b3.g2_rebound-grows-as-volatility-heats",
+    "031-02.b1.g2.b3.g3_high-volatility-dip-rebound"
+  ],
+  "no_ideas": null
+}

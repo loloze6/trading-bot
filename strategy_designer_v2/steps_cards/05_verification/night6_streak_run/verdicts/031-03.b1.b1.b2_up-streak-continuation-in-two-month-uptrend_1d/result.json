@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of forward 20-bar return minus the coin's mean 20-bar return on the forecast, trending-regime grid bars",
+    "value": -0.003588493481180379,
+    "statistic": {
+      "name": "slope t, cases of one day clustered",
+      "value": -1.3624524621675782
+    },
+    "threshold": "slope t >= 2 confirms (with mean unusual move > 0); slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual 20-bar move of the cases (forecast rises >= 2, one per grid cell)",
+    "value": 0.026219502480825083,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in the regime with a forecast above 0": 305,
+    "distinct days": 73,
+    "trending grid bars in the slope": 545,
+    "supporting cases": 844
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "Regime recomputed from prices as 30- and 60-bar close returns > 0 (recorded regime used on a window's first 60 bars), streak situation = raw streak value > 0, side long; the slope is an OLS with intercept on all trending grid bars (forecast 0 included) with day-clustered (CR1) standard errors; the coin's mean 20-bar return is over all its windows' grid; a case is a forecast rise of >= 2 from its lowest long level since the last bet (0 after flat), the first in each grid cell with a 20-bar forward return."
+}

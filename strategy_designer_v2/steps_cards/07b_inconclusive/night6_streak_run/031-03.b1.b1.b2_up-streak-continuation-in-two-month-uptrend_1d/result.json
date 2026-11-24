@@ -1,0 +1,43 @@
+{
+  "line": "7.b",
+  "backtest": "031-03.b1.b1.b2_up-streak-continuation-in-two-month-uptrend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4504665,
+  "findings": {
+    "F1": "The tested result points against the idea, not toward it: across all trending grid bars the 20-day slope is -0.0036 with t -1.36 (545 bars), and among bars with a positive forecast only it is -0.0019 with t -0.45 (305 bars), so this is not a near-miss that more data would turn into a confirmation.",
+    "F2": "Over 10 days, among up-close days inside the two-month uptrend, the effect shows on the idea's side: the slope of the 10-day unusual move on the forecast is +0.0060 with t 2.63 (635 grid bars, day-clustered). It is positive in all four folds (A t 1.02, B 1.52, C 2.14, D 1.22). At 5 days it is weaker but still on the same side (+0.0019, t 1.79, 1266 bars).",
+    "F3": "At 20 days the most extreme streaks give part of the run back: the mean unusual 20-day move falls from +2.5 % (forecast 0\u20138, 19 bars) to +0.6 % (8\u201312, 91), -3.3 % (12\u201316, 34) and -1.1 % (16\u201320, 161). Five coins have a 20-day slope t of -2 or less (AAVE -2.35, ADA -2.00, LINK -2.94, TRX -2.03, UNI -2.27). The continuation fades past about 10 days and turns to giveback by 20.",
+    "F4": "Inside the uptrend, the bars with no up streak (forecast 0, mostly down-close days) are followed by the largest moves: +5.4 % unusual over 20 days (t 3.23, 240 bars). Their weight in the plan's slope pulls the slope down and drowns the streak effect. The length of a down run inside the uptrend is only weakly graded (20-day slope +0.026, t 1.19, 545 bars; 10 of 15 coins positive).",
+    "F5": "Outside the two-month uptrend, a longer up streak is followed by a lower 20-day move. With the raw up-close count capped at 5, the slope is -0.027 with t -2.71 (950 grid bars). Unusual moves fall from +1.1 % after no up close (673) to -5.2 % after 1 (139), -9.9 % after 2 (77) and -7.2 % after 4 or more (39). This is the brief's crowding reversal, showing where the trend filter is off."
+  },
+  "ideas": [
+    {
+      "idea": "Among days a coin closes higher, the more days in a row it has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it keeps rising over the next 10 days, only while its 30-day return is positive and its 60-day return is positive.",
+      "consequence": "A trader leans long into an unusually long up streak inside a two-month uptrend for about ten days, and does not keep the position for twenty days, when the run starts to be given back.",
+      "name": "uptrend streak continuation ten days",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The more days in a row a coin has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it falls over the next 20 days, only while its 30-day return or its 60-day return is negative.",
+      "consequence": "A trader refuses to chase, or fades, an up streak that runs against a falling one- or two-month trend, more the longer the streak.",
+      "name": "up streak reversal outside uptrend",
+      "from": "F5, F1",
+      "refs": [
+        "F5",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1.b1.b2.b1_uptrend-streak-continuation-ten-days",
+    "031-03.b1.b1.b2.b2_up-streak-reversal-outside-uptrend"
+  ],
+  "no_ideas": null
+}

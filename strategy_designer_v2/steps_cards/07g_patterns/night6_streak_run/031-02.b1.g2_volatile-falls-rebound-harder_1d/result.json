@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "031-02.b1.g2_volatile-falls-rebound-harder_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5909163000000001,
+  "findings": {
+    "F1": "After a coin's 5-day rise, measured in units of its own 60-day daily volatility (scaled to 5 days), the next 10 days' return beat the coin's normal drift more the larger the rise. On the rising side only, the slope is +3.95 % per unit (t 2.79, 440 non-overlapping 10-day cases, day-clustered). Rises above 2 units were followed by +10.49 % over the normal drift (t 2.75, 44 cases on 23 days, strength 0.61). Rises of 1 to 2 units were followed by only +0.20 % (85 cases), and rises of 0 to 1 unit by \u22120.71 % (311 cases).",
+    "F2": "The continuation after strong rises does not depend on the 10-day grid chosen. On all 10 grid offsets the rising-side slope is positive (+0.22 % to +4.26 % per unit, t 0.13 to 2.96, four offsets with t above 2.5). Rises above 2 units were followed by a 10-day excess of +3.2 % to +10.5 % on every offset (25 to 49 cases each). The same reading on the 10-day rise is positive on 9 of 10 offsets (t up to 2.04).",
+    "F3": "The continuation is uneven across coins and periods. By coin, the rising-side slope is positive in 5 of 6: XRP t 2.44, BTC t 2.03, ETH t 1.91, LTC t 0.54, ZEC t 0.39, and XMR is negative at t \u22120.60. Windows w13 to w24 carry most of it (t 3.03, 236 cases) against w1 to w12 (t 0.85, 204 cases). Pooled over both sides, the 5-day reading gives t 2.00 and the 10-day reading t 2.04 over 10 days, but only t 0.68 to 0.93 over 20 days.",
+    "F4": "The tested fall rebound is weak, and its volatility weighting adds nothing. On falling days, the slope of the next return on the fall (in 60-day-volatility units) has t 1.56 over 1 day (4319 cases) and t 1.51 and 1.43 on the two 2-day grids. The 1-day gradient runs +1.76 % (falls beyond 2.5 units, 105 cases, t 1.08), +0.66 % (1.5 to 2.5 units, t 1.75), +0.22 % (0.75 to 1.5 units) and \u22120.02 % (small falls), none with a t above 2. The high-minus-low volatility difference is \u22120.08 %.",
+    "F5": "The tested idea's move is too small for the cost of a trade, while the strong-rise cases are large. The tested idea's unusual move is +0.09 % per 2-day case (t 0.53), 0.4 times the 0.19 % cost of a trade. After 5-day rises above 2 units, the 10-day excess is about +10 % (strength 0.61), roughly 50 times that cost.",
+    "F6": "The other angles show nothing beyond chance, given about 70 groups read."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 5-day rise, relative to its usual daily volatility over the past 60 days, the more it keeps rising over the next 10 days.",
+      "consequence": "A trader should expect the biggest 10-day follow-through after a coin's unusually strong 5-day rises. Such a rise is a reason to buy or stay long rather than fade it, with a move far larger than the cost of a trade.",
+      "name": "strong rises keep running",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.g2.g1_strong-rises-keep-running"
+  ],
+  "no_ideas": null
+}

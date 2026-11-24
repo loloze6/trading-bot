@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 031-01.g1.b1_down-day-rebound-more-coins_1d
+idea tested: 031-01.g1.b1_down-day-rebound-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4171 USD
+---
+## Findings
+- **F1:** The tested slope is on the predicted side but tiny and unclear: step 5's slope is +0.000179 per forecast point with a day-clustered t of 0.40 over 5730 grid cases on 814 days, and the unusual move per case is +0.02 % (t 0.10 over 1763 days), only 0.004 of the coin's usual 3-day move of 9.14 %. No more data is available, because the test already used all 19 coins over folds A to D.
+- **F2:** Measured on the down days by the scaled fall itself, the 3-day slope is +0.61 % per usual move (t 1.18, 4734 cases). Once each case's 3-day return is taken net of the same day's mean over at least 5 coins, the slope becomes −0.06 % (t −0.80, 4699 cases). What looks like a rebound after a coin's sharp fall is the whole market bouncing, not the coin's own giveback.
+- **F3:** The market's own moves drown the effect. On down days, the standard deviation of the 3-day unusual move is 10.34 %, and it drops to 7.26 % once the same day's cross-coin mean is removed. After that adjustment the fall terciles show no gradient: +0.16 % (t 1.20) for small falls, −0.08 % (t −0.56) for middle and +0.12 % (t 1.15) for large falls, about 1566 cases each.
+- **F4:** No other horizon or side shows the effect clearly. The down-day slope is t 1.38 at 1 day, 0.24 at 5 days and 1.46 at 10 days, and the 10-day slope is t 0.05 when market-adjusted. Up days give a similar positive slope (t 1.32 at 3 days), so the rise follows large moves in either direction (|z| slope t 1.71) rather than falls specifically.
+- **F5:** Neither periods nor regimes isolate the effect.
+
+## Ideas
+- No ideas: The effect has no clear home: its apparent rebound is the market's own common bounce (F2, F3), and no horizon, side, period, regime or coin shows it clearly (F4, F5), while no further data exists to retest it unchanged (F1).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,59 @@
+{
+  "line": "7.d",
+  "backtest": "031-02.b1.d2_rebound-graded-by-turbulence_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43748109999999996,
+  "findings": {
+    "F1": "The book fails only on Calmar (0.677 against 0.75). Its deepest fall is \u221239.4 %, lasts 204 days, spans windows w1 to w3 and has its trough in 2022. Inside it the book held a mean allocation of 0.39 while the coins lost 0.40 % a day, a forecast was positive on only 53 % of the coin-days, and the positions summed to \u22121.23 in bar gains. Every year from 2018 to 2025 had a fall of 18 % to 39 %, so the depth is not one isolated crash.",
+    "F2": "The signal pays only when the coin is turbulent; after a calm stretch it loses.",
+    "F3": "Turbulence alone does not earn, so it is part of the idea's own effect, not a separate one. On grid bars with no signal, the high-ratio third returns \u22120.25 % excess over 2 days (t \u22120.77, 1077 cases), against +0.69 % when the fall signal is also present.",
+    "F4": "Taking the book out of the market on days after a low-ratio bar (the lower third of the 10-day/60-day volatility ratio) lifts Calmar from 0.67 to 0.87. The yearly return rises from 26.4 % to 30.2 %, the deepest fall shrinks from \u221239.4 % to \u221234.7 %, and Sharpe goes from 0.77 to 0.88. Removing the high-ratio days instead cuts Calmar to 0.25.",
+    "F5": "Within the signal, the rebound grows with both the fall and the turbulence, and small falls lose everywhere.",
+    "F6": "The book carries positions far beyond the signal. 31.5 % of its position-days have a forecast at or below 0, with a mean allocation of 0.24. Those days earn little: summed bar gains are +1.03, +1.03 and \u22122.28 across the low, middle and high ratio thirds. Keeping only the 2 days after a signal lifts Calmar to 0.79, with a yearly return of 30.3 % and a deepest fall of \u221238.1 %.",
+    "F7": "In the turbulent case the rebound grows with the horizon, and the move then dwarfs the 0.19 % cost of a trade.",
+    "F8": "Trend gates do not answer the falls. Leaving the book out when the coin's 20-day return or its distance to the 50-day average is negative gives Calmar 0.30 and 0.38. The signal's 2-day excess is +0.06 % in down 20-day trends against +0.19 % in up trends, both with t under 1."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall on its latest day, measured against the size of its own daily moves over the past 60 days, the more it rises over the next 2 days, only while its daily moves over the past 10 days are larger than those of the past 60 days, and the more so the larger that excess of recent turbulence.",
+      "consequence": "A trader takes the two-day rebound after a sharp drop only when the coin has been unusually turbulent, and stays out after drops that follow a calm stretch, which are the cases that lose and deepen the book's falls.",
+      "name": "rebound only in turbulence",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall on its latest day, measured against the size of its own daily moves over the past 60 days, and the larger its daily moves over the past 10 days against those of the past 60 days, the more it rises over the next 6 days.",
+      "consequence": "A trader holds a rebound after a sharp drop in a turbulent stretch for about six days rather than two, capturing a move many times the cost of a trade.",
+      "name": "turbulent rebound held longer",
+      "from": "F7, F2, F3",
+      "refs": [
+        "F7",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall on its latest day, measured against the size of its own daily moves over the past 60 days, and the more so the larger its daily moves over the past 10 days against those of the past 60 days, the more it rises over the next 2 days, with the whole rise completed within those 2 days of the fall.",
+      "consequence": "A trader holds the rebound position only for the two days after the fall and is flat otherwise, instead of carrying leftover exposure that adds to the falls without adding gain.",
+      "name": "rebound held two days only",
+      "from": "F6, F1",
+      "refs": [
+        "F6",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b1.d2.d1_rebound-only-in-turbulence",
+    "031-02.b1.d2.d2_turbulent-rebound-held-longer",
+    "031-02.b1.d2.d3_rebound-held-two-days-only"
+  ],
+  "no_ideas": null
+}

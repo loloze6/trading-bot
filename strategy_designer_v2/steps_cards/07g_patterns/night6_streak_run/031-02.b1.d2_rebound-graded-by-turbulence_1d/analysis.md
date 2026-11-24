@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 031-02.b1.d2_rebound-graded-by-turbulence_1d
+idea tested: 031-02.b1.d2_rebound-graded-by-turbulence
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4073 USD
+---
+## Findings
+- **F1:** Over the next day, a coin's excess return over its normal drift rises steadily as its latest day's return, in units of its 60-day daily standard deviation, falls. It is +1.19 % (t 3.54, 334 cases) after falls beyond 2 standard deviations, +0.37 % (t 2.42, 1154) after falls of 1 to 2, +0.16 % (t 1.72, 2842) after falls of 0.3 to 1, −0.13 % (t −1.82, 4156) after flat days and −0.18 % (t −2.27, 2921) after rises of 0.3 to 1. These t's are not day-clustered.
+- **F2:** The rebound shows on the first day and fades with the horizon. After falls beyond 2 standard deviations, the excess is +1.19 % over 1 day (t 3.54) but +0.77 % over 2 days (t 1.74, 185 cases) and −1.26 % over 5 days (t −1.21, 57 cases). The tested 2-day horizon therefore holds a rebound that is mostly over after one day.
+- **F3:** The tested grading by turbulence shows in the 2-day excess after falls beyond 1 standard deviation. It is +1.63 % (t 3.71, 308 cases) when the 10-day to 60-day volatility ratio is in its top quarter, against −0.91 % (t −1.30, 62 cases) in its bottom quarter. In forecast terms, it is +0.57 % (t 3.32, 1929 cases) at forecasts above 15, against −0.41 % (t −2.12, 1046) at forecasts of 0 to 5. The gain sits almost entirely at the capped top of the forecast.
+- **F4:** The book is mostly the coins' own market move, not the rebound. Its daily return correlates 0.785 with the coins' mean daily return. On its worst 2 % of days it lost 8.2 % while the coins fell 10.7 %. It trails holding in every rising year (for example 2021: +0.18 % against +0.41 % a day) and beats it only in 2018 and 2022. Being in a position on 83 % of days is what carries the falls that fail the Calmar test (0.68).
+- **F5:** After a strong rise there is a hint of continuation, not reversal: +0.87 % 2-day excess after 5-day returns above 1.5 standard deviations (t 2.36, 475 cases), +3.4 % 5-day excess after up days beyond 2 standard deviations (t 2.14, 89 cases), and +0.81 % 2-day excess after 5-day up streaks (t 1.85, 208). These overlapping cases, with unclustered t's near 2, come from roughly 90 cells examined, so this does not yet stand out from chance.
+- **F6:** The weekday pattern does not stand out once coins sharing a day are counted together. Mean 1-day excess is +0.30 % on Fridays (t 3.76) and −0.30 % on Wednesdays (t −2.70), but these t's are unclustered over six coins that move together. The pattern also has no grading.
+
+## Ideas
+- `031-02.b1.d2.g1_one-day-rebound-after-unusual-fall` (from F1, F2, F4): The larger a coin's fall on its latest day, measured against the size of its own daily moves over the past 60 days, the more it rises over the next 1 day.
+- `031-02.b1.d2.g2_turbulent-fall-one-day-rebound` (from F2, F3, F4): The larger a coin's fall on its latest day against its 60-day daily moves, the more it rises over the next 1 day, and the more so the larger its daily moves over the past 10 days are against those of the past 60 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
