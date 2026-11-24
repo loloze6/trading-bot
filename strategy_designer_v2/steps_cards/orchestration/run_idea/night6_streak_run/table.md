@@ -29,22 +29,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-02.b1.g2.b3_next-day-rebound-after-falls | 031-02.b1.g2_volatile-falls-rebound-harder | plan | confirmed (+2.39) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.b1.g2.b3.d1_dip-rebound-in-turbulence, 031-02.b1.g2.b3.d2_dip-rebound-after-stretched-month; 7.g: 031-02.b1.g2.b3.g1_wide-range-fall-next-day-rebound, 031-02.b1.g2.b3.g2_rebound-grows-as-volatility-heats, 031-02.b1.g2.b3.g3_high-volatility-dip-rebound | 1.05 | 5.2 |
 | 031-02.b1.g2.b1.b1_volatile-falls-next-day-rebound | 031-02.b1.g2.b1_volatile-falls-more-coins | plan | confirmed (+2.38) | not profitable enough (failed: Calmar) | - | 7.d: 031-02.b1.g2.b1.b1.d1_volatile-falls-rising-turbulence-rebound, 031-02.b1.g2.b1.b1.d2_deepest-volatile-falls-rebound, 031-02.b1.g2.b1.b1.d3_stretched-turbulent-falls-rebound; 7.g: 031-02.b1.g2.b1.b1.g1_heavy-volume-falls-rebound-next-day, 031-02.b1.g2.b1.b1.g2_volume-surprise-predicts-drift | 1.50 | 11.2 |
 | 031-02.b1.g2.b2.b1_unusual-falls-rebound-more-coins | 031-02.b1.g2.b2_unusually-large-falls-rebound | plan | inconclusive (+1.28) | not profitable enough (failed: Calmar) | - | 7.b: 031-02.b1.g2.b2.b1.b1_unusual-falls-rebound-next-day; 7.g: no ideas: I compared about 60 slices: fall size, streak length, past 10-to-40-day return, volatility level, weekday, and year and coin splits. The strongest pattern is the momentum slope in F4, which has a t of about 2 and reverses sign by year (F5). At that count of comparisons, nothing stands out from chance, so no finding is strong enough to support a new idea. | 1.05 | 9.9 |
+| 031-01.g1_volatility-scaled-down-day-rebound | 031-01_up-streak-length-reversal | plan | inconclusive (+1.05) | not profitable enough (failed: Calmar) | - | 7.b: 031-01.g1.b1_down-day-rebound-more-coins, 031-01.g1.b2_next-day-down-close-rebound; 7.g: no ideas: Across about 60 angles (streaks, scaled returns of 1 to 30 days, horizons of 3 to 10 days, volatility, range, close location, weekday, coin and window halves), no pattern reached a t that stands out from chance; the up-streak and 7-to-30-day momentum readings (F3, F4) cluster near t 2, are unstable by coin and by half of the windows, and their per-case size is too small against the 0.19 % cost to justify a new idea. | 0.92 | 4.9 |
 
 ## Consumption
-25 ideas, 27.53 USD, 203.7 minutes in all.
+26 ideas, 28.45 USD, 208.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.93 | 12.6 |
-| step4_backtest | 0.00 | 106.3 |
-| step5_verdict | 4.16 | 14.3 |
+| step3_plan | 3.00 | 13.0 |
+| step4_backtest | 0.00 | 108.0 |
+| step5_verdict | 4.33 | 14.9 |
 | step6_check | 0.00 | 1.5 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 2.35 | 7.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 1.15 | 3.3 |
-| step7_7.b | 5.58 | 16.4 |
-| step7_7.g | 11.37 | 32.3 |
+| step7_7.b | 5.89 | 17.4 |
+| step7_7.g | 11.74 | 33.4 |
 | similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 8.3 |
