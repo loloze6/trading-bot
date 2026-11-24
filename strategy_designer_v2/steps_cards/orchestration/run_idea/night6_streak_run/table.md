@@ -22,22 +22,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | confirmed (+2.34) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: Across the forecast's deciles, streaks, last-day moves, volatility levels, volatility ratios, weekdays, years, trades and the book's extreme days, nothing beyond the tested idea stood out from chance once same-day cases were pooled and grid offsets compared. The one bucket with t above 3 reversed sign over a slightly longer horizon and was not graded. | 0.91 | 11.5 |
 | 031-03.b1.b1.e2_short-trend-strength-continuation | 031-03.b1.b1_up-streak-continuation-in-uptrend | plan | inconclusive (+1.98) | profitable enough | - | 7.b: 031-03.b1.b1.e2.b1_scaled-rise-ten-day-continuation; 7.e: 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues, 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation; 7.g: 031-03.b1.b1.e2.g1_month-scaled-trend-continuation, 031-03.b1.b1.e2.g2_one-day-fall-rebound | 1.58 | 11.7 |
 | 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues | 031-03.b1.b1.e2_short-trend-strength-continuation | plan | confirmed (+2.65) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: no ideas: Beyond the tested idea itself (F1 to F3), the patterns I found cannot be told from chance given how many angles I looked at. These are the short rebound after scaled falls (F6, t 2.1, not graded), the Friday and Saturday returns (F8, not graded, fading after 2021) and the earlier-in-regime edge (F5, t 1.9). I also looked at streak length, volatility level, the 3-day and 30-day scaled returns, years, regime age, trade duration and entry forecast, and the book around its best and worst days, and none of them supports a new graded idea. | 0.79 | 11.7 |
+| 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation | 031-03.b1.b1.e2_short-trend-strength-continuation | plan | confirmed (+2.71) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 031-03.b1.b1.e2.e2.g1_extreme-rise-ten-day-continuation | 0.92 | 11.7 |
 
 ## Consumption
-18 ideas, 18.30 USD, 132.2 minutes in all.
+19 ideas, 19.23 USD, 143.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.33 | 9.1 |
-| step4_backtest | 0.00 | 67.4 |
-| step5_verdict | 2.75 | 9.5 |
-| step6_check | 0.00 | 0.9 |
+| step3_plan | 2.41 | 9.7 |
+| step4_backtest | 0.00 | 73.6 |
+| step5_verdict | 2.93 | 10.0 |
+| step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.88 | 2.9 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 1.15 | 3.3 |
 | step7_7.b | 4.01 | 11.9 |
-| step7_7.g | 7.18 | 20.7 |
+| step7_7.g | 7.85 | 22.5 |
 | similarity_check | 0.00 | 0.3 |
-| unseen_test | 0.00 | 5.9 |
+| unseen_test | 0.00 | 8.3 |
