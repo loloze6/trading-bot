@@ -1,6 +1,6 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 12.41 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 12.65 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
@@ -33,3 +33,4 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-01.b1.e1_strong-run-continues-three-days | 7.e | 2 | 0.7143 | 0.2381 | tested: step 5 confirmed (+4.38); step 6 profitable enough  GOAL REACHED |
 | - | 031-01.b1.e2_wide-day-in-strong-run | 7.e | 2 | 0.7143 | 0.2381 | tested: step 5 confirmed (+2.85); step 6 profitable enough  GOAL REACHED |
 | - | 031-02.b1.b1_wide-flat-uprun-more-coins | 7.b | 2 | 0.2661 | 0.0887 | tested: step 5 inconclusive (+1.29); step 6 not profitable enough (failed: Calmar, Trades per day) |
+| - | 031-01.b1.b2_wide-day-extends-strong-run | 7.b | 2 | 0.2661 | 0.0887 | duplicate of 031-01.b1.b2_wide-day-extends-strong-run |
