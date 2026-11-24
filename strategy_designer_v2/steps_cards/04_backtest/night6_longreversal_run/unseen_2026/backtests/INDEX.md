@@ -1,2 +1,3 @@
 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d: ran: XMRUSD 3/3 [1d, windows unseen_2026]
+031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d: ran: XMRUSD 3/3 [1d, windows unseen_2026]
 031-03.g1.b1.g2_swelling-volume-after-rises_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3; ADAUSD 3/3; DOGEUSD 3/3; LINKUSD 3/3; TRXUSD 3/3; UNIUSD 3/3; AAVEUSD 3/3; AVAXUSD 3/3; SOLUSD 3/3; INJUSD 3/3; NEARUSD 3/3; SUIUSD 3/3; TAOUSD 3/3; ONDOUSD 3/3 [1d, windows unseen_2026]

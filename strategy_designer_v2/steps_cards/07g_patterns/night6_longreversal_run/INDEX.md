@@ -17,6 +17,7 @@
 031-03.g1.b1.d2.e2.d1_volume-swell-long-only_1d: no ideas: Across the volume ratio, the 60-, 28- and 14-day moves, volatility, distance from the 50-day mean, next-day and 3-day reversals, weekdays and years, no pattern apart from the tested idea's own volume gradient stands out from chance (the best clustered t's are near 2 among roughly fifty looks), so no finding supports a new idea.
 031-03.g1.b1.d2.e2.d2_volume-swell-in-uptrend_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d: 2 ideas (2 explorations)
+031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d: 2 ideas (2 explorations)
 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d: 1 ideas (3 explorations)

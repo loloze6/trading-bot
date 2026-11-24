@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3811833,
+  "findings": {
+    "F1": "Over all 2903 XMR days, where the close sits inside the day's high-low range predicts the next day's return: the lowest-close quintile is followed by an excess of +0.85 % (t 4.19, n 577) and the highest-close quintile by \u22120.60 % (t \u22123.31, n 581), with the middle quintiles graded in between (+0.11 %, \u22120.06 %, \u22120.30 %).",
+    "F2": "This close-location effect is not one period's: the top-minus-bottom quintile difference in next-day excess is negative in 7 of 8 years, from \u22120.45 % to \u22122.91 %, with t \u2264 \u22122.4 in 2020, 2023 and 2024, and is only positive in 2025 (+0.23 %, t 0.47).",
+    "F3": "Close location accounts for the tested idea's own signal: in a regression of the next-day excess on the day's scaled return z, the close location and close location \u00d7 range size, z's slope is \u22120.0007 (t \u22120.47), while close location \u00d7 range carries \u22120.0056 (t \u22122.96). Among the down-day tercile, low-close days give +0.61 % (t 3.29, n 586), and middle-close days give only +0.22 % (t 0.74).",
+    "F4": "The fade after up days that close high happens on days the long-only book is flat: up days in the highest close tercile give a next-day excess of \u22120.62 % (t \u22123.20, n 509). Among the top z tercile, high-close days give \u22120.42 % (t \u22122.45, n 588), and on the book's flat bars the fourth close quintile gives \u22120.85 % (t \u22123.26).",
+    "F5": "The fade lasts two days: on a 2-day grid, the highest-close quintile is followed by a 2-day excess of \u22120.72 % (t \u22122.24, n 290), and the lowest two quintiles by +0.43 % and +0.58 % (t 1.03 and 1.62).",
+    "F6": "Two patterns that are weaker given how many angles were looked at:"
+  },
+  "ideas": [
+    {
+      "idea": "The lower XMR closes within its day's high-low range, the more it rises over the next day, and the wider that day's range against its 30-day daily volatility, the stronger this rebound.",
+      "consequence": "A trader would buy XMR after days that close near their low, more after wide-range days, whether or not the day's net fall was large.",
+      "name": "low close next-day rebound",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The nearer an XMR up day closes to its high, the more its price falls back over the next one to two days, and more so the wider that day's range against its 30-day daily volatility.",
+      "consequence": "A trader would short XMR after up days that close at their high, the side the tested long-only book leaves flat.",
+      "name": "high-close up-day fade",
+      "from": "F1, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1.g1.d1.g1_low-close-next-day-rebound",
+    "031-03.g1.b1.d2.e2.g1.g1.d1.g2_high-close-up-day-fade"
+  ],
+  "no_ideas": null
+}
