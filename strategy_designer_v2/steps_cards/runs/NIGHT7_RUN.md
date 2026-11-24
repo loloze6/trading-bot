@@ -55,5 +55,16 @@ at least as many portfolio candidates in total and more ideas on the theme; it i
 candidates and no clearer answers. Four themes are few: the reading says so, and gives the counts.
 The control branches are read in place, not merged.
 
+## During the night (the designer's watch)
+- **00:35 Paris, first watch** (a script reads each pushed branch: profile lines, the profile gate in every plan, theme
+  marks, discoveries and their briefs, failures): no defect. The 4 new-code runs: every idea from a brief names a
+  profile; the 3 plans whose idea names one have the gate, none without; lines 7.e/7.g mark discoveries and leave ideas
+  on the theme unmarked (read as on the theme, as intended); 3 discoveries already turned into briefs.
+- **A gap between topic 50's card and the code:** the card says P9 still pushes copies of held books down for a brief
+  from a discovery; it does not: P9 weighs only follow-ups of confirmed ideas, and a brief's first ideas are always group
+  1. Of the first 5 discoveries, 3 are the next-day rebound after a fall (an effect the portfolio holds); session 2 made
+  it brief 033. Not changed during the night (the sessions run the code they cloned); the reading counts the spend on
+  such briefs, and the fix is proposed in the morning.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
