@@ -1,6 +1,6 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 34.13 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 34.90 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
@@ -87,3 +87,4 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess | 7.g | 6 | 0.1028 | 0.0147 | tested: step 5 confirmed (+5.13); step 6 not profitable enough (failed: Calmar) |
 | - | 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls | 7.d | 7 | 0.2587 | 0.0323 | tested: step 5 confirmed (+3.88); step 6 profitable enough  GOAL REACHED |
 | - | 031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls | 7.d | 7 | 0.2587 | 0.0323 | tested: step 5 inconclusive (+1.83); step 6 not profitable enough (failed: Calmar) |
+| - | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts | 7.g | 6 | 0.1028 | 0.0147 | duplicate of 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts |
