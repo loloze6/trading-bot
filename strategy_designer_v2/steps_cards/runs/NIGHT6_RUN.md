@@ -65,6 +65,12 @@ effects of the four); N2 on none.
   briefs it has). At the morning merge, the briefs and their ideas' family codes must be renumbered (031, 032, ...),
   or P7 would take two briefs for one family. A rule for parallel sessions (a brief number range per session, or
   numbers given at the merge) is a next step.
+- **About 04:00 Paris, the designer's container restarted:** the hourly download (P4) had stopped logging after 1,000
+  BTC calls (about 00:48 Paris) and its progress, held in memory, was lost; the hourly files were untouched (checked
+  against their checksums). The tool now saves its progress every 200 calls and resumes after a stop, logs the time,
+  and never appends an hour a file already has (tests; ce60e63798, d3a7855cd8). Relaunched at 04:07 Paris, smallest
+  coins first; watchdog check-ins at 05:30 and 07:30 Paris relaunch it if another restart stops it. P4's hourly part
+  moves later (about 09:00 to 10:00 Paris).
 
 ## Reading
 (in the morning)
