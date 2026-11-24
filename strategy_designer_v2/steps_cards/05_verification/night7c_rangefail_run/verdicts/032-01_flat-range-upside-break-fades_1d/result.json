@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9913793103448276,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 10-bar move (return minus coin drift, fall positive)",
+    "value": -0.043484608060172354,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": -1.9713764907236948
+    },
+    "threshold": "t >= 2 (with slope > 0) confirms, t <= -2 rejects, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on raw overshoot",
+    "value": -0.0021580488379854177,
+    "passed": false
+  },
+  "counts": {
+    "cases": 136,
+    "distinct days": 118
+  },
+  "decided_by": "the t of the mean short-side unusual move lies between -2 and 2",
+  "reading": "the efficiency ratio is rebuilt from closes as |close change over 60 bars| / sum of 60 absolute daily changes, smoothed by a 5-bar mean, and only active bars with enough in-window history to compute it enter the agreement share; a case is the first short bet (forecast rise of at least 2 points on the short side) in each 10-bar grid cell counted from each window's first row, cases without 10 later bars in their window are dropped, the drift is the mean of the coin's non-overlapping 10-bar grid returns over all windows, and fewer than 30 cases or days gives 'not observable' as the workflow's minimum-count rule requires"
+}
