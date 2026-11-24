@@ -1,5 +1,5 @@
-What a brief's theme is, and when an idea stays on it (the operator, 2026-11-24; topic 50). Designed, not yet read by a
-step: steps 7.a, 7.b, 7.c, 7.e, 7.g and step 1 will read it once topic 50 is built.
+What a brief's theme is, and when an idea stays on it (the operator, 2026-11-24; topic 50). Read by lines 7.b, 7.c,
+7.e and 7.g; the loop turns a discovery into a brief (step 1).
 
 **A brief's theme is its theory in one sentence: a situation in a coin's bars, and the effect it claims follows.**
 Example (brief 031, indecision, night 6): situation "after a run of several days, a wide day that closes near its
@@ -17,7 +17,8 @@ open"; effect "the coin moves back over the next days".
 - its mirror, when the brief names both directions (a run up and a run down);
 - the same situation on other coins, another bar size or another horizon.
 
-It may change the effect's side when the brief is a question, the measure, the horizon, the coins and the profile.
+It may change the effect: its side (what the market does instead in the theme's situation), its measure, its horizon;
+and the coins, the bar size and the profile. A changed effect still answers the brief's question.
 
 **An idea off the theme** has another situation. Example (night 6): from the indecision brief, "a wide day that closes
 near its low rebounds" is another situation (a low close after a fall, not a flat close after a run): off the theme.

@@ -22,7 +22,10 @@ The answer step 5's result calls for (its main measure and statistic, not a meas
 - the result is on the idea's side but short of the bar, and more data is available than the test used: the tested idea unchanged, on more data: a `same-idea-on:` block (the line gives the data, from `../common/data_available.md`; code copies the idea's text); narrowing would leave fewer cases when the problem is too few;
 - the result is on the other side or zero, or no more data is available: the tested idea amended to the part of the data where the findings show the effect clearly, written in full; or, if there is none, "no ideas", with that finding: a clear answer.
 
-An idea of its own is written like any idea, without a label.
+Every idea stays on the brief's theme (`../common/theme.md`): the theme's situation or a narrower case of it. When
+none is worth testing, "no ideas: the theme's effect is not in the data", with the finding (operator, 2026-11-24;
+topic 50). Before: the line could also propose an idea of its own; on night 6 its first follow-ups mostly left the
+theme and re-found the portfolio's effects (topic 47, 1d-13).
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.

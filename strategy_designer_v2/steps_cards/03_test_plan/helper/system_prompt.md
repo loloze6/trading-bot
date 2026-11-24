@@ -62,6 +62,9 @@ guide and using only components from the catalogue. Two rules have no exception:
 - every forecast is graded: the position follows the strength of the idea's situation, never
   jumps between fixed levels;
 - standardise is the first transform of every component.
+When the idea's header names a market profile (`profile:`), step 3's code adds it to your config (the market-profile
+definition): the book holds nothing outside the profile. Do not build the profile yourself; write the forecast for the
+idea inside it, as for an idea with no profile.
 Use a regime only when the idea itself is a condition ("when volume is low, ..."; an idea that says
 when its position exists, above, is one); otherwise use graded tools only, so the position never
 jumps from none to some. A constant (buy-and-hold) inside

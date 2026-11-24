@@ -24,6 +24,7 @@ selection rule picks among those the step 7 lines proposed in the run and not ye
 - **Its state is the run's files.** Nothing is kept anywhere else, so a loop stopped for any reason resumes.
 
 ## One turn
+0. Turn every new discovery of the run into a brief (below).
 1. Ask `select_next` for the run's candidates, ranked.
 2. Check the stop rules; if one is met, stop and say which.
 3. Call `run_idea` on the first candidate; go to 1.
@@ -53,6 +54,15 @@ could not find), the loop calls the components step (`../../components/card.md`)
 It is never called twice without a turn between (a call that fails before answering is not repeated), nor once the
 budget is reached. Its cost counts in the run's spend. Each call is one line in `loop.jsonl` (`"components"`).
 
+## Discoveries become briefs (operator, 2026-11-24; topic 50)
+A discovery is a pattern off a brief's theme that line 7.e or 7.g found (`../../common/theme.md`), written in its
+analysis's `discoveries/` folder. Before each turn, the loop turns every discovery of the run not yet handled into a
+brief: `run_brief`'s step 1 with the discovery as its source (the brief gets its own number and its own theory), then
+its step 2 (the brief's first ideas, in the run). `select_next` ranks those ideas like any brief's: group 1. Once per
+discovery: one line in `loop.jsonl` (`"discovery"`: its file, the brief, the number of ideas, or why none). Not once
+the budget is reached; a refused model call stops the loop, and the discovery is handled when it resumes. Steps 1 and
+2 count in the run's spend.
+
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.
@@ -80,7 +90,7 @@ new, identical; a test of the 017-02 sequence.
 
 ## Where its state lives
 Nothing of its own but the queue's rendering: the ideas tested are `run_idea`'s table; the ideas proposed are the step 7
-lines' `ideas/` folders in the run; an idea's line and generation are read from its id (`common/idea_created_from.md`). A resumed loop rebuilds
+lines' `ideas/` folders in the run, and step 2's for the run's briefs (its own, and its discoveries'); an idea's line and generation are read from its id (`common/idea_created_from.md`). A resumed loop rebuilds
 the queue from these files.
 
 ## Visibility
@@ -88,7 +98,7 @@ the queue from these files.
   score, rank (its parent is its id), and what happened (tested: its step 5 and step 6, a goal marked; candidate:
   waiting; duplicate of; excluded: its call failed).
 - **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
-  USD so far; one line per call of the components step (its summary).
+  USD so far; one line per call of the components step (its summary); one line per discovery turned into a brief.
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.
 
 ## Storage

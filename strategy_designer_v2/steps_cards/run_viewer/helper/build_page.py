@@ -241,10 +241,12 @@ def step7(cards, run, bid):
         r = read_json(p)
         if not isinstance(r, dict):
             continue
-        ids = r.get("idea_ids") or []
+        ids, found = iter(r.get("idea_ids") or []), iter(r.get("discovery_ids") or [])
         ideas = []
-        for k, i in enumerate(r.get("ideas") or []):
-            ideas.append({"name": i.get("name"), "idea": i.get("idea"), "id": ids[k] if k < len(ids) else None})
+        for i in r.get("ideas") or []:       # a discovery (topic 50) is a source for a new brief, not a follow-up idea
+            disc = str(i.get("theme") or "").strip().lower().startswith("discovery")
+            ideas.append({"name": i.get("name"), "idea": i.get("idea"), "id": next(found if disc else ids, None),
+                          **({"discovery": True} if disc else {})})
         out.append({"line": r.get("line"), "folder": p.parts[-4], "findings": r.get("findings") or {},
                     "ideas": ideas, "no_ideas": r.get("no_ideas"), "cost": r.get("cost")})
     return out
@@ -312,7 +314,7 @@ def build_run(cards, run, files):
     # the run's ideas: step 2's folder, the tested ones, the ones step 7 proposed, the queue
     ids = {p.stem for p in cards.glob(f"02_ideation/{run}/ideas/*.md") if IDEA_ID.match(p.stem)}
     ids |= {b["idea"] for b in backtests.values()}
-    ids |= {i["id"] for b in backtests.values() for s in b["step7"] for i in s["ideas"] if i["id"]}
+    ids |= {i["id"] for b in backtests.values() for s in b["step7"] for i in s["ideas"] if i["id"] and not i.get("discovery")}
     ids |= {q["idea"] for q in queue if q.get("idea")}
     q_by = {q["idea"]: q for q in queue if q.get("idea")}
     turn_by = {}

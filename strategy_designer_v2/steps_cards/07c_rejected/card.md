@@ -18,7 +18,7 @@ One analysis per backtest that meets the entry condition: findings, then ideas i
 Two things. What the market did instead: its direction and size, where it holds and where it does not (coins, periods, regimes, the size of the forecast, each side). And whether the test measured the idea elsewhere than where it shows: another horizon, comparison or side.
 
 ## What it proposes
-Ideas that could be confirmed: what the market does instead (often the opposite effect), an idea of its own written like any idea; or the tested idea amended to the part of the data where it holds, written in full. "No ideas", with the finding, when nothing could be acted on (operator, 2026-11-15).
+Ideas that could be confirmed: what the market does instead in the theme's situation (often the opposite effect), written like any idea; or the tested idea amended to the part of the data where it holds, written in full (operator, 2026-11-15). Every idea stays on the brief's theme (`../common/theme.md`; operator, 2026-11-24, topic 50): when nothing on the theme could be acted on, "no ideas: the theme's effect is not in the data", with the finding.
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.

@@ -20,6 +20,12 @@ Two things. Whether the gain comes from something else than the idea: the market
 ## What it proposes
 The idea the book actually captures, when the findings show one.
 
+Each idea is marked `theme: on` (on the brief's theme) or `theme: discovery` (off it; `../common/theme.md`). A
+discovery is written as a source for a new brief (`discoveries/`), not as a follow-up; the loop turns it into a brief
+of its own (operator, 2026-11-24; topic 50). Why: a pattern off the theme answers another question; tested as its own
+theory's first idea, it is not counted as the old brief's result (night 6: "a week's gain carries into Saturday",
+found from the yearly-low brief).
+
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
 

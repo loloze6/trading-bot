@@ -1,5 +1,4 @@
-What a market profile is (the operator, 2026-11-24; topic 49). Designed, not yet read by a step: steps 1, 2, 3, 5 and 7
-will read it once topic 49 is built.
+What a market profile is (the operator, 2026-11-24; topic 49). Read by steps 1, 2, 3 and 7; step 3's code builds it.
 
 **A market profile is the kind of market a coin is in, read from its own recent bars: which way it has been going, and
 how much it has been swinging.** Traders use it to say "this works in a rising, calm market" or "only in a falling,
@@ -29,7 +28,9 @@ on 61 to 75 %): coins move together, but not always in the same profile.
 
 **Terms built on it:**
 - **An idea's profile:** the profile an idea names as the place its effect lives ("in a falling, agitated market, a
-  sharp one-day fall rebounds over the next two days"). At most one; an idea that names none acts in every profile.
+  sharp one-day fall rebounds over the next two days"). At most one. It names only what the idea's theory implies: its
+  trend and its agitation (one of the six profiles), or its trend only ("in a choppy market": calm or agitated), or its
+  agitation only ("in an agitated market": any trend). An idea that names none acts in every profile.
 - **A profile specialist:** a strategy whose positions are all in one profile: the book of an idea that names its
   profile, built with that profile as its regime (`forecast.md`: a regime limits where a position exists; inside it
   the forecast is graded).
@@ -39,12 +40,19 @@ on 61 to 75 %): coins move together, but not always in the same profile.
 - **The profile map:** every confirmed strategy placed by its home. A filled cell is a profile and side some strategy
   specialises in; an empty cell is a place no strategy acts in on purpose: a target for the next briefs.
 
-**How step 3 builds a profile** (existing components, no new engine code; the exact settings are part of topic 49's
-build):
-- the trend: `PriceEvolutionComponent` over 60 days;
-- the agitation: `VolatilityPercentileRegimeComponent` with a 30-day swing ranked over 365 days, without smoothing
-  (agitated above 0.5: above the past year's median);
-- the profile: a `threshold_rules` regime on the two.
+**How step 3 builds a profile.** An idea's profile is a line of its own (`profile: falling agitated`, `profile: choppy`); step 3's code,
+not the model, adds it to the config, the same way for every idea (`03_test_plan/helper/make_test_plan.py`,
+`add_profile`). The model writes the idea's forecast as if the profile were not there; the code then keeps the book flat
+on every bar outside the profile.
+
+| Element | Component (existing) | Settings, in days (converted to bars) | In the profile when |
+|---|---|---|---|
+| The trend | `PriceEvolutionComponent` | `period` 60 days, `scaling_factor` 1 (the 60-day return, in percent) | rising: above +10; choppy: from -10 to +10; falling: below -10 |
+| The agitation | `VolatilityPercentileRegimeComponent` | `vol_period` 30 days, `lookback_period` 365 days, `smooth_period` 1 (no smoothing): the share of the past year's 30-day swings at or below today's | agitated: above 0.5; calm: 0.5 or below |
+
+An element the idea does not name is not built. Each condition the bar does not meet is a veto of the regime detector that sends the bar to a regime with no position;
+inside the profile the config's own regimes and forecast apply unchanged. On hourly bars the swing is that of hourly
+returns over the same 30 days.
 
 **Why this cannot leak:** both elements use closes up to the bar being decided; the past year's median uses that year
 only.

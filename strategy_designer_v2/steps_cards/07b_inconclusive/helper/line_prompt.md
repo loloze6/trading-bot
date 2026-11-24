@@ -22,7 +22,10 @@ above), not a measure of your own; your findings say why it is unclear. Each ide
   its horizon), written in full, as one sentence that keeps the tested idea's own situation in its own words and adds
   the change ("... , only while ...", "... , over the next N days ..."); otherwise no ideas, with that finding. That
   is a clear answer.
-You may also propose an idea of its own, written like any idea.
+Every idea stays on the brief's theme (below). If no idea on the theme is worth testing: no ideas, "the theme's effect
+is not in the data", with the finding that shows it.
+
+{{THEME}}
 
 The data available:
 {{DATA_AVAILABLE}}

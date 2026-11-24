@@ -86,6 +86,13 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
    - Without it: nothing to run.
    - **Sizing, added by code, the same for every plan** (operator, 2026-11-13; the engine's `strategies.sizing` block, as in v1): the forecast stays the signal, capped at ±20; the allocation is forecast ÷ 10 × target ÷ the coin's realised volatility over the last 60 days (in bars of the bar size), capped at 2×, the target being a 2 % daily move (0.382 a year). A more volatile coin gets a smaller position. The model does not write it.
    - **The holding period, added by code, the same rule for every plan** (operator, 2026-11-19 and 20; `../common/forecast.md`, point 7): `strategies.min_holding_bars` = the plan's horizon in bars (field 10), so each bet the forecast makes is held for the idea's horizon; never written by the model (`helper/make_test_plan.py`, `add_holding`). Checked on 2026-11-21: in all 214 plans with it, it equals the horizon.
+   - **The idea's market profile, built by code** (operator, 2026-11-24; topic 49, `../common/market_profile.md`): for
+     an idea with a `profile:` line (its trend, its agitation or both), the code adds the profile to the regime
+     detector: `profile_trend` (`PriceEvolutionComponent`, 60 days) and/or `profile_swing`
+     (`VolatilityPercentileRegimeComponent`, 30 days ranked over 365, no smoothing), and one veto for each condition the
+     bar does not meet, sending it to a regime with no position. The model writes the forecast as if the profile were
+     not there. The plan says so in a `Profile:` line. Why: a profile is part of the idea, fixed before its test, built
+     the same way for every idea (topic 44, P10 pilot: a profile chosen after the results repeats in 50 % of cells).
    - **The brief's side, enforced by code** (operator, 2026-11-22; topic 45, `../runs/SHORT_1D_RUN.md`): for a brief
      whose `side` is "short only", every strategy component's transforms end with `clip` `max` 0; for "long only", `clip`
      `min` 0; the combined forecast is a weighted mean of the components, so it keeps the side. Any other side adds

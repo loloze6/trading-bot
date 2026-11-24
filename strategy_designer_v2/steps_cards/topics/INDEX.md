@@ -53,5 +53,6 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 46 | [An idea's id grows past the file name limit](46_idea-ids-grow-past-the-file-name-limit.md) | research: the id convention | built 2026-11-23 (option A) |
 | 47 | [Why most real effects give a book that does not pay](47_why-real-books-do-not-pay.md) | research: steps 3, 6, 1-2, 5 and select_next | open: measured 2026-11-23; for the operator |
 | 48 | [The trades one by one](48_trades-one-by-one.md) | research: steps 3, 5, 6; the engine's diagnostics | parked 2026-11-23 (observations; two points to discuss) |
-| 49 | [Ideas name the market profile they act in](49_ideas-name-their-market-profile.md) | research: common, steps 1, 2, 3, 5, 7 | open: designed 2026-11-24, waits for the operator's go |
+| 49 | [Ideas name the market profile they act in](49_ideas-name-their-market-profile.md) | research: common, steps 1, 2, 3, 7 | built 2026-11-24 (option A) |
 | 50 | [Follow-ups stay on their brief's theme](50_follow-ups-stay-on-the-theme.md) | research: common, step 7 lines, step 1, select_next | open: designed 2026-11-24, waits for the operator's go |
+| 51 | [A position smaller than the rebalance band is never closed](51_small-positions-are-never-closed.md) | engine (the risk layer's band); research: what a book holds after its bets | open: found 2026-11-24 (topic 49's proof); for the operator |

@@ -11,6 +11,14 @@ The theory must be:
 - possible to prove wrong: say what market behaviour would show it wrong. Do not say how to test it: no condition on the check, such as what to control for or account for, or which coins it must hold for;
 - free of results: no returns, win rates, prices, performance figures, or what happened in a given year, whether from a source or from memory. State why the market would behave this way, not how well it did.
 
+A theory may say that the behaviour lives in one kind of market only: name it with the market profiles below, by its
+trend, its agitation or both ("in a falling, agitated market", "in a choppy market"), and give the reason it lives
+there. A request that
+names a market profile is answered with a theory for that profile.
+
+[MARKET PROFILES]
+{{MARKET_PROFILE}}
+
 If the request is a question, keep it a question, and give the reasons the answer could go each way.
 
 If you are given a source: the source is everything pasted, lists included. Write the theory most of the source supports, in your own words. Say whether the reason you give comes from the source or from you. Read code only to understand the rule. The source may be in any language; write in English.

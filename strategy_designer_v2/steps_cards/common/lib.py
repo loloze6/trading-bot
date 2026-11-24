@@ -151,10 +151,33 @@ def common_text(name):
     return (COMMON / f"{name}.md").read_text(encoding="utf-8")
 
 
+def with_common(text):
+    """A prompt with each {{NAME}} replaced by the shared file common/name.md (for example {{IDEA_DEFINITION}})."""
+    return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: common_text(m.group(1).lower()), text)
+
+
+# The market profiles (common/market_profile.md; topic 49): the six names, and when a bar is in each. The trend is the
+# coin's 60-day return in percent, the agitation the rank of its 30-day swing over the past 365 days (0 to 1).
+PROFILE_TREND = {"rising": [("gt", 10)], "choppy": [("gte", -10), ("lte", 10)], "falling": [("lt", -10)]}
+PROFILE_AGITATION = {"calm": [("lte", 0.5)], "agitated": [("gt", 0.5)]}
+PROFILES = tuple(f"{t} {a}" for t in PROFILE_TREND for a in PROFILE_AGITATION)
+
+
+def profile_name(text):
+    """An idea's profile from a line such as "falling, agitated", "Choppy market" or "calm": its trend, its agitation, or
+    both (trend first); None when the line names none ("none", empty) or names two trends or two agitations."""
+    words = re.findall(r"[a-z]+", (text or "").lower())
+    t = [w for w in words if w in PROFILE_TREND]
+    a = [w for w in words if w in PROFILE_AGITATION]
+    if len(t) > 1 or len(a) > 1 or not (t or a):
+        return None
+    return " ".join(t + a)
+
+
 # What step 3 reads of an idea file (operator, 2026-11-14): the same subset whatever step wrote it (step 2 or step 7).
 # Anything else (a step 7 idea's "Why", with numbers measured on the data; a source line) never reaches a model that
 # plans or analyses the idea's test.
-IDEA_HEADER_FIELDS = ("brief", "instruments", "bar", "period")
+IDEA_HEADER_FIELDS = ("brief", "instruments", "bar", "period", "profile")
 IDEA_BODY_FIELDS = ("Idea", "Consequence")
 
 

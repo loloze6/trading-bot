@@ -34,6 +34,26 @@ def test_an_idea_rests_on_existing_findings():
     assert ideas == [] and none == "the effect is not there"
 
 
+def test_an_idea_may_name_one_market_profile():
+    # topic 49: one of the six profiles, or none; any other text is refused
+    ideas, _ = a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nprofile: falling, agitated\n", F)
+    assert a.profile_name(ideas[0]["profile"]) == "falling agitated"
+    ideas, _ = a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nprofile: none\n", F)
+    assert a.profile_name(ideas[0]["profile"]) is None
+    with pytest.raises(ValueError, match="a market profile"):
+        a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nprofile: a bear market\n", F)
+
+
+def test_an_idea_off_the_theme_is_a_discovery_written_for_step_1():
+    # topic 50: lines 7.e and 7.g mark an idea `theme: discovery`; it is written as a source for a new brief
+    ideas, _ = a.parse_ideas("idea: A week's gain carries into Saturday.\nconsequence: buy Friday.\nname: x\nfrom: F1\n"
+                             "theme: discovery\n\nidea: X rebounds.\nconsequence: buy.\nname: y\nfrom: F1\ntheme: on\n", F)
+    assert [a.is_discovery(g) for g in ideas] == [True, False]
+    src = a.discovery_source(ideas[0], {"bar": "1d", "instruments": "BTC, ETH"}, {"id": "7.g", "name": "patterns"},
+                             "031-01_x_1d", {"idea": "031-01_x", "brief": "031_y"}, "\n- F1: " + F["F1"])
+    assert "The pattern: A week's gain carries into Saturday." in src and "1d bars of BTC, ETH" in src and "F1:" in src
+
+
 def test_same_idea_on_checks_the_data():
     ok = "same-idea-on: instruments: BTC, ETH, ADA; bar: 1d; period: folds A, B, C, D\nname: more coins\nfrom: F1\n"
     ideas, _ = a.parse_ideas(ok, F)

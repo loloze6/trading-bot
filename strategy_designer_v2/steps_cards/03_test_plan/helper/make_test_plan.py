@@ -17,7 +17,7 @@ working folder. This script reads no market data and runs no backtest.
 import argparse, datetime, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
-from lib import call, write_atomic, header, idea_fields, common_text, catalogue_version  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, write_atomic, header, idea_fields, common_text, catalogue_version, profile_name, PROFILE_TREND, PROFILE_AGITATION  # noqa: E402  (shared helpers, common/lib.py)
 
 import yaml
 
@@ -192,6 +192,40 @@ def add_side(config, side):
     return config
 
 
+# The idea's market profile (operator, 2026-11-24; topic 49, common/market_profile.md): built by code from the idea's
+# `profile:` line, never by the model, like the side. The book holds nothing outside the profile: one veto per condition
+# the profile does not meet sends the bar to a flat regime (the guide's vetoes, evaluated before the model's own rules);
+# inside the profile the model's regimes and forecast are unchanged. Settings in days, converted to bars.
+PROFILE_DAYS = {"trend": 60, "swing": 30, "year": 365}
+OPPOSITE = {"gt": "lte", "gte": "lt", "lt": "gte", "lte": "gt"}
+PROFILE_CLASS = "strategies.strategy_components."
+
+
+def add_profile(config, profile, bar):
+    name = profile_name(profile)
+    if not name:
+        return config
+    rd = config.setdefault("regime_detector", {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"})
+    regimes = config.get("strategies", {}).get("regimes") or {}
+    flat = next((r for r in ("chop", "mean_reversion", "trending", "unknown") if regimes.get(r) is None), None)
+    if flat is None:
+        raise ValueError("the config uses all four regimes: none is left flat for the bars outside the idea's profile")
+    n = bars_per_day(bar)
+    words = name.split()                                  # its trend, its agitation, or both
+    parts = [("profile_trend", PROFILE_TREND[w]) for w in words if w in PROFILE_TREND] \
+        + [("profile_swing", PROFILE_AGITATION[w]) for w in words if w in PROFILE_AGITATION]
+    built = {"profile_trend": {"id": "profile_trend", "class": PROFILE_CLASS + "PriceEvolutionComponent",
+                               "params": {"period": PROFILE_DAYS["trend"] * n, "scaling_factor": 1.0}},
+             "profile_swing": {"id": "profile_swing", "class": PROFILE_CLASS + "VolatilityPercentileRegimeComponent",
+                               "params": {"vol_period": PROFILE_DAYS["swing"] * n, "lookback_period": PROFILE_DAYS["year"] * n,
+                                          "smooth_period": 1}}}
+    rd.setdefault("components", []).extend(built[cid] for cid, _ in parts)
+    vetoes = [{"id": cid, "transforms": [{"op": "identity"}], "rules": [{"op": OPPOSITE[op], "value": v}], "result": flat}
+              for cid, conds in parts for op, v in conds]
+    rd["vetoes"] = vetoes + rd.get("vetoes", [])
+    return config
+
+
 def brief_side(brief_text):
     """The brief's `side:` header line, or None."""
     head, _ = header(brief_text)
@@ -226,7 +260,8 @@ def main():
               + f"\n[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}"
               + f"\n[WHAT A BACKTEST RECORDS]\n{common_text("backtest_record")}"
               + f"\n[HOW A FORECAST IS BUILT]\n{common_text("forecast")}"
-              + f"\n[HOW THE WORKFLOW MEASURES]\n{common_text("measures")}")
+              + f"\n[HOW THE WORKFLOW MEASURES]\n{common_text("measures")}"
+              + f"\n[MARKET PROFILES]\n{common_text("market_profile")}")
     request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
                f"windows: {windows(data['period'], data['bar'])}\n\n"
                f"[IDEA]\n{idea_fields(idea_text)}\n[BRIEF]\n{brief_text}\n"
@@ -257,11 +292,12 @@ def main():
     bracket = f"[{data['instruments']}, {data['bar']}, {data['period']}]"
     stale = args.plans_dir / f"{plan_id}_config.json"
     if out == "plan":
-        side = brief_side(brief_text)
-        write_atomic(stale, json.dumps(add_side(add_holding(add_sizing(result["config"], data["bar"]), result["horizon"]), side),
-                                       indent=2) + "\n")
+        side, profile = brief_side(brief_text), profile_name(fields.get("profile"))
+        config = add_profile(add_side(add_holding(add_sizing(result["config"], data["bar"]), result["horizon"]), side), profile, data["bar"])
+        write_atomic(stale, json.dumps(config, indent=2) + "\n")
         body += (f"Forecast: {result['forecast']}\nConfig: {plan_id}_config.json\n"
                  + (f"Side: {side} (the brief): each component's forecast capped at 0 by step 3's code\n" if side in SIDE_CLIP else "")
+                 + (f"Profile: {profile} (the idea): no position outside it, by step 3's code (common/market_profile.md)\n" if profile else "")
                  + "Criterion:\n"
                  + "".join(f"- {k.replace('-', ' ').capitalize()}: {result[k]}\n" for k in PLAN_FIELDS[1:]))
         line = f"{plan_id}: plan (fit: {fit}) {bracket}"

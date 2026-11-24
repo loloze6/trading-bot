@@ -6,7 +6,9 @@ It has no limit of its own: it stops when the operator stops it (it resumes from
 budget is reached (an idea already started is finished), or when no candidate is left. It decides only which idea comes
 next (select_next's ranking); the steps judge. Between two ideas it calls the components step (components/card.md) on
 the run's open wishes: every 10 turns since its last call, and before stopping for "no candidate left"; what it builds
-unblocks ideas, which select_next counts as candidates again. Visibility only: loop.jsonl (one line per turn, per call
+unblocks ideas, which select_next counts as candidates again. Before each turn it turns every new discovery a line
+wrote in the run (an idea off its brief's theme: common/theme.md) into a brief, by run_brief's steps 1 and 2: the
+brief's ideas are first ideas, ranked like any brief's. Visibility only: loop.jsonl (one line per turn, per call
 of the components step, per stop), queue.md and queue.json (every idea written in the run and what happened to it, a
 reached goal marked).
 """
@@ -22,6 +24,8 @@ from lib import write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402
 import select_next  # noqa: E402
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402
+sys.path.insert(0, str(ORCH / "run_brief" / "helper"))
+import run_brief  # noqa: E402
 
 RUN_IDEA = ORCH / "run_idea" / "helper" / "run_idea.py"
 BUILDER = STEPS / "components" / "helper" / "build_component.py"
@@ -34,11 +38,11 @@ def table_rows(run, root=ORCH):
 
 
 def spent(run, root=ORCH):
-    """The run's USD so far: the ideas' costs in run_idea's table (from its journal), and the components step's calls
-    for the run (from its journal)."""
+    """The run's USD so far: the ideas' costs in run_idea's table (from its journal), the components step's calls for
+    the run (from its journal), and run_brief's steps 1 and 2 (from its journal: the run's brief, its discoveries)."""
     p = root.parent / "components" / "journal.jsonl"
     built = sum(e.get("usd", 0.0) for e in map(json.loads, p.read_text().splitlines()) if e.get("run") == run) if p.exists() else 0.0
-    return round(sum(r.get("cost", 0.0) for r in table_rows(run, root)) + built, 4)
+    return round(sum(r.get("cost", 0.0) for r in table_rows(run, root)) + built + run_brief.spent(root / "run_brief" / run), 4)
 
 
 def turns(run, root=ORCH):
@@ -149,6 +153,40 @@ def log_turn(run, entry, root=ORCH):
         fh.write(json.dumps(entry) + "\n")
 
 
+def discoveries(run, root=STEPS):
+    """The discoveries the run's lines wrote (topic 50): `07?_*/<run>/<backtest>/discoveries/<id>.md`."""
+    return sorted(root.glob(f"07?_*/{run}/*/discoveries/*.md"))
+
+
+def briefed(run, root=ORCH):
+    """The discoveries already turned into a brief (or found not researchable) in the run: logged in loop.jsonl."""
+    return {t["discovery"] for t in turns(run, root) if "discovery" in t and "outcome" in t}
+
+
+def brief_discoveries(args, steps=STEPS, root=ORCH):
+    """Each new discovery becomes a brief (step 1, with the discovery as its source) and its first ideas (step 2), once;
+    logged in loop.jsonl. False when the model service refused a call (the loop stops, to resume later)."""
+    done = briefed(args.run, root)
+    for f in discoveries(args.run, steps):
+        rel = str(f.relative_to(steps))
+        if rel in done or stop_reason(args.budget, spent(args.run, root), [rel]):
+            continue
+        used = spent(args.run, root)
+        try:
+            brief, why = run_brief.write_brief(args.run, source=f, model=args.model)
+            ideas, why = run_brief.write_ideas(args.run, brief, args.model) if brief else ([], why)
+        except SystemExit as e:
+            if e.code != SERVICE_REFUSED:
+                raise
+            log_turn(args.run, {"stop": f"{REFUSED} (a discovery's brief; resume the loop later)", "spent": used}, root)
+            print(f"{args.run}: stopped: {REFUSED} (a discovery's brief)")
+            return False
+        log_turn(args.run, {"discovery": rel, "brief": brief.stem if brief else None, "ideas": len(ideas),
+                            "outcome": why or "ok", "spent_before": used}, root)
+        print(f"{args.run}: discovery {f.stem}: " + (f"brief {brief.stem}, {len(ideas)} ideas" if brief and ideas else why))
+    return True
+
+
 def call_run_idea(idea_path, args, brief=None):
     cmd = [sys.executable, str(RUN_IDEA), str(idea_path), "--run", args.run, "--python", args.python]
     if brief:
@@ -214,6 +252,8 @@ def main():
         if code:
             log_turn(args.run, {"idea": iid, "outcome": f"failed: {last[0][:300]}"})
     while True:
+        if not brief_discoveries(args):
+            return
         ranking = select_next.rank(args.run, exclude=failed(args.run))
         cands = [r for r in ranking if r["status"] == "candidate"]
         used = spent(args.run)

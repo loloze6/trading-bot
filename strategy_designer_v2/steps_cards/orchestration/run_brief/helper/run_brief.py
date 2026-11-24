@@ -43,9 +43,34 @@ def spent(table_dir):
     return round(sum(json.loads(l).get("usd", 0.0) for l in p.read_text().splitlines()), 4) if p.exists() else 0.0
 
 
-def loop_budget(budget, brief_usd):
-    """The budget is the run's total; the loop counts only the tested ideas, so it gets what steps 1 and 2 left."""
-    return None if budget is None else round(budget - brief_usd, 4)
+def write_brief(run, theme=None, source=None, model=None):
+    """Step 1: a theme or a source (an operator's text, or a discovery a line wrote: common/theme.md) becomes a brief in
+    step 1's list. The brief's path, or None and why (not researchable, or no brief written)."""
+    what = ["--theme", theme] if theme else ["--source", source]
+    j = Journal(ORCH / "run_brief" / run, run, "step1_" + re.sub(r"\W+", "-", (theme or Path(source).stem))[:40].strip("-"))
+    out, _ = j.step("step1_brief", [STEPS / "01_brief/helper/make_brief.py", *what, "--briefs-dir", BRIEFS]
+                    + (["--model", model] if model else []), [BRIEFS / "INDEX.md"])
+    nr, b = NOT_RESEARCHABLE.search(out), BRIEF_LINE.search(out)
+    if nr:
+        return None, f"step 1: not researchable: {nr.group(1)}"
+    if not b:
+        return None, f"step 1 wrote no brief: {' '.join(out.split())[-300:]}"
+    return Path(b.group(1)), None
+
+
+def write_ideas(run, brief, model=None):
+    """Step 2 on a brief, copied into the run (where its ideas find it). The run's ideas from it (step 2 is not called
+    again when they exist), and step 2's reason when there are none."""
+    run_briefs, ideas_dir = STEPS / "01_brief" / run / "briefs", STEPS / "02_ideation" / run / "ideas"
+    run_briefs.mkdir(parents=True, exist_ok=True)
+    copy_into(brief, run_briefs / brief.name)
+    j = Journal(ORCH / "run_brief" / run, run, brief.stem)
+    out, _ = j.step("step2_ideas", [STEPS / "02_ideation/helper/make_ideas.py", run_briefs / brief.name,
+                                    "--ideas-dir", ideas_dir] + (["--model", model] if model else []),
+                    [ideas_dir / "INDEX.md"], done=bool(ideas_of(brief, ideas_dir)))
+    ideas = ideas_of(brief, ideas_dir)
+    why = re.search(r"^no-ideas:\s*(.+)$", out, re.M)
+    return ideas, (None if ideas else f"step 2 wrote no idea: {why.group(1) if why else ' '.join(out.split())[-300:]}")
 
 
 def main():
@@ -69,44 +94,24 @@ def main():
     if args.budget is not None and args.budget <= 0:
         sys.exit("a budget is a positive number of USD")
 
-    table_dir = ORCH / "run_brief" / args.run
-    run_briefs = STEPS / "01_brief" / args.run / "briefs"
-    ideas_dir = STEPS / "02_ideation" / args.run / "ideas"
-    model = ["--model", args.model] if args.model else []
-
     brief = args.brief
     if brief is None:                                   # step 1: a theme or a source becomes a brief
-        what = ["--theme", args.theme] if args.theme else ["--source", args.source]
-        j = Journal(table_dir, args.run, "step1_" + re.sub(r"\W+", "-", (args.theme or args.source.stem))[:40].strip("-"))
-        out, _ = j.step("step1_brief", [STEPS / "01_brief/helper/make_brief.py", *what, "--briefs-dir", BRIEFS] + model,
-                        [BRIEFS / "INDEX.md"])
-        nr, b = NOT_RESEARCHABLE.search(out), BRIEF_LINE.search(out)
-        if nr:
-            print(f"{args.run}: step 1: not researchable: {nr.group(1)}")
+        brief, why = write_brief(args.run, args.theme, args.source, args.model)
+        if brief is None:
+            print(f"{args.run}: {why}")
             return
-        if not b:
-            sys.exit(f"step 1 wrote no brief:\n{out[-800:]}")
-        brief = Path(b.group(1))
-
-    run_briefs.mkdir(parents=True, exist_ok=True)
-    copy_into(brief, run_briefs / brief.name)           # where the run's ideas find their brief
-    j = Journal(table_dir, args.run, brief.stem)
-    out, _ = j.step("step2_ideas", [STEPS / "02_ideation/helper/make_ideas.py", run_briefs / brief.name,
-                                    "--ideas-dir", ideas_dir] + model,
-                    [ideas_dir / "INDEX.md"], done=bool(ideas_of(brief, ideas_dir)))
-    ideas = ideas_of(brief, ideas_dir)
+    ideas, why = write_ideas(args.run, brief, args.model)
     if not ideas:
-        why = re.search(r"^no-ideas:\s*(.+)$", out, re.M)
-        sys.exit(f"{args.run}: step 2 wrote no idea for {brief.stem}" + (f": {why.group(1)}" if why else f":\n{out[-800:]}"))
+        sys.exit(f"{args.run}: {brief.stem}: {why}")
     print(f"{args.run}: {brief.stem}: {len(ideas)} ideas in the run")
 
-    budget = loop_budget(args.budget, spent(table_dir))
-    if budget is not None and budget <= 0:
-        print(f"{args.run}: stopped: budget reached by steps 1 and 2 ({spent(table_dir):.2f} USD)")
+    used = spent(ORCH / "run_brief" / args.run)
+    if args.budget is not None and used >= args.budget:
+        print(f"{args.run}: stopped: budget reached by steps 1 and 2 ({used:.2f} USD)")
         return
-    cmd = [sys.executable, str(LOOP), "--run", args.run, "--python", args.python] + model
-    if budget is not None:
-        cmd += ["--budget", str(budget)]
+    cmd = [sys.executable, str(LOOP), "--run", args.run, "--python", args.python] + (["--model", args.model] if args.model else [])
+    if args.budget is not None:                         # the run's total: the loop counts steps 1 and 2 too
+        cmd += ["--budget", str(args.budget)]
     sys.exit(subprocess.run(cmd).returncode)
 
 

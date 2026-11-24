@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, EXPLORATION_FOLDS, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, EXPLORATION_FOLDS, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -188,9 +188,6 @@ def size_and_cost(size_file, record):
     return "\n".join(lines)
 
 
-def with_common(text):
-    """A prompt with each {{NAME}} replaced by the shared file common/name.md (for example {{DATA_AVAILABLE}})."""
-    return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: (COMMON / f"{m.group(1).lower()}.md").read_text(), text)
 MEASURES = (COMMON / "measures.md").read_text()
 
 
@@ -216,7 +213,7 @@ def parse_ideas(text, findings):
     blocks = re.split(r"(?m)^(?=idea:|same-idea-on:)", text[start.start():]) if start else []
     ideas = []
     for b in blocks:
-        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data):\s*(.+)$", b, re.M)}
+        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data|profile|theme):\s*(.+)$", b, re.M)}
         if not g:
             continue
         if "same-idea-on" in g:   # the tested idea unchanged, on other data: code copies its text
@@ -231,6 +228,8 @@ def parse_ideas(text, findings):
                 raise ValueError("a same-idea-on block rests on findings that exist, in 'from: F1, F3'")
             ideas.append(g)
             continue
+        if g.get("profile") and g["profile"].lower() != "none" and not profile_name(g["profile"]):
+            raise ValueError(f"the profile line names a market profile (its trend, its agitation, or both), or is left out: {g['profile']!r}")
         for k in ("idea", "consequence", "from"):
             if not g.get(k):
                 raise ValueError(f"an idea block has no '{k}' line")
@@ -247,6 +246,22 @@ def parse_ideas(text, findings):
     if not ideas and not m:
         raise ValueError("give the ideas, or one line 'no-ideas: <why>'")
     return ideas, (m.group(1).strip() if m and not ideas else None)
+
+
+def is_discovery(g):
+    """An idea its line marked off the brief's theme (`theme: discovery`, lines 7.e and 7.g; common/theme.md)."""
+    return (g.get("theme") or "").strip().lower().startswith("discovery")
+
+
+def discovery_source(g, mk, line, rid, h, why):
+    """A discovery written as a source for step 1 (topic 50): the pattern, where it was seen, what it rests on. Step 1
+    writes the brief (its theory, in its own words, without the numbers); step 2 its first ideas."""
+    seen = f"{mk.get('bar', '1d')} bars of {mk.get('instruments', 'the core coins')}" + (f", in a {mk['profile']} market" if mk.get("profile") else "")
+    return ("A pattern found in a backtest, off the theme of the brief that backtest tested: a theory of its own, to be "
+            "researched from its first ideas.\n\n"
+            f"The pattern: {g['idea']}\nWhat it would mean for a trader: {g['consequence']}\nSeen on: {seen}.\n"
+            f"Found by: line {line['id']} {line['name']}, in backtest {rid} (idea {h.get('idea', '')}, brief {h.get('brief', '')}).\n"
+            f"What it rests on:{why}\n")
 
 
 def slug(s, n=8):
@@ -340,42 +355,56 @@ def main():
     else:
         sys.exit(f"no valid answer; cost {cost:.4f} USD")
 
-    # Save: the analysis, one file per idea, the index line.
+    # Save: the analysis, one file per idea (a discovery: one source file for step 1, topic 50), the index line.
     market = {k: h[f"data-{k}"] for k in ("instruments", "bar", "period") if h.get(f"data-{k}")}
     letter = line["id"].split(".")[1]
     (d / "ideas").mkdir(exist_ok=True)
-    names = []
+    names, found = [], []
     tested = {f: (re.search(rf"^{f}:\s*(.+)$", idea_text, re.M) or [None, ""])[1].strip() for f in ("Idea", "Consequence")}
+    tested_profile = profile_name(header(idea_text).get("profile"))
     # the run's other analyses by this line: numbering goes on after their ideas of the same parent (topic 46)
-    others = [f.stem for f in out_dir.glob("*/ideas/*.md") if f.parent.parent != d and f.name != "INDEX.md"]
+    others = [f.stem for f in out_dir.glob("*/*/*.md") if f.parent.name in ("ideas", "discoveries")
+              and f.parent.parent != d and f.name != "INDEX.md"]
     start = first_child_number(h.get('idea', rid), letter, others)
     for i, g in enumerate(ideas or [], start):
         if "same-idea-on" in g:
             g["idea"], g["consequence"], g["data"] = tested["Idea"], tested["Consequence"], g["same-idea-on"]
             g.setdefault("name", "same idea on other data")
+            g["profile"] = tested_profile             # the tested idea's profile, unchanged
         mk = dict(market)
         for k, v in re.findall(r"(instruments|bar|period)\s*:\s*([^;]+)", g.get("data", "")):
             mk[k] = v.strip()
+        if profile_name(g.get("profile")):
+            mk["profile"] = profile_name(g["profile"])
         iid = child_id(h.get('idea', rid), letter, i, slug(g.get('name') or g['idea']))   # topic 46
         why = "".join(f"\n- {r}: {findings[r]}" for r in g["refs"])
+        if is_discovery(g):          # off the brief's theme: a theory of its own, for step 1 (common/theme.md)
+            (d / "discoveries").mkdir(exist_ok=True)
+            write_atomic(d / "discoveries" / f"{iid}.md", DATE.sub("<date>", discovery_source(g, mk, line, rid, h, why)))
+            found.append((iid, g))
+            continue
         body = ("---\n" + f"brief: {h.get('brief', '')}\nsource-idea: {h.get('idea', '')}\nline: {line['id']} {line['name']}\n"
                 f"backtest: {rid}\n" + "".join(f"{k}: {v}\n" for k, v in mk.items()) + "---\n"
                 f"Idea: {g['idea']}\nConsequence: {g['consequence']}\nWhy:{why}\n")
         write_atomic(d / "ideas" / f"{iid}.md", DATE.sub("<date>", body))
-        names.append(iid)
+        names.append((iid, g))
     fl = "\n".join(f"- **{k}:** {v}" for k, v in findings.items())
-    il = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in zip(names, ideas or [])) or f"- No ideas: {none_why}"
+    il = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in names) or f"- No ideas: {none_why or 'every idea is a discovery'}"
+    dl = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in found)
     md = (f"---\nline: {line['id']} {line['name']}\nbacktest: {rid}\nidea tested: {h.get('idea', '')}\n"
           f"step 5: {s5}\nstep 6: {s6}\nmode: one call\n"
           f"explorations: {rounds_used}\ncost: {cost:.4f} USD\n---\n## Findings\n{fl}\n\n## Ideas\n{il}\n\n"
-          f"Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.\n")
+          + (f"## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)\n{dl}\n\n" if found else "")
+          + f"Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.\n")
     write_atomic(d / "analysis.md", DATE.sub("<date>", md))
     write_atomic(d / "result.json", DATE.sub("<date>", json.dumps({"line": line["id"], "backtest": rid, "step5": s5, "step6": s6,
                                                 "explorations": rounds_used, "cost": cost,
                                                 "findings": findings, "ideas": [{k: v for k, v in g.items()} for g in ideas or []],
-                                                "idea_ids": names, "no_ideas": none_why}, indent=2)) + "\n")
-    index_line(f"{rid}: {len(names)} ideas ({rounds_used} explorations)" if names else f"{rid}: no ideas: {none_why}")
-    print(f"{line['id']} {rid}: {len(findings)} findings, {len(names)} ideas, {rounds_used} explorations; cost {cost:.4f} USD")
+                                                "idea_ids": [n for n, _ in names], "discovery_ids": [n for n, _ in found],
+                                                "no_ideas": none_why}, indent=2)) + "\n")
+    more = f", {len(found)} discoveries" if found else ""
+    index_line(f"{rid}: {len(names)} ideas{more} ({rounds_used} explorations)" if names or found else f"{rid}: no ideas: {none_why}")
+    print(f"{line['id']} {rid}: {len(findings)} findings, {len(names)} ideas{more}, {rounds_used} explorations; cost {cost:.4f} USD")
 
 
 if __name__ == "__main__":

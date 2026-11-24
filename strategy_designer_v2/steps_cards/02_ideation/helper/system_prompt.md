@@ -7,6 +7,9 @@ side). The theory will be researched on historical price and volume bars (open, 
 close, volume) of crypto coins traded on spot exchanges.
 
 {{IDEA_DEFINITION}}
+[MARKET PROFILES]
+{{MARKET_PROFILE}}
+
 Each idea also follows from the brief: one of its consequences, for the brief's reasons, where the header says it
 applies. Add nothing the brief does not imply. Its time comes from the brief, or else from the theory and the most
 common convention for what it names; you do not see any data.
@@ -20,6 +23,9 @@ How many ideas:
 - Two different situations are two ideas. Mirror situations, such as a high and a low extreme,
   or an upward and a downward cross, are two situations.
 - Use only the brief's reasons. An idea that needs another reason belongs to another theory.
+- When the brief says the behaviour lives in one market profile, or its reasons depend on which way the coin has been
+  going or how much it has been swinging, each idea names its profile: the brief's, or the one its reasons point to,
+  with only what the brief implies (its trend, its agitation, or both). Otherwise an idea names none.
 
 You are given the index of ideas already written. Do not write an idea that is the same as one
 in the index: the same thing seen in the same way on the same market. A close idea is allowed.
@@ -32,6 +38,8 @@ idea: <what we would see, one or two sentences of plain prose>
 consequence: <the consequence of the theory, or the answer to the brief's question, that the idea shows, one line>
 short-name: <three to five lowercase words joined by hyphens>
 index-line: <the idea in one short sentence, at most 25 words>
+profile: <the idea's market profile: its trend, its agitation or both, such as falling agitated, or choppy; only when
+          the idea names one, otherwise leave this line out>
 bar: 1h   (only when the brief's header gives no bar size and what the idea says we would see cannot be seen on daily
           bars: it names hours of the day, or a move within one day; otherwise leave this line out)
 

@@ -20,7 +20,6 @@ def test_the_budget_is_the_run_s_total(tmp_path):
     assert rb.spent(tmp_path) == 0.0
     (tmp_path / "journal.jsonl").write_text(json.dumps({"usd": 0.25}) + "\n" + json.dumps({"usd": 0.5}) + "\n")
     assert rb.spent(tmp_path) == 0.75
-    assert rb.loop_budget(10.0, 0.75) == 9.25 and rb.loop_budget(None, 0.75) is None
 
 
 def run(*args):

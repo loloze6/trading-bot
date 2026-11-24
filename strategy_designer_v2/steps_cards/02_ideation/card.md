@@ -22,6 +22,11 @@ The ideas the theory gives. Their number follows from the theory, not from a quo
 - A theory gives several ideas because it has several consequences, and a consequence can be seen in more than one way.
 - A question brief gives one idea per answer it gives a reason for. Brief 001 gives "reversal" ideas and "continuation" ideas. Its third answer, "nothing", needs no idea: it is what we learn when the others are rejected. The brief stays a question.
 - Two different situations are two ideas (brief 003: thin-volume moves, heavy-volume moves). Mirror situations are two situations (a high and a low RSI extreme; an upward and a downward cross).
+- An idea may name the market profile its effect lives in (`../common/market_profile.md`, topic 49): only when the
+  brief says the behaviour lives in one kind of market, or its reasons depend on which way the coin has been going or
+  how much it has been swinging; and only what the brief implies: its trend ("in a choppy market"), its agitation, or
+  both. Brief 023 ("a coin that has gone nowhere for weeks") gives "choppy"; brief 025 ("a coin falling for months")
+  gives "falling"; brief 031 (a wide flat day after a run) gives none (proof, 2026-11-24: `../topics/49_ideas-name-their-market-profile.md`).
 - Not a new idea:
   - the same idea with another setting, such as a 21-bar RSI instead of a 14-bar one;
   - the same idea for another reason: that is another theory, so a new brief.
@@ -41,6 +46,13 @@ The ideas the theory gives. Their number follows from the theory, not from a quo
    - For: a theory whose mechanism lives within the day is tested on bars that can see it.
    - Used by: step 3, which plans on the idea's bar size (the default is daily).
    - Without it: an hourly theory is planned on daily bars and refused as untestable (second night: brief 014, 5 of 5).
+2c. **profile** (header, the idea's own, 2026-11-24; topic 49): `profile: choppy`, `profile: falling agitated`: the
+   market profile the idea names (its trend, its agitation or both); no line when it names none. Any other text is
+   refused (a minor deviation is corrected: case, comma, the word "market").
+   - For: the profile is part of the idea before its test.
+   - Used by: step 3's code, which builds it (the book holds nothing outside it); step 7, which keeps it on the same
+     idea on other data.
+   - Without it: the profile is only words in the idea, and the model planning it may build it, or not, its own way.
 3. **Idea** (body, mandatory): what we would see in the market, in one or two sentences of plain prose.
    - For: the idea itself.
    - Used by: the next steps, which confirm or reject it.

@@ -20,6 +20,12 @@ Angle by angle: the forecast (what follows small and large values), the position
 ## What it proposes
 New ideas, each from a finding, written like any idea. A pattern that cannot be told apart from chance is not a finding, and the more angles looked at, the more a pattern must stand out. If none does, "no ideas", with what was looked at.
 
+Each idea is marked `theme: on` (on the brief's theme) or `theme: discovery` (off it; `../common/theme.md`). A
+discovery is written as a source for a new brief (`discoveries/`), not as a follow-up; the loop turns it into a brief
+of its own (operator, 2026-11-24; topic 50). Why: a pattern off the theme answers another question; tested as its own
+theory's first idea, it is not counted as the old brief's result (night 6: "a week's gain carries into Saturday",
+found from the yearly-low brief).
+
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
 

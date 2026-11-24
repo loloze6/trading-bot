@@ -146,3 +146,29 @@ def test_a_resumed_idea_does_not_run_past_the_budget(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["loop.py", "--run", run, "--python", "py", "--budget", "35"])
     loop.main()
     assert called == []                                              # stopped on the budget before the resumed idea
+
+
+def test_each_discovery_becomes_a_brief_once(tmp_path, monkeypatch):
+    """Topic 50: a discovery a line wrote (07?_*/<run>/<backtest>/discoveries/) goes through step 1 and step 2 once;
+    logged in loop.jsonl; a refused model call stops the loop and leaves the discovery for the resume."""
+    from types import SimpleNamespace
+    steps, orch = tmp_path / "steps", tmp_path / "steps" / "orchestration"
+    for n in ("031-01_x.g1_weekday-carry", "031-02_y.e1_other"):
+        f = steps / "07g_patterns" / "x_run" / "031-01_x_1d" / "discoveries" / f"{n}.md"
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("The pattern: ...")
+    calls = []
+    monkeypatch.setattr(loop.run_brief, "write_brief", lambda run, source, model=None: (calls.append(source.stem) or Path(f"040_{source.stem}.md"), None))
+    monkeypatch.setattr(loop.run_brief, "write_ideas", lambda run, brief, model=None: ([Path("040-01_a.md")], None))
+    args = SimpleNamespace(run="x_run", budget=None, model=None)
+    assert loop.brief_discoveries(args, steps, orch) and loop.brief_discoveries(args, steps, orch)
+    assert calls == ["031-01_x.g1_weekday-carry", "031-02_y.e1_other"]                 # once each
+    lines = [t for t in loop.turns("x_run", orch) if "discovery" in t]
+    assert [t["ideas"] for t in lines] == [1, 1] and all(t["outcome"] == "ok" for t in lines)
+
+    (steps / "07g_patterns" / "x_run" / "031-01_x_1d" / "discoveries" / "031-03_z.g2_new.md").write_text("x")
+    def refuse(run, source, model=None):
+        raise SystemExit(loop.SERVICE_REFUSED)
+    monkeypatch.setattr(loop.run_brief, "write_brief", refuse)
+    assert loop.brief_discoveries(args, steps, orch) is False
+    assert "031-03" not in " ".join(loop.briefed("x_run", orch)) and "stop" in loop.turns("x_run", orch)[-1]

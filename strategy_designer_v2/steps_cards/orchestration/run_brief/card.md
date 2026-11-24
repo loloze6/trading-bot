@@ -36,9 +36,13 @@ lines propose from them, until a stop rule is met.**
    the run already holds ideas of this brief. "No ideas" ends the call, with step 2's reason.
 4. **`loop`** on the run, without a starting idea: the brief's ideas are its first candidates.
 
+Steps 1 and 2 are two functions (`write_brief`, `write_ideas`) the loop also calls, to turn a discovery into a brief
+(`../loop/card.md`, "Discoveries become briefs"; topic 50): one way to write a brief and its first ideas.
+
 ## Stopping
 `loop`'s rules, unchanged: the operator stops it (it resumes); an optional budget is reached (`--budget USD`, the
-run's total, steps 1 and 2 included); no candidate is left. No default limit.
+run's total, steps 1 and 2 included: the loop counts them in the run's spend, from this function's journal); no
+candidate is left. No default limit.
 
 ## When a step fails
 Step 1 or step 2 failing (no valid answer) ends the call, with the step's message; nothing is half-written (the steps

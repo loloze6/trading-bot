@@ -14,7 +14,7 @@ repository, an empty working folder. This script reads no market data.
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
-from lib import call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, write_atomic, with_common  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 KEYS = {"venue", "instruments", "bar", "period", "side", "source"}
@@ -65,7 +65,7 @@ def main():
     briefs, index_path = args.briefs_dir, args.briefs_dir / "INDEX.md"
     briefs.mkdir(parents=True, exist_ok=True)
     index = index_path.read_text() if index_path.exists() else ""
-    system = (HERE / "system_prompt.md").read_text()
+    system = with_common((HERE / "system_prompt.md").read_text())
     if args.theme:
         ask = f"Write one research brief on this theme, given by the operator in their own words:\n\n{args.theme}"
     elif args.source:
