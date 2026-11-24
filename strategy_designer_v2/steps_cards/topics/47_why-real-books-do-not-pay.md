@@ -56,6 +56,12 @@ that long (a statistic grows with the square root of the length).
 | 0-4 ideas of its branch tested before it | 39, 85 %, 1.00 | 19, 84 %, 0.88 | |
 | 5 or more tested before it | 9, 78 %, 0.77 | 6, 67 %, 0.39 | |
 
+- **Measured again under N3 (next steps 2b, 2026-11-25; `47_review/search_luck_n3.py`):** books built since step 3
+  keeps the idea's situation (night 6, 29 ideas with an unseen test) against those built before (78 and 53). Deep books
+  (generation 3+) keep 0.93 of their effect on 2016-17 and 0.80 on 2026 under N3, against 0.61 and 0.63 before; they hold
+  79 % and 75 % (74 % and 75 % before); their median in-sample t is 2.75 against 3.77. Under N3 a deep book is no
+  longer a luckier one. By the rule decided 2026-11-23 (a stricter bar only if deep books keep under half their effect),
+  no bar is needed (2c). Small sample: one night, four briefs.
 - The deeper a book (the more tries before it), the higher its in-sample statistic and the less of it is left on
   unseen dates: the pattern of a selection that keeps luck. Small samples (generation 5+: 2 ideas), and deeper ideas
   are also later nights' non-momentum ideas: the type of idea and the depth are mixed.

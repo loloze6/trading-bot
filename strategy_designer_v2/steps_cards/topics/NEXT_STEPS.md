@@ -24,10 +24,9 @@ their risk than any one alone.
 | 1l | **New (topic 49's proof).** A book is flat when its idea says so | A leftover position is not closed while both the signal's change (2 forecast points) and the order's size (0.2 of the capital) are under the band: on the proof's book, 8 % of its days in a position | Topic 51; the rule was kept in topic 19 (backtests and live alike) | parked (the operator, 2026-11-24) |
 | 1m | **New.** Briefs aimed at the market profiles the portfolio has no specialist in | P10 pilot: every profile cell is empty; P4: the portfolio failed in 2026, a choppy, slowly falling year | Night 7: four themes in choppy and falling markets, both sides, the first night under 1d and 1j (`runs/NIGHT7_RUN.md`) | running (launched 2026-11-25 00:18 Paris; morning merge and reading about 08:20 Paris) |
 | 1k | Know whether step 2's first ideas improve with the analyst's tools | First ideas are confirmed 9 % of the time, follow-ups 56 % (1g); step 2 sees no data, step 7 explores it | A test on night 6's 4 briefs: step 2 with step 7's rules, without and with exploring (folds B and C only), through steps 3 to 5 | later (about 35 USD) |
-| 2b | Know how much of a found result is search luck | The n-th variant of an idea holds less on new dates (study 2) | Measure search luck again, now that step 3 builds the idea as stated | next (computing only) |
 | 2e | **New (night 6).** An idea unblocked by a component build is run | Night 6, session 1: an idea waiting for a component was not picked again after the component was built, before the budget ended | Check `select_next`'s order for an unblocked idea | later |
 | 2a | Stop deepening a line that keeps failing | Deep lines hold less (study 2) | `select_next`: a branch failing the same check again is left | later (after 2b) |
-| 2c | A fair bar for strategies found after many tries | Search luck grows with the tries | A stricter bar for deep strategies | only if 2b asks for it |
+| 2c | A fair bar for strategies found after many tries | Search luck grows with the tries | A stricter bar for deep strategies | not needed while 2b holds (deep books under N3 keep 0.80 to 0.93 of their effect); to recheck after more nights |
 | 2d | Know whether luck differs by kind of idea | Momentum and other ideas may differ | Split the luck measure by kind | when enough strategies have an unseen test |
 
 ## C. Better trades inside a strategy (topic 48, parked)
@@ -59,6 +58,7 @@ their risk than any one alone.
 |---|---|---|
 | 1d | Ideas name the market profile their effect lives in | built 2026-11-24 (topic 49): steps 1, 2, 7 name it (trend, agitation or both); step 3's code builds it; proof: a falling-market book flat outside falling markets (0 exceptions, 17,524 bars) |
 | 1j | Follow-ups stay on their brief's theme | built 2026-11-24 (topic 50): line 7.b 6 of 6 ideas on the theme (before 4 of 6); line 7.g 5 discoveries, 0 follow-ups (before 6 off the theme); discoveries become briefs in the loop; step 1 names an already-indexed theory instead of inventing one (a defect the proof found) |
+| 2b | How much of a found result is search luck, now that step 3 builds the idea as stated | under N3 (night 6, 29 ideas) deep books keep 0.93 and 0.80 of their effect on the unseen periods, against 0.61 and 0.63 before; no stricter bar needed (topic 47, `47_review/search_luck_n3.py`) |
 | P1-P4 | A first portfolio, chosen and judged by fixed rules | 20 strategies, equal capital, side by side; holds on 2016-17, fails on 2026 (`runs/PORTFOLIO_UNSEEN_RUN.md`) |
 | P7 | Night 6's strategies as candidates | 2 new candidates (weekday carry; volume swell) |
 | P8 | A rule on the market bet | replaced by P10 |
