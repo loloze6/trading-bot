@@ -4,4 +4,5 @@
 031-02_near-yearly-low-bounces_1d: inconclusive (fit: exact) [main: -0.00235943; OLS slope t -1.7029; independent 20-bar cases 806, cases in the top fifth 162, cases in the bottom fifth 162]
 031-03.b1_deep-yearly-low-break-rebounds_1d: not observable (fit: exact) [main: 0.0714982; t of the mean, cases of one day taken together 1.41036; distinct case days 12, cases 13]
 031-03_yearly-low-break-extends_1d: inconclusive (fit: exact) [main: 0.000161299; t of the mean, cases of one day taken together 0.00681091; cases 77, distinct days 57]
+031-04.a1_yearly-low-break-all-coins_1d: not observable (fit: adapted) [main: 0.0684144; t of the mean, cases of one day summed 1.7793; cases 18, distinct days 16]
 031-04_yearly-low-break-reverses_1d: not observable (fit: exact) [main: 0.0714982; t of the mean, same-day cases summed 1.41036; cases 13, distinct days 12]

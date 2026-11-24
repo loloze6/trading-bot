@@ -4,4 +4,5 @@
 031-02_near-yearly-low-bounces_1d: not profitable enough [Sharpe 0.2552; Sharpe minus holding's Sharpe -0.3265; Calmar 0.03265]
 031-03.b1_deep-yearly-low-break-rebounds_1d: not profitable enough [Sharpe 0.6565; Sharpe minus holding's Sharpe 0.07485; Calmar 0.7495]
 031-03_yearly-low-break-extends_1d: not profitable enough [Sharpe -0.5393; Sharpe minus holding's Sharpe -1.121; Calmar -0.1111]
+031-04.a1_yearly-low-break-all-coins_1d: not profitable enough [Sharpe 0.5362; Sharpe minus holding's Sharpe -0.04427; Calmar 0.5495]
 031-04_yearly-low-break-reverses_1d: not profitable enough [Sharpe 0.6565; Sharpe minus holding's Sharpe 0.07485; Calmar 0.7495]
