@@ -1,0 +1,32 @@
+{
+  "line": "7.b",
+  "backtest": "032-02_flat-range-downside-break-recovers_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3963036000000001,
+  "findings": {
+    "F1": "Downside breaks in flat coins do not recover; they lean the other way at every horizon past one day. On closes below the prior 60-day low with a 60-day efficiency ratio at or below 0.3, the mean excess return is +1.23 % over 1 day (t 0.77, 81 cases on 35 days), -2.27 % over 5 days (t -0.76, 63 cases), -4.12 % over 10 days (t -1.01, 51 cases on 23 days) and -5.75 % over 20 days (t -0.78, 40 cases). The test's own -1.56 % (t -0.55) is this flat or negative effect, not a positive one too small to show.",
+    "F2": "The recovery is not graded by depth. On the recorded cases over 10 days, the shallow, mid and deep thirds earn -1.2 % (t -0.29), -3.2 % (t -1.05) and -1.3 % (t -0.22). Across all downside breaks the thirds are +0.7 %, -8.7 % (t -3.44) and -3.1 %. Depth does not order the outcome, which matches the step-5 slope t of 0.73.",
+    "F3": "The downside effect is mixed across periods and coins, with no part showing a clear recovery.",
+    "F4": "The mirror case, an upside break in a flat coin, keeps going instead of failing. Closes above the prior 60-day high with an efficiency ratio at or below 0.3 earn:",
+    "F5": "The upside continuation is graded by distance, but concentrated in time and coins."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose price has gone nowhere over the past 60 days, a daily close above the prior 60-day high is followed by a further rise over the next 5 days, and the further that close sits above the old high, the larger the rise.",
+      "consequence": "A trader would buy, not fade, an upside break out of a trendless coin's two-month range, and buy more the larger the break, while refusing to short it as a failed breakout.",
+      "name": "flat range upside break continues",
+      "from": "F4, F5, F1",
+      "refs": [
+        "F4",
+        "F5",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1_flat-range-upside-break-continues"
+  ],
+  "no_ideas": null
+}
