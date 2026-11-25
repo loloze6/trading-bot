@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 7-bar move per case",
+    "value": -0.0009057952114943455,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": -0.09313775020751759
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger minus smaller |forecast| half",
+    "value": -0.01879247003526458,
+    "passed": false
+  },
+  "counts": {
+    "cases": 209,
+    "days": 168
+  },
+  "decided_by": "the t lies between -2 and 2 (or the mean's sign disagrees with it)",
+  "reading": "profile = regime 'unknown', fall = raw scaled 7-day return < 0; a case is the first short bet (rise of |forecast| on the short side >= 2 from its low since the last bet) in each 7-bar grid cell of a window; t uses day-clustered errors (deviations summed per UTC day, G/(G-1) correction); the larger half is |forecast| strictly above the median, the smaller half at or below it; the plan's 30-case minimum gives 'not observable'."
+}

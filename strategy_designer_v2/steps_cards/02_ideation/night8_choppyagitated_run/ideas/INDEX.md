@@ -1,0 +1,3 @@
+058-01_choppy-agitated-weekly-rise-continues: In a choppy, agitated market, a larger 7-day rise against the coin's usual swing is followed by a larger rise over the next 7 days. [profile: choppy agitated]
+058-02_choppy-agitated-weekly-fall-continues: In a choppy, agitated market, a larger 7-day fall against the coin's usual swing is followed by a larger fall over the next 7 days. [profile: choppy agitated]
+059-01_choppy-calm-weekly-rise-continues: In a choppy, calm market, a larger 7-day rise against the coin's usual swing is followed by a larger rise over the next 7 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]

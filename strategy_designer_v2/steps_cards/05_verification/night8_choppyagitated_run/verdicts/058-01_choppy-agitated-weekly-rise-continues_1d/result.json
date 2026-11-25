@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 7-bar forward return of grid cases with forecast > 0 (vs coin's mean 7-bar return)",
+    "value": -0.0012090929749051732,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.12314805512643283
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation between forecast and excess 7-bar return",
+    "value": 0.033359725737372024,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 93,
+    "distinct days": 64
+  },
+  "decided_by": "t is between -2 and 2.",
+  "reading": "grid bars at positions 0,7,14,... of each window with a full 7-bar forward return inside the window; the coin's mean 7-bar return is the mean over that grid of all its windows; the day-clustered t uses per-day sums of deviations with a D/(D-1) correction; minimum counts are reported as 'not observable'."
+}
