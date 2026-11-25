@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 032-02.g1_uptrend-near-high-continues_1d
+idea tested: 032-02.g1_uptrend-near-high-continues
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 1
+cost: 0.1882 USD
+---
+## Findings
+- **F1:** The test's result is on the side the idea predicts but short of the bar: the pooled slope t is 1.65 on 1,700 in-regime cases, and the unusual move is +0.78 % per 5 days with t 1.88 over 836 days. On folds B and C alone, the same slope measured on 866 non-overlapping 5-day cases has t 3.14, so the shortfall comes from folds A and D diluting it.
+- **F2:** The effect is graded as the idea says. The 5-day excess return rises from −1.80 % in the lowest forecast quintile to +2.57 % in the highest, about 173 cases each. By raw distance from the 28-day high, closes at the high (mean distance 0.05 %) are followed by +3.97 %, against −2.96 % for closes about 25 % below it (128 cases each), with a distance slope t of −3.54 on 638 cases.
+- **F3:** Every coin's slope points the idea's way, but the strength sits in a few coins. XRP has t 3.77 on 127 cases and XMR t 2.12 on 147, while BTC, ETH, LTC and ZEC sit between t 0.18 and 0.68 on 137 to 160 cases each. Six coins give too few cases per coin to show a size of 0.064 of a usual move clearly.
+- **F4:** The effect varies over time. By year the slope t is −0.91 in 2018 (114 cases), 0.82 in 2019, 2.92 in 2020 and 2.63 in 2021. By window it ranges from −2.84 in w14 (35 cases) to 4.11 in w16 and 4.28 in w18. This scatter of small samples argues for more cases rather than a narrower condition.
+- **F5:** The plan's horizon is where the effect shows best. The slope t is 2.09 at 1 day (4,421 cases), 1.26 at 3 days, 3.14 at 5 days, 2.09 at 10 days and −1.16 at 20 days (205 cases).
+- **F6:** The nearness effect belongs to the uptrend, as the idea states. Measured by distance from the high, the 5-day slope has t −3.54 when the 28-day return is positive (638 cases) and t +1.56 when it is negative (640 cases).
+
+## Ideas
+- `032-02.g1.b1_uptrend-near-high-more-coins` (from F1, F2, F3, F4, F5, F6): Among coins that have risen over the past 28 days, the closer the day's close is to the highest close of those 28 days, the larger the further rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
