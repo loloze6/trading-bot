@@ -78,9 +78,34 @@ def merge_lines(base, ours, theirs):
             i += 1
         i += 1
         if any(l.strip() for l in sides["base"]):
-            faults.append("both sides changed the same lines: " + " ".join("".join(sides["base"]).split())[:120])
-        text += sides["ours"] + sides["theirs"]
+            lines_, why = merge_hunk(sides["base"], sides["ours"], sides["theirs"])
+            if why:
+                faults.append("both sides changed the same lines: " + why)
+            text += lines_
+        else:
+            text += sides["ours"] + sides["theirs"]
     return "".join(text), faults
+
+
+def merge_hunk(base, ours, theirs):
+    """One conflict hunk, line by line: git joins changes on neighbouring lines into one hunk; here each side's changes
+    are placed against the base's lines, and only lines both sides changed are a fault. Inserts both sides made at the
+    same place are kept, ours first. Returns (lines, why) with why empty when merged."""
+    import difflib
+    def changes(side):
+        return [(i1, i2, side[j1:j2]) for tag, i1, i2, j1, j2 in
+                difflib.SequenceMatcher(None, base, side, autojunk=False).get_opcodes() if tag != "equal"]
+    co, ct = changes(ours), changes(theirs)
+    for a1, a2, _ in co:
+        for b1, b2, _ in ct:
+            if max(a1, b1) < min(a2, b2):
+                return ours + theirs, " ".join("".join(base[max(a1, b1):min(a2, b2)]).split())[:120]
+    out, i = [], 0
+    for i1, i2, new in sorted(co + ct, key=lambda c: (c[0], c[1] - c[0])):
+        out += base[i:i1] if i1 > i else []
+        out += new
+        i = max(i, i2)
+    return out + base[i:], ""
 
 
 def units(text):

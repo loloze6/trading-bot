@@ -89,3 +89,14 @@ def test_register_files_derived_from_its_inputs():
     assert nm.derived(f"{nm.REGISTER}/register/matrix.csv") and nm.derived(f"{nm.REGISTER}/register/comparisons/x.json")
     assert not nm.derived(nm.BOOKS) and not nm.derived(f"{nm.REGISTER}/register/held.json")
     assert not nm.derived(f"{nm.REGISTER}/register/returns/a.csv.gz") and not nm.derived("other.md")
+
+
+def test_changes_on_neighbouring_lines_both_kept():
+    # night 7: two sessions changed two neighbouring catalogue rows; git makes one hunk of them, the rule keeps both
+    base = "| `A` | 1 |\n| `B` | 1 |\n| `C` | 1 |\n"
+    ours = base.replace("| `A` | 1 |", "| `A` | 2 |")
+    theirs = base.replace("| `B` | 1 |", "| `B` | 3 |")
+    merged, faults = nm.merge_lines(base, ours, theirs)
+    assert faults == [] and merged == "| `A` | 2 |\n| `B` | 3 |\n| `C` | 1 |\n"
+    _, faults = nm.merge_lines(base, base.replace("| `B` | 1 |", "| `B` | 2 |"), theirs)
+    assert faults and "both sides changed the same lines" in faults[0]
