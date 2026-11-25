@@ -105,5 +105,10 @@ The control branches are read in place, not merged.
 - **05:56 Paris:** the 8 sessions confirmed running (new code committed within 5 minutes; controls at their resume, they
   commit hourly); control C2 committed its missing component class (checked on its branch).
 
+- **06:35 Paris watch:** no fault; the 4 new-code runs and control C3 moving (commits within 10 minutes); controls C1,
+  C2, C4 ended on their budgets (reports received). The "already indexed" answer works in the runs: two repeated
+  rebound discoveries were not made into briefs (chopreversal, panic). It cannot see other sessions' briefs: rangefail
+  made the same rebound its brief 036 (each branch indexes its own briefs; the merge reports such repeats only by number).
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
