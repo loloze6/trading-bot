@@ -202,3 +202,4 @@ night6_streak_run | 031-02.b1.g1_long-up-streaks-keep-rising_1d | UpCloseStreakL
 night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d | VolatilityRatioWeightedScaledReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 0, "base_period": 30, "period": 1, "return_scale": "base_std", "vol_period": 5}
 night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
 night7_rangefail_run | 033-01.b2_beyond-range-close-drift_1d | PriorRangePositionComponent | built: DonchianBreakoutComponent {"exclude_current": 1, "form": "position", "period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night7_rangefail_run | 033-02.d2_fresh-upside-break-rises_1d | PriorBreakoutCloseCountComponent | built: PriorBreakoutCloseCountComponent {"period": 20, "window": 20}
