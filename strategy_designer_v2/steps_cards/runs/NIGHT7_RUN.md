@@ -110,5 +110,8 @@ The control branches are read in place, not merged.
   rebound discoveries were not made into briefs (chopreversal, panic). It cannot see other sessions' briefs: rangefail
   made the same rebound its brief 036 (each branch indexes its own briefs; the merge reports such repeats only by number).
 
+- **07:30 Paris watch:** no fault on the 8 branches. 7 sessions ended on their budgets (reports received); session 1
+  (rangefail) still running (turn 30 at 07:30 Paris), stops starting ideas at 08:00 Paris.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
