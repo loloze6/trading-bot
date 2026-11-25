@@ -79,6 +79,9 @@ the new books on the unseen coins (1u).
   discovery briefs' ideas (one group rule). D's discoveries also research B's and F's themes (briefs 060, 061): each
   session's "already indexed" sees its own briefs only (night 7's same limit). F's waiting theme ideas follow the
   reversed sign its 7.b found: in a rising, calm market the deepest pullbacks keep falling (t -3.15).
+- **00:46 Paris, limit watch:** all 6 sessions running (last commits 23:22 to 23:36 UTC), no call refused. 53 turns, 46
+  ideas tested, about 49 USD; confirmed 5 (C 3, B 1, D 1), profitable enough 2 (C). E's "no candidate left" in the
+  watch is its stop of 22:43 (the catalogue fault); it resumed and is at turn 10.
 
 ## Reading
 (written in the morning)
