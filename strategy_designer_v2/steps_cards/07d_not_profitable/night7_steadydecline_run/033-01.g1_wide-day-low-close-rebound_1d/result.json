@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "033-01.g1_wide-day-low-close-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 3.7187433999999997,
+  "findings": {
+    "F1": "The book loses its gain by trading every day. It was in a position on 99 % of the coins' days with an average size of only 0.11, and the gain before costs per coin-day was +0.070 % on the long side and +0.010 % on the short side against an estimated fee drag of about 0.015 %. That leaves a mean daily return on days in a position of 0.009 % and a Calmar of 0.15, with a deepest fall of -10.1 % over 89 days in w17.",
+    "F2": "The effect lives in the strong cases on the long side. Bars in the top fifth of |forecast| (forecast at or above 4.1) on the long side returned +0.96 % the next day (t 2.79 with cases of one day together, 891 cases on 344 days), which is +0.77 % after the 0.19 % trade cost. The top twentieth returned +1.40 % (t 3.02, 208 cases on 117 days).",
+    "F3": "The short side, the mirror case of a near-high close, does not carry the effect. In the top fifth, short bets returned +0.30 % (t 1.02, 847 cases), below the 0.19 % cost once slippage is counted. Over two days they lost (-0.45 % signed excess) while the long side kept +0.72 %. In a rising 60-day trend the short side lost -0.29 % (t -1.46, 836 cases).",
+    "F4": "The forecast's grading is lopsided. The top decile (mean forecast 6.1) was followed by +0.85 % excess (t 4.22) and the ninth decile by +0.68 % (t 3.43). The bottom decile was only -0.39 % (t -1.91), and the middle short deciles were also negative (-0.52 %, t -2.92), so being short on mild forecasts bets on noise.",
+    "F5": "The rebound needs a wide day and is concentrated on down days. Closes in the lower half of the range were followed by +0.89 % (t 2.56, 879 cases) in the widest quartile of day width against the 20-day mean range, and by +0.71 % (t 2.48) in the third quartile. They were followed by -0.19 % and -0.22 % in the two narrowest quartiles. In the widest quartile, a down day closing in its lower half was followed by +1.07 % (t 2.86, 769 cases), against -0.39 % after an up day.",
+    "F6": "The strong long cases pay in an agitated market and not in a calm one. Agitated means a 30-day swing above the coin's median. Strong long cases returned +1.19 % excess there (t 2.45, 332 cases) against +0.32 % in calm markets (t 0.81, 340 cases). The agitated state alone does not earn: all agitated bars returned -0.006 % (t -0.03), and weak-forecast long bets in it returned +0.30 % (t 1.10). Agitation fits the brief's theory, since forced late-day selling such as stops, liquidations and risk cuts is largest when the coin swings more than usual."
+  },
+  "ideas": [
+    {
+      "idea": "The wider a coin's day is against its usual daily range, and the nearer its close sits to that day's low on a day that ends down, the larger its rise over the next day.",
+      "consequence": "A trader would buy only the close of wide down days that end near their low, and stay out on narrow days and on near-high closes, where the move does not cover a trade's cost.",
+      "name": "wide down-day low-close rebound",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In an agitated market, the wider a coin's day is against its usual daily range, and the nearer its close sits to that day's low, the larger its rise over the next day.",
+      "consequence": "A trader would buy the close of wide days ending near their low only while the coin swings more than usual, when forced late selling is largest and the rebound is about four times what it is in calm markets.",
+      "name": "agitated wide-day low-close rebound",
+      "from": "F2, F3, F6",
+      "profile": "agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-01.g1.d1_wide-down-day-low-close-rebound",
+    "033-01.g1.d2_agitated-wide-day-low-close-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

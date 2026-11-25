@@ -29,22 +29,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 041-01_agitated-fall-rise-vs-swing-giveback | - | plan | inconclusive (+0.27) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 041-01.b1_agitated-fall-swing-scaled-bounce; 7.g: 041-01.g1_wide-down-day-range-bounce, 041-01.g2_agitated-fall-scaled-bounce | 1.11 | 5.8 |
 | 041-02_agitated-fall-rise-vs-range-giveback | - | plan | inconclusive (-0.52) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 041-02.b1_agitated-fall-two-sided-fade, 041-02.b2_agitated-fall-down-day-bounce; 7.g: 041-02.g1_agitated-fall-down-day-range-bounce | 0.99 | 5.8 |
 | 041-03_agitated-fall-drop-vs-range-rebound | - | plan | confirmed (+3.64) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: no ideas: Every pattern that stands out (F1, F2, F4, F5, F6) is the tested idea or the already-tested low-close idea from the same profile. The brief's symmetric up-day reversal (F3) is not graded and changes sign. After looking at the scaled move, the close location, profiles, weekdays, coins, years, two- and three-day horizons and the book's extreme days, nothing else stands out enough over the many angles examined to support a new idea. | 0.64 | 6.0 |
+| 033-01.g1_wide-day-low-close-rebound | 033-01_close-near-low-rebounds | plan | confirmed (+3.19) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 033-01.g1.d1_wide-down-day-low-close-rebound, 033-01.g1.d2_agitated-wide-day-low-close-rebound; 7.g: 033-01.g1.g1_falling-agitated-low-close-rebound, 033-01.g1.g2_second-day-reversal-after-extreme-close | 4.47 | 19.8 |
 
 ## Consumption
-25 ideas, 26.86 USD, 154.2 minutes in all.
+26 ideas, 31.34 USD, 174.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.66 | 14.2 |
-| step4_backtest | 0.00 | 56.4 |
-| step5_verdict | 4.10 | 15.0 |
+| step3_plan | 4.79 | 15.0 |
+| step4_backtest | 0.00 | 58.3 |
+| step5_verdict | 4.27 | 15.6 |
 | step6_check | 0.00 | 1.2 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 4.90 | 17.6 |
+| step7_7.d | 8.62 | 32.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 2.13 | 6.7 |
-| step7_7.g | 11.06 | 35.4 |
-| similarity_check | 0.00 | 1.2 |
+| step7_7.g | 11.51 | 36.8 |
+| similarity_check | 0.00 | 1.3 |
 | unseen_test | 0.00 | 6.0 |

@@ -1,88 +1,91 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 30.88 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 35.35 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 033-01.g1_wide-day-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 2 | 033-01.g2_agitated-close-near-low-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 3 | 034-01.g1_wide-day-close-location-reversal | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 4 | 038-01.g1_agitated-big-falls-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 5 | 039-01.d1_falling-agitated-forced-selling-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 6 | 039-01.d2_multi-day-slide-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 7 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 8 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 9 | 034-02.b1_agitated-high-close-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 10 | 036-01.b1_outsized-fall-rebound-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 11 | 036-02.b1_outsized-fall-rebound-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 12 | 041-01.b1_agitated-fall-swing-scaled-bounce | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 13 | 041-02.b1_agitated-fall-two-sided-fade | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 14 | 041-02.b2_agitated-fall-down-day-bounce | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 15 | 035-01.d1_agitated-wide-day-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 16 | 035-01.d2_unusual-wide-day-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 17 | 035-02.d1_strong-flush-only-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 18 | 035-02.d2_flush-in-recent-advance | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 19 | 035-02.d3_sudden-flush-after-up-week | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 20 | 040-01.d1_falling-agitated-fall-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 21 | 033-02.d1_high-close-fades-in-selloffs | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 22 | 033-02.d2_high-close-fades-after-declines | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 23 | 033-02.d3_wide-day-high-close-gives-back | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 24 | 033-01.d2.d1_wide-range-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
-| 25 | 033-01.d2.d2_wide-range-low-close-two-day-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
-| 26 | 033-01.d2.d3_agitated-decline-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
-| 27 | 033-01.d1.d1_strong-low-close-rebound-only | 7.d | 2 | 0.3007 | 0.1002 | candidate |
-| 28 | 033-01.d1.d2_agitated-wide-day-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
-| 29 | 033-01.d1.d3_wide-day-high-close-next-day-fade | 7.d | 2 | 0.3007 | 0.1002 | candidate |
-| 30 | 037-02.d1_wide-fall-rebound-outside-chop | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 31 | 037-02.d2_falling-agitated-sweep-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 32 | 037-02.d3_sweep-after-slide-rebounds | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 33 | 037-01.d1_wide-falls-rebound-when-agitated | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 34 | 037-01.d2_only-extreme-wide-falls-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 35 | 037-01.d3_wide-fall-after-multi-day-decline | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 36 | 032-02.g1_calm-decline-fourteen-day-continuation | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 37 | 036-01.g1_raw-fall-depth-next-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 38 | 036-02.g1_outsized-fall-weak-close | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 39 | 041-01.g1_wide-down-day-range-bounce | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 40 | 041-02.g1_agitated-fall-down-day-range-bounce | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 41 | 034-02.g2_deep-fall-low-close-rebounds | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 42 | 036-01.g2_agitated-market-fall-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 43 | 036-02.g2_outsized-fall-after-decline | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 44 | 041-01.g2_agitated-fall-scaled-bounce | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 45 | 036-02.g3_agitated-outsized-fall-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 46 | 039-02.g1_agitated-at-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 47 | 039-02.g2_calm-market-short-momentum | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 48 | 039-01.g1_extreme-agitated-fall-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 49 | 039-01.g2_agitated-low-close-two-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 50 | 035-01.g1_wide-low-close-three-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 51 | 035-01.g3_extreme-wide-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 52 | 035-02.g1_agitated-wide-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 53 | 035-02.g2_absolute-high-to-close-drop-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 54 | 040-01.g1_falling-agitated-fall-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 55 | 040-01.g2_heavy-volume-fall-next-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 56 | 033-02.g1_wide-low-close-rebounds | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 57 | 033-02.g2_agitated-wide-low-close | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 58 | 033-02.g3_low-close-two-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 59 | 034-01.d2.g1_falling-close-location-graded-agitation | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 60 | 034-01.d2.g2_falling-agitated-high-close-fade | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 61 | 033-01.d2.g1_give-back-below-high-rebounds | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 62 | 033-01.d2.g2_agitated-low-close-rebound | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 63 | 033-01.d2.g3_falling-market-low-close-rebound | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 64 | 033-01.d1.g1_falling-agitated-low-close-rebound | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 65 | 037-02.g1_forced-fall-rebound-when-agitated | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 66 | 037-02.g2_deep-fall-wide-relative-range | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 67 | 037-02.g3_deep-fall-closing-at-low | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 68 | 037-01.g1_wide-fall-rebound-agitated | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 69 | 037-01.g2_wide-fall-low-close | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 70 | 040-02.d1_agitated-fall-after-weekly-decline | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 71 | 040-02.d2_two-day-rebound-after-selling | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 72 | 040-02.d3_largest-scaled-falls-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 73 | 040-02.d4_falling-agitated-fall-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
-| 74 | 034-01.d1.g1_ordinary-rise-high-close-fade | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 75 | 034-01.d1.g2_agitated-sharp-fall-low-close-rebound | 7.g | 2 | 0.125 | 0.0417 | candidate |
-| 76 | 040-02.g1_agitated-heavy-volume-fall-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 77 | 040-02.g2_heavy-volume-fall-three-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 78 | 038-02.g1_agitated-outsized-fall-rebounds | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 79 | 038-02.g2_agitated-fall-three-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 1 | 033-01.g1.d1_wide-down-day-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 2 | 033-01.g1.d2_agitated-wide-day-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 3 | 033-01.g2_agitated-close-near-low-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 4 | 034-01.g1_wide-day-close-location-reversal | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 5 | 038-01.g1_agitated-big-falls-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 6 | 033-01.g1.g1_falling-agitated-low-close-rebound | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 7 | 033-01.g1.g2_second-day-reversal-after-extreme-close | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 8 | 039-01.d1_falling-agitated-forced-selling-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 9 | 039-01.d2_multi-day-slide-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 10 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 11 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 12 | 034-02.b1_agitated-high-close-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 13 | 036-01.b1_outsized-fall-rebound-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 14 | 036-02.b1_outsized-fall-rebound-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 15 | 041-01.b1_agitated-fall-swing-scaled-bounce | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 16 | 041-02.b1_agitated-fall-two-sided-fade | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 17 | 041-02.b2_agitated-fall-down-day-bounce | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 18 | 035-01.d1_agitated-wide-day-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 19 | 035-01.d2_unusual-wide-day-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 20 | 035-02.d1_strong-flush-only-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 21 | 035-02.d2_flush-in-recent-advance | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 22 | 035-02.d3_sudden-flush-after-up-week | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 23 | 040-01.d1_falling-agitated-fall-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 24 | 033-02.d1_high-close-fades-in-selloffs | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 25 | 033-02.d2_high-close-fades-after-declines | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 26 | 033-02.d3_wide-day-high-close-gives-back | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 27 | 033-01.d2.d1_wide-range-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 28 | 033-01.d2.d2_wide-range-low-close-two-day-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 29 | 033-01.d2.d3_agitated-decline-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 30 | 033-01.d1.d1_strong-low-close-rebound-only | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 31 | 033-01.d1.d2_agitated-wide-day-low-close-rebound | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 32 | 033-01.d1.d3_wide-day-high-close-next-day-fade | 7.d | 2 | 0.3007 | 0.1002 | candidate |
+| 33 | 037-02.d1_wide-fall-rebound-outside-chop | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 34 | 037-02.d2_falling-agitated-sweep-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 35 | 037-02.d3_sweep-after-slide-rebounds | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 36 | 037-01.d1_wide-falls-rebound-when-agitated | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 37 | 037-01.d2_only-extreme-wide-falls-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 38 | 037-01.d3_wide-fall-after-multi-day-decline | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 39 | 032-02.g1_calm-decline-fourteen-day-continuation | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 40 | 036-01.g1_raw-fall-depth-next-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 41 | 036-02.g1_outsized-fall-weak-close | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 42 | 041-01.g1_wide-down-day-range-bounce | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 43 | 041-02.g1_agitated-fall-down-day-range-bounce | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 44 | 034-02.g2_deep-fall-low-close-rebounds | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 45 | 036-01.g2_agitated-market-fall-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 46 | 036-02.g2_outsized-fall-after-decline | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 47 | 041-01.g2_agitated-fall-scaled-bounce | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 48 | 036-02.g3_agitated-outsized-fall-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 49 | 039-02.g1_agitated-at-low-close-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 50 | 039-02.g2_calm-market-short-momentum | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 51 | 039-01.g1_extreme-agitated-fall-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 52 | 039-01.g2_agitated-low-close-two-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 53 | 035-01.g1_wide-low-close-three-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 54 | 035-01.g3_extreme-wide-low-close-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 55 | 035-02.g1_agitated-wide-low-close-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 56 | 035-02.g2_absolute-high-to-close-drop-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 57 | 040-01.g1_falling-agitated-fall-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 58 | 040-01.g2_heavy-volume-fall-next-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 59 | 033-02.g1_wide-low-close-rebounds | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 60 | 033-02.g2_agitated-wide-low-close | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 61 | 033-02.g3_low-close-two-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 62 | 034-01.d2.g1_falling-close-location-graded-agitation | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 63 | 034-01.d2.g2_falling-agitated-high-close-fade | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 64 | 033-01.d2.g1_give-back-below-high-rebounds | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 65 | 033-01.d2.g2_agitated-low-close-rebound | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 66 | 033-01.d2.g3_falling-market-low-close-rebound | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 67 | 033-01.d1.g1_falling-agitated-low-close-rebound | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 68 | 037-02.g1_forced-fall-rebound-when-agitated | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 69 | 037-02.g2_deep-fall-wide-relative-range | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 70 | 037-02.g3_deep-fall-closing-at-low | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 71 | 037-01.g1_wide-fall-rebound-agitated | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 72 | 037-01.g2_wide-fall-low-close | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 73 | 040-02.d1_agitated-fall-after-weekly-decline | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 74 | 040-02.d2_two-day-rebound-after-selling | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 75 | 040-02.d3_largest-scaled-falls-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 76 | 040-02.d4_falling-agitated-fall-rebound | 7.d | 1 | 0.3007 | 0.1503 | candidate |
+| 77 | 034-01.d1.g1_ordinary-rise-high-close-fade | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 78 | 034-01.d1.g2_agitated-sharp-fall-low-close-rebound | 7.g | 2 | 0.124 | 0.0413 | candidate |
+| 79 | 040-02.g1_agitated-heavy-volume-fall-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 80 | 040-02.g2_heavy-volume-fall-three-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 81 | 038-02.g1_agitated-outsized-fall-rebounds | 7.g | 1 | 0.124 | 0.062 | candidate |
+| 82 | 038-02.g2_agitated-fall-three-day-rebound | 7.g | 1 | 0.124 | 0.062 | candidate |
 | - | 032-01_calm-fall-depth-continues | step 2 | 0 | 0.16 | 0.16 | tested: step 5 inconclusive (+1.43); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 032-02_calm-fall-below-high-continues | step 2 | 0 | 0.16 | 0.16 | tested: step 5 inconclusive (+1.22); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 033-01_close-near-low-rebounds | step 2 | 0 | 0.16 | 0.16 | tested: step 5 confirmed (+2.64); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
@@ -106,7 +109,8 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 041-03_agitated-fall-drop-vs-range-rebound | step 2 | 0 | 0.16 | 0.16 | tested: step 5 confirmed (+3.64); step 6 profitable enough  GOAL REACHED |
 | - | 033-01.d1_wide-day-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | tested: step 5 confirmed (+3.36); step 6 not profitable enough (failed: Calmar) |
 | - | 033-01.d2_low-close-rebound-long-side | 7.d | 1 | 0.3007 | 0.1503 | tested: step 5 confirmed (+2.07); step 6 not profitable enough (failed: Mean daily return, on days in a position, Calmar) |
+| - | 033-01.g1_wide-day-low-close-rebound | 7.g | 1 | 0.124 | 0.062 | tested: step 5 confirmed (+3.19); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 034-01.d1_wide-range-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | tested: step 5 confirmed (+3.69); step 6 profitable enough  GOAL REACHED |
 | - | 034-01.d2_falling-agitated-low-close-rebound | 7.d | 1 | 0.3007 | 0.1503 | tested: step 5 mismatch; step 6 not profitable enough (failed: Mean daily return, on days in a position, Calmar) |
-| - | 034-01.g2_falling-agitated-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | duplicate of 034-01.d2_falling-agitated-low-close-rebound |
-| - | 034-02.g1_falling-agitated-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | duplicate of 034-01.d2_falling-agitated-low-close-rebound |
+| - | 034-01.g2_falling-agitated-low-close-rebound | 7.g | 1 | 0.124 | 0.062 | duplicate of 034-01.d2_falling-agitated-low-close-rebound |
+| - | 034-02.g1_falling-agitated-low-close-rebound | 7.g | 1 | 0.124 | 0.062 | duplicate of 034-01.d2_falling-agitated-low-close-rebound |
