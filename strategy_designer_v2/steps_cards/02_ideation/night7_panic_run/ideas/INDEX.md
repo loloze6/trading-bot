@@ -19,3 +19,5 @@
 041-02_wide-down-day-next-day-rebound: After a down day, a coin rises over the next day, more so the wider its range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 041-03_range-jump-up-day-fade: After an up day, a coin falls over the next day, more so the wider its range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 041-04_range-jump-down-day-rebound: After a down day, a coin rises over the next day, more so the wider its range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+042-01_low-close-next-day-rebound: A coin rises over the next day, more so the nearer its close sits to the day's low within the range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+042-02_high-close-next-day-fade: A coin falls over the next day, more so the nearer its close sits to the day's high within the range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
