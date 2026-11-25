@@ -1,0 +1,6 @@
+032-01.b1.b1.e1_large-weekly-fall-continues_1d: 1 ideas (2 explorations)
+032-01.b1.b1_large-weekly-rise-continues_1d: 2 ideas (1 explorations)
+032-01.b1_agitated-trend-weekly-reversal_1d: 1 ideas (2 explorations)
+032-01_choppy-weekly-rise-reverses_1d: 1 ideas (3 explorations)
+032-02.b1_choppy-weekly-falls-keep-falling_1d: 2 ideas (2 explorations)
+032-02_choppy-weekly-fall-rebounds_1d: 1 ideas (2 explorations)

@@ -1,0 +1,6 @@
+032-01.b1.b1.e1_large-weekly-fall-continues_1d: not profitable enough [Sharpe -0.3308; Sharpe minus holding's Sharpe -0.885; Calmar -0.1227]
+032-01.b1.b1_large-weekly-rise-continues_1d: profitable enough [Sharpe 0.9857; Sharpe minus holding's Sharpe 0.4315; Calmar 0.776]
+032-01.b1_agitated-trend-weekly-reversal_1d: not profitable enough [Sharpe -0.7937; Sharpe minus holding's Sharpe -1.348; Calmar -0.1841]
+032-01_choppy-weekly-rise-reverses_1d: not profitable enough [Sharpe -0.7249; Sharpe minus holding's Sharpe -1.295; Calmar -0.1678]
+032-02.b1_choppy-weekly-falls-keep-falling_1d: not profitable enough [Sharpe -0.4497; Sharpe minus holding's Sharpe -1.004; Calmar -0.102]
+032-02_choppy-weekly-fall-rebounds_1d: not profitable enough [Sharpe 0.4073; Sharpe minus holding's Sharpe -0.1623; Calmar 0.2271]

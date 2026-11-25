@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "032-01_choppy-weekly-rise-reverses_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5329249,
+  "findings": {
+    "F1": "The test's result is on the wrong side. Step 5's mean short-signed 7-day unusual move is -1.10 % (t -0.99, 400 cases on 175 days, rank correlation -0.05), and in folds B and C the regime's 7-day rises go on rising by +2.46 % beyond drift (145 cases, 59 days, t 1.13), not falling.",
+    "F2": "Inside the tested regime the past 7-day move tends to continue rather than reverse at every horizon. The continuation is +0.21 % at 3 days (737 cases, t 0.42), +1.90 % at 7 days (311 cases, t 1.44) and +2.81 % at 14 days (127 cases, t 1.08), so the reversal the idea predicts is absent wherever the regime is measured.",
+    "F3": "The regime's continuation is uneven. It shows only where the coin's 30-day volatility is in the middle third of its own range (+4.74 %, t 2.60, 93 cases, 56 days, rho 0.33), not the top third (+0.70 %, t 0.45, 212 cases), and only in 2020 and 2021 (+3.8 % and +3.2 %), not 2018 and 2019 (-1.4 % and -0.6 %).",
+    "F4": "The reversal the brief describes does appear, but in the opposite situation. When 30-day volatility is in the coin's top third and the 30-day efficiency ratio is above 0.3 (agitated and trending), the past 7-day move is given back by -6.73 % over the next 7 days (64 cases, 36 days, t -1.99). That is a strength of -0.47 of a usual 7-day move, with rho -0.26 between the scaled 7-day move and the unusual move.",
+    "F5": "That agitated-trending reversal holds on both sides, in every year and in 5 of 6 coins:",
+    "F6": "The same pattern shows with a causal volatility rank. Among bars whose 30-day volatility ranks in the top fifth of the window so far, the move reverses where the efficiency ratio is above 0.3 (-4.51 %, 67 cases, t -1.65, rho -0.19). It does not reverse where the ratio is 0.3 or below (+0.43 %, 104 cases, t 0.21).",
+    "F7": "The tested idea's size cannot pay, but the agitated-trending reversal could. The tested idea is -0.31 % per case (t -0.46), against a cost of 0.19 % a trade. The reversal in F4 is about 6.7 % per case, some 35 times that cost."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily swings over the past 30 days are large compared with its own recent history and its price has made steady net progress over those 30 days rather than chopping, a 7-day rise tends to be partly given back with a decline over the next 7 days. The larger that 7-day rise is relative to the coin's typical daily swing over the past 30 days, the larger the decline.",
+      "consequence": "In agitated markets that have been trending, a trader should fade a large weekly up-move rather than chase it, and should not fade it in agitated chop.",
+      "name": "agitated trend weekly reversal",
+      "from": "F4, F5, F6, F7",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1_agitated-trend-weekly-reversal"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,6 @@
+032-01.b1.b1.e1_large-weekly-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-01.b1.b1_large-weekly-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+032-01.b1_agitated-trend-weekly-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-01_choppy-weekly-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02.b1_choppy-weekly-falls-keep-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02_choppy-weekly-fall-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

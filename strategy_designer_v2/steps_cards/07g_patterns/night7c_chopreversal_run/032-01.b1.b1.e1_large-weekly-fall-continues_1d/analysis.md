@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 032-01.b1.b1.e1_large-weekly-fall-continues_1d
+idea tested: 032-01.b1.b1.e1_large-weekly-fall-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5610 USD
+---
+## Findings
+- **F1:** Large one-day falls, counted in the coin's past-30-day daily swing, were followed by a next-day rebound that grew with the size of the fall. Non-overlapping one-day samples gave these next-day returns by size of fall:
+- **F2:** Large up days showed no matching giveback. The graded reversal product (minus the scaled move times the next day's scaled return) differed by side:
+- **F3:** The down-day rebound held on every coin. Its graded product was positive on all six coins, from 0.051 (ETH) to 0.175 (XMR, t 2.83), with LTC and XRP at 0.106. It was positive in 2019 (0.063), 2020 (0.276, t 1.67) and 2021 (0.128, t 1.84), and slightly negative in 2018 (-0.053, t -0.41).
+- **F4:** The down-day rebound was largest when the coin's 30-day volatility was high against its own past 180 days. The graded product was 0.174 (t 1.97) in the most agitated tercile, against 0.076 (t 1.09) in the middle tercile and 0.097 (t 0.58) in the calmest.
+- **F5:** The rebound after a fall of 2 to 3 daily swings carried over three days: +3.48 % over the next 3 days (36 cases, 21 days, t 2.52). The few falls beyond 3 swings gave only +0.20 % over that span (12 cases). A 2-day fall of 2 swings or more was followed by +1.82 % the next day (144 cases, 55 days, t 1.73).
+- **F6:** The tested weekly continuation was absent, and the short book lost money.
+- **F7:** The weekday pattern in the next-day return did not stand out from chance. Thursday was followed by +0.63 % (t 1.73, 153 days) and was positive in all four years. Wednesday was followed by -0.47 % (t -1.03). Neither clears the bar after this many angles.
+
+## Ideas
+- `032-01.b1.b1.e1.g1_sharp-daily-fall-rebounds` (from F1, F2, F3): When a coin falls sharply in one day compared with its typical daily swing over the past 30 days, it tends to rebound over the next 1 day. The larger that one-day fall counted in 30-day daily swings, the larger the rebound.
+- `032-01.b1.b1.e1.g2_agitated-daily-fall-reversal` (from F4, F5, F1): When a coin's 30-day volatility is high compared with its own volatility over the past 180 days, a sharp one-day fall counted in its 30-day daily swing tends to be partly regained over the next 3 days. The larger the fall and the higher that volatility, the larger the rebound.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

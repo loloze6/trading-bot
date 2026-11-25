@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move of the long cases (return minus the coin's mean 7-bar return)",
+    "value": 0.0491755412329124,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.936992623465488
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of the unusual move on the forecast",
+    "value": 0.0042331258422812846,
+    "passed": true
+  },
+  "counts": {
+    "cases": 103,
+    "distinct days": 63
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Cases are grid bars (positions 0, 7, 14, ... of each window, with a full 7-bar return inside the window) with forecast > 0, the drift is the coin's mean 7-bar return on that grid over all its windows, the t uses day-clustered deviations with a D/(D-1) correction, and the plan's 'fewer than 30 cases or 20 days' is treated as the minimum count giving 'not observable'."
+}

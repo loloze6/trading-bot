@@ -1,0 +1,6 @@
+032-01.b1.b1.e1_large-weekly-fall-continues_1d: inconclusive (fit: adapted) [main: -0.0216037; t of the mean, cases of one day taken together -1.09843; cases 123, days 68]
+032-01.b1.b1_large-weekly-rise-continues_1d: inconclusive (fit: exact) [main: 0.0491755; t of the mean, cases of one day taken together 1.93699; cases 103, distinct days 63]
+032-01.b1_agitated-trend-weekly-reversal_1d: inconclusive (fit: exact) [main: -0.0116897; t of the mean, cases summed per day -1.02739; cases 298, days 220]
+032-01_choppy-weekly-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.0109664; t of the mean, cases of one day taken together -0.994143; cases 400, distinct days 175]
+032-02.b1_choppy-weekly-falls-keep-falling_1d: inconclusive (fit: adapted) [main: 0.0106427; day-clustered t 1.41138; cases 441, distinct days 350]
+032-02_choppy-weekly-fall-rebounds_1d: inconclusive (fit: adapted) [main: 0.00103889; day-clustered slope t 1.00582; cases 444, cases on distinct days 196]

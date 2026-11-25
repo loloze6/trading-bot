@@ -1,1 +1,8 @@
+032-01.b1.b1.e1_large-weekly-fall-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1.b1_large-weekly-rise-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1_agitated-trend-weekly-reversal_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01_choppy-weekly-rise-reverses_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-02.b1_choppy-weekly-falls-keep-falling_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-02_choppy-weekly-fall-rebounds_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-03_reversal-grows-with-choppiness_1d: missing-components: The idea is an interaction: the reversal bet must grow with both the scaled 7-day move and the 30-day choppiness. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
