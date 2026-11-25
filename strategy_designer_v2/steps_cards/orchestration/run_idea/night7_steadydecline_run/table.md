@@ -27,22 +27,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 034-01.d1_wide-range-low-close-rebound | 034-01_agitated-low-close-rebounds | plan | confirmed (+3.69) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 034-01.d1.g1_ordinary-rise-high-close-fade, 034-01.d1.g2_agitated-sharp-fall-low-close-rebound | 0.65 | 6.4 |
 | 034-01.d2_falling-agitated-low-close-rebound | 034-01_agitated-low-close-rebounds | plan | mismatch | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.g: 034-01.d2.g1_falling-close-location-graded-agitation, 034-01.d2.g2_falling-agitated-high-close-fade | 0.82 | 5.3 |
 | 041-01_agitated-fall-rise-vs-swing-giveback | - | plan | inconclusive (+0.27) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 041-01.b1_agitated-fall-swing-scaled-bounce; 7.g: 041-01.g1_wide-down-day-range-bounce, 041-01.g2_agitated-fall-scaled-bounce | 1.11 | 5.8 |
+| 041-02_agitated-fall-rise-vs-range-giveback | - | plan | inconclusive (-0.52) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 041-02.b1_agitated-fall-two-sided-fade, 041-02.b2_agitated-fall-down-day-bounce; 7.g: 041-02.g1_agitated-fall-down-day-range-bounce | 0.99 | 5.8 |
 
 ## Consumption
-23 ideas, 25.24 USD, 142.3 minutes in all.
+24 ideas, 26.23 USD, 148.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.52 | 13.4 |
-| step4_backtest | 0.00 | 51.1 |
-| step5_verdict | 3.78 | 13.9 |
+| step3_plan | 4.59 | 13.8 |
+| step4_backtest | 0.00 | 53.7 |
+| step5_verdict | 3.94 | 14.5 |
 | step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 4.90 | 17.6 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.77 | 5.7 |
-| step7_7.g | 10.26 | 33.0 |
+| step7_7.b | 2.13 | 6.7 |
+| step7_7.g | 10.65 | 34.1 |
 | similarity_check | 0.00 | 1.2 |
 | unseen_test | 0.00 | 4.9 |
