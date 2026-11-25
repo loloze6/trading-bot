@@ -15,7 +15,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | 034-02_agitated-high-close-gives-back | - | plan | inconclusive (+1.02) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 034-02.b1_agitated-high-close-all-coins; 7.g: 034-02.g1_falling-agitated-low-close-rebound, 034-02.g2_deep-fall-low-close-rebounds | 1.15 | 6.9 |
 | 037-01_wide-day-fall-next-day-rebound | - | plan | confirmed (+2.37) | not profitable enough (failed: Calmar) | - | 7.d: 037-01.d1_wide-falls-rebound-when-agitated, 037-01.d2_only-extreme-wide-falls-rebound, 037-01.d3_wide-fall-after-multi-day-decline; 7.g: 037-01.g1_wide-fall-rebound-agitated, 037-01.g2_wide-fall-low-close | 1.89 | 6.7 |
 | 039-01_agitated-swing-fall-low-close-rebound | - | plan | confirmed (+3.86) | not profitable enough (failed: Calmar) | - | 7.d: 039-01.d1_falling-agitated-forced-selling-rebound, 039-01.d2_multi-day-slide-low-close-rebound; 7.g: 039-01.g1_extreme-agitated-fall-rebound, 039-01.g2_agitated-low-close-two-day-rebound | 1.03 | 6.3 |
-| 036-02_fall-vs-range-next-day-rebound | - | missing-components | - | - | - | - | 0.06 | 0.4 |
 | 037-02_fall-range-beyond-loss-rebound | - | missing-components | - | - | - | - | 0.11 | 0.8 |
 | 038-02_agitated-fall-vs-swing-rebound | - | plan | confirmed (+4.80) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 038-02.g1_agitated-outsized-fall-rebounds, 038-02.g2_agitated-fall-three-day-rebound | 0.66 | 6.0 |
 | 039-02_agitated-range-fall-low-close-rebound | - | missing-components | - | - | - | - | 0.13 | 0.7 |
@@ -23,22 +22,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 033-01.d2_low-close-rebound-long-side | 033-01_close-near-low-rebounds | plan | confirmed (+2.07) | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.d: 033-01.d2.d1_wide-range-low-close-rebound, 033-01.d2.d2_wide-range-low-close-two-day-rebound, 033-01.d2.d3_agitated-decline-low-close-rebound; 7.g: 033-01.d2.g1_give-back-below-high-rebounds, 033-01.d2.g2_agitated-low-close-rebound, 033-01.d2.g3_falling-market-low-close-rebound | 1.10 | 5.8 |
 | 040-01_agitated-fall-size-next-day-rebound | - | plan | confirmed (+3.76) | not profitable enough (failed: Calmar) | - | 7.d: 040-01.d1_falling-agitated-fall-rebound; 7.g: 040-01.g1_falling-agitated-fall-rebound, 040-01.g2_heavy-volume-fall-next-day-rebound | 1.22 | 6.5 |
 | 035-02_swing-wide-low-close-rebounds | - | plan | confirmed (+3.20) | not profitable enough (failed: Calmar) | - | 7.d: 035-02.d1_strong-flush-only-rebound, 035-02.d2_flush-in-recent-advance, 035-02.d3_sudden-flush-after-up-week; 7.g: 035-02.g1_agitated-wide-low-close-rebound, 035-02.g2_absolute-high-to-close-drop-rebound | 2.04 | 6.6 |
+| 036-02_fall-vs-range-next-day-rebound | - | plan | inconclusive (+1.93) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 036-02.b1_outsized-fall-rebound-more-coins; 7.g: 036-02.g1_outsized-fall-weak-close, 036-02.g2_outsized-fall-after-decline, 036-02.g3_agitated-outsized-fall-rebound | 0.96 | 6.0 |
 
 ## Consumption
-19 ideas, 18.20 USD, 98.2 minutes in all.
+19 ideas, 19.10 USD, 103.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.19 | 9.8 |
-| step4_backtest | 0.00 | 33.8 |
-| step5_verdict | 2.64 | 9.8 |
+| step3_plan | 3.33 | 10.8 |
+| step4_backtest | 0.00 | 35.6 |
+| step5_verdict | 2.80 | 10.4 |
 | step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 4.03 | 14.1 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.23 | 4.0 |
-| step7_7.g | 7.11 | 22.5 |
+| step7_7.b | 1.45 | 4.8 |
+| step7_7.g | 7.50 | 23.9 |
 | similarity_check | 0.00 | 0.8 |
 | unseen_test | 0.00 | 2.3 |

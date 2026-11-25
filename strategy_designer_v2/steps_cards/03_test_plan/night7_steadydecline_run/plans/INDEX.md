@@ -9,7 +9,7 @@
 035-01_wide-low-close-rebounds_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 035-02_swing-wide-low-close-rebounds_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 036-01_fall-vs-swing-next-day-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-036-02_fall-vs-range-next-day-rebound_1d: missing-components: The idea needs the close-to-close fall measured in multiples of the coin's 30-day mean daily high-to-low range, both for the [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+036-02_fall-vs-range-next-day-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 037-01_wide-day-fall-next-day-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 037-02_fall-range-beyond-loss-rebound_1d: missing-components: The closing loss over range is available (NetMoveToRangeRatioComponent, period 1), but the forecast is a weighted sum, so it cannot [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 038-01_agitated-fall-next-day-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

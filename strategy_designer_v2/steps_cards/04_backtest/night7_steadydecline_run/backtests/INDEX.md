@@ -9,6 +9,7 @@
 035-01_wide-low-close-rebounds_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 035-02_swing-wide-low-close-rebounds_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 036-01_fall-vs-swing-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+036-02_fall-vs-range-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 037-01_wide-day-fall-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 038-01_agitated-fall-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 038-02_agitated-fall-vs-swing-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
