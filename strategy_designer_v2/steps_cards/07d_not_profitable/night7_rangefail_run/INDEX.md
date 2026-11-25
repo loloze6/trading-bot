@@ -21,6 +21,7 @@
 035-03.b1_choppy-far-below-high-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 035-03_far-below-high-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 036-01_swing-scaled-fall-next-day-rebound_1d: 2 ideas (2 explorations)
+037-01.b1_choppy-extended-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 037-01_choppy-swing-scaled-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 038-01_calm-swing-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 038-02_calm-swing-scaled-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

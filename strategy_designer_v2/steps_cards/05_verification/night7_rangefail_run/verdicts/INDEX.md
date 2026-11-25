@@ -21,6 +21,7 @@
 035-03.b1_choppy-far-below-high-falls_1d: inconclusive (fit: exact) [main: 0.00882686; t of the mean, cases of one day taken together 2.46608; independent case days across coins and windows 827, cases 1461]
 035-03_far-below-high-falls_1d: inconclusive (fit: adapted) [main: 0.00683512; t of the mean, clustered by day 1.98869; distinct case days 1149, cases 3666, active bars 20969]
 036-01_swing-scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000281788; slope t, clustered by day 2.15065; bars with forecast above 0 18271, distinct days 2413, bars in slope 36948, day clusters 2898]
+037-01.b1_choppy-extended-fall-continues_1d: inconclusive (fit: exact) [main: 0.00631214; t of the mean, cases of one day taken together 1.35827; cases 994, distinct days 567]
 037-01_choppy-swing-scaled-fall-continues_1d: inconclusive (fit: exact) [main: 0.00653383; t of the mean, clustered by day 0.935135; cases 776, distinct days 288]
 038-01_calm-swing-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.000669978; slope t, clustered by date 1.11755; grid cases with forecast > 0 1779, dates 387]
 038-02_calm-swing-scaled-fall-continues_1d: inconclusive (fit: exact) [main: 0.000843771; slope t, same-day cases summed (day-clustered) 1.47616; grid cases with forecast < 0 1654, grid cases with forecast <= -2 1433, days of the forecast < 0 cases 359]
