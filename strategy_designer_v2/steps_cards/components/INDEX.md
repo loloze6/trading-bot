@@ -219,3 +219,4 @@ pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | ReclaimAboveLowInRang
 pilot_panic_run | 054-03_deep-pierce-reclaim-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimNearnessInRange | built: PriorLowReclaimInRangeComponent {"form": "nearness", "period": 30}
+night8_risingagitated_run | 058-02_agitated-rise-swing-scaled-giveback_1d | MovingAverageDistanceInUsualMovesComponent | built: MovingAverageDistanceComponent {"average": "sma", "base": "usual_moves", "period": 20, "vol_period": 20}
