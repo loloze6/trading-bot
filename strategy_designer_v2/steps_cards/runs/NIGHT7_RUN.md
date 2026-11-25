@@ -113,5 +113,50 @@ The control branches are read in place, not merged.
 - **07:30 Paris watch:** no fault on the 8 branches. 7 sessions ended on their budgets (reports received); session 1
   (rangefail) still running (turn 30 at 07:30 Paris), stops starting ideas at 08:00 Paris.
 
-## Reading (the morning)
-To be written after the merge: the outcome, the counts, the step back.
+## Reading (2026-11-25, about 08:40 Paris; the designer)
+**Merged** with `night_merge` (its first real use): the 4 new-code branches, conflicts resolved by rule (0, 9, 9, 10).
+It stopped once, rightly by its rule as then coded: two sessions changed two neighbouring catalogue rows, which git joins
+into one conflict; the code now keeps both (only lines both sides changed stop), as its card says, with a test; then the
+other two merged. The control branches are read in place (not merged).
+
+**Cost:** new code 142.7 USD, control 104.1 USD: 246.8 of the operator's 250. The 5-hour usage limit stopped all 8
+sessions from 02:10 to 05:40 Paris; each resumed and finished.
+
+**The comparison, at equal spend (each new-code run cut at 25 USD; `topics/44_review/p7_night7_candidates.py`, `.csv`):**
+| | New code (topics 49, 50) | Control (code before them) |
+|---|---|---|
+| Ideas tested | 87 | 82 |
+| Confirmed | 39 | 19 |
+| Profitable enough (step 6) | 17 | 17 |
+| Families earning on their own (size and Sharpe above 0) | 32 | 5 |
+| Of them, related to the portfolio's 20 (correlation 0.5 or more) | 29 | 4 |
+| Portfolio candidates (P1's rule) | 3 books, 2 effects: "in a falling, agitated market, a fall rebounds the next day" (038-01 and 042-01, correlation 0.85 with each other; 0.39 and 0.50 with 011-01) and "in a rising market, the late week gains" (045-01, 0.42) | 1: "after a volatile month's low, a rebound next day" (032-02.b2, 0.24), no profile |
+| Unseen dates of the candidates | 038-01 holds on 2016-17, not 2026; 045-01 holds on 2026, not 2016-17; 042-01 not tested (not profitable enough) | not tested (not profitable enough) |
+| Ideas tested from the brief's own theme (032) | 10 of 87 | 82 of 82 |
+| The brief's theme answered (`common/theme.md`) | 0 of 4 closed; 2 lean "not real" (line 7.b: "not in the data") | none answered; in 3 of 4 the follow-ups turned the theme around ("breakouts continue", "moves continue", "near highs continue") |
+
+**What it shows:**
+1. **The market profile (topic 49) works as built and helps:** about 70 % of the new code's ideas name a profile (281 of 406 written); every plan
+   carries its gate exactly (the watch: no fault all night); at equal spend twice as many ideas are confirmed. Its best
+   result is in the profile the night aimed at: two sessions independently found the same falling-agitated rebound.
+   Caveat: it is a rebound, close to the portfolio's 011-01 (0.39 to 0.50).
+2. **Topic 50 works in its parts and fails as a whole:** lines 7.b/7.c stayed on the theme and twice answered "not in
+   the data" (the control's follow-ups drifted to the opposite effect in 3 of 4 themes); but discoveries became 57
+   briefs, and their ideas, ranked first as any brief's first ideas, took 77 of 87 turns: no theme was closed, its
+   on-theme follow-ups were queued and never run. The gap noted at 00:35 Paris is the cause: a discovery's brief is
+   ranked like an operator's brief, and outside P9.
+3. **Most of what both arms find is the portfolio's effects again** (29 of 32 and 4 of 5 families related at 0.5 or
+   more), mostly next-day rebounds and continuation.
+4. Four themes, one night: the counts are indicative; the candidates are 1 or 2 per arm and none holds on both unseen
+   periods.
+
+**Outcome:** between N1 and N3. N1 narrowly (2 candidates by P1's rule against the control's 1; the night's target
+profile gave one); N3 for the themes (discoveries carried the night).
+
+**Recommendation (for the operator):** keep both changes, and fix one rule of topic 50 before the next night: **a
+discovery's brief is ranked as a follow-up, not as a first brief** (its ideas keep the generation of the idea they were
+found from, so P9 and the score apply to them), so that a theme's own follow-ups run before the patterns found on the way.
+Not reversed: reversing loses the profile's gain (39 confirmed against 19) and brings back the drift. Also needed: 3e
+(brief numbers: tonight 4 sessions numbered 032 to 053 each).
+
+**The one change a practitioner would make:** the discovery ranking above; it is what kept the themes unanswered.
