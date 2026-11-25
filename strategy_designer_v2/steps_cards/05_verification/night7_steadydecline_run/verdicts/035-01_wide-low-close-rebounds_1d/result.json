@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of next-day excess return on post_pipeline_value",
+    "value": 0.00035758609376838543,
+    "statistic": {
+      "name": "OLS slope t, day-clustered SE",
+      "value": 3.273022909589179
+    },
+    "threshold": "t (day-clustered) >= 2 confirms (with top-fifth mean > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return of the per-coin top fifth of forecast values",
+    "value": 0.00430444841656615,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a recorded forecast": 2922,
+    "cases": 17380,
+    "days with cases": 2898,
+    "top-fifth cases": 3479
+  },
+  "decided_by": "The slope's t is 2 or more and the top-fifth mean next-day excess return is positive.",
+  "reading": "The slope is an OLS with intercept of next-bar excess return on post_pipeline_value over all coin-bars, its t from a sandwich SE clustered by UTC calendar day (small-sample factor G/(G-1)*(N-1)/(N-2)); 'top fifth' is the bars at or above each coin's 80th percentile of post_pipeline_value; the 500-day minimum counts distinct UTC days with a non-missing post_pipeline_value and, as a minimum count, gives 'not observable'; the situation is a positive raw component value (close below the high) on a long forecast.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001063 on the check folds against +0.0003576 on every fold",
+    "main": 0.00010626072651143482,
+    "statistic": 0.8635961997053078,
+    "counts": {
+      "distinct days with a recorded forecast": 1461,
+      "cases": 8691,
+      "days with cases": 1449,
+      "top-fifth cases": 1740
+    }
+  }
+}

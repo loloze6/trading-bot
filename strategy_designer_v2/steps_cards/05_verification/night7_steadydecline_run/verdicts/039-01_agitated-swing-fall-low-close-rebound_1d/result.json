@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day return minus coin mean, on forecast, forecast > 0, day-summed cases",
+    "value": 0.0005214194021896417,
+    "statistic": {
+      "name": "t of the OLS slope",
+      "value": 3.8619580627294012
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus gain from market's rise",
+    "value": 0.0005171644830891809,
+    "passed": true
+  },
+  "counts": {
+    "days with a positive forecast": 1463,
+    "days in the regression": 1449
+  },
+  "decided_by": "The slope is positive with t >= 2 and the supporting check passes (confirm rule).",
+  "reading": "Situation = raw FallCloseLocation value > 0 on a bar whose close is below the previous close (first bar of a window judged on the raw value alone) with regime not 'chop', long side; same-day cases are summed into one case by summing their forecasts and their excess next-day returns, then an OLS slope with intercept is fitted across days; the 100-day minimum counts distinct days with any coin's forecast above 0; the book's return before costs is the position held times the coin's next-bar return, averaged over coins each day.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002398 on the check folds against +0.0005214 on every fold",
+    "main": 0.0002397890233261265,
+    "statistic": 1.735242561655472,
+    "counts": {
+      "days with a positive forecast": 798,
+      "days in the regression": 789
+    }
+  }
+}

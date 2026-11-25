@@ -1,0 +1,75 @@
+## ag: s*x1 vs (s*relrng)*x1
+              mean         t    days
+s         0.005029  2.963796  1051.0
+s*relrng  0.010317  2.456226   876.0
+
+## ag OLS x1 ~ s + z0 + s*(relrng-1)
+              beta         t
+c         0.001216  1.047573
+s         0.029555  4.476723
+z0        0.004959  2.401494
+s_x_wide  0.046738  6.688202
+
+## ag: signed next-day gain % by |s| x width
+            mean                     count            
+sbin        weak       mid    strong  weak  mid strong
+wide                                                  
+narrow  0.174098 -0.183305  0.533369   501  274    218
+mid     0.197812  0.164792  0.594565   404  307    282
+wide    1.132264  1.419989  1.000676   333  353    314
+
+## ag: signed gain % by trend x |s|
+             mean                     count            
+sbin         weak       mid    strong  weak  mid strong
+trend                                                  
+falling  1.086591  0.807576  1.794989   290  258    190
+choppy   2.619180  1.667241  2.805404    51   40     29
+rising   0.688663 -0.198502 -0.421452   303  232    219
+
+## ag: 3d excess % by z x trend
+zq       bigdown   down    mid     up  bigup
+trend                                       
+falling    3.475  1.346  2.317 -1.912 -5.375
+choppy    -2.028 -6.213 -9.698 -2.485 -4.633
+rising     1.590 -0.916  0.557 -0.189  0.578
+
+## ag: -z*x per-day t (1d, 3d grid)
+        mean         t   days
+1d  0.018116  2.022700  856.0
+3d  0.020294  1.173775  298.0
+
+## all: -z*x1 by ag x trend
+              mean       t   days
+ag trend                         
+0  falling -0.0011 -0.1198  371.0
+   choppy   0.0016  0.3918  283.0
+   rising   0.0020  0.2098  320.0
+1  falling  0.0556  2.1957  229.0
+   choppy   0.0136  0.7845   84.0
+   rising  -0.0090 -0.8850  270.0
+
+## ag: -z*x1 by year
+        mean       t   days
+year                       
+2018  0.0321  1.8475  154.0
+2019  0.0088  1.1633  250.0
+2020  0.0350  1.2807  226.0
+2021  0.0021  0.1473  226.0
+
+## ag: -z*x1 by coin
+          mean       t   days
+coin                         
+BTCUSD  0.0057  2.2276  541.0
+ETHUSD  0.0074  2.2626  504.0
+LTCUSD  0.0037  0.9758  518.0
+XMRUSD  0.0083  2.5729  374.0
+XRPUSD  0.0014  0.2270  391.0
+ZECUSD  0.0054  1.8554  578.0
+
+## next-day excess % by weekday x year
+wd        0      1      2      3      4      5      6
+year                                                 
+2018 -0.395 -1.442 -0.434  0.212 -0.144  0.015 -1.272
+2019 -0.601  0.484 -1.597  0.896  0.420 -0.297 -0.026
+2020 -0.003  0.176 -0.189  0.543  0.621 -0.506  1.224
+2021 -0.102  0.916  0.211 -0.042  0.515  0.523 -0.244

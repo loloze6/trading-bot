@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (all coins, windows)",
+    "value": 0.0003535601437529131,
+    "statistic": {
+      "name": "OLS t, day-clustered",
+      "value": 3.2027537163781896
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-minus-bottom fifth > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top fifth minus bottom fifth of forecasts (per coin)",
+    "value": 0.006328065282888,
+    "passed": true
+  },
+  "counts": {
+    "independent days": 2898,
+    "bars with forecast >= 2": 15131,
+    "bars": 17380
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-minus-bottom fifth difference is above 0.",
+  "reading": "Every recorded bar enters the regression (forecast 0 included), the coin mean is over all its next-day returns in all windows, t is OLS with day-clustered errors, the fifths are cut per coin by forecast rank (ties broken by time order), and a minimum count not reached is reported as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001213 on the check folds against +0.0003536 on every fold",
+    "main": 0.00012134756972987484,
+    "statistic": 0.9862220869623234,
+    "counts": {
+      "independent days": 1449,
+      "bars with forecast >= 2": 7538,
+      "bars": 8691
+    }
+  }
+}

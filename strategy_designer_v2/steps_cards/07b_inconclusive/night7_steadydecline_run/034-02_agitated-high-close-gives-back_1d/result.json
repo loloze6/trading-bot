@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "034-02_agitated-high-close-gives-back_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.456358,
+  "findings": {
+    "F1": "The test's own measure points the way the idea predicts but stays short of the bar. On all folds the mean is +0.00048 with t 1.02 (7,670 bars, 2,212 days). On folds B and C it is +0.00087 with t 1.19 (3,668 bars, 1,051 days). It is positive on every one of the 6 coins, from +0.00019 (LTC, t 0.23) to +0.00230 (XMR, t 1.99), but no coin reaches t 2. The effect is weak but consistent, not mixed.",
+    "F2": "In agitated bars the close's place in the day's range does predict the next day against it. The correlation of the close location with the next day's excess return is \u22120.079 (t \u22124.84, 3,691 cases), against \u22120.038 (t \u22122.58, 4,639 cases) in calm bars. The quintile nearest the high is followed by \u22120.58 % (t \u22122.62), and closes above mid-range by \u22120.48 % (t \u22123.37, 2,010 cases). The effect is there; the book's sizing and drift removal make it hard to show.",
+    "F3": "The correlation is negative in every year of folds B and C, from \u22120.050 (2021, t \u22121.80) to \u22120.117 (2019, t \u22123.23). It is negative on all 6 coins, from \u22120.063 to \u22120.162 (XMR, t \u22123.62). The effect is not confined to one period or one coin, so more instruments should strengthen it rather than dilute it.",
+    "F4": "Inside the agitated profile the short side depends on the trend. In a rising market the main measure is \u22120.10 % (t \u22120.69, 748 bars) and the high-close short \u22120.03 % (t \u22120.06). In a falling market the main measure is +0.17 % (t 1.18, 730 bars) and the high-close short +1.00 % (t 1.99, 357 cases). In a choppy market the main measure is +1.26 % (t 1.60, 120 bars). The rising-agitated bars, about a third of the cases, dilute the result.",
+    "F5": "The effect is spent after the next day, as the brief says. The agitated correlation is \u22120.079 (t \u22124.84) at 1 day, \u22120.044 (t \u22121.91) at 2 days and \u22120.018 (t \u22120.62) at 3 days, so the plan's 1-day horizon is the right one.",
+    "F6": "The idea's size is 0.044 of a usual move: an unusual move of +0.20 % per case (t 1.26, 1,369 days). Its total move of +0.07 % is 0.4 times the 0.19 % cost of a trade. However real the effect is, a short-only book on this idea cannot pay at this size on these coins."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "agitated high close, all coins",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ],
+      "idea": "In an agitated market, the nearer a coin's daily close sits to the day's high within its high-low range, the larger its fall over the next day.",
+      "consequence": "In agitated stretches, forced late-day buying pushes the close toward the day's high and overshoots, and the price gives it back the next day once that flow is spent.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "agitated"
+    }
+  ],
+  "idea_ids": [
+    "034-02.b1_agitated-high-close-all-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

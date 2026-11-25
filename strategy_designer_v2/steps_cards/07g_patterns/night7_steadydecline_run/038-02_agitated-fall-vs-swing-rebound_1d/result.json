@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "038-02_agitated-fall-vs-swing-rebound_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.42768280000000003,
+  "findings": {
+    "F1": "The scaled-fall rebound grows with the agitation of the coin's current swing, whatever the trend. On days with a fall of more than one 30-day standard deviation, the next day's excess return is +1.77 % (t 4.69, 232 cases) when the coin's 30-day swing ranks in the upper third of its recent swings. It is +0.60 % (t 1.52, 236 cases) in the middle third and -0.22 % (t -0.59, 167 cases) in the lower third, across all trends.",
+    "F2": "The graded rebound is strongest in the falling agitated profile, is also present in choppy markets, and is absent in falling calm ones. The slope of the next-day excess return on the scaled fall size is:",
+    "F3": "In the falling agitated profile, the bounce does not fade after the first day. After falls beyond one standard deviation (129 cases), the mean return is +2.91 % over the next day (t 4.46), +2.51 % over two days (t 3.26) and +3.57 % over three days (t 3.84). These are overlapping returns from distinct signal bars, not a non-overlapping grid.",
+    "F4": "In the falling agitated profile, the next-day excess return rises step by step with the fall's size in standard deviations:",
+    "F5": "The book's gain is concentrated in a few windows:"
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, the larger a coin's one-day fall against the standard deviation of its daily returns over the last 30 days, the larger its rise over the next day.",
+      "consequence": "A trader can buy outsized falls whenever the coin is swinging more than usual, not only in declines, and refuse the same trade when the coin is calm.",
+      "name": "agitated outsized fall rebounds",
+      "from": "F1, F2, F4",
+      "profile": "agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall against the standard deviation of its daily returns over the last 30 days, the larger its rise over the next three days.",
+      "consequence": "The rebound after a forced sweep in an agitated decline keeps building for several days, so a trader can hold it longer than one day and pay the trade's cost once for a larger move.",
+      "name": "agitated fall three-day rebound",
+      "from": "F3, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "038-02.g1_agitated-outsized-fall-rebounds",
+    "038-02.g2_agitated-fall-three-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

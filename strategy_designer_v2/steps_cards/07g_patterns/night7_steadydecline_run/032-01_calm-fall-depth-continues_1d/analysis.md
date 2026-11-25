@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 032-01_calm-fall-depth-continues_1d
+idea tested: 032-01_calm-fall-depth-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3944 USD
+---
+## Findings
+- **F1:** The tested effect is not in the explored folds: inside the falling calm profile, the next-day excess return does not fall as the 30-day fall gets deeper. The deepest quintile of the 30-day fall (in units of 20-day swing, mean -1.59) returned +0.05 % (t 0.12, 170 days), against -0.57 % (t -1.49) for the second quintile and -0.29 % (t -0.87) for the shallowest. The idea's size, +0.13 % unusual move (t 0.51), is under the 0.19 % cost of a trade.
+- **F2:** Where a day closes in its own high-low range predicts the next day the opposite way, across all bars. The graded reversal signal (0.5 minus the close's position in the range) times the next-day excess return averaged +0.089 % with t 3.04 over 1,448 days. Closes in the lowest fifth of the range were followed by +0.59 % (t 2.40, 592 days) and closes in the highest fifth by -0.34 % (t -1.65, 635 days). The effect fades with time: t 1.68 at 2 days and -0.33 at 3 days.
+- **F3:** The close-near-the-low rebound is about 0.10 of the coin's usual daily move (1,597 cases), about three times the tested idea's 0.030. Its +0.59 % per case is about 3 times the 0.19 % cost of a trade.
+- **F4:** The close-location reversal lives in the more agitated stretches. When the 20-day swing was above its window median, a close in the lowest quarter of the range was followed by +1.16 % (t 3.14, 311 days) and a close in the top quarter by -0.63 % (t -2.55, 421 days). When the swing was below that median, the same reads were +0.05 % (t 0.16) and -0.19 % (t -0.82). Inside the falling calm profile they were +0.08 % (t 0.21) and -0.28 % (t -0.95).
+- **F5:** The rebound grows with the width of the day. Among the widest third of days (range over 20-day swing), a close in the lowest quarter was followed by +1.10 % (t 2.71, 246 days), against +0.17 % (t 0.44) and -0.03 % (t -0.08) in the narrower two thirds.
+- **F6:** The rebound appears on every coin and in both halves of the explored windows, though not significantly everywhere. Low-close next-day means were positive on all six coins, from +0.17 % (ETH) to +0.93 % (XMR, t 3.21). They were +0.87 % (t 2.14) in w13-18 and +0.20 % (t 0.64) in w7-12.
+- **F7:** The day's own return, scaled by its 20-day swing, also reverses the next day (graded t 2.29, 1,209 days). The most down-scaled fifth of days was followed by +0.66 % (t 2.24) and the fourth fifth by -0.46 % (t -2.30). This is the same rebound seen through the close rather than the range. Weekday, volatility rank and the 30-day trend outside the profile showed nothing beyond t 2.3, among about 20 angles looked at.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `032-01.g1_low-close-rebounds-next-day` (from F2, F3, F6, F7): The lower a coin closes within its day's high-low range, the more it rises over the next day.
+- `032-01.g2_agitated-low-close-rebound` (from F2, F4): In an agitated market, the lower a coin closes within its day's high-low range, the more it rises over the next day.
+- `032-01.g3_wide-day-low-close-rebound` (from F2, F5): The wider a day's high-low range against the coin's daily swing over the past 20 days, and the nearer its close to the low, the more the coin rises over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

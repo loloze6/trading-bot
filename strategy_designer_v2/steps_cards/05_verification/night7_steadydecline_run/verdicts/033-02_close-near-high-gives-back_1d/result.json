@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-day return minus coin mean on close location",
+    "value": -0.006254618595443598,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": -2.607423941927934
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 (and top-fifth mean < 0); reject: slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean next-day return minus coin mean, close location >= 0.8",
+    "value": -0.002141299941665998,
+    "passed": true
+  },
+  "counts": {
+    "distinct days of cases": 2898,
+    "bars in the top fifth": 3739,
+    "cases": 17380
+  },
+  "decided_by": "The slope is negative with t <= -2 and the top-fifth mean is below 0 (confirm rule).",
+  "reading": "Every bar is a case (1-bar horizon, so non-overlapping); the slope's t uses standard errors clustered by UTC day (residual x centred location summed per day, G/(G-1) correction); the situation holds where close location > 0, on the short side.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure -0.001101 on the check folds against -0.006255 on every fold",
+    "main": -0.0011008185830292299,
+    "statistic": -0.41002367085698116,
+    "counts": {
+      "distinct days of cases": 1449,
+      "bars in the top fifth": 1873,
+      "cases": 8691
+    }
+  }
+}

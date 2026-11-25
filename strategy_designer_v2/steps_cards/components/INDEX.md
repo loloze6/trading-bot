@@ -204,3 +204,8 @@ night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesR
 night7_panic_run | 037-01_falling-market-wide-day-decline_1d | RangeInReturnStdComponent | built: RangeInReturnStdComponent {"vol_period": 30}
 night7_panic_run | 041-01_wide-up-day-next-day-fade_1d | RangeInUsualMovesComponent | exists: RangeInReturnStdComponent {"vol_period": 30}
 night7_panic_run | 036-02_range-scaled-rally-continuation_1d | RangeScaledReturnComponent | built: MeanAbsScaledReturnComponent {"base": "mean_relative_range", "period": 3, "window": 30}
+night7_steadydecline_run | 037-01_wide-day-fall-next-day-rebound_1d | FallTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"exclude_current": 1, "range_period": 14, "rise_period": 1, "side": "down"}
+night7_steadydecline_run | 035-02_swing-wide-low-close-rebounds_1d | LowCloseRangeInUsualMovesComponent | built: VolatilityScaledDistanceFromHighComponent {"base": "close", "exclude_current": 0, "period": 1, "source": "high", "vol_period": 20}
+night7_steadydecline_run | 036-02_fall-vs-range-next-day-rebound_1d | FallInMeanBarRanges | built: BreakoutInMeanRangesComponent {"base_exclude_current": 1, "base_period": 30, "high_current": 0, "period": 1, "side": "below", "source": "close"}
+night7_steadydecline_run | 037-02_fall-range-beyond-loss-rebound_1d | FallTimesRangeExcessComponent | built: FallTimesRangeExcessComponent {}
+night7_steadydecline_run | 039-02_agitated-range-fall-low-close-rebound_1d | FallInMeanRangesCloseLocationComponent | built: FallCloseLocationComponent {"base": "mean_bar_range", "exclude_current": 1, "vol_period": 30}

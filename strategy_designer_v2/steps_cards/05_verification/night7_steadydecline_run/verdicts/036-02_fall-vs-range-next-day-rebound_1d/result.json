@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return (close[t+1]/close[t]-1 minus coin's mean daily return) on case bars, same-day cases summed",
+    "value": 0.017291631253895556,
+    "statistic": {
+      "name": "t of the mean (over per-day summed cases)",
+      "value": 1.933804185855688
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation of raw ratio (fall.last_history_value) vs next-day excess return across cases",
+    "value": 0.061547578334570606,
+    "passed": true
+  },
+  "counts": {
+    "case days": 365,
+    "case bars": 936,
+    "active bars": 946
+  },
+  "decided_by": "Inconclusive rule met: the t of the mean next-day excess return lies between -2 and 2.",
+  "reading": "Cases on the same UTC day are summed into one value and the mean and ordinary t are taken over these day sums, the Spearman correlation is taken over individual case bars, the coin's mean daily return is the mean of all its 1-bar returns inside all windows, and the plan's 'fewer than 100 case days' is reported as not observable."
+}
