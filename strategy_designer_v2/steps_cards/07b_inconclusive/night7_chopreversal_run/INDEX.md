@@ -27,3 +27,4 @@
 047-01_falling-agitated-daily-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 047-02_falling-agitated-daily-rise-giveback_1d: 1 ideas (2 explorations)
 049-01_wide-day-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+049-02_wide-day-high-close-giveback_1d: 2 ideas (1 explorations)

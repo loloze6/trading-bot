@@ -27,3 +27,4 @@
 047-01_falling-agitated-daily-fall-rebound_1d: 2 ideas (3 explorations)
 047-02_falling-agitated-daily-rise-giveback_1d: 1 ideas, 1 discoveries (2 explorations)
 049-01_wide-day-low-close-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
+049-02_wide-day-high-close-giveback_1d: 1 ideas, 2 discoveries (2 explorations)

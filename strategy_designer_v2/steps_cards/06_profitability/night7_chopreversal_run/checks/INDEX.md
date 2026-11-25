@@ -27,3 +27,4 @@
 047-01_falling-agitated-daily-fall-rebound_1d: profitable enough [Sharpe 1.072; Sharpe minus holding's Sharpe 0.5027; Calmar 0.8022]
 047-02_falling-agitated-daily-rise-giveback_1d: not profitable enough [Sharpe 0.3486; Sharpe minus holding's Sharpe -0.221; Calmar 0.1963]
 049-01_wide-day-low-close-rebound_1d: not profitable enough [Sharpe 0.7966; Sharpe minus holding's Sharpe 0.2424; Calmar 0.6048]
+049-02_wide-day-high-close-giveback_1d: not profitable enough [Sharpe -0.2881; Sharpe minus holding's Sharpe -0.8422; Calmar -0.106]

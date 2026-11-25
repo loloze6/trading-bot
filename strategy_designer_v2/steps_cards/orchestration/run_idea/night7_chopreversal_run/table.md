@@ -34,22 +34,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 048-01_falling-agitated-wide-rise-giveback | - | missing-components | - | - | - | - | 0.08 | 0.5 |
 | 047-02_falling-agitated-daily-rise-giveback | - | plan | inconclusive (+0.25) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 047-02.b1_falling-agitated-daily-fall-rebound; 7.g: 047-02.g1_falling-agitated-fall-rebound | 0.99 | 5.8 |
 | 049-01_wide-day-low-close-rebound | - | plan | confirmed (+3.48) | not profitable enough (failed: Calmar) | - | 7.d: 049-01.d1_rising-market-wide-day-low-close-rebound, 049-01.d2_excess-width-low-close-rebound, 049-01.d3_rising-market-excess-width-rebound; 7.g: 049-01.g1_falling-market-wide-day-low-close-rebound | 1.05 | 5.8 |
+| 049-02_wide-day-high-close-giveback | - | plan | inconclusive (+1.73) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 049-02.b1_wide-day-giveback-all-coins, 049-02.b2_falling-agitated-wide-day-giveback; 7.g: 049-02.g1_wide-day-low-close-rebound | 0.98 | 5.8 |
 
 ## Consumption
-30 ideas, 31.72 USD, 186.0 minutes in all.
+31 ideas, 32.70 USD, 191.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.63 | 13.7 |
-| step4_backtest | 0.00 | 71.7 |
-| step5_verdict | 4.59 | 16.7 |
-| step6_check | 0.00 | 1.0 |
+| step3_plan | 4.75 | 14.6 |
+| step4_backtest | 0.00 | 73.6 |
+| step5_verdict | 4.79 | 17.5 |
+| step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.d | 2.76 | 9.1 |
-| step7_7.a | 0.00 | 0.0 |
-| step7_7.c | 0.00 | 0.0 |
-| step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 7.67 | 27.0 |
-| step7_7.g | 12.07 | 37.6 |
+| step7_7.a | 0.00 | 0.1 |
+| step7_7.c | 0.00 | 0.1 |
+| step7_7.e | 0.00 | 0.1 |
+| step7_7.b | 7.90 | 27.8 |
+| step7_7.g | 12.49 | 38.9 |
 | similarity_check | 0.00 | 0.9 |
 | unseen_test | 0.00 | 7.8 |

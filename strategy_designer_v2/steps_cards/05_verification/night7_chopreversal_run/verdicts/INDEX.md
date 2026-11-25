@@ -27,3 +27,4 @@
 047-01_falling-agitated-daily-fall-rebound_1d: confirmed (fit: adapted) [main: 0.0010705; slope t, SE clustered by day 2.76736; down-day cases 1468, distinct days 702]
 047-02_falling-agitated-daily-rise-giveback_1d: inconclusive (fit: exact) [main: 7.00351e-05; day-clustered t of slope 0.245678; cases (bars with forecast < 0) 1326, distinct days 633]
 049-01_wide-day-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000373757; OLS slope t, clustered by day 3.47545; bars with a forecast 17216, distinct days of bars with a forecast 2897, bars in the top fifth 3476]
+049-02_wide-day-high-close-giveback_1d: inconclusive (fit: adapted) [main: 0.000412399; day-clustered t 1.73258; distinct days with a forecast 2877, bars in regression 17380]
