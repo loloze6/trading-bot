@@ -24,21 +24,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean | plan | inconclusive (+2.19) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-01.b1.b1.e2.d1.d1.d1.b1_chop-continuation-over-a-week, 032-01.b1.b1.e2.d1.d1.d1.b2_chop-month-lean-continuation; 7.g: 032-01.b1.b1.e2.d1.d1.d1.g1_agitated-one-day-move-reversal | 1.05 | 5.6 |
 | 032-01.b1.b1.e2.d1.d3.d1_short-continuation-ends-with-chop | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop | untestable | - | - | - | - | 0.06 | 0.3 |
 | 032-01.b1.b1.e2.d2.d1.d1_chop-continuation-exit-on-break | 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts | plan | inconclusive (+1.57) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-01.b1.b1.e2.d2.d1.d1.b1_chop-continuation-more-coins, 032-01.b1.b1.e2.d2.d1.d1.b2_choppy-month-weekly-continuation; 7.g: 032-01.b1.b1.e2.d2.d1.d1.g1_choppy-month-weekly-continuation, 032-01.b1.b1.e2.d2.d1.d1.g2_agreeing-week-continues-weekly | 1.04 | 5.5 |
+| 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean | plan | confirmed (+4.21) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 032-01.b1.b1.e2.d1.d1.d2.g1_widened-swing-sharp-drop-rebound | 0.64 | 5.4 |
 
 ## Consumption
-20 ideas, 24.08 USD, 119.0 minutes in all.
+21 ideas, 24.72 USD, 124.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.30 | 11.2 |
-| step4_backtest | 0.00 | 36.1 |
-| step5_verdict | 3.25 | 12.2 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 3.41 | 11.8 |
+| step4_backtest | 0.00 | 38.0 |
+| step5_verdict | 3.42 | 12.8 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 4.79 | 16.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.82 | 2.9 |
-| step7_7.g | 8.24 | 26.2 |
+| step7_7.g | 8.61 | 27.2 |
 | step7_7.b | 3.68 | 12.0 |
-| similarity_check | 0.00 | 0.7 |
+| similarity_check | 0.00 | 0.8 |
+| unseen_test | 0.00 | 1.1 |

@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.36393129999999996,
+  "findings": {
+    "F1": "Across all coins in folds B and C, on a 1-day grid, the more a day's fall is measured in the coin's 30-day daily swings, the larger the next day's drift-removed return. Days with z \u2264 \u22123 are followed by +3.78 % (t 3.01, n 48), z in (\u22123, \u22122] by +1.18 % (t 2.60, n 131) and z in (\u22121, 0] by +0.15 % (t 1.40, n 2393). The slope on down days is \u22120.00624 per unit of z (t \u22125.15, n 3146), the strongest pattern among the many angles examined.",
+    "F2": "The rebound is one-sided. On up days the slope of the next day's drift-removed return on z is +0.00086 (t 0.84, n 3305), and days with z > 2 are followed by small, non-significant falls (\u22120.58 % t \u22121.30; \u22120.36 % t \u22120.43).",
+    "F3": "After days with z \u2264 \u22121.5 (n 371 with 30-to-90-day swing ratio available), the next-day rebound grows with how wide the 30-day swings are against the 90-day swings. In the calm tercile it is \u22120.01 % (t \u22120.02, n 124), in the middle tercile +0.89 % (t 2.21, n 123) and in the wide tercile +2.43 % (t 4.11, n 124).",
+    "F4": "The rebound after z \u2264 \u22121.5 days holds in every coin (+0.50 % for BTC to +1.49 % for XMR, all positive), in every year (+0.63 % in 2018 to +1.99 % in 2020), and whether the 30-day return is down (+0.98 %, t 2.52, n 249) or up (+1.29 %, t 2.87, n 133).",
+    "F5": "The tested book does not capture this rebound. After days with z \u2264 \u22121.5 its position is net short (mean allocation \u22120.112, short 45 % of the time and long 32 %, n 382), yet the book's day after its worst 2 % of days still averages +0.85 % (t 2.85, n 173).",
+    "F6": "The tested idea itself is graded inside its regime. The active grid bars' directional drift-removed 7-day return rises from +2.03 % (t 1.29, n 80) in the lowest |forecast| quartile to +6.38 % (t 3.98, n 80) in the highest. Across all grid bars, aligned continuation is strongest at 30-day efficiency 0.15 to 0.3 (+4.53 %, t 3.80, n 162) and in the calm 30-to-90-day swing tercile (+3.36 %, t 3.13, n 191). It is absent in the wide tercile (\u22121.10 %, t \u22120.87, n 146)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 1-day fall, counted in its past 30 days' daily swings, the larger its rise over the next 1 day, and the more so the wider its past 30 days' daily swings are compared with its past 90 days'.",
+      "consequence": "A trader should lean long the day after a sharp fall in a coin whose swings have just widened, most firmly after the largest falls, and should not hold a short through that next day.",
+      "name": "widened-swing sharp-drop rebound",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1.b1.e2.d1.d1.d2.g1_widened-swing-sharp-drop-rebound"
+  ],
+  "no_ideas": null
+}

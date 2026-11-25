@@ -1,0 +1,1 @@
+032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d: ran: BTCUSD 6/6; ETHUSD 6/6; LTCUSD 6/6; XMRUSD 2/6 (4 not run: no historical data on the venue); XRPUSD not run (no historical data on the venue); ZECUSD 2/6 (4 not run: no historical data on the venue) [1d, windows unseen_2016_2017]

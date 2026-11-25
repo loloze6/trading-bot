@@ -1,5 +1,6 @@
 032-01.b1.b1.e1_large-weekly-fall-continues_1d: inconclusive (fit: adapted) [main: -0.0216037; t of the mean, cases of one day taken together -1.09843; cases 123, days 68]
 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned_1d: inconclusive (fit: adapted) [main: 0.00181947; t of the mean, clustered by day 2.19491; in-regime position-days 7563, distinct days 2491]
+032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d: confirmed (fit: exact) [main: 0.00135928; t of the OLS slope 4.20943; active grid bars across all coins and windows 1114]
 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d: confirmed (fit: adapted) [main: 0.0105851; day-clustered t 2.74512; distinct case days 1043, cases 1758]
 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d: confirmed (fit: adapted) [main: 0.0135488; t of the mean, cases of the same day pooled 2.51666; cases 1114, distinct case days 366]
 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d: confirmed (fit: adapted) [main: 0.000970546; OLS slope t 3.55922; grid cases with a non-zero forecast 1889]
