@@ -1,0 +1,24 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean next-day excess fall (short side) on regime bars",
+    "value": 0.001269769106637983,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day pooled",
+      "value": 1.1607087967563208
+    },
+    "threshold": "confirm: > 0 with t >= 2; reject: < 0 with t <= -2; else inconclusive; at least 100 case-days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "case-days": 8831,
+    "distinct days": 2218,
+    "active bars": 8916
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "The situation is the 20-day return below 0 recomputed from closes inside each window (the recorded regime where fewer than 20 prior bars exist in the window) with a short forecast; case-days are counted as the (coin, day) cases with a non-zero forecast in the trending regime and a next-day return; the day-pooled t sums each day's weighted deviations into one cluster with a D/(D-1) correction; the plan's fewer-than-100 case-days rule is applied as the minimum count giving 'not observable'."
+}

@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b2.g2_volatile-close-near-low-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39497340000000003,
+  "findings": {
+    "F1": "On the 3256 regime bars (880 days), a regression of next-day excess return on the day's return scaled by its 30-day volatility (z1) and on the close's location in the range together gives z1 \u22120.91 % per standard deviation (t \u22122.30) and close location \u22120.12 % (t \u22120.40). The tested idea's close-near-low effect is carried by the size of the day's fall, not by where the close sits.",
+    "F2": "Over all bars (7537 bars, 1257 days), z1 predicts the next day's excess return with a coefficient of \u22120.40 % per standard deviation (t \u22122.51). The bottom z1 fifth (mean z \u22121.38) is followed by +0.75 % (t 2.50, 1508 bars) and the top fifth by \u22120.26 % (t \u22121.11). The z1 correlation is negative in every year from 2018 to 2021 (\u22120.05 to \u22120.13), in 5 of 6 coins (XRP +0.00) and in 10 of 12 windows.",
+    "F3": "The reversal is concentrated where ranges are wide. In the regime (30-day ranges wide against 90-day) z1's coefficient is \u22120.91 % (t \u22122.30), outside it +0.12 % (t 0.67). On bars whose range is above the median relative to its 30-day mean it is \u22120.55 % (t \u22122.42, 3725 bars), against \u22120.14 % (t \u22121.04) on the rest.",
+    "F4": "The bottom fifth of raw 1-day returns is followed by +0.89 % (mean fall \u22128.3 %, t 1.74, 770 regime bars) and +0.64 % outside the regime (mean fall \u22125.9 %, t 2.34, 954 bars). Both are 3 to 4.7 times the 0.19 % cost of a trade, against +0.23 % unusual move for the tested idea.",
+    "F5": "A fresh 30-day closing low, the brief's own situation, is followed by +0.32 % excess (t 0.56, 624 bars), which cannot be told from 0. No weekday stands out (all |t| < 1.6).",
+    "F6": "On the book's worst 5 % of days (73) it lost \u22123.88 % while the coins fell \u22128.48 %. On its best 5 % (73) it gained +3.87 % against coins +8.14 %. Its largest swings are the market's own moves at about half exposure, not timing."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily high-low ranges over the past 30 days are wide compared with the past 90 days, the larger its 1-day fall measured against its past 30 days' daily volatility, the larger its rise over the next 1 day.",
+      "consequence": "In agitated markets, a trader would buy a coin after an unusually large down day for a one-day rebound, sized up with the size of the fall relative to the coin's recent volatility, rather than with where the close sits in the day's range.",
+      "name": "volatile large-fall next-day rebound",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.g2.g1_volatile-large-fall-next-day-rebound"
+  ],
+  "no_ideas": null
+}

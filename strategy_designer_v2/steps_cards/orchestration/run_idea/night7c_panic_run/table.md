@@ -16,21 +16,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-02.b2.d2_graded-monthly-low-rebound | 032-02.b2_volatile-low-next-day-rebound | missing-components | - | - | - | - | 0.27 | 2.0 |
 | 032-02.b2.g1.d1_close-location-on-wide-days | 032-02.b2.g1_close-location-next-day-reversal | missing-components | - | - | - | - | 0.06 | 0.4 |
 | 032-02.b2.g1.d2_long-reversal-after-wide-days | 032-02.b2.g1_close-location-next-day-reversal | plan | inconclusive (+1.19) | not profitable enough (failed: Calmar) | - | 7.b: 032-02.b2.g1.d2.b1_wide-day-low-close-rebound-more-coins, 032-02.b2.g1.d2.b2_rebound-after-wide-days-in-decline; 7.g: 032-02.b2.g1.d2.g1_five-day-momentum-continues-briefly, 032-02.b2.g1.d2.g2_monthly-trend-carries-over-days | 1.01 | 5.5 |
+| 032-02.b2.g1.d3_short-fade-in-falling-month | 032-02.b2.g1_close-location-next-day-reversal | plan | inconclusive (+1.16) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-02.b2.g1.d3.b1_short-fade-more-coins, 032-02.b2.g1.d3.b2_high-close-fades-wide-steeper; 7.g: 032-02.b2.g1.d3.g1_falling-month-one-day-close-reversal, 032-02.b2.g1.d3.g2_falling-month-daily-return-reversal, 032-02.b2.g1.d3.g3_near-high-five-day-continuation | 1.09 | 6.0 |
+| 032-02.b2.g2_volatile-close-near-low-rebound | 032-02.b2_volatile-low-next-day-rebound | plan | confirmed (+2.45) | not profitable enough (failed: Calmar) | - | 7.d: 032-02.b2.g2.d1_near-low-rebound-in-falling-months, 032-02.b2.g2.d2_below-midrange-close-rebound, 032-02.b2.g2.d3_rebound-scaled-by-range-widening; 7.g: 032-02.b2.g2.g1_volatile-large-fall-next-day-rebound | 1.04 | 5.3 |
+| 032-02.b2.g2.d1_near-low-rebound-in-falling-months | 032-02.b2.g2_volatile-close-near-low-rebound | plan | inconclusive (+1.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 032-02.b2.g2.d1.b1_near-low-rebound-more-coins, 032-02.b2.g2.d1.b2_near-high-close-fades; 7.g: 032-02.b2.g2.d1.g1_near-low-close-rebounds-anywhere, 032-02.b2.g2.d1.g2_volatility-scaled-one-day-fall-reversal, 032-02.b2.g2.d1.g3_down-day-close-at-low-rebounds | 1.00 | 5.3 |
+| 032-02.b2.g2.d2_below-midrange-close-rebound | 032-02.b2.g2_volatile-close-near-low-rebound | plan | inconclusive (+1.97) | not profitable enough (failed: Mean daily return, on days in a position) | - | 7.b: 032-02.b2.g2.d2.b1_below-midrange-rebound-all-coins, 032-02.b2.g2.d2.b2_close-location-in-wide-ranges; 7.g: 032-02.b2.g2.d2.g1_large-daily-fall-rebounds, 032-02.b2.g2.d2.g2_volatile-regime-daily-fall-rebound | 0.92 | 5.2 |
 
 ## Consumption
-12 ideas, 11.84 USD, 66.4 minutes in all.
+16 ideas, 15.88 USD, 88.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.09 | 8.9 |
-| step4_backtest | 0.00 | 25.3 |
-| step5_verdict | 1.83 | 7.1 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 2.61 | 12.3 |
+| step4_backtest | 0.00 | 31.4 |
+| step5_verdict | 2.50 | 9.6 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.78 | 2.8 |
+| step7_7.d | 1.18 | 4.2 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 2.55 | 7.8 |
-| step7_7.g | 4.18 | 12.6 |
+| step7_7.b | 3.46 | 11.1 |
+| step7_7.g | 5.72 | 17.5 |
 | step7_7.a | 0.41 | 1.3 |
-| similarity_check | 0.00 | 0.1 |
+| similarity_check | 0.00 | 0.2 |

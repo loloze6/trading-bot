@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.963126460659569,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on low_close forecast, regime bars",
+    "value": 0.0004290259064063955,
+    "statistic": {
+      "name": "t of OLS slope, SE clustered by day",
+      "value": 2.454107047566719
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-minus-bottom third > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return, top third minus bottom third of forecasts",
+    "value": 0.005897020935057212,
+    "passed": true
+  },
+  "counts": {
+    "regime bars": 7697,
+    "distinct days": 2128
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-minus-bottom-third difference is above 0.",
+  "reading": "The detector's MeanBarRangeRatio is recomputed from prices as the 90-bar mean of (high-low)/close over its 30-bar mean, inside each window, and where fewer than 90 bars of the window exist the recorded regime stands in for it; the close sits low when (high-close)/(high-low) > 0; the coin's mean daily return is the mean of all its 1-bar returns over all windows; the slope's t is the OLS slope with standard errors clustered by UTC day; regime bars are those with regime 'mean_reversion' and a next-day return in the window; thirds are cut by forecast rank.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +9.485e-05 on the check folds against +0.000429 on every fold",
+    "main": 9.485213178374068e-05,
+    "statistic": 0.5250125724210846,
+    "counts": {
+      "regime bars": 3809,
+      "distinct days": 1114
+    }
+  }
+}

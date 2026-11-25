@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9930245535714286,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day return minus coin's mean daily return (bars with forecast > 0)",
+    "value": 0.003858842745643135,
+    "statistic": {
+      "name": "t of the forecast-weighted mean, cases of one day summed",
+      "value": 1.9677735298531511
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; else inconclusive; fewer than 100 distinct days -> not observable"
+  },
+  "supporting_check": null,
+  "counts": {
+    "distinct days with a positive forecast": 1369,
+    "bars with a positive forecast": 3522
+  },
+  "decided_by": "the t lies between -2 and 2 (inconclusive rule).",
+  "reading": "every bar with forecast > 0 and a next close in the same window is a case, the coin's mean is the mean of all its in-window 1-bar returns, the t is the weighted mean over a standard error built from the forecast-weighted deviations summed per UTC day, and days are counted over these usable cases."
+}

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 032-02.b2.g1.d3_short-fade-in-falling-month_1d
+idea tested: 032-02.b2.g1.d3_short-fade-in-falling-month
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3490 USD
+---
+## Findings
+- **F1:** In the regime (20-day return below 0, folds B and C), the next-day excess fall rises steadily with the close location: by close-location quintile from lowest to highest it is -0.59 % (t -3.00), -0.03 %, +0.28 %, +0.54 % (t 2.93) and +0.74 % (t 4.07), about 860 cases each. The slope of the excess fall on close location is 0.0164, with t 2.87 when the cases of one day are pooled (4,331 cases).
+- **F2:** The range multiple adds nothing and dilutes the forecast. Weighted by the close-location component alone, the mean excess fall is +0.42 % with day-pooled t 2.20. Weighted by the range-multiple component alone, it is +0.02 % with t 0.10. Weighted by the full forecast, it is +0.23 % with t 1.23. The range multiple's own slope is negative (-0.0047, t -1.11), and its widest quintile has a mean of -0.17 %.
+- **F3:** The day's range matters only by sharpening the close-location gradient. On days wider than the median range multiple, the close-location slope is 0.0292 (t 3.50, 1,853 cases). On narrower days it is only 0.0044 (t 0.65, 2,478 cases). In the joint grid, the highest close on the widest days gives +1.78 % the next day, and the lowest close on the widest days gives -1.55 %.
+- **F4:** The close-location gradient is spread across coins and years. The slope is positive on all 6 coins: t 3.79 on XMR, t 2.33 on XRP, t 2.12 on BTC, and down to t 1.37 on ZEC. It is positive in all 4 years, from t 0.92 in 2021 to t 2.11 in 2020. Even so, windows w10 and w11 give negative mean excess falls (-0.43 % and -1.71 %, t -2.24 and -3.58).
+- **F5:** The effect is a 1-day effect. At 3 days, the excess fall by close-location quintile shows no order (+0.29 %, +1.97 %, +0.50 %, -0.40 %, +0.31 %). The step-5 size is also small: an unusual move of +0.24 % per case (t 1.66, 1,513 days, strength 0.051), against a trade cost of 0.19 %.
+- **F6:** The test used only the 6 default coins. The data offers 13 more coins in folds A and D, and partly in B and C, which could raise the number of independent days behind a result that is on the predicted side (+0.127 %, t 1.16).
+
+## Ideas
+- `032-02.b2.g1.d3.b1_short-fade-more-coins` (from F1, F4, F6): The higher a coin's daily close sits within that day's high-low range, the more the coin falls over the next 1 day while its 20-day return is negative. The fall is larger the wider that day's range is against its previous 20 days' average range.
+- `032-02.b2.g1.d3.b2_high-close-fades-wide-steeper` (from F1, F2, F3, F5): The higher a coin's daily close sits within that day's high-low range, the more the coin falls over the next 1 day while its 20-day return is negative, and this gradient is steeper the wider that day's range is against its previous 20 days' average range.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

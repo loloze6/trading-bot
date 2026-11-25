@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9776536312849162,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess next-day return on mean_reversion bars",
+    "value": 0.002616105582891613,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 1.2996071856747706
+    },
+    "threshold": "confirm t >= 2 (with top-minus-bottom > 0); reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third mean excess next-day return",
+    "value": 0.011922693085704365,
+    "passed": true
+  },
+  "counts": {
+    "regime days with a position": 3174,
+    "regime bars in main measure": 3187,
+    "independent days (t clusters)": 1188
+  },
+  "decided_by": "main measure t between -2 and 2",
+  "reading": "Situation recomputed per window from prices with bar range (high-low)/close, the 90/30 mean-range ratio and the 30-day return (the recorded fall30 raw value where present), falling back on the recorded regime where 90 bars of history are not in the record; the main measure uses every mean_reversion bar with a next-day return (zero forecasts included), its t clusters deviations by UTC day across coins; 'regime days with a position' are mean_reversion (coin, day) bars with a non-zero postRebalance_current_allocation; terciles are the lowest and highest n//3 regime bars pooled by forecast (stable sort)."
+}

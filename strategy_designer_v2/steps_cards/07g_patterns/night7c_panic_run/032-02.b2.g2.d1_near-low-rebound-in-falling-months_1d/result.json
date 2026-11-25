@@ -1,0 +1,61 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b2.g2.d1_near-low-rebound-in-falling-months_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3864261,
+  "findings": {
+    "F1": "Across all bars of folds B and C, not only the tested regime, the lower the close sits in the day's high-low range, the higher the next-day excess return: the slope is +0.32 % per standard deviation of close location (t 2.90, 8688 bars, 1448 days); closes in the lowest fifth of the range are followed by +0.52 % (t 2.05) and closes in the highest fifth by \u22120.34 % (t \u22121.66).",
+    "F2": "This near-low rebound points the same way on every year and every coin: the yearly slopes run from +0.23 % to +0.61 % (t 1.06 to 2.70), and the coin slopes from +0.14 % for XRP (t 0.76) to +0.67 % for XMR (t 4.82).",
+    "F3": "The near-low rebound does not need the tested regime: outside it, closes in the lowest fifth of the range earn +0.37 % against \u22120.25 % for the highest fifth. It is stronger in down months, with a slope of +0.46 % (t 2.56, 775 days) when the 30-day return is negative against +0.26 % (t 1.97, 1118 days) when it is not.",
+    "F4": "The larger a day's fall relative to the coin's own 30-day daily volatility, the larger the next day's rise: the slope on the volatility-scaled day return is \u22120.40 % (t \u22122.38, 7537 bars, 1257 days), the most-fallen fifth of days is followed by +0.75 % excess (t 2.51, 446 days), and the effect is stronger in down months (slope \u22120.62 %, t \u22122.11) than otherwise (\u22120.28 %, t \u22121.46).",
+    "F5": "The volatility-scaled reversal also points the same way on every year (slopes \u22120.19 % to \u22120.68 %) and on 5 of 6 coins (ETH t \u22122.37, XMR \u22123.25, ZEC \u22122.69); XRP is flat (+0.01 %, t 0.03).",
+    "F6": "The near-low rebound sits mostly on down and flat days: its slope is +0.28 % (t 1.28) in the lowest tercile of the volatility-scaled day return and +0.33 % (t 2.06) in the middle one, but \u22120.11 % (t \u22120.61) in the highest.",
+    "F7": "The brief's own situation shows nothing: a new 30-day closing low is followed by +0.32 % next day (t 0.56, 226 days) and +0.21 % over 3 days (t 0.15, 67 days), and the tested regime's bars as a whole earn \u22120.06 % (t \u22120.18).",
+    "F8": "Both one-day effects are larger than a trade's cost of 0.19 %: +0.52 % after near-low closes and +0.75 % after the most-fallen fifth of days. Weekday, day-range level and the 30/90 range ratio show no group with |t| above 2, so the effect is in the shape of the day's move, not in the volatility regime."
+  },
+  "ideas": [
+    {
+      "idea": "For any coin, in any market, the lower its daily close sits within that day's high-low range, the larger its rise over the next 1 day, and the more so when its 30-day return is negative.",
+      "consequence": "A trader would buy daily closes pinned near the day's low in every market, leaning harder in down months, instead of waiting for a volatile decline that adds nothing.",
+      "name": "near-low close rebounds anywhere",
+      "from": "F1, F2, F3, F7, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F7",
+        "F8"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 1-day fall measured against its own daily volatility over the past 30 days, the larger its rise over the next 1 day.",
+      "consequence": "A trader would buy a coin the day after an unusually large fall for its own volatility, sized with how unusual the fall was, and refuse the long after large up days.",
+      "name": "volatility-scaled one-day fall reversal",
+      "from": "F4, F5, F8",
+      "refs": [
+        "F4",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "When a coin closes the day lower than the day before, the nearer that close sits to the day's low, the larger its rise over the next 1 day.",
+      "consequence": "A trader would buy a down day's close when it sits at the day's low rather than one that recovered within the day, and would not apply this to up days.",
+      "name": "down-day close at low rebounds",
+      "from": "F1, F4, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.g2.d1.g1_near-low-close-rebounds-anywhere",
+    "032-02.b2.g2.d1.g2_volatility-scaled-one-day-fall-reversal",
+    "032-02.b2.g2.d1.g3_down-day-close-at-low-rebounds"
+  ],
+  "no_ideas": null
+}

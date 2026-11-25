@@ -3,7 +3,12 @@
 032-02.b2.d1_volatile-ten-day-low-rebound_1d: inconclusive (fit: exact) [main: 0.0203643; t of the mean, cases of one day taken together 2.48079; cases 195, distinct case days 124]
 032-02.b2.d3_falling-coin-short-low-bounce_1d: inconclusive (fit: exact) [main: 0.00694613; t of weighted mean, cases clustered by day 1.17865; cases (distinct days) 750, cases (bars) 1278]
 032-02.b2.g1.d2_long-reversal-after-wide-days_1d: inconclusive (fit: exact) [main: 0.0017578; Welch t 1.18648; days in top tercile 1814, days in bottom tercile 1883]
+032-02.b2.g1.d3_short-fade-in-falling-month_1d: inconclusive (fit: adapted) [main: 0.00126977; t of the weighted mean, cases of one day pooled 1.16071; case-days 8831, distinct days 2218, active bars 8916]
 032-02.b2.g1_close-location-next-day-reversal_1d: confirmed (fit: exact) [main: 0.000604317; OLS t of the slope 4.75869; bars with a non-zero forecast 17380, bars in the regression 17380]
+032-02.b2.g2.d1_near-low-rebound-in-falling-months_1d: inconclusive (fit: exact) [main: 0.00261611; t of the mean, clustered by day 1.29961; regime days with a position 3174, regime bars in main measure 3187, independent days (t clusters) 1188]
+032-02.b2.g2.d2_below-midrange-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00385884; t of the forecast-weighted mean, cases of one day summed 1.96777; distinct days with a positive forecast 1369, bars with a positive forecast 3522]
+032-02.b2.g2.d3_rebound-scaled-by-range-widening_1d: mismatch: the test does not match its plan (agreement 0.871716) (fit: exact)
+032-02.b2.g2_volatile-close-near-low-rebound_1d: confirmed (fit: adapted) [main: 0.000429026; t of OLS slope, SE clustered by day 2.45411; regime bars 7697, distinct days 2128]
 032-02.b2_volatile-low-next-day-rebound_1d: confirmed (fit: exact) [main: 0.0236171; day-clustered t of the mean 2.12997; distinct case days 93, cases 143]
 032-02_volatile-decline-low-rebound_1d: inconclusive (fit: adapted) [main: 0.0204635; t of the mean, cases of one day taken together 0.754605; cases 42, days 27]
 032-03.b1_deep-low-rebound-all-coins_1d: inconclusive (fit: exact) [main: 0.00535866; t of the mean, cases of the same day pooled 0.636562; distinct case days 221, cases 437]
