@@ -5,6 +5,7 @@
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: 1 ideas (2 explorations)
 032-02.g1.e1_raw-nearness-to-uptrend-high_1d: 1 ideas (2 explorations)
 032-02.g1.e2.e1_new-closing-high-continuation_1d: 1 ideas (3 explorations)
+032-02.g1.e2.e2_overextended-high-reverses_1d: 1 ideas (2 explorations)
 032-02.g1.e2_wide-range-breakout-continuation_1d: 1 ideas (2 explorations)
 032-02.g1_uptrend-near-high-continues_1d: 3 ideas (3 explorations)
 032-02_low-range-decline-continues-more_1d: 2 ideas (2 explorations)

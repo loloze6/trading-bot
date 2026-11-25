@@ -22,22 +22,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-02.g1.e1.e1_raw-nearness-to-28-day-high | 032-02.g1.e1_raw-nearness-to-uptrend-high | plan | inconclusive (+1.57) | profitable enough | - | 7.b: 032-02.g1.e1.e1.b1_nearness-to-high-more-coins; 7.e: 032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise, 032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high; 7.g: 032-02.g1.e1.e1.g1_calm-nearness-to-28-day-high | 1.38 | 6.6 |
 | 032-02.g1.e2.e1_new-closing-high-continuation | 032-02.g1.e2_wide-range-breakout-continuation | plan | confirmed (+2.40) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 032-02.g1.e2.e1.g1_next-day-rebound-after-shock | 0.79 | 5.6 |
 | 032-02.g1.e1.e2_quiet-breakout-to-28-day-high | 032-02.g1.e1_raw-nearness-to-uptrend-high | plan | inconclusive (+1.47) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-02.g1.e1.e2.b1_quiet-breakout-all-coins; 7.g: 032-02.g1.e1.e2.g1_high-in-28-day-range-rises | 1.02 | 5.4 |
+| 032-02.g1.e2.e2_overextended-high-reverses | 032-02.g1.e2_wide-range-breakout-continuation | plan | inconclusive (-1.27) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-02.g1.e2.e2.b1_extreme-run-up-high-reverses, 032-02.g1.e2.e2.b2_modest-run-up-high-continues; 7.g: 032-02.g1.e2.e2.g1_fresh-highs-keep-rising | 0.98 | 6.3 |
 
 ## Consumption
-18 ideas, 20.17 USD, 127.0 minutes in all.
+19 ideas, 21.15 USD, 133.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.32 | 9.9 |
-| step4_backtest | 0.00 | 54.7 |
-| step5_verdict | 3.04 | 10.8 |
+| step3_plan | 2.40 | 10.4 |
+| step4_backtest | 0.00 | 57.6 |
+| step5_verdict | 3.20 | 11.4 |
 | step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 1.48 | 5.7 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.g | 7.76 | 24.7 |
-| step7_7.b | 5.57 | 18.9 |
+| step7_7.g | 8.14 | 25.9 |
+| step7_7.b | 5.93 | 20.1 |
 | similarity_check | 0.00 | 0.1 |
 | unseen_test | 0.00 | 1.1 |

@@ -5,6 +5,7 @@
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: 1 ideas (2 explorations)
 032-02.g1.e1_raw-nearness-to-uptrend-high_1d: 2 ideas (1 explorations)
 032-02.g1.e2.e1_new-closing-high-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+032-02.g1.e2.e2_overextended-high-reverses_1d: 2 ideas (2 explorations)
 032-02.g1.e2_wide-range-breakout-continuation_1d: 2 ideas (2 explorations)
 032-02.g1_uptrend-near-high-continues_1d: 1 ideas (1 explorations)
 032-02_low-range-decline-continues-more_1d: no ideas: The tested effect is zero rather than short of the bar: an unusual move of +0.10 % with t 0.22, and a slope t of -0.73. No coin, window, depth or horizon shows calm declines falling more in a way that holds up (F1–F6), so neither more data nor a narrowed version is supported.
