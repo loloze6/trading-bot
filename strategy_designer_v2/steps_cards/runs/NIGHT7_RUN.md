@@ -95,5 +95,12 @@ The control branches are read in place, not merged.
   branch first if their machine was replaced), the time rule unchanged (no new idea after 08:00 Paris). About 2.5 hours
   of the night remain: the budgets will not be spent.
 
+- **05:45 Paris:** all 8 sessions resumed at 05:40-05:42 Paris, each on its own branch and venv (their machines were not
+  replaced), each finishing the idea the limit cut first. Spent before the stop: new code 17.9, 20.7, 23.0, about 23
+  USD; control 12.4 to 18.1 USD. **A commit gap:** two sessions had built components without committing the classes
+  under `trading-bot/` (session 3: 5 components, now committed by itself; control C2: 1, asked to commit). The other 6
+  branches have every built class in their components file (checked). Without it the morning merge would have carried
+  build records for classes that do not exist.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
