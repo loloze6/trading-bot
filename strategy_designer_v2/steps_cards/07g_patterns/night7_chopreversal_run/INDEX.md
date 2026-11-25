@@ -19,3 +19,4 @@
 042-01_falling-agitated-low-close-rebound_1d: 2 ideas, 1 discoveries (2 explorations)
 043-01_falling-agitated-intraday-drop-rebound_1d: 1 ideas (2 explorations)
 044-02_agitated-down-day-range-rebound_1d: 1 ideas, 2 discoveries (2 explorations)
+045-01_agitated-wide-low-close-rebound_1d: 2 ideas, 1 discoveries (2 explorations)

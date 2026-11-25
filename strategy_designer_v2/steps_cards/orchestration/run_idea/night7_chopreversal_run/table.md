@@ -26,22 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 039-02.d1_wide-range-low-close-next-day-rebound | 039-02_agitated-high-close-next-day-giveback | plan | confirmed (+2.61) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 039-02.d1.g2_down-day-low-close-next-day-rebound | 0.64 | 6.2 |
 | 044-01_agitated-wide-range-fall-rebound | - | missing-components | - | - | - | - | 0.81 | 0.4 |
 | 044-02_agitated-down-day-range-rebound | - | plan | confirmed (+3.21) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-02.g1_agitated-wide-fall-run-rebound | 0.74 | 7.3 |
+| 045-01_agitated-wide-low-close-rebound | - | plan | confirmed (+3.83) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 045-01.g1_falling-agitated-low-close-rebound, 045-01.g2_agitated-high-close-next-day-fade | 0.63 | 6.2 |
 
 ## Consumption
-22 ideas, 20.99 USD, 126.4 minutes in all.
+23 ideas, 21.62 USD, 132.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.20 | 9.9 |
-| step4_backtest | 0.00 | 51.9 |
-| step5_verdict | 3.45 | 12.7 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 3.28 | 10.4 |
+| step4_backtest | 0.00 | 54.6 |
+| step5_verdict | 3.60 | 13.3 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.d | 2.35 | 7.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 3.35 | 10.6 |
-| step7_7.g | 8.64 | 27.5 |
+| step7_7.g | 9.04 | 28.8 |
 | similarity_check | 0.00 | 0.7 |
-| unseen_test | 0.00 | 4.4 |
+| unseen_test | 0.00 | 5.5 |
