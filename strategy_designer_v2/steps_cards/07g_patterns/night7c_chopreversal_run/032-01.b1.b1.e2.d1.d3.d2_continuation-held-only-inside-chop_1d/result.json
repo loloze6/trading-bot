@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4326641,
+  "findings": {
+    "F1": "Measured over 7 days instead of 1, the tested signal is much larger: on its own 7-day grid each active case shows an unusual move of +2.41 %, t 2.34 (512 cases, 172 days), strength 0.15, total move +2.38 %. Over 3 days it is +0.93 %, t 2.48 (1257 cases, 417 days), strength 0.10. Over 14 days it is +1.74 %, t 0.82 (246 cases). Against these, the 1-day size behind the verdict is +0.14 %, t 1.26, below the 0.19 % cost of a trade.",
+    "F2": "On the non-overlapping 7-day grid of all bars, the slope of the next-7-day excess return on the 7-day move scaled by 30-day swings depends on the 30-day efficiency ratio. It is 0.0275 (t 2.73, 290 cases) in the choppiest third, 0.0278 (t 3.23, 283) in the middle third and 0.0018 (t 0.25, 286) in the trending third. So the weekly move continues outside trends; it does not reverse as the brief predicted.",
+    "F3": "The same weekly continuation weakens as the coin's 30-day volatility rises relative to its 90-day volatility. By quintile of that ratio, from calmest to most agitated, the slopes are 0.039 (t 2.30), 0.031 (t 2.10), 0.037 (t 1.29), 0.010 (t 0.60) and \u22120.014 (t \u22120.83), about 110 to 123 cases each. Dividing the scaled 7-day move by that ratio raises the t from 1.41 to 2.32 (571 cases, day-clustered).",
+    "F4": "In the calmer two-thirds of that volatility ratio, the continuation is not uniform across the sample. All six coins have a positive slope (0.004 to 0.049), but none has a t above 1.58. The years 2018 and 2020 are positive (t 0.93, 1.30), while 2019 and 2021 are near 0. 8 of 12 windows are positive, and the three first windows (w7 to w9) are negative.",
+    "F5": "Among the book's active bars, the signed next-7-day excess return rises with the forecast's size: 0.38 %, 1.94 %, 1.67 % and 2.97 % by |forecast| quartile (about 960 bars each). The signed next-day excess stays flat, at 0.29 %, 0.57 %, 0.53 % and 0.16 %.",
+    "F6": "The bars show no daily pattern that stands out. By quintile of the day's move scaled by 30-day swings, the next-day excess has no |t| above 1.46. By weekday, the next-day excess has no |t| above 1.64 (about 207 days each).",
+    "F7": "The book's worst 2 % of days average \u22124.0 % while the coins rose 2.2 % that day, and its best 2 % average +5.0 % while the coins fell 1.6 %. The book's daily return has a correlation of \u22120.09 with the coins'."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings is followed by a move the same way over the next 7 days. The larger that scaled 7-day move, the larger the move over the following week.",
+      "consequence": "A trader taking the choppy-market weekly continuation should expect its payoff over a week, where the move per case is many times a trade's cost, rather than over the next day, where it is smaller than that cost.",
+      "name": "chop weekly continuation, weekly horizon",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's 7-day move counted in 30-day daily swings is followed by a move the same way over the next 7 days, and more strongly the lower its 30-day volatility is compared with its 90-day volatility. The larger the scaled 7-day move relative to that volatility ratio, the larger the following week's move.",
+      "consequence": "A trader should back a strong scaled weekly move when the coin's recent swings have calmed against their longer level, and refuse it when the recent swings have swollen.",
+      "name": "weekly continuation in calming volatility",
+      "from": "F3, F2, F4",
+      "refs": [
+        "F3",
+        "F2",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1.b1.e2.d1.d3.d2.g1_chop-weekly-continuation-weekly-horizon",
+    "032-01.b1.b1.e2.d1.d3.d2.g2_weekly-continuation-in-calming-volatility"
+  ],
+  "no_ideas": null
+}

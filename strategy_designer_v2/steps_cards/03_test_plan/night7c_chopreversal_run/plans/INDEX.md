@@ -5,6 +5,7 @@
 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1.d3.d1_short-continuation-ends-with-chop_1d: untestable: The idea's outcome needs a different exit on each side: longs held a fixed 7 days, shorts closed the day [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d2.d1.d1_chop-continuation-exit-on-break_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

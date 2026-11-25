@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast/10, active bars",
+    "value": 0.0012058093441255785,
+    "statistic": {
+      "name": "OLS t, SE clustered by day",
+      "value": 1.5641553696068036
+    },
+    "threshold": "t >= 2 with positive supporting mean confirms; t <= -2 rejects; at least 100 active bars"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x next-day excess return",
+    "value": 0.001742084403281457,
+    "passed": true
+  },
+  "counts": {
+    "active bars": 8058,
+    "days": 2546
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Situation checked only on active bars with 30 prior bars inside the same window (earlier bars cannot be recomputed from prices and are left out of the agreement); the regression is OLS with an intercept and a standard error clustered by UTC day; fewer than 100 active bars is reported as 'not observable' per the workflow's minimum-count rule."
+}

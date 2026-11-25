@@ -4,6 +4,7 @@
 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d: not profitable enough [Sharpe 0.7402; Sharpe minus holding's Sharpe 0.1861; Calmar 0.5902]
 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d: not profitable enough [Sharpe 0.7402; Sharpe minus holding's Sharpe 0.1861; Calmar 0.5902]
 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d: not profitable enough [Sharpe 0.5217; Sharpe minus holding's Sharpe -0.03248; Calmar 0.3003]
+032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop_1d: not profitable enough [Sharpe 0.4659; Sharpe minus holding's Sharpe -0.08829; Calmar 0.2687]
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: not profitable enough [Sharpe 0.7402; Sharpe minus holding's Sharpe 0.1861; Calmar 0.5902]
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: not profitable enough [Sharpe 0.5217; Sharpe minus holding's Sharpe -0.03248; Calmar 0.3003]
 032-01.b1.b1.e2.d2.d1.d1_chop-continuation-exit-on-break_1d: not profitable enough [Sharpe 0.4659; Sharpe minus holding's Sharpe -0.08829; Calmar 0.2687]

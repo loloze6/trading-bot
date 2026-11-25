@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3355709,
+  "findings": {
+    "F1": "The test's own result points the way the idea predicts but falls short of the bar: the slope on forecast/10 is +0.0012 (t 1.56) over 8058 active bars on 2546 days, and the supporting mean is +0.17 %, so it fails only on the strength of the evidence, not on its direction.",
+    "F2": "On the explored folds the next-day move follows the scaled week on average: the signed next-day excess return is +0.39 % (t 2.70; 3807 cases on 1217 days). But the next-day grading is weak: the clustered slope on forecast/10 has t 1.81, and the signed slope on the size of the raw scaled week is \u22120.0006 (t \u22120.24).",
+    "F3": "At one day the strongest cases add nothing. The top quartile of the raw scaled week earns +0.13 % the next day (t 0.36), against +0.51 % (t 2.89) and +0.67 % (t 2.66) for the middle quartiles. This flat, then falling, pattern is what keeps the one-day slope short of the bar.",
+    "F4": "Over the next 7 days the effect is graded. On a non-overlapping 7-day grid the clustered slope on forecast/10 is 0.0232 (t 2.76; 512 cases, 172 days) and the signed mean is +2.4 % (t 2.33). The top quartile of the raw scaled week gives +5.0 % (t 2.91), against +0.9 % (t 0.68) for the bottom quartile.",
+    "F5": "The effect is uneven across coins and years. XMR's next-day signed excess is \u22120.01 % (t \u22120.06; 691 cases), while the other five coins range from +0.30 % to +0.58 %. By year it ranges from +0.13 % in 2020 (t 0.48) to +0.73 % in 2021 (t 2.25).",
+    "F6": "Held one day at a time, the move per case (+0.14 %) is 0.7 times the 0.19 % cost of a trade. The 7-day signed move of +2.4 % per case is about 12 times that cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "chop continuation, more coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the following days, only while its 30-day return points the same way and only for as long as the past 30 days are still going back and forth at each day's close. The larger that scaled 7-day move, the larger the following move.",
+      "consequence": "A trader should hold the choppy-market weekly continuation only on the days the chop is still there at the close, not for a fixed week, which cuts the deepest fall.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way. The larger that scaled 7-day move, the larger the 7-day move that follows.",
+      "consequence": "A trader should hold the choppy-market weekly continuation for a week, not one day at a time, because the move grows with the scaled week only over that horizon and is then large enough to cover a trade's cost.",
+      "name": "chop continuation over week",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1.b1.e2.d1.d3.d2.b1_chop-continuation-more-coins",
+    "032-01.b1.b1.e2.d1.d3.d2.b2_chop-continuation-over-week"
+  ],
+  "no_ideas": null
+}
