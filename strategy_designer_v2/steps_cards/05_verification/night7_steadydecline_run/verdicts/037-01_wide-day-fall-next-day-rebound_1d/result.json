@@ -1,0 +1,41 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "timing gain before costs, per-day mean across coins",
+    "value": 0.0007400750812729446,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 2.371492642005883
+    },
+    "threshold": "confirm if t >= 2 and mean > 0 (with supporting check); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half (median post_pipeline_value) mean next-day excess return, Welch t",
+    "value": 0.0051643122430918564,
+    "passed": true,
+    "welch_t": 4.794611134429324
+  },
+  "counts": {
+    "bars with forecast > 0": 8605,
+    "distinct days": 2219,
+    "days in main measure": 2898
+  },
+  "decided_by": "Main measure t >= 2 with a positive mean, and the supporting check passes.",
+  "reading": "Days are UTC calendar days of the bar timestamp, the coin's mean is over all its within-window next-day returns, the median split puts values above the median in the upper half and the rest in the lower, and the plan's 'fewer is inconclusive' minimum is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0005394 on the check folds against +0.0007401 on every fold",
+    "main": 0.0005393757291592975,
+    "statistic": 1.2718057934387152,
+    "counts": {
+      "bars with forecast > 0": 4294,
+      "distinct days": 1161,
+      "days in main measure": 1449
+    }
+  }
+}
