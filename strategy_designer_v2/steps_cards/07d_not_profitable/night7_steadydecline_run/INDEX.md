@@ -5,6 +5,7 @@
 033-01_close-near-low-rebounds_1d: 2 ideas (2 explorations)
 033-02_close-near-high-gives-back_1d: 3 ideas (2 explorations)
 034-01.d1_wide-range-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+034-01.d2_falling-agitated-low-close-rebound_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 034-01_agitated-low-close-rebounds_1d: 2 ideas (2 explorations)
 034-02_agitated-high-close-gives-back_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 035-01_wide-low-close-rebounds_1d: 2 ideas (2 explorations)

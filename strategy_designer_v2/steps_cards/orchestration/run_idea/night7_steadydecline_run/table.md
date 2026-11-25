@@ -25,22 +25,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 039-02_agitated-range-fall-low-close-rebound | - | plan | confirmed (+2.76) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 039-02.g1_agitated-at-low-close-rebound, 039-02.g2_calm-market-short-momentum | 1.52 | 7.7 |
 | 040-02_agitated-fall-vs-swing-rebound | - | plan | confirmed (+3.18) | not profitable enough (failed: Calmar) | - | 7.d: 040-02.d1_agitated-fall-after-weekly-decline, 040-02.d2_two-day-rebound-after-selling, 040-02.d3_largest-scaled-falls-rebound, 040-02.d4_falling-agitated-fall-rebound; 7.g: 040-02.g1_agitated-heavy-volume-fall-rebound, 040-02.g2_heavy-volume-fall-three-day-rebound | 1.08 | 7.0 |
 | 034-01.d1_wide-range-low-close-rebound | 034-01_agitated-low-close-rebounds | plan | confirmed (+3.69) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 034-01.d1.g1_ordinary-rise-high-close-fade, 034-01.d1.g2_agitated-sharp-fall-low-close-rebound | 0.65 | 6.4 |
+| 034-01.d2_falling-agitated-low-close-rebound | 034-01_agitated-low-close-rebounds | plan | mismatch | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.g: 034-01.d2.g1_falling-close-location-graded-agitation, 034-01.d2.g2_falling-agitated-high-close-fade | 0.82 | 5.3 |
 
 ## Consumption
-21 ideas, 23.30 USD, 131.3 minutes in all.
+22 ideas, 24.12 USD, 136.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.37 | 12.6 |
-| step4_backtest | 0.00 | 46.0 |
-| step5_verdict | 3.45 | 12.7 |
-| step6_check | 0.00 | 1.0 |
+| step3_plan | 4.45 | 13.0 |
+| step4_backtest | 0.00 | 48.5 |
+| step5_verdict | 3.62 | 13.4 |
+| step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 4.90 | 17.6 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.45 | 4.8 |
-| step7_7.g | 9.13 | 30.0 |
+| step7_7.g | 9.70 | 31.6 |
 | similarity_check | 0.00 | 1.2 |
 | unseen_test | 0.00 | 4.9 |

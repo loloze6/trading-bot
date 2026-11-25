@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 034-01.d2_falling-agitated-low-close-rebound_1d
+idea tested: 034-01.d2_falling-agitated-low-close-rebound
+step 5: mismatch
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5733 USD
+---
+## Findings
+- **F1:** In a falling, agitated market (60-day return below -10 %, 30-day swing above its recent median), the day's close location (0 at the high, 1 at the low) tracks the next day's excess return: correlation 0.216, t 2.79 over 266 days (788 cases). In falling calm markets it does not (correlation -0.017, t -0.42, 368 days), nor in rising agitated markets (correlation -0.009, t -0.26, 245 days).
+- **F2:** In falling markets the reversal grows with agitation. Across the four quartiles of the 30-day swing against its recent median (medians 0.68, 0.84, 1.02 and 1.60), the correlation is -0.10, 0.05, 0.14 and 0.23, with t -1.38, 0.75, 1.99 and 2.19 (about 475 cases each).
+- **F3:** The effect holds on every coin inside the falling, agitated cells. Correlations run from 0.15 to 0.36 and t from 1.74 (ZEC) to 3.55 (XRP). By year it is positive in 2018 to 2020 (t 1.64, 1.96, 1.82) and weak in 2021 (t 0.57, 27 days).
+- **F4:** The effect is spent after the next day. In falling agitated markets the two-day correlation is 0.016, t 0.25 (776 cases), against t 2.79 at one day.
+- **F5:** Most of the edge sits on the side of closes near the high. In falling agitated markets, closes in the upper half of the range are followed by -1.25 % excess next day (t -1.93, 152 days); closes in the lower half by +1.21 % (t 0.96, 159 days). In profile, the second close-location quintile from the high gives -1.12 % (t -2.10, 149 days).
+- **F6:** The day's own return, scaled by the 30-day swing, reverses in the same cells.
+- **F7:** The book is flat 85 % of the time, in profile on 15.5 % of bars. In profile, its long bars earned a mean 0.102 % per bar (696 bars) and its short bars 0.038 % (570 bars). It is not profitable enough: mean on days in a position 0.028 % against 0.05 % needed, Calmar 0.64.
+- **F8:** Several other angles showed no stand-alone pattern (largest |t| 1.80, below what so many looks require): weekday, the day's range size, the prior 5-day return, and the volatility level alone.
+
+## Ideas
+- `034-01.d2.g1_falling-close-location-graded-agitation` (from F1, F2, F3, F4): In a falling market, the nearer a coin's daily close sits to the day's low within its high-low range, the larger its rise over the next day. This reversal grows with how much more the coin has swung over the last 30 days than over its past year.
+- `034-01.d2.g2_falling-agitated-high-close-fade` (from F1, F5, F4): In a falling, agitated market, the nearer a coin's daily close sits to the day's high within its high-low range, the larger its fall over the next day.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `034-01.d2.g3_falling-agitated-daily-reversal` (from F6, F1, F4): In a falling, agitated market, the larger a coin's one-day return measured against its 30-day swing, the weaker its return over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
