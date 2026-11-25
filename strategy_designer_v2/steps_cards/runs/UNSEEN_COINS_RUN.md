@@ -32,6 +32,14 @@ Of the 35 books with unseen coins, 28 are daily and 7 hourly (017-01, 017-05, 02
 - The P4 portfolio on unseen coins: `topics/44_review/p4_portfolio.py unseen_coins` (the P4 method unchanged: equal
   capital among the books with a record, each book's daily returns by step 6's definition).
 
+- **The engine:** this branch's, from 734cbff5b9, which holds 1l (topic 51: a move to flat is never refused by the
+  band; not yet on master). The in-sample verdicts and the unseen-dates results were made before 1l. Step 5's main
+  measure does not change with 1l (it reads forecasts and prices); step 6's Sharpe moves by up to 0.08 on topic 51's 7
+  proof books (`topics/51_review/compare.csv`). So the holds rule's in-sample sign is unaffected; the comparison with
+  the unseen dates carries that small difference. Proof that step 4 without `--coins` is unchanged: the helper of
+  734cbff5b9 and this branch's, on 048-01 and unseen_2026, give identical files (metrics, bars, trades, chart files,
+  run.md) apart from the manifests, logs and run summaries (times and run ids).
+
 ## Expected outcomes (written before the run)
 1. **Most books hold on their unseen coins: 70 % or more of the 35.** Coins move together and the years are the same,
    so an idea that rode its folds' market should still earn on other coins; this run tests the coins, not the years.
