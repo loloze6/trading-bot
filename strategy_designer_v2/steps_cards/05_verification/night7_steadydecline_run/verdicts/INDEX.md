@@ -2,6 +2,7 @@
 032-02_calm-fall-below-high-continues_1d: inconclusive (fit: exact) [main: 0.000767266; OLS slope t, clustered by day 1.21732; independent grid cases in a position 1071, days 435, active bars 3281]
 033-01.d1_wide-day-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000363224; t with cases summed per day (day-clustered OLS t) 3.36232; bars 17380, distinct days 2898, top-fifth bars 3479]
 033-01.d2_low-close-rebound-long-side_1d: confirmed (fit: adapted) [main: 0.00117971; t, standard errors clustered by day 2.06946; regime bars 8067, distinct days 2177, forecast >= 2 regime bars 5199]
+033-01.g1_wide-day-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000628257; slope t, cases of one day summed 3.19377; bars with |forecast| >= 2 8681, distinct days 2898, cases 17380]
 033-01_close-near-low-rebounds_1d: confirmed (fit: adapted) [main: 0.00309886; t of the mean over days 2.64101; distinct days of cases 2898, days in main measure 2898, bars with forecast >= +2.5 4308, bars with forecast <= -2.5 4490]
 033-02_close-near-high-gives-back_1d: confirmed (fit: exact) [main: -0.00625462; t clustered by day -2.60742; distinct days of cases 2898, bars in the top fifth 3739, cases 17380]
 034-01.d1_wide-range-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000624062; OLS t, errors clustered by day 3.69206; agitated bars with forecast > 0 7650, distinct days 2211, top-quintile agitated bars 1543]

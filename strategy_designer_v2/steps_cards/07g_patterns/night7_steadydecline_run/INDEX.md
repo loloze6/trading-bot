@@ -2,6 +2,7 @@
 032-02_calm-fall-below-high-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 033-01.d1_wide-day-low-close-rebound_1d: 1 ideas (2 explorations)
 033-01.d2_low-close-rebound-long-side_1d: 3 ideas, 1 discoveries (2 explorations)
+033-01.g1_wide-day-low-close-rebound_1d: 2 ideas (2 explorations)
 033-01_close-near-low-rebounds_1d: 2 ideas, 1 discoveries (2 explorations)
 033-02_close-near-high-gives-back_1d: 3 ideas (2 explorations)
 034-01.d1_wide-range-low-close-rebound_1d: 2 ideas (2 explorations)
