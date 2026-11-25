@@ -62,6 +62,14 @@ the new books on the unseen coins (1u).
   4 reran it (+0.61 again), about 1.1 USD. `select_next`'s duplicate rule compares the Idea sentence and the header's
   instruments, bar and period as written, so two ideas whose data lines are worded differently but tested the same are
   both run. For the morning: the duplicate judged on what is tested (the plan's config), not on how the idea is worded.
+- **00:16 Paris, first watch** (each branch as last pushed): no fault. Every plan whose idea names a profile has its
+  gate (30 of 30), no failed turn. The theme's own ideas took every turn so far in A (5 of 5), B (4/4), C (7/7), E
+  (4/4), F (5/5); in D 2 of 5, rightly: its two first ideas were answered "not in the data" by lines 7.b and 7.g
+  (the weekly move does not carry on in a choppy, agitated market: excess return about zero), so the theme is closed
+  and the discoveries come next. 27 ideas tested, 22.1 USD. **First result, session C:** 058-03.e1 ("in a calm,
+  rising market a stretched rise carries on over ten days") confirmed (+2.32), profitable enough, and it holds on
+  both unseen periods (2016-17 and 2026); 058-03.b1 confirmed, not profitable. E's pushed state predates its resume
+  (its loop had stopped at 22:43 on the catalogue fault, resumed since). No usage-limit stop yet.
 
 ## Reading
 (written in the morning)
