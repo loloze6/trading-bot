@@ -1,0 +1,68 @@
+## wide down days (top range quintile of down days): by year
+          n  days     mean%     t_day
+year                                 
+2018  219.0  69.0  1.279592  1.491920
+2019  159.0  52.0  0.447765  0.523486
+2020  172.0  61.0  1.570160  1.659765
+2021  167.0  54.0  1.388702  1.246185
+
+## wide down days: by coin
+            n   days     mean%     t_day
+coin                                    
+BTCUSD  114.0  114.0  0.710671  1.671383
+ETHUSD  119.0  119.0  1.215865  2.094352
+LTCUSD  123.0  123.0  0.831098  1.311860
+XMRUSD  114.0  114.0  1.717276  3.184917
+XRPUSD  122.0  122.0  1.200560  1.570418
+ZECUSD  125.0  125.0  1.465910  2.170758
+
+## wide down days: by window
+        n  days     mean%     t_day
+win                                
+w10  50.0  18.0  1.755060  3.738010
+w11  60.0  22.0  0.171638  0.118549
+w12  68.0  20.0  0.781736  0.709399
+w13  76.0  25.0  1.578352  0.765401
+w14  65.0  19.0  1.231824  0.935264
+w15  57.0  18.0  0.664835  0.444674
+w16  52.0  16.0  1.407320  0.614225
+w17  70.0  27.0  1.559055  0.969361
+w18  39.0  12.0  4.319408  1.142209
+w7   78.0  25.0  1.028300  1.210479
+w8   33.0  15.0  0.951092  0.912055
+w9   69.0  19.0  0.027725  0.018502
+
+## down days quintile, 2-day excess (grid)
+        n   days     mean%     t_day
+rq                                  
+0   337.0  171.0 -0.549424 -0.961286
+1   342.0  198.0 -0.693546 -1.326745
+2   337.0  190.0  0.447219  0.865008
+3   355.0  188.0  0.554452  1.002388
+4   396.0  129.0  1.284930  1.460407
+
+## down days OLS ex1 ~ rng + retz + clv (coef, t)
+           coef         t
+const -0.000198 -0.077865
+rng    0.003968  2.774905
+retz  -0.000679 -0.259157
+clv   -0.010176 -1.846236
+
+## rng*(1-clv) quintile, next-day excess
+          n   days     mean%     t_day
+lwq                                   
+0.0  1448.0  544.0 -0.225789 -1.011386
+1.0  1452.0  696.0 -0.197341 -1.180908
+2.0  1450.0  703.0 -0.117987 -0.616986
+3.0  1447.0  642.0 -0.171704 -0.758287
+4.0  1452.0  462.0  0.802229  2.597524
+
+## wide down days by profile
+Empty DataFrame
+Columns: [timestamp, open, high, low, close, volume, forecast, confidence, regime, strategy, total_portfolio_value, previous_allocation, allocation_change, approved_rebalance, succcess_execute_portfolio_rebalance, postRebalance_total_value, postRebalance_current_allocation, sizing_realised_vol, sizing_target_allocation, sizing_signal_change, portfolio_value, debug_info.regime, debug_info.forecast_delta, debug_info.regime_scores, debug_info.regime_margin, debug_info.bars_in_regime, debug_approve_allocation_change.symbol, debug_approve_allocation_change.time, debug_execute_portfolio_rebalance.symbol, debug_execute_portfolio_rebalance.price, debug_execute_portfolio_rebalance.quantity, debug_execute_portfolio_rebalance.trade_type, balances.USDT.free, balances.USDT.locked, balances.BTCUSD.free, balances.BTCUSD.locked, postRebalance_balances.USDT.free, postRebalance_balances.USDT.locked, postRebalance_balances.BTCUSD.free, postRebalance_balances.BTCUSD.locked, debug_info.components.range_swing.last_history_value, debug_info.components.range_swing.post_pipeline_value, debug_info.components.range_swing.weight_normalized, debug_info.components.range_swing.weighted_contribution, debug_approve_allocation_change.controls.min_allocation_change.passed, debug_approve_allocation_change.controls.min_allocation_change.passed_on, ts, ret1, fwd1, fwd2, sd30, rng, retz, clv, ret60, sd30d, pct, pos, coin, win, year, day, i, balances.ETHUSD.free, balances.ETHUSD.locked, postRebalance_balances.ETHUSD.free, postRebalance_balances.ETHUSD.locked, balances.LTCUSD.free, balances.LTCUSD.locked, postRebalance_balances.LTCUSD.free, postRebalance_balances.LTCUSD.locked, balances.XMRUSD.free, balances.XMRUSD.locked, postRebalance_balances.XMRUSD.free, postRebalance_balances.XMRUSD.locked, balances.XRPUSD.free, balances.XRPUSD.locked, postRebalance_balances.XRPUSD.free, postRebalance_balances.XRPUSD.locked, balances.ZECUSD.free, balances.ZECUSD.locked, postRebalance_balances.ZECUSD.free, postRebalance_balances.ZECUSD.locked, ex1, ex2, lowwide, lwq, tr, ag, rq]
+Index: []
+
+## position held: share short, mean gain% by up/down day
+               n      gain       pos
+after down    60  0.243436 -0.340912
+after up    4349 -0.011399 -0.418014

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move, next day, short direction",
+    "value": 0.0015397828834313198,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.6894696939420628
+    },
+    "threshold": "t >= 2 (with top third beating bottom third) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean unusual move by abs(forecast)",
+    "value": -0.0006566944718387678,
+    "passed": false
+  },
+  "counts": {
+    "cases": 8849,
+    "distinct days": 2274
+  },
+  "decided_by": "The t of the mean unusual move is between -2 and 2.",
+  "reading": "The up-close situation is computed as close[t]/close[t-1]-1 > 0 inside each window, so active bars on a window's first row (no previous close) are left out of the agreement; cases are bars with a negative forecast and a next close in the same window, the drift is each coin's mean 1-bar return pooled over all its windows, the t clusters deviations by UTC day, the thirds are equal-size splits of the cases sorted by abs(forecast), and the plan's minimum counts lead to 'not observable'."
+}
