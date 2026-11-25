@@ -4,3 +4,8 @@
 034-01_agitated-scaled-fall-next-day-rebound_1d: not profitable enough [Sharpe 0.852; Sharpe minus holding's Sharpe 0.2824; Calmar 0.6858]
 035-01_falling-agitated-scaled-fall-rebound_1d: profitable enough [Sharpe 1.049; Sharpe minus holding's Sharpe 0.4795; Calmar 0.7684]
 036-01_agitated-scaled-fall-three-day-rebound_1d: not profitable enough [Sharpe 0.6009; Sharpe minus holding's Sharpe 0.03129; Calmar 0.3537]
+036-02_agitated-scaled-fall-delayed-rebound_1d: not profitable enough [Sharpe 0.3407; Sharpe minus holding's Sharpe -0.2289; Calmar 0.1247]
+037-01_agitated-ordinary-rise-next-day-giveback_1d: not profitable enough [Sharpe -0.06462; Sharpe minus holding's Sharpe -0.6342; Calmar -0.031]
+038-01_calm-scaled-weekly-rise-continues_1d: not profitable enough [Sharpe 0.8793; Sharpe minus holding's Sharpe 0.3097; Calmar 0.6028]
+039-01_agitated-low-close-next-day-rebound_1d: not profitable enough [Sharpe 0.5853; Sharpe minus holding's Sharpe 0.01574; Calmar 0.3003]
+040-01_agitated-daily-fall-next-day-rebound_1d: not profitable enough [Sharpe 0.8926; Sharpe minus holding's Sharpe 0.323; Calmar 0.7469]

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-day excess return on forecast",
+    "value": 0.0010071104549861324,
+    "statistic": {
+      "name": "day-clustered t of the slope",
+      "value": 2.9578296128999693
+    },
+    "threshold": "slope > 0 with t >= 2 confirms; slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus market-rise part (timing)",
+    "value": 0.00014624393858614723,
+    "passed": true
+  },
+  "counts": {
+    "bars with a non-zero forecast": 7715,
+    "distinct days": 2214
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing part is above 0.",
+  "reading": "The agitated situation is every bar whose regime is not 'chop'; the expected side is long when the standardised close location (rebuilt from raw values with 60 past bars inside the window, else the recorded post-pipeline value) exceeds 10; the slope's t uses day-clustered standard errors with a G/(G-1) correction; the book's daily return before costs is the position after each bar's trade times the next-day return, averaged over the coins each day; and the minimum counts are applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003521 on the check folds against +0.001007 on every fold",
+    "main": 0.0003520831229014162,
+    "statistic": 0.9388341854206259,
+    "counts": {
+      "bars with a non-zero forecast": 4023,
+      "distinct days": 1162
+    }
+  }
+}

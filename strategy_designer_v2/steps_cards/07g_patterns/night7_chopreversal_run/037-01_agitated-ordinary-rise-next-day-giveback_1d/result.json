@@ -1,0 +1,39 @@
+{
+  "line": "7.g",
+  "backtest": "037-01_agitated-ordinary-rise-next-day-giveback_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39909059999999996,
+  "findings": {
+    "F1": "In agitated markets, the lower a coin closes within its day's high-low range, the higher its next-day return over its drift. The slope on (0.5 \u2212 close position) is +1.86 % (t 2.99, cases of one day together, 3,691 bars). In calm markets it is only +0.63 % (t 1.47, 4,639 bars).",
+    "F2": "The close-location effect in agitated markets carries more than the tested idea's own signal. With both in one regression on agitated bars, the coefficient on (0.5 \u2212 close position) is +1.05 % against \u22120.33 % for the volatility-scaled return (2,946 bars). In calm bars the two are +0.22 % and \u22120.14 % (4,005 bars).",
+    "F3": "The agitated close-location slope is positive on every coin and in every year shown.",
+    "F4": "Across all agitated days, the next-day excess return falls steadily as the close moves up the range.",
+    "F5": "The tested signal points the same way on all six coins: an agitated ordinary rise (scaled rise 0 to 1) is followed by a next-day excess return of \u22120.30 % (XRP) to \u22121.12 % (ZEC, t \u22122.76). Only ZEC reaches |t| 2; the other five have t from \u22120.49 to \u22121.63.",
+    "F6": "The book does not convert that edge into profit.",
+    "F7": "The next-day reversal does not carry into a longer horizon in a way that can be told from chance."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, the lower a coin closes within its day's high-low range, the higher its return over the next day; closes near the day's high are followed by the weakest next day.",
+      "consequence": "In agitated markets, the day's close location is a graded one-day signal: lean long after closes near the low and short after closes near the high, and hold for about a day.",
+      "name": "agitated close location reversal",
+      "from": "F1, F2, F3, F4, F6",
+      "profile": "agitated",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "037-01.g1_agitated-close-location-reversal"
+  ],
+  "no_ideas": null
+}

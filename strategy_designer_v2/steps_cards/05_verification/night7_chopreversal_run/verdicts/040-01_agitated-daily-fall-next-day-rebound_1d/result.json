@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of (next-day return minus coin mean daily return) on forecast, bars with forecast > 0",
+    "value": 0.0005295404128455497,
+    "statistic": {
+      "name": "OLS slope t, day-clustered standard errors",
+      "value": 2.184441157097443
+    },
+    "threshold": "slope t >= 2 (with supporting mean > 0) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean next-day return minus coin mean daily return on bars with forecast > 0",
+    "value": 0.0037686223999358693,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0 across all coins and windows": 3753,
+    "days": 1449
+  },
+  "decided_by": "The slope's t is 2 or more and the supporting mean is above 0 (confirm rule).",
+  "reading": "The regression has an intercept and its slope t uses cluster-robust (sandwich) standard errors with cases grouped by UTC day and the usual G/(G-1)*(N-1)/(N-K) correction; the coin's mean daily return is the mean of all its 1-bar returns over all its windows, and the 1-bar horizon makes every bar its own non-overlapping case.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003694 on the check folds against +0.0005295 on every fold",
+    "main": 0.00036939968366458633,
+    "statistic": 1.4769749671302352,
+    "counts": {
+      "bars with forecast > 0 across all coins and windows": 1949,
+      "days": 789
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the 5-day forward return net of the coin's drift on the forecast (grid, forecast > 0)",
+    "value": 1.4567040415971573,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4567040415971573
+    },
+    "threshold": "confirm if slope t >= 2 and mean unusual move > 0; reject if slope t <= -2; at least 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-day move (net of coin drift) > 0",
+    "value": 0.0021012612120187416,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 941
+  },
+  "decided_by": "The slope's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases from all coins are pooled in one OLS regression of the drift-removed 5-day forward return on the forecast at the grid bar (positions 0,5,10,... of each window with a full 5-bar return), each coin's drift being the mean of its non-overlapping 5-bar returns over all its windows, and the plan's 'fewer than 100 cases' is reported as 'not observable' per the minimum-count rule."
+}

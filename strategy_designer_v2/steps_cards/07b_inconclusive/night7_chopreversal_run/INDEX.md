@@ -3,3 +3,9 @@
 033-01_scaled-daily-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 034-01_agitated-scaled-fall-next-day-rebound_1d: 2 ideas (2 explorations)
 035-01_falling-agitated-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+036-01_agitated-scaled-fall-three-day-rebound_1d: no ideas: The theme's effect is not in the data. The three-day rise does not grow with the scaled fall in any trend (F1). It is not larger in agitated than in calm markets (F3). What rebound exists lands on the next day and is not built over the two days after (F4, F5). More data could not lift a t of 0.72 (F2).
+036-02_agitated-scaled-fall-delayed-rebound_1d: 1 ideas (2 explorations)
+037-01_agitated-ordinary-rise-next-day-giveback_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+038-01_calm-scaled-weekly-rise-continues_1d: 2 ideas (1 explorations)
+039-01_agitated-low-close-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+040-01_agitated-daily-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

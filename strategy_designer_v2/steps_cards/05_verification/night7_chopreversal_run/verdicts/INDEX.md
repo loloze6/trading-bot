@@ -4,3 +4,8 @@
 034-01_agitated-scaled-fall-next-day-rebound_1d: inconclusive (fit: exact) [main: 0.000489291; t of slope, cases of one day taken together 1.89384; cases with forecast > 0 3753, distinct days 1449]
 035-01_falling-agitated-scaled-fall-rebound_1d: confirmed (fit: exact) [main: 0.0010552; t of the OLS slope, day-clustered (CR1) 2.62033; bars with forecast > 0 1468, distinct days 702, bars in top third 490]
 036-01_agitated-scaled-fall-three-day-rebound_1d: inconclusive (fit: exact) [main: 0.000464641; day-clustered OLS slope t 0.718234; cases 1192, days 479]
+036-02_agitated-scaled-fall-delayed-rebound_1d: inconclusive (fit: exact) [main: 0.000342857; OLS slope t 1.20579; grid cells with a positive forecast 1879]
+037-01_agitated-ordinary-rise-next-day-giveback_1d: confirmed (fit: exact) [main: 0.00384875; t, cases of one day taken together 2.19879; cases 1865, distinct days 1014]
+038-01_calm-scaled-weekly-rise-continues_1d: inconclusive (fit: exact) [main: 1.4567; OLS slope t 1.4567; grid cases with forecast > 0 941]
+039-01_agitated-low-close-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.00100711; day-clustered t of the slope 2.95783; bars with a non-zero forecast 7715, distinct days 2214]
+040-01_agitated-daily-fall-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.00052954; OLS slope t, day-clustered standard errors 2.18444; bars with forecast > 0 across all coins and windows 3753, days 1449]

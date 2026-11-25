@@ -4,3 +4,8 @@
 034-01_agitated-scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 035-01_falling-agitated-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 036-01_agitated-scaled-fall-three-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+036-02_agitated-scaled-fall-delayed-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+037-01_agitated-ordinary-rise-next-day-giveback_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+038-01_calm-scaled-weekly-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+039-01_agitated-low-close-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+040-01_agitated-daily-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
