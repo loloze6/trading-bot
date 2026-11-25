@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "038-01_calm-swing-scaled-rise-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3397675,
+  "findings": {
+    "F1": "The tested slope is on the predicted side but short of the bar (slope t 1.12 over 1779 grid cases on 387 dates, all folds), and its mean excess is slightly negative (-0.16 %), so its size is tiny: unusual move +0.17 % per case (t 0.47), 0.012 of a usual move, 0.8 times the 0.22 % cost of a trade. The test already used every coin and fold, so no more data is available.",
+    "F2": "The effect is half of what the brief claims. In calm markets on folds B and C, rises alone give a slope t of 1.94 (471 cases, 144 days). Counting falls in their own direction too, the size-ordered continuation clears the bar: slope of the directional excess on |scaled move| t 2.27 (904 cases, 200 days), mean directional excess +1.30 % (day-pooled t 2.44). The signed scaled move on the excess return gives a slope t of 2.79.",
+    "F3": "The effect lives in the calm profile only. In agitated markets the same two-sided measure has a slope t of -0.29 and a mean of -0.03 % (718 cases, 186 days), against t 2.27 and +1.30 % in calm markets.",
+    "F4": "In calm markets the gain is carried by the largest moves on both sides. The top two quartiles of |scaled move| return +2.4 % and +3.3 % (falls, t 2.11 and 1.87) and +1.0 % and +3.5 % (rises, t 1.78 for the top quartile). The two lowest quartiles are near 0 (-0.06 % to +0.21 %).",
+    "F5": "The rise-only signal is uneven over time and horizons. Its calm-market mean excess is negative in 2018 (-2.4 %) and 2019 (-0.6 %) and positive in 2020 (+3.6 %, t 2.13) and 2021 (+2.5 %). Its unclustered slope t grows from 3.41 at 5 days to 4.62 at 10 days for calm rises."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the more of its 20-day daily swings a coin's 5-day move spans, the further the coin keeps moving the same way over the next 5 days, after rises and after falls alike.",
+      "consequence": "A large move in a quiet coin is a reason to trade in its direction for the following days, on the long side after a rise and on the short side after a fall.",
+      "name": "calm swing-scaled move continues",
+      "from": "F2, F3, F4",
+      "profile": "calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a calm market, the more of its 20-day daily swings a coin's 5-day rise spans, the more the coin rises over the next 10 days.",
+      "consequence": "A large rise in a quiet coin is a reason to hold a long position for about two weeks rather than one.",
+      "name": "calm scaled rise, ten days",
+      "from": "F1, F5",
+      "profile": "calm",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "038-01.b1_calm-swing-scaled-move-continues",
+    "038-01.b2_calm-scaled-rise-ten-days"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

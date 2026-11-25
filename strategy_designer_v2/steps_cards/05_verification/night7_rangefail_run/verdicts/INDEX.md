@@ -20,3 +20,4 @@
 035-03_far-below-high-falls_1d: inconclusive (fit: adapted) [main: 0.00683512; t of the mean, clustered by day 1.98869; distinct case days 1149, cases 3666, active bars 20969]
 036-01_swing-scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000281788; slope t, clustered by day 2.15065; bars with forecast above 0 18271, distinct days 2413, bars in slope 36948, day clusters 2898]
 037-01_choppy-swing-scaled-fall-continues_1d: inconclusive (fit: exact) [main: 0.00653383; t of the mean, clustered by day 0.935135; cases 776, distinct days 288]
+038-01_calm-swing-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.000669978; slope t, clustered by date 1.11755; grid cases with forecast > 0 1779, dates 387]

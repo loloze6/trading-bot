@@ -20,3 +20,4 @@
 035-03_far-below-high-falls_1d: not profitable enough [Sharpe -0.02989; Sharpe minus holding's Sharpe -0.6373; Calmar -0.1229]
 036-01_swing-scaled-fall-next-day-rebound_1d: not profitable enough [Sharpe 0.5141; Sharpe minus holding's Sharpe -0.09332; Calmar 0.3444]
 037-01_choppy-swing-scaled-fall-continues_1d: not profitable enough [Sharpe -0.0787; Sharpe minus holding's Sharpe -0.6862; Calmar -0.05908]
+038-01_calm-swing-scaled-rise-continues_1d: not profitable enough [Sharpe 0.9096; Sharpe minus holding's Sharpe 0.3569; Calmar 0.6985]
