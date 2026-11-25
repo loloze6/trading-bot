@@ -3,6 +3,7 @@
 032-01.b1_flat-range-upside-breaks-continue_1d: 3 ideas (2 explorations)
 032-01_flat-range-upside-break-fades_1d: 1 ideas (2 explorations)
 032-02.b1.e1.e1_tight-range-breakouts-continue_1d: 2 ideas (2 explorations)
+032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d: 2 ideas (2 explorations)
 032-02.b1.e1_quiet-breakouts-continue-longer_1d: 2 ideas (2 explorations)
 032-02.b1.e2_tight-range-breakouts-continue_1d: 1 ideas (2 explorations)
 032-02.b1_flat-range-upside-break-continues_1d: 2 ideas (3 explorations)
