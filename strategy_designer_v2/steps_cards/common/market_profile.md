@@ -37,6 +37,11 @@ on 61 to 75 %): coins move together, but not always in the same profile.
 - **A strategy's side:** long when at least 90 % of its coin-days in a position are long, short when at least 90 % are
   short, both otherwise. Read from its backtest's positions when it enters the similarity register, and kept there
   (`books.json`, field `side`; 2026-11-25, next steps 1t).
+- **A box:** a profile and a side (long or short): twelve boxes. **A strategy's presence in a box:** the share of its
+  coin-days in a position that fall in that box (the coin's own profile that day, the position's sign). **Its times
+  the market:** that presence divided by the market's own share of the profile over the same coins and dates (about
+  1: it does not choose that market; well above 1: it does). Used by the combination step
+  (`orchestration/combine/card.md`, 2026-11-25).
 - **The profile map:** the proven and profitable strategies (step 5 confirmed, step 6 profitable enough), by profile
   and side: twelve cells (six profiles, long or short), and the strategies acting in every profile.
   - **A cell holds** the specialists whose idea names a profile that holds that cell ("rising" holds rising calm and
@@ -49,10 +54,8 @@ on 61 to 75 %): coins move together, but not always in the same profile.
     the register, and after a night's merge. Read by lines 7.e and 7.g: a discovery is looked for where the map is
     empty or thin, by profile and by side. A filled cell is a profile and side some strategy specialises in; an empty
     cell is a place no strategy acts in on purpose: a target for the next briefs.
-  - **Not yet in it** (to decide with the combination step, `orchestration/combine/card.md`): where the strategies
-    acting in every profile really hold their positions, measured against the market's own share of each profile (a
-    strategy present in a profile no more often than the market is not choosing it: P10a found that for all of P4's
-    20). Whether a profile reads the market rightly is topic 54.
+  - **Not yet in it:** the boxes where the strategies acting in every profile really trade (their presence by box,
+    above); the combination step reads them first. Whether a profile reads the market rightly is topic 54.
 
 **How step 3 builds a profile.** An idea's profile is a line of its own (`profile: falling agitated`, `profile: choppy`); step 3's code,
 not the model, adds it to the config, the same way for every idea (`03_test_plan/helper/make_test_plan.py`,
