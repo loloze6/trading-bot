@@ -39,6 +39,12 @@ on 61 to 75 %): coins move together, but not always in the same profile.
   profile (topic 44, P10 pilot).
 - **The profile map:** every confirmed strategy placed by its home. A filled cell is a profile and side some strategy
   specialises in; an empty cell is a place no strategy acts in on purpose: a target for the next briefs.
+  - **As the research keeps it** (the operator, 2026-11-25; next steps 1q): for each of the six profiles, the proven and
+    profitable strategies specialised in it (step 5 confirmed, step 6 profitable enough, their idea naming a profile
+    that holds the cell: "rising" holds rising calm and rising agitated), each with its idea; and the number of proven
+    and profitable strategies acting in every profile (no profile named). Written by code with the similarity register
+    (`orchestration/ideas_similarities_check/register/PROFILE_MAP.md`), each time a book enters it. Read by lines 7.e and
+    7.g: a discovery is looked for where the map is empty or thin.
 
 **How step 3 builds a profile.** An idea's profile is a line of its own (`profile: falling agitated`, `profile: choppy`); step 3's code,
 not the model, adds it to the config, the same way for every idea (`03_test_plan/helper/make_test_plan.py`,

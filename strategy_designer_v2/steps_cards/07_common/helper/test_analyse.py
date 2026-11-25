@@ -70,7 +70,7 @@ def test_shared_files_are_pasted_where_a_prompt_names_them():
     out = a.with_common("before\n{{DATA_AVAILABLE}}\nafter")
     assert "{{" not in out and "BTC, ETH, LTC" in out
     for line in sorted(Path(a.STEPS).glob("07?_*/helper/line_prompt.md")):
-        assert "{{" not in a.with_common(line.read_text()), line
+        assert "{{" not in a.with_common(line.read_text().replace("{{PROFILE_MAP}}", a.profile_map())), line
 
 
 def test_line_7d_runs_only_on_a_confirmed_idea_whose_book_does_not_pay():
@@ -110,3 +110,11 @@ def test_explorations_see_the_exploration_folds_only(tmp_path):
     assert "w1" in a.run_explore(sys.executable, rec, code)          # without the restriction every window is seen
     summary = a.data_summary(rec, only)
     assert "w7" in summary and "w18" in summary and "w19" not in summary and "(w1," not in summary
+
+
+def test_lines_e_and_g_read_the_profile_map():
+    """Next steps 1q (2026-11-25): the two lines that write discoveries are given the profile map."""
+    for line in ("07e_profitable_unproven", "07g_patterns"):
+        t = (Path(a.STEPS) / line / "helper" / "line_prompt.md").read_text()
+        assert "{{PROFILE_MAP}}" in t and "[THE PROFILE MAP]" in t
+    assert "{{PROFILE_MAP}}" not in a.with_common((Path(a.STEPS) / "07g_patterns" / "helper" / "line_prompt.md").read_text().replace("{{PROFILE_MAP}}", a.profile_map()))

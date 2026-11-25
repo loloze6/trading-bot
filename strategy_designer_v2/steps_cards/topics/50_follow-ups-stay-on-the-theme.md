@@ -81,6 +81,20 @@ kept: same window counts). Read against `common/theme.md`:
   agitated market gives brief 034 (a close theory: another market). Each source line names the backtest and line.
 - Tests: the loop turns each discovery into a brief once, logs it, and stops on a refused call without losing it.
 
+## Proof of 1q, the profile map given to lines 7.e and 7.g (2026-11-25; about 1.4 USD, plus 1.1 USD of a first try
+whose analyses started before their backtests had finished, discarded)
+Line 7.g rerun on 3 night 7 backtests whose discoveries that night were all the next-day rebound after a fall (step 4
+rerun first, as the bars are not kept; `07g_patterns/topic1q_proof_run/`):
+
+| Backtest | Night 7 (no map) | With the map |
+|---|---|---|
+| steadydecline 032-01 | 3 discoveries: the low close rebounds (3 forms) | 0 discoveries; 1 follow-up on the theme (a falling coin's up day is sold) |
+| chopreversal 032-02 | 3 discoveries: the one-day fall rebounds (3 forms) | 1 discovery: in a falling market a wide up day gives back its rise |
+| panic 036-02 | 2 discoveries: the one-day fall rebounds | 0 discoveries; 2 follow-ups naming a profile (falling agitated: a large up day fades; rising agitated: it continues) |
+
+8 discoveries, all one held effect, became 1, a new one; the analyses name the reason twice ("repeats what is
+already held, so not a discovery"; "repeats the falling-agitated rebound books the map already holds").
+
 ## Status and next
 Built. Next: the next night runs with it; its reading counts, per brief, the answer (real, not real, open) and the
 discoveries turned into briefs.

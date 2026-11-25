@@ -264,6 +264,13 @@ def discovery_source(g, mk, line, rid, h, why):
             f"What it rests on:{why}\n")
 
 
+def profile_map():
+    """The profile map as the research keeps it (common/market_profile.md; written with the similarity register), for a
+    line prompt's {{PROFILE_MAP}} (lines 7.e and 7.g: next steps 1q, the operator 2026-11-25)."""
+    f = HERE.parents[1] / "orchestration" / "ideas_similarities_check" / "register" / "PROFILE_MAP.md"
+    return f.read_text() if f.exists() else "(no profile map yet: no proven and profitable strategy is in the register)"
+
+
 def slug(s, n=8):
     w = re.findall(r"[a-z0-9]+", s.lower())[:n]
     return "-".join(w) or "idea"
@@ -321,7 +328,7 @@ def main():
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record)}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n{explore_note}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record, only)}\n")
-    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
+    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text().replace("{{PROFILE_MAP}}", profile_map()))
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
               + (HERE / "output_one_call.md").read_text()
               ).replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION)

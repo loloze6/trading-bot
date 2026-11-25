@@ -19,9 +19,10 @@ STEPS = FUNC.parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(STEPS / "common"))
 from book_returns import bar_of, book_returns, timeframes_from, HOURS  # noqa: E402
-from lib import idea_code, write_atomic, utc_now  # noqa: E402
+from lib import idea_code, write_atomic, utc_now, profile_name, PROFILE_TREND, PROFILE_AGITATION  # noqa: E402
 
 REGISTER = FUNC / "register"
+BAR_RE = re.compile(r"_(1d|1h|4h)$")                 # a record's bar suffix
 MIN_DAYS = 365                     # the window in common: under one year, "not comparable" (operator, 2026-11-21)
 READINGS = (("same period", 0), ("new one period ahead", 1), ("new one period behind", -1))   # new[t] with other[t+k]
 
@@ -279,6 +280,40 @@ def write_summary(root=REGISTER):
               "(real ideas that are not yet a profit; the least explained are the variations the research has found)", ""] + head + [l for _, l in con]
     write_atomic(root / "COMPARISONS.md", "\n".join(lines) + "\n")
     write_matrix(root)
+    write_profile_map(root)
+
+
+PROFILES = [f"{t} {a}" for t in PROFILE_TREND for a in PROFILE_AGITATION]
+
+
+def book_profile(r, steps=STEPS):
+    """The market profile a book's idea names (its plan's `Profile:` line, written by step 3's code), or None."""
+    plan = steps / "03_test_plan" / r["run"] / "plans" / f"{r['id']}.md"
+    m = re.search(r"^Profile:\s*([a-z ]+?)\s*\(", plan.read_text(), re.M) if plan.exists() else None
+    return profile_name(m.group(1)) if m else None
+
+
+def write_profile_map(root=REGISTER, steps=STEPS):
+    """`PROFILE_MAP.md` (common/market_profile.md, "The profile map", as the research keeps it): per market profile, the
+    paying books specialised in it, each with its idea; and how many paying books act in every profile. Read by lines
+    7.e and 7.g (next steps 1q, the operator 2026-11-25)."""
+    cells, every = {p: [] for p in PROFILES}, 0
+    for r in sorted((r for r in books(root) if r["kind"] == "paying"), key=lambda r: r["key"]):
+        named = book_profile(r, steps)
+        if not named:
+            every += 1
+            continue
+        what = f"{idea_code(BAR_RE.sub('', r['id']))} ({named}): {BAR_RE.sub('', r['id']).split('_', 1)[-1].replace('-', ' ')}"
+        for p in PROFILES:
+            if all(w in p.split() for w in named.split()):
+                cells[p].append(what)
+    lines = ["# The profile map: the proven and profitable strategies, by market profile",
+             "(written by code with the similarity register; definition: common/market_profile.md. A strategy counts in",
+             "a profile when step 5 confirmed its idea, step 6 found its book profitable enough, and its idea names a",
+             "profile holding that one.)", "", "| Market profile | Strategies specialised in it | Their ideas |", "|---|---|---|"]
+    lines += [f"| {p} | {len(v)} | {'; '.join(v) if v else '-'} |" for p, v in cells.items()]
+    lines += ["", f"Proven and profitable strategies acting in every profile (their idea names none): {every}."]
+    write_atomic(root / "PROFILE_MAP.md", "\n".join(lines) + "\n")
 
 
 def matrix(root=REGISTER):

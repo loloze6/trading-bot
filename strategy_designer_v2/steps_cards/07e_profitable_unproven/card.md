@@ -20,6 +20,12 @@ Two things. Whether the gain comes from something else than the idea: the market
 ## What it proposes
 The idea the book actually captures, when the findings show one.
 
+The line is given the profile map (`../orchestration/ideas_similarities_check/register/PROFILE_MAP.md`,
+`../common/market_profile.md`; the operator, 2026-11-25, next steps 1q): it looks first for discoveries in the market
+profiles the map shows empty or thin, names the profile a pattern lives in, and does not write as a discovery an idea
+the map already lists in the same profile. Why: on night 7, 29 of 70 discoveries were the next-day rebound after a fall,
+already held, and 31 of the 51 confirmed books were that one effect.
+
 Each idea is marked `theme: on` (on the brief's theme) or `theme: discovery` (off it; `../common/theme.md`). A
 discovery is written as a source for a new brief (`discoveries/`), not as a follow-up; the loop turns it into a brief
 of its own (operator, 2026-11-24; topic 50). Why: a pattern off the theme answers another question; tested as its own

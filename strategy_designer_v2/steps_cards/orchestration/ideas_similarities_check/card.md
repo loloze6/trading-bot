@@ -27,6 +27,10 @@ books that make money on the same bars are one bet taken twice.
 - Its comparison with every held book of the register (and, for a repair, with its parent) and with holding its coins:
   `<id>.json` and `<id>.md`, one line in the register's `COMPARISONS.md` (its paying books, then its confirmed books from
   the least explained).
+- **The profile map** (the operator, 2026-11-25; next steps 1q; `../../common/market_profile.md`), rewritten with every
+  summary: `register/PROFILE_MAP.md`, per market profile the paying books whose idea names a profile holding it (read
+  from the plan's `Profile:` line, written by step 3's code), each with its idea, and the number of paying books acting
+  in every profile. Read by lines 7.e and 7.g, where they look for discoveries.
 - **The similarity matrix of the paying books** (operator, 2026-11-22; `../../common/measures.md`), rewritten with every
   summary: `register/MATRIX.md` (the numbered books, then one row and one column per book, the share explained in
   hundredths, "-" under one year in common; similar books together, so families show as blocks) and
@@ -93,6 +97,7 @@ orchestration/ideas_similarities_check/
     returns/<run>__<id>.csv.gz one book's bar returns: window, period start (UTC), return; and holding's return
     comparisons/<run>__<id>.json and .md   its comparison with every other book and with holding
     COMPARISONS.md             one line per book: its nearest relative, share explained, who leads, what is left (t)
+    PROFILE_MAP.md             the profile map (common/market_profile.md): per market profile, the paying books specialised in it
 ```
 The bar returns of the held books are committed (about 1.3 MB per hourly book, 7 significant digits): the records' bars
 are kept local only, and a new session must find what it compares with; any other confirmed book's are kept local

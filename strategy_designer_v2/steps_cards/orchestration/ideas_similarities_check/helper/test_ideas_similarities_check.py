@@ -187,3 +187,22 @@ def test_the_held_books_are_the_paying_books_and_the_portfolios(tmp_path):
     assert ISC.is_held({"key": "r__b_1d", "kind": "confirmed"}, held)
     assert not ISC.is_held({"key": "r__c_1d", "kind": "confirmed"}, held)
     assert ISC.held_keys(tmp_path / "none") == set()
+
+
+def test_the_profile_map_places_each_paying_specialist_in_the_profiles_its_idea_names(tmp_path):
+    """Next steps 1q (2026-11-25): per market profile, the paying books whose idea names a profile holding it; the
+    others counted as acting in every profile; confirmed books that do not pay are left out."""
+    reg = tmp_path / "register"; reg.mkdir()
+    rows = [("r_run", "001-01_fall-rebounds_1d", "paying", "falling agitated"), ("r_run", "002-01_breaks-continue_1d", "paying", "rising"),
+            ("r_run", "003-01_always_1d", "paying", None), ("r_run", "004-01_real-not-paying_1d", "confirmed", "choppy")]
+    (reg / "books.json").write_text(json.dumps([{"key": f"{r}__{i}", "run": r, "id": i, "kind": k} for r, i, k, _ in rows]))
+    for r, i, k, p in rows:
+        plans = tmp_path / "03_test_plan" / r / "plans"; plans.mkdir(parents=True, exist_ok=True)
+        (plans / f"{i}.md").write_text("---\nidea: x\n---\n" + (f"Profile: {p} (the idea): no position outside it, by step 3's code\n" if p else ""))
+    pb.write_profile_map(reg, steps=tmp_path)
+    t = (reg / "PROFILE_MAP.md").read_text()
+    cell = {l.split("|")[1].strip(): l.split("|")[2].strip() for l in t.splitlines() if l.startswith("| ") and "Market profile" not in l}
+    assert cell == {"rising calm": "1", "rising agitated": "1", "choppy calm": "0", "choppy agitated": "0",
+                    "falling calm": "0", "falling agitated": "1"}
+    assert "001-01 (falling agitated): fall rebounds" in t and "real not paying" not in t
+    assert "acting in every profile (their idea names none): 1." in t
