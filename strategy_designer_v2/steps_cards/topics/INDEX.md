@@ -57,3 +57,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 50 | [Follow-ups stay on their brief's theme](50_follow-ups-stay-on-the-theme.md) | research: common, step 7 lines, step 1, loop | built 2026-11-24 (option A) |
 | 51 | [A position smaller than the rebalance band is never closed](51_small-positions-are-never-closed.md) | engine (the risk layer's band); research: what a book holds after its bets | built on the working branch 2026-11-25 (option A, proven); merge into master: the operator's go |
 | 52 | [Decide-next as an agent step that reads why each idea exists](52_decide-next-as-an-agent-step.md) | research: select_next, step 2, step 7 lines | parked 2026-11-25 |
+| 53 | [Which coins, grouped how, weighted how](53_which-coins-grouped-and-weighted-how.md) | research: common, steps 2-7; the portfolio layer | parked 2026-11-25 |
