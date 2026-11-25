@@ -184,3 +184,18 @@ three judged criteria**. The cause is topic 50's discovery rule (a discovery bec
 first, outside P9: 76 of 86 turns, mostly the next-day rebound the portfolio holds). Topic 49's own effect is not
 separable on this night: the brief's first ideas were confirmed in neither arm (0 of 10, 0 of 11); 7 of the new code's
 9 unrelated confirmed books name a profile, and both candidate effects do.
+
+**The whole night, by the objectives of topics 49 and 50 (2026-11-25 about 11:00 Paris; `topics/49_review/night7_home.py`,
+`night7_home.csv`, `night7_ideas_full.csv`):**
+| Objective (from the topics) | New code (whole night: 117 ideas, 129 USD) | Control (82 ideas, 99 USD) |
+|---|---|---|
+| 49: books that act in one profile only (a specialist) | 29 confirmed books name a profile; median 82 % of their days in a position inside it, against 39 % for the market (falling agitated: 81 to 92 % against 16 %) | none: each book's largest profile holds 20 to 42 % of its days, about the market's own; its "choppy" ideas trade in every profile (as P10 saw) |
+| 49: in the profiles the portfolio lacks (choppy, falling) | falling agitated: 7 books, one effect (the next-day rebound after a fall); choppy, falling calm: none confirmed | - |
+| 50: themes answered | 0 of 4 | 3 of 4 |
+| 50: spend not on the portfolio's effects | 40 of 51 confirmed books re-find them (71 % of confirmed are next-day rebounds); 107 of 117 ideas from discovery briefs | 4 of 19 |
+| Earns where the portfolio failed (2026) | of 22 books on the unseen dates, 9 hold on 2026: rising-market continuation and agitated rebounds, all related to held books (0.7 to 0.9); the falling-agitated specialists hold on 2016-17 and none on 2026 (038-01: Sharpe -0.07) | 2 of 3: "close near a new high continues" (related, 0.94) and "calm chop continuation" (0.44; correlation 0.57 with 013-03) |
+
+**What it shows:** topic 49 does what it was built for (specialists exist only with it); topic 50's discovery rule
+took the night and fed the portfolio's own rebound, so the themes, and with them the choppy and falling-calm cells, were
+never tested; the one target cell filled (falling agitated) holds the portfolio's rebound restricted to it, and it does
+not earn on 2026. Next steps: 1n (revised), 1o, 1p in `topics/NEXT_STEPS.md`.
