@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 30-bar excess return on vol_ratio post_pipeline_value at break bars",
+    "value": 0.027819778423130926,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.615124062204607
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 on >= 20 cases; reject: slope < 0 with t <= -2 on >= 20 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 34
+  },
+  "decided_by": "t = 1.62 lies between -2 and 2 on 34 cases: the inconclusive rule.",
+  "reading": "The situation is checked as a necessary condition, close above the highest high of the prior bars available inside the window (at most 365, the window's first bar counted as consistent) with a positive forecast, since the 365-bar history is not recorded; a break bar is a 'trending' regime bar whose previous row in the same window is not 'trending' (a window's first row is not a case), and the coin's mean 30-bar return is taken on the non-overlapping grid (positions 0, 30, 60, ...) of all its windows pooled."
+}

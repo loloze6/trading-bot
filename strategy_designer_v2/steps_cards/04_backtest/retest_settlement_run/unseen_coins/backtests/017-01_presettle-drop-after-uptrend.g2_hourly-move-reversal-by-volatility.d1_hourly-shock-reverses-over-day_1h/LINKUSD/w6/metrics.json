@@ -1,0 +1,129 @@
+{
+  "core": {
+    "net_return_pct": -95.119,
+    "sharpe": -3.344,
+    "max_drawdown_pct": -62.436,
+    "trade_count": 35,
+    "win_rate": 0.0,
+    "avg_trade_net_pnl": -27.178759,
+    "fees_paid": 1.708259,
+    "gross_pnl": -949.548295,
+    "net_pnl": -951.256554,
+    "cost_drag_pct": 0.1799,
+    "forecast_return_corr": 0.019986,
+    "forecast_return_corr_pvalue": 0.279734,
+    "forecast_return_corr_pvalue_block_adjusted": 0.828129,
+    "forecast_return_corr_n_eff": 121,
+    "forecast_return_corr_all_bars": 0.019986,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.828129,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 1439.89,
+    "sigma_bar_bps": 91.4779,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 69.3756,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 3.75,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0200, p=0.8281 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -10074.9919,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -10074.9919,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 1007.4992,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0200, p=0.8281 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2928,
+      "avg_forecast": -0.326226,
+      "trade_count": 35,
+      "total_net_pnl": -951.256553
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 35,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -951.2566,
+      "avg_pnl_per_trade_usd": -27.1788
+    }
+  },
+  "dynamic": {
+    "debug_info.components.hour_move.last_history_value": {
+      "unknown": {
+        "mean": 0.039165,
+        "std": 1.006619
+      }
+    },
+    "debug_info.components.hour_move.post_pipeline_value": {
+      "unknown": {
+        "mean": -0.326226,
+        "std": 11.086571
+      }
+    },
+    "debug_info.components.hour_move.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.hour_move.weighted_contribution": {
+      "unknown": {
+        "mean": -0.326226,
+        "std": 11.086571
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00035727,
+      "forward_return_std": 0.00914779,
+      "n_bars": 2927,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -96.4541,
+    "sharpe": -3.4018,
+    "sortino": -3.8379,
+    "exposure_pct": 99.9658,
+    "turnover": 18.192143,
+    "n_bars_total": 2928,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 71,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "LINKUSD",
+        "timestamp": "2023-05-07 21:00:00",
+        "previous_timestamp": "2023-05-07 19:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
