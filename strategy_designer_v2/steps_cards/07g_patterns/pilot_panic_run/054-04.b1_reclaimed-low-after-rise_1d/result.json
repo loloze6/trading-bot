@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "054-04.b1_reclaimed-low-after-rise_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.41651980000000005,
+  "findings": {
+    "F1": "Across all profiles in folds B and C, a day that trades below the prior 30 days' lowest low and closes back above it is followed by a 10-day move graded by the coin's 60-day return before that day. By quartile of that return, from lowest to highest, the unusual 10-day move is +4.9 % (t 0.91, 23 cases, 14 days), \u22122.0 % (t \u22120.51, 24 cases), \u22128.6 % (t \u22122.30, 24 cases, 16 days) and \u221212.8 % (t \u22123.69, 22 cases, 14 days), with strengths running from +0.30 to \u22120.78 of a usual move.",
+    "F2": "The same grading holds when the day closes below the 30-day low. By 60-day-return quartile the unusual 10-day move is \u22122.6 % (t \u22120.50), \u22122.2 % (t \u22120.47), \u22128.6 % (t \u22121.93) and \u221214.6 % (t \u22122.36, 19 cases, 12 days). Pooling both kinds of event, those after a 60-day rise above +10 % average \u221216.2 % (t \u22123.66, 14 cases, 9 days) and those in a choppy 60 days \u221212.9 % (t \u22123.21, 22 cases, 16 days), against \u22122.6 % (t \u22120.63, 76 cases) after a 60-day fall below \u221210 %.",
+    "F3": "The tested book's agitated filter keeps only a sliver of the reclaims: 39 cases in the verdict against 114 reclaims over all profiles here. In the agitated bars I could measure, the trend groups hold 1 to 11 cases each, and the falling-agitated group even moved the other way (+8.7 %, t 1.11, 11 cases). The effect is not visible as living in the agitated profile.",
+    "F4": "The book's problem is how rarely it trades, not cost. It held a position on 3.95 % of the coins' days, made 56 trades over folds B and C, and its trades' net results swing by window from \u221211.3 % to +11.0 %. Meanwhile the verdict's unusual move per case (+3.72 %) is 19 times the 0.19 % cost of a trade.",
+    "F5": "Among reclaims after a 60-day fall below \u221210 %, a close high in the day's range is followed by \u22129.8 % over 10 days (t \u22122.37, 25 cases, 15 days), against +4.6 % (t 0.87, 27 cases) after a close low in the range. This is one cut among many I looked at, so it does not stand out enough to carry an idea alone.",
+    "F6": "Other angles showed patterns the portfolio already holds, or nothing:"
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's day trades below its lowest price of the past 30 days but closes back above that low, the coin falls over the next 10 days, and the fall is larger the higher the coin's 60-day return before that day.",
+      "consequence": "A reclaimed monthly low that comes after a rise is a failed defence in any market, so a trader should lean short, or refuse a long, the more the coin had risen over the prior 60 days.",
+      "name": "reclaimed low after rise, any market",
+      "from": "F1, F3, F4",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin closes below its lowest price of the past 30 days, it keeps falling over the next 10 days, and the fall is larger the higher the coin's 60-day return before that day.",
+      "consequence": "A first monthly-low break after a rise marks the start of a reversal rather than a dip to buy, so a trader should short it harder, or refuse a long, the more the coin had risen beforehand.",
+      "name": "monthly low break after rise",
+      "from": "F2, F1",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "054-04.b1.g1_reclaimed-low-after-rise-any-market"
+  ],
+  "discovery_ids": [
+    "054-04.b1.g2_monthly-low-break-after-rise"
+  ],
+  "no_ideas": null
+}
