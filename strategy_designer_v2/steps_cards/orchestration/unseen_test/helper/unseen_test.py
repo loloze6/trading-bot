@@ -1,13 +1,16 @@
-"""unseen_test: one idea's plan, unchanged, on every unseen period (common/unseen_dates.md): step 4 on the period's
-windows, step 5 with the idea's own measure.py (no model call), step 6; then whether the idea holds there.
+"""unseen_test: one idea's plan, unchanged, on unseen data: every unseen period (common/unseen_dates.md), or with
+--coins its unseen coins (common/unseen_coins.md). Step 4 on the period's windows (or on the unseen coins over the
+plan's own folds), step 5 with the idea's own measure.py (no model call), step 6; then whether the idea holds there.
 
-  python3 unseen_test.py PLAN --run NAME_run --python VENV_PYTHON
+  python3 unseen_test.py PLAN --run NAME_run --python VENV_PYTHON [--coins]
 
 PLAN is the idea's plan in 03_test_plan/<run>/plans/; its in-sample verdict (result.json and measure.py) is read from
 05_verification/<run>/verdicts/<plan id>/. Per period P (a windows file 04_backtest/windows/P.json), the steps'
 files go in their usual folders under the run: 04_backtest/<run>/P/backtests/, 05_verification/<run>/P/verdicts/,
 06_profitability/<run>/P/checks/. The idea's result: orchestration/unseen_test/<run>/<plan id>.json and one line in
-orchestration/unseen_test/<run>/INDEX.md. A step whose output already exists is not called again (step 4's: a
+orchestration/unseen_test/<run>/INDEX.md; each kind of unseen data is one entry of its "periods" (unseen_2016_2017,
+unseen_2026, unseen_coins), a call keeping the entries it did not run. With --coins, the steps' files go under
+unseen_coins in place of P. A step whose output already exists is not called again (step 4's: a
 record where at least one window ran). After step 4, the record's chart files under their committed names (step 4's
 chart_files.py), so an unseen record is read on any machine, not only where its bars were made.
 Prints one last line: the result as JSON.
@@ -21,11 +24,40 @@ sys.path.insert(0, str(STEPS / "common"))
 from lib import write_atomic  # noqa: E402
 
 WINDOWS = STEPS / "04_backtest" / "windows"
+DATA = STEPS.parents[1] / "trading-bot" / "local_data"
+COINS = "unseen_coins"   # the name of the unseen coins' entry and folders
 
 
 def periods():
     """The unseen periods: one windows file each (common/unseen_dates.md)."""
     return sorted(p.stem for p in WINDOWS.glob("unseen_*.json"))
+
+
+def data_coins():
+    """The coins of the data: the Kraken files the data tool recorded in local_data/coverage.yaml (kraken_<COIN>USD_*),
+    the venue step 4 runs on. Reads the file names only, no price."""
+    import re
+    text = (DATA / "coverage.yaml").read_text(encoding="utf-8") if (DATA / "coverage.yaml").exists() else ""
+    return sorted(set(re.findall(r"^\s*kraken_([A-Z0-9]+)USD_\w+\.csv:", text, re.M)))
+
+
+def plan_coins(plan_text):
+    """The coins the plan tested: its header's data-instruments, as step 4 reads them ("BTC, ETH" or "BTC/USDT")."""
+    import re
+    m = re.search(r"^data-instruments:(.*)$", plan_text, re.M)
+    out = []
+    for part in (m.group(1) if m else "").split(","):
+        base = re.sub(r"(USDT|USD)$", "", re.split(r"[/\s-]", part.strip())[0].upper())
+        if base and base not in out:
+            out.append(base)
+    return out
+
+
+def unseen_coins(plan_text):
+    """The plan's unseen coins (common/unseen_coins.md): the data's coins it did not test. Step 4 runs each where it
+    has data in the plan's folds; a coin with none runs no window and is not counted."""
+    tested = set(plan_coins(plan_text))
+    return [c for c in data_coins() if c not in tested]
 
 
 def load(path):
@@ -44,6 +76,13 @@ def main_values(result):
     mm = (result or {}).get("main_measure") or {}
     st = mm.get("statistic")
     return mm.get("value"), (st.get("value") if isinstance(st, dict) else None)
+
+
+def coverage(record):
+    """The coins that ran at least one window in a record, and how many (coin, window) pairs ran."""
+    ran = sorted(d.name for d in record.iterdir() if d.is_dir() and any(d.glob("w*/metrics.json"))) \
+        if record.is_dir() else []
+    return ran, sum(len(list((record / c).glob("w*/metrics.json"))) for c in ran)
 
 
 def reading(in_sample, verdict, check):
@@ -81,6 +120,8 @@ def main():
     a.add_argument("plan", type=Path)
     a.add_argument("--run", required=True)
     a.add_argument("--python", required=True)
+    a.add_argument("--coins", action="store_true", help="the plan's unseen coins over its own folds, in place of the "
+                   "unseen periods (common/unseen_coins.md)")
     args = a.parse_args()
     plan, run = args.plan.resolve(), args.run
     rid = plan.stem
@@ -88,16 +129,26 @@ def main():
     in_sample, measure_py = load(verdict_dir / "result.json"), verdict_dir / "measure.py"
     if not in_sample or not measure_py.exists():
         sys.exit(f"no in-sample verdict with its measure.py for {rid} in {run}")
-    out = {"idea": rid, "run": run, "in_sample": dict(zip(("main", "statistic"), main_values(in_sample))), "periods": {}}
-    for p in periods():
+    d = HERE.parent / run
+    old = load(d / f"{rid}.json") or {}
+    out = {"idea": rid, "run": run, "in_sample": dict(zip(("main", "statistic"), main_values(in_sample))),
+           "periods": dict(old.get("periods") or {})}     # the entries this call does not run are kept
+    others = unseen_coins(plan.read_text(encoding="utf-8")) if args.coins else None
+    for p in ([COINS] if args.coins else periods()):
+        if args.coins and not others:                     # the plan tested every coin of the data
+            out["periods"][p] = {"coins": [], "step5": "no verdict", "step6": "not checked", "holds": None,
+                                 "coins_asked": [],
+                                 "why": "no unseen coin: the plan tested every coin of the data"}
+            continue
+        where = (["--coins", ", ".join(others)] if args.coins else ["--windows", WINDOWS / f"{p}.json"])
         bt = STEPS / "04_backtest" / run / p / "backtests"
         vd = STEPS / "05_verification" / run / p / "verdicts"
         ck = STEPS / "06_profitability" / run / p / "checks"
         if not backtest_ran(bt / rid):
             if (bt / rid).exists():                # a record where no window ran (e.g. the dates were not fetched)
                 shutil.rmtree(bt / rid)            # holds no result: step 4 is called again
-            call([STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python, "--out-root", bt,
-                  "--windows", WINDOWS / f"{p}.json"], p)
+            call([STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python, "--out-root", bt]
+                 + where, p)
         if backtest_ran(bt / rid) and not (bt / rid / "chart_bars.csv.gz").exists():
             call([STEPS / "04_backtest/helper/chart_files.py", bt / rid], p)   # readable on any machine (committed)
         if not (vd / rid / "result.json").exists():
@@ -105,12 +156,21 @@ def main():
                   "--verdicts-dir", vd, "--measure", measure_py], p)
         if (bt / rid).exists() and not (ck / rid / "result.json").exists():
             call([STEPS / "06_profitability/helper/check_profitability.py", bt / rid, "--checks-dir", ck], p)
-        out["periods"][p] = reading(in_sample, load(vd / rid / "result.json"), load(ck / rid / "result.json"))
-    d = HERE.parent / run
+        ran, coin_windows = coverage(bt / rid)
+        check = load(ck / rid / "result.json")
+        out["periods"][p] = {**({"coins_asked": others} if args.coins else {}), "coins": ran, "coin_windows": coin_windows,
+                             "years": ((check or {}).get("informative") or {}).get("years"),
+                             **reading(in_sample, load(vd / rid / "result.json"), check)}
     d.mkdir(parents=True, exist_ok=True)
     write_atomic(d / f"{rid}.json", json.dumps(out, indent=2) + "\n")
     said = {True: "holds", False: "does not hold", None: "no data"}
-    line = "; ".join(f"{p}: {said[r['holds']]}" for p, r in out["periods"].items())
+    def say(p, r):
+        if p != COINS:
+            return f"{p}: {said[r['holds']]}"
+        if not r.get("coins_asked"):
+            return f"{p}: none (the plan tested every coin of the data)"
+        return f"{p}: {said[r['holds']]} ({len(r.get('coins') or [])} of {len(r['coins_asked'])} coins ran)"
+    line = "; ".join(say(p, r) for p, r in sorted(out["periods"].items(), key=lambda kv: (kv[0] == COINS, kv[0])))
     index = d / "INDEX.md"
     lines = [l for l in (index.read_text(encoding="utf-8").splitlines() if index.exists() else [])
              if not l.startswith(rid + ":")]

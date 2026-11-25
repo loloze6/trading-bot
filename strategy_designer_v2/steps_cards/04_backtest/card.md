@@ -106,6 +106,11 @@ data added up by hand (open, high, low, close exactly; volume within the record'
 (`[{label, test: {start, end}}, ...]`, in `windows/`) in place of its folds; the record's data line names the file. Used
 to test an idea on dates the research never saw.
 
+**Other coins** (`--coins "ADA, DOGE"`, 2026-11-25, `runs/UNSEEN_COINS_RUN.md`): the same plan, config and folds on these
+coins in place of the plan's `data-instruments`; the record's data line names them, and the rerun check reads them (a
+record on other coins is not the plan's own). Used to test an idea on coins its plan never tested
+(`common/unseen_coins.md`). A coin without data in a window is skipped there, as in-sample.
+
 The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 
 **Venue.** Binance is not reachable from this environment (HTTP 451). Kraken is reachable, and the repository holds Kraken caches for 19 coins, daily and hourly; six cover all four folds (BTC, ETH, LTC, XMR, XRP, ZEC: step 3's default). Coins run as `<COIN>USD`, with the pipeline's Kraken keys: Kraken spot prices, Kraken futures costs, no funding. Costs do not change the verification, which is judged before costs; branch 3 judges the book after them.

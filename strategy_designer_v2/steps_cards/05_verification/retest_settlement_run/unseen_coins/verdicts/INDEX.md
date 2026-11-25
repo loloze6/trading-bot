@@ -1,0 +1,1 @@
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-reverses-over-day_1h: confirmed (fit: exact) [main: 3.02426; OLS slope t 3.02426; grid cases 19406, grid cases with a non-zero forecast 19263]

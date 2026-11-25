@@ -3,7 +3,8 @@ engine's record in the backtests folder.
 
   python run_backtest.py path/to/PLAN.md --python path/to/venv/bin/python
 Options: --out-root (default: ../backtests next to this folder), --force (rerun even when nothing the engine reads
-has changed), --windows FILE (a JSON list of windows run in place of the plan's folds: the same plan on other dates).
+has changed), --windows FILE (a JSON list of windows run in place of the plan's folds: the same plan on other dates),
+--coins "ADA, DOGE" (these coins in place of the plan's: the same plan on other coins, common/unseen_coins.md).
 
 What it does, in order:
   1. Reads the plan's header: coins, bar size, fold, outcome. A plan whose outcome is untestable or missing-components
@@ -245,12 +246,15 @@ def main():
     a.add_argument("--force", action="store_true")
     a.add_argument("--windows", type=Path, help="a JSON file of windows ([{label, test: {start, end}}, ...]) to run "
                    "in place of the plan's folds (a test on other dates, the same plan and config)")
+    a.add_argument("--coins", help="coins (\"ADA, DOGE\") run in place of the plan's data-instruments (a test on other "
+                   "coins, the same plan, config and folds)")
     args = a.parse_args()
 
     plan_path = args.plan.resolve()
     plan_id, text = plan_path.stem, plan_path.read_text()
     h = plan_header(text)
     bar, period = h["data-bar"], h["data-period"]
+    instruments = args.coins or h["data-instruments"]   # other coins than the plan's: the record names them
     m = re.fullmatch(r"folds? ([A-Z](?:, [A-Z])*)", period)   # "fold A", or "folds A, B, C, D"
     if not m:
         sys.exit(f"unreadable data-period: {period!r}")
@@ -275,7 +279,7 @@ def main():
     # Rerun only when what the engine reads has changed: the config (labels and default-valued params aside) and the
     # data (coins, bar size, fold).
     # The plan's other fields (fidelity, forecast in words, criterion) do not change the backtest.
-    data_line = f"- Data: {h['data-instruments']} as "
+    data_line = f"- Data: {instruments} as "
     if (not args.force and (dest / "config.json").exists() and (dest / "run.md").exists()
             and canonical(json.loads((dest / "config.json").read_text())) == canonical(json.loads(config_path.read_text()))
             and data_line in (dest / "run.md").read_text() and f"; {bar} bars; {period}\n" in (dest / "run.md").read_text()
@@ -288,7 +292,7 @@ def main():
     dest.mkdir(parents=True)
     shutil.copy(config_path, dest / "config.json")
     report, summary, proto = [], [], None
-    symbols = [f"{base}USD" for base in coins(h["data-instruments"])]
+    symbols = [f"{base}USD" for base in coins(instruments)]
     # The calls at the same time, as many as the machine has cores: one call per coin and fold (change C, 2026-11-20:
     # 6 coins on 4 cores ran in two waves when a call held a whole coin). Each call is a separate process with its own
     # folders. The record is written in the coins' and windows' order, whichever call finishes first.
@@ -320,7 +324,7 @@ def main():
     venue = proto["venue"]["label"] if proto else ""
     write_atomic(dest / "run.md", f"# Backtest of {plan_id}\n\n"
                  f"- Plan: `{os.path.relpath(plan_path, dest)}`\n- Config: `config.json` (a copy of the plan's config)\n"
-                 f"- Data: {h['data-instruments']} as {', '.join(f'{b}USD' for b in coins(h['data-instruments']))}; {bar} bars; {period}\n"
+                 f"- Data: {instruments} as {', '.join(f'{b}USD' for b in coins(instruments))}; {bar} bars; {period}\n"
                  f"- Venue: {venue}\n- Engine: trading-bot/backtest/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window\n\n"
                  + "\n".join(report) + "\n")
     ran = any(" not run" not in s for s in summary)
