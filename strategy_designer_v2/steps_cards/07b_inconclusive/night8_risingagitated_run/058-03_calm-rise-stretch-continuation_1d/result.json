@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "058-03_calm-rise-stretch-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 1,
+  "cost": 0.1785372,
+  "findings": {
+    "F1": "Step 5's main measure is on the side the idea predicts but short of the bar: a slope t of +1.49 (day-clustered) on 428 grid cases over 188 days, with an unusual move of +1.01 % per case over 5 days (strength 0.093, t 1.61 on 338 days). The test used only the 6 default coins, so it lacks the cases needed to separate an effect of this size from 0.",
+    "F2": "In folds B and C, the cases with forecast > 0 rise beyond drift over 5 days on average (mean excess +1.90 %, t 2.49, 244 cases). The grading with the forecast is weaker (slope t +1.07). Most of the gain sits in the top forecast quartile (+4.14 % excess, mean forecast 19.8), against +1.07 % to +1.28 % in the three lower quartiles.",
+    "F3": "The effect is mixed across coins and years, and that spread drowns the slope. Across coins the 5-day slope t runs from -2.54 (LTC) to +1.92 (ETH), positive in 4 of 6. Across years it is +2.61 in 2020, -0.97 in 2019 and -1.13 in 2021.",
+    "F4": "The grading grows with the horizon. The slope t is -0.62 at 1 day, +0.48 at 3 days, +1.07 at 5 days and +2.13 at 10 days (124 cases), then +1.53 at 20 days (55 cases). The 5-day test sits where the effect is still forming.",
+    "F5": "The raw percent distance above the 20-day average does not grade the next 5 days, inside or outside the profile (slope t -0.05 on 213 profile cases, -0.40 on 444 outside). The only grading the data shows comes from the standardised distance, at its strongest values."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "calm-rise continuation, all coins",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "idea": "In a rising, calm market, the further a coin's close stands above its 20-day average price, the more the coin rises over the next 5 days.",
+      "consequence": "In a calm rising market the distance above the average is built by steady, information-led buying, which can keep going, so the run continues.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "rising calm"
+    }
+  ],
+  "idea_ids": [
+    "058-03.b1_calm-rise-continuation-all-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -3,3 +3,5 @@
 058-03_calm-rise-stretch-continuation: In rising calm markets, a larger distance of close above its 20-day average is followed by a larger rise over 5 days. [profile: rising calm]
 059-01_swing-scaled-rise-continues: The larger a coin's 20-day rise in units of its own 20-day daily swing, the larger its rise over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 059-02_swing-scaled-fall-continues: The larger a coin's 20-day fall in units of its own 20-day daily swing, the larger its fall over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+060-01_falling-agitated-high-close-fade: In falling agitated markets, a close nearer the day's high is followed by a larger fall over the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: falling agitated]
+061-01_choppy-agitated-high-close-fade: In choppy agitated markets, a close nearer the day's high is followed by a larger fall over the next two days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: choppy agitated]
