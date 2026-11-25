@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move in the short direction",
+    "value": -0.005215365190807889,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": -1.1187297656594823
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check passes); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of wider half minus narrower half (split at median |forecast|)",
+    "value": -0.0023645388142276283,
+    "passed": false
+  },
+  "counts": {
+    "cases": 870,
+    "distinct days": 456
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (inconclusive rule).",
+  "reading": "The situation is a range/30-day-return-std ratio of at least 2.0 (recorded raw value, else recomputed) with a 60-bar price change below -10 % on a short forecast, judged on the active bars where the 60-bar change can be computed inside the window; a case is the first short bet (rise of |forecast| of at least 2 from its lowest level since the last bet) in each 3-bar grid cell of a window, its return taken from that bar's close; the drift is the coin's mean 3-bar return on the grid of all its windows; the t sums the deviations per UTC day with a D/(D-1) correction; the wider half is |forecast| above the case median, the narrower half at or below it; the plan's minimum of 30 cases and 30 distinct days is applied as 'not observable'."
+}

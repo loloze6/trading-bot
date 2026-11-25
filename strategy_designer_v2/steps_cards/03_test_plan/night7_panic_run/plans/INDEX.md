@@ -3,7 +3,7 @@
 034-01_falling-market-rally-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 035-01_rising-market-quieting-swings-rise_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 036-01_scaled-rally-week-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-037-01_falling-market-wide-day-decline_1d: missing-components: The idea's situation is the day's high-low range in units of the coin's 30-day standard deviation of daily returns. No [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+037-01_falling-market-wide-day-decline_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 038-01_rising-market-scaled-rally-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 039-01_scaled-fall-next-day-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 040-01_falling-calm-scaled-fall-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
