@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean timing gain forecast/10 x excess 10-bar return",
+    "value": 0.003235191484930591,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.4326031947725342
+    },
+    "threshold": "positive with t >= 2 to confirm, negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "excess 10-bar return, forecast >= +2 minus forecast <= -2, above 0",
+    "value": 0.020093733967840956,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1691,
+    "distinct days": 304,
+    "cells forecast >= +2": 624,
+    "cells forecast <= -2": 530
+  },
+  "decided_by": "The t of the mean timing gain lies between -2 and 2.",
+  "reading": "The situation is the close nearer its 28-day closing high than its mean absolute distance over the 60 prior raw values (long) and, by the graded forecast, farther than usual (short), rebuilt from last_history_value where 60 prior values are in the window and from post_pipeline_value otherwise; the grid is positions 0,10,20,... of each window with the 10-bar return inside the window, all grid cells (forecast 0 included, gain 0) are cases, the coin's mean 10-bar return is the mean of its grid returns over all windows, the t sums each day's deviations, and the plan's minimum counts not reached give 'not observable'."
+}
