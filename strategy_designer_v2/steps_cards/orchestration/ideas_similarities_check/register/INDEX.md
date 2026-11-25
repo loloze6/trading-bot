@@ -184,6 +184,7 @@ An idea's latest record counts once.
 | 031-01.g1.g2_monthly-trend-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | cf258ce23 | 2026-11-24T01:50:50 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 19f1eb4c6 | 2026-11-24T01:30:32 |
 | 033-01.d1_wide-day-low-close-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | 97853b31e | 2026-11-25T00:32:16 |
+| 033-01.d2_low-close-rebound-long-side_1d | confirmed | night7_steadydecline_run | 1d | 6 | d89f349fd | 2026-11-25T00:36:55 |
 | 033-01_close-near-low-rebounds_1d | confirmed | night7_steadydecline_run | 1d | 6 | 3bed67057 | 2026-11-24T23:28:44 |
 | 033-02_close-near-high-gives-back_1d | confirmed | night7_steadydecline_run | 1d | 6 | 659d13acf | 2026-11-24T23:59:51 |
 | 034-01_agitated-low-close-rebounds_1d | confirmed | night7_steadydecline_run | 1d | 6 | 3bed67057 | 2026-11-24T23:33:48 |

@@ -1,6 +1,7 @@
 032-01_calm-fall-depth-continues_1d: 1 ideas (1 explorations)
 032-02_calm-fall-below-high-continues_1d: 1 ideas (1 explorations)
 033-01.d1_wide-day-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+033-01.d2_low-close-rebound-long-side_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 033-01_close-near-low-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 033-02_close-near-high-gives-back_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 034-01_agitated-low-close-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

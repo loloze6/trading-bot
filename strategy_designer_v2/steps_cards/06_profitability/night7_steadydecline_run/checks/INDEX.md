@@ -1,6 +1,7 @@
 032-01_calm-fall-depth-continues_1d: not profitable enough [Sharpe 0.2032; Sharpe minus holding's Sharpe -0.3664; Calmar 0.09675]
 032-02_calm-fall-below-high-continues_1d: not profitable enough [Sharpe 0.2528; Sharpe minus holding's Sharpe -0.3168; Calmar 0.1305]
 033-01.d1_wide-day-low-close-rebound_1d: not profitable enough [Sharpe 0.7617; Sharpe minus holding's Sharpe 0.2075; Calmar 0.5397]
+033-01.d2_low-close-rebound-long-side_1d: not profitable enough [Sharpe 0.7698; Sharpe minus holding's Sharpe 0.2156; Calmar 0.5889]
 033-01_close-near-low-rebounds_1d: not profitable enough [Sharpe 0.1976; Sharpe minus holding's Sharpe -0.3566; Calmar 0.07773]
 033-02_close-near-high-gives-back_1d: not profitable enough [Sharpe -0.6163; Sharpe minus holding's Sharpe -1.17; Calmar -0.2757]
 034-01_agitated-low-close-rebounds_1d: not profitable enough [Sharpe 0.5853; Sharpe minus holding's Sharpe 0.01574; Calmar 0.3003]
