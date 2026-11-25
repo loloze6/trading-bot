@@ -2,6 +2,7 @@
 032-01.g1_sharp-daily-fall-rebounds_1d: inconclusive (fit: adapted) [main: 0.00224921; t of the mean, cases of one day taken together 0.506815; cases 463, case-days 191]
 032-01_calm-decline-depth-continues_1d: inconclusive (fit: adapted) [main: 0.000401883; slope t, day-clustered 0.351918; independent days of cases 141, cases (coin-cells with forecast < 0) 173]
 032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise_1d: inconclusive (fit: exact) [main: 0.00323519; t of the mean, cases of one day summed 1.4326; grid cases 1691, distinct days 304, cells forecast >= +2 624, cells forecast <= -2 530]
+032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high_1d: mismatch: the test does not match its plan (agreement 0) (fit: exact)
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: inconclusive (fit: exact) [main: 0.00077628; OLS slope t, day-clustered 1.56557; grid cases across coins and windows 3419, days 617]
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: inconclusive (fit: exact) [main: 1.47238; OLS slope t 1.47238; grid cases 327, top third cases 109, bottom third cases 109]
 032-02.g1.e1.e3_flat-base-high-breakout_1d: inconclusive (fit: exact) [main: 0.00089248; OLS slope t 0.787421; cases 327]

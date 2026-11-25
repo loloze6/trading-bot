@@ -2,6 +2,7 @@
 032-01.g1_sharp-daily-fall-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 032-01_calm-decline-depth-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: 2 ideas (2 explorations)
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 032-02.g1.e1.e3_flat-base-high-breakout_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
