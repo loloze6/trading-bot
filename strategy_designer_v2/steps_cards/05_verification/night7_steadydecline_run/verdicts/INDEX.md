@@ -20,3 +20,4 @@
 039-02_agitated-range-fall-low-close-rebound_1d: confirmed (fit: exact) [main: 0.00543445; t of weighted mean, same-day cases summed (day-clustered) 2.75958; distinct days with forecast > 0 1449, cases (coin-bars with forecast > 0) 3753]
 040-01_agitated-fall-size-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.00052954; OLS slope t 3.75899; bars with forecast > 0 3753]
 040-02_agitated-fall-vs-swing-rebound_1d: confirmed (fit: exact) [main: 0.000636229; slope t, day-clustered 3.17556; profile bars with forecast above 0 3753, distinct days 1449, profile bars used 7715]
+041-01_agitated-fall-rise-vs-swing-giveback_1d: inconclusive (fit: exact) [main: 8.50512e-05; slope t, clustered by day 0.268764; cases (bars with forecast < 0) 1326, days 633]
