@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "033-03.b1_upper-range-drifts-higher_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39162379999999997,
+  "findings": {
+    "F1": "The tested range-position slope lives in calm markets. Over the 10-day grid of folds B and C, the slope of the 10-day excess return on the close's 20-day range position is 0.105 (t 5.17, 390 cases) when the coin's 30-day swing is at or below its median, against 0.021 (t 0.68, 312 cases) when it is above. With each coin's own past-year volatility rank and the cases of one day clustered, it is 0.141 (t 2.34, 126 cases on 32 days) when calm and \u22120.010 (t \u22120.08) when agitated.",
+    "F2": "The effect grows as the market gets calmer. In the lowest quartile of the coin's own volatility rank the slope is 0.341 (t 3.47, 50 cases, 18 days). The next three quartiles give 0.013 (t 0.21), 0.053 (t 1.38) and \u22120.087 (t \u22120.56). In calm markets the top quartile of range position is followed by +13.9 % excess over 10 days (32 cases), against +1.5 % for the bottom quartile.",
+    "F3": "Over all profiles the gain sits at the top of the range. The top fifth of range position is followed by +4.41 % excess over 10 days (t 2.65, 141 cases), the bottom two fifths by \u22121.86 % (t \u22121.41) and \u22122.72 % (t \u22122.08). The pooled slope stays weak (verdict t 1.53; size +0.59 %, t 1.02 over 832 days).",
+    "F4": "By the 60-day trend, the slope is 0.140 in rising markets (t 2.88, 158 cases), 0.167 in choppy ones (t 2.34, 63 cases) and only 0.037 in falling ones (t 1.01, 193 cases).",
+    "F5": "The book earns on its long side and loses on its short side. Its 1,211 long trades average +7.67 % net (median +0.25 %); its 1,324 short trades average \u22120.96 % (median \u22122.80 %).",
+    "F6": "The effect is not steady across coins or windows. In calm markets the slope is positive on ETH, LTC, XMR, XRP and ZEC (t 1.20 to 2.52) but negative on BTC (\u22120.071, t \u22121.04). By window over all profiles, only w16 is strongly positive (t 5.46) and w14 is negative (t \u22122.07)."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the higher a coin's daily close sits within its 20-day high-to-low range, the more the coin rises over the next 10 days, and the calmer the market, the steeper this rise.",
+      "consequence": "A trader leans with the close's place in its recent range only while the coin swings less than usual for it, and stands aside from that lean when it is agitated.",
+      "name": "calm range position drift",
+      "from": "F1, F2, F3, F6",
+      "profile": "calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a rising market, the higher a coin's daily close sits within its 20-day high-to-low range, the more the coin rises over the next 10 days.",
+      "consequence": "A trader in a coin up over the past two months buys closes high in the recent range rather than fading them.",
+      "name": "rising market range drift",
+      "from": "F4, F3, F5",
+      "profile": "rising",
+      "theme": "on",
+      "refs": [
+        "F4",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-03.b1.g1_calm-range-position-drift",
+    "033-03.b1.g2_rising-market-range-drift"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

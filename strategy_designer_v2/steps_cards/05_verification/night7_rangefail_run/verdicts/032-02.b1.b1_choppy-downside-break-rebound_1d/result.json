@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return over the coin's mean, cases summed per day",
+    "value": 0.01751662407169684,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.897746901038997
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 30 days; reject: mean < 0 with t <= -2 on >= 30 days"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on depth below the prior 20-day low",
+    "value": 0.004692063550292491,
+    "passed": true
+  },
+  "counts": {
+    "days with a case": 150,
+    "cases (coin-bars)": 285,
+    "cases with depth": 285
+  },
+  "decided_by": "The t of the mean excess next-day return lies between -2 and 2.",
+  "reading": "The situation check uses the recorded depth (else the close against the prior 20 bars' lowest low) and the 60-bar close return in percent, inclusive of -10 and +10, and leaves out of its share the active bars whose 60-bar return or 20-bar low cannot be computed inside the window; the depth slope is the least-squares slope of each coin-bar's next-day excess return on its depth below the low (minus last_history_value), fitted over the coin-bar observations of the cases."
+}

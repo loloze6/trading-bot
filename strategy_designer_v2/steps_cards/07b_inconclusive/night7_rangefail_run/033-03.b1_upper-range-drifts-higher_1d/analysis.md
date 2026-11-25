@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 033-03.b1_upper-range-drifts-higher_1d
+idea tested: 033-03.b1_upper-range-drifts-higher
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3648 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but short of the bar: the day-clustered slope t is 1.53 over 1691 grid cases on 304 days, and the unusual move is only +0.59 % per case over 10 days (t 1.02, 832 days), a strength of 0.024 of the coin's usual 14.49 % move, about half the 0.05 of real ideas. On folds B and C alone, my day-clustered 10-day slope t is 1.39 (846 cases, 150 days).
+- **F2:** The same graded relation is clear when the data holds more independent cases. At 5 days the day-clustered slope t is 2.53 (1710 cases, 305 days), and at 3 days it is 2.45 (2862 cases, 512 days). At 5 days the slope is positive on all six coins (t from 1.36 on ZEC to 2.43 on ETH), so the effect is weak and spread across coins rather than absent; it needs more cases, not a narrower test.
+- **F3:** The largest forecasts carry most of the 10-day effect. Closes above the 20-day high are followed by +10.4 % excess over 10 days (45 cases, t 3.17) and +4.0 % over 5 days (92 cases, t 2.41). The long side's 10-day slope t is 2.87 (398 cases, 102 days), against -0.37 on the short side (448 cases, 108 days).
+- **F4:** The effect is mixed across periods, which is why 12 windows and 4 years cannot pin it down:
+- **F5:** A longer horizon is not where the effect shows: at 20 days the slope turns slightly negative (t -0.57, 414 cases), and every coin is near zero (t from -1.05 to +0.91).
+- **F6:** The move per case covers the cost. The total move of +0.57 % per case is 3.0 times the 0.19 % cost of a trade. The book has a Sharpe of 0.80, 0.25 above holding, and failed only on Calmar (0.54 against 0.75), so a clearer effect on more data is worth having.
+
+## Ideas
+- `033-03.b1.b1_range-position-more-coins` (from F1, F2, F4, F6): The higher a coin's daily close sits within its 20-day high-to-low range, the more the coin rises over the next 10 days, most of all when the close is above the 20-day high.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
