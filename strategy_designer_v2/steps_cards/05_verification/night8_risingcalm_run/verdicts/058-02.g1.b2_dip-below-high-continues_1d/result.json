@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-bar excess return on forecast",
+    "value": 0.0004432635580096342,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 1.0833009188412592
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and check passes); reject: slope < 0 with t <= -2; at least 300 independent cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return of the 20% most negative-forecast cases below 0",
+    "value": -0.00794764689893826,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 3419,
+    "days": 617
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "Cases are all bars of each window's non-overlapping 5-bar grid (positions 0, 5, 10, ...) with a forward return, including forecast-0 bars; the 300 minimum is counted on these cases; the slope's t uses day-clustered (CR1) standard errors in an OLS with intercept; the deepest fifth is the ceil(20%) cases with the lowest forecast."
+}

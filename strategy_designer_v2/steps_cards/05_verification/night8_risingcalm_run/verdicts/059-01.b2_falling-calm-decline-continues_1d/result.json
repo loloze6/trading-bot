@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-day excess return on forecast (forecast < 0, day-clustered)",
+    "value": 0.0012301321346098147,
+    "statistic": {
+      "name": "day-clustered OLS t of the slope",
+      "value": 1.2150115298787592
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean excess < 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 5-day excess return on the forecast < 0 grid bars",
+    "value": -0.005830151632479387,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 438,
+    "distinct days": 194
+  },
+  "decided_by": "Inconclusive: the slope has |t| < 2.",
+  "reading": "The falling calm profile is read from the recorded regime (regime 'unknown', the only regime with a strategy, i.e. both vetoes not triggered) and the decline from the raw scaled 14-day return < 0, expected side short; the coin's mean 5-day return is the mean over its non-overlapping grid (positions 0, 5, 10, ... of each window) of all windows; the slope is OLS with intercept and day-clustered standard errors with the usual G/(G-1)*(N-1)/(N-K) correction; minimum counts not reached give 'not observable'."
+}
