@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of in-regime 5-day excess return on forecast",
+    "value": 0.00042845273060663824,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.7269178018707068
+    },
+    "threshold": "slope t >= 2 confirms (with mean excess > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean in-regime 5-day excess return > 0",
+    "value": -0.006730932764168829,
+    "passed": false
+  },
+  "counts": {
+    "in-regime grid cases pooled over coins and windows": 1013
+  },
+  "decided_by": "Inconclusive: the slope's t is between -2 and 2.",
+  "reading": "The 28-day fall is read from fall_depth's last_history_value (recomputed from closes where missing), while the wide-range condition (28-day vs 365-day mean range) cannot be rebuilt from ~120-bar windows so it is taken from the recorded regime 'mean_reversion'; grid bars at positions 0,5,10,... of each window with close[t+5] inside the window, in-regime meaning forecast > 0, coin mean 5-day return over all its grid bars in all windows, slope t from ordinary least squares with intercept."
+}

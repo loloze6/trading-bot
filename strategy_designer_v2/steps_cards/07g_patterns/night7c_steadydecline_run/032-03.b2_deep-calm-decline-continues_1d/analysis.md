@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 032-03.b2_deep-calm-decline-continues_1d
+idea tested: 032-03.b2_deep-calm-decline-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5461 USD
+---
+## Findings
+- **F1:** In the thin-volume regime (28-day mean volume below the prior year's, the recorded "trending" regime), a coin's raw 28-day return predicts its 10-day excess return with the same sign: slope 0.144, t 2.49 clustered by day (342 cases, 90 days); measured in units of the coin's 20-day daily volatility, the slope's t is 2.75. Outside the regime the slope is -0.034, t -0.82 (263 cases).
+- **F2:** Inside the thin-volume regime the effect runs on both sides and is graded. The lowest 28-day-return quintile was followed by -4.98 % excess over 10 days (t -4.07, 71 cases), and the highest by +5.75 % (t 2.00, 69 cases). Taken separately, falls give slope 0.23 (t 1.47, 184 cases) and rises slope 0.18 (t 1.48, 158 cases).
+- **F3:** The thin-volume slope on the 28-day return is positive for all 6 coins (BTC t 2.05, ETH t 1.96, ZEC t 1.68, XMR t 1.14, XRP t 1.14, LTC t 0.89). It is positive in 2019 to 2021 but negative in 2018 (-0.16, t -0.87). At a 5-day horizon it holds too: slope 0.075, t 2.59 (684 cases, 181 days).
+- **F4:** The tested forecast, the 28-day change standardised over 60 bars and clipped at 0, correlates only 0.72 with the raw 28-day return on thin fallen bars. Its own slope t is 1.60 (241 cases), against 2.75 for the volatility-scaled 28-day return. The verdict's inconclusive t of 0.68 partly reflects this transform, not only the idea.
+- **F5:** A large one-day fall tends to be followed by a rebound the next day, but the evidence is weaker than the raw numbers suggest. The day after the lowest quintile of one-day return scaled by 20-day volatility gained +0.66 % excess (t 4.34, 1392 bars). That t is not clustered by day, so cases on several coins the same day inflate it. With clustering, the graded slope is negative in all 4 years (t -1.75, -0.82, -1.88, -0.53) and for 5 of 6 coins (XMR t -3.56, ETH t -2.43).
+- **F6:** Among fallen coins (28-day return below 0), a narrow recent range was followed by a rebound rather than a further fall, against the brief. The lowest quintile of 10-day range relative to the 60-day range gained +4.33 % excess over 10 days (t 2.00). The pooled graded slope is only t -1.37 (605 cases, 113 days), so this cannot be told from chance after this many angles.
+- **F7:** The book lost 7.3 % a year (Sharpe -0.25) even though the supporting excess was +0.74 %. The coins' normal drift in the short's direction (-1.28 % per 10 days) outweighed the unusual move, so the total move per case (-0.72 %) is negative, at -3.8 times the 0.19 % cost of a trade.
+
+## Ideas
+- `032-03.b2.g1_thin-volume-trend-continues` (from F1, F2, F3, F4): When a coin's volume over the past 28 days is below its usual volume of the year before, the larger its 28-day return measured against its own daily volatility, the larger its return in the same direction over the next 10 days: thin-volume rises keep rising and thin-volume falls keep falling.
+- `032-03.b2.g2_quiet-rally-keeps-rising` (from F1, F2, F3): When a coin's volume over the past 28 days is below its usual volume of the year before, the larger its 28-day rise measured against its own daily volatility, the larger its further rise over the next 10 days.
+- `032-03.b2.g3_sharp-daily-drop-rebounds` (from F5): The larger a coin's one-day fall measured against its 20-day daily volatility, the larger its rise over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

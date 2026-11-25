@@ -9,20 +9,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-03_low-volume-decline-continues-more | - | plan | inconclusive (+0.48) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b1_thin-volume-decline-more-coins, 032-03.b2_deep-calm-decline-continues; 7.g: 032-03.g1_position-in-28-day-range | 0.96 | 6.2 |
 | 032-04_calm-decline-rally-sold | - | plan | mismatch | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.g: 032-04.g1_calm-uptrend-day-follow-through | 0.65 | 4.5 |
 | 032-03.b1_thin-volume-decline-more-coins | 032-03_low-volume-decline-continues-more | plan | inconclusive (+1.25) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b1.b1_thin-volume-decline-all-coins, 032-03.b1.b2_violent-decline-rebounds; 7.g: no ideas: Across about 60 groupings and slopes (depth of the decline, volume and range ratios over several spans, calm against panic, volatility, past returns, weekday, year), no pattern exceeded a t of about 2.6, which is what chance gives among that many looks. The one consistent shape, moderate declines continuing while deep ones do not, was chosen after seeing the data and was never tested on its own. | 1.09 | 8.9 |
+| 032-03.b2_deep-calm-decline-continues | 032-03_low-volume-decline-continues-more | plan | inconclusive (+0.68) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b2.b1_deep-calm-decline-more-coins, 032-03.b2.b2_deep-calm-decline-five-days; 7.g: 032-03.b2.g1_thin-volume-trend-continues, 032-03.b2.g2_quiet-rally-keeps-rising, 032-03.b2.g3_sharp-daily-drop-rebounds | 1.12 | 6.2 |
+| 032-03.b1.b1_thin-volume-decline-all-coins | 032-03.b1_thin-volume-decline-more-coins | plan | inconclusive (+1.03) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The volume-ratio effect is flat and ungraded in every part of the data I could see (F2–F4), the test already used all the data available (F1), and the only hint in the brief's direction (F7, calm declines continuing more the deeper they are) reaches t 1.57 at most, which is too weak to found an amended or new idea on.; 7.g: 032-03.b1.b1.g1_thin-volume-rise-keeps-rising, 032-03.b1.b1.g2_four-week-momentum-continues | 1.07 | 9.9 |
+| 032-03.b2.b1_deep-calm-decline-more-coins | 032-03.b2_deep-calm-decline-continues | plan | inconclusive (+0.38) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b2.b1.b1_steady-thin-volume-deep-decline; 7.g: 032-03.b2.b1.g1_calm-trend-continues-both-ways, 032-03.b2.b1.g2_calm-decline-longer-horizon | 1.07 | 9.7 |
+| 032-03.b1.b2_violent-decline-rebounds | 032-03.b1_thin-volume-decline-more-coins | plan | inconclusive (+0.73) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-03.b1.b2.b1_violent-decline-weekly-drop-rebound, 032-03.b1.b2.b2_violent-decline-next-day-rebound; 7.g: 032-03.b1.b2.g1_one-day-drop-rebounds-next-day, 032-03.b1.b2.g2_calm-decline-keeps-falling, 032-03.b1.b2.g3_drying-volume-precedes-weakness | 1.03 | 9.2 |
 
 ## Consumption
-5 ideas, 4.84 USD, 31.8 minutes in all.
+9 ideas, 9.14 USD, 66.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.49 | 3.1 |
-| step4_backtest | 0.00 | 14.0 |
-| step5_verdict | 0.85 | 3.1 |
-| step6_check | 0.00 | 0.1 |
+| step3_plan | 0.81 | 5.0 |
+| step4_backtest | 0.00 | 34.1 |
+| step5_verdict | 1.56 | 5.5 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.g | 1.89 | 6.0 |
-| step7_7.b | 1.60 | 5.2 |
+| step7_7.g | 3.68 | 11.6 |
+| step7_7.b | 3.09 | 10.0 |
