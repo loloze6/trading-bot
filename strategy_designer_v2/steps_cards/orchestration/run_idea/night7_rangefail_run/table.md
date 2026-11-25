@@ -26,22 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 034-01.e1_rising-market-breakout-distance-continuation | 034-01_rising-nearness-to-high-rises | plan | confirmed (+2.70) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 034-01.e1.g1_rising-breakout-ten-day-drift, 034-01.e1.g2_choppy-far-below-high-decline, 034-01.e1.g3_falling-far-below-high-decline | 1.49 | 11.7 |
 | 034-01.b1_nearness-to-high-10-days | 034-01_rising-nearness-to-high-rises | plan | confirmed (+3.19) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 034-01.b1.g1_calm-rising-nearness-drift, 034-01.b1.g2_calm-market-nearness-short-drift | 0.75 | 11.9 |
 | 034-03.b1_choppy-far-below-high-falls | 034-03_rising-far-below-high-falls | plan | inconclusive (+0.11) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 034-03.b1.b1_choppy-slip-falling-coin; 7.g: 034-03.b1.g1_rising-nearness-to-high-drift | 1.13 | 10.2 |
+| 036-01_swing-scaled-fall-next-day-rebound | - | plan | confirmed (+2.15) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 036-01.d1_beyond-one-swing-fall-rebound, 036-01.d2_widening-swings-fall-rebound; 7.g: 036-01.g1_agitated-sharp-fall-rebound | 1.14 | 10.6 |
 
 ## Consumption
-22 ideas, 23.02 USD, 164.5 minutes in all.
+23 ideas, 24.16 USD, 175.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.57 | 13.8 |
-| step4_backtest | 0.00 | 80.1 |
-| step5_verdict | 3.61 | 13.1 |
-| step6_check | 0.00 | 0.9 |
+| step3_plan | 4.64 | 14.2 |
+| step4_backtest | 0.00 | 86.8 |
+| step5_verdict | 3.79 | 13.7 |
+| step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.4 |
-| step7_7.d | 1.03 | 3.5 |
+| step7_7.d | 1.48 | 5.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.7 |
 | step7_7.b | 4.55 | 13.7 |
-| step7_7.g | 8.58 | 25.8 |
-| similarity_check | 0.00 | 0.5 |
+| step7_7.g | 9.01 | 27.1 |
+| similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 10.8 |

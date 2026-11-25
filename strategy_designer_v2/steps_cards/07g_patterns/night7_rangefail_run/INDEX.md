@@ -18,3 +18,4 @@
 035-01_nearness-to-high-rises_1d: 2 ideas (2 explorations)
 035-02_break-swings-above-continues_1d: no ideas: I looked at about 60 groupings: distance from the high and from the low, the last day's move, the volatility ratio, trend crossed with breakout, year, weekday, prior 5-day return, and trade duration, entry forecast and coin. No pattern outside the tested breakout effect reaches a day-clustered |t| of 2 in a graded way, so none stands out from chance across that many looks.
 035-03_far-below-high-falls_1d: 2 ideas (2 explorations)
+036-01_swing-scaled-fall-next-day-rebound_1d: 1 ideas (2 explorations)
