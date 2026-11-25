@@ -1,6 +1,6 @@
 # Topic 51: a position smaller than the rebalance band is never closed
 
-Status: parked (the operator, 2026-11-24); the rule was kept on 2026-11-18 (topic 19)  
+Status: un-parked 2026-11-25 (next steps 1l); the rule was kept on 2026-11-18 (topic 19)  
 Where: engine (shared code: the risk layer's `min_allocation_change`); research: what a book holds after its bets end  
 Opened: 2026-11-24, the designer, from topic 49's proof (a book that must be flat outside its market profile).
 
@@ -37,6 +37,7 @@ a paying book's gain or loss, the book is not what its idea says.
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-25 | Un-parked: option A to design and prove | the operator ("it would make sense to clean the small positions never closed ... keep solution simple") | night 7 (M8): a median 16 % of the profile specialists' days in a position are leftovers outside their profile; they also count in step 6's days in a position | B: measuring alone leaves the books unlike their ideas |
 | 2026-11-24 | Parked | the operator ("park that") | the rule was already decided (topic 19: kept, so backtests and live follow the same rule); this adds one measure (a short book in falling markets: leftovers 8 % of its days in a position, median 0.14) | |
 
 ## Status and next
