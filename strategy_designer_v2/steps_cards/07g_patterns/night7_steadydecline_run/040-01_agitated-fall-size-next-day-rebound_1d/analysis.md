@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 040-01_agitated-fall-size-next-day-rebound_1d
+idea tested: 040-01_agitated-fall-size-next-day-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5765 USD
+---
+## Findings
+- **F1:** The rebound lives in falling agitated markets only. There, the slope of the next-day excess return on the fall's size (in units of the coin's daily standard deviation) is +0.0218 (t 8.2, 377 falls). In rising agitated markets it is -0.0008 (t -0.12, 358 falls). In calm markets it is +0.0018 falling (t 0.59, 622), -0.0069 choppy (t -1.1, 252) and +0.0073 rising (t 1.5, 383).
+- **F2:** Yet the book holds about as many position-bars in rising markets (417, mean allocation 0.33) as in falling ones (440, 0.30), so roughly half its exposure sits where the slope is zero.
+- **F3:** After agitated falls larger than one standard deviation, the next day's excess return differs sharply by trend. It is +2.91 % in falling markets (t 5.3, 133 cases), +1.02 % in choppy ones (t 0.53, 19) and +0.16 % in rising ones (t 0.22, 94).
+- **F4:** The falling-agitated slope is positive on every coin and in every year. By coin it runs from +0.0123 on ZEC (t 1.7, 77) to +0.0375 on LTC (t 5.4, 63), with BTC at +0.0181 (t 4.7, 81). By year it runs from +0.0155 in 2019 (t 1.9) to +0.0223 in 2020 (t 7.1). Every window with more than 20 falls is positive except w9 (-0.0107, t -0.81, 23).
+- **F5:** The effect lasts one day only. On a 2-day grid, the 2-day slope in falling agitated markets is +0.0032 (t 0.41, 157). Across all agitated falls larger than one standard deviation, the excess is +1.17 % over 1 day (t 3.8, 574), against +0.97 % over 2 days (t 1.7, 297) and +1.51 % over 3 days (t 1.7, 174).
+- **F6:** Heavy volume adds to the rebound. Across agitated down days, the day's volume relative to its 20-day average carries a slope of +0.0059 (t 2.6, 1439 falls), alongside the fall's size at +0.0089 (t 3.2).
+- **F7:** The fall measured against the coin's long-run daily swing carries the effect, and extreme agitation weakens it. With both in one regression, the fall size against the coin's long-run swing has slope +0.0247 (t 5.7) and the fall against its 20-day swing has slope -0.0168 (t -3.0). The ratio of the 30-day swing to its yearly median has slope -0.0098 (t -2.5, 415). In the top tercile of that ratio, falls larger than one standard deviation give -0.99 % (t -0.71, 44).
+- **F8:** Where the close sits in the day's range adds little once the fall's size is known. The lower-wick term has slope -0.0050 (t -1.7) against the fall's slope of +0.0136 (t 6.4), which agrees with the brief's claim that the day's return carries the effect.
+- **F9:** Agitated up days are followed by weaker days, but the effect does not grow with the size of the rise, so it is not graded. The intercept is -0.0067 (t -3.4) while the slope on the rise's size is +0.0015 (t 0.95). Up days of 0.3 to 1 standard deviation give -0.69 % (t -3.6, 779).
+
+## Ideas
+- `040-01.g1_falling-agitated-fall-rebound` (from F1, F2, F3, F4, F5): In a falling, agitated market, the larger a coin's one-day fall compared with its usual daily swing, the larger its rise over the next day.
+- `040-01.g2_heavy-volume-fall-next-day-rebound` (from F6, F1): In an agitated market, the larger a coin's one-day fall and the heavier that day's volume compared with its average over the previous 20 days, the larger its rise over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
