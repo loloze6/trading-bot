@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "058-03.e2.b1_choppy-distance-continuation-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6696864,
+  "findings": {
+    "F1": "The book's gain comes only from its long side. Its 407 long trades average +7.77 % after fees (median -0.30 %, 48 % winners). Its 544 short trades average -4.93 % (median -4.51 %, 29 % winners), and the short loss grows with the entry forecast (-2.97 % and -2.82 % in the two lower |forecast| quartiles, -7.42 % and -6.59 % in the two upper).",
+    "F2": "Inside the choppy profile the distance from the 20-day average does sort the next 10 days. Measured against the coin's drift, the cases run from -5.5 % (t -2.01) in the lowest distance quintile to +15.6 % (t 1.21) in the highest, with a Spearman rho of 0.237 (p 0.0014, 179 grid cases). In raw returns, though, the lowest quintile is only -2.7 % (t -0.96), so the \"falls further\" half is mostly the coins' high drift in folds B and C, which explains why the shorts lose.",
+    "F3": "Below its 20-day average in a choppy trend, the further below the coin stands, the more its excess 10-day return falls: -13.1 % (t -4.14), -11.0 % (t -2.51) and -3.1 % (t -0.75) by distance tercile, positive for the short side in all four years. But it rests on 50 cases on 26 days (t over days 1.99 calm, 1.56 agitated): too few to stand out.",
+    "F4": "In a rising trend (60-day return above +10 %), a sharp down day is followed by a rebound over the next 3 days in both agitation states. After a fall of 1 to 2 of the coin's daily swings, the excess 3-day return is +6.1 % (t 3.65, 41 cases) when calm and +5.5 % (t 2.14, 34 cases) when agitated. It is positive in every year, 2019 to 2021 (calm +2.8 %, +9.3 %, +4.4 %; agitated +1.7 %, +1.7 %, +8.0 %), while falls of under one swing give only +0.9 % (calm, t 0.99) and -0.5 % (agitated).",
+    "F5": "Across all coin-days, the next day after the largest daily falls is strongly up. The lowest decile of the coin-standardised daily return is followed by +1.47 % (t 6.93, 1222 days) and the second decile by +0.64 % (t 3.64), against about 0 % for the middle deciles.",
+    "F6": "In a falling, agitated market, the larger an up day, the weaker the next 3 days. The Spearman rho of the day's standardised rise against the excess 3-day return is -0.183 (p 0.0024, 272 cases), and the excess return falls from +2.0 % to -2.6 % (t -2.22) from the lowest to the highest quartile of the rise. Three of four years point that way (2018 -2.6 %, 2019 -5.0 %, 2020 -5.5 %, 2021 +2.5 %). Taken per day it is weaker (t 1.34 over 77 days); it is the only pattern seen in the empty falling-agitated short cell.",
+    "F7": "Coins rise more on Fridays and Saturdays: +0.54 % and +0.71 % a day (t 3.79 and 5.30), against -0.08 % to +0.35 % on Monday, Tuesday and Thursday. The difference is strongest in a rising trend (t 3.11). This repeats 045-01, rising market late week gain, which is already held.",
+    "F8": "The idea's size is small for its noise but not against its cost. The unusual move is +0.67 % per 10-day case (t 1.08, 808 days, strength 0.014 of a usual 16.82 % move), 3.0 times the 0.22 % cost of a trade. The book still earns only +2.1 % a year (Sharpe 0.20 against holding's 0.61) because of the losing shorts (F1)."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, the larger a coin's one-day fall measured in its own usual daily swings, the more it rises over the next 3 days.",
+      "consequence": "In a coin whose 60-day trend is up, a trader buys a sharp down day rather than reading it as the end of the rise, sizing up with the size of the fall.",
+      "name": "rising market sharp dip rebound",
+      "from": "F4, F5",
+      "profile": "rising",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day rise measured in its own usual daily swings, the more it gives back over the next 3 days.",
+      "consequence": "In a coin that has been falling and swinging hard, a trader sells into a sharp up day instead of chasing it, more heavily the larger the rise.",
+      "name": "falling agitated rally fade",
+      "from": "F6",
+      "profile": "falling agitated",
+      "theme": "discovery",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "058-03.e2.b1.g1_rising-market-sharp-dip-rebound",
+    "058-03.e2.b1.g2_falling-agitated-rally-fade"
+  ],
+  "no_ideas": null
+}
