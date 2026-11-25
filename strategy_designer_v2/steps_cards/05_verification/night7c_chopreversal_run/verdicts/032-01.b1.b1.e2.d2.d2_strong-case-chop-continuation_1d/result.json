@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-day move over cases, in the forecast's direction",
+    "value": 0.016540422358941882,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 3.666344428213226
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and top-minus-bottom third > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean unusual move by abs(forecast)",
+    "value": 0.0004253264599694967,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1223,
+    "distinct days": 798
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the top-minus-bottom-third difference is above 0.",
+  "reading": "A case is the first bet (a rise of |forecast| on its side of at least 2 points from its lowest level since the last bet, from 0 after a flat or side change) in each 7-bar cell counted from each window's first row, with the 7-bar return inside the window; the normal drift is the coin's mean 7-bar return on that grid over all windows; t is clustered by UTC day with a G/(G-1) correction; thirds are by sorted abs(forecast) split as evenly as possible; the plan's 'fewer than 30 cases or days' rule is reported as not observable; in the situation check, bars with under 30 bars of window history use the recorded regime for the situation and the 7-day move (or the raw scaled_week sign) for the side.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.007137 on the check folds against +0.01654 on every fold",
+    "main": 0.007137160700480086,
+    "statistic": 1.3998795048737256,
+    "counts": {
+      "cases": 641,
+      "distinct days": 437
+    }
+  }
+}

@@ -5,6 +5,7 @@
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: confirmed (fit: exact) [main: 0.00123453; OLS slope t 3.89505; cases 1114, days 366, active bars 8133]
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: confirmed (fit: adapted) [main: 0.000970546; slope t (day-clustered) 2.14133; grid cases 1889, distinct days 420]
 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d: confirmed (fit: adapted) [main: 0.0175327; t of the weighted mean, cases summed per day 2.65621; cases 1114, days 366]
+032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation_1d: confirmed (fit: adapted) [main: 0.0165404; t of the mean, cases clustered by day 3.66634; cases 1223, distinct days 798]
 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d: confirmed (fit: adapted) [main: 3.89505; OLS slope t 3.89505; grid cases in the regime across coins and windows 1114]
 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: confirmed (fit: adapted) [main: 0.000970546; t of the OLS slope 3.55922; non-overlapping cases on choppy bars 1889]
 032-01.b1.b1_large-weekly-rise-continues_1d: inconclusive (fit: exact) [main: 0.0491755; t of the mean, cases of one day taken together 1.93699; cases 103, distinct days 63]
