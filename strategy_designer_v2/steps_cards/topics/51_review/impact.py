@@ -62,7 +62,7 @@ def held_days(rec, profile):
             d = d[d]
             n += len(d)
             if profile:
-                p = d.index.map(prof).to_series().fillna("")
+                p = pd.Series(prof.reindex(d.index).values, dtype=object).fillna("")
                 inside += int(p.apply(lambda s: bool(s) and all(w in s.split() for w in profile.split())).sum())
     return n, (inside / n if profile and n else None)
 
