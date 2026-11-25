@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 20-bar excess return on forecast (date-clustered SE)",
+    "value": 0.0007606748691754638,
+    "statistic": {
+      "name": "date-clustered t of slope",
+      "value": 0.10546767035398592
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-minus-bottom > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 20-bar return, top fifth minus bottom fifth of forecast",
+    "value": 0.0138668401069568,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 827,
+    "distinct dates": 147,
+    "top fifth cases": 166,
+    "bottom fifth cases": 166
+  },
+  "decided_by": "Inconclusive: the slope has |t| < 2.",
+  "reading": "Situation is every bar with the long side when the standardised compression exceeds its usual level (expected sign = sign of the rebuilt (compression + offset)/2, standardise rebuilt from last_history_value where 61 past in-window values exist, else the recorded post_pipeline_value); grid at positions 0,20,40,... of each window with the 20-bar return inside the window, coin mean = mean of that coin's grid returns over all windows, OLS with intercept and CR1 date-clustered SE, top/bottom fifth = forecast >= 80th / <= 20th percentile of pooled grid cases, and fewer than 300 cases or 100 dates gives 'not observable'."
+}

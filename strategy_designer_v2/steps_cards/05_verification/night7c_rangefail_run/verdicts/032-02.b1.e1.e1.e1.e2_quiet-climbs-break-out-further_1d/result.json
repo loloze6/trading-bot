@@ -1,0 +1,29 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 20-bar excess return on raw brk_runup weight",
+    "value": -1.0319002670385202,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": -1.0319002670385202
+    },
+    "threshold": "t >= 2 with positive supporting check confirms; t <= -2 rejects; otherwise inconclusive",
+    "slope": -0.0667287457861845
+  },
+  "supporting_check": {
+    "name": "mean excess 20-bar return of cases with weight > 0",
+    "value": 0.1291453273087666,
+    "passed": true
+  },
+  "counts": {
+    "breakout cases": 114,
+    "cases with weight above 0": 60,
+    "days": 84
+  },
+  "reading": "Breakouts are recomputed only on bars with 60 prior closes in the same window, so active bars without that history are left out of the agreement share; the 20-bar grid starts at each window's first row and a case needs its forward close inside the window; the slope's t uses a day-clustered (cases of one day summed) sandwich standard error; the plan's 'fewer than the minimum' is reported as not observable.",
+  "status": "inconclusive",
+  "decided_by": "The slope's t is between -2 and 2."
+}

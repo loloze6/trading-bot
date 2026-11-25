@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Welch t of excess 20-bar return, small-margin half minus large-margin half",
+    "value": 0.011304711725532518,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.28251973007478803
+    },
+    "threshold": "confirm t >= 2 with small half rising more and supporting check passing; reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 20-bar return > 0",
+    "value": 0.0358709782861522,
+    "passed": true
+  },
+  "counts": {
+    "cases": 240,
+    "small-margin half": 120,
+    "large-margin half": 120
+  },
+  "decided_by": "Welch t is between -2 and 2.",
+  "reading": "Cases are the first long bet (forecast rise of at least 2 points, holding-period rule) in each 20-bar grid cell of each window with a full 20-bar return inside the window; the pooled median split puts margins <= median in the small half; the coin's drift is its mean non-overlapping 20-bar return over all its windows."
+}
