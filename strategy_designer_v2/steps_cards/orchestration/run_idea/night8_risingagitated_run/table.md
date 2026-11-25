@@ -15,22 +15,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01_falling-agitated-high-close-fade | - | plan | confirmed (-2.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 060-01.d1_wide-day-high-close-next-day-fade; 7.g: 060-01.g1_wide-day-high-close-fade | 1.06 | 6.3 |
 | 058-02_agitated-rise-swing-scaled-giveback | - | plan | inconclusive (-0.79) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data: a coin far above its 20-day average in a rising agitated market kept rising over the next 1 to 10 days, in every coin and every year with enough cases, with no graded giveback (F1–F4). The only gradient, continuation in calm and choppy markets, is too weak and too mixed across coins to make a clear idea (F5, F6).; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.81 | 6.6 |
 | 060-01.d1_wide-day-high-close-next-day-fade | 060-01_falling-agitated-high-close-fade | plan | inconclusive (-1.78) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.d1.b1_wide-day-upper-close-next-day-fade, 060-01.d1.b2_wide-up-day-high-close-fade; 7.g: no ideas: The only pattern that stands out once same-day cases are counted together is the wide-day low-close rebound (F1), which the portfolio already holds; the tested high-close fade, its grading, and the weekday, volatility and rising-trend angles stay under t 2 or repeat held books (F2–F6). | 1.03 | 6.4 |
+| 060-01.g1_wide-day-high-close-fade | 060-01_falling-agitated-high-close-fade | plan | confirmed (+2.50) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 060-01.g1.d1_wider-than-usual-high-close-fade, 060-01.g1.d2_wide-day-close-location-graded-fade; 7.g: 060-01.g1.g1_graded-width-high-close-fade | 1.11 | 7.1 |
 
 ## Consumption
-11 ideas, 12.88 USD, 79.3 minutes in all.
+12 ideas, 13.99 USD, 86.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.61 | 4.6 |
-| step4_backtest | 0.00 | 37.1 |
-| step5_verdict | 1.77 | 6.2 |
+| step3_plan | 1.71 | 5.2 |
+| step4_backtest | 0.00 | 40.1 |
+| step5_verdict | 1.93 | 6.8 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 1.09 | 3.2 |
+| step7_7.d | 1.54 | 4.7 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.46 | 1.2 |
 | step7_7.b | 2.62 | 8.4 |
-| step7_7.g | 5.32 | 16.7 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.g | 5.73 | 18.0 |
+| similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 1.1 |

@@ -8,4 +8,5 @@
 059-01.b1_calm-swing-scaled-move-continues_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 059-01_swing-scaled-rise-continues_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 060-01.d1_wide-day-high-close-next-day-fade_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
+060-01.g1_wide-day-high-close-fade_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 060-01_falling-agitated-high-close-fade_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
