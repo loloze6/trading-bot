@@ -23,3 +23,5 @@
 042-02_high-close-next-day-fade: A coin falls over the next day, more so the nearer its close sits to the day's high within the range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 043-01_falling-market-narrow-day-rise: In falling markets, a coin rises over 3 days, more so the narrower its daily range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
 043-02_falling-market-range-shrink-rise: In falling markets, a coin rises over 3 days, more so the narrower its daily range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
+044-01_rising-market-wide-down-day-rebound: In rising markets, a down-closing day rises over 3 days, more so the wider its range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
+044-02_rising-market-range-jump-down-rebound: In rising markets, a down-closing day rises over 3 days, more so the wider its range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]

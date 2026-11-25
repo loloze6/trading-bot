@@ -9,3 +9,4 @@
 040-01_falling-calm-scaled-fall-continuation_1d: not profitable enough [Sharpe 0.2046; Sharpe minus holding's Sharpe -0.365; Calmar 0.07591]
 041-01_wide-up-day-next-day-fade_1d: not profitable enough [Sharpe -0.5931; Sharpe minus holding's Sharpe -1.147; Calmar -0.1974]
 042-01_low-close-next-day-rebound_1d: not profitable enough [Sharpe 0.1976; Sharpe minus holding's Sharpe -0.3566; Calmar 0.07773]
+043-01_falling-market-narrow-day-rise_1d: not profitable enough [Sharpe -0.5941; Sharpe minus holding's Sharpe -1.148; Calmar -0.1245]

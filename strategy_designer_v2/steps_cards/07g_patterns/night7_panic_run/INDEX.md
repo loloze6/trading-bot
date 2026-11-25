@@ -9,3 +9,4 @@
 040-01_falling-calm-scaled-fall-continuation_1d: 0 ideas, 2 discoveries (2 explorations)
 041-01_wide-up-day-next-day-fade_1d: 2 ideas (2 explorations)
 042-01_low-close-next-day-rebound_1d: 2 ideas, 1 discoveries (2 explorations)
+043-01_falling-market-narrow-day-rise_1d: 1 ideas, 1 discoveries (2 explorations)
