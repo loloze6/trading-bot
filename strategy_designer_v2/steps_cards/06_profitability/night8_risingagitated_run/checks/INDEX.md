@@ -1,4 +1,5 @@
 058-01_agitated-rise-stretch-giveback_1d: not profitable enough [Sharpe -0.922; Sharpe minus holding's Sharpe -1.492; Calmar -0.1943]
+058-02_agitated-rise-swing-scaled-giveback_1d: not profitable enough [Sharpe -1.015; Sharpe minus holding's Sharpe -1.585; Calmar -0.1932]
 058-03.b1_calm-rise-continuation-all-coins_1d: not profitable enough [Sharpe 0.944; Sharpe minus holding's Sharpe 0.3912; Calmar 0.6337]
 058-03.e1_calm-rise-stretch-ten-days_1d: profitable enough [Sharpe 1.042; Sharpe minus holding's Sharpe 0.4726; Calmar 0.9527]
 058-03.e2.b1_choppy-distance-continuation-more-coins_1d: not profitable enough [Sharpe 0.2039; Sharpe minus holding's Sharpe -0.4036; Calmar 0.05743]
@@ -6,4 +7,5 @@
 058-03_calm-rise-stretch-continuation_1d: profitable enough [Sharpe 0.9737; Sharpe minus holding's Sharpe 0.4041; Calmar 0.8299]
 059-01.b1_calm-swing-scaled-move-continues_1d: not profitable enough [Sharpe 0.5538; Sharpe minus holding's Sharpe -0.01577; Calmar 0.2727]
 059-01_swing-scaled-rise-continues_1d: not profitable enough [Sharpe 0.5322; Sharpe minus holding's Sharpe -0.02199; Calmar 0.2805]
+060-01.d1_wide-day-high-close-next-day-fade_1d: not profitable enough [Sharpe -0.1794; Sharpe minus holding's Sharpe -0.749; Calmar -0.06082]
 060-01_falling-agitated-high-close-fade_1d: not profitable enough [Sharpe 0.006541; Sharpe minus holding's Sharpe -0.5631; Calmar -0.02312]
