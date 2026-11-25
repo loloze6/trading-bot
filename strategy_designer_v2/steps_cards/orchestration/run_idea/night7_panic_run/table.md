@@ -25,13 +25,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 049-01_choppy-scaled-five-day-rise-continuation | - | plan | inconclusive (-0.29) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 049-01.b1_choppy-scaled-fall-continuation; 7.g: 049-01.g1_rising-market-scaled-rise-continuation, 049-01.g2_rising-scaled-rise-five-day-carry | 0.96 | 4.8 |
 | 050-01_falling-calm-scaled-week-fall-continuation | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-01.b1_calm-downtrend-fall-continuation-more-coins; 7.g: no ideas: Every pattern seen is a weak, same-sign version of the tested continuation (slopes with t at most 1.99 among about 50 cells looked at), it changes sign between years, and the book's gain comes from a handful of crash days, so nothing stands out enough from chance to support a new idea. | 0.97 | 5.7 |
 | 035-02_rising-market-narrowing-ranges-rise | - | plan | inconclusive (-0.11) | not profitable enough (failed: Calmar) | - | 7.b: 035-02.b1_narrowing-ranges-weekly-rise, 035-02.b2_strong-uptrend-narrowing-ranges-rise; 7.g: 035-02.g1_calm-level-uptrend-continuation, 035-02.g2_low-volatility-rising-coins-continue | 1.77 | 5.5 |
+| 036-02_range-scaled-rally-continuation | - | missing-components | - | - | - | - | 0.05 | 0.3 |
 
 ## Consumption
-21 ideas, 22.54 USD, 114.0 minutes in all.
+22 ideas, 22.59 USD, 114.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.09 | 11.0 |
+| step3_plan | 4.14 | 11.4 |
 | step4_backtest | 0.00 | 38.3 |
 | step5_verdict | 3.59 | 13.5 |
 | step6_check | 0.00 | 0.7 |
