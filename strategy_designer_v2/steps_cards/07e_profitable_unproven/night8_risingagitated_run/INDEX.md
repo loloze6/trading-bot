@@ -4,3 +4,4 @@
 058-03.e2.b1_choppy-distance-continuation-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-03.e2_choppy-market-distance-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-03_calm-rise-stretch-continuation_1d: 2 ideas (2 explorations)
+059-01_swing-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
