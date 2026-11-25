@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 032-01_monthly-low-break-cascade_1d
+idea tested: 032-01_monthly-low-break-cascade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3479 USD
+---
+## Findings
+- **F1:** The test's result is on the opposite side to the idea, just short of the reject bar: after a fresh 30-day closing low in the falling, agitated profile, the coin rose rather than fell. The mean unusual move in the short direction was -2.20 % (t -1.98, 163 cases on 86 days), so the coin rebounded by about 2.2 % more than its normal drift over 3 days. In folds B and C the same cases rebound by +3.27 % over 3 days (t 2.17, 107 cases on 55 days), and 58 % of them close higher.
+- **F2:** The rebound grows with the horizon and becomes surer. On folds B and C the mean unusual move upward is +2.40 % at 1 day (t 2.36, 150 cases), +4.80 % at 5 days (t 2.37, 94 cases), +5.92 % at 7 days (t 2.38, 79 cases, 70 % up) and +9.08 % at 10 days (t 2.76, 71 cases on 42 days, 70 % up). The plan's 3-day horizon caught the effect where it is smallest relative to its noise.
+- **F3:** The rebound is graded by how far the close sits below the prior 30-day low, but only at some horizons. The slope of the unusual move on that depth is 0.268 at 3 days (t 2.46, 85 cases) and 0.545 at 7 days (t 3.40, 63 cases). At 7 days the deepest third of breaks rebounds +11.8 % (t 2.67), against +1.8 % for the middle third and +5.5 % for the shallowest. At 5 and 10 days the slope is flat (t 0.18 and 0.81), so the grading is not yet stable.
+- **F4:** The rebound is uneven across years and coins, which is part of why the test's t stopped short.
+- **F5:** The move is large against the cost of a trade. The rebound at 7 days, +5.9 % unusual and +7.7 % total per case, is about 30 to 40 times the 0.19 % a trade cost this backtest. The book lost money because it was short against the rebound (Sharpe -0.418), not because costs ate the move.
+
+## Ideas
+- `032-01.b1_monthly-low-exhaustion-rebound` (from F1, F2, F3, F4, F5): In a falling, agitated market, when a coin closes below the lowest close of its previous 30 days, it rebounds over the next 7 days, and the further the close sits below that prior 30-day low, the larger the rebound.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

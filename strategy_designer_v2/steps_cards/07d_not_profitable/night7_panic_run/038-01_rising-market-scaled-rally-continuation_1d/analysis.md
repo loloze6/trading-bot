@@ -1,0 +1,23 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 038-01_rising-market-scaled-rally-continuation_1d
+idea tested: 038-01_rising-market-scaled-rally-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4038 USD
+---
+## Findings
+- **F1:** The book fails on its falls. On folds B and C its deepest fall was -31.8 % against a yearly return of +24.5 % over 1449 days. That fall ran 78 days through windows w16 to w17, while the coins' mean daily return summed to -41 % and the book's summed to -37 %. The next falls were -22.2 % (w12 to w15, 358 days, coins -82 %) and -14.1 % (w8 to w10, 205 days, coins -42 %), so the book stayed long through the coin's own slides inside "rising" 60-day profiles.
+- **F2:** The losses come from positions opened while the coin's close was more than 10 % below its highest close of the last 20 days. Their held days earned a mean of -0.038 % on 967 coin-days, summing to -0.37. Positions opened within 5 to 10 % of that high earned +0.233 % on 480 coin-days, and those within 5 % earned +0.374 % on 1126 coin-days. In the deepest fall (w16 to w17), the positions opened deep summed to -0.54, while the others summed to +1.79.
+- **F3:** On the rising-profile 3-day grid, the signal pays only when the coin is near its 20-day high, so that nearness is a condition and not an effect of its own. Near the high, the signal's cases beat the drift by +1.50 % (t 3.53, 445 cases), against +0.43 % (t 0.69, 196) for the same bars without the signal. Deep below the high, the signal's cases lost -1.24 % (t -1.33, 105), against -0.11 % (t -0.15, 235) without the signal. The slope of the excess return on the forecast is 0.00125 near the high, against 0.00109 on every bar. This fits the brief's own reason: a rally from far below a recent high meets holders waiting to sell at better prices.
+- **F4:** Keeping the tested book but staying flat while the close is more than 10 % below its 20-day high raises Calmar from 0.75 to 1.22. Its fall shrinks from -31.9 % to -22.7 %, its yearly return rises from +24.1 % to +27.5 %, and its Sharpe from 1.04 to 1.20, with 28 % of coin-days in a position against 41 %. Applying the same filter only at entry gives a Calmar of 1.03 (fall -26.0 %, yearly +26.9 %).
+- **F5:** Other filters do not repair the falls:
+- **F6:** The gain is uneven across windows. Signal cases beat the drift by +3.8 % (t 3.70, 126) in w11 and +2.4 % (t 2.57, 90) in w15, but fell short of it by -1.5 % to -2.8 % in w12, w13, w14 and w18. The size per case is +0.30 % unusual and +0.67 % total, against a cost of 0.19 % per trade.
+
+## Ideas
+- `038-01.d1_scaled-rally-near-20-day-high` (from F1, F2, F3, F4): In a rising market, a coin keeps rising over the next 3 days, more so the larger its 3-day return in units of the standard deviation of its daily returns over the last 30 days and the nearer its close stands to its highest close of the last 20 days.
+- `038-01.d2_rally-held-near-recent-high` (from F1, F2, F4): In a rising market, a coin whose 3-day return is large in units of the standard deviation of its daily returns over the last 30 days keeps rising over the next 3 days, more so the larger that scaled rise, for as long as its close stays near its highest close of the last 20 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move (close[t+1]/close[t]-1 minus coin mean daily return) over bars with forecast > 0",
+    "value": 0.0014731464171258402,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.17867812645898112
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0 with t >= 2; reject: mean < 0 with t <= -2 or slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of next-day unusual move on forecast (day-pooled t)",
+    "value": 0.0006005877933046042,
+    "passed": false,
+    "t": 0.3003640101617108
+  },
+  "counts": {
+    "cases": 19,
+    "distinct case days": 19
+  },
+  "decided_by": "Only 19 distinct case days, fewer than the plan's minimum of 30.",
+  "reading": "Cases are every bar with forecast > 0 and a next close in the same window, the drift is the coin's mean 1-bar return over all its windows, day pooling uses per-day sums of deviations (mean) or of scores (OLS slope) with a D/(D-1) correction, and the plan's 'fewer than 30 distinct case days' is applied as a minimum count giving 'not observable'."
+}

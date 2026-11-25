@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "039-01_scaled-fall-next-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4585506,
+  "findings": {
+    "F1": "The next-day rebound after a down day is convex in the fall's size rather than linear. In folds B, C the mean next-day excess return is +0.10 % for scaled moves of -0.5 to 0 (1681 cases), +0.16 % for -1 to -0.5 (1033), +0.83 % for -1.5 to -1 (t 2.95, 463), +1.48 % for -3 to -2 (t 3.20, 132) and +3.55 % below -3 (t 2.07, 34). The tested forecast caps at 20 and trades every down day (71 % of coin-days in a position), so its per-case unusual move is only +0.18 %, under the 0.19 % cost of a trade.",
+    "F2": "The rebound after a large scaled fall lasts beyond one day. On the non-overlapping 3-day grid, falls beyond 2 usual swings are followed by a +2.33 % excess 3-day return (t 2.62, 46 cases), against +0.66 % (t 0.91, 218) for falls of 1 to 2 swings and +0.10 % (t 0.30, 879) for falls under 1 swing.",
+    "F3": "The tested effect holds in folds B, C on day-clustered errors: on all down days, the next-day excess return rises with the fall in usual swings (slope 0.0070 per swing, t 1.99, 3574 cases on 877 days). Adding the 5-day return scaled by the usual swing leaves the fall's slope at t 2.24 and gives the 5-day return no effect of its own (t -1.01).",
+    "F4": "Among falls beyond 1 usual swing, the rebound is largest when the day's volume is heavy for the coin. The top volume quartile (1.9 to 9 times its 30-day mean) gives +1.99 % next day (t_day 2.61, 216 cases, 103 days), the third quartile +1.01 % (t_day 2.04) and the two lower ones +0.64 % and +0.17 % (t_day 1.19 and 0.27). The top-volume subset is positive in every year 2018 to 2021, from +0.85 % to +2.33 %, but each year's t_day is under 2, and the fall \u00d7 log-volume interaction is only t 1.18.",
+    "F5": "Falls beyond 1 swing rebound more when the coin's 30-day swing is above its 90-day median: +1.66 % (t_day 2.19, 239 cases) against +0.68 % (t_day 1.60, 628). All four years are positive, but the interaction with fall size is t 1.23, so the profile split does not stand out.",
+    "F6": "After a scaled fall, an up day is followed by -0.98 % next day (t_day -2.58, 554 cases, 201 days). This rests on 2018 alone (-3.33 %, t -4.94), with 2019 at -0.06 %, 2020 at -0.50 % and 2021 at +0.88 %, and it does not grow with the size of the up day (slope t -0.08). It is not a stable pattern.",
+    "F7": "Two other patterns vanish once the fall's size is controlled for or the errors are clustered, so neither stands out among the many angles examined:"
+  },
+  "ideas": [
+    {
+      "idea": "After a one-day fall, a coin rises over the next three days, and the rise grows faster than the fall: a fall of several times its 30-day daily-return standard deviation is followed by a rebound many times larger than a fall of one such swing.",
+      "consequence": "The rebound worth trading after costs sits in the coin's rare, very large falls for its own swing, held for a few days, not in ordinary down days.",
+      "name": "convex rebound after extreme falls",
+      "from": "F1, F2, F3",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "After a one-day fall measured in units of its 30-day daily-return standard deviation, a coin rises over the next day, more so the heavier that day's volume against its 30-day average volume.",
+      "consequence": "A large scaled fall on heavy volume, the mark of forced selling, is a stronger reason to buy for the next day than the same fall on quiet volume.",
+      "name": "heavy-volume fall rebounds more",
+      "from": "F4, F3",
+      "theme": "on",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "039-01.g1_convex-rebound-after-extreme-falls",
+    "039-01.g2_heavy-volume-fall-rebounds-more"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

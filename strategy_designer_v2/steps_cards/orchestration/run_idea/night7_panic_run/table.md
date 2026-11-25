@@ -1,0 +1,54 @@
+# Run table (run_idea)
+
+One row per idea run; every status is read from the step's own result file. Each step call: `journal.jsonl`; each helper's output: `logs/`.
+
+| Idea | Parent | Step 3 | Step 5 | Step 6 | Unseen dates | Step 7: ideas proposed | USD | Minutes |
+|---|---|---|---|---|---|---|---|---|
+| 032-01_monthly-low-break-cascade | - | plan | inconclusive (-1.97) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-01.b1_monthly-low-exhaustion-rebound; 7.g: 032-01.g1_monthly-low-exhaustion-rebound, 032-01.g2_monthly-low-closing-off-lows | 1.78 | 6.4 |
+| 033-01_rising-market-sharp-drop-rebound | - | plan | inconclusive (+1.11) | not profitable enough (failed: Calmar) | - | 7.b: 033-01.b1_rising-market-dip-rebound-more-coins; 7.g: 033-01.g1_calm-uptrend-dip-rebound | 1.00 | 5.0 |
+| 034-01_falling-market-rally-fade | - | plan | inconclusive (+0.05) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 034-01.b1_agitated-downtrend-rally-fade, 034-01.b2_next-day-agitated-rally-fade; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.21 | 5.7 |
+| 035-01_rising-market-quieting-swings-rise | - | plan | inconclusive (+0.61) | not profitable enough (failed: Calmar) | - | 7.b: 035-01.b1_quieting-swings-more-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.85 | 4.7 |
+| 036-01_scaled-rally-week-continuation | - | plan | inconclusive (-0.67) | not profitable enough (failed: Calmar) | - | 7.b: 036-01.b1_calm-market-rally-two-week-continuation; 7.g: 036-01.g1_scaled-two-week-rally-continues, 036-01.g2_scaled-weekly-rally-continues | 1.03 | 5.4 |
+| 038-01_rising-market-scaled-rally-continuation | - | plan | confirmed (+3.88) | not profitable enough (failed: Calmar) | - | 7.d: 038-01.d1_scaled-rally-near-20-day-high, 038-01.d2_rally-held-near-recent-high; 7.g: 038-01.g2_scaled-rally-continues-calm-uptrend, 038-01.g3_ten-day-scaled-rally-continues | 1.09 | 6.1 |
+| 039-01_scaled-fall-next-day-rebound | - | plan | confirmed (+2.63) | not profitable enough (failed: Calmar) | - | 7.d: 039-01.d1_scaled-fall-rebound-capped, 039-01.d2_scaled-fall-within-slide, 039-01.d3_agitated-scaled-fall-rebound; 7.g: 039-01.g1_convex-rebound-after-extreme-falls, 039-01.g2_heavy-volume-fall-rebounds-more | 1.30 | 6.6 |
+| 040-01_falling-calm-scaled-fall-continuation | - | plan | inconclusive (+1.93) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 040-01.b1_calm-downtrend-falls-more-coins; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.89 | 5.6 |
+| 037-01_falling-market-wide-day-decline | - | plan | inconclusive (-1.12) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. In a falling market, wide days are followed by no reliable decline at the planned 3 days or at 5, 7 or 10 days, and the decline does not grow with width (F1–F3). The only signs of one are period-bound (F4) or limited to down-closing days, which the brief itself says would refute the range explanation (F5). No coin or trend depth isolates it (F6).; 7.g: 037-01.g1_rising-market-wide-day-dip-rebound | 1.79 | 5.5 |
+| 041-01_wide-up-day-next-day-fade | - | plan | inconclusive (+1.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 041-01.b1_wide-up-day-fade-all-coins, 041-01.b2_wide-down-day-next-day-rebound; 7.g: 041-01.g1_wide-down-day-next-day-rebound, 041-01.g2_wide-low-close-day-rebound | 1.04 | 5.5 |
+| 042-01_low-close-next-day-rebound | - | plan | confirmed (+2.64) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 042-01.d1_wide-range-low-close-rebound, 042-01.d2_falling-market-low-close-rebound; 7.g: 042-01.g1_wide-day-low-close-rebound, 042-01.g2_falling-market-low-close-rebound | 1.31 | 6.7 |
+| 043-01_falling-market-narrow-day-rise | - | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.g: 043-01.g1_quiet-day-after-deep-slide | 0.62 | 4.0 |
+| 044-01_rising-market-wide-down-day-rebound | - | plan | inconclusive (+0.61) | not profitable enough (failed: Calmar) | - | 7.b: 044-01.b1_wide-down-day-shakeout-more-coins; 7.g: 044-01.g1_extreme-range-rising-market-shakeout | 0.94 | 5.0 |
+| 045-01_rising-market-late-week-gain | - | plan | confirmed (+3.01) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.60 | 4.8 |
+| 046-01_falling-market-scaled-rise-fade | - | plan | inconclusive (+1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 046-01.b1_falling-market-rise-fade-more-coins; 7.g: 046-01.g1_scaled-fall-next-day-rebound, 046-01.g2_falling-market-fall-rebound | 0.85 | 4.7 |
+| 032-02_monthly-low-exhaustion-rebound | - | plan | inconclusive (+1.97) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-02.b1_monthly-low-rebound-more-coins; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.89 | 5.9 |
+| 047-01_falling-agitated-scaled-fall-rebound | - | plan | inconclusive (+0.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 047-01.b1_scaled-fall-rebound-more-coins; 7.g: 0 ideas, 2 discoveries (3 explorations) | 1.05 | 5.7 |
+| 048-01_scaled-up-week-continuation | - | plan | confirmed (+3.03) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: Every pattern beyond the tested idea is under t 2 once the many angles looked at are counted: the down-week mirror is flat (F1), no profile concentrates the effect (F3), the calm-market asymmetry is not graded (F4), and the bar angles show nothing (F5). | 0.58 | 4.6 |
+| 049-01_choppy-scaled-five-day-rise-continuation | - | plan | inconclusive (-0.29) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 049-01.b1_choppy-scaled-fall-continuation; 7.g: 049-01.g1_rising-market-scaled-rise-continuation, 049-01.g2_rising-scaled-rise-five-day-carry | 0.96 | 4.8 |
+| 050-01_falling-calm-scaled-week-fall-continuation | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-01.b1_calm-downtrend-fall-continuation-more-coins; 7.g: no ideas: Every pattern seen is a weak, same-sign version of the tested continuation (slopes with t at most 1.99 among about 50 cells looked at), it changes sign between years, and the book's gain comes from a handful of crash days, so nothing stands out enough from chance to support a new idea. | 0.97 | 5.7 |
+| 035-02_rising-market-narrowing-ranges-rise | - | plan | inconclusive (-0.11) | not profitable enough (failed: Calmar) | - | 7.b: 035-02.b1_narrowing-ranges-weekly-rise, 035-02.b2_strong-uptrend-narrowing-ranges-rise; 7.g: 035-02.g1_calm-level-uptrend-continuation, 035-02.g2_low-volatility-rising-coins-continue | 1.77 | 5.5 |
+| 036-02_range-scaled-rally-continuation | - | plan | inconclusive (+1.43) | not profitable enough (failed: Calmar) | - | 7.b: 036-02.b1_scaled-rally-continuation-all-coins, 036-02.b2_rising-market-rally-continues-briefly; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.76 | 5.4 |
+| 051-01_falling-agitated-scaled-fall-next-day-rebound | - | plan | confirmed (+3.01) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.63 | 5.7 |
+| 052-01_down-day-low-close-rebound | - | plan | confirmed (+3.03) | not profitable enough (failed: Calmar) | - | 7.d: 052-01.d1_agitated-down-day-low-close-rebound, 052-01.d2_falling-agitated-low-close-rebound, 052-01.d3_steep-low-close-rebound-grading; 7.g: 052-01.g1_wide-down-day-drop-from-high, 052-01.g2_agitated-low-close-rebound | 1.23 | 5.6 |
+| 037-02_falling-market-range-jump-decline | - | plan | inconclusive (-0.40) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. Wide days in falling markets are followed by no decline at any horizon from 1 to 10 days (F1), with no gradient in the day's width (F2) and no coin, close direction, fall depth or prior-move condition that carries it (F4, F5). The only split that separates is by period, and there the later years rebound against the short (F3).; 7.g: 037-02.g1_rising-market-wide-day-continuation | 1.01 | 5.1 |
+| 038-02_rising-market-range-scaled-continuation | - | plan | confirmed (+2.70) | not profitable enough (failed: Calmar) | - | 7.d: 038-02.d1_scaled-rally-faded-exit, 038-02.d2_scaled-rally-near-highs; 7.g: 038-02.g1_falling-market-scaled-rally-fades | 1.23 | 5.8 |
+| 039-02_range-scaled-fall-rebound | - | plan | confirmed (+2.86) | not profitable enough (failed: Calmar) | - | 7.d: 039-02.d1_rising-swing-scaled-fall-rebound; 7.g: 039-02.g1_intraday-high-to-close-selloff-rebound, 039-02.g2_agitated-high-to-close-selloff-rebound | 1.09 | 5.6 |
+| 040-02_falling-calm-range-scaled-continuation | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 040-02.b1_calm-downtrend-falls-continue-all-coins; 7.g: 040-02.g1_calm-downtrend-falls-persist | 0.93 | 6.1 |
+| 041-02_wide-down-day-next-day-rebound | - | plan | confirmed (+5.83) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 041-02.g1_extreme-range-down-day-rebound, 041-02.g2_falling-market-wide-rally-fades, 041-02.g3_symmetric-wide-range-next-day-reversal, 041-02.g4_wide-swing-small-gain-up-fade | 0.80 | 5.6 |
+
+## Consumption
+29 ideas, 31.22 USD, 158.9 minutes in all.
+
+| Step | USD | Minutes |
+|---|---|---|
+| step3_plan | 5.49 | 14.7 |
+| step4_backtest | 0.00 | 53.8 |
+| step5_verdict | 4.94 | 18.4 |
+| step6_check | 0.00 | 1.0 |
+| chart_files | 0.00 | 0.4 |
+| step7_7.a | 0.00 | 0.0 |
+| step7_7.c | 0.00 | 0.0 |
+| step7_7.d | 3.12 | 10.0 |
+| step7_7.e | 0.00 | 0.0 |
+| step7_7.b | 5.37 | 16.9 |
+| step7_7.g | 12.29 | 39.0 |
+| similarity_check | 0.00 | 0.7 |
+| unseen_test | 0.00 | 3.8 |

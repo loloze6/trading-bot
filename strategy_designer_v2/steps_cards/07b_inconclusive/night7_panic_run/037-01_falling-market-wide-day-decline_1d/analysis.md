@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 037-01_falling-market-wide-day-decline_1d
+idea tested: 037-01_falling-market-wide-day-decline
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3462 USD
+---
+## Findings
+- **F1:** The test's own result points against the idea. Over all folds, the mean unusual 3-day move in the short direction is -0.52 % (t -1.12, 870 cases on 456 days). The wider-minus-narrower half difference is -0.24 %. In folds B and C alone the same measure is only +0.46 % (t 0.46, 317 cases on 129 days), so folds A and D must carry a clearly negative move.
+- **F2:** The decline does not grow with the width of the day. In folds B and C, width and the 3-day unusual move are uncorrelated (correlation -0.018). Over 3 days the four width quartiles (median ratio 2.09, 2.37, 2.76, 3.86) give +0.45 %, +0.76 %, -0.19 % and +1.67 % (sign-flipped for the first, all |t| under 1). Over 10 days the width terciles give 2.1 %, 0.6 % and 4.2 %. Both orders are uneven, and the main test's wider-minus-narrower half was negative.
+- **F3:** No other horizon makes the effect clear. The unusual move on non-overlapping cases is +0.46 % over 3 days (t 0.46), -0.02 % over 5 days (t -0.02), +0.50 % over 7 days (t 0.27) and +2.3 % over 10 days (t 0.99, 157 cases on 73 days). The 10-day strength is 0.14, but it cannot be told from 0.
+- **F4:** The 10-day move flips sign by period, so it follows the market's own phases rather than the wide day. It is positive in 2018 (+6.5 %, t 1.88) and 2019 (+5.8 %, t 3.27) and negative in 2020 (-10.1 %, t -5.0, only 5 days) and 2021 (-10.9 %, t -2.04). Windows w16 and w18 alone give -5.3 % (t -1.29) and -8.1 % (t -3.62) over 3 days.
+- **F5:** The little decline there is comes from down-closing days, the case the brief says would falsify a range effect. Over 10 days, wide days that close down are followed by +4.8 % (t 1.79, 105 cases) and those that close up by -2.7 % (t -0.71, 52 cases). Over 3 days the order reverses (down-close -0.11 %, up-close +1.43 %, both |t| under 1).
+- **F6:** No coin, depth of fall or agitation level holds the effect. Over 3 days every coin has |t| at most 1.11 (XMR -1.27 %, XRP 0.00 %, BTC +1.39 %). Over 10 days the 60-day-trend terciles give +0.3 %, +1.7 % and +5.0 %, with the shallowest fall strongest, against the theory, and every |t| under 1.4. Every case in folds B and C is in a calm market, so agitation cannot separate them.
+
+## Ideas
+- No ideas: The theme's effect is not in the data. In a falling market, wide days are followed by no reliable decline at the planned 3 days or at 5, 7 or 10 days, and the decline does not grow with width (F1–F3). The only signs of one are period-bound (F4) or limited to down-closing days, which the brief itself says would refute the range explanation (F5). No coin or trend depth isolates it (F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

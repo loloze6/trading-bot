@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move after cases, short direction",
+    "value": 0.0001474731121934536,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 0.04572305243083526
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope t <= -2); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of drift-adjusted 3-bar return on |post_pipeline_value| (t)",
+    "value": 0.0745232006247399,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 726,
+    "cases": 1572
+  },
+  "decided_by": "The main-measure t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The falling market is the 60-bar close change (in percent) below -10, recomputed from prices, falling back to the recorded regime ('unknown' = not vetoed) on a window's first 60 bars; an up day is a positive raw scaled return; the plan's 'fewer than 30 case days' is treated as a minimum count (not observable); the per-day t uses deviations from the mean summed per day (cluster standard error with D/(D-1)); the slope t is the ordinary OLS t."
+}

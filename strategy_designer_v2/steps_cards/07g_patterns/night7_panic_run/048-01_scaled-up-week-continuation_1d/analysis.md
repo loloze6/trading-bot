@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 048-01_scaled-up-week-continuation_1d
+idea tested: 048-01_scaled-up-week-continuation
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3641 USD
+---
+## Findings
+- **F1:** Over folds B and C, the continuation is only on the up side: on 3-day grid cases with an up week, the slope of the excess 3-day return on the 7-day scaled return is +0.0108 (day-clustered t 1.71, 1183 cases on 311 days), while after down weeks it is -0.0004 (t -0.04, 1175 cases on 301 days).
+- **F2:** The effect comes from the largest up weeks: weeks above +1.5 scaled units are followed by a +2.15 % excess 3-day return (t 1.98, 201 cases on 91 days, 0.23 of a usual move). Weeks from +0.25 to +1.5 give only +0.13 % and +0.59 % (t 0.22 and 0.84). No down-week bin reaches |t| 1.1 (-0.50 % with t -0.26 for weeks below -1.5).
+- **F3:** No market profile holds the effect. The up-week slope is +0.0193 (t 1.42) in agitated markets and +0.0066 (t 0.97) in calm ones. By trend it is +0.015 (t 0.75) falling, +0.007 (t 0.70) choppy and +0.010 (t 0.97) rising, so the brief's expected failure in falling markets is not seen.
+- **F4:** Calm up weeks have a +1.38 % mean excess 3-day return (t 2.04, 404 cases on 132 days), and calm down weeks have -1.24 % (t -1.73, 400 cases). But the slope inside each group is flat: +0.0066 (t 0.97) for calm up weeks and +0.0015 (t 0.13) for calm down weeks. Neither effect is graded, and neither stands out once the dozen angles looked at are counted.
+- **F5:** The other bar angles show nothing beyond chance. The 1-day scaled move, the volatility level, the day's range in swings, the close location and the weekday all give buckets with |t| at most 1.77, with no monotone pattern. Choppy down weeks have -2.58 % (t -1.88), but on only 101 cases.
+- **F6:** Across coins (slopes +0.0008 to +0.0153, t 0.20 to 1.84) and years (slopes -0.0002 to +0.0062, t at most 0.67) the slope points mostly the same way but is never sure. On the book's best and worst decile days, it moves about half as much as the coins: +3.30 % against +6.03 % on its best days, and -2.54 % against -5.49 % on its worst.
+
+## Ideas
+- No ideas: Every pattern beyond the tested idea is under t 2 once the many angles looked at are counted: the down-week mirror is flat (F1), no profile concentrates the effect (F3), the calm-market asymmetry is not graded (F4), and the bar angles show nothing (F5).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

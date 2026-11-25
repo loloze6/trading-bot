@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-bar forward return on forecast (rising-profile grid bars)",
+    "value": 0.001088084250336471,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 3.8834546185755308
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean unusual move > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move (strength) of long cases",
+    "value": 0.03589157924602184,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 1273,
+    "grid cases in rising profile": 2224,
+    "supporting check cases": 1414
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean unusual move of the forecast > 0 cases is above 0.",
+  "reading": "Rising profile read as regime not 'chop'; excess return uses the coin's mean 3-bar return on the non-overlapping grid of all its windows; supporting-check cases are the workflow's long bets (forecast rise >= 2 points from its lowest level since the last bet), one per 3-bar grid cell, strength = (return - drift) / the coin's 3-bar std; the plan's 'fewer than 100 is inconclusive' minimum is reported as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0004702 on the check folds against +0.001088 on every fold",
+    "main": 0.00047023539253867306,
+    "statistic": 1.2591371161028173,
+    "counts": {
+      "grid cases with forecast > 0": 568,
+      "grid cases in rising profile": 987,
+      "supporting check cases": 636
+    }
+  }
+}

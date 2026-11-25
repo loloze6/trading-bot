@@ -1,0 +1,52 @@
+{
+  "line": "7.b",
+  "backtest": "036-02_range-scaled-rally-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3295353,
+  "findings": {
+    "F1": "Step 5's main measure points the way the idea predicts but falls short of the bar. The slope of the next-7-day excess return on the forecast is +0.00071 with t 1.43, over 1278 positive-forecast cells on 338 days. The 7-day size is null: the unusual move is -0.15 % per case (t -0.33, 875 days, 1882 cases), -0.012 of a usual move.",
+    "F2": "Over a 3-day horizon the graded effect does show. On the non-overlapping 3-day grid of the up cells in folds B and C, the slope of the excess return on the range-scaled 3-day rise has t 2.22 (1139 cases, 307 days). The mean excess return is +0.53 % (day t 1.23).",
+    "F3": "By horizon, the slope's t on up cells falls from 1.93 (2 days) and 2.22 (3 days) to 1.36 (4 days), 0.82 (5 days) and -0.26 (7 days). The test's 7-day horizon is past where the continuation shows.",
+    "F4": "The 3-day continuation lives in rising markets, where the slope has t 3.83 and the mean excess is +1.32 % (day t 1.44, 310 cases, 103 days). In choppy markets the slope has t -0.28 (548 cases). In falling markets it reverses, with slope t -2.54 (281 cases).",
+    "F5": "In a rising, calm market the 3-day continuation is strongest: mean excess +3.00 %, day t 2.46, slope t 2.88, 128 cases on 54 days. Rising agitated has slope t 2.83 but a mean of only +0.25 % (76 cases).",
+    "F6": "The effect is mixed across periods. On the 3-day up cells the slope's t is -2.27 in 2018, +1.85 in 2019, +2.65 in 2020 and +2.01 in 2021. On the 7-day positive-forecast cells the mean excess is -4.88 % (t -3.14) in 2018 and +3.66 % (t 2.65) in 2020. The market's swing between years drowns the 7-day result.",
+    "F7": "Across coins the 7-day positive-forecast excess is positive on BTC, XMR and XRP (+1.5 %, +1.6 %, +2.9 %, t 1.0 to 1.2) and about zero or negative on ETH, LTC and ZEC. The test used only six of the 19 coins available."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "scaled rally continuation, all coins",
+      "from": "F1, F7",
+      "refs": [
+        "F1",
+        "F7"
+      ],
+      "idea": "A coin whose 3-day return is large against its usual daily range (the average of its daily high-to-low range over the past 30 days) keeps rising over the next 7 days, and the larger that range-scaled 3-day rise, the larger the further gain.",
+      "consequence": "A rally that is unusual against the coin's usual daily range draws late and forced buyers, so it continues over the following week.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": null
+    },
+    {
+      "idea": "In a rising market, a coin whose 3-day return is large against its usual daily range (the average of its daily high-to-low range over the past 30 days) keeps rising over the next 3 days, and the larger that range-scaled 3-day rise, the larger the further gain.",
+      "consequence": "A trader can ride an unusually large rally for a few days in a coin that has been rising for weeks, but should not hold it for a full week.",
+      "name": "rising-market rally continues briefly",
+      "from": "F2, F3, F4, F5, F6",
+      "profile": "rising",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "036-02.b1_scaled-rally-continuation-all-coins",
+    "036-02.b2_rising-market-rally-continues-briefly"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

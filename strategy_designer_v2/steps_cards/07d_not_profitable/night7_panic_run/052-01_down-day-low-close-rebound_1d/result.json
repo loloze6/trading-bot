@@ -1,0 +1,67 @@
+{
+  "line": "7.d",
+  "backtest": "052-01_down-day-low-close-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6152899,
+  "findings": {
+    "F1": "The book failed only on Calmar (0.49 against 0.75): its deepest fall is -33.0 %, and its losses cluster in the coin's own selloffs. On the 185 book-days more than 20 % under its peak, the coins' 20-day return averaged -19.7 %, and the book lost -0.26 % a day there, against +0.39 % a day when within 5 % of its peak (456 days).",
+    "F2": "The effect lives in agitated markets (30-day swing above the past year's median). Among agitated down days, the top tercile (close nearest the low) is followed by an unusual next-day move of +1.43 % (t 4.09, 321 cases). Among calm down days the top tercile gives -0.11 % (t -0.44, 406 cases), and the calm middle tercile gives +0.11 % (t 0.54).",
+    "F3": "Agitation alone does not earn and is not the effect. On all agitated bars the unusual next-day move is -0.09 % (t -0.64, 1965 bars). On agitated up days it is -0.71 % (t -4.13, 1003 bars). Against these, agitated down days closing nearest the low give +1.43 %. Agitation belongs to the idea's own theory: forced selling, from stops and margin calls, is what an agitated market produces, so more of the rebound is left owed.",
+    "F4": "In a simple book (cost 0.19 % per trade), trading only agitated down days cuts the deepest fall and lifts Calmar:",
+    "F5": "The strongest case is a falling, agitated market (60-day return below -10 %). Its top-tercile down days give an unusual move of +2.10 % (t 4.22, 181 cases), against +0.03 % (t 0.09, 239 cases) for falling calm ones. A book restricted to it has Calmar 1.34, deepest fall -12.6 % and Sharpe 1.02. The falling trend alone does not earn: all falling bars give -0.14 % (t -1.28), and falling up days give -0.58 % (t -3.55).",
+    "F6": "Agitated top-tercile cases beat calm ones in each of the four years: 2018 +0.94 % vs -0.39 %, 2019 +0.46 % vs +0.19 %, 2020 +3.15 % vs +1.20 %, 2021 +0.57 % vs -0.30 %. They also do so in five of six coins (LTC +2.26 % vs +0.01 %, ZEC the exception at -0.01 % vs +0.53 %).",
+    "F7": "The grading is steep at the top. Across all down days the unusual move is -0.07 % (t -0.47) in the bottom tercile, +0.35 % (t 2.34) in the middle and +0.53 % (t 3.61) in the top. Yet the book held a 0.41 allocation in the bottom tercile, where it earned 0.05 % a day. Squaring the size shrank the deepest fall from -42.4 % to -36.0 % at about the same Sharpe (0.73 vs 0.71).",
+    "F8": "Volatility targeting works against the effect. The top tercile earns more in high-volatility days (+0.88 %, t 3.05) than in low-volatility days (+0.27 %, t 1.10), but the book's allocation there was 0.52 against 1.01. A volatility-scaled agitated book drops to a mean of 0.013 % a day and Calmar 0.52.",
+    "F9": "Size against cost: the agitated top-tercile case moves +1.56 % over the next day, about 8 times the 0.19 % cost of a trade. The unrestricted idea's total move is +0.31 %, only 1.6 times that cost."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, after a down day, a coin rises over the next day, more so the nearer that day's close sits to its low, as a share of the day's high-low range.",
+      "consequence": "A trader buys low closes on down days only when the coin has been swinging more than usual, and stays out in calm markets, where the rebound is not owed and the book's falls come from.",
+      "name": "agitated down-day low-close rebound",
+      "from": "F1, F2, F3, F4, F6, F9",
+      "profile": "agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6",
+        "F9"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, after a down day, a coin rises over the next day, more so the nearer that day's close sits to its low, as a share of the day's high-low range.",
+      "consequence": "Forced selling into a falling, agitated coin leaves its largest rebound owed when the day closes at its low, so that is where the long pays most for its risk.",
+      "name": "falling agitated low-close rebound",
+      "from": "F2, F3, F5, F9",
+      "profile": "falling agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F5",
+        "F9"
+      ]
+    },
+    {
+      "idea": "After a down day, a coin rises over the next day, the rise growing more than in proportion as that day's close nears its low, as a share of the day's high-low range, so that closes at the very low carry most of the rebound.",
+      "consequence": "A trader weights low-close down days far more heavily than mid-range ones, and puts little at risk on down days that recovered toward their high.",
+      "name": "steep low-close rebound grading",
+      "from": "F4, F7, F8",
+      "refs": [
+        "F4",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "052-01.d1_agitated-down-day-low-close-rebound",
+    "052-01.d2_falling-agitated-low-close-rebound",
+    "052-01.d3_steep-low-close-rebound-grading"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

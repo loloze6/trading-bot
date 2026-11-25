@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "041-01_wide-up-day-next-day-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3472927,
+  "findings": {
+    "F1": "On the down side the brief also names, the effect is clear and graded at the widest ranges. After down-closing days in folds B and C, the next day's long-side unusual move rises from +0.12 % (t 0.43, 715 cases) in the narrowest range-in-swing quintile to +1.21 % (t 2.58, 234 days) in the widest. The top quintile beats the bottom by 1.09 %, and the slope on range is +0.0044 per swing unit, with a correlation of 0.087 over 3574 cases.",
+    "F2": "The widest-range down days rebound in every year and on every coin. By year they gain +0.55 % to +1.58 % (2018 to 2021, t 0.68 to 1.66). By coin they gain +0.84 % (BTC, t 1.89) to +1.61 % (XMR, t 3.17), with ETH at t 2.27. So the effect is not carried by one period or one coin.",
+    "F3": "On the tested up side, the move is on the predicted side but not graded. All up days fade by +0.28 % (t 1.76, 3668 cases, 894 days), against step 5's +0.15 % (t 1.69). By range quintile the move is a hump: \u22120.04 %, +0.37 %, +0.58 % (t 2.64), +0.13 %, +0.37 %. By forecast third it is also a hump: +0.14 %, +0.55 % (t 2.87), +0.14 %. This is why the supporting check failed (\u22120.07 %).",
+    "F4": "The up-side fade is mixed across periods and regimes. By year it goes from +1.07 % (2018, t 2.59) down to \u22120.16 % (2021, t \u22120.51). It is positive in falling (+0.58 %, t 1.77) and choppy (+0.61 %, t 1.88) 60-day trends, but reverses in rising ones (\u22120.36 %, t \u22121.27). Even outside rising markets it is not graded: by range tercile it is \u22120.10 %, +1.20 % (t 3.26), +0.67 %.",
+    "F5": "The up-side move per case is too small for the costs. Its total move of +0.12 % is 0.6 times the 0.19 % cost of a trade, so the book loses: Sharpe \u22120.59, \u221216 % a year. On the down side, the widest-range quintile moves about 1.2 % per case, several times that cost.",
+    "F6": "Within the largest down-day returns, a wider range still adds to the rebound. In the top tercile of down-day returns in swing units, the widest-range tercile gains +1.01 % (t 2.48, 878 cases), against +0.32 % (t 0.84) for the middle range tercile. So the range carries part of the effect beyond the size of the close-to-close return."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "wide up-day fade, all coins",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ],
+      "idea": "After an up-closing day, a coin falls over the next day, more so the wider that day's high-to-low range in units of its 30-day daily-return swing.",
+      "consequence": "A wide-range up day is an overshoot from urgent buying that is partly undone the next day, and a wider range means a larger give-back.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": null
+    },
+    {
+      "idea": "After a down-closing day, a coin rises over the next day, more so the wider that day's high-to-low range in units of its 30-day daily-return swing.",
+      "consequence": "A wide-range down day is an overshoot from urgent selling that is partly repaid the next day, and the wider the range, the larger the rebound a trader can buy.",
+      "name": "wide down-day next-day rebound",
+      "from": "F1, F2, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "041-01.b1_wide-up-day-fade-all-coins",
+    "041-01.b2_wide-down-day-next-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

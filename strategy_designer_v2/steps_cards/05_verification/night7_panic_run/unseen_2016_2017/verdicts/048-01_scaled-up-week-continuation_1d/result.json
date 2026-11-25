@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess next-3-bar return on forecast (forecast > 0 grid cases, pooled)",
+    "value": 0.0015661253090563346,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 1.7725371880215497
+    },
+    "threshold": "confirm: slope t >= 2 with mean excess return > 0; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return (long) on the same cases",
+    "value": 0.009356970592137076,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 561,
+    "distinct days": 233
+  },
+  "decided_by": "Slope t between -2 and 2: the plan's inconclusive rule.",
+  "reading": "The slope is from an OLS of excess return on forecast with an intercept, its t from a day-clustered (CR1) sandwich variance, the normal drift is each coin's mean non-overlapping 3-bar grid return over all its windows, and grid bars without a full 3-bar return inside their window are left out."
+}

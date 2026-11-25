@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-7-bar excess return on forecast (forecast > 0 grid cells)",
+    "value": 0.0007100983950068075,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4311084298142196
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess > 0 with t >= 2; reject: slope t <= -2 or mean-excess t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean next-7-bar excess return, same-day cases summed (t >= 2, > 0)",
+    "value": 0.019442792045463626,
+    "passed": false,
+    "t": 0.7731228574164826
+  },
+  "counts": {
+    "positive-forecast grid cells": 1278,
+    "days with cases": 338
+  },
+  "decided_by": "Neither the confirm nor the reject rule is met (slope t between -2 and 2, or positive slope with mean-excess t under 2).",
+  "reading": "Grid cells at positions 0,7,14,... of each window with a full 7-bar forward return; the coin's mean 7-bar return is over all its grid cells in all windows; the slope is a pooled OLS across coins on per-cell values (not day-summed), while the mean-excess t uses same-day sums; the 100-case minimum counts positive-forecast cells and, being a minimum count, gives 'not observable'."
+}

@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of drift-removed next-day return on forecast",
+    "value": 0.0006043167924151309,
+    "statistic": {
+      "name": "t, day-clustered SE",
+      "value": 2.6436970431185336
+    },
+    "threshold": "slope t >= 2 confirms (with top-minus-bottom > 0), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top minus bottom forecast quintile drift-removed next-day return",
+    "value": 0.004995611732616468,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with recorded forecasts": 2898,
+    "observations": 17380,
+    "top quintile observations": 3476,
+    "bottom quintile observations": 3476
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom quintile difference is above 0.",
+  "reading": "The situation is the standardised close location above (long) or below (short) its usual size of +10, rebuilt from last_history_value with a full 60-bar in-window history and otherwise read from post_pipeline_value; the horizon of 1 bar uses every bar; quintiles are pooled over all coins and windows by forecast rank; the 1000-day count is the distinct UTC days in the slope's sample; the slope has an intercept and cluster-robust (CR1) day-clustered errors.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001024 on the check folds against +0.0006043 on every fold",
+    "main": 0.00010236939146985939,
+    "statistic": 0.40544194567441366,
+    "counts": {
+      "distinct days with recorded forecasts": 1449,
+      "observations": 8691,
+      "top quintile observations": 1738,
+      "bottom quintile observations": 1739
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move per case, short direction",
+    "value": -0.0021901034590536346,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.40373921692070636
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 over >= 30 cases and slope < 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 3-bar excess return on raw range multiple (must be < 0)",
+    "value": 0.0030102273122796027,
+    "passed": false
+  },
+  "counts": {
+    "cases (non-overlapping 3-bar cells)": 500,
+    "days with cases": 293,
+    "cases in slope regression": 500
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (or could not be computed).",
+  "reading": "Situation = range ratio >= 1.5 (recorded range_mult, else recomputed from prices) in a falling market (60-bar close return < 0, or regime 'trending' where 60 bars are not available in the window), short side; a case is the first short bet (forecast falling >= 2 points below its lowest short level since the last bet) in each 3-bar grid cell of a window, its return taken from that bet bar's close over 3 bars inside the window, drift = per-coin mean of non-overlapping grid 3-bar returns over all windows, t clustered by UTC day, slope = OLS of raw (unsigned) excess return on range_mult at the case bar."
+}

@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "044-01_rising-market-wide-down-day-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3771636,
+  "findings": {
+    "F1": "In a rising market, down-closing days sorted by raw range in units of the 30-day standard deviation show the rebound only in the widest days, and it is not graded below them: the top sixth gained +4.34 % excess over 3 days (t 2.07, 74 cases, 34 days) and the fifth sixth +2.69 % (t 1.90, 72 cases), while the lowest three sixths ran from -1.02 % to +0.71 % (all |t| < 0.7); by quartile, the top one gained +3.93 % (t 2.12, 110 cases). The test averaged all down days at +0.21 % (t 0.61, 1813 cases).",
+    "F2": "The widest quarter of rising-market down days beat the rest of them in three of four years: 2019 +3.88 % against +0.76 %, 2020 +4.39 % against +0.20 %, 2021 +6.11 % against +1.28 % (each t 1.3 to 1.5). The exception is 2018, -2.63 % against -2.56 %, on 13 cases.",
+    "F3": "In a rising market, wide up-closing days are not followed by a rise: the widest quarter gained +0.34 % excess over 3 days (t 0.29, 136 cases), against +3.93 % for the widest quarter of down-closing days. This matches the brief's claim that only the down close carries the rebound.",
+    "F4": "In a rising market, the day after a Thursday or Friday close rises +0.94 % more than the coin's mean day (t 3.10, 1072 cases, 277 days), against -0.25 % after other weekdays (t -1.09). Outside rising markets the same days give +0.04 % (t 0.16). Over all markets the Thursday/Friday effect is positive on all six coins (+0.24 % to +0.75 %, t 1.26 to 2.87) and in all four years (+0.17 % to +0.68 %). It stands out among the roughly 60 groupings examined.",
+    "F5": "The book's gain sits in its tails: its best 1 % of coin-days carry 116 % of its total daily gain and its worst 1 % take back 87 % (8689 coin-days). That fits a rebound that lives only in rare very wide days."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, a day that closes down after a high-low range far beyond the coin's 30-day standard deviation of daily returns rises over the next 3 days, and the rise grows steeply with that range-to-swing ratio, so the widest such days carry almost all of it.",
+      "consequence": "In an uptrend, only an exceptionally wide down day is a shakeout worth buying for the next three days, and an ordinary red day is not.",
+      "name": "extreme-range rising-market shakeout",
+      "from": "F1, F2, F3, F5",
+      "profile": "rising",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a rising market, a coin's return on the day after a Thursday or Friday close is larger the stronger its 60-day rise.",
+      "consequence": "In an uptrend, a trader holding into the late-week next day expects a gain above the coin's usual day, and more so the steeper the trend.",
+      "name": "late-week uptrend next-day rise",
+      "from": "F4",
+      "profile": "rising",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "044-01.g1_extreme-range-rising-market-shakeout"
+  ],
+  "discovery_ids": [
+    "044-01.g2_late-week-uptrend-next-day-rise"
+  ],
+  "no_ideas": null
+}

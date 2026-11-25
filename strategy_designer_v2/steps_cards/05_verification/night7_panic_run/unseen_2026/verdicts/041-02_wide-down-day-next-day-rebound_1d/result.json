@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of next-day excess return on the range_swing forecast",
+    "value": 0.20364274131546917,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.20364274131546917
+    },
+    "threshold": "confirm if slope t >= +2 (with mean excess > 0); reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return over the cases",
+    "value": -0.00037055261906832824,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1002
+  },
+  "decided_by": "The slope's t lies between -2 and +2, which the plan calls inconclusive.",
+  "reading": "The first bar of each window has no recorded prior close, so its down close is read from the recorded regime; the coin's mean daily return is the mean of all its within-window 1-bar close-to-close returns over all windows; every forecast>0 bar with a next close in the same window is a case, pooled across coins in one OLS of next-day excess return on post_pipeline_value, slope t = slope / its standard error; fewer than 300 cases gives 'not observable' as the workflow requires for unmet minimum counts."
+}

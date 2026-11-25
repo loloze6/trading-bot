@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "034-01_falling-market-rally-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39737449999999996,
+  "findings": {
+    "F1": "The tested effect is not in folds B and C. In a falling market (60-day return below -10 %), the slope of the next 3-day return on the day's rise in 30-day swing units is -0.80 % per unit with a day-clustered t of -1.14 (673 cases, 160 days). The tested book's 1434 shorts lost a mean of 2.11 % each after fees, and 9 of the 12 windows had a negative mean daily return.",
+    "F2": "Large up days are followed by further rises, not by a fade. Over the next 5 days, the slope of the return on the day's scaled rise is +1.13 % per unit (t 2.06, 1422 cases, 256 days). Days above 2 swings are followed by +6.41 % above the coin's normal drift (t 2.05, 38 cases on 26 days), which is about 34 times the 0.19 % cost of a trade.",
+    "F3": "The 3-day rise in swing units also predicts a 5-day rise of +1.32 % per unit (t 2.26, 1422 cases, 256 days). The slope points the same way in every trend: rising +2.26 % (t 2.38), choppy +3.75 % (t 2.01), falling +1.61 % (t 1.46). At the 3-day horizon it is also positive in all three trends (t 0.46 to 1.15).",
+    "F4": "The day's high-low range in swing units predicts the next 3 days with opposite signs by trend. In falling markets the slope is -1.58 % per unit (t -2.19, 673 cases, 160 days). In rising markets it is +1.52 % per unit (t 2.41, 531 cases, 137 days).",
+    "F5": "Several angles showed nothing that holds once days are clustered. Weekday next-day returns averaged over coins have all |t| below 1.7. The close's place in the day's range shows no gradient (quintile t between -0.8 and 1.2). With about 40 slopes and buckets examined, F2 to F4 are only at the edge of chance (best t 2.4), and they need the unseen folds A and D to stand."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's rise over its last 3 days, measured in units of its 30-day daily swing, is followed by a further rise over the next 5 days, and the larger that scaled rise the larger the gain that follows.",
+      "consequence": "A sharp multi-day rally is a reason to be long the coin for the following week, not to fade it, whatever its trend.",
+      "name": "scaled rally continues five days",
+      "from": "F2, F3, F1",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a falling market, a coin's wide day is followed by a decline over the next 3 days, and the wider that day's high-low range in units of the coin's 30-day daily swing, the larger the decline.",
+      "consequence": "In a downtrend, an unusually wide day, whichever way it closes, is a reason to be short for the next few days.",
+      "name": "wide days fall in downtrends",
+      "from": "F4",
+      "profile": "falling",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "034-01.g1_scaled-rally-continues-five-days",
+    "034-01.g2_wide-days-fall-in-downtrends"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-day return of bet cases (coin return minus coin's mean 3-day return)",
+    "value": 0.0021227980640825214,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 0.6093790086922458
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 over >= 100 cases and slope check passes; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 3-day return on range_std post_pipeline_value (positive, t >= 1)",
+    "value": 0.001482909860478279,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1813,
+    "days": 863
+  },
+  "decided_by": "The main t lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "The situation is checked as a close below the prior close within the window on long bars (the rising profile is applied by code not recorded, so it is not recomputed, and each window's first bar, having no prior close, is left out); a case is the first bet (forecast rise >= 2 points from its lowest level since the last bet, reset at 0 after a flat) in each 3-bar grid cell from each window's first row; the coin's mean 3-day return is over the same non-overlapping grid pooled across all its windows; the day-clustered t uses the sum of deviations per signal day with a G/(G-1) correction."
+}

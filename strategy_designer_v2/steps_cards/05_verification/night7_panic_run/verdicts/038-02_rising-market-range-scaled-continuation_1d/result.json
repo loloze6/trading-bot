@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 3-bar forward return on forecast (in-profile grid bars)",
+    "value": 0.0011266521290254623,
+    "statistic": {
+      "name": "OLS t, standard errors clustered by day",
+      "value": 2.6977609938848026
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2 (t clustered by day)"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return on grid bars with forecast > 0 is above 0",
+    "value": 0.0047369352928383806,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 1273,
+    "in-profile grid bars": 2224,
+    "days of grid bars with forecast > 0": 487
+  },
+  "decided_by": "The slope is positive with t >= 2, the mean excess return on forecast > 0 bars is above 0, with at least 100 such bars.",
+  "reading": "In-profile bars are grid bars where the scaled_rise raw value is recorded, the regression has an intercept with CR1 day-clustered errors, the coin's mean 3-bar return is taken over all grid bars of all its windows, and the supporting check needs only a mean above 0 (no t), as written.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0004698 on the check folds against +0.001127 on every fold",
+    "main": 0.00046980633560510834,
+    "statistic": 0.9185978300218719,
+    "counts": {
+      "grid bars with forecast > 0": 568,
+      "in-profile grid bars": 987,
+      "days of grid bars with forecast > 0": 247
+    }
+  }
+}

@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 040-01_falling-calm-scaled-fall-continuation_1d
+idea tested: 040-01_falling-calm-scaled-fall-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4427 USD
+---
+## Findings
+- **F1:** Over the next day, a coin moves against the direction of a day whose high-low range is wide for its 30-day swing; the widest-range quintile is followed by a signed drift-removed move of -0.82 % (day-clustered t -3.03, 1,390 cases on 532 days), against -0.07 % to -0.28 % in the other quintiles. The slope of the next day's move on the signed range is negative in 11 of 12 windows (t -3.41 in w10). The 0.82 % is 4.3 times the 0.19 % cost of a trade.
+- **F2:** The wide-day reversal lives outside the falling calm profile; the slope of the next day's move on the signed scaled range is -0.29 % per unit (t -3.14, 5,287 bars, 1,146 days) outside it, against -0.09 % (t -0.88, 1,664 bars) inside it.
+- **F3:** Where the day closes inside its range grades the next day's drift-removed return. A close in the lowest fifth of the range is followed by +0.52 % (t 1.94, 503 days) and a close in the highest fifth by -0.38 % (t -1.76, 523 days). The slope of the next day's return on close location is negative in all 12 windows (w10: -3.14 %, t -3.11).
+- **F4:** A large one-day fall, scaled by the 30-day swing, rebounds the next day. The lowest decile of scaled daily returns is followed by +1.01 % (t 2.33, 696 cases, 224 days), and among down days the slope is -1.05 % per unit outside the falling calm profile (t -2.39) against -0.29 % inside it (t -0.66).
+- **F5:** On folds B and C, falling calm 3-day falls continued on average (drift-removed 3-day return -2.02 %, t -2.82, 319 cases, 139 days), but the continuation is not graded. The slope on the scaled fall is +0.12 % (t 0.17), and the second-most-negative quintile (-3.04 %, t -4.78) fell more than the most negative one (-1.54 %, t -2.23). This repeats step 5's failed supporting check, so no graded on-theme idea is supported.
+- **F6:** Weekday effects do not stand out against the number of angles examined. Saturday's mean coin return was +0.59 % (t 2.29, 206 days) and Friday's +0.52 % (t 1.72).
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `040-01.g1_wide-days-reverse-next-day` (from F1, F2): Over the next day, a coin moves against the direction of a day whose high-low range is wide relative to its 30-day daily-return swing, and the wider that scaled range, the larger the move back.
+- `040-01.g2_close-location-predicts-next-day` (from F3, F4): The lower within its day's high-low range a coin closes, the more it rises over the next day relative to its normal drift, and the higher it closes, the more it lags.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 3-bar unusual move in the short direction (return minus normal drift, sign flipped)",
+    "value": -0.021986674474359785,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": -1.9727731542019742
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 3-bar return on post_pipeline_value, t >= 1 and positive",
+    "value": 0.2189784472029568,
+    "passed": false
+  },
+  "counts": {
+    "cases": 163,
+    "distinct days": 86
+  },
+  "decided_by": "Inconclusive: the day-pooled t of the unusual move lies between -2 and 2.",
+  "reading": "The profile part of the situation is read from the recorded regime ('trending' is only reachable past the falling/agitated vetoes, whose components are not recorded), the break from break_depth's last_history_value < 0 (recomputed from the window's prior 30 closes where missing); a case is the first short bet (forecast rising in size on the short side by at least 2 points) in each 3-bar grid cell of a window, measured from that bet bar's close over 3 bars; the coin's normal drift is the mean of its non-overlapping 3-bar returns on the same grid over all its windows; the supporting slope is an OLS of the raw 3-bar return on post_pipeline_value with its ordinary t; the plan's 30 cases on 30 distinct days are treated as minimum counts (not observable if unmet)."
+}

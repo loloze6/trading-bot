@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Welch t of excess 3-day return, top third minus bottom third of forecast",
+    "value": -0.0005517358419913515,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.10871161306380299
+    },
+    "threshold": "confirm t >= 2 with top-third mean excess > 0; reject t <= -2; at least 100 grid cases per third"
+  },
+  "supporting_check": {
+    "name": "top-third mean excess 3-day return > 0",
+    "value": -4.8259943531980655e-05,
+    "passed": false
+  },
+  "counts": {
+    "grid cases": 2224,
+    "top-third cases": 741,
+    "bottom-third cases": 741
+  },
+  "decided_by": "Welch t is between -2 and +2.",
+  "reading": "The rising-market profile is read from the recorded regime (the detector's decision, 'unknown' = not vetoed to chop), the situation also needs a recorded positive range ratio, the side is long; the coin's mean 3-day return uses the non-overlapping grid of all its bars in all windows; thirds are the lowest and highest floor(n/3) cases of the forecast pooled over all coins and windows (ties broken by record order); fewer than 100 cases in a third is reported as not observable."
+}
