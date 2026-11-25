@@ -1,0 +1,50 @@
+{
+  "line": "7.g",
+  "backtest": "054-02.b1_reclaim-rebound-all-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6592555,
+  "findings": {
+    "F1": "In falling markets (60-day return below \u221210 %), the reclaim of a pierced 30-day low is graded against the tested idea: the higher the close sits above that low within the day's range, the worse the next 5 days. Over 71 non-overlapping cases on 41 days, Spearman between reclaim and the 5-day excess return is \u22120.28 (p 0.017). The day-clustered slope is \u22121.91 usual moves per unit of reclaim (t \u22121.97). By reclaim tercile, the mean excess 5-day return runs from +2.5 % (low) to +0.7 % to \u22125.3 % (high, median \u22124.8 %). This matches step 5's failed supporting check (Spearman \u22120.108).",
+    "F2": "The strongest reclaims (above the median) fall in every window they occur in: the mean is negative in 6 of 7 windows (w7, w12 to w16) and the seventh is +0.06 %. They also fall in every year: \u22125.9 % in 2018, \u22123.0 % in 2019, \u22127.9 % in 2020, \u22123.6 % in 2021. The effect is larger in calm falling bars (top tercile \u22127.0 %, 17 cases) than in agitated ones (\u22121.2 %, 7 cases).",
+    "F3": "The tested event itself is no edge, even inside a falling market. Pierce-and-reclaim days there have a +4.3 % excess over 5 days (t 1.46, 30 grid cases). The book's per-trade figures (84 trades, mean net +6.3 %, 81 % winners) rest on 0.0084 trades a day, and the idea's unusual move of +1.76 % has a t of 0.95. The cost is not what fails: the unusual move is 7.9 times the 0.22 % cost. The forecast sizes up the strong reclaims, which F1 shows do worst.",
+    "F4": "In calm markets (30-day swing at or below its 90-day level), a coin's 5-day return, scaled by its usual 5-day move, predicts the next 5 days in the same direction. The day-clustered slope is +0.375 usual moves per unit (t 3.23, 623 cases, 139 days). By quintile of the past 5-day move, the excess 5-day return rises steadily: \u22123.0 %, \u22121.9 %, +1.4 %, +1.5 %, +4.6 %.",
+    "F5": "In agitated markets the same past-5-day continuation is absent (slope +0.108, t 0.82, 100 days). It is strongest in choppy calm markets (slope +0.83, t 2.97, 50 days) and still present in falling calm ones (+0.32, t 2.22, 88 days). In calm bars, the 5-day excess taken in the direction of the past 5-day move is positive in 11 of 12 windows (w8 \u22120.1 %) and in all four years (+0.9 % to +3.4 %).",
+    "F6": "Other angles showed nothing beyond known or held effects, given how many angles were looked at:"
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, when a coin's day trades below its lowest price of the past 30 days and closes back above it, the coin falls over the next 5 days, and the fall is larger the higher the close sits above that low, measured against the day's range.",
+      "consequence": "A strong-looking reclaim of a monthly low in a downtrend is a reason to refuse the long, or to lean short, over the following week rather than buy the apparent rejection.",
+      "name": "strong reclaim fails falling",
+      "from": "F1, F2, F3",
+      "profile": "falling",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a calm market, a coin keeps moving over the next 5 days in the direction of its last 5-day return, and the further that 5-day return is from zero, measured against the coin's usual 5-day move, the larger the move that follows.",
+      "consequence": "When a coin's swings are quieter than usual, a trader can follow its last week's move for the next week, sized by how unusual that move was, and should not do so in agitated markets.",
+      "name": "calm market weekly continuation",
+      "from": "F4, F5",
+      "profile": "calm",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "054-02.b1.g1_strong-reclaim-fails-falling"
+  ],
+  "discovery_ids": [
+    "054-02.b1.g2_calm-market-weekly-continuation"
+  ],
+  "no_ideas": null
+}
