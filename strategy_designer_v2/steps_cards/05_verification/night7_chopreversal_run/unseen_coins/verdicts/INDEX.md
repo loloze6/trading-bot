@@ -2,3 +2,6 @@
 039-02.d1_wide-range-low-close-next-day-rebound_1d: inconclusive (fit: exact) [main: 0.000948874; t of the mean (cases of one day summed) 1.46412; position days 6622, distinct days 1624]
 043-01_falling-agitated-intraday-drop-rebound_1d: inconclusive (fit: exact) [main: 0.000549116; day-clustered t of the slope 1.49088; cases 1406, distinct days 445]
 044-01_agitated-wide-range-fall-rebound_1d: confirmed (fit: adapted) [main: 0.000702986; t clustered by day 2.8495; cases with forecast > 0 3444, distinct days 1096]
+044-02_agitated-down-day-range-rebound_1d: inconclusive (fit: exact) [main: 0.00416997; t, cases of one day together 1.95193; cases 3444, distinct days 1096]
+045-01_agitated-wide-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000519669; slope t, day-clustered 2.34348; cases 6799, distinct days 1644]
+047-01_falling-agitated-daily-fall-rebound_1d: inconclusive (fit: adapted) [main: 0.000452843; slope t, SE clustered by day 1.00924; down-day cases 1404, distinct days 444]

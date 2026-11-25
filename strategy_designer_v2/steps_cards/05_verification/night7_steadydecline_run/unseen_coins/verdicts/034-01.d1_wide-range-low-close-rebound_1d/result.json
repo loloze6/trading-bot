@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (agitated, forecast > 0)",
+    "value": 0.0005168109941919127,
+    "statistic": {
+      "name": "OLS t, errors clustered by day",
+      "value": 2.3783962900651763
+    },
+    "threshold": "positive with t >= 2 (and top-quintile mean > 0) confirms; negative with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return of top-quintile forecasts (agitated bars)",
+    "value": 0.004299289095518402,
+    "passed": true
+  },
+  "counts": {
+    "agitated bars with forecast > 0": 6799,
+    "distinct days": 1644,
+    "top-quintile agitated bars": 1370
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-quintile mean excess return is above 0.",
+  "reading": "The agitated regime is read from the recorded `regime` (mean_reversion), since the detector's 365-day volatility rank cannot be rebuilt inside 120-bar windows; the situation is that regime with the raw low-close range reading above 0 on the long side; the next-day return (every bar, horizon 1) minus the coin's mean 1-day return over all its windows is regressed with OLS on the forecast with day-clustered errors (CR1 small-sample correction); the top quintile is the pooled agitated bars (all coins, forecast 0 included) with forecast at or above the pooled 80th percentile; the minimum counts are agitated bars with forecast > 0 and a next-day return, and the distinct days they fall on.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003235 on the check folds against +0.0005168 on every fold",
+    "main": 0.0003234896082306018,
+    "statistic": 1.38620501635583,
+    "counts": {
+      "agitated bars with forecast > 0": 6010,
+      "distinct days": 1175,
+      "top-quintile agitated bars": 1211
+    }
+  }
+}
