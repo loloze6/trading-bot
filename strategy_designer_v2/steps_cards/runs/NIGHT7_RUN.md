@@ -81,5 +81,11 @@ The control branches are read in place, not merged.
   register's pages identical to the hand repair, the catalogue right where the hand repair was wrong. It will merge
   night 7.
 
+- **01:40 Paris watch:** no fault on the 8 branches (every plan has the profile gate exactly when its idea names a
+  profile); all 8 sessions committed within the last 20 minutes. The designer's container restarted at about 01:32
+  Paris: nothing lost (tree clean, last commit in place). New code, about 75 minutes in: 54 ideas tested, 20 confirmed,
+  5 profitable enough, 53 USD; 31 discoveries made into briefs (panic alone 13). Control, about 45 minutes in: 25 tested,
+  1 confirmed, 3 profitable enough, 26 USD.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
