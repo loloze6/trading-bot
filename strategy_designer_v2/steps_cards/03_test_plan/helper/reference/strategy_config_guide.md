@@ -28,6 +28,8 @@ On every completed candle, for one symbol, the engine does this:
    outside the strategy config: it rejects a rebalance whose
    size `abs(target - actual allocation)` is below `min_allocation_change` (default 0.2, that is 2 forecast points).
    There is no upper limit. The key `strategies.min_allocation_change` overrides the minimum for this strategy.
+   A move to flat (the target allocation 0) is never rejected, whatever its size: the book is flat when its forecast
+   is 0 (topic 51, 2026-11-25).
 6. **The holding period.** The key `strategies.min_holding_bars` (an integer >= 1), the idea's horizon in bars: each
    bet is held for that many bars. A bet is a rise of the forecast on its own side of at least `min_allocation_change`
    (2 forecast points by default), from its lowest level since its last bet; its size is that rise's share of the

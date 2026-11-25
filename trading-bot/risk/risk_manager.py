@@ -25,7 +25,7 @@ class RiskManager:
     def __init__(self, controls_cfg: dict):
         self.controls = controls_cfg
 
-    def approve_allocation_change(self, symbol, change, data, signal_change=None):
+    def approve_allocation_change(self, symbol, change, data, signal_change=None, target=None):
         """signal_change (D-176): with a strategies.sizing block the caller
         passes the change in the UNSIZED signal allocation (forecast / 10)
         since the position was last set. The min_allocation_change band then
@@ -41,13 +41,24 @@ class RiskManager:
         signal_change leaves the sized change judged alone (a de-risking sized
         move is not refused because of it). None (the default; every caller
         without a sizing block) leaves every control's input exactly `change`
-        and every debug entry exactly as before D-176."""
+        and every debug entry exactly as before D-176.
+
+        target (topic 51, 2026-11-25): the target allocation of the order. A
+        move to flat (target exactly 0.0, a position to close) is never refused
+        by the min_allocation_change band: the strategy asks for no position,
+        so a remainder under the band is closed, not left open until the next
+        bet (passed_on "flat" with a sizing block). The band still filters every change between two
+        non-zero allocations. None (the default) leaves everything as before."""
         time = data['timestamp'].iloc[-1]
         debug = {"symbol": symbol, "time": time, "controls": {}}
 
         for name, params in self.controls.items():
             method = getattr(self, f"_ctrl_{name}", None)
             if not method:
+                continue
+            if name == "min_allocation_change" and target is not None and target == 0.0 and change != 0.0:
+                # the debug entry keeps the shape of its mode (passed_on only with a sizing block, as D-176)
+                debug["controls"][name] = {"passed": True, **({"passed_on": "flat"} if signal_change is not None else {})}
                 continue
             if name == "min_allocation_change" and signal_change is not None:
                 passed, passed_on = self._min_allocation_change_signal_or_sized(

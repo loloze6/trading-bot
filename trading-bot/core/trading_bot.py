@@ -625,12 +625,14 @@ class TradingBot:
                         self.logger.error(f"   ✗ RISK FLATTEN execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 
             elif abs(allocation_change) != 0.0:
-                # Check if rebalance is ok from risk management perspective
+                # Check if rebalance is ok from risk management perspective; a move to flat is never refused by
+                # the band (topic 51, 2026-11-25: the target is passed)
                 if band_signal_change is None:
-                    approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(symbol, allocation_change, data)
+                    approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(
+                        symbol, allocation_change, data, target=target_allocation)
                 else:
                     approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(
-                        symbol, allocation_change, data, signal_change=band_signal_change)
+                        symbol, allocation_change, data, signal_change=band_signal_change, target=target_allocation)
 
                 if approved_rebalance:
                     self.logger.debug(
