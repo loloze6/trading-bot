@@ -17,21 +17,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation | plan | confirmed (+2.75) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned, 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean; 7.g: 032-01.b1.b1.e2.d1.d1.g1_agitated-large-fall-next-day-bounce | 1.40 | 6.6 |
 | 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation | plan | confirmed (+3.56) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift; 7.g: 032-01.b1.b1.e2.d1.d2.g1_scaled-daily-fall-rebounds, 032-01.b1.b1.e2.d1.d2.g2_close-at-low-next-day-bounce, 032-01.b1.b1.e2.d1.d2.g3_monthly-drift-persists-in-chop, 032-01.b1.b1.e2.d1.d2.g4_trending-market-weekly-fall-reverses | 1.06 | 5.8 |
 | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation | plan | confirmed (+3.90) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d3.d1_short-continuation-ends-with-chop, 032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop, 032-01.b1.b1.e2.d1.d3.d3_month-strength-graded-chop-continuation; 7.g: 032-01.b1.b1.e2.d1.d3.g1_volatile-down-day-next-day-rebound, 032-01.b1.b1.e2.d1.d3.g2_calm-volatility-weekly-continuation | 1.32 | 6.4 |
+| 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift | 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop | plan | confirmed (+2.52) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d2.d1.d1_chop-continuation-exit-on-loss, 032-01.b1.b1.e2.d1.d2.d1.d2_chop-continuation-graded-drift, 032-01.b1.b1.e2.d1.d2.d1.d3_calm-chop-drift-continuation; 7.g: 032-01.b1.b1.e2.d1.d2.d1.g1_chop-drift-scaled-continuation | 1.09 | 6.1 |
 
 ## Consumption
-13 ideas, 15.81 USD, 79.6 minutes in all.
+14 ideas, 16.90 USD, 85.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.98 | 7.8 |
-| step4_backtest | 0.00 | 25.0 |
-| step5_verdict | 2.24 | 8.4 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 2.06 | 8.3 |
+| step4_backtest | 0.00 | 26.9 |
+| step5_verdict | 2.40 | 9.0 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 3.12 | 10.0 |
+| step7_7.d | 3.52 | 11.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.38 | 1.4 |
-| step7_7.g | 5.50 | 17.4 |
+| step7_7.g | 5.94 | 18.9 |
 | step7_7.b | 2.59 | 8.5 |
-| similarity_check | 0.00 | 0.4 |
+| similarity_check | 0.00 | 0.5 |

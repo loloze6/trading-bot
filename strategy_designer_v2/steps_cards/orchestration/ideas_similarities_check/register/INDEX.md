@@ -184,6 +184,7 @@ An idea's latest record counts once.
 | 031-01.g1.g2_monthly-trend-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | cf258ce23 | 2026-11-24T01:50:50 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 19f1eb4c6 | 2026-11-24T01:30:32 |
 | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:44:17 |
+| 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d | confirmed | night7c_chopreversal_run | 1d | 6 | 2cc6aeb12 | 2026-11-25T00:58:57 |
 | 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:49:19 |
 | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d | confirmed | night7c_chopreversal_run | 1d | 6 | ce173ed84 | 2026-11-25T00:53:49 |
 | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:27:27 |

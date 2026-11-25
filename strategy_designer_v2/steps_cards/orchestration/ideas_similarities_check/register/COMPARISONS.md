@@ -231,6 +231,7 @@
 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d | night_006_run | 1d | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d (1d) | 0.46 | same period | -0.0324 % (-1.69) | 0.50 |
 | 031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d | night6_longreversal_run | 1d | 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d (1d) | 0.46 | same period | -0.0146 % (-0.43) | 0.00 |
 | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
+| 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d | volume_run | 1d | 031-01.b1.e2_wide-day-in-strong-run_1d (1d) | 0.47 | same period | -0.0313 % (-2.50) | 0.17 |
