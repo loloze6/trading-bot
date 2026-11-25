@@ -1,1 +1,2 @@
 033-03.b2_rising-market-range-top-continuation_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1d, windows unseen_2026]
+034-02_rising-break-swings-continues_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3; ADAUSD 3/3; DOGEUSD 3/3; LINKUSD 3/3; TRXUSD 3/3; UNIUSD 3/3; AAVEUSD 3/3; AVAXUSD 3/3; SOLUSD 3/3; INJUSD 3/3; NEARUSD 3/3; SUIUSD 3/3; TAOUSD 3/3; ONDOUSD 3/3 [1d, windows unseen_2026]
