@@ -1,0 +1,22 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 038-02_rising-market-range-scaled-continuation_1d
+idea tested: 038-02_rising-market-range-scaled-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5726 USD
+---
+## Findings
+- **F1:** The book keeps positions after the scaled rise has faded, and those positions carry its falls. Held bars whose forecast is below the held median (≈3, a quarter of them at 0, kept only by the 3-bar minimum hold) earn +0.008 % per bar (1772 bars, 5th percentile -1.5 %). The other held bars earn +0.36 % (1772 bars). Flattening the book on the bar after a held bar with a weak forecast raises Calmar from 0.85 to 1.33 and lifts the deepest fall from -29.4 % to -19.2 %, while the yearly return holds (25.0 % to 25.6 %). Flattening it after any zero forecast gives Calmar 1.24 and a deepest fall of -20.4 % (folds B, C).
+- **F2:** The effect is graded and lives in its strong part. On the in-profile 3-bar grid, the excess 3-day return by forecast quartile, among signal bars, is -1.48 % (t -2.13, n 182), +0.01 %, +0.95 % and +3.09 % (t 3.63, n 182). Held gain per bar by forecast group is +0.008 %, +0.19 % and +0.53 %. So the weakest signals lose and add risk without gain.
+- **F3:** The continuation holds only when the coin is close to its 20-day high, and closeness alone does not earn it.
+- **F4:** Agitation is not the cause of the falls. Being out when the 10-day/60-day swing ratio is in its top quarter lowers Calmar to 0.67, and its top half to 0.30. In-profile signal bars with high swing earn +1.84 % excess (t 2.18, n 179) against +0.30 % (n 136) for high swing without a signal. The effect is strongest, not weakest, in agitated stretches.
+- **F5:** The book's losses concentrate in 2018. Its held bars average -0.13 % per bar that year (480 bars), against +0.18 % to +0.28 % in 2019 to 2021. Weak-forecast holdings lose -0.34 % in sum in 2018, and their sum stays negative in 2020 as well (-0.12).
+
+## Ideas
+- `038-02.d1_scaled-rally-faded-exit` (from F1, F2, F5): In a rising market, a coin keeps rising over the next 3 days, more so the larger its 3-day return measured in units of its average daily high-low range over the last 30 days, and the lift ends as soon as its latest 3-day scaled return has shrunk back toward zero, so the days after a faded rise carry no more gain.
+- `038-02.d2_scaled-rally-near-highs` (from F3, F2, F1): In a rising market, a coin keeps rising over the next 3 days, more so the larger its 3-day return measured in units of its average daily high-low range over the last 30 days and the closer its close stands to its highest close of the last 20 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

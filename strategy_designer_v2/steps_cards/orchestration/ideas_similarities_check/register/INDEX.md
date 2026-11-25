@@ -184,6 +184,7 @@ An idea's latest record counts once.
 | 031-01.g1.g2_monthly-trend-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | cf258ce23 | 2026-11-24T01:50:50 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 19f1eb4c6 | 2026-11-24T01:30:32 |
 | 038-01_rising-market-scaled-rally-continuation_1d | confirmed | night7_panic_run | 1d | 6 | c41d8660a | 2026-11-24T23:48:41 |
+| 038-02_rising-market-range-scaled-continuation_1d | confirmed | night7_panic_run | 1d | 6 | e6815a7e2 | 2026-11-25T05:12:15 |
 | 039-01_scaled-fall-next-day-rebound_1d | confirmed | night7_panic_run | 1d | 6 | 69ab00876 | 2026-11-25T00:02:17 |
 | 042-01_low-close-next-day-rebound_1d | confirmed | night7_panic_run | 1d | 6 | c2a8107b2 | 2026-11-25T00:25:19 |
 | 045-01_rising-market-late-week-gain_1d | paying | night7_panic_run | 1d | 6 | d7616f698 | 2026-11-25T00:39:13 |

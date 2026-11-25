@@ -9,6 +9,7 @@
 037-01_falling-market-wide-day-decline_1d: 1 ideas, 1 discoveries (2 explorations)
 037-02_falling-market-range-jump-decline_1d: 1 ideas, 2 discoveries (2 explorations)
 038-01_rising-market-scaled-rally-continuation_1d: 2 ideas, 2 discoveries (2 explorations)
+038-02_rising-market-range-scaled-continuation_1d: 1 ideas (2 explorations)
 039-01_scaled-fall-next-day-rebound_1d: 2 ideas (2 explorations)
 040-01_falling-calm-scaled-fall-continuation_1d: 0 ideas, 2 discoveries (2 explorations)
 041-01_wide-up-day-next-day-fade_1d: 2 ideas (2 explorations)

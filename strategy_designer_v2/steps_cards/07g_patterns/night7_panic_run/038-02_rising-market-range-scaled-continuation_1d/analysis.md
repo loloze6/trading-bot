@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 038-02_rising-market-range-scaled-continuation_1d
+idea tested: 038-02_rising-market-range-scaled-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4226 USD
+---
+## Findings
+- **F1:** In a falling market, the larger a coin's 1-day rise measured in units of its 30-day mean daily high-low range, the lower its next 3-day return against its normal drift: on the non-overlapping 3-day grid of folds B and C, the slope is -0.0416 per unit, with t -3.00 clustered by day (350 cases on 103 days). The mean unusual move after these rises is -0.79 %.
+- **F2:** Outside rising markets, the top fifth of scaled 1-day rises is followed by a mean 3-day unusual move of -2.67 % (t -2.71 with each day's cases taken together, 73 days). It is negative in 2018 (-3.98 %, 68 cases), 2019 (-3.48 %, 40) and 2020 (-3.69 %, 41), and positive in 2021 (+2.78 %, 30).
+- **F3:** The tested continuation is weak once each day's cases are taken together. In rising markets, the slope of the 3-day unusual move on the positive scaled 3-day rise is +0.0181, with t 1.95 clustered by day (310 cases, 103 days). The top fifth of scaled 3-day rises earns +2.51 %, with t 1.57 over 49 days, although the naive per-case t is 3.18.
+- **F4:** Outside rising markets, the same scaled 3-day rise turns against the coin. Its day-clustered slope is -0.0086 in choppy markets (t -1.18, 108 cases) and -0.0171 in falling markets (t -1.80, 281 cases). Over all non-rising markets together, the per-case slope is -0.0146 (t -3.22, 562 cases).
+- **F5:** In the trades, the lowest quarter of entry forecasts earned +3.62 % net per trade, against +2.62 % for the highest quarter. However, the low-forecast trades were held 7.9 days on average against 3.8 days, so the stronger signals did not earn more per trade.
+- **F6:** Other angles showed nothing that stands out once each day's cases are taken together. A calming of swings (10-day against 30-day volatility) has a slope of +0.0075 (t 0.46, 1422 cases, 256 days). Saturday has the best weekday mean coin return, +0.58 % (t 2.26 over 206 days), but this is one of seven weekdays tested.
+
+## Ideas
+- `038-02.g1_falling-market-scaled-rally-fades` (from F1, F2, F4): In a falling market, a coin's one-day rise, measured in units of its average daily high-low range over the last 30 days, is followed by a fall over the next 3 days, and the larger that scaled rise, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
