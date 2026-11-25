@@ -76,18 +76,24 @@ def choose(books, cells):
     return weights, {k: boxes[k] for k in chosen}, crowd, log
 
 
-def coin_returns(r):
-    b = bx.coin_days(STEPS / "04_backtest" / r["run"] / "backtests" / r["id"])
+def coin_returns(r, records=""):
+    """A book's return and position per coin and day: its in-sample record, or with records="unseen_coins" its
+    unseen-coins record (None when it has none)."""
+    b = bx.coin_days(STEPS / "04_backtest" / r["run"] / records / "backtests" / r["id"])
+    if b is None:
+        return None
     b["ret"] = b.groupby(["coin", "window"]).value.pct_change()
     return b.set_index(["day", "coin"])[["ret", "position"]]
 
 
-def portfolio(weights, rows):
+def portfolio(weights, rows, records=""):
     """Rule 6: coin by coin, the weighted sum of the books' returns; then the mean over the coins of that day. Also how
     often, coin-day by coin-day, the weighted positions add up to more than one full position."""
     ret, pos = [], []
     for k, w in weights.items():
-        cr = coin_returns(rows[k])
+        cr = coin_returns(rows[k], records)
+        if cr is None:
+            continue
         cr = cr[~cr.index.duplicated()]
         ret.append(cr.ret.rename(k) * w); pos.append(cr.position.abs().rename(k) * w)
     R = pd.concat(ret, axis=1); P = pd.concat(pos, axis=1)
