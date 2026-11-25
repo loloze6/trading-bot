@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 058-01_rising-calm-dip-rebound_1d
+idea tested: 058-01_rising-calm-dip-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3600 USD
+---
+## Findings
+- **F1:** In rising calm markets the deeper 3-day dips are followed by smaller 5-day moves, not larger ones, which is the opposite of the idea. On the non-overlapping 5-day grid of folds B and C, the slope of the 5-day excess return on dip depth is -0.032, with a same-day-clustered t of -1.66 (121 cases, 61 days). This matches step 5's slope t of 0.0004 and its mean excess of -0.07 %, which sit on neither side of the bar.
+- **F2:** The gradient is backwards across the depth quartiles of rising calm dips. The shallowest quarter (depth 0.19 usual swings) is followed by a +3.3 % excess move over 5 days. The deepest quarter (depth 1.75 swings) is followed by -3.4 % (about 30 cases each).
+- **F3:** No other horizon shows a rebound in rising calm. The slope t is -0.32 at 1 day, -0.39 at 2 days, -1.55 at 3 days, -2.04 at 5 days unclustered and -1.07 at 10 days.
+- **F4:** The negative slope in rising calm comes from one year and is not a stable opposite effect. The clustered t is -2.36 in 2019 (31 cases, 13 days), against 0.02 in 2018, -0.83 in 2020 and +0.45 in 2021. The correlation of depth with the 5-day move by coin runs from -0.43 (ETH) to +0.05 (ZEC).
+- **F5:** The brief's comparison profiles do not hold a clear rebound either. In rising agitated markets the slope is +0.018 at 5 days (clustered t 0.52, 61 cases) and +0.062 at 10 days (t 1.66). Their mean excess is -3.5 % over 5 days, so these dips lose against the coin's drift as well.
+- **F6:** Outside rising calm, deeper dips tend to continue down, the reverse of the theme's effect, but not cleanly enough to build on. In falling markets the slope is -0.021 at 5 days (clustered t -2.06) and -0.038 at 10 days (t -2.96). This comes mostly from 2018 (t -2.69), while 2019 to 2021 have positive slopes (t +0.94, +1.72, +0.47). The depth quartiles are not monotone (+4.5 % in the third, -5.5 % in the fourth).
+- **F7:** The book's small profit is the coin's drift rather than the dip. The total move per case is +0.98 %, of which +0.62 % is normal drift. The unusual move is +0.36 % with t 0.54 over 307 days, a strength of 0.033. The book's Sharpe beats holding by only 0.007.
+
+## Ideas
+- No ideas: The theme's effect is not in the data. In rising calm markets deeper few-day dips are followed by smaller moves, not larger recoveries (F1, F2), at every horizon from 1 to 10 days (F3). The opposite sign also shifts from year to year (F4), and no other profile shows a clear graded rebound that would justify narrowing the idea (F5, F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
