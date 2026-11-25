@@ -10,20 +10,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 035-01_rising-market-quieting-swings-rise | - | plan | inconclusive (+0.61) | not profitable enough (failed: Calmar) | - | 7.b: 035-01.b1_quieting-swings-more-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.85 | 4.7 |
 | 036-01_scaled-rally-week-continuation | - | plan | inconclusive (-0.67) | not profitable enough (failed: Calmar) | - | 7.b: 036-01.b1_calm-market-rally-two-week-continuation; 7.g: 036-01.g1_scaled-two-week-rally-continues, 036-01.g2_scaled-weekly-rally-continues | 1.03 | 5.4 |
 | 037-01_falling-market-wide-day-decline | - | missing-components | - | - | - | - | 0.06 | 0.3 |
+| 038-01_rising-market-scaled-rally-continuation | - | plan | confirmed (+3.88) | not profitable enough (failed: Calmar) | - | 7.d: 038-01.d1_scaled-rally-near-20-day-high, 038-01.d2_rally-held-near-recent-high; 7.g: 038-01.g2_scaled-rally-continues-calm-uptrend, 038-01.g3_ten-day-scaled-rally-continues | 1.09 | 6.1 |
 
 ## Consumption
-6 ideas, 5.94 USD, 27.4 minutes in all.
+7 ideas, 7.03 USD, 33.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.23 | 2.9 |
-| step4_backtest | 0.00 | 9.5 |
-| step5_verdict | 0.88 | 3.3 |
+| step3_plan | 1.30 | 3.2 |
+| step4_backtest | 0.00 | 11.2 |
+| step5_verdict | 1.06 | 4.0 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.00 | 0.0 |
+| step7_7.d | 0.40 | 1.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.69 | 5.2 |
-| step7_7.g | 2.14 | 6.3 |
+| step7_7.g | 2.59 | 7.9 |
+| similarity_check | 0.00 | 0.2 |

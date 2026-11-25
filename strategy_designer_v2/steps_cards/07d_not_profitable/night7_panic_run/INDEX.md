@@ -3,3 +3,4 @@
 034-01_falling-market-rally-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 035-01_rising-market-quieting-swings-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 036-01_scaled-rally-week-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+038-01_rising-market-scaled-rally-continuation_1d: 2 ideas (2 explorations)
