@@ -24,7 +24,7 @@ now) compares a paying book with every other one: its nearest relative, how much
 what is left. The `components`
 step answers the measures step 3 lacked (exists, built, cannot build); `loop` calls it and its builds unblock ideas. Read first: `steps_cards/HOW_WE_DESIGN_A_CARD.md`, then the
 card of the step or function at hand, then `steps_cards/common/` (shared definitions). Improvements, open and decided,
-are topic cards in `steps_cards/topics/` (`INDEX.md` lists them; a decision is recorded there with its reason).
+are topic cards in `steps_cards/topics/` (`NEXT_STEPS.md` lists them with the plan; a decision is recorded in the card with its reason).
 
 ## Commands
 ```

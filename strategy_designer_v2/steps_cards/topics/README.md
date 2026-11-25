@@ -1,11 +1,11 @@
 # Topics: one card per improvement, open or decided
 
 Every improvement noted while designing, running and trading (research, engine, live, hosting, viewer) is one topic
-card here, in one shape (`TEMPLATE.md`), with its decisions and their reasons. `INDEX.md` is the one list of topics.
+card here, in one shape (`TEMPLATE.md`), with its decisions and their reasons. `NEXT_STEPS.md` is the one list: the plan's steps and every topic (sections E and F).
 Run briefs, one per run, are in `../runs/`; the cards of the steps and functions are in their own folders.
 
-- **A topic is noted:** a card `NN_short-name.md` (the next number) with what was seen and why it matters, and a line
-  in `INDEX.md`. Nothing is built: it waits for the operator's go (CLAUDE.md, "Build only what was asked").
+- **A topic is noted:** a card `NN_short-name.md` (the next number) with what was seen and why it matters, and a row
+  in `NEXT_STEPS.md` (a step of the plan, or section E). Nothing is built: it waits for the operator's go (CLAUDE.md, "Build only what was asked").
 - **A topic is opened:** the operator says go. If it becomes a step or a function, its card is designed by
   `../HOW_WE_DESIGN_A_CARD.md`, starting from the topic's question and decisions; the topic's status says "designing"
   and names that card. The topic card keeps the why (the decisions and their reasons); the step's card holds the how.

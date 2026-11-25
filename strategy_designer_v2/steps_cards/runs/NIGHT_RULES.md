@@ -8,7 +8,11 @@ budget) and what changed since the last night; everything else is here.
 1. The night's run file written: purpose, expected outcomes, sessions, budgets (set in each session's first message,
    never changed during the night).
 2. Each session starts from the working branch, on its own branch `night<n>-<name>`.
-3. **Brief numbers (3e):** the operator's rule, still to decide. Until then the morning merge reports a number used
+3. **A watched pilot before the night when a step changed since the last night** (the operator, 2026-11-25, after night
+   7 lost most of its turns to a ranking rule nobody had run in a loop): the changed chain runs once on one theme, a
+   small budget (about 15 USD), during the day, with pass criteria written before it starts (`PILOT_CHAIN_RUN.md` is
+   the first); the night starts only when every criterion passes, or a failure is fixed and its part rerun.
+4. **Brief numbers (3e):** the operator's rule, still to decide. Until then the morning merge reports a number used
    twice (`night_merge`) and the reading names both briefs by their full file name.
 
 ## During the night (each session)
