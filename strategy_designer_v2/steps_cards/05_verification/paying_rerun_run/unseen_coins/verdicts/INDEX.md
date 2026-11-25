@@ -1,1 +1,2 @@
 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d: inconclusive (fit: exact) [main: 0.00273402; OLS slope t 3.95104; cases 1907, cases with forecast > 0 890, cases with positive 60-day return 484, cases with non-positive 60-day return 451]
+005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: inconclusive (fit: adapted) [main: 0.0141321; t of the mean 3.58227; qualifying cases across all coins and windows 888]
