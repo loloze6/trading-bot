@@ -13,22 +13,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-03.e2.b1_choppy-distance-continuation-more-coins | 058-03.e2_choppy-market-distance-continuation | plan | inconclusive (+0.97) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 058-03.e2.b1.b1_choppy-distance-continuation-recent-swings; 7.g: 0 ideas, 2 discoveries (3 explorations) | 1.30 | 11.2 |
 | 059-01_swing-scaled-rise-continues | - | plan | inconclusive (+2.08) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 059-01.b1_calm-swing-scaled-move-continues; 7.g: 059-01.g1_calm-swing-scaled-move-continues, 059-01.g2_calmer-scaled-move-carries-further | 1.06 | 5.4 |
 | 059-01.b1_calm-swing-scaled-move-continues | 059-01_swing-scaled-rise-continues | plan | inconclusive (+1.41) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 059-01.b1.b1_calm-scaled-move-more-coins; 7.g: 059-01.b1.g1_choppy-calm-scaled-continuation, 059-01.b1.g2_calm-week-move-continues | 0.98 | 5.9 |
+| 060-01_falling-agitated-high-close-fade | - | plan | confirmed (-2.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 060-01.d1_wide-day-high-close-next-day-fade; 7.g: 060-01.g1_wide-day-high-close-fade | 1.06 | 6.3 |
 
 ## Consumption
-9 ideas, 9.05 USD, 60.2 minutes in all.
+10 ideas, 10.10 USD, 66.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.59 | 3.3 |
-| step4_backtest | 0.00 | 28.9 |
-| step5_verdict | 1.27 | 4.3 |
+| step3_plan | 0.67 | 3.7 |
+| step4_backtest | 0.00 | 31.4 |
+| step5_verdict | 1.43 | 4.9 |
 | step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 0.70 | 1.9 |
+| step7_7.d | 1.09 | 3.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.46 | 1.2 |
 | step7_7.b | 1.87 | 6.0 |
-| step7_7.g | 4.14 | 12.9 |
-| similarity_check | 0.00 | 0.1 |
+| step7_7.g | 4.57 | 14.4 |
+| similarity_check | 0.00 | 0.2 |
 | unseen_test | 0.00 | 1.1 |

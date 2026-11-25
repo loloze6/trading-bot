@@ -6,3 +6,4 @@
 058-03_calm-rise-stretch-continuation_1d: 0 ideas, 2 discoveries (3 explorations)
 059-01.b1_calm-swing-scaled-move-continues_1d: 2 ideas, 1 discoveries (2 explorations)
 059-01_swing-scaled-rise-continues_1d: 2 ideas, 1 discoveries (2 explorations)
+060-01_falling-agitated-high-close-fade_1d: 1 ideas (2 explorations)

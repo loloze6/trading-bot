@@ -6,3 +6,4 @@
 058-03_calm-rise-stretch-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 059-01.b1_calm-swing-scaled-move-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01_swing-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+060-01_falling-agitated-high-close-fade_1d: 1 ideas (2 explorations)
