@@ -28,15 +28,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 044-02_agitated-down-day-range-rebound | - | plan | confirmed (+3.21) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-02.g1_agitated-wide-fall-run-rebound | 0.74 | 7.3 |
 | 045-01_agitated-wide-low-close-rebound | - | plan | confirmed (+3.83) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 045-01.g1_falling-agitated-low-close-rebound, 045-01.g2_agitated-high-close-next-day-fade | 0.63 | 6.2 |
 | 046-01_calm-scaled-rise-second-day-continues | - | plan | inconclusive (+1.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 046-01.b1_calm-rise-second-day-all-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 4.18 | 19.0 |
+| 047-01_falling-agitated-daily-fall-rebound | - | plan | confirmed (+2.77) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 047-01.g1_agitated-wide-up-day-next-day-fade, 047-01.g2_agitated-wide-down-day-rebound | 0.78 | 6.4 |
 
 ## Consumption
-24 ideas, 25.80 USD, 151.7 minutes in all.
+25 ideas, 26.58 USD, 158.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.35 | 10.8 |
-| step4_backtest | 0.00 | 57.2 |
-| step5_verdict | 3.78 | 13.9 |
+| step3_plan | 3.42 | 11.2 |
+| step4_backtest | 0.00 | 59.7 |
+| step5_verdict | 3.94 | 14.4 |
 | step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.d | 2.35 | 7.6 |
@@ -44,6 +45,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 6.85 | 24.8 |
-| step7_7.g | 9.48 | 30.0 |
-| similarity_check | 0.00 | 0.7 |
-| unseen_test | 0.00 | 5.5 |
+| step7_7.g | 10.02 | 31.6 |
+| similarity_check | 0.00 | 0.8 |
+| unseen_test | 0.00 | 6.7 |

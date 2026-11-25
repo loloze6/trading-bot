@@ -3,3 +3,4 @@
 043-01_falling-agitated-intraday-drop-rebound_1d: inconclusive (fit: exact) [main: -0.000334037; day-clustered t of the slope -0.395956; cases 217, distinct days 91]
 044-02_agitated-down-day-range-rebound_1d: inconclusive (fit: exact) [main: 0.00108866; t, cases of one day together 0.215132; cases 406, distinct days 178]
 045-01_agitated-wide-low-close-rebound_1d: inconclusive (fit: exact) [main: 0.000126803; slope t, day-clustered 0.259521; cases 747, distinct days 254]
+047-01_falling-agitated-daily-fall-rebound_1d: inconclusive (fit: adapted) [main: 0.000173941; slope t, SE clustered by day 0.132615; down-day cases 216, distinct days 91]

@@ -3,3 +3,4 @@
 043-01_falling-agitated-intraday-drop-rebound_1d: not observable (fit: exact) [main: 0.00124819; day-clustered t of the slope 1.01988; cases 20, distinct days 20]
 044-02_agitated-down-day-range-rebound_1d: inconclusive (fit: exact) [main: 0.00114121; t, cases of one day together 0.21448; cases 452, distinct days 276]
 045-01_agitated-wide-low-close-rebound_1d: inconclusive (fit: exact) [main: -0.000170571; slope t, day-clustered -0.347074; cases 953, distinct days 459]
+047-01_falling-agitated-daily-fall-rebound_1d: not observable (fit: adapted) [main: 0.00179144; slope t, SE clustered by day 0.737809; down-day cases 19, distinct days 19]

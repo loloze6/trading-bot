@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast, bars with forecast > 0",
+    "value": 0.001070504048032134,
+    "statistic": {
+      "name": "slope t, SE clustered by day",
+      "value": 2.7673625335045404
+    },
+    "threshold": "slope t (clustered by day) >= 2 and weighted mean > 0 confirms; t <= -2 rejects; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-day excess return > 0",
+    "value": 0.012068880649277202,
+    "passed": true
+  },
+  "counts": {
+    "down-day cases": 1468,
+    "distinct days": 702
+  },
+  "decided_by": "The slope's t is 2 or more and the forecast-weighted mean excess return is above 0.",
+  "reading": "Profile bars are read from the recorded regime (not 'chop'), the raw one-day return from last_history_value (else recomputed from closes); the clustered standard error uses the usual small-sample factor G/(G-1)*(N-1)/(N-K) with an intercept in the regression; the plan's minimum counts (100 cases, 50 distinct days) are applied as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0006748 on the check folds against +0.001071 on every fold",
+    "main": 0.0006748311665845896,
+    "statistic": 1.7026820591058003,
+    "counts": {
+      "down-day cases": 793,
+      "distinct days": 413
+    }
+  }
+}
