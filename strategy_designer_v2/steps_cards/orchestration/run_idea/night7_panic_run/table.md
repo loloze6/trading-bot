@@ -32,15 +32,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 038-02_rising-market-range-scaled-continuation | - | plan | confirmed (+2.70) | not profitable enough (failed: Calmar) | - | 7.d: 038-02.d1_scaled-rally-faded-exit, 038-02.d2_scaled-rally-near-highs; 7.g: 038-02.g1_falling-market-scaled-rally-fades | 1.23 | 5.8 |
 | 039-02_range-scaled-fall-rebound | - | plan | confirmed (+2.86) | not profitable enough (failed: Calmar) | - | 7.d: 039-02.d1_rising-swing-scaled-fall-rebound; 7.g: 039-02.g1_intraday-high-to-close-selloff-rebound, 039-02.g2_agitated-high-to-close-selloff-rebound | 1.09 | 5.6 |
 | 040-02_falling-calm-range-scaled-continuation | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 040-02.b1_calm-downtrend-falls-continue-all-coins; 7.g: 040-02.g1_calm-downtrend-falls-persist | 0.93 | 6.1 |
+| 041-02_wide-down-day-next-day-rebound | - | plan | confirmed (+5.83) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 041-02.g1_extreme-range-down-day-rebound, 041-02.g2_falling-market-wide-rally-fades, 041-02.g3_symmetric-wide-range-next-day-reversal, 041-02.g4_wide-swing-small-gain-up-fade | 0.80 | 5.6 |
 
 ## Consumption
-28 ideas, 30.42 USD, 153.3 minutes in all.
+29 ideas, 31.22 USD, 158.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.42 | 14.3 |
-| step4_backtest | 0.00 | 52.0 |
-| step5_verdict | 4.80 | 17.9 |
+| step3_plan | 5.49 | 14.7 |
+| step4_backtest | 0.00 | 53.8 |
+| step5_verdict | 4.94 | 18.4 |
 | step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
@@ -48,6 +49,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.d | 3.12 | 10.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 5.37 | 16.9 |
-| step7_7.g | 11.71 | 37.3 |
+| step7_7.g | 12.29 | 39.0 |
 | similarity_check | 0.00 | 0.7 |
-| unseen_test | 0.00 | 2.8 |
+| unseen_test | 0.00 | 3.8 |

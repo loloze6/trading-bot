@@ -49,6 +49,7 @@
 | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d | night6_yearlow_run | 1d | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d (1d) | 0.85 | same period | +0.0045 % (0.78) | 0.10 |
 | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d | night6_yearlow_run | 1d | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d (1d) | 0.85 | same period | +0.0037 % (0.72) | 0.08 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | night6_yearlow_run | 1d | 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d (1d) | 0.81 | same period | +0.0003 % (0.07) | 0.03 |
+| 041-02_wide-down-day-next-day-rebound_1d | night7_panic_run | 1d | 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.g1_heavy-volume-selloff-next-day-rebound_1d (1d) | 0.82 | same period | +0.0007 % (0.06) | 0.46 |
 | 045-01_rising-market-late-week-gain_1d | night7_panic_run | 1d | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d (1d) | 0.66 | same period | +0.0010 % (0.12) | 0.08 |
 | 048-01_scaled-up-week-continuation_1d | night7_panic_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.82 | same period | +0.0148 % (1.27) | 0.39 |
 | 051-01_falling-agitated-scaled-fall-next-day-rebound_1d | night7_panic_run | 1d | 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d (1d) | 0.35 | same period | +0.0138 % (1.74) | 0.12 |
