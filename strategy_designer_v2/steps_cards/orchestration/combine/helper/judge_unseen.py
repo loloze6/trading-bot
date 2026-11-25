@@ -25,13 +25,15 @@ COINS = "unseen_coins"
 def book_alone(r):
     """The book's own unseen-coins result (orchestration/unseen_test/<run>/<id>.json)."""
     f = cb.STEPS / "orchestration" / "unseen_test" / r["run"] / f"{r['id']}.json"
-    e = (json.loads(f.read_text()) if f.exists() else {}).get("periods", {}).get(COINS)
+    d = json.loads(f.read_text()) if f.exists() else {}
+    e = d.get("periods", {}).get(COINS)
     if e is None:
         return {"holds": "no record"}
     if not e.get("coins_asked"):
         return {"holds": "none (the plan tested every coin of the data)"}
     return {"holds": {True: "holds", False: "does not hold", None: "no data"}[e["holds"]], "coins": len(e.get("coins") or []),
-            "years": e.get("years"), "main": e.get("main"), "in_sample_main": e.get("in_sample_main"),
+            "years": e.get("years"), "main": e.get("main"), "in_sample_main": (d.get("in_sample") or {}).get("main"),
+            "coin_windows": e.get("coin_windows"), "holding_sharpe": e.get("holding_sharpe"),
             "sharpe": e.get("sharpe"), "step5": e.get("step5"), "step6": e.get("step6")}
 
 
