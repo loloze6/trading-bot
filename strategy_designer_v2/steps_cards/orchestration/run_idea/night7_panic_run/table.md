@@ -18,22 +18,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 043-01_falling-market-narrow-day-rise | - | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.g: 043-01.g1_quiet-day-after-deep-slide | 0.62 | 4.0 |
 | 044-01_rising-market-wide-down-day-rebound | - | plan | inconclusive (+0.61) | not profitable enough (failed: Calmar) | - | 7.b: 044-01.b1_wide-down-day-shakeout-more-coins; 7.g: 044-01.g1_extreme-range-rising-market-shakeout | 0.94 | 5.0 |
 | 045-01_rising-market-late-week-gain | - | plan | confirmed (+3.01) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.60 | 4.8 |
+| 046-01_falling-market-scaled-rise-fade | - | plan | inconclusive (+1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 046-01.b1_falling-market-rise-fade-more-coins; 7.g: 046-01.g1_scaled-fall-next-day-rebound, 046-01.g2_falling-market-fall-rebound | 0.85 | 4.7 |
 
 ## Consumption
-14 ideas, 15.46 USD, 77.0 minutes in all.
+15 ideas, 16.32 USD, 81.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.80 | 7.8 |
-| step4_backtest | 0.00 | 25.1 |
-| step5_verdict | 2.42 | 9.2 |
+| step3_plan | 2.87 | 8.2 |
+| step4_backtest | 0.00 | 26.7 |
+| step5_verdict | 2.58 | 9.8 |
 | step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.53 | 5.3 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 2.90 | 9.0 |
-| step7_7.g | 5.81 | 18.6 |
+| step7_7.b | 3.10 | 9.7 |
+| step7_7.g | 6.22 | 19.9 |
 | similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 0.9 |
