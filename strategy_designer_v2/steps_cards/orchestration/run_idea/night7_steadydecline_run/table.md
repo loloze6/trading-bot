@@ -19,13 +19,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 036-02_fall-vs-range-next-day-rebound | - | missing-components | - | - | - | - | 0.06 | 0.4 |
 | 037-02_fall-range-beyond-loss-rebound | - | missing-components | - | - | - | - | 0.11 | 0.8 |
 | 038-02_agitated-fall-vs-swing-rebound | - | plan | confirmed (+4.80) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 038-02.g1_agitated-outsized-fall-rebounds, 038-02.g2_agitated-fall-three-day-rebound | 0.66 | 6.0 |
+| 039-02_agitated-range-fall-low-close-rebound | - | missing-components | - | - | - | - | 0.13 | 0.7 |
 
 ## Consumption
-15 ideas, 12.71 USD, 73.1 minutes in all.
+16 ideas, 12.84 USD, 73.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.00 | 7.3 |
+| step3_plan | 2.14 | 8.0 |
 | step4_backtest | 0.00 | 26.1 |
 | step5_verdict | 2.00 | 7.4 |
 | step6_check | 0.00 | 0.5 |
