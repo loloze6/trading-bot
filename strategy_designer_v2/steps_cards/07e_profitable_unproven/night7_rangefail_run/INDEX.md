@@ -19,3 +19,4 @@
 035-02_break-swings-above-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 035-03_far-below-high-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 036-01_swing-scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+037-01_choppy-swing-scaled-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

@@ -1,0 +1,50 @@
+{
+  "line": "7.g",
+  "backtest": "037-01_choppy-swing-scaled-fall-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4158394,
+  "findings": {
+    "F1": "In calm markets (the coin's 30-day swing at or below its own median), the next 5 days follow the 5-day move measured in 20-day swings, in steps across the quintiles: \u22123.71 % (t \u22122.77, 157 cases, 63 days) after the largest falls, \u22121.19 %, \u22120.08 %, +0.98 %, and +4.40 % (t 1.87, 207 cases, 69 days) after the largest rises. In agitated markets every quintile is flat (\u22120.94 % to +0.48 %, all |t| < 0.5).",
+    "F2": "The calm-market continuation points the same way in every year shown: the mean of z5 \u00d7 unusual move is positive in 2018 (t 1.51), 2019 (t 0.36), 2020 (t 1.84) and 2021 (t 2.12). The same 20-day measure in calm markets also steps from \u22123.33 % (t \u22122.25) to +4.92 % (t 1.88).",
+    "F3": "In choppy markets, a coin's 20-day fall in its own swings continues, and the continuation grows with the fall. Over 5 days the bottom two quintiles return \u22127.58 % (t \u22122.22, 52 cases, 34 days) and \u22122.58 % (t \u22122.25). Over 10 days they return \u221210.20 % (t \u22122.37, 30 cases) and \u22126.87 % (t \u22122.77, 35 cases). Over 3 days the bottom quintile returns \u22123.44 % (t \u22122.26).",
+    "F4": "Inside the tested book's own short cases in choppy markets, folds B and C show the effect in steps. The most negative forecast tercile is followed by \u22127.77 % over 5 days (t \u22122.40, 30 days), the middle tercile by \u22123.22 % (t \u22121.45) and the mildest by \u22121.25 % (t \u22120.94). This is far more than the 0.22 % cost per trade, so the inconclusive verdict over all folds (t 0.94) comes from the folds hidden here.",
+    "F5": "The choppy 20-day continuation is not steady across years. Its slope term is near zero in 2018 (0.0028, t 0.14) and 2019 (0.0029, t 0.53) and carries the effect only in 2020 (\u22120.0287, t \u22120.98) and 2021 (\u22120.1321, t \u22121.91). The choppy evidence rests on few days and on part of the period.",
+    "F6": "Other angles showed nothing that clearly beats chance across this many looks:"
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the more of its own 20-day daily swings a coin's 5-day move spans, the further the coin keeps moving the same way over the next 5 days.",
+      "consequence": "When a coin is swinging less than usual, a 5-day move that is large for the coin is a reason to trade with it rather than against it, and a reason to refuse fading it.",
+      "name": "calm-market swing-scaled momentum",
+      "from": "F1, F2",
+      "profile": "calm",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the more of its own 20-day daily swings a coin's 20-day fall spans, the more the coin falls over the next 10 days.",
+      "consequence": "In a sideways market, a slow month-long fall that is large for the coin is a reason to stay short for about ten days, and a reason to refuse buying the dip.",
+      "name": "choppy month-fall continues longer",
+      "from": "F3, F4, F5",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "037-01.g2_choppy-month-fall-continues-longer"
+  ],
+  "discovery_ids": [
+    "037-01.g1_calm-market-swing-scaled-momentum"
+  ],
+  "no_ideas": null
+}
