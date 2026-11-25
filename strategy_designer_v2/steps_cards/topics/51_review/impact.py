@@ -136,6 +136,8 @@ def main():
             row = {"book": "P4 portfolio", "groups": "P4", "period": period}; rows.append(row)
         row.update({f"sharpe_{e}": sharpe(p), f"calmar_{e}": c, f"yearly_{e}": ann, f"worst_fall_{e}": fall, f"books_{e}": R.shape[1]})
     out = pd.DataFrame(rows)
+    for c in [c for c in out if c.startswith(("days_in_position_", "books_"))]:
+        out[c] = out[c].astype("Int64")
     out.to_csv(HERE / "impact.csv", index=False, float_format="%.4g")
     pd.set_option("display.width", 250); pd.set_option("display.max_rows", 300)
     show = ["book", "groups", "period", "step6_before", "step6_after", "crossed", "sharpe_before", "sharpe_after",
