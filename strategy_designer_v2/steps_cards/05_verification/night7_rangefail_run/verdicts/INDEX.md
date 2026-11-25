@@ -11,5 +11,6 @@
 033-03_downside-break-continues-falling_1d: inconclusive (fit: exact) [main: 0.00775672; t of the mean, cases on the same day pooled 0.668928; cases 232, distinct days 114]
 034-01_rising-nearness-to-high-rises_1d: inconclusive (fit: exact) [main: 0.00179148; slope t (day-clustered) 1.63695; independent in-profile grid cases 2841, distinct days 447]
 034-02_rising-break-swings-continues_1d: confirmed (fit: exact) [main: 0.0344334; t of the weighted mean, cases of one day together 3.69098; cases 989, distinct days 558]
+034-03_rising-far-below-high-falls_1d: inconclusive (fit: exact) [main: 0.000293879; OLS slope t 0.63687; grid cases with forecast below 0 2350, grid cases with forecast -10 or below 1174]
 035-01_nearness-to-high-rises_1d: inconclusive (fit: exact) [main: 0.00151006; OLS slope t, clustered by day 1.57748; grid cases 7270, distinct days 617, non-rising-market cells 2140]
 035-02_break-swings-above-continues_1d: confirmed (fit: exact) [main: 0.0230332; t of the mean, cases of one day together 2.06709; cases 349, distinct days 159, active bars 1806]

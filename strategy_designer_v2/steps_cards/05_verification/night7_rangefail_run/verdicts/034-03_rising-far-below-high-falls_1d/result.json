@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-bar return on forecast (forecast < 0, non-overlapping grid, pooled)",
+    "value": 0.000293879472202164,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.6368702326272804
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with supporting check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on grid bars with forecast <= -10 is below 0",
+    "value": 0.0005195697353467605,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast below 0": 2350,
+    "grid cases with forecast -10 or below": 1174
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "Rising market read as the recorded regime not being 'chop' (the profile veto), the raw distance taken from last_history_value or recomputed from closes where missing; each coin's mean 5-bar return is taken on the non-overlapping grid of all its windows; the plan's 'inconclusive' for too few cases is reported as 'not observable' per the workflow's rule."
+}
