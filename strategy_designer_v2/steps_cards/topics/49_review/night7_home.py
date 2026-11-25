@@ -14,7 +14,8 @@ def prof(coin):
     tr=(c/c.shift(60)-1)*100; vol=(c.diff()/c).rolling(30).std()
     rk=vol.rolling(366).apply(lambda w:(w<=w[-1]).mean(),raw=True)
     t=np.where(tr>10,"rising",np.where(tr<-10,"falling","choppy")); a=np.where(rk>0.5,"agitated","calm")
-    p=pd.Series([f"{x} {y}" for x,y in zip(t,a)],index=c.index); p[tr.isna()|rk.isna()]=None
+    t=np.where(tr.isna(),"?",t); a=np.where(rk.isna(),"?",a)   # each element known on its own (corrected 2026-11-25)
+    p=pd.Series([f"{x} {y}" for x,y in zip(t,a)],index=c.index); p[tr.isna()&rk.isna()]=None
     return p
 d=pd.read_csv(f"{S}/night7_ideas_full.csv",dtype={"brief":str})
 d=d[d.step5.fillna("").str.startswith("confirmed")]; d["step6"]=d.step6.fillna("")

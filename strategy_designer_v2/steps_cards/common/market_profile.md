@@ -34,21 +34,25 @@ on 61 to 75 %): coins move together, but not always in the same profile.
 - **A profile specialist:** a strategy whose positions are all in one profile: the book of an idea that names its
   profile, built with that profile as its regime (`forecast.md`: a regime limits where a position exists; inside it
   the forecast is graded).
-- **A strategy's home:** the profiles and side where it holds its positions (its share of its days in a position, by
-  profile and side). Read on each coin's own profile, over the folds; its home cells hold at least 25 % of its
-  days in a position (always its largest); `orchestration/combine/card.md`, the profile reader (designed 2026-11-25). Today's strategies have no home: their days in a position follow the market's own days in every
-  profile (topic 44, P10 pilot).
-- **The profile map:** every confirmed strategy placed by its home. A filled cell is a profile and side some strategy
-  specialises in; an empty cell is a place no strategy acts in on purpose: a target for the next briefs.
-  - **As the research keeps it** (the operator, 2026-11-25; next steps 1q and 1t): for each of the six profiles and each
-    side, the proven and profitable strategies specialised in it (step 5 confirmed, step 6 profitable enough, their idea
-    naming a profile that holds the cell: "rising" holds rising calm and rising agitated), each with its idea; and the
-    proven and profitable strategies acting in every profile (no profile named), by side.
-  - **A strategy's side:** long when at least 90 % of its coin-days in a position are long, short when at least 90 % are
-    short, both otherwise (a "both" strategy counts on each side). Read from its backtest's positions when it enters the
-    register, and kept there (`books.json`, field `side`). Written by code with the similarity register
-    (`orchestration/ideas_similarities_check/register/PROFILE_MAP.md`), each time a book enters it. Read by lines 7.e and
-    7.g: a discovery is looked for where the map is empty or thin, by profile and by side.
+- **A strategy's side:** long when at least 90 % of its coin-days in a position are long, short when at least 90 % are
+  short, both otherwise. Read from its backtest's positions when it enters the similarity register, and kept there
+  (`books.json`, field `side`; 2026-11-25, next steps 1t).
+- **The profile map:** the proven and profitable strategies (step 5 confirmed, step 6 profitable enough), by profile
+  and side: twelve cells (six profiles, long or short), and the strategies acting in every profile.
+  - **A cell holds** the specialists whose idea names a profile that holds that cell ("rising" holds rising calm and
+    rising agitated; "agitated" holds the three agitated profiles), on their side (a "both" strategy on each side),
+    each with its idea. They are placed by the profile their idea names because that is where they trade: step 3's
+    code keeps the book flat outside it, and the positions confirm it: after 1l, every day outside is within the
+    idea's horizon after the profile ended (2026-11-25: 034-02 "rising" 94 % inside, 6 % within its 5 days, 0 other).
+  - **Strategies acting in every profile** (their idea names none) are counted by side, not placed in cells.
+  - **Kept by code:** `orchestration/ideas_similarities_check/register/PROFILE_MAP.md`, rewritten each time a book enters
+    the register, and after a night's merge. Read by lines 7.e and 7.g: a discovery is looked for where the map is
+    empty or thin, by profile and by side. A filled cell is a profile and side some strategy specialises in; an empty
+    cell is a place no strategy acts in on purpose: a target for the next briefs.
+  - **Not yet in it** (to decide with the combination step, `orchestration/combine/card.md`): where the strategies
+    acting in every profile really hold their positions, measured against the market's own share of each profile (a
+    strategy present in a profile no more often than the market is not choosing it: P10a found that for all of P4's
+    20). Whether a profile reads the market rightly is topic 54.
 
 **How step 3 builds a profile.** An idea's profile is a line of its own (`profile: falling agitated`, `profile: choppy`); step 3's code,
 not the model, adds it to the config, the same way for every idea (`03_test_plan/helper/make_test_plan.py`,

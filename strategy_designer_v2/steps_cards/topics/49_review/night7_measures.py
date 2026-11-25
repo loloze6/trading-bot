@@ -55,8 +55,11 @@ def profile_of(coin):
     rk = vol.rolling(366).apply(lambda w: (w <= w[-1]).mean(), raw=True)
     t = np.where(tr > 10, "rising", np.where(tr < -10, "falling", "choppy"))
     a = np.where(rk > 0.5, "agitated", "calm")
+    # each element known on its own (corrected 2026-11-25): the trend needs 60 days, the agitation a year; a day whose
+    # agitation is not yet known still has its trend ("rising ?"), so an idea naming only a trend is read on it
+    t = np.where(tr.isna(), "?", t); a = np.where(rk.isna(), "?", a)
     p = pd.Series([f"{x} {y}" for x, y in zip(t, a)], index=c.index)
-    p[tr.isna() | rk.isna()] = None
+    p[tr.isna() & rk.isna()] = None
     return p
 
 

@@ -216,6 +216,12 @@ not earn on 2026. Next steps: 1n (revised), 1o, 1p in `topics/NEXT_STEPS.md`.
   falling-agitated books' "holds" there rests on almost nothing; 2026 holds 19 % (about 276 days in a position) and they
   lose there (Sharpe -0.06 to -0.33). The rising specialists earn on 2026 (0.9 to 1.8), though their effect is the
   held books' continuation (explained 0.7 to 0.87 in-sample) and those books lost on 2026.
-- **M8, days in a position outside the profile:** median 16 % beyond the idea's horizon (positions left open, a median
+- **M8, days in a position outside the profile:** median 15 % beyond the idea's horizon (positions left open, a median
   size 0.04 to 0.1 of the capital against 0.1 to 0.5 inside) and 1 % in the holding period. The 18 % outside the
   profile is topic 51's band, not the holding period (the earlier reading said otherwise).
+
+**Correction (2026-11-25, evening):** the measuring scripts (`night7_measures.py`, `night7_home.py`) left out a coin's
+day until its agitation had a year of history, though an idea naming a trend only needs the trend (60 days). Rerun:
+M8's "beyond the horizon" is 15 % (16 % first read); the specialists' median share inside their profile stays 82 %.
+After 1l (topic 51's rerun records), every day a specialist holds outside its profile is within its idea's horizon
+after the profile ended (034-02 "rising": 94 % inside, 6 % within its 5 days, 0 other).

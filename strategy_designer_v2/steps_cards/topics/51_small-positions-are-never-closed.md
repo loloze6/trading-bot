@@ -38,7 +38,7 @@ a paying book's gain or loss, the book is not what its idea says.
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
 | 2026-11-25 | Option A built on the working branch, proven (above) | the operator ("go for 1l") | | |
-| 2026-11-25 | Un-parked: option A to design and prove | the operator ("it would make sense to clean the small positions never closed ... keep solution simple") | night 7 (M8): a median 16 % of the profile specialists' days in a position are leftovers outside their profile; they also count in step 6's days in a position | B: measuring alone leaves the books unlike their ideas |
+| 2026-11-25 | Un-parked: option A to design and prove | the operator ("it would make sense to clean the small positions never closed ... keep solution simple") | night 7 (M8): a median 15 % of the profile specialists' days in a position are leftovers outside their profile; they also count in step 6's days in a position | B: measuring alone leaves the books unlike their ideas |
 | 2026-11-24 | Parked | the operator ("park that") | the rule was already decided (topic 19: kept, so backtests and live follow the same rule); this adds one measure (a short book in falling markets: leftovers 8 % of its days in a position, median 0.14) | |
 
 ## The build (option A, 2026-11-25)
@@ -61,15 +61,20 @@ the portfolio's 20; script `topics/51_review/compare.py`, table `topics/51_revie
 763 identical; in every other one the first differing bar is a close of a remainder under the band (the old engine
 did not trade it, this one closed it to flat), and every later difference follows from it; 0 unexplained.
 
-| Book | Days in a position, before → after | Sharpe (daily), before → after | Days inside its profile |
+| Book | Days in a position, before → after | Sharpe (daily), before → after | Days inside its profile (the rest after 1l: within the idea's horizon) |
 |---|---|---|---|
 | 038-01 falling agitated | 1,745 → 1,324 | 1.07 → 1.07 | 81 % → 99 % |
-| 034-02 rising | 9,039 → 5,087 | 1.35 → 1.39 | 64 % → 83 % |
+| 034-02 rising | 9,039 → 5,087 | 1.35 → 1.39 | 73 % → 94 % |
 | 035-01.b1 calm | 20,891 → 17,331 | 1.19 → 1.11 | 80 % → 95 % |
 | 045-01 rising | 1,894 → 1,894 | 1.09 → 1.09 (identical) | |
 | 002-03 (portfolio) | 18,155 → 14,489 | 0.91 → 0.90 | |
 | 011-01 (portfolio) | 6,809 → 4,287 | 0.77 → 0.78 | |
 | 013-04 (portfolio) | 237 → 237 | 0.52 → 0.52 (identical) | |
+
+(Corrected 2026-11-25: the share inside first read 64 % → 83 % for 034-02, because the measuring script left out a
+coin's day until its agitation had a year of history, though an idea naming a trend only needs the trend. After 1l
+every day outside a profile is within the idea's horizon after it ended: 034-02 6 %, 035-01.b1 5 %, 038-01 0.2 %, and
+0.4 % where the engine's and the script's agitation round differently at the median.)
 
 What it changes elsewhere: every backtest from now on (a book's days in a position fall where it kept remainders; its
 gain moves a little either way); records made before are not rerun; the live bot closes a remainder when its strategy
