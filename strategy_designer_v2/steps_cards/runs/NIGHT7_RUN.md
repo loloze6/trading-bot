@@ -102,5 +102,8 @@ The control branches are read in place, not merged.
   branches have every built class in their components file (checked). Without it the morning merge would have carried
   build records for classes that do not exist.
 
+- **05:56 Paris:** the 8 sessions confirmed running (new code committed within 5 minutes; controls at their resume, they
+  commit hourly); control C2 committed its missing component class (checked on its branch).
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
