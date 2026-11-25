@@ -129,6 +129,19 @@ def test_the_files_a_build_writes():
     assert 'SETTINGS = [{}, {"n": 2}, {"n": 3}]' in spec
 
 
+def test_row_replaced_only_in_the_component_rows():
+    """A class also named in a table before the component rows (the misleading names) keeps that line; its component
+    row is the one replaced (night 8: the replace hit the misleading-names line, and the settings check then read
+    the stale component row)."""
+    cat = CAT.replace("## Component rows", "### Misleading names\n\n| Name | What |\n|---|---|\n"
+                      "| `BComponent` | what it really is |\n\n## Component rows")
+    row = "| `BComponent` | `window` (5), `k` (1), `source` (\"close\") | x | x | x | x | x | x | x |"
+    out = B.with_row(cat, "BComponent", "Directional components", row)
+    assert "| `BComponent` | what it really is |" in out and row in out
+    assert out.count("| `BComponent` |") == 2
+    assert B.catalogue_rows(out)["BComponent"] == {"window", "k", "source"}
+
+
 def fake_files(tmp_path, monkeypatch):
     """The three files a build writes, in a fake repository; the journal and the note in a fake components folder."""
     repo = tmp_path / "repo"

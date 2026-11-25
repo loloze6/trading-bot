@@ -219,3 +219,6 @@ pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | ReclaimAboveLowInRang
 pilot_panic_run | 054-03_deep-pierce-reclaim-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimNearnessInRange | built: PriorLowReclaimInRangeComponent {"form": "nearness", "period": 30}
+night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night8_choppycalm_run | 058-02_calm-range-bottom-drifts-up_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePositionComponent | cannot build: no answer passed the checks after 3 attempts

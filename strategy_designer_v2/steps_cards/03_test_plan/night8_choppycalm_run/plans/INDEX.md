@@ -1,0 +1,2 @@
+058-01_calm-range-top-drifts-down_1d: missing-components: The idea measures where the close sits inside the 20-day high-low range. The only catalogue component that reads it is [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+058-02_calm-range-bottom-drifts-up_1d: missing-components: The idea needs where the close sits inside the 20-day high-low range. The listed `DonchianBreakoutComponent` params are only `period` and [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
