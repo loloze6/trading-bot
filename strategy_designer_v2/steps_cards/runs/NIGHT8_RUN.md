@@ -70,6 +70,15 @@ the new books on the unseen coins (1u).
   rising market a stretched rise carries on over ten days") confirmed (+2.32), profitable enough, and it holds on
   both unseen periods (2016-17 and 2026); 058-03.b1 confirmed, not profitable. E's pushed state predates its resume
   (its loop had stopped at 22:43 on the catalogue fault, resumed since). No usage-limit stop yet.
+- **00:40 Paris, a gap in 1n (session F's count and check; not changed during the night):** F's first 10 turns are 4 on
+  the theme. Its queue (select_next, 23:38 UTC): the theme's own follow-ups wait at ranks 3, 8, 10, 14, 15 (scores
+  0.0595 to 0.0307, generations 2 and 3), below two first ideas of discovery briefs (0.0615, generation 1). 1n ranks a
+  discovery's ideas as follow-ups at the discovery's level, so a shallow discovery outranks a deep follow-up of the
+  theme; the record of the lines is not the cause (7.b 0.238 against 7.g 0.123). 1n's aim (the theme's own follow-ups
+  first) holds for first ideas, not for deep chains. For the morning: the theme brief's own lineage ranked before the
+  discovery briefs' ideas (one group rule). D's discoveries also research B's and F's themes (briefs 060, 061): each
+  session's "already indexed" sees its own briefs only (night 7's same limit). F's waiting theme ideas follow the
+  reversed sign its 7.b found: in a rising, calm market the deepest pullbacks keep falling (t -3.15).
 
 ## Reading
 (written in the morning)
