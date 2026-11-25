@@ -46,7 +46,15 @@ on books a held book explains at 0.5 or more. Then, in the morning: v2 of the co
 the new books on the unseen coins (1u).
 
 ## During the night (the designer's watch)
-(written during the night)
+- **23:55 Paris, a machinery fault found by session E (N4), shared by every session:** since night 7 the catalogue's
+  component row of `DonchianBreakoutComponent` was stale (only `period`, `scaling_factor`): a night 7 build's `with_row`
+  had replaced the first line starting with the class's name, the class's line in the misleading-names table. Tonight
+  step 3's settings check refused `source`, a setting the class has; the components step rebuilt the class twice; E's
+  two first ideas ended "missing components" (4.58 USD spent before its loop stopped). E's fix (5ac0d5d770, checked
+  by the designer): `with_row` replaces a row only inside "Component rows" (a new test fails on the old rule); the
+  catalogue's two lines back in their tables; the class back to the night's start (same value on 7,600 of 7,600 bars).
+  Taken onto the working branch (the three files; components and step 3 tests pass) and given to the 5 other sessions
+  to take between two turns, so none rebuilds the class.
 
 ## Reading
 (written in the morning)
