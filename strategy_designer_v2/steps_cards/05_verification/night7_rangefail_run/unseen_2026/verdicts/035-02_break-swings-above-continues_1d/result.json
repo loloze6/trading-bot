@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-day excess return over the coin's mean 5-day return, cases with forecast > 0",
+    "value": 0.02408358434527871,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.0145018068172402
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation forecast vs 5-day excess return > 0",
+    "value": 0.10012171356041301,
+    "passed": true
+  },
+  "counts": {
+    "cases": 60,
+    "distinct days": 25,
+    "active bars": 241
+  },
+  "decided_by": "The plan's minimum of 100 cases on at least 60 distinct days is not reached (60 cases, 25 days).",
+  "reading": "Situation recomputed from prices as close above the max high of the 20 prior bars in the window (falling back to the recorded raw component > 0 on the first 20 bars), expected side long; cases are grid bars 0,5,10,... of each window with forecast > 0 and a 5-bar return inside the window; the coin's mean 5-day return is taken on the same non-overlapping grids of all its windows; the day-clustered t sums deviations per calendar day (UTC) with a D/(D-1) correction; the plan's minimum of 100 cases on 60 days, when not reached, gives 'not observable'."
+}

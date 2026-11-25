@@ -20,22 +20,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 034-01_rising-nearness-to-high-rises | - | plan | inconclusive (+1.64) | profitable enough | - | 7.b: 034-01.b1_nearness-to-high-10-days, 034-01.b2_close-above-high-drifts; 7.e: 034-01.e1_rising-market-breakout-distance-continuation; 7.g: 034-01.g1_rising-nearness-ten-day-drift | 1.75 | 10.4 |
 | 035-01_nearness-to-high-rises | - | plan | inconclusive (+1.58) | not profitable enough (failed: Mean daily return, on days in a position) | - | 7.b: 035-01.b1_calm-market-nearness-to-high; 7.g: 035-01.g1_near-high-side-carries-drift, 035-01.g2_choppy-market-nearness-to-high | 1.09 | 9.6 |
 | 034-02_rising-break-swings-continues | - | plan | confirmed (+3.69) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 034-02.g1_choppy-deep-below-high-keeps-falling, 034-02.g2_nearness-to-high-every-market, 034-02.g3_rising-approach-to-high | 0.72 | 10.8 |
+| 035-02_break-swings-above-continues | - | plan | confirmed (+2.07) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: I looked at about 60 groupings: distance from the high and from the low, the last day's move, the volatility ratio, trend crossed with breakout, year, weekday, prior 5-day return, and trade duration, entry forecast and coin. No pattern outside the tested breakout effect reaches a day-clustered |t| of 2 in a graded way, so none stands out from chance across that many looks. | 0.66 | 10.8 |
 
 ## Consumption
-16 ideas, 16.19 USD, 99.7 minutes in all.
+17 ideas, 16.85 USD, 110.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.60 | 11.1 |
-| step4_backtest | 0.00 | 41.9 |
-| step5_verdict | 2.48 | 9.0 |
+| step3_plan | 2.69 | 11.6 |
+| step4_backtest | 0.00 | 47.8 |
+| step5_verdict | 2.66 | 9.5 |
 | step6_check | 0.00 | 0.6 |
-| chart_files | 0.00 | 0.2 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.d | 1.03 | 3.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.7 |
 | step7_7.b | 3.36 | 10.1 |
-| step7_7.g | 6.03 | 18.0 |
-| similarity_check | 0.00 | 0.3 |
-| unseen_test | 0.00 | 3.3 |
+| step7_7.g | 6.43 | 19.2 |
+| similarity_check | 0.00 | 0.4 |
+| unseen_test | 0.00 | 5.7 |
