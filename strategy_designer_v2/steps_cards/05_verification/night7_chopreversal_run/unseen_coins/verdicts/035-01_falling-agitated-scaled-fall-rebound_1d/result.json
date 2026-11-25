@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess next-day return on the forecast, bars with forecast > 0",
+    "value": 0.0004775516680395037,
+    "statistic": {
+      "name": "t of the OLS slope, day-clustered (CR1)",
+      "value": 1.0134292749049472
+    },
+    "threshold": "confirm if slope t >= 2 and top-third check passes; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return, top third of positive forecasts",
+    "value": 0.007087334215586261,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 1404,
+    "distinct days": 444,
+    "bars in top third": 468
+  },
+  "decided_by": "The slope's t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The falling, agitated profile is read as the bars whose regime is 'unknown' (both chop vetoes off), the fall as the recorded raw scaled return (else the price return) below zero, the expected side long; cases are bars with forecast > 0 and a next-day close in the same window; the coin's mean daily return is the pooled mean of all its in-window close-to-close returns; the slope's t uses a CR1 day-clustered standard error; the top third is the positive forecasts at or above their 2/3 quantile; the plan's minimum counts, when not reached, give 'not observable'."
+}
