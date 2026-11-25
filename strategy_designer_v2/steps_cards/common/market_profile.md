@@ -35,7 +35,8 @@ on 61 to 75 %): coins move together, but not always in the same profile.
   profile, built with that profile as its regime (`forecast.md`: a regime limits where a position exists; inside it
   the forecast is graded).
 - **A strategy's home:** the profiles and side where it holds its positions (its share of its days in a position, by
-  profile and side). Today's strategies have no home: their days in a position follow the market's own days in every
+  profile and side). Read on each coin's own profile, over the folds; its home cells hold at least 25 % of its
+  days in a position (always its largest); `orchestration/combine/card.md`, the profile reader (designed 2026-11-25). Today's strategies have no home: their days in a position follow the market's own days in every
   profile (topic 44, P10 pilot).
 - **The profile map:** every confirmed strategy placed by its home. A filled cell is a profile and side some strategy
   specialises in; an empty cell is a place no strategy acts in on purpose: a target for the next briefs.
