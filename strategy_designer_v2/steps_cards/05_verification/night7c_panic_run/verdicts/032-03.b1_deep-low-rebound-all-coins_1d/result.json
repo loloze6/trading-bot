@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of bets (return minus coin's 5-bar drift)",
+    "value": 0.005358662787535286,
+    "statistic": {
+      "name": "t of the mean, cases of the same day pooled",
+      "value": 0.6365620495084799
+    },
+    "threshold": "confirm: positive with t >= 2; reject: negative with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move, split at median entry forecast",
+    "value": 0.00468350329339989,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 221,
+    "cases": 437
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The range-ratio condition (365-bar over 30-bar mean range at or below 1) cannot be rebuilt from windows of about 122 recorded bars and the detector's components are not recorded, so it is read from the recorded regime ('mean_reversion'), while the 30-bar closing low is recomputed from closes where 30 bars of the window exist; a bet is a rise of the long forecast of at least 2 points from its lowest positive level since the last bet (from 0 after a flat), the first bet per 5-bar grid cell from each window's first row is the case; the drift is the coin's mean 5-bar return on that grid over all its windows; the day-pooled t uses per-day sums of deviations from the mean (cluster SE with G/(G-1)); the median split puts cases above the median entry forecast in the upper half and the rest in the lower."
+}

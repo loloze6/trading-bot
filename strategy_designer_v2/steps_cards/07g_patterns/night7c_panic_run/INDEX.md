@@ -1,0 +1,5 @@
+032-01_volatile-decline-low-cascade_1d: 2 ideas (2 explorations)
+032-02.b1_volatile-decline-low-rebound-more-coins_1d: 2 ideas (2 explorations)
+032-02_volatile-decline-low-rebound_1d: 2 ideas (2 explorations)
+032-03.b1_deep-low-rebound-all-coins_1d: 1 ideas (2 explorations)
+032-03_deep-fall-low-exhaustion-rebound_1d: 3 ideas (2 explorations)

@@ -1,0 +1,5 @@
+032-01_volatile-decline-low-cascade_1d: not profitable enough [Sharpe -0.497; Sharpe minus holding's Sharpe -1.067; Calmar -0.1207]
+032-02.b1_volatile-decline-low-rebound-more-coins_1d: not profitable enough [Sharpe 0.202; Sharpe minus holding's Sharpe -0.4481; Calmar 0.1389]
+032-02_volatile-decline-low-rebound_1d: not profitable enough [Sharpe 0.4581; Sharpe minus holding's Sharpe -0.1115; Calmar 0.405]
+032-03.b1_deep-low-rebound-all-coins_1d: not profitable enough [Sharpe 0.3307; Sharpe minus holding's Sharpe -0.3117; Calmar 0.1543]
+032-03_deep-fall-low-exhaustion-rebound_1d: not profitable enough [Sharpe 0.2772; Sharpe minus holding's Sharpe -0.2924; Calmar 0.1347]

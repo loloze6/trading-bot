@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 032-02.b1_volatile-decline-low-rebound-more-coins_1d
+idea tested: 032-02.b1_volatile-decline-low-rebound-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3685 USD
+---
+## Findings
+- **F1:** The rebound shows at the shortest horizons and fades by the plan's 5 days. On the signal cases in folds B and C, the mean unusual move is +10.8 % over 1 day (t 3.07, 28 cases on 10 days), +4.7 % over 2 days (t 2.18), +4.3 % over 3 days (t 1.44), +0.24 % over 5 days (t 0.04), and −1.6 % over 10 days (t −0.22), so the test measured the idea after its move was mostly gone.
+- **F2:** The short rebound is graded by depth as the idea says. Over 1 day the deepest forecast tercile gains +20.4 % (t 5.49, 10 cases on 4 days), against +7.0 % (t 1.86) for the shallowest. Over 5 days only the deepest tercile is positive and sure, at +8.2 % (t 2.80, 9 cases on 3 days), while the middle tercile is −8.4 % (t −0.83); at the 5-day horizon the grade is mixed.
+- **F3:** The effect rests on very few market days, mostly in 2020. In 2020 the 1-day unusual move is +12.8 % (t 2.03, 13 cases on 3 days). Outside 2020 it is +1.8 % (t 0.55, 5 cases on 4 days), and in-regime breaks outside 2020 average −0.8 % over 1 day (t −1.08, 22 cases on 11 days), so the evidence is a few crash days, not a steady effect.
+- **F4:** At 5 days the effect is mixed across coins and is drowned by the coin's own swings. BTC (+4.2 %) and ETH (+4.8 %) are positive and LTC (−4.3 %) and XRP (−7.1 %) negative, each with |t| < 1.4 on 3 to 6 cases. The full test's −0.60 % is −0.036 of a usual 5-day move of 11.68 %.
+- **F5:** Breaks of the 30-day low outside the volatile-decline regime show no rebound. The deepest third of those breaks gains +3.3 % over 1 day (t 1.41, 55 cases on 23 days) and −4.6 % over 5 days (t −0.90). Whatever rebound exists belongs to the regime's deep breaks over a day or two, which is the part that folds A and D (2018 and 2022 declines) can confirm or reject.
+
+## Ideas
+- `032-02.b1.b1_volatile-low-one-day-rebound` (from F1, F2, F3, F5): In a coin that has fallen over the past 30 days and whose daily high-low ranges over that month are wide compared with its own past year, a close below its lowest low of the prior 30 days is followed by a rise over the next 1 day. The further that close sits below the prior 30-day low, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,56 @@
+{
+  "line": "7.b",
+  "backtest": "032-03_deep-fall-low-exhaustion-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3718518,
+  "findings": {
+    "F1": "The tested result points the way the idea predicts but is far from the bar: the mean unusual 5-day move is +0.59 % (t 0.56, 155 case days, 236 cases), and in folds B and C alone it is +1.10 % (t 0.59, 76 days, 129 cases); at the same spread, t 2 would need about 13 times as many case days.",
+    "F2": "The rebound in the cases is strongest before the plan's horizon and fades by it: the unusual move is +1.95 % at 1 day (t 1.52), +2.70 % at 3 days (t 2.09), +1.10 % at 5 days (t 0.59) and +1.21 % at 10 days (t 0.49), on the same 129 cases and 76 days.",
+    "F3": "Inside the cases, the depth of the raw 30-day fall sorts the outcome the way the idea's grading says, with a Spearman of ret30 against the 5-day unusual move of \u22120.25. The deepest third rose +4.93 % over 5 days (t 1.14, 19 days) and +10.3 % over 10 days (t 1.60). The shallowest third fell \u22124.63 % (t \u22121.75) and \u22129.86 % (t \u22123.04, 18 days).",
+    "F4": "Across every new 30-day close low, not only the strategy's cases, lows reached after the smallest 30-day falls keep falling over 10 days. In the wide-range regime the shallowest third moved \u221210.6 % (t \u22122.64, 16 days); outside it, \u22127.6 % (t \u22122.13, 27 days). At 5 days the figures were \u22124.7 % (t \u22121.83) and \u22123.0 % (t \u22121.89). The deepest third in the regime stayed near zero, at \u22120.45 % over 5 days and +0.27 % over 10 days.",
+    "F5": "The rebound is mixed across coins and years. Per case over 5 days, BTC moved +2.4 %, XMR +5.3 % and ZEC +4.3 %, against ETH \u22120.9 %, LTC \u22120.6 % and XRP \u22123.3 %. By year, only 2021 is clearly positive (+4.4 %, t 2.15); 2018 was \u22121.4 % and 2020 \u22121.6 %.",
+    "F6": "The strategy's own forecast grades the move only weakly: the lowest forecast third moved \u22122.4 %, the middle +2.6 % and the highest +3.0 %. The supporting Spearman is 0.066, against the raw 30-day fall's \u22120.25 in F3, which suggests the 60-day standardisation blurs the grading."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "deep-low rebound, all coins",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ],
+      "idea": "In a coin whose daily high-low ranges over the past 30 days are wide compared with its own past year, a close at a new 30-day low is followed by a rise over the next 5 days. The larger the coin's 30-day fall into that low, the larger the rise.",
+      "consequence": "Rebound. The longer and deeper the volatile fall before the new monthly low, the more of the forced-seller pool is already liquidated.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "In a coin whose daily high-low ranges over the past 30 days are wide compared with its own past year, a close at a new 30-day low is followed by a rise over the next 3 days. The larger the coin's 30-day fall into that low, the larger the rise.",
+      "consequence": "A trader buying a volatile monthly low after a deep fall would take the rebound within about 3 days, before it fades.",
+      "name": "deep-low three-day rebound",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a coin whose daily high-low ranges over the past 30 days are wide compared with its own past year, a close at a new 30-day low is followed by a further fall over the next 10 days. The smaller the coin's 30-day fall into that low, the larger the further fall.",
+      "consequence": "A trader should refuse to buy a fresh monthly low that comes after only a mild 30-day decline, and may short it instead, because such lows tend to break down further.",
+      "name": "shallow-fall low breakdown",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-03.b1_deep-low-rebound-all-coins",
+    "032-03.b2_deep-low-three-day-rebound",
+    "032-03.b3_shallow-fall-low-breakdown"
+  ],
+  "no_ideas": null
+}

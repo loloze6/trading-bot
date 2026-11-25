@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of long cases",
+    "value": 0.005917912710397731,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 0.5585842389728576
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and correlation > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, unusual move) > 0",
+    "value": 0.0659508044661344,
+    "passed": true
+  },
+  "counts": {
+    "cases": 236,
+    "cases on distinct days": 155
+  },
+  "decided_by": "t lies between -2 and 2: inconclusive rule.",
+  "reading": "The 365-bar range ratio is taken from the recorded regime (not rebuildable in ~120-bar windows); a case is the first long bet (forecast rise >= 2 from its low since the last bet, reset at flat) in each 5-bar grid cell counted from each window's first row, needing 5 bars ahead in the window; the drift is the mean of the coin's non-overlapping 5-bar grid returns over all windows; the t clusters deviations summed per day with a G/(G-1) correction; 'at least 30 cases on distinct days' is read as at least 30 distinct case days, and fewer is reported as not observable."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar unusual move of long cases (return minus normal 5-bar drift)",
+    "value": -0.005983796465060074,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": -0.21247910579519813
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of per-case unusual move on forecast",
+    "value": 0.008618223799221711,
+    "passed": true
+  },
+  "counts": {
+    "cases": 64,
+    "distinct days": 31
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Situation = regime 'mean_reversion' cross-checked with price-based 30-bar return and recorded depth; a case is a forecast rise of at least 2 above its lowest long level since the last bet (from 0 after a flat), the first per 5-bar grid cell from each window's first row, dropped if its 5-bar return leaves the window; the drift is each coin's mean grid 5-bar return over all its windows; t uses per-day summed deviations with a D/(D-1) factor; the plan's 'fewer is inconclusive' minimum is reported as 'not observable'."
+}

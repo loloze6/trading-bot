@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "032-01_volatile-decline-low-cascade_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3892379,
+  "findings": {
+    "F1": "How close a coin closes to its highest high of the prior 30 days sorts the next 5 days, on a non-overlapping 5-day grid across folds B and C. The top decile, closing about 0.3 % above that high, then beats the coin's drift by +3.89 % (t 2.50 with same-day cases taken together, 126 cases on 50 days). The next decile, about 5 % below the high, beats it by +3.29 % (t 2.50, 121 cases on 67 days). The four deciles 10 % to 35 % below the high all trail the drift, by -1.9 % to -3.4 % (decile 3: -3.39 %, t -2.69, 67 days).",
+    "F2": "The gap between the top fifth of closes and the rest is consistent. It holds in all 6 coins (from +2.3 % for LTC to +11.6 % for XRP) and in 10 of 12 windows (w7 and w9 are the exceptions, at -1.5 % and -1.1 %). The Spearman correlation of distance-from-high with the next 5-day unusual move is 0.13 (p 3e-6) over all cases. It is only 0.01 (p 0.85) among closes within 5 % of the high, so the effect grades across the whole range, not within the top.",
+    "F3": "A coin up over 30 days that closes above its prior 30-day high then beats its drift by +5.05 % over 5 days (t 2.37, 54 cases).",
+    "F4": "The prior 5-day return, scaled by 20-day volatility, points the same way. Its top fifth is followed by +1.75 % over the drift over 5 days (t 2.38, 276 cases). Its bottom fifth is followed by -1.39 % (t -1.88).",
+    "F5": "The tested situation shows no reliable move either way. A 30-day decline with a close under the prior 30-day low gives -2.95 % unusual over 5 days (t -1.45, 28 cases). The book's trades lost on every coin, with mean net trade results from -2.8 % (XRP) to -34.2 % (ETH).",
+    "F6": "The next day after a large daily fall (at least 2.5 times the 20-day daily volatility) averages +2.05 %, but its t is only 1.28 once same-day cases are taken together (84 cases on 31 days). No weekday stands out once days are taken together (every |t| is below 1.3). Neither counts as a finding."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's close sits to its highest high of the prior 30 days, the more it rises over the next 5 days beyond its normal drift, and closes above that high are followed by the largest rises.",
+      "consequence": "A coin pressing on its monthly high is a reason to hold it long for the following days, and a coin far below that high is a reason to refuse a long.",
+      "name": "monthly high proximity momentum",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 5-day return relative to its recent daily volatility, the more its return over the next 5 days exceeds its normal drift.",
+      "consequence": "A strong week, scaled by the coin's own volatility, is a reason to lean long on that coin for the next week.",
+      "name": "volatility-scaled weekly momentum",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.g1_monthly-high-proximity-momentum",
+    "032-01.g2_volatility-scaled-weekly-momentum"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b1_volatile-decline-low-rebound-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4198611,
+  "findings": {
+    "F1": "On 5-day non-overlapping grids across all coins in windows w7\u2013w18, closes in each coin's top quintile of distance from the prior 20-day high (at or above that high) were followed by a 5-day unusual move of +4.18 % (t 2.25, cases of one day together, 332 cases on 107 days); over 10 days it was +6.76 % (t 2.22, 166 cases on 53 days).",
+    "F2": "The pattern is not graded across the quintiles: the second-lowest quintile of distance from the 20-day high showed \u22123.43 % over 5 days (t \u22123.21, 326 cases on 128 days) and \u22124.82 % over 10 days (t \u22122.30), while the lowest quintile was near 0 (\u22120.19 %, t \u22120.13).",
+    "F3": "The 20-day return points the same way over 10 days: its two top quintiles were followed by +4.29 % (t 1.60) and +5.29 % (t 1.62), and its second-lowest quintile by \u22125.37 % (t \u22122.69, 160 cases on 63 days).",
+    "F4": "A day whose high-low range is wide compared with its prior 20-day mean range (top quintile) was followed by +2.81 % over 5 days (t 1.67, 114 days) and +5.92 % over 10 days (t 2.12, 166 cases on 61 days).",
+    "F5": "The tested situation itself, on the bars of these folds where the regime was active and the forecast was positive, was followed by +5.28 % unusual over 5 days (t 1.42, only 16 cases on 9 days), against \u22120.60 % across all folds in step 5. Its depth correlated \u22120.53 with the 5-day unusual move, which means deeper breaks rose more, but on only 16 cases.",
+    "F6": "The book's 50 trades show where holding length mattered: trades closed within 5.5 days averaged +11.9 % net (33 trades), those held 5.5\u201310.5 days \u221220.4 % (7 trades), and those held over 20 days +27.1 % (10 trades). Windows w16\u2013w18 carried the gain (+2.9 %, +26.2 %, +13.8 % mean per trade).",
+    "F7": "These patterns come from about 15 features, 3 horizons, weekdays and windows. With that many angles, only F1 holds at |t| above 2.2 on two horizons. Each of F1\u2013F4 is marginal on its own, and the weekday effects (Wednesday \u22122.27 %, Thursday \u22122.15 %) were not tested with cases of one day counted together, so they are not used."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose daily close sits at or above the highest high of its prior 20 days, the coin rises over the next 10 days, and the further the close sits above that prior 20-day high, the larger the rise.",
+      "consequence": "A close breaking above its 20-day high is a reason to be long for the following week and a half, not to fade it.",
+      "name": "twenty-day high breakout continuation",
+      "from": "F1, F3, F7",
+      "refs": [
+        "F1",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a coin that closes at or above the highest high of its prior 20 days, the wider that day's high-low range compared with its mean range over the prior 20 days, the larger the rise over the next 10 days.",
+      "consequence": "A breakout made on an unusually wide day is a stronger reason to buy than a quiet one.",
+      "name": "wide-range breakout continuation",
+      "from": "F1, F4, F7",
+      "refs": [
+        "F1",
+        "F4",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1.g1_twenty-day-high-breakout-continuation",
+    "032-02.b1.g2_wide-range-breakout-continuation"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,64 @@
+## breaks all bars: regime vs not (day-clustered)
+        n_u1   mean_u1      t_u1   n_u2  mean_u2      t_u2   n_u3   mean_u3      t_u3   n_u5   mean_u5      t_u5
+reg                                                                                                             
+False  117.0  0.000852  0.111899  117.0 -0.00793 -1.154019  116.0 -0.013016 -1.016973  114.0 -0.020576 -1.075223
+True    52.0  0.027658  1.283330   52.0  0.02001  1.119173   50.0 -0.000637 -0.019037   48.0 -0.027775 -0.622099
+
+## fresh breaks: regime vs not
+       n_u1   mean_u1      t_u1  n_u2   mean_u2      t_u2  n_u3   mean_u3      t_u3  n_u5   mean_u5      t_u5
+reg                                                                                                          
+False  88.0 -0.008679 -1.040622  88.0 -0.007290 -0.935920  88.0 -0.011990 -0.869165  86.0 -0.016869 -0.770562
+True   39.0  0.034890  1.288251  39.0  0.023425  1.117983  39.0  0.027778  1.107783  37.0 -0.012936 -0.263977
+
+## fresh breaks all
+n_u1       127.000000
+mean_u1      0.004700
+t_u1         0.419041
+n_u2       127.000000
+mean_u2      0.002142
+t_u2         0.233058
+n_u3       127.000000
+mean_u3      0.000222
+t_u3         0.016931
+n_u5       123.000000
+mean_u5     -0.015686
+t_u5        -0.695297
+
+## fresh breaks ret30<0 by range-ratio tercile
+         n_u1  mean_u1  t_u1  n_u2  mean_u2  t_u2  n_u3  mean_u3  t_u3  n_u5  mean_u5  t_u5
+ratio_q                                                                                    
+narrow    1.0      NaN   NaN   1.0      NaN   NaN   1.0      NaN   NaN   0.0      NaN   NaN
+mid       1.0      NaN   NaN   1.0      NaN   NaN   1.0      NaN   NaN   0.0      NaN   NaN
+wide      2.0      NaN   NaN   2.0      NaN   NaN   2.0      NaN   NaN   0.0      NaN   NaN
+
+## fresh breaks ret30<0 by depth tercile
+         n_u1  mean_u1  t_u1  n_u2  mean_u2  t_u2  n_u3  mean_u3  t_u3  n_u5  mean_u5  t_u5
+dq                                                                                         
+deep      1.0      NaN   NaN   1.0      NaN   NaN   1.0      NaN   NaN   0.0      NaN   NaN
+mid       1.0      NaN   NaN   1.0      NaN   NaN   1.0      NaN   NaN   0.0      NaN   NaN
+shallow   2.0      NaN   NaN   2.0      NaN   NaN   2.0      NaN   NaN   0.0      NaN   NaN
+
+## wide-range fresh breaks by depth half
+           n_u1  mean_u1  t_u1  n_u2  mean_u2  t_u2  n_u3  mean_u3  t_u3  n_u5  mean_u5  t_u5
+dq                                                                                           
+deeper      1.0      NaN   NaN   1.0      NaN   NaN   1.0      NaN   NaN   0.0      NaN   NaN
+shallower   1.0      NaN   NaN   1.0      NaN   NaN   1.0      NaN   NaN   0.0      NaN   NaN
+
+## regime bars by coin u1
+        n_u1   mean_u1      t_u1   mean_u5
+coin                                      
+BTCUSD   8.0  0.027519  1.075917  0.051557
+ETHUSD  11.0  0.029017  0.992293  0.001700
+LTCUSD  10.0  0.004305  0.135611 -0.074635
+XMRUSD   7.0  0.022026  0.815673 -0.079465
+XRPUSD   8.0  0.069699  1.448253 -0.023397
+ZECUSD   8.0  0.018006  0.737207 -0.072843
+
+## corr u1 with ratio (fresh, ret30<0)
+-0.7562496536699389
+
+## corr u5 with ratio (fresh, ret30<0)
+nan
+
+## corr u1 with depth (regime bars)
+-0.765995753448884

@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "032-02_volatile-decline-low-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3947659,
+  "findings": {
+    "F1": "The tested effect points the right way but is small against its noise. On folds B and C, the regime's 5-day grid cases number 61. Their mean unusual 5-day move is +0.6 % (t 0.34) and their median is +1.6 %, with 59 % of cases positive. Step 5's own measure over all folds is +2.05 % with t 0.75, on 42 cases across 27 days.",
+    "F2": "The effect is mixed across periods and coins. Window w17 shows +5.3 % (t 2.04, 11 cases) and window w16 shows \u22128.2 % (t \u22121.41, 12 cases). By coin, XMR shows +4.6 % (8 cases) and BTC +2.9 % (9 cases), while LTC shows \u22121.8 % (12 cases) and ZEC \u22121.6 % (9 cases).",
+    "F3": "The rebound appears sooner than the plan's 5 days and fades by day 5. On fresh breaks inside the regime (39 cases, day-clustered), the unusual move is +3.5 % after 1 day (t 1.29), +2.3 % after 2 days (t 1.12), +2.8 % after 3 days (t 1.11) and \u22121.3 % after 5 days (t \u22120.26). The regime's grid cases also gain +4.9 % on average over 1 day.",
+    "F4": "Deeper breaks are followed by larger rises, more clearly over the first day than over five.",
+    "F5": "Outside the falling, wide-range regime, a monthly low is followed by further falling, so the regime filter carries the effect.",
+    "F6": "The test is starved of cases, not of size. The book trades only 0.0037 times per coin-day and is in a position on 7 % of coin-days, yet the total move of +2.66 % per case is 13.8 times the 0.19 % cost of a trade. More coins would add cases without making the move smaller than the cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ; bar: 1d; period: folds A, B, C, D",
+      "name": "volatile-decline low rebound, more coins",
+      "from": "F1, F2, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ],
+      "idea": "In a coin that has fallen over the past 30 days and whose daily high-low ranges over that month are wide compared with its own past year, a close below its lowest low of the prior 30 days is followed by a rise over the next 5 days. The further that close sits below the prior 30-day low, the larger the rise.",
+      "consequence": "Rebound. By the time a volatile decline breaks to a new monthly low, the forced sellers are used up, so buyers and short-covering lift price.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "In a coin that has fallen over the past 30 days and whose daily high-low ranges over that month are wide compared with its own past year, a close below its lowest low of the prior 30 days is followed by a rise over the next 1 day. The further that close sits below the prior 30-day low, the larger the rise.",
+      "consequence": "A trader would take the rebound right after a deep monthly low in a volatile decline and be out within a day or two, before the bounce fades.",
+      "name": "volatile low next-day rebound",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1_volatile-decline-low-rebound-more-coins",
+    "032-02.b2_volatile-low-next-day-rebound"
+  ],
+  "no_ideas": null
+}

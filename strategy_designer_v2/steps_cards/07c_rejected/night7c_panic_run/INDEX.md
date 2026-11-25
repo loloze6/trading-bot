@@ -1,0 +1,5 @@
+032-01_volatile-decline-low-cascade_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
+032-02.b1_volatile-decline-low-rebound-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-02_volatile-decline-low-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-03.b1_deep-low-rebound-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+032-03_deep-fall-low-exhaustion-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

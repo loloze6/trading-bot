@@ -1,0 +1,5 @@
+032-01_volatile-decline-low-cascade_1d: not observable (fit: exact) [main: -0.0204635; distinct case days 27, cases 42]
+032-02.b1_volatile-decline-low-rebound-more-coins_1d: inconclusive (fit: exact) [main: -0.0059838; t of the mean, cases summed per day -0.212479; cases 64, distinct days 31]
+032-02_volatile-decline-low-rebound_1d: inconclusive (fit: adapted) [main: 0.0204635; t of the mean, cases of one day taken together 0.754605; cases 42, days 27]
+032-03.b1_deep-low-rebound-all-coins_1d: inconclusive (fit: exact) [main: 0.00535866; t of the mean, cases of the same day pooled 0.636562; distinct case days 221, cases 437]
+032-03_deep-fall-low-exhaustion-rebound_1d: inconclusive (fit: exact) [main: 0.00591791; t of the mean, cases grouped by day 0.558584; cases 236, cases on distinct days 155]

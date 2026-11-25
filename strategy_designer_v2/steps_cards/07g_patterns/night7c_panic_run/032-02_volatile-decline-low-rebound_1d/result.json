@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "032-02_volatile-decline-low-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3760506,
+  "findings": {
+    "F1": "Over 5 days, a coin whose close sits closest to its prior 30-day high goes on to rise more than its normal drift: in the top quintile of the close-to-prior-30-day-high distance (mean \u22122.3 %), the unusual 5-day move is +3.60 % (t 3.09 with cases of one day taken together, 247 cases on 91 days). The other quintiles run from \u22122.72 % to \u22120.11 %, and the second-lowest is the weakest at \u22122.72 % (t \u22122.53).",
+    "F2": "The effect is graded but not cleanly monotonic. The slope of the unusual 5-day move on each coin's rank of that distance is +0.053 per unit rank (t 2.20, 230 days), even though the second-lowest quintile is weaker than the lowest.",
+    "F3": "The same pattern appears for other lookbacks. On the 10-day high, the top quintile is +3.14 % (t 3.08, 111 days) with slope t 2.39. On the 60-day high, the top quintile is +3.19 % (t 2.47, 57 days). The position within the 30-day high-low range gives +2.50 % (t 1.92).",
+    "F4": "The top-20 % vs rest gap in the unusual 5-day move is positive in all 6 coins and in 10 of 12 windows. By coin it runs from +2.26 % (LTC) to +11.60 % (XRP); w7 (\u22121.47 %) and w9 (\u22121.10 %) are the two exceptions.",
+    "F5": "The near-high rise is strongest when the coin's 20-day volatility is in its lower half: +3.85 % (t 3.19, 66 days), against +3.02 % (t 1.35, 52 days) in the upper half.",
+    "F6": "The tested rebound does not show in falling, volatile markets. Among bars with a negative 30-day return and 20-day volatility above the coin's median, every quartile of distance above the prior 30-day low has a negative unusual 5-day move (\u22122.46 % to \u22120.46 %; the strongest t is \u22122.45). That whole regime averages \u22121.18 % (t \u22121.76, 325 cases).",
+    "F7": "The size of the effect is large against costs. The +3.60 % per case in F1 is about 19 times the 0.19 % cost of a trade (buy plus sell). Weekday effects (Monday +1.58 %, t 2.20; Thursday \u22121.61 %, t \u22122.13) do not stand out given the more than 15 cuts examined, and are not counted."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin, the closer its daily close sits to (or above) the highest high of its prior 30 days, the larger its rise over the next 5 days.",
+      "consequence": "A trader would go long coins closing near or above their monthly high and avoid buying coins sitting deep below it.",
+      "name": "near monthly high continuation",
+      "from": "F1, F2, F3, F4, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin's daily returns over the past 20 days have been calm compared with its own past year, the closer its close sits to the highest high of its prior 30 days, the larger its rise over the next 5 days.",
+      "consequence": "A trader would favour monthly-high continuation trades in quiet markets, where the rise after a close near the high is largest.",
+      "name": "calm breakout continuation",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1_near-monthly-high-continuation",
+    "032-02.g2_calm-breakout-continuation"
+  ],
+  "no_ideas": null
+}
