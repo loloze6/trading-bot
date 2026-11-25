@@ -28,22 +28,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 036-02_range-scaled-rally-continuation | - | plan | inconclusive (+1.43) | not profitable enough (failed: Calmar) | - | 7.b: 036-02.b1_scaled-rally-continuation-all-coins, 036-02.b2_rising-market-rally-continues-briefly; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.76 | 5.4 |
 | 051-01_falling-agitated-scaled-fall-next-day-rebound | - | plan | confirmed (+3.01) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.63 | 5.7 |
 | 052-01_down-day-low-close-rebound | - | plan | confirmed (+3.03) | not profitable enough (failed: Calmar) | - | 7.d: 052-01.d1_agitated-down-day-low-close-rebound, 052-01.d2_falling-agitated-low-close-rebound, 052-01.d3_steep-low-close-rebound-grading; 7.g: 052-01.g1_wide-down-day-drop-from-high, 052-01.g2_agitated-low-close-rebound | 1.23 | 5.6 |
+| 037-02_falling-market-range-jump-decline | - | plan | inconclusive (-0.40) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. Wide days in falling markets are followed by no decline at any horizon from 1 to 10 days (F1), with no gradient in the day's width (F2) and no coin, close direction, fall depth or prior-move condition that carries it (F4, F5). The only split that separates is by period, and there the later years rebound against the short (F3).; 7.g: 037-02.g1_rising-market-wide-day-continuation | 1.01 | 5.1 |
 
 ## Consumption
-24 ideas, 26.16 USD, 130.7 minutes in all.
+25 ideas, 27.18 USD, 135.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.10 | 12.5 |
-| step4_backtest | 0.00 | 44.1 |
-| step5_verdict | 4.07 | 15.2 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 5.19 | 13.0 |
+| step4_backtest | 0.00 | 45.9 |
+| step5_verdict | 4.27 | 16.0 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 2.15 | 7.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 4.83 | 15.4 |
-| step7_7.g | 10.01 | 31.8 |
+| step7_7.b | 5.15 | 16.2 |
+| step7_7.g | 10.41 | 33.0 |
 | similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 2.8 |

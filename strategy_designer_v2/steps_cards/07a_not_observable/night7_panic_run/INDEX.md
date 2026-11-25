@@ -7,6 +7,7 @@
 036-01_scaled-rally-week-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 036-02_range-scaled-rally-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 037-01_falling-market-wide-day-decline_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+037-02_falling-market-range-jump-decline_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 038-01_rising-market-scaled-rally-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 039-01_scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 040-01_falling-calm-scaled-fall-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
