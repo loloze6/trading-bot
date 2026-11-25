@@ -1,3 +1,4 @@
+058-01.b1_calm-downtrend-all-coins_1d: inconclusive (fit: adapted) [main: -0.000435884; slope t, cases of one day summed (day-clustered) -0.60512; grid cases with forecast < 0 981, distinct days 271]
 058-01_calm-downtrend-depth-continues_1d: inconclusive (fit: exact) [main: 0.00290122; t of the weighted mean, cases of one day pooled 0.373081; grid cases in a position (forecast < 0) 475, days 201]
 058-02_quiet-volume-fall-continues_1d: inconclusive (fit: exact) [main: -0.00421575; t of the mean, cases of one day summed -0.554834; grid cases 444, distinct days 193]
 058-03_heavy-volume-fall-exhausts_1d: inconclusive (fit: exact) [main: -0.0129266; Welch t -0.975751; heavy-volume cases (forecast > 0) 58, quiet-volume cases (forecast < 0) 408]

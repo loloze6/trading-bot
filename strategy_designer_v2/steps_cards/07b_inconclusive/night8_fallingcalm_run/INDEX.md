@@ -1,3 +1,4 @@
+058-01.b1_calm-downtrend-all-coins_1d: no ideas: The theme's effect is not in the data. The test already used every coin and fold available. Within the falling-calm profile, a deeper 30-day fall is not followed by more falling at 5, 10 or 20 days (F1, F2, F6), and the continuation is no stronger there than outside it (F3). Even the brief's quiet-volume condition shows only a sign with t -0.91 (F4), and the residual changes sign by year and coin (F5).
 058-01_calm-downtrend-depth-continues_1d: 2 ideas (2 explorations)
 058-02_quiet-volume-fall-continues_1d: 1 ideas (2 explorations)
 058-03_heavy-volume-fall-exhausts_1d: no ideas: The test's result is on the side the idea rules out. No coin, period, horizon or depth of fall shows the heavy-volume exhaustion clearly (F1, F3, F4, F5), and the brief's own continuation is absent too (F6), so the theme's effect is not in the data.
