@@ -26,3 +26,4 @@
 038-01_calm-swing-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 038-02_calm-swing-scaled-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 039-01_choppy-swing-scaled-weeks-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+040-01_rising-swing-scaled-weeks-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)

@@ -26,3 +26,4 @@
 038-01_calm-swing-scaled-rise-continues_1d: not profitable enough [Sharpe 0.9096; Sharpe minus holding's Sharpe 0.3569; Calmar 0.6985]
 038-02_calm-swing-scaled-fall-continues_1d: not profitable enough [Sharpe -0.007537; Sharpe minus holding's Sharpe -0.5603; Calmar -0.05024]
 039-01_choppy-swing-scaled-weeks-rise-continues_1d: not profitable enough [Sharpe 0.3464; Sharpe minus holding's Sharpe -0.261; Calmar 0.1207]
+040-01_rising-swing-scaled-weeks-rise-continues_1d: profitable enough [Sharpe 1.104; Sharpe minus holding's Sharpe 0.4966; Calmar 0.9009]
