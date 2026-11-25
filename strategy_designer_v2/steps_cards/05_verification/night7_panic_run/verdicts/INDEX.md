@@ -21,3 +21,4 @@
 049-01_choppy-scaled-five-day-rise-continuation_1d: inconclusive (fit: adapted) [main: -0.000851589; t of the mean, cases of a day pooled -0.288967; cases 717, distinct days 392]
 050-01_falling-calm-scaled-week-fall-continuation_1d: inconclusive (fit: exact) [main: 0.00718781; t, cases of one day summed together 1.59097; cases 677, distinct days 316]
 051-01_falling-agitated-scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.00703452; t of the mean, cases of one day pooled 3.00734; cases 1468, distinct case days 702]
+052-01_down-day-low-close-rebound_1d: confirmed (fit: adapted) [main: 0.00407723; Welch t 3.0325; top tercile down-day cases 2840, bottom tercile down-day cases 2838]

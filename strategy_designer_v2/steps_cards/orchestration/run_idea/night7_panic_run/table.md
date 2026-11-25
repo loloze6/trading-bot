@@ -27,22 +27,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 035-02_rising-market-narrowing-ranges-rise | - | plan | inconclusive (-0.11) | not profitable enough (failed: Calmar) | - | 7.b: 035-02.b1_narrowing-ranges-weekly-rise, 035-02.b2_strong-uptrend-narrowing-ranges-rise; 7.g: 035-02.g1_calm-level-uptrend-continuation, 035-02.g2_low-volatility-rising-coins-continue | 1.77 | 5.5 |
 | 036-02_range-scaled-rally-continuation | - | plan | inconclusive (+1.43) | not profitable enough (failed: Calmar) | - | 7.b: 036-02.b1_scaled-rally-continuation-all-coins, 036-02.b2_rising-market-rally-continues-briefly; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.76 | 5.4 |
 | 051-01_falling-agitated-scaled-fall-next-day-rebound | - | plan | confirmed (+3.01) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.63 | 5.7 |
+| 052-01_down-day-low-close-rebound | - | plan | confirmed (+3.03) | not profitable enough (failed: Calmar) | - | 7.d: 052-01.d1_agitated-down-day-low-close-rebound, 052-01.d2_falling-agitated-low-close-rebound, 052-01.d3_steep-low-close-rebound-grading; 7.g: 052-01.g1_wide-down-day-drop-from-high, 052-01.g2_agitated-low-close-rebound | 1.23 | 5.6 |
 
 ## Consumption
-23 ideas, 24.94 USD, 125.1 minutes in all.
+24 ideas, 26.16 USD, 130.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.03 | 12.1 |
-| step4_backtest | 0.00 | 42.4 |
-| step5_verdict | 3.91 | 14.6 |
+| step3_plan | 5.10 | 12.5 |
+| step4_backtest | 0.00 | 44.1 |
+| step5_verdict | 4.07 | 15.2 |
 | step6_check | 0.00 | 0.8 |
-| chart_files | 0.00 | 0.3 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.53 | 5.4 |
+| step7_7.d | 2.15 | 7.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 4.83 | 15.4 |
-| step7_7.g | 9.64 | 30.6 |
+| step7_7.g | 10.01 | 31.8 |
 | similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 2.8 |

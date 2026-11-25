@@ -21,3 +21,4 @@
 049-01_choppy-scaled-five-day-rise-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 050-01_falling-calm-scaled-week-fall-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 051-01_falling-agitated-scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+052-01_down-day-low-close-rebound_1d: 3 ideas (3 explorations)

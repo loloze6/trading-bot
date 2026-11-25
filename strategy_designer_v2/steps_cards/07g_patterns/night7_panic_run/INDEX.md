@@ -21,3 +21,4 @@
 049-01_choppy-scaled-five-day-rise-continuation_1d: 2 ideas (2 explorations)
 050-01_falling-calm-scaled-week-fall-continuation_1d: no ideas: Every pattern seen is a weak, same-sign version of the tested continuation (slopes with t at most 1.99 among about 50 cells looked at), it changes sign between years, and the book's gain comes from a handful of crash days, so nothing stands out enough from chance to support a new idea.
 051-01_falling-agitated-scaled-fall-next-day-rebound_1d: 0 ideas, 1 discoveries (2 explorations)
+052-01_down-day-low-close-rebound_1d: 2 ideas, 1 discoveries (2 explorations)

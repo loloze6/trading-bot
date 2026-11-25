@@ -21,3 +21,4 @@
 049-01_choppy-scaled-five-day-rise-continuation_1d: not profitable enough [Sharpe 0.4613; Sharpe minus holding's Sharpe -0.09291; Calmar 0.2386]
 050-01_falling-calm-scaled-week-fall-continuation_1d: not profitable enough [Sharpe 0.3082; Sharpe minus holding's Sharpe -0.2614; Calmar 0.1713]
 051-01_falling-agitated-scaled-fall-next-day-rebound_1d: profitable enough [Sharpe 1.049; Sharpe minus holding's Sharpe 0.4795; Calmar 0.7684]
+052-01_down-day-low-close-rebound_1d: not profitable enough [Sharpe 0.6427; Sharpe minus holding's Sharpe 0.08856; Calmar 0.4934]

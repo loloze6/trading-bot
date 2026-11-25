@@ -21,3 +21,4 @@
 049-01_choppy-scaled-five-day-rise-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 050-01_falling-calm-scaled-week-fall-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 051-01_falling-agitated-scaled-fall-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
+052-01_down-day-low-close-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
