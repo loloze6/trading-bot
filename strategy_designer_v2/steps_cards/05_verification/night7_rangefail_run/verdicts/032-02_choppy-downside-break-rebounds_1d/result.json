@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move over the cases (long)",
+    "value": -0.02391382789093494,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": -1.2650901711428277
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and slope on forecast > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast",
+    "value": -0.0009842298472936535,
+    "passed": false
+  },
+  "counts": {
+    "cases": 50,
+    "distinct days": 36
+  },
+  "decided_by": "t lies between -2 and 2: inconclusive by the plan.",
+  "reading": "Situation = recorded depth raw value (or its recomputation from prior 20 lows) below 0 on a bar whose regime is not the 'chop' veto, long side; a case is the first bet (forecast rise of >= 2 points from its lowest long level since the last bet, reset at flat) in each 5-bar grid cell of a window counted from its first row, needing close 5 bars later in the same window; drift = mean of the coin's non-overlapping 5-bar grid returns over all windows; t clusters cases by UTC day with a G/(G-1) correction."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 14-bar excess return on forecast (forecast > 0, in profile, 14-bar grid)",
+    "value": 0.0026083962549501663,
+    "statistic": {
+      "name": "t of slope (day-clustered)",
+      "value": 1.1262982960493253
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean excess > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 14-bar return of forecast > 0 cases > 0",
+    "value": 0.017442956371941192,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 662,
+    "distinct days": 132
+  },
+  "decided_by": "The slope's |t| is below 2.",
+  "reading": "Rising profile read as regime == 'unknown' (the 60-day price-evolution veto not firing), the situation as profile bars with the raw 20-day swing-scaled return > 0 on the long side; the coin's mean 14-bar return is taken over all its non-overlapping grid cases in all windows; the slope's t uses day-clustered errors (each day's x-deviation times residual summed per day); days are the UTC dates of the case bars."
+}

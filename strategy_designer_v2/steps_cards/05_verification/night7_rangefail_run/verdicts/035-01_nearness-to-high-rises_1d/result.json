@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9666281235947838,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast, pooled grid cells",
+    "value": 0.0015100606013514531,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 1.577477035531526
+    },
+    "threshold": "confirm t >= 2 (with positive non-rising-market slope); reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope on cells with 60-day return <= +10 %",
+    "value": 0.0031648393586838183,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 7270,
+    "distinct days": 617,
+    "non-rising-market cells": 2140
+  },
+  "decided_by": "The main slope has t between -2 and 2.",
+  "reading": "All grid cells with a full 5-bar forward return are regressed with an intercept (including forecast-0 cells), the t uses standard errors clustered by calendar day, the normal drift is the coin's mean grid-cell 5-bar return, and cells before bar 60 of a window have no 60-day return and are left out of the supporting check."
+}

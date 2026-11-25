@@ -1,0 +1,59 @@
+{
+  "line": "7.g",
+  "backtest": "034-01.e1_rising-market-breakout-distance-continuation_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4762229,
+  "findings": {
+    "F1": "In rising markets the edge of a close above the prior 20-day high grows with the horizon, while closes below the high give nothing. Above-high cases return, in excess of drift: +3.08 % over 3 days (151 cases, 63 days, pooled t 1.14), +6.36 % over 5 days (74 cases, 32 days, pooled t 2.54, strength 0.98) and +12.25 % over 10 days (38 cases, 15 days, pooled t 2.21, strength 1.11). Below-high cases return +0.41 %, \u22120.55 % and \u22121.39 % over the same horizons, with every t under 1 in absolute value. Removing DOGE leaves the effect intact: +6.82 % at 5 days, t 2.87.",
+    "F2": "Within the above-high cases, the distance above the high does not rank the outcome. The Spearman correlation of distance with the scaled excess return is 0.03 at 3 days (p 0.73), \u22120.04 at 5 days (p 0.72) and 0.31 at 10 days (p 0.056). Entry-forecast quartiles of the book's trades are not monotone either: 6.8 %, 7.1 %, 22.4 % and 12.3 % per trade.",
+    "F3": "Outside rising markets, the further a close sits below its 20-day high in swings, the lower the next 3 days. The Spearman correlation is 0.112 (p 0.0002, 1103 cases). Pooled-by-day excess returns by distance in swings are:",
+    "F4": "This downward drift far below the high is strongest in choppy markets. Choppy cases 4 to 8 swings below the high return \u22123.68 % over 3 days (69 cases, t \u22123.16 unpooled), and those 2 to 4 swings below return \u22121.29 % (104 cases, t \u22122.10). Choppy cases at least 4 swings below give \u22123.49 % pooled (41 days, t \u22121.94); the same cases in falling markets give \u22121.44 % (99 days, t \u22121.42). The deep cases outside rising markets are negative in 9 of the 12 windows, including all six windows with 44 or more cases (w7, w9, w12\u2013w15).",
+    "F5": "In rising markets, coins far below their high do not fall. Cases 4 to 8 swings below return \u22120.74 % over 3 days (t \u22120.59), and cases 2 to 4 below return +0.58 % (t 0.78). The weakness far below the high therefore belongs to non-rising markets, not to the brief's rising one.",
+    "F6": "The book's gain is concentrated in a few days. The top 1 % of its 1449 days carry 88 % of the total summed daily gain, and the top 5 % carry 181 %. The mean daily return ranges from \u22120.017 % to +0.243 % across windows w7\u2013w18, and 4 of the 12 windows are negative."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, the nearer a coin's daily close comes to its 20-day high, and the further it stands above it, measured in units of its daily swing over the last 20 days, the more it rises over the next 10 days.",
+      "consequence": "In a rising market, a trader holds breakouts above the recent high for one to two weeks rather than three days, and expects nothing from coins left below their high.",
+      "name": "rising breakout ten-day drift",
+      "from": "F1, F2",
+      "profile": "rising",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the further a coin's daily close sits below its 20-day high, measured in units of its daily swing over the last 20 days, the more it falls over the next 5 days.",
+      "consequence": "In a choppy market, a trader avoids buying, or sells, coins that have slipped many swings below their recent high, and leans harder the deeper the slip.",
+      "name": "choppy far-below-high decline",
+      "from": "F3, F4, F5",
+      "profile": "choppy",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling market, the further a coin's daily close sits below its 20-day high, measured in units of its daily swing over the last 20 days, the more it falls over the next 5 days.",
+      "consequence": "In a falling market, a trader refuses to bottom-fish coins that are several swings under their recent high and treats the depth of the slip as a reason to stay short.",
+      "name": "falling far-below-high decline",
+      "from": "F3, F4",
+      "profile": "falling",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "034-01.e1.g1_rising-breakout-ten-day-drift",
+    "034-01.e1.g2_choppy-far-below-high-decline",
+    "034-01.e1.g3_falling-far-below-high-decline"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

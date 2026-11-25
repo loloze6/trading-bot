@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of long cases",
+    "value": 0.01746802072646851,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 2.049490212297821
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on at least 30 case-days; reject: t <= -2 on at least 30 case-days"
+  },
+  "supporting_check": {
+    "name": "larger-half minus smaller-half mean unusual move (by forecast)",
+    "value": 0.03876131741570087,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 284,
+    "cases": 387
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 on at least 30 case-days, and the larger-half minus smaller-half difference above 0.",
+  "reading": "A case is the first bar in each 5-bar grid cell (from each window's first row) where the long forecast rises by at least 2 points from its lowest level since the last bet, its 5-bar return needing the bar 5 rows later in the same window; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the halves are the lower and upper floor(n/2) cases by forecast rank (ties by time, coin), the middle case left out when n is odd.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01427 on the check folds against +0.01747 on every fold",
+    "main": 0.0142672528666952,
+    "statistic": 1.1718516445369591,
+    "counts": {
+      "case-days": 130,
+      "cases": 170
+    }
+  }
+}

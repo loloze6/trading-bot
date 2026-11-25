@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per short case (short direction)",
+    "value": 0.0063121385204481266,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.3582693300370843
+    },
+    "threshold": "t >= 2 (with slope > 0) confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast size",
+    "value": -0.0004074786279344011,
+    "passed": false
+  },
+  "counts": {
+    "cases": 994,
+    "distinct days": 567
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (inconclusive rule).",
+  "reading": "Situation = raw fall_in_swings < 0 and 20-bar return < 0 recomputed from the window's closes (the recorded regime 'trending' stands in on the first 20 bars of a window), side short, the choppy profile not checked since the plan adds it by code; a case is a short bet (forecast growing more negative by at least 2 points from its smallest short size since the last bet, from 0 after a flat or side change), the first one in each 5-bar grid cell of its window, needing close 5 bars later in the same window; drift = mean of the coin's non-overlapping 5-bar grid returns over all its windows; t = mean over a day-clustered standard error (deviations summed per day, D/(D-1) correction); the slope is OLS of the unusual move on |forecast| at the case bar."
+}

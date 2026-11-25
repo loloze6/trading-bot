@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 032-02_choppy-downside-break-rebounds_1d
+idea tested: 032-02_choppy-downside-break-rebounds
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6169 USD
+---
+## Findings
+- **F1:** Unlike downside breaks, closes above the highest high of the prior 20 days are followed by more rise, not a failure: 256 cases on 162 days, mean unusual 5-day move +3.04 % (t 2.89 with one day's cases taken together, strength 0.243); over 10 days it is +6.44 % on 193 cases and 122 days (t 3.27, strength 0.302).
+- **F2:** The downside break the idea tested does not rebound: over all trends, 206 cases on 84 days average -0.49 % unusual over 5 days (t -0.29); in a choppy market they average -7.0 % (11 cases, 7 days); the tested book's own 50 cases average -2.39 % (t -1.27), against a trade cost of 0.19 %.
+- **F3:** Among upside breaks, the rise that follows is larger the less the coin rose over the 20 days before the break: the slope of the unusual 5-day move on the prior 20-day return is -0.099 (t -3.03, 256 cases).
+- **F4:** Among upside breaks, the widest prior 20-day ranges (top quartile of high-to-low width over price) give nothing, -0.30 % (t -0.17, 64 cases); the three narrower quartiles give +3.1 %, +4.2 % and +5.1 % (t 1.95 to 2.47); the linear slope on range width is -0.165 (t -1.83).
+- **F5:** The upside continuation does not grow with how far the close sits above the high: by depth quartile in units of 20-day volatility it is +5.5 %, +2.2 %, +0.9 % and +3.5 % (slope +0.0027); it holds across trends (rising +4.8 % with t 2.52 on 97 cases, choppy +3.8 % with t 1.57 on 28 cases, falling +1.0 % with t 0.34 on 30 cases) and is positive in 8 of 12 windows, with negative signs only in windows of 4 to 8 cases.
+- **F6:** The other angles did not stand out once one day's cases were taken together: weekday own returns (Friday +0.41 % with t 1.33, Saturday +0.45 % with t 1.74), the past 1-day move quintiles (t at most 1.77) and 60-day trend quintiles. Breaks of the 60-day high repeat F1 (+4.2 %, t 2.19, 95 cases) without adding to it.
+
+## Ideas
+- `032-02.g1_flat-base-upside-breaks-continue` (from F1, F3, F5): When a coin's daily close is above the highest high of its prior 20 days, its price rises over the next 10 days, and the smaller the coin's 20-day return before that close, the larger the rise.
+- `032-02.g2_tight-range-breakouts-run-further` (from F1, F4): When a coin's daily close is above the highest high of its prior 20 days, its price rises over the next 5 days, and the narrower that 20-day range was relative to the price, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

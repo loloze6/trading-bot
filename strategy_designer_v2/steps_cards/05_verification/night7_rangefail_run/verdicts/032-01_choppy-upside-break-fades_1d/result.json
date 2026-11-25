@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move in the short direction over 5 bars, t clustered by day",
+    "value": -0.008709842610284972,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": -0.7019134254456944
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": -0.009082954550706767,
+    "passed": false
+  },
+  "counts": {
+    "cases": 80,
+    "distinct days": 67
+  },
+  "decided_by": "The t lies between -2 and 2: inconclusive.",
+  "reading": "The choppy profile is read from the recorded regime (bars not vetoed to 'chop'), the 20-day distance from the overshoot component's raw value or else recomputed from prices; a case is the first short bet (forecast rising in size by >= 2 points from its lowest level since the last bet, from 0 after a flat) in each 5-bar grid cell, the normal drift is the mean of the coin's non-overlapping 5-bar grid returns over all windows, the clustered t uses per-day summed deviations with no small-sample correction, and the plan's '<30 cases or days' rule is reported as 'not observable' as the workflow requires for minimum counts."
+}

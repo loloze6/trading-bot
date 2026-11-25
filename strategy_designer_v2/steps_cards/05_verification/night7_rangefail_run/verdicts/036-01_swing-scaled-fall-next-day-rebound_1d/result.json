@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast",
+    "value": 0.0002817877771285506,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 2.150654283165986
+    },
+    "threshold": "t >= 2 confirms (with supporting mean > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return on forecast > 0 bars above 0",
+    "value": 0.0012612017239102646,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast above 0": 18271,
+    "distinct days": 2413,
+    "bars in slope": 36948,
+    "day clusters": 2898
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess next-day return on forecast > 0 bars is above 0.",
+  "reading": "Situation = raw fall_in_swings value below 0 (a down day; day-return sign if not recorded) with forecast > 0 (long); slope t is cluster-robust by UTC day (CR1, all coins' bars of a day as one cluster); the 300-bar and 200-day minimums count bars with forecast above 0 that have a next-day return inside their window; coin mean daily return is over all its windows' next-day returns.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +4.22e-05 on the check folds against +0.0002818 on every fold",
+    "main": 4.2196769613485666e-05,
+    "statistic": 0.28358257674239173,
+    "counts": {
+      "bars with forecast above 0": 12276,
+      "distinct days": 1288,
+      "bars in slope": 24633,
+      "day clusters": 1449
+    }
+  }
+}

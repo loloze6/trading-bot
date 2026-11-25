@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b1.b1_choppy-downside-break-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4413642,
+  "findings": {
+    "F1": "In a rising market (60-day return above +10 %), a daily close above the highest high of the prior 20 days is followed by a 5-day excess return of +4.82 % (t 3.08, 257 cases on 114 days, all bars, overlapping). The same check on the non-overlapping 5-day grid gives +5.62 % (t 1.47, 43 cases on 25 days). Rising bars that do not break average -0.02 % (t -0.02, 441 grid cases).",
+    "F2": "That 5-day continuation grows with the size of the break, measured as the close's distance above the 20-day high in units of the 30-day daily swing. On the non-overlapping grid the terciles give +1.83 %, +5.16 % and +10.98 % (15, 16 and 12 cases), and the slope is +1.59 % per swing unit. On all bars the large tercile gives +10.90 % (t 2.88, 90 cases on 56 days).",
+    "F3": "In a rising market, the 5-day excess return on the grid rises steadily with the close's distance to its 20-day high. It is -2.53 % at 3 to 6 swings below (t -1.61, 131 cases), -0.09 % at 1.5 to 3 below, +2.97 % at 0.5 to 1.5 below, +3.17 % just below, and +2.73 %, +5.77 % and +8.42 % at 0 to 0.5, 0.5 to 1 and over 1 swing above.",
+    "F4": "The rising-market upside-break continuation (all bars, 5 days) holds across years and agitation. By year it is +4.88 % in 2019 (t 1.67), +4.89 % in 2020 (t 2.25) and +5.08 % in 2021 (t 1.83); 2018 has only 4 cases. By agitation it is +5.28 % agitated (t 2.68) and +6.48 % calm (t 1.77). It is positive on 9 of 13 coins (XRP +17.8 %, t 3.31; ADA +4.8 %, t 2.22).",
+    "F5": "The tested choppy downside break rebounds for one day only. The next-day excess is +2.35 % (t 1.53, 32 cases on 17 days), carried by the deepest tercile at +6.64 % (t 1.77, 11 cases). The move then reverses: -2.09 % over 3 days (t -0.68) and -6.19 % over 5 days (t -1.64).",
+    "F6": "In a choppy market, upside breaks do not fail the way the brief claims. The next-day excess is -0.51 % (t -0.50, 63 cases), the largest tercile is -2.09 % (t -1.07), and the 3-day excess is +3.47 % (t 1.91). None of these can be told from 0.",
+    "F7": "Across all bars, the next day after a daily return of 2 to 3 swings down gives +1.10 % (t 2.01, 212 cases on 88 days). After more than 3 swings down it gives +2.35 % (t 1.20). Among the many angles looked at (weekday, close location, volatility rank), this does not stand out."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, when a coin's daily close is above the highest high of its prior 20 days, its price keeps rising over the next 5 days, and the further the close sits above that high (measured against its daily swing over the last 30 days), the larger the rise.",
+      "consequence": "An upside break of the 20-day range in a rising market is a continuation to buy for about a week, and larger breaks deserve larger positions, not fades.",
+      "name": "rising-market breakout continuation",
+      "from": "F1, F2, F4",
+      "profile": "rising",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a rising market, the closer a coin's daily close sits to the highest high of its prior 20 days, or the further above it, measured against its daily swing over the last 30 days, the larger its rise over the next 5 days.",
+      "consequence": "In a rising market a trader should lean long in proportion to how near the coin trades to its 20-day high and step aside from coins that have slipped far below it.",
+      "name": "rising-market proximity to high",
+      "from": "F3, F1",
+      "profile": "rising",
+      "theme": "discovery",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1.b1.g1_rising-market-breakout-continuation"
+  ],
+  "discovery_ids": [
+    "032-02.b1.b1.g2_rising-market-proximity-to-high"
+  ],
+  "no_ideas": null
+}

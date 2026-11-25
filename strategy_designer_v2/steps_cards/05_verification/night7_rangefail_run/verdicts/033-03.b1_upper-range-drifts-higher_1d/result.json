@@ -1,0 +1,29 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope t of 10-bar excess return on forecast (day-clustered)",
+    "value": 0.0012805694928825005,
+    "statistic": {
+      "name": "day-clustered slope t",
+      "value": 1.53497025922876
+    },
+    "threshold": "t >= 2 confirms (with check difference > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess return when above_high > 0 minus mean excess return when forecast < 0",
+    "value": 0.06833236895426736,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in total": 1691,
+    "cases above the 20-day high": 108,
+    "grid cases with forecast below 0": 880,
+    "days (clusters)": 304
+  },
+  "reading": "Expected side taken as long when above_high > 0, else the sign of the raw range position; the slope is OLS with intercept of excess return on forecast, its t day-clustered (CR1); the drift is each coin's mean grid 10-bar return over all its windows; the minimum counts the plan lists under inconclusive are applied as 'not observable'.",
+  "status": "inconclusive",
+  "decided_by": "The slope's t is between -2 and 2."
+}

@@ -524,31 +524,34 @@ class MovingAverageDistanceComponent(SubStrategyComponent):
 
 class DonchianBreakoutComponent(SubStrategyComponent):
     """
-    Where the close sits against its window's channel, on every bar:
+    Where the close sits in a channel of the last `period` bars, on every bar.
 
-        W = bars t-period+1 .. t (bar t included)
-        source = "close" (default): H = max(close[W]), L = min(close[W])
-        source = "high_low":        H = max(high[W]),  L = min(low[W])
+        exclude_current = 0 (default): window = bars t-period+1 .. t   (bar t included)
+        exclude_current = 1:           window = bars t-period .. t-1   (bar t excluded)
+        source = "close" (default): H, L = highest and lowest close of the window
+        source = "high_low":        H = max(high), L = min(low) over the window
         form = "position" (default):
-            pos = (close[t] - L) / (H - L)   (pos = 0.5 when H = L)
+            pos = (close[t] - L) / (H - L), pos = 0.5 when H = L
             raw_value = (2 x pos - 1) x scaling_factor
         form = "below_proximity":
-            mid = (H + L) / 2
-            D = (mid - close[t]) / mid x 100
-            raw_value = 1 / (1 + D) if close[t] < mid, else 0.0     (scaling_factor not used)
+            mid = (H + L) / 2, D = (mid - close[t]) / mid x 100
+            raw_value = 1 / (1 + D) when close[t] < mid, else 0   (scaling_factor not used)
 
-    Range and sign: "position" is -sf to +sf, signed, positive above the middle of the window, 0 at the middle
-    or for a zero range. "below_proximity" is 0 to below 1, never negative, with no direction. It is 0 at or above
-    the middle (a zero range puts the close on the middle) and rises toward 1 as a close below the middle
-    climbs back to it. It jumps from near 1 to 0 where the close crosses the middle.
-    The default form "position" is the original output, unchanged.
-    Warm-up: period rows, bar t included.
-    NaN: a NaN in any value read gives NaN. With "below_proximity", a mid not above 0 gives NaN (never on real bars).
-    Building the component raises for a period below 1, a source other than "close" or "high_low", or a
-    form other than "position" or "below_proximity".
+    Range and sign: "position" with exclude_current 0 runs from -sf to +sf. It is signed, positive above the
+    window's middle and 0 at the middle or for a zero range. With exclude_current 1 it is unbounded and signed:
+    -sf at the prior low, +sf at the prior high, beyond them outside the prior range.
+    "below_proximity" runs from 0 to below 1, never negative.
+    The defaults (exclude_current 0, form "position") are the original output, unchanged.
+    Warm-up: period + exclude_current rows, bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the last `period` rows of data (bar t is the last row): the closes, or the
-    highs and lows plus close[t]; all of them are known at bar t's close.
+    NaN: a NaN in any value read (the window's closes, or highs and lows, and close[t]) gives NaN. With
+    "below_proximity", a mid not above 0 gives NaN (never on real bars).
+    Building raises for period < 1, a source other than "close" or "high_low", a form other than "position"
+    or "below_proximity", or an exclude_current other than 0 or 1.
+
+    WHY THIS CANNOT LEAK: it reads only the last period + exclude_current rows of data (the last row is bar t):
+    the window's closes or highs and lows (ending at bar t, or at bar t-1 with exclude_current 1) and close[t],
+    all known at bar t's close.
     """
 
     def __init__(self, name="DonchianBreakout", weight=1.0, parameters=None):
@@ -559,61 +562,64 @@ class DonchianBreakoutComponent(SubStrategyComponent):
         self.scaling_factor = float(self.parameters.get("scaling_factor", 20.0))
         self.source = self.parameters.get("source", "close")
         if self.source not in ("close", "high_low"):
-            raise ValueError(
-                f"DonchianBreakoutComponent: source must be 'close' or 'high_low', got {self.source!r}")
+            raise ValueError(f"DonchianBreakoutComponent: source must be 'close' or 'high_low', got {self.source!r}")
         self.form = self.parameters.get("form", "position")
         if self.form not in ("position", "below_proximity"):
             raise ValueError(
                 f"DonchianBreakoutComponent: form must be 'position' or 'below_proximity', got {self.form!r}")
+        ex = self.parameters.get("exclude_current", 0)
+        if isinstance(ex, bool):
+            ex = int(ex)
+        if ex not in (0, 1):
+            raise ValueError(f"DonchianBreakoutComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
         self._raw_value = 0.0
 
-    def update(self, data: pd.DataFrame):
+    def update(self, data):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.period
-        close = data['close'].astype(float)
-        c = float(close.iloc[-1])
-        if self.source == "high_low":
-            hi = data['high'].astype(float).iloc[-n:]
-            lo = data['low'].astype(float).iloc[-n:]
-            if hi.isna().any() or lo.isna().any() or np.isnan(c):
-                self._raw_value = float("nan")
-                self.confidence = 1.0
-                return
-            H = float(hi.max())
-            L = float(lo.min())
+        n = len(data)
+        stop = n - self.exclude_current
+        start = stop - self.period
+        close_t = float(data["close"].astype(float).iloc[-1])
+        if self.source == "close":
+            win = data["close"].astype(float).iloc[start:stop]
+            hi_vals = win
+            lo_vals = win
         else:
-            win = close.iloc[-n:]
-            if win.isna().any():
-                self._raw_value = float("nan")
-                self.confidence = 1.0
-                return
-            H = float(win.max())
-            L = float(win.min())
+            hi_vals = data["high"].astype(float).iloc[start:stop]
+            lo_vals = data["low"].astype(float).iloc[start:stop]
+        if np.isnan(close_t) or hi_vals.isna().any() or lo_vals.isna().any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        H = float(hi_vals.max())
+        L = float(lo_vals.min())
         if self.form == "position":
             rng = H - L
-            pos = 0.5 if rng == 0 else (c - L) / rng
-            self._raw_value = float((2.0 * pos - 1.0) * self.scaling_factor)
+            pos = 0.5 if rng == 0 else (close_t - L) / rng
+            value = (2.0 * pos - 1.0) * self.scaling_factor
         else:
             mid = (H + L) / 2.0
             if not mid > 0:
-                self._raw_value = float("nan")
-            elif c < mid:
-                d = (mid - c) / mid * 100.0
-                self._raw_value = float(1.0 / (1.0 + d))
+                value = float("nan")
+            elif close_t < mid:
+                D = (mid - close_t) / mid * 100.0
+                value = 1.0 / (1.0 + D)
             else:
-                self._raw_value = 0.0
+                value = 0.0
+        self._raw_value = float(value)
         self.confidence = 1.0
-        self.debug_info = {'high': H, 'low': L, 'close': c, 'form': self.form, 'source': self.source}
+        self.debug_info = {"high": H, "low": L, "close": close_t, "exclude_current": self.exclude_current}
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self) -> int:
-        return self.period
+    def get_required_periods(self):
+        return self.period + self.exclude_current
 
 class VolumeExpansionHedgeComponent(SubStrategyComponent):
     """
@@ -9386,3 +9392,60 @@ class FallTimesRangeExcessComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class PriorBreakoutCloseCountComponent(SubStrategyComponent):
+    """
+    How many earlier closes broke above their prior closing high, on every bar:
+
+        B(i) = 1 if close[i] > max(close[i-period] .. close[i-1]) else 0   (strictly higher; a tie is not a break)
+        raw_value = sum of B(i) over i = t-window .. t-1                    (bar t excluded)
+
+    Range: 0 to window, integers, never negative, no direction. It grows by one for each earlier breakout
+    close in the window, so fewer earlier breaks give a smaller value.
+    Warm-up: window + period + 1 rows, bar t included (the earliest close read is close[t-window-period]).
+
+    NaN: a NaN close in bars t-window-period .. t-1 gives NaN. close[t] is not read.
+    Building the component raises for a window below 1 or a period below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of rows t-window-period .. t-1, all at or before
+    bar t (the last row of data). Each breakout test at bar i uses closes up to bar i only.
+    """
+
+    def __init__(self, name="PriorBreakoutCloseCount", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.window = int(self.parameters.get("window", 20))
+        if self.window < 1:
+            raise ValueError(f"PriorBreakoutCloseCountComponent: window must be >= 1, got {self.window}")
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"PriorBreakoutCloseCountComponent: period must be >= 1, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).to_numpy()
+        t = len(c) - 1
+        w, p = self.window, self.period
+        seg = c[t - w - p:t]
+        if np.isnan(seg).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        count = 0
+        for i in range(t - w, t):
+            if c[i] > np.max(c[i - p:i]):
+                count += 1
+        self._raw_value = float(count)
+        self.confidence = 1.0
+        self.debug_info = {'breakout_count': count, 'window': w, 'period': p}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.window + self.period + 1

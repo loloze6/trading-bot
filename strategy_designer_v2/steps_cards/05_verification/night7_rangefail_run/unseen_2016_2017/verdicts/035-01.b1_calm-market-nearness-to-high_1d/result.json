@@ -1,0 +1,24 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 0.9649532710280374,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered slope of 5-bar excess return on forecast",
+    "value": null,
+    "statistic": null,
+    "threshold": "slope > 0 with t >= 2 confirms (with tercile difference > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom forecast tercile mean excess 5-bar return",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "grid cases": 170,
+    "distinct days": 119
+  },
+  "decided_by": "the plan's minimum of 200 grid cases on at least 100 distinct days is not reached",
+  "reading": "Cases are the non-overlapping 5-bar grid bars (positions 0, 5, 10, ... of each window) with near_high recorded, excess return = 5-bar return minus the coin's mean 5-bar grid return over all its windows; 'cases of one day summed together' is read as an OLS slope with standard errors clustered by day; terciles are three equal-count groups of the pooled cases ranked by forecast (ties by order)."
+}

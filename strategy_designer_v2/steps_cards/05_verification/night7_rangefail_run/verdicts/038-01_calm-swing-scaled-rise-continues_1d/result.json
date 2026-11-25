@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast",
+    "value": 0.0006699779637008757,
+    "statistic": {
+      "name": "slope t, clustered by date",
+      "value": 1.11754722430498
+    },
+    "threshold": "slope t >= 2 with positive mean excess return confirms; slope t <= -2 rejects; else inconclusive; at least 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return > 0",
+    "value": -0.0015528484854462254,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast > 0": 1779,
+    "dates": 387
+  },
+  "decided_by": "The slope's t is between -2 and 2 (inconclusive rule).",
+  "reading": "Grid at positions 0,5,10,... of each window with a full 5-bar forward return; excess = return minus the coin's mean 5-bar return over all grid bars of all its windows; slope t uses OLS with standard errors clustered by date (CR1 correction) to pool same-date cases; the plan's 'fewer than 100 grid cases' minimum is reported as not observable."
+}

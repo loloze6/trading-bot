@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 034-03_rising-far-below-high-falls_1d
+idea tested: 034-03_rising-far-below-high-falls
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3974 USD
+---
+## Findings
+- **F1:** The tested idea is not in folds B and C. In a rising market, closes more than 2.5 of the coin's own daily swings below the prior 20-day high show a mean excess 5-day return of -0.23 % (t -0.13 with each day's cases taken together; 254 cases on 87 days). Closes 0 to 1 swing below the high show +1.29 % (t 1.09; 224 cases on 90 days). So a deeper slip brings no fall, which matches the verdict's unusual move of -0.33 % (t -0.74).
+- **F2:** In a rising market, a close above the prior 20-day high is followed by a mean excess 5-day return of +4.61 % (t 2.43 with each day's cases taken together; 127 cases on 56 days). This is about 21 times the 0.22 % cost of a trade. The result is positive in 7 of the 9 windows where such closes occur, for example w10 +5.3 %, w11 +8.4 % and w17 +8.0 %.
+- **F3:** In a rising market, the 5-day excess return climbs with the close's distance to the 20-day high counted in swings. By bin it runs -1.64 % (more than 4 swings below), +0.46 %, +0.37 %, +1.44 %, +1.43 % (just below), then +4.76 % (0 to 0.5 swings above), +2.85 % (0.5 to 1 above) and +5.56 % (more than 1 above, t 2.02, 55 cases). The pooled slope over the whole range is 0.0073 per swing (t 2.15, 906 grid cases). Most of that slope comes from closes at or above the high rather than from the depth below it, which is the side the tested short traded.
+- **F4:** Outside rising markets, closes deep below the high are weakly followed by a fall. Below -2.5 swings the mean excess 5-day return is -1.65 % (t -1.51 by day; 642 cases on 158 days). Its largest part is in choppy markets, at -5.5 % (t -2.15; 81 cases on 41 days). Given how many angles were looked at, this does not stand out from chance.
+- **F5:** Weekday effects do not stand out on the coins' mean return per day. The next-day excess is +0.47 % on Thursday (t 1.47, 207 days) and +0.42 % on Friday (t 1.67, 206 days), and every other weekday has |t| below 1.
+
+## Ideas
+- `034-03.g1_rising-above-high-breakout-drift` (from F2, F3, F1): In a rising market, a coin whose daily close stands above its highest close of the prior 20 days rises over the next 5 days, more the more of its own daily swings over the last 20 days it stands above that high.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,40 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-removed 5-bar forward return on post_pipeline_value, grid cases pooled",
+    "value": 0.0005313568593927472,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 3.1741073067376178
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-minus-bottom fifth > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 5-bar return, top fifth minus bottom fifth of forecast",
+    "value": 0.014698903266909365,
+    "passed": true
+  },
+  "counts": {
+    "grid cases across the coins": 3419,
+    "top fifth cases": 684,
+    "bottom fifth cases": 684
+  },
+  "decided_by": "Confirmed on every fold, but the main measure points the other way on the check folds (A, D), the years step 7 does not explore: main measure -0.0001454 on the check folds against +0.0005314 on every fold.",
+  "reading": "Grid = rows 0,5,10,... of each window with close[t+5] in the same window; drift = coin's mean grid 5-bar return over all windows; fifths = pooled 20th/80th percentiles of post_pipeline_value (inclusive); fewer than 500 grid cases is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": false,
+    "why": "main measure -0.0001454 on the check folds against +0.0005314 on every fold",
+    "main": -0.00014543061856688464,
+    "statistic": -0.7198033156965004,
+    "counts": {
+      "grid cases across the coins": 1709,
+      "top fifth cases": 342,
+      "bottom fifth cases": 342
+    }
+  }
+}

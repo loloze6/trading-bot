@@ -211,3 +211,5 @@ night7_steadydecline_run | 037-02_fall-range-beyond-loss-rebound_1d | FallTimesR
 night7_steadydecline_run | 039-02_agitated-range-fall-low-close-rebound_1d | FallInMeanRangesCloseLocationComponent | built: FallCloseLocationComponent {"base": "mean_bar_range", "exclude_current": 1, "vol_period": 30}
 night7_chopreversal_run | 043-01_falling-agitated-intraday-drop-rebound_1d | OpenToCloseDropComponent | built: BarBodySizeComponent {"form": "drop", "relative_to": "open"}
 night7_chopreversal_run | 044-01_agitated-wide-range-fall-rebound_1d | FallStdScaledRangeMultipleComponent | built: ScaledFallRangeMultipleComponent {"lag": 0, "period": 1, "scale": "std", "window": 30}
+night7_rangefail_run | 033-01.b2_beyond-range-close-drift_1d | PriorRangePositionComponent | built: DonchianBreakoutComponent {"exclude_current": 1, "form": "position", "period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night7_rangefail_run | 033-02.d2_fresh-upside-break-rises_1d | PriorBreakoutCloseCountComponent | built: PriorBreakoutCloseCountComponent {"period": 20, "window": 20}

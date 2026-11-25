@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar fall of short bets (return minus coin's mean 5-bar return, short direction)",
+    "value": 0.0077567236398031255,
+    "statistic": {
+      "name": "t of the mean, cases on the same day pooled",
+      "value": 0.6689276284698774
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; at least 30 cases on at least 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean excess fall of cases with |forecast| above median minus below median",
+    "value": 0.016357660926477592,
+    "passed": true
+  },
+  "counts": {
+    "cases": 232,
+    "distinct days": 114
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is a short bet (a rise of the forecast's size of at least 2 points from its lowest level since the last bet, from 0 after a flat), the first in each non-overlapping 5-bar grid cell from each window's first row, returned from its own close over 5 bars inside the window; the drift is the coin's mean return on the 5-bar grid of all its windows; the same-day t sums deviations per UTC day with a G/(G-1) correction; cases exactly at the median |forecast| are left out of the supporting check; the situation uses the recorded raw value, recomputed from prices where missing."
+}
