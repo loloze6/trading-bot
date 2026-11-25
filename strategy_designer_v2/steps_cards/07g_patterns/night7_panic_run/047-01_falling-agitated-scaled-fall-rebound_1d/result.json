@@ -1,0 +1,50 @@
+{
+  "line": "7.g",
+  "backtest": "047-01_falling-agitated-scaled-fall-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6015311,
+  "findings": {
+    "F1": "Outside the tested profile, in coins not in a rising trend, the 5-day return scaled by the 30-day daily swing carries on over the following days. The slope of the unusual move on it is +0.0179 over 3 days (t 2.46, 591 cases on 186 days) and +0.0344 over 5 days (t 3.04, 344 cases on 110 days), with day-clustered t's.",
+    "F2": "Bucketed on 3-day grid cases outside the profile, the 3-day unusual move rises steadily with the scaled 5-day move. It is \u22122.46 % (t \u22122.96, 171 cases) after a 5-day fall of 1 to 2 usual moves, and +1.30 % (t 2.31, 247 cases) after a 5-day rise of 1 to 2 usual moves. Pooled over all trends outside the profile, the slope is +0.0091 (t 2.15, 1,899 cases on 391 days).",
+    "F3": "The carry-on is weaker when the coin is rising: the slope is +0.0042 over 3 days (t 0.49) and +0.0196 over 5 days (t 1.76).",
+    "F4": "Inside the falling-agitated profile, the 5-day scaled move has a negative slope (\u22120.0071, t \u22120.57), the opposite sign to outside it.",
+    "F5": "The tested down-day side is not graded in a way that can be told from chance. Inside the profile:",
+    "F6": "The book's worst 2 % of days average \u22122.72 %, against \u22129.02 % for the coins on those days. That is about a third of the coins' fall on those days, consistent with being in the market on 21 % of coin-days.",
+    "F7": "The Wednesday bar's next-day unusual return (\u22120.50 %, t \u22122.78 on bars) loses its strength once same-day cases are taken together (t \u22121.26). It is not a finding to act on."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has moved far over 5 days against its usual daily swing of the past 30 days, it keeps moving the same way over the next 5 days, and the larger that 5-day move in units of the swing, the larger the move that follows.",
+      "consequence": "A sharp multi-day move scaled by the coin's own swing is a reason to trade with it for the following days rather than fade it.",
+      "name": "scaled five-day move continues",
+      "from": "F1, F2, F3",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, the larger a coin's 5-day return in units of its 30-day daily swing, the further the coin moves the same way over the next 5 days.",
+      "consequence": "In a calm downtrend, a 5-day fall that is unusual for the coin is a reason to stay short or out, and an unusual 5-day rise a reason to hold long, for the following days.",
+      "name": "calm downtrend move continues",
+      "from": "F1, F3, F4",
+      "profile": "falling calm",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "047-01.g1_scaled-five-day-move-continues",
+    "047-01.g2_calm-downtrend-move-continues"
+  ],
+  "no_ideas": null
+}
