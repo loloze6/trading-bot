@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar return, new-high (prox=1) minus other in-regime grid cases",
+    "value": 0.047832359494670476,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.2789814482858493
+    },
+    "threshold": "Welch t >= 2 (with correlation > 0) confirms; Welch t <= -2 rejects; at least 30 grid cases per group"
+  },
+  "supporting_check": {
+    "name": "correlation of prox with excess 10-bar return across in-regime grid cases",
+    "value": 0.1421424655494641,
+    "passed": true
+  },
+  "counts": {
+    "new-high grid cases": 19,
+    "other in-regime grid cases": 75,
+    "all in-regime grid cases": 94
+  },
+  "decided_by": "The plan's minimum of 30 grid cases in each group is not reached (new-high 19, other 75).",
+  "reading": "In-regime grid cases are grid bars (positions 0,10,20,... of each window) with a recorded prox value; new-high means prox equal to 1 within 1e-9; the coin's mean 10-bar return is taken over the same non-overlapping grid of all its windows; for bars with fewer than 28 in-window bars of history the situation check uses the recorded regime ('trending')."
+}

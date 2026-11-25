@@ -1,0 +1,23 @@
+---
+line: 7.e profitable but not proven
+backtest: 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d
+idea tested: 032-02.g1.e1.e1_raw-nearness-to-28-day-high
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3677 USD
+---
+## Findings
+- **F1:** The book's mean daily return of 0.1235 % splits into 0.053 % from the market's own rise (mean position 0.38 × the coins' mean daily return) and 0.0705 % from timing (t 2.53 over 8,689 coin-days), so timing carries most of the gain; it is spread over every coin (timing from 0.004 % a day on XMR to 0.143 % on XRP) and every year except 2018 (timing −0.137 % a day in 2018, +0.259 % in 2020, +0.152 % in 2021).
+- **F2:** On folds B and C, the forecast predicts the 5-day excess return with a day-clustered slope t of 2.68 (1,278 cases, 230 days), where the full test gave only 1.57; the raw, unstandardised nearness gives t 2.86, and the plain t is 4.19 at 5 days and 3.24 at 10 days (846 cases) but −0.24 at 20 days.
+- **F3:** The effect sits at the 28-day high itself: cases in the top fifth of raw distance (mean 1.0 % below the high) are followed by a 5-day excess return of +2.99 % (t 3.67, 256 cases), while the raw distance has no linear slope (t 0.91); the fifth 21.6 % below the high falls a further −3.17 % (t −4.88) and the deepest fifth (38.7 % below) is flat at +0.15 %.
+- **F4:** The 28-day return itself predicts nothing (clustered t 0.18; standardised beta −0.005 next to the forecast's +0.017 in a joint fit), and the forecast's slope is the same whether the 28-day return is up (0.00244, t 2.50, 638 cases) or down (0.00240, t 1.50, 640 cases), so the book earns from nearness to the high and not from past trend.
+- **F5:** The book earns when it holds most: in the top third of positions (mean 0.80) the coin gains 0.43 % a day and the book 0.385 % a day, against about 0 % for both in the two lower thirds (positions 0.08 and 0.26); the gain is concentrated, since the best 5 % of book days sum to 2.99 times the book's total summed return.
+- **F6:** The slope varies by period and coin: it is null in 2018 (t −0.04) and positive in 2019 (t 1.12), 2020 (t 1.87) and 2021 (t 2.21); it is strongest on XRP (t 3.13) and ETH (t 2.21) and weakest on LTC (t 0.44).
+
+## Ideas
+- `032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise` (from F2, F4, F1, F5): The closer a coin closes to its highest close of the last 28 days, compared with how close it has usually closed over the past 60 days, the larger its rise over the next 10 days, whatever its 28-day return.
+- `032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high` (from F3, F4, F5): When a coin closes above its highest close of the previous 28 days, the further its close exceeds that prior high, the larger its rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -16,20 +16,28 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-03.b2.b2_deep-calm-decline-five-days | 032-03.b2_deep-calm-decline-continues | plan | inconclusive (+0.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b2.b2.b1_calm-decline-more-coins, 032-03.b2.b2.b2_volatility-scaled-calm-decline; 7.g: 032-03.b2.b2.g1_thin-volume-two-week-momentum, 032-03.b2.b2.g2_deep-quiet-precedes-rise | 0.97 | 5.5 |
 | 032-01.g1_sharp-daily-fall-rebounds | 032-01_calm-decline-depth-continues | plan | inconclusive (+0.51) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-01.g1.b1_sharp-fall-rebound-more-coins; 7.g: 032-01.g1.g1_close-near-low-rebounds, 032-01.g1.g2_one-day-fall-bounces-next-day | 1.02 | 5.5 |
 | 032-01.g1.b1_sharp-fall-rebound-more-coins | 032-01.g1_sharp-daily-fall-rebounds | plan | inconclusive (+0.21) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-01.g1.b1.b1_sharp-fall-next-day-rebound; 7.g: no ideas: Across about forty angles (the fall's size, 20-day and 5-day trend, volatility level, volume and range expansion, the day's direction, weekday and window), no pattern reaches a day-pooled t near 3, and the best ones (F2 at t 1.99, F3 at t 1.58, F1 at t -0.91) cannot be told from chance after this many looks. | 1.22 | 10.8 |
+| 032-02.g1_uptrend-near-high-continues | 032-02_low-range-decline-continues-more | plan | inconclusive (+1.65) | profitable enough | - | 7.b: 032-02.g1.b1_uptrend-near-high-more-coins; 7.e: 032-02.g1.e1_raw-nearness-to-uptrend-high, 032-02.g1.e2_wide-range-breakout-continuation; 7.g: 032-02.g1.g1_early-decline-near-top-falls, 032-02.g1.g2_violent-deep-fall-rebounds, 032-02.g1.g3_near-high-rise-two-days | 1.32 | 8.1 |
+| 032-02.g1.e1_raw-nearness-to-uptrend-high | 032-02.g1_uptrend-near-high-continues | plan | inconclusive (+1.65) | profitable enough | - | 7.b: 032-02.g1.e1.b1_uptrend-high-proximity-more-coins, 032-02.g1.e1.b2_calm-uptrend-high-proximity; 7.e: 032-02.g1.e1.e1_raw-nearness-to-28-day-high, 032-02.g1.e1.e2_quiet-breakout-to-28-day-high, 032-02.g1.e1.e3_flat-base-high-breakout; 7.g: 032-02.g1.e1.g1_quiet-volume-uptrend-keeps-rising | 1.92 | 6.1 |
+| 032-02.g1.e2_wide-range-breakout-continuation | 032-02.g1_uptrend-near-high-continues | plan | inconclusive (+1.86) | profitable enough | - | 7.b: 032-02.g1.e2.b1_wide-range-breakout-more-coins, 032-02.g1.e2.b2_wide-range-close-beyond-high; 7.e: 032-02.g1.e2.e1_new-closing-high-continuation, 032-02.g1.e2.e2_overextended-high-reverses; 7.g: 032-02.g1.e2.g1_closing-high-continuation-ten-days | 1.40 | 6.7 |
+| 032-02.g1.e1.e1_raw-nearness-to-28-day-high | 032-02.g1.e1_raw-nearness-to-uptrend-high | plan | inconclusive (+1.57) | profitable enough | - | 7.b: 032-02.g1.e1.e1.b1_nearness-to-high-more-coins; 7.e: 032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise, 032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high; 7.g: 032-02.g1.e1.e1.g1_calm-nearness-to-28-day-high | 1.38 | 6.6 |
+| 032-02.g1.e2.e1_new-closing-high-continuation | 032-02.g1.e2_wide-range-breakout-continuation | plan | confirmed (+2.40) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 032-02.g1.e2.e1.g1_next-day-rebound-after-shock | 0.79 | 5.6 |
+| 032-02.g1.e1.e2_quiet-breakout-to-28-day-high | 032-02.g1.e1_raw-nearness-to-uptrend-high | plan | inconclusive (+1.47) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-02.g1.e1.e2.b1_quiet-breakout-all-coins; 7.g: 032-02.g1.e1.e2.g1_high-in-28-day-range-rises | 1.02 | 5.4 |
 
 ## Consumption
-12 ideas, 12.35 USD, 88.6 minutes in all.
+18 ideas, 20.17 USD, 127.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.07 | 6.7 |
-| step4_backtest | 0.00 | 44.1 |
-| step5_verdict | 2.09 | 7.5 |
-| step6_check | 0.00 | 0.4 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 2.32 | 9.9 |
+| step4_backtest | 0.00 | 54.7 |
+| step5_verdict | 3.04 | 10.8 |
+| step6_check | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
-| step7_7.e | 0.00 | 0.0 |
+| step7_7.e | 1.48 | 5.7 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.g | 4.91 | 15.6 |
-| step7_7.b | 4.27 | 13.9 |
+| step7_7.g | 7.76 | 24.7 |
+| step7_7.b | 5.57 | 18.9 |
+| similarity_check | 0.00 | 0.1 |
+| unseen_test | 0.00 | 1.1 |

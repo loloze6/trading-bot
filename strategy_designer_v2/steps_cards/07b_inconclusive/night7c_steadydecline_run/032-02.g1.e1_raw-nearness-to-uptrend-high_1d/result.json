@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "032-02.g1.e1_raw-nearness-to-uptrend-high_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 1,
+  "cost": 0.2121612,
+  "findings": {
+    "F1": "Step 5's slope t of 1.65 (1,700 grid cases, forecast-weighted mean excess +0.56 %, unusual move +0.78 % per case with t 1.88 over 836 days) is on the side the idea predicts, and on the folds shown (B, C) the same slope is clearly positive: t 3.14 on the forecast at 5 days (866 cases), t 3.56 on raw proximity. So folds A and D dilute it, and the result is short of the bar rather than absent.",
+    "F2": "The effect is graded and on the predicted side at 5 days. The mean excess return falls from +2.58 % for closes nearest the 28-day high (D about 0.08 %) to +1.82 % (D 2.3 %), to about 0 % (D 5 to 10 %), to -2.48 % for the deepest pullbacks (D about 21 %). At 10 days the same ends are +6.38 % and -3.00 % (proximity slope t 3.52, 433 cases).",
+    "F3": "The horizon matters. The proximity slope t is 0.66 at 3 days, 3.56 at 5 days and 3.52 at 10 days, but -1.04 at 20 days (205 cases), so the effect lives in the plan's 5-to-10-day span and is not carried further.",
+    "F4": "The effect is uneven across coins and years, which keeps its t modest. Per coin the 5-day t is 3.77 on XRP and 2.12 on XMR, but between 0.18 and 0.68 on BTC, ETH, LTC and ZEC. Per year it is -0.91 in 2018, 0.82 in 2019, 2.92 in 2020 and 2.63 in 2021.",
+    "F5": "The effect shows only in calm uptrends and outside the steepest ones. The 5-day t is 2.87 and 2.42 in the low and middle terciles of 20-day volatility, but 0.25 in the most volatile tercile. It is 2.01 and 3.49 in the lower two terciles of the 28-day return, but 0.79 in the steepest tercile.",
+    "F6": "The gradient belongs to the uptrend regime. Among coins below their close of 28 days ago, the same nearness to the high predicts nothing at 5 days (t -0.38, 640 cases), against t 2.71 in uptrends (866 cases).",
+    "F7": "More data exists than the test used: 13 more coins have daily bars in folds A and D (ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO), and six of them also in part of B and C. The effect also varies by coin (F4), so a wider set of coins is the way to settle its sign."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "uptrend high proximity, more coins",
+      "from": "F1, F2, F4, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F7"
+      ],
+      "idea": "Among coins whose close is above its close of 28 days ago, the smaller the percent distance of today's close below its highest close of the last 28 days, the larger the coin's rise over the next 5 to 10 days, with closes that have pulled back furthest from that high falling behind.",
+      "consequence": "A trader would go long uptrending coins in proportion to how close they close to their 28-day closing high, measured in raw percent rather than relative to its own recent history, and would avoid uptrending coins that have pulled well back from it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "Among coins whose close is above its close of 28 days ago, only while their daily moves over the last 20 days have stayed calm, the smaller the percent distance of today's close below its highest close of the last 28 days, the larger the coin's rise over the next 5 to 10 days, with closes that have pulled back furthest from that high falling behind.",
+      "consequence": "A trader would go long calm uptrending coins in proportion to how close they close to their 28-day closing high, and would not apply this ranking when the coin's recent daily moves are wide.",
+      "name": "calm uptrend high proximity",
+      "from": "F2, F3, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1.e1.b1_uptrend-high-proximity-more-coins",
+    "032-02.g1.e1.b2_calm-uptrend-high-proximity"
+  ],
+  "no_ideas": null
+}

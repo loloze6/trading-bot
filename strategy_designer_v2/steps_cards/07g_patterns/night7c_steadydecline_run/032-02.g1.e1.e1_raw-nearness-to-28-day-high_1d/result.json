@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.5784561,
+  "findings": {
+    "F1": "The tested nearness effect comes only from calm stretches. On the 5-day grid, the slope of excess return per standard deviation of nearness to the 28-day closing high is +0.0327 (t 2.22, 426 cases, 132 days) in the lowest third of 20-day volatility and +0.0247 (t 2.14, 426 cases, 166 days) in the middle third, against -0.0080 (t -0.73, 426 cases, 154 days) in the highest third; pooled over all cases it is only +0.0073 (t 0.87).",
+    "F2": "Within calm stretches, the effect grades upward toward the high. In the lowest volatility third, the nearest quartile to the 28-day high gains +3.36 % in excess over 5 days (t 3.66, 155 cases) and the second-farthest quartile gains -3.37 % (t -3.60, 98 cases). In the highest volatility third, the nearest quartile gains -1.22 % (t -0.64, 66 cases).",
+    "F3": "Split in half by 20-day volatility, the nearest third to the high gains +2.84 % in excess over 5 days in the calmer half (t 4.62, 293 cases) and only +0.15 % in the more volatile half (t 0.12, 133 cases).",
+    "F4": "The calm-regime effect lasts and is spread across coins. In the lowest volatility third, the 10-day slope on nearness is +0.0524 per standard deviation (t 2.20, 410 cases, 126 days). The correlation of nearness with the 5-day excess return is positive on all 6 coins (0.08 to 0.27), but on only 6 of the 11 windows with cases (-0.16 to +0.65).",
+    "F5": "Overall, the relationship to nearness bends at the far end. By quintile of nearness, the second-farthest quintile gains -3.20 % in excess over 5 days (t -5.11, 252 cases), but the farthest quintile gains +0.12 % (t 0.14, 258 cases) and the nearest gains +2.98 % (t 3.65, 258 cases). In high volatility, the farthest quartile gains +1.09 % (t 1.07, 191 cases), which is not distinguishable from 0.",
+    "F6": "The brief's own calm-decline claim does not show. Among coins down over 28 days with calm daily ranges, the deepest-fall third gains -0.36 % in excess over 5 days (t -0.24, 83 cases), against -1.80 % (t -2.03, 128 cases) for the middle third. A larger calm fall is not followed by a larger further fall.",
+    "F7": "The book is mostly a reduced-size long on the coins, not a timing engine. Its daily returns correlate 0.735 with the coins' mean daily return, with a beta of 0.30. Its mean daily return is 0.123 %, against 0.134 % for holding the coins (1,449 days). It loses -1.89 % on the coins' worst fifth of days and gains +2.22 % on their best fifth.",
+    "F8": "Other angles do not stand out given how many were tried. Large standardized 1-day moves are followed by a 5-day slope of +0.0131 (t 2.13, 1,278 cases, 230 days), with only 64 cases above 1.5 standard deviations. The 28-day return (t 0.14), the 5-day return (t 0.46), relative daily range (t -0.05) and relative volume (t 0.57) all have slopes with |t| < 1.2."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily returns over the past 20 days have been calm, the closer its close is to its highest close of the last 28 days, the larger its rise over the next 5 to 10 days. The calmer those 20 days, the steeper this gradient.",
+      "consequence": "A trader would lean long a coin near its 28-day closing high mainly when its recent daily moves are quiet, and refuse to read nearness to the high as a reason to buy when the coin is volatile.",
+      "name": "calm nearness to 28-day high",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1.e1.e1.g1_calm-nearness-to-28-day-high"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-day return on grid bars with forecast > 0",
+    "value": 0.008213630583480104,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 1.860872916131152
+    },
+    "threshold": "confirm: > 0 with t >= 2; reject: < 0 with t <= -2; at least 30 grid cases"
+  },
+  "supporting_check": {
+    "name": "slope of excess return on post_pipeline_value (t >= 1, positive)",
+    "value": 0.0002832597830152371,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 855,
+    "cases in slope regression": 855,
+    "active bars checked": 3204
+  },
+  "decided_by": "The t of the mean excess 5-day return lies between -2 and 2.",
+  "reading": "Situation recomputed from prices inside each window (28-bar close change > 0 and today's high-low range over the mean high-low range of the last 28 bars including today >= 1, long side); active bars of a window's first 28 bars, where this cannot be computed, are left out of the agreement (874 such bars); cases are grid bars (positions 0,5,10,... of each window) with forecast > 0 and a 5-bar forward return inside the window, the coin's mean taken over all its grid returns of all windows, and the slope uses post_pipeline_value of near_high. Slope t = 1.1147167976328904."
+}
