@@ -17,13 +17,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 039-01_agitated-swing-fall-low-close-rebound | - | plan | confirmed (+3.86) | not profitable enough (failed: Calmar) | - | 7.d: 039-01.d1_falling-agitated-forced-selling-rebound, 039-01.d2_multi-day-slide-low-close-rebound; 7.g: 039-01.g1_extreme-agitated-fall-rebound, 039-01.g2_agitated-low-close-two-day-rebound | 1.03 | 6.3 |
 | 035-02_swing-wide-low-close-rebounds | - | missing-components | - | - | - | - | 0.06 | 0.4 |
 | 036-02_fall-vs-range-next-day-rebound | - | missing-components | - | - | - | - | 0.06 | 0.4 |
+| 037-02_fall-range-beyond-loss-rebound | - | missing-components | - | - | - | - | 0.11 | 0.8 |
 
 ## Consumption
-13 ideas, 11.95 USD, 66.4 minutes in all.
+14 ideas, 12.05 USD, 67.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.82 | 6.1 |
+| step3_plan | 1.93 | 6.9 |
 | step4_backtest | 0.00 | 23.7 |
 | step5_verdict | 1.85 | 6.9 |
 | step6_check | 0.00 | 0.5 |
