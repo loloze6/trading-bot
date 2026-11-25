@@ -1,77 +1,79 @@
+import numpy as np, pandas as pd
+from scipy import stats
+
 def explore(data):
-    import numpy as np, pandas as pd
     bars = data["bars"]
+    H = [1, 3, 5, 10, 20]
     rows = []
     drift = {}
     for coin, wins in bars.items():
-        g = []
+        g = {h: [] for h in H}
         for w, df in wins.items():
             c = df["close"].values
-            for i in range(0, len(c) - 5, 5):
-                g.append(c[i + 5] / c[i] - 1)
-        drift[coin] = (np.mean(g), np.std(g))
+            for h in H:
+                idx = np.arange(0, len(c) - h, h)
+                g[h] += list(c[idx + h] / c[idx] - 1)
+        drift[coin] = {h: (np.mean(g[h]) if len(g[h]) else np.nan) for h in H}
+        drift[coin].update({f"sd{h}": (np.std(g[h], ddof=1) if len(g[h]) > 1 else np.nan) for h in H})
     for coin, wins in bars.items():
         for w, df in wins.items():
             df = df.reset_index(drop=True)
-            c = df["close"].astype(float)
-            lr = c.pct_change()
-            vol20 = lr.rolling(20).std()
-            r5 = c / c.shift(5) - 1
-            z = r5 / vol20
-            r20 = c / c.shift(20) - 1
+            c = df["close"]
             n = len(df)
-            for i in range(n):
-                f = {}
-                for h in (1, 3, 5, 10, 20):
-                    f[h] = c.iloc[i + h] / c.iloc[i] - 1 if i + h < n else np.nan
-                rows.append(dict(coin=coin, win=w, pos=i, cell=i // 5,
-                    year=pd.Timestamp(df["timestamp"].iloc[i]).year,
-                    day=pd.Timestamp(df["timestamp"].iloc[i]).floor("D"),
-                    regime=df["regime"].iloc[i], fc=df["forecast"].iloc[i],
-                    z=z.iloc[i], r20=r20.iloc[i], vol20=vol20.iloc[i],
-                    **{f"f{h}": f[h] for h in f}))
-    R = pd.DataFrame(rows)
-    R["dr"] = R.coin.map(lambda k: drift[k][0])
-    R["sd"] = R.coin.map(lambda k: drift[k][1])
-    # cases: forecast<0 first per 5 cell
-    C = R[(R.fc < 0)].sort_values(["coin", "win", "pos"]).groupby(["coin", "win", "cell"]).head(1).copy()
-    C = C[C.f5.notna()]
-    C["u"] = -(C.f5 - C.dr)
-    C["tot"] = -C.f5
+            ts = pd.to_datetime(df["timestamp"])
+            r = c.pct_change()
+            sd20 = r.rolling(20).std()
+            z = (c / c.shift(5) - 1) / (sd20 * np.sqrt(5))
+            r20 = c / c.shift(20) - 1
+            r60 = c / c.shift(60) - 1
+            vol30 = r.rolling(30).std()
+            fc = df["forecast"].values
+            seen = set()
+            for t in range(n):
+                if fc[t] >= 0:
+                    continue
+                cell = t // 5
+                if cell in seen or t + 5 >= n:
+                    continue
+                seen.add(cell)
+                d = {"coin": coin, "win": w, "year": ts[t].year, "day": ts[t].normalize(),
+                     "fc": fc[t], "z": z[t], "r20": r20[t], "r60": r60[t], "vol30": vol30[t],
+                     "sd20": sd20[t]}
+                for h in H:
+                    if t + h < n:
+                        d[f"u{h}"] = -((c[t + h] / c[t] - 1) - drift[coin][h])
+                        d[f"s{h}"] = d[f"u{h}"] / drift[coin][f"sd{h}"]
+                    else:
+                        d[f"u{h}"] = np.nan; d[f"s{h}"] = np.nan
+                rows.append(d)
+    X = pd.DataFrame(rows)
 
-    def tday(df, col="u"):
-        d = df.dropna(subset=[col])
-        if len(d) < 5:
-            return pd.Series(dict(n=len(d), mean=d[col].mean(), t=np.nan, days=d.day.nunique()))
-        m = d[col].mean()
-        s = (d[col] - m).groupby(d.day).sum()
-        D = len(s)
-        se = np.sqrt((s ** 2).sum() * D / (D - 1)) / len(d)
-        return pd.Series(dict(n=len(d), mean=m, t=m / se, days=D))
+    def tclus(sub, col):
+        s = sub.dropna(subset=[col])
+        if len(s) < 5:
+            return pd.Series({"n": len(s), "mean": np.nan, "t": np.nan, "days": np.nan})
+        m = s[col].mean()
+        dev = (s[col] - m).groupby(s["day"]).sum()
+        D = len(dev)
+        se = np.sqrt((dev ** 2).sum() * D / (D - 1)) / len(s) if D > 1 else np.nan
+        return pd.Series({"n": len(s), "mean": m, "t": m / se, "days": D})
 
     out = {}
-    out["all"] = tday(C)
-    out["by_window"] = C.groupby("win").apply(tday)
-    out["by_coin"] = C.groupby("coin").apply(tday)
-    out["by_year"] = C.groupby("year").apply(tday)
-    C["fq"] = pd.qcut(C.fc.abs().rank(method="first"), 4, labels=False)
-    out["by_fc_quart"] = C.groupby("fq").apply(tday)
-    C["zq"] = pd.qcut(C.z.rank(method="first"), 4, labels=False)
-    out["by_rawz_quart(0=most neg)"] = C.groupby("zq").apply(tday)
-    C["r20q"] = pd.qcut(C.r20.rank(method="first"), 4, labels=False)
-    out["by_r20_quart"] = C.groupby("r20q").apply(tday)
-    # horizons
-    hz = {}
-    for h in (1, 3, 5, 10, 20):
-        dd = C.copy(); dd["uh"] = -(dd[f"f{h}"] - dd.dr * h / 5)
-        hz[h] = tday(dd, "uh")
-    out["horizons_on_cases"] = pd.DataFrame(hz).T
-    # unconditioned: all bars, grid pos%5==0, by regime and z quartile among falls
-    G = R[(R.pos % 5 == 0) & R.f5.notna() & R.z.notna()].copy()
-    G["u"] = -(G.f5 - G.dr)
-    G["fall"] = G.z < 0
-    out["grid_by_regime_fall"] = G.groupby(["regime", "fall"]).apply(tday)
-    Gf = G[G.z < 0].copy()
-    Gf["zb"] = pd.cut(Gf.z, [-99, -3, -2, -1, 0])
-    out["grid_falls_by_zbin_regime"] = Gf.groupby(["regime", "zb"]).apply(tday)
+    out["horizons"] = pd.DataFrame({h: tclus(X, f"u{h}") for h in H}).T
+    out["by_year_u5"] = X.groupby("year").apply(lambda s: tclus(s, "u5"))
+    out["by_coin_u5"] = X.groupby("coin").apply(lambda s: tclus(s, "u5"))
+    out["by_window_u5"] = X.groupby("win").apply(lambda s: tclus(s, "u5"))
+    X["fcq"] = pd.qcut(-X["fc"], 4, labels=False, duplicates="drop")
+    out["by_fc_quart_u5"] = X.groupby("fcq").apply(lambda s: tclus(s, "u5"))
+    X["zq"] = pd.qcut(-X["z"], 4, labels=False, duplicates="drop")
+    out["by_rawz_quart_u5"] = X.groupby("zq").apply(lambda s: tclus(s, "u5"))
+    out["by_rawz_quart_u10"] = X.groupby("zq").apply(lambda s: tclus(s, "u10"))
+    X["r20q"] = pd.qcut(-X["r20"], 4, labels=False, duplicates="drop")
+    out["by_r20_quart_u5"] = X.groupby("r20q").apply(lambda s: tclus(s, "u5"))
+    X["r60s"] = np.sign(X["r60"])
+    out["by_r60sign_u5"] = X.groupby("r60s").apply(lambda s: tclus(s, "u5"))
+    X["volq"] = pd.qcut(X["vol30"], 3, labels=False, duplicates="drop")
+    out["by_vol30_terc_u5"] = X.groupby("volq").apply(lambda s: tclus(s, "u5"))
+    out["slope_u5_on_rawz"] = float(stats.linregress(-X.dropna(subset=["z","u5"])["z"], X.dropna(subset=["z","u5"])["u5"]).slope)
+    out["n_total"] = len(X)
     return out

@@ -21,6 +21,7 @@
 035-03.b1_choppy-far-below-high-falls_1d: 2 ideas (2 explorations)
 035-03_far-below-high-falls_1d: 2 ideas (2 explorations)
 036-01_swing-scaled-fall-next-day-rebound_1d: 1 ideas (2 explorations)
+037-01.b1_choppy-extended-fall-continues_1d: 1 ideas, 2 discoveries (3 explorations)
 037-01_choppy-swing-scaled-fall-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 038-01_calm-swing-scaled-rise-continues_1d: 4 ideas (2 explorations)
 038-02_calm-swing-scaled-fall-continues_1d: 2 ideas (2 explorations)
