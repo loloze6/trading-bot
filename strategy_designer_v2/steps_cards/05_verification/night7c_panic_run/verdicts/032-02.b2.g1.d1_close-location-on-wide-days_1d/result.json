@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of daily-summed (forecast/10) x next-day excess return",
+    "value": 0.013452522815026225,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 3.0472084040637757
+    },
+    "threshold": "confirm t >= 2 with top-minus-bottom third difference > 0; reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "top minus bottom third by |forecast| of sign(forecast) x next-day excess return",
+    "value": 0.003205861264426834,
+    "passed": true
+  },
+  "counts": {
+    "days with cases": 2897,
+    "days in main measure": 2898,
+    "bars in main measure": 17380
+  },
+  "decided_by": "The main measure's t is 2 or more and the top-minus-bottom third difference is above 0.",
+  "reading": "Every recorded bar with a next-day return in its window is used (zero forecasts included in the daily sums and in the pooled tercile split by |forecast|, ties broken by order), days are UTC dates, a day with cases is one with a nonzero forecast on any coin, and the plan's 1000-day minimum is reported as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003089 on the check folds against +0.01345 on every fold",
+    "main": 0.003088669844395294,
+    "statistic": 0.601341076794121,
+    "counts": {
+      "days with cases": 1449,
+      "days in main measure": 1449,
+      "bars in main measure": 8691
+    }
+  }
+}

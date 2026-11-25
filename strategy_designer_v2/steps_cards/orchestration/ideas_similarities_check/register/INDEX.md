@@ -183,6 +183,8 @@ An idea's latest record counts once.
 | 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | 75383ddb5 | 2026-11-24T01:55:09 |
 | 031-01.g1.g2_monthly-trend-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | cf258ce23 | 2026-11-24T01:50:50 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 19f1eb4c6 | 2026-11-24T01:30:32 |
+| 032-02.b2.g1.d1.d1_close-location-wide-days-only_1d | confirmed | night7c_panic_run | 1d | 6 | 199431d84 | 2026-11-25T05:01:15 |
+| 032-02.b2.g1.d1_close-location-on-wide-days_1d | confirmed | night7c_panic_run | 1d | 6 | 199431d84 | 2026-11-25T04:57:13 |
 | 032-02.b2.g1_close-location-next-day-reversal_1d | confirmed | night7c_panic_run | 1d | 6 | 40965f2c0 | 2026-11-25T00:31:55 |
 | 032-02.b2.g2_volatile-close-near-low-rebound_1d | confirmed | night7c_panic_run | 1d | 6 | bcc640875 | 2026-11-25T00:55:44 |
 | 032-02.b2_volatile-low-next-day-rebound_1d | confirmed | night7c_panic_run | 1d | 6 | 40965f2c0 | 2026-11-25T00:22:20 |

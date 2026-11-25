@@ -203,3 +203,5 @@ night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts
 night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
 night7c_panic_run | 032-02.b2.d1_volatile-ten-day-low-rebound_1d | LowBreakDepthInMeanRangesComponent | built: BreakoutInMeanRangesComponent {"base_period": 30, "extreme": "low", "period": 10, "side": "below"}
 night7c_panic_run | 032-02.b2.d2_graded-monthly-low-rebound_1d | LowBreakDepthInMeanRangesTimesRangeRatio | exists: BreakoutInMeanRangesComponent {"base_exclude_current": 0, "base_period": 365, "extreme": "low", "high_current": 0, "period": 30, "side": "below"}
+night7c_panic_run | 032-02.b2.d2_graded-monthly-low-rebound_1d | mean bar range width ratio | built: MeanBarRangeRatioComponent {"form": "inverse", "long_period": 365, "short_period": 30}
+night7c_panic_run | 032-02.b2.g1.d1_close-location-on-wide-days_1d | RangeMultipleWeightedCloseLocation | built: RangeMultipleWeightedCloseLocationComponent {"period": 20}

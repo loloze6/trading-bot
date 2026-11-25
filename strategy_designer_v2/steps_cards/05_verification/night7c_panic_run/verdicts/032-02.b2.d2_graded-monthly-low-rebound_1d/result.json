@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-1-day return on forecast > 0 bars minus coin mean daily return",
+    "value": 0.008242416420038671,
+    "statistic": {
+      "name": "t of the mean, same-day cases pooled",
+      "value": 1.4638857033622263
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 distinct days; reject: t <= -2 over >= 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean excess return above median forecast minus below median",
+    "value": 0.012949704704311017,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 197,
+    "cases": 420
+  },
+  "decided_by": "t is between -2 and 2 (or not computable), meeting neither the confirm nor the reject rule.",
+  "reading": "The situation is checked on active bars where it can be evaluated (break from the recorded raw depth > 0, or from prices if missing; 30-bar return from closes inside the window), bars without 30 prior bars in their window being left out of the share; the same-day pooled t sums each day's deviations from the mean (clustered standard error with a D/(D-1) correction); cases equal to the median forecast are in neither group."
+}

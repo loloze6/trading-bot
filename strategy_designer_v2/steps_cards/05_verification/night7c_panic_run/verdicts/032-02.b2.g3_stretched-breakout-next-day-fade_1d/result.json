@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess next-bar return on breakout size (-forecast)",
+    "value": -0.00039496837995451603,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": -0.6096979369621752
+    },
+    "threshold": "t <= -2 confirms (with mean unusual short move > 0); t >= +2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in short direction",
+    "value": -0.0028434171134222655,
+    "passed": false
+  },
+  "counts": {
+    "distinct days with a breakout case": 491,
+    "breakout cases": 782
+  },
+  "decided_by": "Slope t is between -2 and +2: inconclusive per the plan.",
+  "reading": "All bars with regime 'mean_reversion' and a next bar in the same window are cases, including those with forecast 0 (size 0); the slope's t uses day-clustered (CR1) standard errors from OLS of the drift-removed next-bar return on -forecast; the drift is each coin's mean next-bar return pooled over all its windows; days are UTC calendar days of the bar's timestamp."
+}

@@ -1,7 +1,10 @@
 032-01_volatile-decline-low-cascade_1d: not observable (fit: exact) [main: -0.0204635; distinct case days 27, cases 42]
 032-02.b1_volatile-decline-low-rebound-more-coins_1d: inconclusive (fit: exact) [main: -0.0059838; t of the mean, cases summed per day -0.212479; cases 64, distinct days 31]
 032-02.b2.d1_volatile-ten-day-low-rebound_1d: inconclusive (fit: exact) [main: 0.0203643; t of the mean, cases of one day taken together 2.48079; cases 195, distinct case days 124]
+032-02.b2.d2_graded-monthly-low-rebound_1d: inconclusive (fit: adapted) [main: 0.00824242; t of the mean, same-day cases pooled 1.46389; distinct days with cases 197, cases 420]
 032-02.b2.d3_falling-coin-short-low-bounce_1d: inconclusive (fit: exact) [main: 0.00694613; t of weighted mean, cases clustered by day 1.17865; cases (distinct days) 750, cases (bars) 1278]
+032-02.b2.g1.d1.d1_close-location-wide-days-only_1d: confirmed (fit: exact) [main: 0.000237078; day-clustered t of the slope 3.30672; distinct days with regime bars 2126, regime bars in the slope 6674, bars in the top third 2224]
+032-02.b2.g1.d1_close-location-on-wide-days_1d: confirmed (fit: exact) [main: 0.0134525; t of the mean over days 3.04721; days with cases 2897, days in main measure 2898, bars in main measure 17380]
 032-02.b2.g1.d2_long-reversal-after-wide-days_1d: inconclusive (fit: exact) [main: 0.0017578; Welch t 1.18648; days in top tercile 1814, days in bottom tercile 1883]
 032-02.b2.g1.d3_short-fade-in-falling-month_1d: inconclusive (fit: adapted) [main: 0.00126977; t of the weighted mean, cases of one day pooled 1.16071; case-days 8831, distinct days 2218, active bars 8916]
 032-02.b2.g1_close-location-next-day-reversal_1d: confirmed (fit: exact) [main: 0.000604317; OLS t of the slope 4.75869; bars with a non-zero forecast 17380, bars in the regression 17380]
@@ -9,6 +12,7 @@
 032-02.b2.g2.d2_below-midrange-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00385884; t of the forecast-weighted mean, cases of one day summed 1.96777; distinct days with a positive forecast 1369, bars with a positive forecast 3522]
 032-02.b2.g2.d3_rebound-scaled-by-range-widening_1d: mismatch: the test does not match its plan (agreement 0.871716) (fit: exact)
 032-02.b2.g2_volatile-close-near-low-rebound_1d: confirmed (fit: adapted) [main: 0.000429026; t of OLS slope, SE clustered by day 2.45411; regime bars 7697, distinct days 2128]
+032-02.b2.g3_stretched-breakout-next-day-fade_1d: inconclusive (fit: exact) [main: -0.000394968; day-clustered OLS slope t -0.609698; distinct days with a breakout case 491, breakout cases 782]
 032-02.b2_volatile-low-next-day-rebound_1d: confirmed (fit: exact) [main: 0.0236171; day-clustered t of the mean 2.12997; distinct case days 93, cases 143]
 032-02_volatile-decline-low-rebound_1d: inconclusive (fit: adapted) [main: 0.0204635; t of the mean, cases of one day taken together 0.754605; cases 42, days 27]
 032-03.b1_deep-low-rebound-all-coins_1d: inconclusive (fit: exact) [main: 0.00535866; t of the mean, cases of the same day pooled 0.636562; distinct case days 221, cases 437]

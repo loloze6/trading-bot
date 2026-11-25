@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b2.g3_stretched-breakout-next-day-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39051400000000003,
+  "findings": {
+    "F1": "When the coin was falling and agitated (30-day return below 0, and the 5-day spread of daily returns above the coin's median ratio to its 60-day spread), a larger day's return measured in units of its usual daily move was followed by a move the other way the next day. The day-clustered slope t was -2.45 over 334 days, and -2.87 with the range ratio added. Outside that regime the same slope had a t of -0.10 over 671 days.",
+    "F2": "The reversal in F1 is graded and holds across coins and years. Inside the falling, agitated regime, the next day's unusual move was +2.34 % after a day below -2 usual moves (n 83, t 2.75), +0.74 % after -2 to -1 (n 151), and -1.59 % and -1.32 % after days of 0 to +1 usual moves (t -3.30 and -3.26). The per-coin slope t was negative for all six coins (from -1.23 to -3.78, five beyond -2). The per-year slope t was negative in three of four years (2018 -1.64, 2019 -2.51, 2020 -5.70, 2021 -0.49).",
+    "F3": "The F1 effect is large enough to cover the cost of a trade, but it is a one-day effect. Fading the 40 % largest absolute days in that regime earned +1.07 % per case over the next day (t 3.78, 412 cases), which is 0.19 of the usual 1-day move (5.57 %) and about 5.6 times the 0.19 % cost. On a non-overlapping 2-day grid the slope t fell to -0.66 (168 days).",
+    "F4": "Over all bars, where the close sat in the day's range predicted the next day the other way. Closes in the bottom fifth of the range were followed by +0.57 % (t 4.21, n 1740), and closes in the top fifth by -0.31 % (t -2.32). The day-clustered slope t was -2.91 over 1448 days, and -2.15 over 1401 days outside the falling, agitated regime.",
+    "F5": "The tested idea has no size against the cost of a trade. Breakouts above the prior 30-day high gave an unusual move of +0.01 % per case (t 0.03, 256 days) against a 0.19 % cost. The per-coin mean next-day moves after a breakout had mixed signs (from -0.65 % to +2.92 %, every |t| below 1.7). Its book's Sharpe was -0.28.",
+    "F6": "Weekday effects were not strong enough to count after this many angles. Thursday was +0.47 % (t 3.19) and Wednesday -0.49 % (t -2.69), but these t's are not grouped by day."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has fallen over the past 30 days and its daily swings over the past 5 days are wider than usual, the larger today's return is against the coin's usual daily move, the more the coin moves the opposite way over the next 1 day.",
+      "consequence": "In an agitated decline, a trader would refuse to chase the day's move and would favour fading the largest up and down days for one day.",
+      "name": "agitated-decline next-day overshoot reversal",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The nearer a coin's daily close sits to the day's high within that day's range, the lower the coin's return over the next 1 day, and the nearer the close sits to the low, the higher.",
+      "consequence": "A trader would refuse to buy a close pinned at the day's high and would favour buying a close pinned at the day's low for the next day.",
+      "name": "close-in-range next-day reversal",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.g3.g1_agitated-decline-next-day-overshoot-reversal",
+    "032-02.b2.g3.g2_close-in-range-next-day-reversal"
+  ],
+  "no_ideas": null
+}

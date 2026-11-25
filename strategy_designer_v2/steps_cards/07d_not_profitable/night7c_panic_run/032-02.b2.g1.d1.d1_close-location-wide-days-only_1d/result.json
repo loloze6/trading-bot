@@ -1,0 +1,57 @@
+{
+  "line": "7.d",
+  "backtest": "032-02.b2.g1.d1.d1_close-location-wide-days-only_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3932135,
+  "findings": {
+    "F1": "The idea's effect sits almost entirely on its long side. On wide days a low close was followed by +0.88 % excess next-day return (t 5.12, 1245 cases), against +0.20 % (t 1.29, 1405 cases) after a high close. The book's long days earned 49.5 bp a day and its short days \u22120.49 bp, so the short half adds turnover, fees and variance but no gain.",
+    "F2": "Shorts lose when the coin is in a 20-day rise. After a wide day with a high close and a positive 20-day return, the next-day excess return in the short's favour was \u22120.04 % (t \u22120.21, 1003 cases), and the book lost 17.6 bp a day on those short days. The same signal with a negative 20-day return earned +0.79 % (t 2.72, 402 cases).",
+    "F3": "The 20-day fall condition is not an effect of its own. Wide days with a negative 20-day return, taken without the signal, had a next-day excess of +0.23 % (t 1.13, 1008 cases), which runs against a short. The short's gain therefore comes from the high close inside the decline, which is the brief's agitated fall where a high close is a failed bounce. Short gains concentrate in the lowest 20-day-return quartile: +0.93 % (t 2.89, 352 cases), against \u22120.18 %, \u22120.13 % and +0.17 % in the other quartiles.",
+    "F4": "In my rebuilt daily book (an approximation: one 0.19 % fee per unit of allocation change, coins averaged per day), the as-tested positions gave a Sharpe of 0.21, a Calmar of 0.05 and 4.5 bp a day in position.",
+    "F5": "The long effect is graded and lasts two days.",
+    "F6": "The effect held in every year, with excess returns of +0.74 %, +0.40 %, +0.43 % and +0.53 % (t 3.17, 2.11, 2.02, 1.92). It was weakest on BTC at +0.15 % (t 0.79) and strongest on XMR at +0.74 % (t 3.13). Long cases that were also a 30-day closing low earned +1.03 % (t 2.26, 243 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "The lower a coin's daily close sits within that day's high-low range, on a day whose range is wider than the coin's average daily range over the previous 20 days, the more the coin rises over the next 1 day, the rise growing with how much wider the day was.",
+      "consequence": "A trader would buy the close of an unusually wide day that closes near its low, sized by how low the close sits and how wide the day was, and would not short wide days that close high.",
+      "name": "wide-day low-close rebound",
+      "from": "F1, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The lower a coin's daily close sits within that day's high-low range, the more the coin rises over the next 1 day, and the higher the close sits, the more it falls; this holds on days whose range is wider than the coin's average daily range over the previous 20 days, grows with how much wider the day was, and for high closes holds only while the coin's 20-day return is negative, falling more the deeper that 20-day decline.",
+      "consequence": "A trader would buy wide days that close low in any market, but would short wide days that close high only during a 20-day decline, treating that high close as a failed bounce.",
+      "name": "short only in declines",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The lower a coin's daily close sits within that day's high-low range, on a day whose range is wider than the coin's average daily range over the previous 20 days, the more the coin rises over the next 2 days, the rise growing with how much wider the day was.",
+      "consequence": "A trader would hold the rebound after a wide low-closing day for two days instead of one, so that each trade captures a larger move against its fixed cost.",
+      "name": "wide-day rebound two days",
+      "from": "F5, F1",
+      "refs": [
+        "F5",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.g1.d1.d1.d1_wide-day-low-close-rebound",
+    "032-02.b2.g1.d1.d1.d2_short-only-in-declines",
+    "032-02.b2.g1.d1.d1.d3_wide-day-rebound-two-days"
+  ],
+  "no_ideas": null
+}
