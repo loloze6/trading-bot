@@ -5,6 +5,7 @@
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation_1d: 1 ideas (2 explorations)
 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

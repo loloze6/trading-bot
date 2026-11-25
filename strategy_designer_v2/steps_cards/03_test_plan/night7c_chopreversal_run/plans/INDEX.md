@@ -5,6 +5,7 @@
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

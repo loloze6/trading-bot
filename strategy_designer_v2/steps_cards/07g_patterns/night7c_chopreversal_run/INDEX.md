@@ -5,6 +5,7 @@
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: 2 ideas (2 explorations)
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: no ideas: Beyond the tested idea's own choppy-regime continuation (F1, F2), I looked at efficiency-ratio levels, volatility ranks, coins, years, weekdays, daily shocks, trade sides and the book's extreme days, and every other pattern (F4, F5, F6) falls under t 2 once days are clustered or holds on only two of six coins, so none stands out from chance across that many angles.
 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d: 3 ideas (2 explorations)
+032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation_1d: 1 ideas (2 explorations)
 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation_1d: 3 ideas (3 explorations)
 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d: 2 ideas (2 explorations)
 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: 2 ideas (2 explorations)
