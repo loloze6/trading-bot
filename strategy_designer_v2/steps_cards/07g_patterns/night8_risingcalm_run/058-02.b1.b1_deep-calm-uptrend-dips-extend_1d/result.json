@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "058-02.b1.b1_deep-calm-uptrend-dips-extend_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.441912,
+  "findings": {
+    "F1": "In the rising calm profile, a one-day fall is followed by a next-day rebound that grows with the fall's size, measured against the coin's 30-day daily swing. The product of the scaled fall and the next day's excess return over all down days averages +0.81 % (t 3.10 with day-clustered errors, 731 cases on 324 days). Outside the profile the same product is weaker: +0.50 %, t 1.81, 3304 cases.",
+    "F2": "The rebound is graded across bins in the rising calm profile. Days falling more than one usual swing gain +1.62 % excess the next day (t 2.97, 173 cases, 91 days). Smaller falls gain +0.47 % (t 1.81, 560 cases), and up days gain \u22120.02 % (t \u22120.05, 624 cases).",
+    "F3": "The rebound persists past one day. On non-overlapping grids, the graded product in rising calm is +1.07 % over 2 days (t 2.24, 377 cases, 161 days) and +1.96 % over 3 days (t 2.30, 234 cases, 104 days). Falls of more than one swing gain +4.39 % excess over 3 days (t 2.79, 67 cases).",
+    "F4": "The 5-day horizon the tested idea used shows no effect. The verdict found an unusual move of +0.04 % per case (t 0.09, 1159 cases). Short trades lost \u22125.33 % on average net (1098 trades), and the shorts paid the profile's drift of about +0.34 % a day. The rebound is concentrated in the first 1\u20133 days.",
+    "F5": "The next-day graded product is positive in all 4 years: 2018 +0.50 % (t 0.50), 2019 +0.14 % (t 0.23), 2020 +1.23 % (t 4.73) and 2021 +0.83 % (t 1.47). It is positive in 9 of 10 coins; DOGE is the exception with 8 cases. It is positive in 9 of 12 windows (w15 \u22120.48 %, t \u22120.33).",
+    "F6": "A falling day in the rising calm profile that closes in the top third of its range does not rebound: \u22120.97 % next day (t \u22121.43, 68 cases). Falls closing in the lower or middle third gain +0.96 % (t 2.37, 335 cases) and +0.88 % (t 2.97, 328 cases).",
+    "F7": "Two other patterns stand out in the rising calm profile, and both are already held in the profile map. Thursdays carry a next-day excess of +1.46 % (t 4.69, 229 cases); the map holds this as 045-01, \"rising market late week gain\". Five-day excess returns are highest at a 5-day closing high (+3.58 %, t 2.81, 97 cases); the map holds this as 034-01.b1 / 035-01.b1, \"nearness to high\". Neither is proposed again.",
+    "F8": "The size of the rebound clears the cost of a trade. Next-day excess after falls of more than one swing is +1.62 % (F2), against a cost of 0.22 % per trade, about 7 times the cost before the drift is added."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising, calm market, the larger a coin's one-day fall against its usual daily swing over the past 30 days, the larger its rise over the next day.",
+      "consequence": "A trader in a calm uptrend can buy a sharp one-day drop for a one-day hold, sized by how large the drop was against the coin's usual swing.",
+      "name": "calm uptrend one-day dip rebound",
+      "from": "F1, F2, F5, F8",
+      "profile": "rising calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In a rising, calm market, the larger a coin's one-day fall against its usual daily swing over the past 30 days, the larger its rise over the next 3 days.",
+      "consequence": "A trader can hold a calm-uptrend dip purchase for about three days rather than one, but not as long as five.",
+      "name": "calm uptrend dip three-day rebound",
+      "from": "F3, F4, F2",
+      "profile": "rising calm",
+      "theme": "on",
+      "refs": [
+        "F3",
+        "F4",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-02.b1.b1.g1_calm-uptrend-one-day-dip-rebound",
+    "058-02.b1.b1.g2_calm-uptrend-dip-three-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

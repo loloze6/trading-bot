@@ -1,1 +1,5 @@
 058-01_rising-calm-dip-rebound_1d: not profitable enough [Sharpe 0.5769; Sharpe minus holding's Sharpe 0.007268; Calmar 0.393]
+058-02.b1.b1_deep-calm-uptrend-dips-extend_1d: not profitable enough [Sharpe -0.7671; Sharpe minus holding's Sharpe -1.32; Calmar -0.1824]
+058-02.b1_rising-calm-deep-dips-extend_1d: not profitable enough [Sharpe -0.7454; Sharpe minus holding's Sharpe -1.315; Calmar -0.1889]
+058-02.g1_choppy-agitated-dip-continues_1d: not profitable enough [Sharpe -0.2298; Sharpe minus holding's Sharpe -0.7994; Calmar -0.117]
+058-02_rising-calm-below-recent-high_1d: not profitable enough [Sharpe 0.6324; Sharpe minus holding's Sharpe 0.06278; Calmar 0.4184]

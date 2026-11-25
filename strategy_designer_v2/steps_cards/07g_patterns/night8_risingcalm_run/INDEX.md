@@ -1,1 +1,5 @@
 058-01_rising-calm-dip-rebound_1d: 0 ideas, 2 discoveries (2 explorations)
+058-02.b1.b1_deep-calm-uptrend-dips-extend_1d: 2 ideas (2 explorations)
+058-02.b1_rising-calm-deep-dips-extend_1d: 1 ideas (2 explorations)
+058-02.g1_choppy-agitated-dip-continues_1d: 1 ideas, 1 discoveries (2 explorations)
+058-02_rising-calm-below-recent-high_1d: 1 ideas (2 explorations)

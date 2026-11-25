@@ -1,1 +1,5 @@
 058-01_rising-calm-dip-rebound_1d: inconclusive (fit: exact) [main: 0.000416406; day-clustered OLS slope t 0.330579; grid cases with forecast > 0 238, days 127]
+058-02.b1.b1_deep-calm-uptrend-dips-extend_1d: inconclusive (fit: exact) [main: 0.00520952; t of the mean, cases of one day summed as one piece of evidence 0.612557; cases 715, distinct days 239]
+058-02.b1_rising-calm-deep-dips-extend_1d: inconclusive (fit: exact) [main: 0.000572981; slope t, day-clustered 0.607111; non-overlapping cases 396, distinct days 194]
+058-02.g1_choppy-agitated-dip-continues_1d: inconclusive (fit: exact) [main: 0.000259205; regression t 0.317578; grid cases inside the profile with a non-zero forecast 174, grid cases inside the profile 244]
+058-02_rising-calm-below-recent-high_1d: inconclusive (fit: exact) [main: -0.00105883; OLS slope t, day-clustered -1.66833; in-profile grid cases 607, cases with forecast above 0 396]

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (5-bar forward return minus coin's mean 5-bar return), forecast<0, non-overlapping grid",
+    "value": 0.005209517756654922,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed as one piece of evidence",
+      "value": 0.6125572212617887
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, deepest third minus shallowest third (must be < 0)",
+    "value": -0.0006015191299795905,
+    "passed": true
+  },
+  "counts": {
+    "cases": 715,
+    "distinct days": 239
+  },
+  "decided_by": "t of the mean product lies between -2 and 2",
+  "reading": "the rising calm profile is the recorded regime 'unknown'; grid cells need a full 5-bar forward return inside the window; the coin's mean is over all its grid returns in all windows; thirds are n//3 cases at each end sorted by forecast; the t uses a day-clustered standard error."
+}

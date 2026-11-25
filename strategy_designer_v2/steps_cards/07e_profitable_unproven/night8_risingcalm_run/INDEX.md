@@ -1,1 +1,5 @@
 058-01_rising-calm-dip-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02.b1.b1_deep-calm-uptrend-dips-extend_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02.b1_rising-calm-deep-dips-extend_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02.g1_choppy-agitated-dip-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02_rising-calm-below-recent-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
