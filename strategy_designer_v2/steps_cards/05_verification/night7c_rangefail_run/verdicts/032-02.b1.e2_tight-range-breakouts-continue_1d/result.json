@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move per long case (percent)",
+    "value": 4.520124786067817,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.5884339908097513
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation entry forecast vs unusual move (> 0)",
+    "value": 0.03321792933807952,
+    "passed": true
+  },
+  "counts": {
+    "cases": 188,
+    "distinct days": 156
+  },
+  "decided_by": "Confirm: mean unusual move > 0 with t >= 2 and the rank correlation is above 0.",
+  "reading": "Situation recomputed from prices on active bars with enough in-window history (ER(60) smoothed by a 5-bar mean or EMA, or unsmoothed, at or below 0.3, and close strictly above the max high of the prior 60 bars, forecast > 0), falling back to regime=='trending' only if no bar is evaluable; a case is the first forecast bet (rise >= 2 points from its lowest positive level since the last bet) in each 10-bar grid cell from each window's first row, cases without 10 bars ahead in the window are dropped, the per-day clustered t uses D/(D-1) correction, the rank-correlation t is rho*sqrt((n-2)/(1-rho^2)), and the plan's '30 cases on 30 days' minimum is reported as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (86 cases, 75 days)",
+    "main": 2.7358774292109125,
+    "statistic": 1.4249558838557286,
+    "counts": {
+      "cases": 86,
+      "distinct days": 75
+    }
+  }
+}

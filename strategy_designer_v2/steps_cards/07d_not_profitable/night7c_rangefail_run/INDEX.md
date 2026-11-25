@@ -1,5 +1,6 @@
 032-01.b1_flat-range-upside-breaks-continue_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 032-01_flat-range-upside-break-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 032-02.b1.e1_quiet-breakouts-continue-longer_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+032-02.b1.e2_tight-range-breakouts-continue_1d: 3 ideas (2 explorations)
 032-02.b1_flat-range-upside-break-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 032-02_flat-range-downside-break-recovers_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
