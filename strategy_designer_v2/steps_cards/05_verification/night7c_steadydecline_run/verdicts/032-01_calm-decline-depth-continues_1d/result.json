@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next 5-bar excess return on the forecast (forecast < 0 cells)",
+    "value": 0.00040188345415315417,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 0.3519179417421844
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and short-direction mean excess > 0; reject: slope < 0 with t <= -2, or short-direction mean t <= -2; fewer than 30 independent days: inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean short-direction excess 5-bar return > 0 (t summed per day: -0.065)",
+    "value": -0.0005217824916400525,
+    "passed": false
+  },
+  "counts": {
+    "independent days of cases": 141,
+    "cases (coin-cells with forecast < 0)": 173
+  },
+  "decided_by": "Inconclusive rule: the slope's t lies between -2 and 2 (or cannot be computed) and no reject rule is met.",
+  "reading": "Calm is read from the recorded regime 'trending' and the fall from fall28's raw value (28-bar price return where not recorded); the slope is pooled OLS of excess return on forecast with its t from a day-clustered standard error (case terms summed per day, G/(G-1) correction), the short-direction mean's t sums its deviations per day, the coin's mean 5-bar return is over its non-overlapping grid cells of all windows, and the 30-day minimum (stated as inconclusive by the plan) is applied as the minimum count, i.e. 'not observable'."
+}

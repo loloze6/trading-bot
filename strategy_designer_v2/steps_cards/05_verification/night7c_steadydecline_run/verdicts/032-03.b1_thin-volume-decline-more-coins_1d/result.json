@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess return (return minus coin drift) on forecast, in-regime grid cases",
+    "value": 0.0005905055789216119,
+    "statistic": {
+      "name": "slope t, cases of a day taken together",
+      "value": 1.245308386312188
+    },
+    "threshold": "slope t >= 2 confirms (with supporting check and >=100 cases on >=60 days); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return on cases with forecast <= -2 below 0",
+    "value": -0.00865513598713583,
+    "passed": true
+  },
+  "counts": {
+    "in-regime cases": 3307,
+    "distinct days": 498,
+    "cases with forecast <= -2": 1983
+  },
+  "decided_by": "Slope t between -2 and 2: inconclusive by the plan's rule.",
+  "reading": "Situation recomputed as close below its close 28 bars earlier inside each window, falling back to the recorded regime on a window's first 28 bars; expected side short; in-regime cases are grid bars with regime 'trending'; drift is the coin's mean 5-bar return over its non-overlapping grid of all windows; the slope's t uses day-clustered (cases summed per day) standard errors with a G/(G-1) correction; the supporting check uses in-regime grid cases with forecast <= -2."
+}

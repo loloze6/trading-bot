@@ -1,0 +1,6 @@
+032-01_calm-decline-depth-continues_1d: not profitable enough [Sharpe -0.1806; Sharpe minus holding's Sharpe -0.7526; Calmar -0.0589]
+032-02_low-range-decline-continues-more_1d: not profitable enough [Sharpe -0.1335; Sharpe minus holding's Sharpe -0.7152; Calmar -0.1092]
+032-03.b1_thin-volume-decline-more-coins_1d: not profitable enough [Sharpe 0.0988; Sharpe minus holding's Sharpe -0.5069; Calmar 0.004565]
+032-03.b2_deep-calm-decline-continues_1d: not profitable enough [Sharpe -0.2546; Sharpe minus holding's Sharpe -0.8242; Calmar -0.1132]
+032-03_low-volume-decline-continues-more_1d: not profitable enough [Sharpe -0.1548; Sharpe minus holding's Sharpe -0.7121; Calmar -0.09115]
+032-04_calm-decline-rally-sold_1d: not profitable enough [Sharpe 0.06252; Sharpe minus holding's Sharpe -0.4916; Calmar -0.007041]
