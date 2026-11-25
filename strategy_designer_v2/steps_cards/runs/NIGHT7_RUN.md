@@ -199,3 +199,23 @@ separable on this night: the brief's first ideas were confirmed in neither arm (
 took the night and fed the portfolio's own rebound, so the themes, and with them the choppy and falling-calm cells, were
 never tested; the one target cell filled (falling agitated) holds the portfolio's rebound restricted to it, and it does
 not earn on 2026. Next steps: 1n (revised), 1o, 1p in `topics/NEXT_STEPS.md`.
+
+**Measures M4 to M8 (2026-11-25 about 12:30 Paris; the operator's go; `topics/49_review/night7_measures.py`, its print
+`night7_measures.txt`):**
+- **M4, ideas by profile:** choppy 10 tested, 0 confirmed, median 746 cases, median t 1.15; falling 5, t -0.18; falling
+  calm 5, all five with t between 1 and 2 (677 cases); agitated 13 of 20 confirmed, falling agitated 8 of 18, rising 7
+  of 14. The quiet profiles have the cases: their effects are weak or absent, not unobserved.
+- **M5, distinct effects (books correlated 0.7 or more are one effect):** new code 51 confirmed books, about 6 effects,
+  31 of the books one effect (the next-day rebound after a fall, in every profile it was named in); control 19 books, 6
+  effects (10 of them chop continuation). The same variety; the new code paid for it with more copies.
+- **M6, specialists combined** (falling agitated and rising, which cannot hold on the same coin-day; one book per
+  effect, equal capital per profile): Sharpe in-sample 1.77, 2016-17 2.49, 2026 0.29; P4's 20 books 1.64, 1.08, -0.73;
+  the control's 3 profitable books 1.16, 3.67, 1.11. By profile on 2026: rising 1.33, calm 2.21, agitated 0.28,
+  falling agitated -0.33. Correlation with P4 0.35 to 0.48.
+- **M7, the unseen periods by profile:** 2016-17 holds 2 % falling-agitated coin-days (11 to 20 days in a position): the
+  falling-agitated books' "holds" there rests on almost nothing; 2026 holds 19 % (about 276 days in a position) and they
+  lose there (Sharpe -0.06 to -0.33). The rising specialists earn on 2026 (0.9 to 1.8), though their effect is the
+  held books' continuation (explained 0.7 to 0.87 in-sample) and those books lost on 2026.
+- **M8, days in a position outside the profile:** median 16 % beyond the idea's horizon (positions left open, a median
+  size 0.04 to 0.1 of the capital against 0.1 to 0.5 inside) and 1 % in the holding period. The 18 % outside the
+  profile is topic 51's band, not the holding period (the earlier reading said otherwise).
