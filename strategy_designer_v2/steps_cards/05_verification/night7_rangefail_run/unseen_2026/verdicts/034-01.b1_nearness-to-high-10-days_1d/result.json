@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 0.9989701338825953,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of excess 10-bar return on forecast, profile bars, non-overlapping grid",
+    "value": 0.003527705963769499,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.5178270889806336
+    },
+    "threshold": "slope t >= 2 (with top-minus-bottom > 0) confirms; t <= -2 rejects; at least 300 grid cases and 100 distinct grid days"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top third minus bottom third by forecast",
+    "value": 0.0567206837366473,
+    "passed": true
+  },
+  "counts": {
+    "grid cases inside the profile": 178,
+    "distinct grid days": 24
+  },
+  "decided_by": "Minimum count not reached: 178 grid cases inside the profile (300 needed) and 24 distinct grid days (100 needed).",
+  "reading": "The coin's mean 10-bar return is the mean over all its non-overlapping grid cases in all windows (profile or not), the profile is bars with regime 'unknown' where near_high is recorded, the thirds are the n//3 lowest and highest grid cases by forecast (stable sort), and the expected side is the sign of the forecast rebuilt from raw component values (post-pipeline values where a window lacks a full standardise history)."
+}

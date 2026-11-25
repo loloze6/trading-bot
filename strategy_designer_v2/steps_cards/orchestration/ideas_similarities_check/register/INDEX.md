@@ -186,6 +186,7 @@ An idea's latest record counts once.
 | 033-02.d1_upside-break-five-day-hold_1d | confirmed | night7_rangefail_run | 1d | 6 | 4624ac680 | 2026-11-25T00:13:23 |
 | 033-02_upside-break-continues-rising_1d | confirmed | night7_rangefail_run | 1d | 6 | ba5b888fe | 2026-11-24T23:36:38 |
 | 033-03.b2_rising-market-range-top-continuation_1d | paying | night7_rangefail_run | 1d | 6 | 4624ac680 | 2026-11-25T00:03:37 |
+| 034-01.b1_nearness-to-high-10-days_1d | paying | night7_rangefail_run | 1d | 19 | 42c196ffb | 2026-11-25T05:07:31 |
 | 034-01.e1_rising-market-breakout-distance-continuation_1d | paying | night7_rangefail_run | 1d | 19 | 313d1ec6d | 2026-11-25T04:55:54 |
 | 034-02_rising-break-swings-continues_1d | paying | night7_rangefail_run | 1d | 19 | 1e2340f65 | 2026-11-25T00:45:29 |
 | 035-02_break-swings-above-continues_1d | paying | night7_rangefail_run | 1d | 19 | b76156dc7 | 2026-11-25T00:56:20 |

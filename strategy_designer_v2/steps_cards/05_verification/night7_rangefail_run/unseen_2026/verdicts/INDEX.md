@@ -1,4 +1,5 @@
 033-03.b2_rising-market-range-top-continuation_1d: inconclusive (fit: exact) [main: 1.70431; OLS t of the slope 1.70431; non-overlapping in-profile cases 127]
+034-01.b1_nearness-to-high-10-days_1d: not observable (fit: exact) [main: 0.00352771; OLS slope t 1.51783; grid cases inside the profile 178, distinct grid days 24]
 034-01.e1_rising-market-breakout-distance-continuation_1d: inconclusive (fit: exact) [main: 0.0280295; t of weighted mean, same-day cases pooled 1.32891; cases 104, cases on distinct days 41]
 034-02_rising-break-swings-continues_1d: inconclusive (fit: exact) [main: 0.0365219; t of the weighted mean, cases of one day together 2.18023; cases 122, distinct days 64]
 035-02_break-swings-above-continues_1d: not observable (fit: exact) [main: 0.0240836; t of the mean, cases of one day together 1.0145; cases 60, distinct days 25, active bars 241]

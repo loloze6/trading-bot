@@ -9,6 +9,7 @@
 033-03.b1_upper-range-drifts-higher_1d: 2 ideas (2 explorations)
 033-03.b2_rising-market-range-top-continuation_1d: 2 ideas (2 explorations)
 033-03_downside-break-continues-falling_1d: 2 ideas (2 explorations)
+034-01.b1_nearness-to-high-10-days_1d: 2 ideas (2 explorations)
 034-01.e1_rising-market-breakout-distance-continuation_1d: 3 ideas (2 explorations)
 034-01_rising-nearness-to-high-rises_1d: 1 ideas, 1 discoveries (2 explorations)
 034-02_rising-break-swings-continues_1d: 3 ideas (2 explorations)
