@@ -10,21 +10,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 059-01.b1_choppy-calm-rise-more-coins | 059-01_choppy-calm-weekly-rise-continues | plan | inconclusive (+0.99) | not profitable enough (failed: Calmar) | - | 7.b: 059-01.b1.b1_choppy-calm-rise-two-weeks; 7.g: 059-01.b1.g1_calm-market-weekly-rise-continues | 1.02 | 12.2 |
 | 059-01.b1.b1_choppy-calm-rise-two-weeks | 059-01.b1_choppy-calm-rise-more-coins | plan | confirmed (+2.76) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise, 059-01.b1.b1.d2_choppy-calm-rise-up-month; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.44 | 13.6 |
 | 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise | 059-01.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+0.82) | not profitable enough (failed: Calmar) | - | 7.b: 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.36 | 12.9 |
+| 059-01.b1.b1.d2_choppy-calm-rise-up-month | 059-01.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+0.86) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The unusual move is positive but small and uncertain (F1), and it does not grow with the scaled weekly rise (F3). It shows only in up years and turns over in down years (F2), and no horizon, condition or coin group gives it clearly (F4, F5), with no further data to test it on (F6).; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.08 | 12.0 |
 
 ## Consumption
-6 ideas, 6.98 USD, 58.1 minutes in all.
+7 ideas, 8.06 USD, 70.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.46 | 2.8 |
-| step4_backtest | 0.00 | 34.2 |
-| step5_verdict | 1.08 | 3.9 |
+| step3_plan | 0.55 | 3.3 |
+| step4_backtest | 0.00 | 42.7 |
+| step5_verdict | 1.29 | 4.6 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.d | 0.69 | 2.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.73 | 5.5 |
-| step7_7.g | 3.02 | 9.2 |
+| step7_7.b | 2.08 | 6.5 |
+| step7_7.g | 3.45 | 10.4 |
 | similarity_check | 0.00 | 0.1 |

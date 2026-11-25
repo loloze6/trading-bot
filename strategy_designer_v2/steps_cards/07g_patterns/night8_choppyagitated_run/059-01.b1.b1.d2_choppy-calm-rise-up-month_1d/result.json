@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "059-01.b1.b1.d2_choppy-calm-rise-up-month_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.430249,
+  "findings": {
+    "F1": "In a falling market (the coin's 60-day return below -10 %), a day in the top fifth of one-day moves scaled by the coin's 30-day daily swing is followed by a next-day return 0.85 % below the coin's normal daily drift (t -3.34, 346 cases). In a rising market the same days are followed by +0.42 % (t 1.63, 530 cases) and in a choppy market by -0.22 % (t -0.62, 162 cases), so the fade appears only in falling markets.",
+    "F2": "The fade in F1 lasts one day only. On a 5-day grid in falling markets, the top fifth of scaled one-day moves is followed by +1.30 % over 5 days (t 1.13, 67 cases), so the move is spent by the next close.",
+    "F3": "Over all bars, a large scaled down day is followed by a rebound that is graded but sits in the extreme tail. The next day is +0.91 % above drift in the bottom tenth (t 4.20, 741 cases) and +0.30 % in the second tenth (t 1.62), with no effect after that. By trend, the bottom fifth rebounds in falling markets (+0.73 %, t 3.22, 542 cases) and rising markets (+0.63 %, t 2.18, 373 cases), but not in choppy ones (+0.03 %, t 0.06, 153 cases). This long rebound is already held many times in the map (falling agitated long: 12 strategies; rising agitated long: 10), so it is not a discovery.",
+    "F4": "The tested book's gain rests on a few days. Its 1,613 non-zero coin-days sum to +5.29, but without its best 5 % of days they sum to -3.78, and its worst 5 % alone sum to -5.88. This fits its Calmar of 0.52 against the required 0.75.",
+    "F5": "Inside the tested regime (choppy calm, 30-day return above 0), the scaled 7-day rise does not grade the next 14 days. The five fifths read +8.4 %, -8.2 %, -17.2 %, +15.3 % and +14.1 % against drift, with only 7 to 8 cases each. Outside the profile, the top fifth of scaled weekly rises reads -4.6 % (t -1.71, 69 cases). Neither shows the graded continuation the idea claims.",
+    "F6": "Wednesdays are 0.67 % below the next-day drift (t -3.54, 1,056 cases), but the effect comes from 2019 (t -7.16) and from windows w8, w9 and w15; in 2021 it is +0.18 %. It is not steady enough to count as a finding for an idea."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, the larger a coin's one-day rise against its usual daily swing over the past 30 days, the larger its fall over the next day.",
+      "consequence": "A trader should not chase a sharp up day in a coin that has been falling for two months, and may sell it for the next day instead.",
+      "name": "falling market rally fades",
+      "from": "F1, F2",
+      "profile": "falling",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "059-01.b1.b1.d2.g1_falling-market-rally-fades"
+  ],
+  "no_ideas": null
+}
