@@ -87,5 +87,13 @@ The control branches are read in place, not merged.
   5 profitable enough, 53 USD; 31 discoveries made into briefs (panic alone 13). Control, about 45 minutes in: 25 tested,
   1 confirmed, 3 profitable enough, 26 USD.
 
+- **The usage limit stopped the whole night at about 02:10 Paris:** all 8 sessions on the account's 5-hour limit
+  (reset 05:20 Paris); none could schedule its wake-up, since its own model calls were refused too. The designer's
+  check-ins of 02:30, 03:30 and 04:30 Paris did not run (its worker restarted several times and its triggers waited).
+  State at the stop: new code 74 ideas tested, 30 confirmed, 10 profitable enough, 74 USD; control 47 tested, 12
+  confirmed, 5 profitable enough, 54 USD. **05:35 Paris:** the watch: no fault; all 8 sessions told to resume (their
+  branch first if their machine was replaced), the time rule unchanged (no new idea after 08:00 Paris). About 2.5 hours
+  of the night remain: the budgets will not be spent.
+
 ## Reading (the morning)
 To be written after the merge: the outcome, the counts, the step back.
