@@ -191,6 +191,7 @@ An idea's latest record counts once.
 | 035-01_wide-low-close-rebounds_1d | confirmed | night7_steadydecline_run | 1d | 6 | 3bed67057 | 2026-11-24T23:38:26 |
 | 035-02_swing-wide-low-close-rebounds_1d | confirmed | night7_steadydecline_run | 1d | 6 | 2004db9e8 | 2026-11-25T01:00:26 |
 | 037-01_wide-day-fall-next-day-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | 659d13acf | 2026-11-25T00:14:17 |
+| 037-02_fall-range-beyond-loss-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | 7a8ff0fac | 2026-11-25T01:09:56 |
 | 038-01_agitated-fall-next-day-rebound_1d | paying | night7_steadydecline_run | 1d | 6 | 659d13acf | 2026-11-24T23:53:29 |
 | 038-02_agitated-fall-vs-swing-rebound_1d | paying | night7_steadydecline_run | 1d | 6 | 23b3baf75 | 2026-11-25T00:25:46 |
 | 039-01_agitated-swing-fall-low-close-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | 659d13acf | 2026-11-25T00:19:07 |

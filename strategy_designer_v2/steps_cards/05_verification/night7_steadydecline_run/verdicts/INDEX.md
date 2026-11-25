@@ -11,6 +11,7 @@
 036-01_fall-vs-swing-next-day-rebound_1d: inconclusive (fit: adapted) [main: 0.00622551; t of the mean, cases clustered by day 2.74567; cases 2093, distinct days 738]
 036-02_fall-vs-range-next-day-rebound_1d: inconclusive (fit: exact) [main: 0.0172916; t of the mean (over per-day summed cases) 1.9338; case days 365, case bars 936, active bars 946]
 037-01_wide-day-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000740075; t of the mean over days 2.37149; bars with forecast > 0 8605, distinct days 2219, days in main measure 2898]
+037-02_fall-range-beyond-loss-rebound_1d: confirmed (fit: exact) [main: 0.000420498; day-clustered t of the slope 3.29992; case bars 8489, distinct days 2196]
 038-01_agitated-fall-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.0010705; t clustered by day 2.76736; cases 1468, distinct days 702]
 038-02_agitated-fall-vs-swing-rebound_1d: confirmed (fit: exact) [main: 0.0010552; OLS slope t 4.79687; cases with forecast > 0 1468]
 039-01_agitated-swing-fall-low-close-rebound_1d: confirmed (fit: adapted) [main: 0.000521419; t of the OLS slope 3.86196; days with a positive forecast 1463, days in the regression 1449]
