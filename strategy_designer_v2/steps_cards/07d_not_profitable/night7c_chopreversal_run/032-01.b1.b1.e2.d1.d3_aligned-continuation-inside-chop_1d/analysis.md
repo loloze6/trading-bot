@@ -1,0 +1,26 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d
+idea tested: 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6229 USD
+---
+## Findings
+- **F1:** The deepest fall of the book on folds B and C is −26.7 %. It runs from late w11 through w14. Most of it is in w12, where the book lost −10.1 % summed while holding the coins lost −2.7 %, and in w14, where the book lost −17.0 % over 78 days. w12 is the only window with a negative mean daily return (−0.083 %) and has the deepest in-window fall (−21.3 %).
+- **F2:** Because of the 7-bar minimum holding, the book holds positions after the chop regime has ended. Those off-chop bars earn far less than chop bars: shorts off chop lose −0.071 % a bar over 1451 bars (−1.03 summed), against +0.126 % a bar for shorts in chop. In off-chop bars where the 30-day efficiency ratio has risen above 0.3, shorts lose −0.10 % a bar over 493 bars, while longs in the same state earn +0.51 % a bar over 443 bars.
+- **F3:** Inside the deepest fall, long positions lost −0.48 summed off chop and −0.82 in chop, and shorts lost −0.31 off chop. Shorts still in chop earned +0.66 there. So the fall comes from long positions and from shorts carried past the chop's end.
+- **F4:** Rebuilt from the bars with approximate fees, removing only the shorts held after the chop has ended cuts the deepest fall from −25.3 % to −20.8 % and raises the yearly return from 37 % to 45 %. Calmar rises from 1.48 to 2.14 and Sharpe from 1.17 to 1.40. Holding only while chop holds gives a deepest fall of −18.7 % and Calmar 1.71, but the yearly return drops to 32 %. These reconstructed levels run higher than the record's 0.59; only the comparisons between versions should be read.
+- **F5:** The effect is strongest while the chop lasts. Aligned-chop grid cases whose chop holds through all of the next 7 days gain +6.9 % signed and drift-adjusted (t 5.35, 82 cases), against +1.8 % (t 2.57, 430 cases) where the chop ends inside the week. The continuation fades as soon as the market leaves chop.
+- **F6:** The signal is graded by the 30-day return counted in 30-day daily swings. Aligned-chop cases in its lowest, middle and highest terciles gain +2.4 % (t 1.95), +3.4 % (t 2.90) and +5.6 % (t 3.56), 114–115 cases each. The condition alone does not earn: bars outside aligned chop with a top-quartile scaled 30-day move give −1.0 % (t −0.87, 203 cases).
+- **F7:** Both sides carry the effect per case: longs +2.2 % (t 2.20, 250 cases) and shorts +2.6 % (t 3.21, 262 cases). The book's shorts, however, earn only +0.039 % a bar against +0.237 % for longs. That gap is due to how shorts are held after the signal, not to the signal itself.
+- **F8:** The book's gain grows with the forecast's size. Held bars in the lowest quartile of |forecast| earn +0.048 % a bar, against +0.16 %, +0.37 % and +0.26 % in the next three quartiles (about 925 bars each). The weakest quarter of positions adds exposure to falls with almost no gain.
+
+## Ideas
+- `032-01.b1.b1.e2.d1.d3.d1_short-continuation-ends-with-chop` (from F2, F3, F4, F7, F1): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way. A down-week continuation lasts only while the past 30 days are still going back and forth at each day's close, while an up-week continuation carries on over the full 7 days. The larger that scaled 7-day move, the larger the following move.
+- `032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop` (from F5, F2, F4, F1): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the following days, only while its 30-day return points the same way and only for as long as the past 30 days are still going back and forth at each day's close. The larger that scaled 7-day move, the larger the following move.
+- `032-01.b1.b1.e2.d1.d3.d3_month-strength-graded-chop-continuation` (from F6, F8): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way and the past 30 days are still going back and forth at each day's close. The larger the 30-day return counted in 30-day daily swings, the larger the following move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,6 +1,8 @@
 032-01.b1.b1.e1_large-weekly-fall-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
