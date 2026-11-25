@@ -1,5 +1,7 @@
 032-01.b1_flat-range-upside-breaks-continue_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-01_flat-range-upside-break-fades_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-02.b1.e1.e1_tight-range-breakouts-continue_1d: missing-components: The catalogue has no component for the width of the 60-bar range of closes measured in the coin's usual daily [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d: missing-components: Almost every close at a new 60-day high follows a positive 20-day return, so `standardise` (which keeps the sign) and [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.b1.e1_quiet-breakouts-continue-longer_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.b1.e2_tight-range-breakouts-continue_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.b1_flat-range-upside-break-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
