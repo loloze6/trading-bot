@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "054-02.b2_low-close-reclaim-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5909173,
+  "findings": {
+    "F1": "Outside the falling-agitated profile, a day that pierces the prior 30-day low and closes back above it is followed by a fall, not a rebound. The unusual 5-day move is -4.1 % (t -2.00 with same-day cases pooled; 113 cases on 75 days; hit rate 40 %), and the unusual 10-day move is -5.8 % (t -2.92; 93 cases on 62 days). All six coins are negative at 5 days, from -0.5 % for ZEC to -8.7 % for ETH.",
+    "F2": "After a reclaim outside the profile, the fall is graded by the coin's 60-day return. In the deepest tercile (mean 60-day return -42 %) the unusual 5-day move is +1.6 %; in the middle tercile (-18 %) it is -6.4 %; in the highest tercile (+15 %) it is -12.2 % (27 cases each). Inside the falling-agitated profile, reclaims give +3.9 % (t 1.74, 30 cases), which fits the same gradient.",
+    "F3": "When the coin's 60-day return is above -10 % (a choppy or rising market), a reclaim is followed by an unusual move of -11.6 % over 5 days (t -2.28; 31 cases on 21 days) and -12.9 % over 10 days (t -3.82; 26 cases on 17 days). The rising subset gives -14.5 % (13 cases) and the choppy subset -9.7 % (19 cases) at 5 days. These samples are small and I looked at many angles, so this is weaker evidence than F1.",
+    "F4": "Outside the profile, the post-reclaim fall is graded by where the close sits in the day's range. The Spearman correlation between distance-from-high and the unusual 5-day move is +0.20 (p 0.03, 113 cases). By tercile of close location, the closes nearest the high give -6.0 %, the middle tercile -6.9 %, and the closes nearest the low +0.5 % (38, 37 and 38 cases).",
+    "F5": "A day that pierces the prior 30-day high and closes back below it is followed by a rise, not a fall: +2.9 % unusual over 5 days (t 2.33; 218 cases on 140 days), and +5.9 % in rising markets (t 2.98). A day that closes above the 30-day high does about the same (+3.2 %, t 2.74). This is new-high continuation, which the map already holds in rising profiles (034-01, 033-03.b2), so it is not a discovery.",
+    "F6": "The tested idea's own effect is weak in folds B and C. Within the profile, closes below the 30-day low give +2.4 % (t 1.16, 32 cases). The book's few trades (0.0075 per day, 2 % of days in a position) are too rare to pay, even though the 3.59 % total move is 18.6 times the 0.19 % cost of a trade. Weekday means (-1.6 % to +1.6 %, about 230 cases each) show no pattern that stands out."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's day trades below its lowest price of the past 30 days but closes back above it, the coin falls over the next 10 days, and the fall is larger the higher the coin's 60-day return.",
+      "consequence": "A trader should refuse to buy a reclaimed monthly-low pierce unless the coin has already fallen hard over the past two months, and should lean short on it in a coin that has held up.",
+      "name": "reclaimed low fails uptrend",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "When a coin's day trades below its lowest price of the past 30 days and closes back above it, the coin falls over the next 5 days, and the fall is larger the nearer the close sits to the day's high.",
+      "consequence": "A strong-looking reclaim that closes near the day's high is a warning of further weakness, not a sign of a bottom.",
+      "name": "high-close reclaim keeps falling",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "054-02.b2.g1_reclaimed-low-fails-uptrend",
+    "054-02.b2.g2_high-close-reclaim-keeps-falling"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

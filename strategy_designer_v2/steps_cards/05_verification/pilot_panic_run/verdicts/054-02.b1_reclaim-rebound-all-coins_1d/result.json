@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "5-day forward return after case bars minus that of the other falling-agitated bars",
+    "value": 0.01526505478032839,
+    "statistic": {
+      "name": "Welch t (cases of a day taken together)",
+      "value": 0.8056808059346141
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2 (and Spearman > 0); reject: difference < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman of reclaim post_pipeline_value vs drift-adjusted 5-day return",
+    "value": -0.10800669402451335,
+    "passed": false
+  },
+  "counts": {
+    "cases": 153,
+    "distinct days": 72,
+    "other falling-agitated bars": 969
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the difference), meeting neither rule.",
+  "reading": "The falling-agitated profile is taken from the detector's recorded regime (mean_reversion or unknown, i.e. no veto fired) intersected with a 60-day close return below -10 % where the window allows, because the 365-day volatility median cannot be rebuilt inside a ~122-bar window; cases are the first long bet (forecast rise >= 2 from its low since the last bet) in each 5-bar grid cell, others are in-profile grid bars of cells without a case, and the Welch t uses a day-clustered standard error on the case side."
+}

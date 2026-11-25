@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar short move per case, before costs",
+    "value": 0.03718413726109318,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.4831580702714349
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual short move, larger |forecast| half minus smaller half",
+    "value": 0.12312425313706812,
+    "passed": true
+  },
+  "counts": {
+    "cases": 39,
+    "days": 31
+  },
+  "decided_by": "The t is between -2 and 2 over at least 30 cases.",
+  "reading": "The situation is low below the lowest low of the 30 prior bars of the same window with close at or above it (bars without 30 prior bars in the window left out of the agreement), the expected side is short; a case is the first short bet (forecast rise of at least 2 points on the short side from its lowest level since the last bet, from 0 after a flat) in each 10-bar grid cell of a window, its return taken from that bet's close over 10 bars inside the window; the coin's drift is the mean of its non-overlapping 10-bar returns on the grid of all windows; the t clusters deviations by UTC day with a D/(D-1) correction; the supporting halves are |forecast| above the median versus at or below it."
+}

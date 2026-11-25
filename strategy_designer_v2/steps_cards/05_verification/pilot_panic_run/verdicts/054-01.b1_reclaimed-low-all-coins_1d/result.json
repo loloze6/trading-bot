@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-day return of long bets over the coin's mean 5-day return",
+    "value": 0.024344709480734337,
+    "statistic": {
+      "name": "t of the mean, deviations summed per day",
+      "value": 1.2866777289050968
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and deeper-minus-shallower > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean excess 5-day return (split at median forecast) (Welch t 1.530)",
+    "value": 0.03128319697144567,
+    "passed": true
+  },
+  "counts": {
+    "cases": 148,
+    "distinct days": 67,
+    "cases in deeper half": 74
+  },
+  "decided_by": "The t of the mean excess 5-day return lies between -2 and 2 (or its sign disagrees with the mean), meeting neither rule.",
+  "reading": "Situation = a reclaimed pierce of the prior 30-day low (recorded pierce_depth raw value > 0, recomputed from prices where not recorded) on a bar the detector sent to mean_reversion (the regime column carries the falling-agitated profile vetoes, whose 60-bar trend and 365-bar volatility percentile cannot be rebuilt inside a window), expected side long; a case is a forecast rise of at least 2 points from its lowest positive level since the last bet (from 0 after a flat), the first in each 5-bar grid cell of its window; the coin's mean 5-day return is taken on the non-overlapping grid of all its windows; the day-clustered t uses per-day sums of deviations with a G/(G-1) correction; the deeper half is forecast above the median, the shallower half at or below it; the plan's 'fewer than 30 cases or 25 days' rule is reported as 'not observable'."
+}

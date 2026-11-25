@@ -1,0 +1,86 @@
+## regime counts
+reg
+chop              8467
+unknown           1466
+mean_reversion      53
+
+## by horizon (excess over coin drift, grid)
+     h                    group     n  days  mean_excess  t_dayclust
+0    1                 case(mr)    53    30     0.022446    0.928219
+1    1      reclaim any profile   202   107    -0.018219   -1.305089
+2    1  close below low, inprof    47    24     0.034618    1.209882
+3    1             other inprof  1457   487     0.000915    0.297996
+4    2                 case(mr)    31    17     0.065612    1.596985
+5    2      reclaim any profile   124    69    -0.009737   -0.539480
+6    2  close below low, inprof    24    11     0.018413    0.673596
+7    2             other inprof   718   253     0.000279    0.049442
+8    3                 case(mr)    16    10    -0.031011   -0.561212
+9    3      reclaim any profile    73    38    -0.009849   -0.531555
+10   3  close below low, inprof    17     6     0.056005    1.190517
+11   3             other inprof   483   169     0.001792    0.196203
+12   5                 case(mr)    17     9     0.063989    1.167874
+13   5      reclaim any profile    52    24    -0.026650   -0.477125
+14   5  close below low, inprof     8     6    -0.024003   -0.447305
+15   5             other inprof   290   101    -0.002989   -0.223358
+16  10                 case(mr)     4     2     0.287811         NaN
+17  10      reclaim any profile    22    12    -0.042374   -0.453831
+18  10  close below low, inprof     3     2    -0.110701         NaN
+19  10             other inprof   143    50    -0.000135   -0.005281
+
+## case by coin
+         count      mean
+coin                    
+ADAUSD       1 -0.116913
+BTCUSD      11  0.002875
+DOGEUSD      2  0.285340
+ETHUSD       9  0.032839
+LINKUSD      2  0.225193
+LTCUSD       5  0.058526
+XMRUSD       8  0.080589
+XRPUSD       3 -0.011046
+ZECUSD      11  0.055390
+
+## case by year
+      count      mean
+year                 
+2018     23  0.051575
+2019      6 -0.020994
+2020      9 -0.021623
+2021     14  0.134227
+
+## case by strength tercile
+            x5        f1        f3       f10       str
+sq                                                    
+low   0.068754  0.014631  0.029209  0.084876  0.153044
+mid   0.041832 -0.014173  0.022045  0.079335  0.366877
+high  0.035023  0.014250  0.008048  0.037887  0.569858
+
+## case by strength count
+sq
+low     12
+mid     13
+high    13
+
+## case by 60d depth
+               x5       f10       r60
+r60q                                 
+deepest  0.102058  0.088404 -0.557051
+mid      0.038394  0.040853 -0.405937
+shallow -0.013404  0.009047 -0.233278
+
+## spearman str vs x5, x10
+x5    -0.173433
+f10   -0.077361
+
+## reclaim by profile
+                    x5             f10          
+                 count      mean count      mean
+cls                                             
+falling agitated    38  0.048004    38  0.066905
+other profile      158 -0.037592   152 -0.043236
+
+## share hit x5>0 case
+0.660377358490566
+
+## median x5 case
+0.04287130735625902
