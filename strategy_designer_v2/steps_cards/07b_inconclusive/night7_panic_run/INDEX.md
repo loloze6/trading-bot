@@ -20,3 +20,4 @@
 048-01_scaled-up-week-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 049-01_choppy-scaled-five-day-rise-continuation_1d: 1 ideas (2 explorations)
 050-01_falling-calm-scaled-week-fall-continuation_1d: 1 ideas (1 explorations)
+051-01_falling-agitated-scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

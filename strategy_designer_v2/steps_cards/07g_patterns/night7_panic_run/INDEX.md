@@ -20,3 +20,4 @@
 048-01_scaled-up-week-continuation_1d: no ideas: Every pattern beyond the tested idea is under t 2 once the many angles looked at are counted: the down-week mirror is flat (F1), no profile concentrates the effect (F3), the calm-market asymmetry is not graded (F4), and the bar angles show nothing (F5).
 049-01_choppy-scaled-five-day-rise-continuation_1d: 2 ideas (2 explorations)
 050-01_falling-calm-scaled-week-fall-continuation_1d: no ideas: Every pattern seen is a weak, same-sign version of the tested continuation (slopes with t at most 1.99 among about 50 cells looked at), it changes sign between years, and the book's gain comes from a handful of crash days, so nothing stands out enough from chance to support a new idea.
+051-01_falling-agitated-scaled-fall-next-day-rebound_1d: 0 ideas, 1 discoveries (2 explorations)

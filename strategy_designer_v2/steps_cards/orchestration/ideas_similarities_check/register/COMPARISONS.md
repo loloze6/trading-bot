@@ -51,6 +51,7 @@
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | night6_yearlow_run | 1d | 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d (1d) | 0.81 | same period | +0.0003 % (0.07) | 0.03 |
 | 045-01_rising-market-late-week-gain_1d | night7_panic_run | 1d | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d (1d) | 0.66 | same period | +0.0010 % (0.12) | 0.08 |
 | 048-01_scaled-up-week-continuation_1d | night7_panic_run | 1d | 031-01.b1.e1_strong-run-continues-three-days_1d (1d) | 0.82 | same period | +0.0148 % (1.27) | 0.39 |
+| 051-01_falling-agitated-scaled-fall-next-day-rebound_1d | night7_panic_run | 1d | 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d (1d) | 0.35 | same period | +0.0138 % (1.74) | 0.12 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (1d) | 0.94 | same period | +0.0043 % (0.70) | 0.28 |
 | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d (1d) | 0.42 | same period | +0.0178 % (1.11) | 0.00 |

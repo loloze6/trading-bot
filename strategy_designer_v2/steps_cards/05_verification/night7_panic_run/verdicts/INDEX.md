@@ -20,3 +20,4 @@
 048-01_scaled-up-week-continuation_1d: confirmed (fit: adapted) [main: 0.000951023; day-clustered OLS slope t 3.03352; grid cases with a positive forecast 2916, distinct days 796]
 049-01_choppy-scaled-five-day-rise-continuation_1d: inconclusive (fit: adapted) [main: -0.000851589; t of the mean, cases of a day pooled -0.288967; cases 717, distinct days 392]
 050-01_falling-calm-scaled-week-fall-continuation_1d: inconclusive (fit: exact) [main: 0.00718781; t, cases of one day summed together 1.59097; cases 677, distinct days 316]
+051-01_falling-agitated-scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.00703452; t of the mean, cases of one day pooled 3.00734; cases 1468, distinct case days 702]
