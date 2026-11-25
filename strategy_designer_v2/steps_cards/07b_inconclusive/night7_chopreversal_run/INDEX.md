@@ -20,5 +20,7 @@
 043-01_falling-agitated-intraday-drop-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 044-02_agitated-down-day-range-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 045-01_agitated-wide-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+045-02_agitated-wide-high-close-giveback_1d: not run: entry condition not met (step 5: none; step 6: none)
 046-01_calm-scaled-rise-second-day-continues_1d: 1 ideas (1 explorations)
+046-02_calm-scaled-rise-two-day-continues_1d: 1 ideas (3 explorations)
 047-01_falling-agitated-daily-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

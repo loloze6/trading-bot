@@ -20,5 +20,7 @@
 043-01_falling-agitated-intraday-drop-rebound_1d: confirmed (fit: exact) [main: 0.000924804; day-clustered t of the slope 3.04012; cases 1467, distinct days 698]
 044-02_agitated-down-day-range-rebound_1d: confirmed (fit: exact) [main: 0.00575476; t, cases of one day together 3.20737; cases 3752, distinct days 1448]
 045-01_agitated-wide-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000669906; slope t, day-clustered 3.83464; cases 7650, distinct days 2211]
+045-02_agitated-wide-high-close-giveback_1d: no verdict: no backtest record
 046-01_calm-scaled-rise-second-day-continues_1d: inconclusive (fit: exact) [main: 0.000205239; slope t, day-clustered 1.88055; bars with a forecast above 0 4720, distinct days 1642]
+046-02_calm-scaled-rise-two-day-continues_1d: inconclusive (fit: exact) [main: 7.02048e-05; OLS slope t 0.390977; grid bars with forecast > 0 2349]
 047-01_falling-agitated-daily-fall-rebound_1d: confirmed (fit: adapted) [main: 0.0010705; slope t, SE clustered by day 2.76736; down-day cases 1468, distinct days 702]

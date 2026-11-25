@@ -20,5 +20,7 @@
 043-01_falling-agitated-intraday-drop-rebound_1d: 1 ideas (2 explorations)
 044-02_agitated-down-day-range-rebound_1d: 1 ideas, 2 discoveries (2 explorations)
 045-01_agitated-wide-low-close-rebound_1d: 2 ideas, 1 discoveries (2 explorations)
+045-02_agitated-wide-high-close-giveback_1d: no ideas: The backtest record for 045-02_agitated-wide-high-close-giveback reached this line with 0 coins, 0 windows, 0 bars, 0 trades and 0 days, so no pattern could be measured and no idea can rest on a finding. The backtest should be re-run or its record reloaded before this line reads it again.
 046-01_calm-scaled-rise-second-day-continues_1d: 0 ideas, 1 discoveries (2 explorations)
+046-02_calm-scaled-rise-two-day-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 047-01_falling-agitated-daily-fall-rebound_1d: 2 ideas (3 explorations)

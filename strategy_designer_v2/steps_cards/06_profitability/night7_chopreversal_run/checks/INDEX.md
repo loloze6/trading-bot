@@ -20,5 +20,7 @@
 043-01_falling-agitated-intraday-drop-rebound_1d: profitable enough [Sharpe 1.104; Sharpe minus holding's Sharpe 0.534; Calmar 0.797]
 044-02_agitated-down-day-range-rebound_1d: profitable enough [Sharpe 1.111; Sharpe minus holding's Sharpe 0.5415; Calmar 1.176]
 045-01_agitated-wide-low-close-rebound_1d: profitable enough [Sharpe 0.9146; Sharpe minus holding's Sharpe 0.345; Calmar 0.9635]
+045-02_agitated-wide-high-close-giveback_1d: not checked: the record holds no window that ran
 046-01_calm-scaled-rise-second-day-continues_1d: not profitable enough [Sharpe 0.4861; Sharpe minus holding's Sharpe -0.0835; Calmar 0.2341]
+046-02_calm-scaled-rise-two-day-continues_1d: not profitable enough [Sharpe 0.3667; Sharpe minus holding's Sharpe -0.2029; Calmar 0.153]
 047-01_falling-agitated-daily-fall-rebound_1d: profitable enough [Sharpe 1.072; Sharpe minus holding's Sharpe 0.5027; Calmar 0.8022]
