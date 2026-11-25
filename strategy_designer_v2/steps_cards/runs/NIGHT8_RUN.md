@@ -54,7 +54,14 @@ the new books on the unseen coins (1u).
   by the designer): `with_row` replaces a row only inside "Component rows" (a new test fails on the old rule); the
   catalogue's two lines back in their tables; the class back to the night's start (same value on 7,600 of 7,600 bars).
   Taken onto the working branch (the three files; components and step 3 tests pass) and given to the 5 other sessions
-  to take between two turns, so none rebuilds the class.
+  to take between two turns, so none rebuilds the class. **00:00 Paris:** all 6 sessions took it (A 23b95c9796, B
+  f30b39818e, C 2a70c9a517, D a91e045283, F 79058e1838; E's own), each between turns with no components build running,
+  components tests passing.
+- **00:01 Paris, a second finding (session F; not fixed during the night):** turn 4 retested turn 3's book. Line 7.b on
+  058-02.b1 wrote 058-02.b1.b1 with the same `Idea:` sentence word for word; step 3 gave a byte-identical config; step
+  4 reran it (+0.61 again), about 1.1 USD. `select_next`'s duplicate rule compares the Idea sentence and the header's
+  instruments, bar and period as written, so two ideas whose data lines are worded differently but tested the same are
+  both run. For the morning: the duplicate judged on what is tested (the plan's config), not on how the idea is worded.
 
 ## Reading
 (written in the morning)
