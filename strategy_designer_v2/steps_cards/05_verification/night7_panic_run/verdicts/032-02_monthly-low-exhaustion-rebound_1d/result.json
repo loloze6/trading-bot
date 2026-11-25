@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move of the cases (long side), before costs",
+    "value": 0.021986674474359785,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 1.972773154201974
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and deeper half beats shallower; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, deeper half minus shallower half (median depth split)",
+    "value": 0.03875456074654308,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 86,
+    "cases": 163
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "The falling agitated profile is read from the recorded regime (not 'chop', since the detector's trend and volatility components are not recorded and need more history than a window holds), the break from depth.last_history_value or, where missing, recomputed from the window's prior 30 closes; a case is the first bet in each 3-bar grid cell from the window's first row, its unusual move is a fraction (not percent), the t is clustered by UTC day with a D/(D-1) correction, and the median split puts cases strictly below the median depth in the deeper half and the rest in the shallower."
+}

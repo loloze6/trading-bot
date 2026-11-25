@@ -1,4 +1,5 @@
 032-01_monthly-low-break-cascade_1d: not profitable enough [Sharpe -0.418; Sharpe minus holding's Sharpe -0.9876; Calmar -0.09169]
+032-02_monthly-low-exhaustion-rebound_1d: not profitable enough [Sharpe 0.3521; Sharpe minus holding's Sharpe -0.2175; Calmar 0.147]
 033-01_rising-market-sharp-drop-rebound_1d: not profitable enough [Sharpe 0.8402; Sharpe minus holding's Sharpe 0.286; Calmar 0.5572]
 034-01_falling-market-rally-fade_1d: not profitable enough [Sharpe -0.5078; Sharpe minus holding's Sharpe -1.062; Calmar -0.1587]
 035-01_rising-market-quieting-swings-rise_1d: not profitable enough [Sharpe 0.7724; Sharpe minus holding's Sharpe 0.2182; Calmar 0.4082]
