@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "054-02_strong-close-reclaim-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36158940000000006,
+  "findings": {
+    "F1": "Step 5's main result is on the side the idea predicts but well short of the bar: a mean excess 5-day return of +1.06 % with t 0.62 over 76 cases on 49 days, and a total move per case of +1.93 %, 10 times the 0.19 % trade cost. The problem is too few cases for the noise, not a move too small to pay.",
+    "F2": "The profile matters, and the effect lives in it. In folds B and C, the 35 reclaimed-low pierces inside falling agitated bars beat the coin's drift by +3.8 % over 5 days (t 1.88, 20 days, strength 0.37). The 136 pierces outside the profile fell short of it by \u22123.6 % (t \u22123.19).",
+    "F3": "Inside the profile the effect is on the predicted side on most coins but each coin has only a handful of cases. BTC had 10 cases at +4.2 %, XMR 7 at +9.6 %, ETH 4 at +3.8 %, LTC 3 at +1.7 % and ZEC 8 at +0.9 %. XRP, with 3 cases at \u22121.1 %, was the only negative coin. The six coins together give a sample too thin for t 2.",
+    "F4": "The years are mixed, which adds to the noise. 2018 (18 cases, +6.1 %, t 1.87) and 2021 (6 cases, +8.9 %) were positive. 2019 (5 cases, \u22123.8 %) and 2020 (6 cases, \u22123.0 %) were negative. Window w15 was \u22123.8 % against w18 at +8.9 %.",
+    "F5": "The idea's grading runs the wrong way. Within the profile, the reclaim measure correlates \u22120.19 with the excess 5-day return. Low-reclaim cases gained +5.6 % (t 1.70) against +2.0 % (t 0.84) for high-reclaim cases. So the supporting check (upper half beats lower half) is likely to fail even if the mean became sure.",
+    "F6": "What sorts the rebound is where the close sits in the day's range, and in the opposite direction to the idea. Its rank correlation with the 5-day excess return is \u22120.34. Pierce days closing in the lower half of their range gained +8.2 % (t 2.51, 18 cases, 13 days) against \u22120.6 % (t \u22120.29) for those closing in the upper half. Shallower pierces (+7.4 %, t 2.15) and narrower days (+7.8 %, t 2.31) do the same."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "reclaim rebound, all coins",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "idea": "In a falling, agitated market, when a coin's day trades below its lowest price of the past 30 days but closes back above that low, it rises over the next 5 days, and the rise is larger the higher the close sits above that low, measured against the day's range.",
+      "consequence": "Rebound: a stronger reclaim shows that buyers took all of the supply set off below the low and leaves the breakdown sellers further under water.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "falling agitated"
+    },
+    {
+      "idea": "In a falling, agitated market, when a coin's day trades below its lowest price of the past 30 days but closes back above that low, it rises over the next 5 days, and the rise is larger the lower the close sits within the day's range.",
+      "consequence": "A trader buying reclaimed monthly-low pierces in a falling, agitated market should favour the reclaims that close low in their day's range over those that close at the day's high.",
+      "name": "low-close reclaim rebound",
+      "from": "F2, F5, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F2",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "054-02.b1_reclaim-rebound-all-coins",
+    "054-02.b2_low-close-reclaim-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

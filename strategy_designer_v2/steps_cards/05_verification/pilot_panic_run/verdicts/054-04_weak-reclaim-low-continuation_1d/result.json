@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move of the short cases, short direction",
+    "value": -0.021560968806543773,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.1953537916270034
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and positive nearness slope; reject: mean < 0 with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "slope of short-direction unusual move on raw nearness",
+    "value": -0.08358445086161868,
+    "passed": false
+  },
+  "counts": {
+    "cases": 82,
+    "distinct case days": 53,
+    "active bars": 104
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (or cannot be computed), meeting neither the confirm nor the reject rule.",
+  "reading": "Profile taken from the recorded regime 'mean_reversion' (the detector's 365-bar volatility percentile cannot be rebuilt from the window bars), pierce-and-reclaim recomputed from prices where 30 prior bars exist in the window and otherwise from a raw nearness in (0,1]; a case is the first short bet in each 5-bar grid cell of its window with a full 5-bar return inside the window; the minimum of 30 cases on distinct days is treated as a minimum count giving 'not observable'; the day-clustered t uses a small-sample factor D/(D-1)."
+}

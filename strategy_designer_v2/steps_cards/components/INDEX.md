@@ -213,3 +213,9 @@ night7_chopreversal_run | 043-01_falling-agitated-intraday-drop-rebound_1d | Ope
 night7_chopreversal_run | 044-01_agitated-wide-range-fall-rebound_1d | FallStdScaledRangeMultipleComponent | built: ScaledFallRangeMultipleComponent {"lag": 0, "period": 1, "scale": "std", "window": 30}
 night7_rangefail_run | 033-01.b2_beyond-range-close-drift_1d | PriorRangePositionComponent | built: DonchianBreakoutComponent {"exclude_current": 1, "form": "position", "period": 20, "scaling_factor": 1.0, "source": "high_low"}
 night7_rangefail_run | 033-02.d2_fresh-upside-break-rises_1d | PriorBreakoutCloseCountComponent | built: PriorBreakoutCloseCountComponent {"period": 20, "window": 20}
+pilot_panic_run | 054-01_deep-reclaimed-low-pierce-rebound_1d | PriorLowPierceDepth | built: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | PriorLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | ReclaimAboveLowInRange | built: PriorLowReclaimInRangeComponent {"period": 30}
+pilot_panic_run | 054-03_deep-pierce-reclaim-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimNearnessInRange | built: PriorLowReclaimInRangeComponent {"form": "nearness", "period": 30}

@@ -2,3 +2,6 @@
 054-02_strong-close-reclaim-rebound: Falling agitated market: after a 30-day-low pierce closed back above, the higher the close in the day's range, the larger the 5-day rise. [profile: falling agitated]
 054-03_deep-pierce-reclaim-continuation: Falling agitated market: a 30-day-low pierce closed back above falls over 5 days, more for deeper pierces. [profile: falling agitated]
 054-04_weak-reclaim-low-continuation: Falling agitated market: after a 30-day-low pierce closed back above, the nearer the close to the low, the larger the 5-day fall. [profile: falling agitated]
+055-01_failed-monthly-high-pierce-rise: A day piercing the 30-day high but closing below it rises over 14 days, more for deeper pierces. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+055-02_deep-rejection-monthly-high-rise: After a 30-day-high pierce closed back below, the larger the fall from high to close, the larger the 14-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+055-03_heavy-volume-failed-high-rise: After a 30-day-high pierce closed back below, the higher that day's volume against its 30-day average, the larger the 14-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]

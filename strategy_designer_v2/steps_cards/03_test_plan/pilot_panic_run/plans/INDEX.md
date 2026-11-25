@@ -1,1 +1,5 @@
-054-01_deep-reclaimed-low-pierce-rebound_1d: missing-components: The reclaim (close at or above the prior 30-day low) can be a regime rule on `DistanceFromHighComponent` (`extreme` "low", `source` [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+054-01.b1_reclaimed-low-all-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+054-01_deep-reclaimed-low-pierce-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+054-02_strong-close-reclaim-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+054-03_deep-pierce-reclaim-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+054-04_weak-reclaim-low-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
