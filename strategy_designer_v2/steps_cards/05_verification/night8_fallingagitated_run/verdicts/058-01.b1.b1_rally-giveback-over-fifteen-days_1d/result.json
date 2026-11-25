@@ -1,0 +1,26 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 15-bar return minus normal drift on forecast (grid bars, forecast < 0)",
+    "value": 0.002406822524358702,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.2100549216861431
+    },
+    "threshold": "slope > 0 with t >= 2 on >= 30 cases confirms; slope < 0 with t <= -2 on >= 30 cases rejects"
+  },
+  "supporting_check": {
+    "name": "mean share given back, top half of |forecast| minus bottom half",
+    "value": 0.7194677356257563,
+    "passed": true
+  },
+  "counts": {
+    "cases": 177
+  },
+  "reading": "cases are grid bars (0,15,30,... of each window) with forecast < 0 and a 15-bar return inside the window; drift is the coin's mean non-overlapping 15-bar return over all its windows; slope t is the OLS slope over its standard error; the share check keeps cases with a positive 3-day price rise ending at the signal bar and splits them by |forecast| rank into lower and upper n//2 (middle case dropped if odd); the plan's 'fewer than 30 cases' is applied as the minimum count, giving 'not observable'.",
+  "status": "inconclusive",
+  "decided_by": "the slope's t is between -2 and 2 on at least 30 cases"
+}

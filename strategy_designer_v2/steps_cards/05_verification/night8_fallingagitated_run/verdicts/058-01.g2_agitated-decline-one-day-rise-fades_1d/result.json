@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of short cases, in the short direction, before costs",
+    "value": 0.0033148014903121767,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.7268321415088117
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and larger-half minus smaller-half > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger minus smaller half of |forecast|",
+    "value": -0.0018610732243326085,
+    "passed": false
+  },
+  "counts": {
+    "cases": 694,
+    "days with cases": 379
+  },
+  "decided_by": "the t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "a case is the first short bet (short size up >= 2 points from its lowest level since the last bet, reset at flat) in each 3-bar grid cell from each window's first row, with its 3-bar return inside the window; the larger half is |forecast| strictly above the median and the smaller half the rest; the day-clustered t uses the G/(G-1) correction; the profile is read from the recorded regime 'unknown'; fewer than 30 days with cases is reported as not observable."
+}
