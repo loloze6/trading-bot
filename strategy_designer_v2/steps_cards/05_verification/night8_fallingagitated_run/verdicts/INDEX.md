@@ -1,0 +1,2 @@
+058-01.b1_rally-giveback-all-coins_1d: inconclusive (fit: exact) [main: 0.0110488; t of the mean, cases of one day summed 1.7378; distinct days carrying cases 341, cases 827, supporting top half cases 397, supporting bottom half cases 398]
+058-01_agitated-decline-rally-giveback_1d: inconclusive (fit: exact) [main: 0.00332497; t of the mean, cases of one day pooled 0.485258; cases 422, distinct days 244, top half cases 203, bottom half cases 202]

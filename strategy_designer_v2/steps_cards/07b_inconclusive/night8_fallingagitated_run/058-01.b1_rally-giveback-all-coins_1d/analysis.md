@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 058-01.b1_rally-giveback-all-coins_1d
+idea tested: 058-01.b1_rally-giveback-all-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3427 USD
+---
+## Findings
+- **F1:** Whatever the result shows, it is not graded the way the idea says: step 5's give-back share is smaller in the top half of scaled rises than in the bottom (top minus bottom -0.37, check failed), and on folds B and C the 5-day unusual move is +0.96 % in the top half against +1.93 % in the bottom (54 cases each), with a correlation of only 0.066 between the scaled rise and the move. By quartile the move does not grow either: q1 +0.75 %, q2 +3.10 %, q3 +0.57 %, q4 +1.34 %.
+- **F2:** At 5 days the effect has the predicted sign (step 5: +1.10 %, t 1.74, 827 cases on 341 days), but it is mixed over time. On folds B and C it is +6.42 % in 2018 (t 2.93, 15 days), +2.40 % in 2019 and +2.13 % in 2021, but -2.64 % in 2020 (t -1.38, 37 cases on 10 days). By window it runs from +7.27 % in w14 (t 3.75) to -3.12 % in w16 (t -2.59).
+- **F3:** It is also not specific to rallies, which points to the falling market's own trend rather than given-back short covering. Even the smallest rises (quartile q1, mean scaled rise 0.13) are followed by a 5-day unusual fall of +0.75 %. The drift removed is the coin's drift over all windows, so a falling profile's continuing decline counts as "unusual" (step 5: normal drift in the short direction -0.74 %, total move only +0.36 %).
+- **F4:** The move is unstable across horizons, so step 5's 5 days is one noisy point among them. On folds B and C the unusual move is +1.44 % at 5 days (t 0.98, 43 days), -2.38 % at 7 days (t -0.75), +3.44 % at 10 days (t 1.27) and +12.36 % at 15 days (t 3.21, 42 cases on 15 days).
+- **F5:** Only at 15 days does the move grow with the rise: +14.85 % in the top half (t 4.95, 10 days) against +9.88 % in the bottom half (t 1.76, 10 days), strength 0.69 against 0.45 of a usual move. Even there the effect rests on 2018 (+22.5 %) and 2021 (+13.9 %), 2020 is -2.4 %, and the correlation of the scaled rise with the move is -0.065.
+- **F6:** The book did not pay: Sharpe -0.0006 and yearly return -0.4 %, with a total move per case only 1.6 times the 0.22 % cost of a trade. The tested 5-day bet cannot pay, and no more data on the theme's 1d bars exists beyond the four folds and 19 coins the test already used.
+
+## Ideas
+- `058-01.b1.b1_rally-giveback-over-fifteen-days` (from F4, F5, F1, F6): In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 15 days, taking back a larger share of that rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
