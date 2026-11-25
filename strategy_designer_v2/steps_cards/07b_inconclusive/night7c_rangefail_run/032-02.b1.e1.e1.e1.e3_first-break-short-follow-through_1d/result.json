@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3743058,
+  "findings": {
+    "F1": "The test's own result is on the opposite side to the idea, not short of the bar on its side. The day-clustered slope of the 3-day excess return on proximity has t -1.85 over 511 cases and 370 days. In the explored folds the slope on the raw margin at 3 days is +0.76 per margin point (t 2.98, 119 cases, 78 days), so larger overshoots were followed by larger 3-day rises, not smaller ones.",
+    "F2": "The margin's grading is not stable across horizons. Its slope turns from +0.76 (t 2.98) at 3 days to -0.28 (t -0.60) at 10 days and -0.71 (t -1.66) at 20 days. By margin quartile the 3-day excess return runs 2.56 %, 1.15 %, 2.89 % and 5.39 % from the smallest to the largest quartile, which is mixed with no clear order. So no part of the data shows the tested \"smaller margin, larger rise\" effect.",
+    "F3": "What the breaks do have is a sizeable rise on average. The step-5 unusual move is +1.15 % per case over 3 days (t 2.15, 381 days, strength 0.134), 5.9 times the 0.19 % cost of a trade. The book paid with Sharpe 0.93, so the problem is the grading, not the size.",
+    "F4": "The width of the prior 60-day range of closes grades the follow-through clearly. Breaks out of the narrowest third of ranges (median width 31 %) had a 10-day excess return of +14.26 % (t 3.55, strength 0.76). The middle third (median 56 %) had +7.90 % (t 1.51), and the widest third (median 86 %) had -2.69 % (t -0.79). These counts are 42, 41 and 41 cases.",
+    "F5": "The width grading strengthens with the horizon. The day-clustered slope of the excess return on log range width is -2.09 (t -1.15) at 3 days, -6.70 (t -2.71) at 5 days, -14.20 (t -2.84, 112 cases, 72 days) at 10 days and -21.29 (t -3.31, 87 cases, 58 days) at 20 days.",
+    "F6": "The narrow-range advantage at 10 days holds in every coin. Narrow-minus-wide excess returns are BTC +0.75, ETH +25.2, LTC +3.9, XMR +7.5, XRP +55.7 and ZEC +19.5 points. It holds in 2020, with Spearman rho of width against the 10-day return -0.42, p 0.001, n 55. It is weaker in 2021 (rho -0.24, p 0.15) and absent in 2019 (rho 0.03). Only 124 of the 265 explored cases have a full 60-day history inside their window, so the width reading rests on fewer cases.",
+    "F7": "The width effect is close to a quiet-market effect, since log width and log 60-day volatility correlate at 0.73. Breaks in the lowest-volatility third had a 10-day excess return of +12.89 % (t 3.17), against +1.85 % for the middle third and +5.82 % for the highest third. The prior 60-day return grades the same way: its slope at 10 days is -0.18 (t -2.38)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's close first moves above its highest close of the prior 60 days, the narrower its range of closes over those 60 days (highest over lowest), the larger its rise over the next 10 days.",
+      "consequence": "A trader would buy fresh two-month-high closes and lean harder on those breaking out of a tight, quiet range, holding for about ten days, while giving little weight to breaks out of wide, volatile ranges.",
+      "name": "narrow-range breakouts run further",
+      "from": "F3, F4, F5, F6, F7",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1.e1.e1.e1.e3.b1_narrow-range-breakouts-run-further"
+  ],
+  "no_ideas": null
+}

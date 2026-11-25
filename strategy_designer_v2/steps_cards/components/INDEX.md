@@ -203,3 +203,5 @@ night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts
 night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
 night7c_rangefail_run | 032-02.b1.e1.e1_tight-range-breakouts-continue_1d | ClosingRangeInUsualMovesComponent | built: ClosingRangeInUsualMovesComponent {"form": "width", "period": 60, "window": 60}
 night7c_rangefail_run | 032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d | BreakoutRunUpDiscount | built: BreakoutRunUpDiscountComponent {"period": 60, "rise_lag": 1, "rise_period": 20, "window": 120}
+night7c_rangefail_run | 032-01.b1.b1.e2_small-breaks-follow-through_1d | BreakProximityAboveHigh | cannot build: no answer passed the checks after 3 attempts
+night7c_rangefail_run | 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d | BreakoutMarginProximityComponent | built: BreakoutMarginProximityComponent {"period": 60}

@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d
+idea tested: 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4076 USD
+---
+## Findings
+- **F1:** On the first close above the prior 60-day high (119 cases on 78 days, folds B and C), the narrower the prior 60-day range, the larger the coin's excess rise over the next 5 days: slope −0.107 per unit of range width, day-clustered t −3.50 (117 cases, 76 days); over 3 days the slope is −0.046, t −1.73.
+- **F2:** The same holds over 3 days when the range width is scaled by the coin's own volatility (width / (20-day daily std × √60)): slope −0.0375, t −2.55. By range-width tercile, the 3-day excess return falls from +3.25 % (t 2.62) and +4.70 % (t 2.44) in the two narrower terciles to +1.21 % (t 0.65) in the widest.
+- **F3:** Over 3 days, a break's excess return grows with its margin above the prior high, against the tested idea: slope +0.0076 per percent of margin, t 2.98, 119 cases, 78 days. By margin quintile the means are +3.3 %, +1.7 %, +1.3 %, +3.9 % and +4.9 %. This matches the step-5 slope on proximity of −1.85 over all folds, but over 10 days the smallest-margin quintile leads (+23.6 % against +1.1 % for the largest; 13 cases per quintile).
+- **F4:** Breaks are followed by a rise in every margin quintile, and the book's trades held longer than 3.5 days pay: 98 trades of 3.5 to 6.5 days average +8.3 % net and 34 trades over 6.5 days average +14.9 %, against +0.34 % (median −1.43 %) for the 268 trades of up to 3.5 days.
+- **F5:** With the coins averaged per day, Fridays and Saturdays rise more than other days: +0.54 % (t 1.75, 207 days) and +0.58 % (t 2.26, 206 days). Friday plus Saturday beats the other days in all 6 coins and all 4 years. The book's best weekday is Saturday (+0.22 % a day). This pattern is not graded, so it gives no idea here.
+- **F6:** Across all bars, the distance below the 60-day high does not grade the next 3 days (slope t 0.79, 1422 cases, 256 days) or the next 5 days (t 1.08, 846 cases), so the effect sits in the break bars and not in nearness to the high.
+
+## Ideas
+- `032-02.b1.e1.e1.e1.e3.g1_tight-range-breakouts-run-further` (from F1, F2, F4): When a coin's close first moves above its highest close of the prior 60 days, the narrower that 60-day range was relative to the coin's usual daily volatility, the larger its rise over the next 5 days.
+- `032-02.b1.e1.e1.e1.e3.g2_decisive-breaks-follow-through` (from F3, F4): When a coin's close first moves above its highest close of the prior 60 days, the larger the margin of that close above the prior high, the larger its rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

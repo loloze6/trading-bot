@@ -9248,3 +9248,60 @@ class BreakoutRunUpDiscountComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.period + 1, self.window + self.rise_period, self.rise_lag + self.rise_period + 1)
+
+
+class BreakoutMarginProximityComponent(SubStrategyComponent):
+    """
+    Nearness of a breaking close to the prior closing high, on every bar:
+
+        H = max(close[t-period] .. close[t-1])          (bar t excluded)
+        G = 1 if close[t] > H else 0
+        raw_value = G x 1 / (1 + (close[t] - H) / H x 100)
+
+    Range: 0 to 1, never negative, no direction. It is 0 when close[t] <= H (no break; a tie is not a
+    break). On a break it is in (0, 1): near 1 for a tiny margin above H, shrinking smoothly as the
+    margin (in percent of H) grows.
+    Warm-up: period + 1 rows, bar t included.
+    NaN: a NaN close in the last period + 1 rows gives NaN; an H not above 0 gives NaN (never on real bars).
+    Building raises for a period below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows of data, bars
+    t-period .. t, bar t being the last row; each close is known at its bar's close.
+    """
+
+    def __init__(self, name="BreakoutMarginProximity", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 60))
+        if self.period < 1:
+            raise ValueError(f"BreakoutMarginProximityComponent: period must be >= 1, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        closes = data['close'].astype(float).to_numpy()[-(p + 1):]
+        if np.isnan(closes).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        c = float(closes[-1])
+        h = float(np.max(closes[:-1]))
+        if not h > 0:
+            value = float("nan")
+        elif c > h:
+            value = 1.0 / (1.0 + (c - h) / h * 100.0)
+        else:
+            value = 0.0
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': h, 'close': c}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1

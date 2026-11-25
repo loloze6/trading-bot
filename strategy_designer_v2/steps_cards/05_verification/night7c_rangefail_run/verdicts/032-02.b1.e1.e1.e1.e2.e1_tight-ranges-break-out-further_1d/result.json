@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Welch t of 20-bar excess return, narrower half minus wider half",
+    "value": 0.11661103970514168,
+    "statistic": {
+      "name": "Welch t",
+      "value": 3.095433603071517
+    },
+    "threshold": "confirm: t >= 2 with positive narrow-half mean excess; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "narrower-half mean excess 20-bar return > 0",
+    "value": 0.09457860447114198,
+    "passed": true
+  },
+  "counts": {
+    "cases": 260,
+    "narrower-half cases": 128,
+    "wider-half cases": 128
+  },
+  "decided_by": "Welch t of narrow minus wide is 2 or more and the narrower-half mean excess return is positive.",
+  "reading": "The situation (close above the highest of the prior 60 closes, long side) is checked on active bars with 60 prior closes in their window, those without are left out of the agreement (regime used only if none is computable); a case is the first trending bar in each 20-bar grid cell (positions 0,20,40,... from the window's first row) with its 20-bar return from that bar inside the window; the coin's mean 20-bar return is over the non-overlapping grid returns of all its windows; the narrower half is narrow.last_history_value above the coin's median of its cases (a larger proximity to the low means a tighter range), the wider half below it, cases equal to the median are left out; a minimum count not reached gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (63 cases, None days)",
+    "main": -0.030724202733658435,
+    "statistic": -0.5633611386743638,
+    "counts": {
+      "cases": 131,
+      "narrower-half cases": 63,
+      "wider-half cases": 63
+    }
+  }
+}
