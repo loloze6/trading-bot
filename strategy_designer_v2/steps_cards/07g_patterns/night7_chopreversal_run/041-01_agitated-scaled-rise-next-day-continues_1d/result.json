@@ -1,0 +1,38 @@
+{
+  "line": "7.g",
+  "backtest": "041-01_agitated-scaled-rise-next-day-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5752493,
+  "findings": {
+    "F1": "In a falling, agitated market (60-day return below -10 %, swing above its yearly median), the next-day move scales with the size of a day's fall: the slope of next-day excess return (in 30-day sd units) on the scaled fall is -0.362, t -3.99, over 377 down days. In the other five profiles the same slope is flat: falling calm -0.004 (t -0.03), choppy agitated -0.088 (t -0.95), rising agitated -0.003 (t -0.03).",
+    "F2": "The F1 slope holds on every coin and every window with enough cases, so one episode does not carry it:",
+    "F3": "In falling, agitated markets the next-day excess return grows with the depth of the fall:",
+    "F4": "The F1 rebound lasts one day only. Over two days, on non-overlapping cases, the slope in falling, agitated markets is -0.005 (t -0.33, 157 cases), against -0.36 over one day.",
+    "F5": "The tested continuation of scaled rises is not in the data:",
+    "F6": "The low-close effect is not separate from the fall itself. In agitated markets, a close in the bottom fifth of the day's range is followed by +0.88 % next day (t 2.25) and a top-fifth close by -0.58 % (t -1.83). With the scaled return in the same regression, close location loses its significance (t -0.89), and the scaled return also drops (t -0.73).",
+    "F7": "No other angle stood out:"
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall measured against the standard deviation of its daily returns over the last 30 days, the larger its rise over the next day.",
+      "consequence": "After a sharp scaled fall in a coin that has dropped over the past 60 days and swings more than usual, a trader buys for one day, more the deeper the fall, and does not hold the rebound longer.",
+      "name": "falling agitated fall rebound",
+      "from": "F1, F2, F3, F4",
+      "profile": "falling agitated",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "041-01.g1_falling-agitated-fall-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

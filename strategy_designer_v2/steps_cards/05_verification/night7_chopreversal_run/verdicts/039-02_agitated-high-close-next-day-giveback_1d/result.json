@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day return minus coin mean daily return on forecast",
+    "value": 0.0010071104549861324,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 2.9576378884069534
+    },
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "bars in the profile": 7715,
+    "distinct days": 2214
+  },
+  "decided_by": "The slope is positive with t >= 2: the higher the close, the larger the next-day fall.",
+  "reading": "The agitated profile is read as regime 'unknown' (not 'chop'); the slope is an OLS slope with intercept on all profile bars with a non-zero forecast and a next bar in the same window, its t day-clustered (CR1); the plan's minimums (500 bars, 250 days) are applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003521 on the check folds against +0.001007 on every fold",
+    "main": 0.0003520831229014162,
+    "statistic": 0.9387174658098781,
+    "counts": {
+      "bars in the profile": 4023,
+      "distinct days": 1162
+    }
+  }
+}

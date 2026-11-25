@@ -15,22 +15,29 @@ One row per idea run; every status is read from the step's own result file. Each
 | 039-01_agitated-low-close-next-day-rebound | - | plan | confirmed (+2.96) | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.d: 039-01.d1_falling-agitated-low-close-rebound, 039-01.d2_wide-range-low-close-rebound; 7.g: 039-01.g1_wide-day-low-close-rebound, 039-01.g2_price-distance-below-mid-range | 1.01 | 6.5 |
 | 040-01_agitated-daily-fall-next-day-rebound | - | plan | confirmed (+2.18) | not profitable enough (failed: Calmar) | - | 7.d: 040-01.d1_agitated-outsized-fall-rebound, 040-01.d2_agitated-second-down-day-rebound; 7.g: 040-01.g1_heavy-volume-agitated-fall-rebound | 1.00 | 6.1 |
 | 036-02_agitated-scaled-fall-delayed-rebound | - | plan | inconclusive (+1.21) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 036-02.b1_delayed-rebound-more-coins; 7.g: 036-02.g1_agitated-fall-next-day-rebound, 036-02.g2_agitated-scaled-fall-bounce | 0.99 | 6.2 |
+| 038-02_calm-scaled-weekly-fall-continues | - | plan | inconclusive (+1.53) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 038-02.b1_calm-scaled-fall-more-coins; 7.g: 038-02.g1_calm-scaled-three-day-continuation, 038-02.g2_calm-scaled-rise-continues, 038-02.g3_calm-scaled-monthly-trend-continues | 0.94 | 5.9 |
+| 039-02_agitated-high-close-next-day-giveback | - | plan | confirmed (+2.96) | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.d: 039-02.d1_wide-range-low-close-next-day-rebound, 039-02.d2_falling-market-low-close-rebound, 039-02.d3_choppy-market-high-close-giveback; 7.g: 039-02.g2_downtrend-low-close-next-day-rebound, 039-02.g3_wide-day-close-location-reversal | 1.08 | 6.6 |
+| 041-01_agitated-scaled-rise-next-day-continues | - | plan | inconclusive (-1.11) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 041-01.b1_rising-agitated-rise-continues, 041-01.b2_falling-agitated-rise-given-back; 7.g: 041-01.g1_falling-agitated-fall-rebound | 1.14 | 6.3 |
+| 040-02_agitated-daily-rise-next-day-giveback | - | plan | inconclusive (+1.33) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 040-02.b1_falling-agitated-fall-rebound, 040-02.b2_agitated-daily-fall-rebound; 7.g: 040-02.g1_falling-agitated-fall-rebound | 0.92 | 5.8 |
+| 037-01.d1_falling-agitated-rise-giveback | 037-01_agitated-ordinary-rise-next-day-giveback | plan | inconclusive (+1.60) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 037-01.d1.b1_falling-agitated-rise-giveback-more-coins; 7.g: 037-01.d1.g2_agitation-scaled-ordinary-rise-giveback | 1.03 | 6.3 |
+| 042-01_falling-agitated-low-close-rebound | - | plan | confirmed (+2.98) | not profitable enough (failed: Calmar) | - | 7.d: 042-01.d1_lower-half-close-rebound, 042-01.d2_down-day-low-close-rebound; 7.g: 042-01.g1_deep-close-in-usual-ranges, 042-01.g2_wide-low-close-rebounds | 1.03 | 6.4 |
+| 043-01_falling-agitated-intraday-drop-rebound | - | missing-components | - | - | - | - | 0.06 | 0.3 |
 
 ## Consumption
-11 ideas, 10.61 USD, 64.0 minutes in all.
+18 ideas, 16.81 USD, 101.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.81 | 4.5 |
-| step4_backtest | 0.00 | 26.1 |
-| step5_verdict | 1.80 | 6.4 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.30 | 7.3 |
+| step4_backtest | 0.00 | 41.4 |
+| step5_verdict | 2.81 | 10.3 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.2 |
-| step7_7.d | 1.59 | 5.1 |
+| step7_7.d | 2.35 | 7.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.95 | 6.0 |
-| step7_7.g | 4.46 | 14.0 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.b | 3.35 | 10.6 |
+| step7_7.g | 7.01 | 21.9 |
+| similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 1.1 |

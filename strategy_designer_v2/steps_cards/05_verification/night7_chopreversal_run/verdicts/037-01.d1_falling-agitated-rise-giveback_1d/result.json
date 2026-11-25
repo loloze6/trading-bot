@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess gain per position bar (position x next-day return minus position x coin drift)",
+    "value": 0.0005138731576329726,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 1.604933638276671
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of signal-direction next-day return minus drift on |forecast|",
+    "value": 0.0007245153434652329,
+    "passed": true
+  },
+  "counts": {
+    "cases on the 1-bar grid": 1610,
+    "days": 1142,
+    "active bars": 1047
+  },
+  "decided_by": "The t of the mean excess gain lies between -2 and 2.",
+  "reading": "The falling-agitated profile is taken from the recorded regime (the profile vetoes send every other bar to chop, and its 60/365-bar inputs cannot be rebuilt inside the 120-bar windows) together with the recorded raw rise in (0, 1], expected side short; cases are all bars with a nonzero position on the 1-bar grid, the day-clustered t sums each day's deviations from the mean, and the plan's 'fewer than 100 cases' is reported as not observable."
+}
