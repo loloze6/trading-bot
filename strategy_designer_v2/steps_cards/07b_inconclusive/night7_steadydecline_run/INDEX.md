@@ -17,3 +17,4 @@
 039-01_agitated-swing-fall-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 039-02_agitated-range-fall-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 040-01_agitated-fall-size-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+040-02_agitated-fall-vs-swing-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

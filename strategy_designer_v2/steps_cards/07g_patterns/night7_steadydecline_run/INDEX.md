@@ -17,3 +17,4 @@
 039-01_agitated-swing-fall-low-close-rebound_1d: 2 ideas (2 explorations)
 039-02_agitated-range-fall-low-close-rebound_1d: 2 ideas (2 explorations)
 040-01_agitated-fall-size-next-day-rebound_1d: 2 ideas (3 explorations)
+040-02_agitated-fall-vs-swing-rebound_1d: 2 ideas (2 explorations)

@@ -17,3 +17,4 @@
 039-01_agitated-swing-fall-low-close-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 039-02_agitated-range-fall-low-close-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 040-01_agitated-fall-size-next-day-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+040-02_agitated-fall-vs-swing-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
