@@ -5,3 +5,4 @@
 036-01_scaled-rally-week-continuation_1d: not profitable enough [Sharpe 0.7159; Sharpe minus holding's Sharpe 0.1617; Calmar 0.3833]
 038-01_rising-market-scaled-rally-continuation_1d: not profitable enough [Sharpe 1.02; Sharpe minus holding's Sharpe 0.4657; Calmar 0.6571]
 039-01_scaled-fall-next-day-rebound_1d: not profitable enough [Sharpe 0.7209; Sharpe minus holding's Sharpe 0.1668; Calmar 0.6357]
+040-01_falling-calm-scaled-fall-continuation_1d: not profitable enough [Sharpe 0.2046; Sharpe minus holding's Sharpe -0.365; Calmar 0.07591]

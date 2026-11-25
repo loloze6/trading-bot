@@ -5,3 +5,4 @@
 036-01_scaled-rally-week-continuation_1d: inconclusive (fit: adapted) [main: -0.0030477; t of the mean, cases of one day summed -0.671998; distinct case days 854, cases 1757]
 038-01_rising-market-scaled-rally-continuation_1d: confirmed (fit: exact) [main: 0.00108808; OLS t of slope 3.88345; grid cases with forecast > 0 1273, grid cases in rising profile 2224, supporting check cases 1414]
 039-01_scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000397677; slope t, residuals summed per day (day-clustered) 2.62617; down-day cases 8514, distinct days 2199, top-fifth cases 1706]
+040-01_falling-calm-scaled-fall-continuation_1d: inconclusive (fit: exact) [main: 0.00914313; t of the mean, day-clustered 1.93359; cases 632, distinct days 303]

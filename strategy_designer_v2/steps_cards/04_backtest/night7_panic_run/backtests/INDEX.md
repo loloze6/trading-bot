@@ -5,3 +5,4 @@
 036-01_scaled-rally-week-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 038-01_rising-market-scaled-rally-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 039-01_scaled-fall-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+040-01_falling-calm-scaled-fall-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]

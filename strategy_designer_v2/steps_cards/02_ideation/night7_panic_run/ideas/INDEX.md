@@ -15,3 +15,7 @@
 039-02_range-scaled-fall-rebound: After a down day, a coin rises over the next day, more so the larger its fall in units of 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 040-01_falling-calm-scaled-fall-continuation: In falling calm markets, a 3-day fall declines further over 3 days, more so the larger it is in units of 30-day daily swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling calm]
 040-02_falling-calm-range-scaled-continuation: In falling calm markets, a 3-day fall declines further over 3 days, more so the larger it is in units of 30-day average range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling calm]
+041-01_wide-up-day-next-day-fade: After an up day, a coin falls over the next day, more so the wider its range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+041-02_wide-down-day-next-day-rebound: After a down day, a coin rises over the next day, more so the wider its range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+041-03_range-jump-up-day-fade: After an up day, a coin falls over the next day, more so the wider its range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+041-04_range-jump-down-day-rebound: After a down day, a coin rises over the next day, more so the wider its range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
