@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 032-01.g1.b1_sharp-fall-rebound-more-coins_1d
+idea tested: 032-01.g1.b1_sharp-fall-rebound-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4195 USD
+---
+## Findings
+- **F1:** Over all the 2-day grid cases, the day's fall in units of its 20-day typical move ranks a later rebound only weakly: the lowest fifth (a 1-day return of -0.68 or fewer usual moves) is followed by an unusual 2-day move of +1.40 % (t 1.66, 256 days), and the rank correlation is -0.056 with 11 of the 12 windows negative, but the day-pooled slope has a t of only -0.91 over 637 days.
+- **F2:** Days whose high-low range is in the top third against its 20-day mean and that closed down are followed by an unusual 2-day move of +1.89 % (t 1.99, 215 days), while top-third range days that closed up give +0.06 % (t 0.11); at 5 days the down case is gone (+0.19 %, t 0.13).
+- **F3:** The 20-day return in units of its typical move predicts the next 5 days in the trend's own direction at a day-pooled slope of 0.0104 per unit (t 1.58, 256 days), with a positive sign in only 7 of the 12 windows; one quartile of trend strength reaches t 2.81, but the strongest quartile gives +2.13 % with a t of only 1.46.
+- **F4:** The calm decline the brief describes shows no clear further fall: among cases with a 20-day return in the lowest 30 %, the unusual 5-day move is -2.6 %, -2.5 % and -1.1 % from the calmest to the most violent third of past ranges, all with |t| ≤ 1.34 (61 to 74 days each).
+- **F5:** By weekday, the day-pooled unusual moves stay within |t| ≤ 1.65 at 1 and 2 days (Sunday at 2 days: -1.38 %, t -1.65, 111 days). The 5-day weekday t-values of up to 3.9 came from cases counted without pooling the coins of one day.
+- **F6:** High volume against its 20-day mean is followed by a larger unusual 2-day move, +0.98 % in the top fifth (t 1.80), but the day-pooled slope has a t of 0.88 over 650 days and is positive in 8 of the 12 windows.
+- **F7:** The book's 492 trades average +2.50 % after fees (67 % winners), yet the book earns +0.2 % a year (Sharpe 0.08), because it is in a position on only 8 % of the coins' days and its positions are small.
+
+## Ideas
+- No ideas: Across about forty angles (the fall's size, 20-day and 5-day trend, volatility level, volume and range expansion, the day's direction, weekday and window), no pattern reaches a day-pooled t near 3, and the best ones (F2 at t 1.99, F3 at t 1.58, F1 at t -0.91) cannot be told from chance after this many looks.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

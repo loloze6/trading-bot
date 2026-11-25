@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean across days of the |forecast|/10-weighted short-direction unusual 5-bar move",
+    "value": 0.011175675730762898,
+    "statistic": {
+      "name": "t of the mean across days",
+      "value": 0.8803416046424594
+    },
+    "threshold": "confirm t >= 2 with slope > 0; reject t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-direction unusual 5-bar move on |forecast|",
+    "value": 0.0004869474884576878,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 380,
+    "cases": 1080
+  },
+  "decided_by": "Main-measure t between -2 and 2 (inconclusive rule).",
+  "reading": "The coin's mean 5-bar return is taken on the non-overlapping 5-bar grid of all its windows, the slope is unweighted over all cases, a case day is the UTC date of the case bar, and the volume regime is recomputed from volume where a window holds 118 bars, else read from the recorded regime."
+}

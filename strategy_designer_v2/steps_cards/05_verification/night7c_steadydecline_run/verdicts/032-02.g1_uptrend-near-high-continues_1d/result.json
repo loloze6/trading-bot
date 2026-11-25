@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope t of 5-bar forward excess return on forecast, in-regime non-overlapping grid",
+    "value": 0.0006758065223982736,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.6527053276226846
+    },
+    "threshold": "confirm: slope t >= 2 and supporting check passes; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of forecast, mean 5-bar excess return, Welch t > 0",
+    "value": 1.5491579981776709,
+    "passed": true
+  },
+  "counts": {
+    "in-regime grid cases": 1700,
+    "top third cases": 566,
+    "bottom third cases": 566
+  },
+  "decided_by": "Slope t lies between -2 and 2.",
+  "reading": "Grid = positions 0,5,10,... of each window with a 5-bar return inside the window; in-regime = recorded regime 'trending'; coin mean = mean of that coin's grid 5-bar returns over all windows; thirds = the n//3 lowest and n//3 highest forecasts by stable rank; the plan's 150-case minimum is applied as 'not observable'."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 2-bar return of the cases over the coin's mean 2-bar return, before costs",
+    "value": 0.002249210185888372,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.5068151816497555
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope > 0 with t >= 2); reject: mean < 0 with t <= -2 or slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of the case's excess 2-bar return on its forecast",
+    "value": 0.000344378726738043,
+    "passed": false
+  },
+  "counts": {
+    "cases": 463,
+    "case-days": 191
+  },
+  "decided_by": "Inconclusive rule: neither the confirm nor the reject rule is met, a t lies between -2 and 2 on a measure (t mean 0.51, t slope 0.33).",
+  "reading": "Bets are read as in the holding-period rule (forecast rise >= 2 from its lowest level on its side since the last bet), one per 2-bar grid cell from each window's first row taking the cell's first bet bar and its return from that bar's close over 2 bars inside the window; the drift is the coin's mean of grid 2-bar returns over all its windows; the mean's t sums deviations per day (cluster SE with D/(D-1)); the slope is ordinary OLS on the case's forecast; the 30 minimum counts case-days."
+}

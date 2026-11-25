@@ -13,20 +13,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-03.b1.b1_thin-volume-decline-all-coins | 032-03.b1_thin-volume-decline-more-coins | plan | inconclusive (+1.03) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The volume-ratio effect is flat and ungraded in every part of the data I could see (F2–F4), the test already used all the data available (F1), and the only hint in the brief's direction (F7, calm declines continuing more the deeper they are) reaches t 1.57 at most, which is too weak to found an amended or new idea on.; 7.g: 032-03.b1.b1.g1_thin-volume-rise-keeps-rising, 032-03.b1.b1.g2_four-week-momentum-continues | 1.07 | 9.9 |
 | 032-03.b2.b1_deep-calm-decline-more-coins | 032-03.b2_deep-calm-decline-continues | plan | inconclusive (+0.38) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b2.b1.b1_steady-thin-volume-deep-decline; 7.g: 032-03.b2.b1.g1_calm-trend-continues-both-ways, 032-03.b2.b1.g2_calm-decline-longer-horizon | 1.07 | 9.7 |
 | 032-03.b1.b2_violent-decline-rebounds | 032-03.b1_thin-volume-decline-more-coins | plan | inconclusive (+0.73) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-03.b1.b2.b1_violent-decline-weekly-drop-rebound, 032-03.b1.b2.b2_violent-decline-next-day-rebound; 7.g: 032-03.b1.b2.g1_one-day-drop-rebounds-next-day, 032-03.b1.b2.g2_calm-decline-keeps-falling, 032-03.b1.b2.g3_drying-volume-precedes-weakness | 1.03 | 9.2 |
+| 032-03.b2.b2_deep-calm-decline-five-days | 032-03.b2_deep-calm-decline-continues | plan | inconclusive (+0.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-03.b2.b2.b1_calm-decline-more-coins, 032-03.b2.b2.b2_volatility-scaled-calm-decline; 7.g: 032-03.b2.b2.g1_thin-volume-two-week-momentum, 032-03.b2.b2.g2_deep-quiet-precedes-rise | 0.97 | 5.5 |
+| 032-01.g1_sharp-daily-fall-rebounds | 032-01_calm-decline-depth-continues | plan | inconclusive (+0.51) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-01.g1.b1_sharp-fall-rebound-more-coins; 7.g: 032-01.g1.g1_close-near-low-rebounds, 032-01.g1.g2_one-day-fall-bounces-next-day | 1.02 | 5.5 |
+| 032-01.g1.b1_sharp-fall-rebound-more-coins | 032-01.g1_sharp-daily-fall-rebounds | plan | inconclusive (+0.21) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 032-01.g1.b1.b1_sharp-fall-next-day-rebound; 7.g: no ideas: Across about forty angles (the fall's size, 20-day and 5-day trend, volatility level, volume and range expansion, the day's direction, weekday and window), no pattern reaches a day-pooled t near 3, and the best ones (F2 at t 1.99, F3 at t 1.58, F1 at t -0.91) cannot be told from chance after this many looks. | 1.22 | 10.8 |
 
 ## Consumption
-9 ideas, 9.14 USD, 66.8 minutes in all.
+12 ideas, 12.35 USD, 88.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.81 | 5.0 |
-| step4_backtest | 0.00 | 34.1 |
-| step5_verdict | 1.56 | 5.5 |
-| step6_check | 0.00 | 0.3 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 1.07 | 6.7 |
+| step4_backtest | 0.00 | 44.1 |
+| step5_verdict | 2.09 | 7.5 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.g | 3.68 | 11.6 |
-| step7_7.b | 3.09 | 10.0 |
+| step7_7.g | 4.91 | 15.6 |
+| step7_7.b | 4.27 | 13.9 |

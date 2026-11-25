@@ -1,9 +1,13 @@
+032-01.g1.b1_sharp-fall-rebound-more-coins_1d: inconclusive (fit: adapted) [main: 0.00105236; t of the mean, cases of one day pooled 0.21145; cases 922, distinct case days 253]
+032-01.g1_sharp-daily-fall-rebounds_1d: inconclusive (fit: adapted) [main: 0.00224921; t of the mean, cases of one day taken together 0.506815; cases 463, case-days 191]
 032-01_calm-decline-depth-continues_1d: inconclusive (fit: adapted) [main: 0.000401883; slope t, day-clustered 0.351918; independent days of cases 141, cases (coin-cells with forecast < 0) 173]
+032-02.g1_uptrend-near-high-continues_1d: inconclusive (fit: exact) [main: 0.000675807; OLS slope t 1.65271; in-regime grid cases 1700, top third cases 566, bottom third cases 566]
 032-02_low-range-decline-continues-more_1d: inconclusive (fit: exact) [main: -0.000334468; OLS slope t -0.729981; grid cases in the regime 1648, active bars checked 6316]
 032-03.b1.b1_thin-volume-decline-all-coins_1d: inconclusive (fit: exact) [main: 0.000318729; day-clustered t of slope 1.02813; cases 3610, distinct days 501]
 032-03.b1.b2_violent-decline-rebounds_1d: inconclusive (fit: exact) [main: 0.000428453; OLS slope t 0.726918; in-regime grid cases pooled over coins and windows 1013]
 032-03.b1_thin-volume-decline-more-coins_1d: inconclusive (fit: adapted) [main: 0.000590506; slope t, cases of a day taken together 1.24531; in-regime cases 3307, distinct days 498, cases with forecast <= -2 1983]
 032-03.b2.b1_deep-calm-decline-more-coins_1d: inconclusive (fit: adapted) [main: 0.000558812; OLS slope t, day-clustered SE 0.383809; independent cases (distinct days) 216, cases (coin grid cells) 1179]
+032-03.b2.b2_deep-calm-decline-five-days_1d: inconclusive (fit: adapted) [main: 0.0111757; t of the mean across days 0.880342; distinct case days 380, cases 1080]
 032-03.b2_deep-calm-decline-continues_1d: inconclusive (fit: adapted) [main: 0.00097939; OLS slope t, clustered by day 0.675951; cases 532, distinct days 201]
 032-03_low-volume-decline-continues-more_1d: inconclusive (fit: adapted) [main: 0.000222855; day-clustered OLS t 0.482832; regime grid cells 1616, grid cells with forecast <= -2 944, days of regime grid cells 468]
 032-04_calm-decline-rally-sold_1d: mismatch: the test does not match its plan (agreement 0.781619) (fit: exact)
