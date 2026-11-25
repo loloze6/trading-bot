@@ -25,4 +25,5 @@
 046-01_calm-scaled-rise-second-day-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 046-02_calm-scaled-rise-two-day-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 047-01_falling-agitated-daily-fall-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+047-02_falling-agitated-daily-rise-giveback_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 048-01_falling-agitated-wide-rise-giveback_1d: missing-components: The idea's signal is the day's rise in 30-day standard deviations times the day's range in 30-day mean ranges. All [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

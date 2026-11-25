@@ -25,3 +25,4 @@
 046-01_calm-scaled-rise-second-day-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 046-02_calm-scaled-rise-two-day-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 047-01_falling-agitated-daily-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+047-02_falling-agitated-daily-rise-giveback_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

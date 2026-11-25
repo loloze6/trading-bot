@@ -25,3 +25,4 @@
 046-01_calm-scaled-rise-second-day-continues_1d: 0 ideas, 1 discoveries (2 explorations)
 046-02_calm-scaled-rise-two-day-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 047-01_falling-agitated-daily-fall-rebound_1d: 2 ideas (3 explorations)
+047-02_falling-agitated-daily-rise-giveback_1d: 1 ideas, 1 discoveries (2 explorations)

@@ -25,3 +25,4 @@
 046-01_calm-scaled-rise-second-day-continues_1d: inconclusive (fit: exact) [main: 0.000205239; slope t, day-clustered 1.88055; bars with a forecast above 0 4720, distinct days 1642]
 046-02_calm-scaled-rise-two-day-continues_1d: inconclusive (fit: exact) [main: 7.02048e-05; OLS slope t 0.390977; grid bars with forecast > 0 2349]
 047-01_falling-agitated-daily-fall-rebound_1d: confirmed (fit: adapted) [main: 0.0010705; slope t, SE clustered by day 2.76736; down-day cases 1468, distinct days 702]
+047-02_falling-agitated-daily-rise-giveback_1d: inconclusive (fit: exact) [main: 7.00351e-05; day-clustered t of slope 0.245678; cases (bars with forecast < 0) 1326, distinct days 633]

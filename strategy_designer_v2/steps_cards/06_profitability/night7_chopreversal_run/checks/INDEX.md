@@ -25,3 +25,4 @@
 046-01_calm-scaled-rise-second-day-continues_1d: not profitable enough [Sharpe 0.4861; Sharpe minus holding's Sharpe -0.0835; Calmar 0.2341]
 046-02_calm-scaled-rise-two-day-continues_1d: not profitable enough [Sharpe 0.3667; Sharpe minus holding's Sharpe -0.2029; Calmar 0.153]
 047-01_falling-agitated-daily-fall-rebound_1d: profitable enough [Sharpe 1.072; Sharpe minus holding's Sharpe 0.5027; Calmar 0.8022]
+047-02_falling-agitated-daily-rise-giveback_1d: not profitable enough [Sharpe 0.3486; Sharpe minus holding's Sharpe -0.221; Calmar 0.1963]

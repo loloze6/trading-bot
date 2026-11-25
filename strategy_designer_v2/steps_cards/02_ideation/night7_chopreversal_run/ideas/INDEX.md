@@ -25,3 +25,5 @@
 047-02_falling-agitated-daily-rise-giveback: In a falling agitated market, a larger one-day percent rise is followed by a larger fall over the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
 047-03_falling-agitated-scaled-rise-giveback: In a falling agitated market, a larger one-day rise relative to the 30-day daily swing is followed by a larger fall next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
 048-01_falling-agitated-wide-rise-giveback: In a falling agitated market, a larger scaled one-day rise times its range against the 30-day usual range is followed by a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
+049-01_wide-day-low-close-rebound: A lower close in a wider-than-usual day's range, against the 30-day usual range, is followed by a larger rise next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+049-02_wide-day-high-close-giveback: A higher close in a wider-than-usual day's range, against the 30-day usual range, is followed by a larger fall next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]

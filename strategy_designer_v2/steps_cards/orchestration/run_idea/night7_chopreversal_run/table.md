@@ -32,22 +32,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 046-02_calm-scaled-rise-two-day-continues | - | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 046-02.b1_calm-rise-second-day-follow-through; 7.g: 046-02.g2_calm-rise-second-day-follow-through | 1.09 | 5.9 |
 | 044-01_agitated-wide-range-fall-rebound | - | plan | confirmed (+2.16) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-01.g1_falling-agitated-wide-fall-rebound | 2.40 | 7.0 |
 | 048-01_falling-agitated-wide-rise-giveback | - | missing-components | - | - | - | - | 0.08 | 0.5 |
+| 047-02_falling-agitated-daily-rise-giveback | - | plan | inconclusive (+0.25) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 047-02.b1_falling-agitated-daily-fall-rebound; 7.g: 047-02.g1_falling-agitated-fall-rebound | 0.99 | 5.8 |
 
 ## Consumption
-28 ideas, 29.68 USD, 174.4 minutes in all.
+29 ideas, 30.67 USD, 180.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.48 | 12.9 |
-| step4_backtest | 0.00 | 67.2 |
-| step5_verdict | 4.26 | 15.5 |
-| step6_check | 0.00 | 0.9 |
+| step3_plan | 4.55 | 13.3 |
+| step4_backtest | 0.00 | 69.8 |
+| step5_verdict | 4.43 | 16.1 |
+| step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.d | 2.35 | 7.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 7.34 | 26.0 |
-| step7_7.g | 11.26 | 35.0 |
+| step7_7.b | 7.67 | 27.0 |
+| step7_7.g | 11.67 | 36.3 |
 | similarity_check | 0.00 | 0.9 |
 | unseen_test | 0.00 | 7.8 |
