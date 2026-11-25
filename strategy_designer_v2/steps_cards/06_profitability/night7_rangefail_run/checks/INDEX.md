@@ -15,6 +15,7 @@
 034-02_rising-break-swings-continues_1d: profitable enough [Sharpe 1.351; Sharpe minus holding's Sharpe 0.7434; Calmar 1.479]
 034-03.b1_choppy-far-below-high-falls_1d: not profitable enough [Sharpe -0.09748; Sharpe minus holding's Sharpe -0.7049; Calmar -0.07243]
 034-03_rising-far-below-high-falls_1d: not profitable enough [Sharpe -0.328; Sharpe minus holding's Sharpe -0.9354; Calmar -0.1625]
+035-01.b1_calm-market-nearness-to-high_1d: profitable enough [Sharpe 1.188; Sharpe minus holding's Sharpe 0.6357; Calmar 0.8655]
 035-01_nearness-to-high-rises_1d: not profitable enough [Sharpe 1.29; Sharpe minus holding's Sharpe 0.6827; Calmar 1.284]
 035-02_break-swings-above-continues_1d: profitable enough [Sharpe 1.228; Sharpe minus holding's Sharpe 0.6206; Calmar 1.08]
 035-03_far-below-high-falls_1d: not profitable enough [Sharpe -0.02989; Sharpe minus holding's Sharpe -0.6373; Calmar -0.1229]

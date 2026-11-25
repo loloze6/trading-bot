@@ -2,4 +2,5 @@
 034-01.b1_nearness-to-high-10-days_1d: profitable enough [Sharpe 0.9193; Sharpe minus holding's Sharpe 0.8529; Calmar 2.092]
 034-01.e1_rising-market-breakout-distance-continuation_1d: profitable enough [Sharpe 1.817; Sharpe minus holding's Sharpe 1.75; Calmar 7.826]
 034-02_rising-break-swings-continues_1d: profitable enough [Sharpe 1.514; Sharpe minus holding's Sharpe 1.447; Calmar 5.055]
+035-01.b1_calm-market-nearness-to-high_1d: profitable enough [Sharpe 2.212; Sharpe minus holding's Sharpe 2.146; Calmar 6.565]
 035-02_break-swings-above-continues_1d: profitable enough [Sharpe 1.29; Sharpe minus holding's Sharpe 1.224; Calmar 3.814]

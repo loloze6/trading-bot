@@ -30,15 +30,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 037-01_choppy-swing-scaled-fall-continues | - | plan | inconclusive (+0.94) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 037-01.b1_choppy-extended-fall-continues; 7.g: 037-01.g2_choppy-month-fall-continues-longer | 1.07 | 9.9 |
 | 038-01_calm-swing-scaled-rise-continues | - | plan | inconclusive (+1.12) | not profitable enough (failed: Calmar) | - | 7.b: 038-01.b1_calm-swing-scaled-move-continues, 038-01.b2_calm-scaled-rise-ten-days; 7.g: 038-01.g1_calm-two-sided-swing-continuation, 038-01.g2_calm-swing-scaled-fall-continues, 038-01.g3_calm-ten-day-swing-continuation, 038-01.g4_choppy-calm-break-continuation | 1.01 | 10.8 |
 | 038-02_calm-swing-scaled-fall-continues | - | plan | inconclusive (+1.48) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 038-02.b1_calm-swing-scaled-move-continues; 7.g: 038-02.g1_calm-swing-scaled-move-continues, 038-02.g2_calm-swing-scaled-rise-continues | 0.99 | 10.9 |
+| 035-01.b1_calm-market-nearness-to-high | 035-01_nearness-to-high-rises | plan | confirmed (+2.11) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 035-01.b1.g1_choppy-market-distance-from-high, 035-01.b1.g2_calm-breakout-day-size-continuation | 0.71 | 14.0 |
 
 ## Consumption
-26 ideas, 27.22 USD, 206.7 minutes in all.
+27 ideas, 27.94 USD, 220.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.86 | 15.3 |
-| step4_backtest | 0.00 | 109.0 |
-| step5_verdict | 4.34 | 15.4 |
+| step3_plan | 4.95 | 15.8 |
+| step4_backtest | 0.00 | 117.2 |
+| step5_verdict | 4.56 | 16.3 |
 | step6_check | 0.00 | 1.2 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.d | 1.48 | 5.0 |
@@ -46,6 +47,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.7 |
 | step7_7.b | 5.63 | 16.6 |
-| step7_7.g | 10.24 | 30.6 |
-| similarity_check | 0.00 | 0.6 |
-| unseen_test | 0.00 | 10.8 |
+| step7_7.g | 10.64 | 31.7 |
+| similarity_check | 0.00 | 0.7 |
+| unseen_test | 0.00 | 13.8 |

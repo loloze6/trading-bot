@@ -53,6 +53,7 @@
 | 034-01.b1_nearness-to-high-10-days_1d | night7_rangefail_run | 1d | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d (1d) | 0.79 | same period | +0.0079 % (1.28) | 0.15 |
 | 034-01.e1_rising-market-breakout-distance-continuation_1d | night7_rangefail_run | 1d | 034-02_rising-break-swings-continues_1d (1d) | 0.87 | same period | +0.0010 % (0.30) | 0.22 |
 | 034-02_rising-break-swings-continues_1d | night7_rangefail_run | 1d | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d (1d) | 0.79 | same period | +0.0096 % (1.91) | 0.25 |
+| 035-01.b1_calm-market-nearness-to-high_1d | night7_rangefail_run | 1d | 035-02_break-swings-above-continues_1d (1d) | 0.50 | same period | +0.0091 % (1.27) | 0.05 |
 | 035-02_break-swings-above-continues_1d | night7_rangefail_run | 1d | 034-02_rising-break-swings-continues_1d (1d) | 0.73 | same period | +0.0042 % (0.41) | 0.23 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (1d) | 0.94 | same period | +0.0043 % (0.70) | 0.28 |
