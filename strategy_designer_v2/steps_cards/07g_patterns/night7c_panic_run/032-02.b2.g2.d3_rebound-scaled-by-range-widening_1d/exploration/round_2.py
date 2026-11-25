@@ -1,80 +1,57 @@
-import numpy as np, pandas as pd
-
 def explore(data):
+    import pandas as pd, numpy as np
     rows = []
     for coin, wins in data["bars"].items():
         for w, b in wins.items():
             b = b.sort_values("timestamp").reset_index(drop=True)
-            c, h, l = b["close"], b["high"], b["low"]
-            d = pd.DataFrame({"coin": coin, "win": w, "ts": pd.to_datetime(b["timestamp"])})
-            d["ret0"] = c / c.shift(1) - 1
-            d["fwd1"] = c.shift(-1) / c - 1
-            d["fwd2"] = c.shift(-2) / c - 1
-            d["pos2"] = (np.arange(len(b)) % 2 == 0)
-            d["loc"] = ((c - l) / (h - l)).where(h > l)
-            d["sd30"] = d["ret0"].rolling(30).std().shift(1)
-            d["z0"] = d["ret0"] / d["sd30"]
+            c = b["close"]; h = b["high"]; l = b["low"]
             rng = (h - l) / c
-            d["rr"] = rng.rolling(30).mean() / rng.rolling(90).mean()
-            d["r30"] = c / c.shift(30) - 1
-            d["alloc"] = b["postRebalance_current_allocation"]
-            d["gain"] = d["alloc"] * d["fwd1"]
+            r1 = c / c.shift(1) - 1
+            d = pd.DataFrame({
+                "coin": coin, "win": w,
+                "day": pd.to_datetime(b["timestamp"]).dt.floor("D"),
+                "fwd1": c.shift(-1) / c - 1,
+                "fwd3": c.shift(-3) / c - 1,
+                "ret1": r1,
+                "z1": r1 / r1.rolling(30).std().shift(1),
+                "rr20_60": rng.rolling(20).mean() / rng.rolling(60).mean(),
+                "rr": rng.rolling(30).mean() / rng.rolling(90).mean(),
+                "pos": np.arange(len(b)),
+                "gain": b["postRebalance_current_allocation"] * (c.shift(-1) / c - 1),
+                "fc": b["forecast"],
+            })
             rows.append(d)
     D = pd.concat(rows, ignore_index=True)
-    mu1 = D.groupby("coin")["fwd1"].mean()
-    mu2 = D[D.pos2].groupby("coin")["fwd2"].mean()
-    D["x1"] = D["fwd1"] - D["coin"].map(mu1)
-    D["x2"] = D["fwd2"] - D["coin"].map(mu2)
-    D["day"] = D["ts"].dt.floor("D")
-    D["wd"] = D["ts"].dt.weekday
-    D["yr"] = D["ts"].dt.year
+    drift = D.groupby("coin")["fwd1"].mean()
+    D["ab"] = D["fwd1"] - D["coin"].map(drift)
+    D = D.dropna(subset=["ab"])
+    D["wd"] = D["day"].dt.dayofweek
+    D["yr"] = D["day"].dt.year
 
-    def ct(sub, col):
-        s = sub.dropna(subset=[col])
+    def dayt(g):
+        s = g.groupby("day")["ab"].sum()
         n = len(s)
-        if n < 10: return pd.Series({"n": n, "mean%": np.nan, "t": np.nan, "days": 0})
-        m = s[col].mean()
-        g = (s[col] - m).groupby(s["day"]).sum()
-        se = np.sqrt((g ** 2).sum()) / n
-        return pd.Series({"n": n, "mean%": 100 * m, "t": m / se, "days": g.size})
-
-    def slope_t(sub, xcol, ycol):
-        s = sub.dropna(subset=[xcol, ycol])
-        x = s[xcol] - s[xcol].mean(); y = s[ycol] - s[ycol].mean()
-        bta = (x * y).sum() / (x * x).sum()
-        e = y - bta * x
-        g = (x * e).groupby(s["day"]).sum()
-        se = np.sqrt((g ** 2).sum()) / (x * x).sum()
-        return pd.Series({"n": len(s), "slope": bta, "t": bta / se, "days": g.size})
-
+        return pd.Series({"cases": len(g), "days": n, "mean_ab%": 100*g["ab"].mean(),
+                          "t_day": s.mean()/(s.std()/np.sqrt(n)) if n > 2 else np.nan})
     out = {}
-    D["z0c"] = D["z0"].clip(-4, 4)
-    D["dz"] = (-D["z0c"]).clip(lower=0)  # size of the fall only
-    D["uz"] = D["z0c"].clip(lower=0)
-    out["slope x1 on -z0 (falls only, z<0)"] = pd.DataFrame({
-        "all": slope_t(D[D.z0 < 0].assign(m=-D.z0c), "m", "x1"),
-        "rr>1": slope_t(D[(D.z0 < 0) & (D.rr > 1)].assign(m=-D.z0c), "m", "x1"),
-        "rr<=1": slope_t(D[(D.z0 < 0) & (D.rr <= 1)].assign(m=-D.z0c), "m", "x1"),
-        "r30<0": slope_t(D[(D.z0 < 0) & (D.r30 < 0)].assign(m=-D.z0c), "m", "x1"),
-        "r30>=0": slope_t(D[(D.z0 < 0) & (D.r30 >= 0)].assign(m=-D.z0c), "m", "x1"),
-        "up days z>0": slope_t(D[D.z0 > 0].assign(m=D.z0c), "m", "x1"),
-    }).T
-    D["zb"] = pd.cut(D["z0"], [-99, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 99])
-    out["x1 by z0 band"] = D.groupby("zb").apply(lambda s: ct(s, "x1"))
-    out["x2 by z0 band (grid 2d)"] = D[D.pos2].groupby("zb").apply(lambda s: ct(s, "x2"))
-    big = D[D.z0 <= -1.5]
-    out["x1 after z<=-1.5 by year"] = big.groupby("yr").apply(lambda s: ct(s, "x1"))
-    out["x1 after z<=-1.5 by coin"] = big.groupby("coin").apply(lambda s: ct(s, "x1"))
-    out["x1 after z<=-1.5 by loc half"] = big.groupby(D["loc"] < 0.3).apply(lambda s: ct(s, "x1"))
-    out["slope x1 on loc, all bars, by rr"] = pd.DataFrame({
-        "all": slope_t(D.assign(m=1 - D["loc"]), "m", "x1"),
-        "rr>1": slope_t(D[D.rr > 1].assign(m=1 - D["loc"]), "m", "x1"),
-        "rr<=1": slope_t(D[D.rr <= 1].assign(m=1 - D["loc"]), "m", "x1"),
-        "loc on z<0": slope_t(D[D.z0 < 0].assign(m=1 - D["loc"]), "m", "x1"),
-    }).T
-    out["x1 by weekday by year (Thu+Fri)"] = D[D.wd.isin([3, 4])].groupby("yr").apply(lambda s: ct(s, "x1"))
-    out["x1 by weekday by year (Mon-Wed)"] = D[D.wd.isin([0, 1, 2])].groupby("yr").apply(lambda s: ct(s, "x1"))
-    out["x1 after big falls by weekday"] = D[D.z0 <= -1].groupby("wd").apply(lambda s: ct(s, "x1"))
-    out["book gain in position by year"] = D[D.alloc.abs() > 0].groupby("yr").apply(lambda s: ct(s, "gain"))
-    out["x1 by window, z<=-1.5"] = big.groupby("win").apply(lambda s: ct(s, "x1"))
+    D["z1q"] = pd.qcut(D["z1"], 10, labels=False)
+    out["z1_decile"] = D.groupby("z1q").apply(dayt)
+    D["z1q"] = pd.qcut(D["z1"], 5, labels=False)
+    out["z1_bottom_by_win"] = D[D["z1q"] == 0].groupby("win").apply(dayt)
+    out["z1_bottom_by_coin"] = D[D["z1q"] == 0].groupby("coin").apply(dayt)
+    out["z1_bottom_by_year"] = D[D["z1q"] == 0].groupby("yr").apply(dayt)
+    out["z1_bottom_by_rr"] = D[D["z1q"] == 0].assign(hi=D["rr20_60"] > 1).groupby("hi").apply(dayt)
+    D["rrq2"] = pd.qcut(D["rr20_60"], 5, labels=False)
+    out["rr20_60_quint"] = D.groupby("rrq2").apply(dayt)
+    D["rrq"] = pd.qcut(D["rr"], 5, labels=False)
+    out["rr_low_by_win"] = D[D["rrq"] == 0].groupby("win").apply(dayt)
+    out["rr_quint_dayt"] = D.groupby("rrq").apply(dayt)
+    out["weekday_dayt"] = D.groupby("wd").apply(dayt)
+    out["thu_fri_by_year"] = D[D["wd"].isin([3, 4])].groupby("yr").apply(dayt)
+    # book's largest gains/losses: what preceded
+    G = D.dropna(subset=["gain"])
+    G = G[G["gain"] != 0]
+    G["gq"] = pd.qcut(G["gain"], 10, labels=False, duplicates="drop")
+    out["book_gain_decile_context"] = G.groupby("gq").agg(n=("gain","size"), gain=("gain","mean"),
+                                                          z1=("z1","mean"), fc=("fc","mean"), rr=("rr20_60","mean"))
     return out
