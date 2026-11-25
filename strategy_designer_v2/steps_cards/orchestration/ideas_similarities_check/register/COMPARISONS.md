@@ -50,6 +50,7 @@
 | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d | night6_yearlow_run | 1d | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d (1d) | 0.85 | same period | +0.0037 % (0.72) | 0.08 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | night6_yearlow_run | 1d | 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d (1d) | 0.81 | same period | +0.0003 % (0.07) | 0.03 |
 | 033-03.b2_rising-market-range-top-continuation_1d | night7_rangefail_run | 1d | 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d (1d) | 0.71 | same period | +0.0077 % (0.63) | 0.06 |
+| 034-01.e1_rising-market-breakout-distance-continuation_1d | night7_rangefail_run | 1d | 034-02_rising-break-swings-continues_1d (1d) | 0.87 | same period | +0.0010 % (0.30) | 0.22 |
 | 034-02_rising-break-swings-continues_1d | night7_rangefail_run | 1d | 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d (1d) | 0.79 | same period | +0.0096 % (1.91) | 0.25 |
 | 035-02_break-swings-above-continues_1d | night7_rangefail_run | 1d | 034-02_rising-break-swings-continues_1d (1d) | 0.73 | same period | +0.0042 % (0.41) | 0.23 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 3-bar excess return",
+    "value": 0.0361186324092402,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases pooled",
+      "value": 2.69633495540909
+    },
+    "threshold": "confirm: above 0 with t >= 2 (and slope > 0); reject: below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 3-bar excess return on forecast",
+    "value": 0.0046356772454789,
+    "passed": true
+  },
+  "counts": {
+    "cases": 782,
+    "cases on distinct days": 299
+  },
+  "decided_by": "The forecast-weighted mean excess return is above 0 with t >= 2 and the slope on the forecast is positive.",
+  "reading": "Situation = raw distance above prior 20-day closing high > 0 (recomputed from closes where not recorded) and, where 60 bars of the window exist, a positive 60-bar price change as the rising profile, side long; the plan's 'fewer than 30 cases on distinct days' is applied as a minimum count (not observable), the weighted-mean t pools each day's weighted deviations, and the slope is an ordinary least-squares slope of excess return on forecast over all cases.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.02174 on the check folds against +0.03612 on every fold",
+    "main": 0.021737264490912282,
+    "statistic": 2.590586635305469,
+    "counts": {
+      "cases": 486,
+      "cases on distinct days": 170
+    }
+  }
+}
