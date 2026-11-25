@@ -1,4 +1,4 @@
-026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: unseen_2016_2017: holds; unseen_2026: no data
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: unseen_2016_2017: holds; unseen_2026: no data; unseen_coins: holds (13 of 13 coins ran)
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h: unseen_2016_2017: holds; unseen_2026: no data
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue_1h: unseen_2016_2017: does not hold; unseen_2026: no data
 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h: unseen_2016_2017: does not hold; unseen_2026: does not hold

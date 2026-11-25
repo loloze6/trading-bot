@@ -1,0 +1,1 @@
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: inconclusive (fit: adapted) [main: 0.000330002; OLS slope t 1.60458; entry cases 741]

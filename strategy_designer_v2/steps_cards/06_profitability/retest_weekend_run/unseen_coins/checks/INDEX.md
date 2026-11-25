@@ -1,0 +1,1 @@
+026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h: not profitable enough [Sharpe 0.6022; Sharpe minus holding's Sharpe -0.4401; Calmar 0.4734]
