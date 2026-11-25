@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move of the bets (drift removed)",
+    "value": 0.018471040920477737,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 2.171496002691461
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of unusual 5-day move on entry forecast",
+    "value": -0.0038284275392586804,
+    "passed": false
+  },
+  "counts": {
+    "cases": 232,
+    "distinct days": 190
+  },
+  "decided_by": "A t >= 2 with a slope of 0 or below is inconclusive.",
+  "reading": "A case is the first bet (forecast rise of at least 2 from its lowest long level since the last bet, reset to 0 when flat) in each 5-bar cell from each window's first row, cases whose 5 bars run past the window's end are dropped, the drift is the coin's mean 5-day return on the same grid pooled over its windows, and the t uses day-summed deviations with a D/(D-1) correction."
+}
