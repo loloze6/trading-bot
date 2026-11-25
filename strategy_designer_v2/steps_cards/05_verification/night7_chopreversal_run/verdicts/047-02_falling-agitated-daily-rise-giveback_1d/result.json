@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (post_pipeline_value), day-clustered SE",
+    "value": 7.003507568833924e-05,
+    "statistic": {
+      "name": "day-clustered t of slope",
+      "value": 0.245677689968296
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, short direction (negated), > 0",
+    "value": 0.005589897617253487,
+    "passed": true
+  },
+  "counts": {
+    "cases (bars with forecast < 0)": 1326,
+    "distinct days": 633
+  },
+  "decided_by": "Inconclusive rule: the slope's t lies between -2 and 2.",
+  "reading": "The profile is read from the recorded regime ('unknown' = neither chop veto fired), the one-day rise from last_history_value (prices where missing); cases are bars with forecast < 0 that have a next bar in the same window; the regression has an intercept with CR1 day-clustered standard errors (G/(G-1)*(N-1)/(N-K)); the plan's 'fewer than 100 cases or 50 days' is treated as 'not observable' per the workflow's minimum-count rule."
+}

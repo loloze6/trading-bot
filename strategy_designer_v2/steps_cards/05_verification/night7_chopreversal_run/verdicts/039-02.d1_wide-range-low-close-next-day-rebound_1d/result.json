@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (next-day return - coin mean daily return) x position held, on non-zero positions",
+    "value": 0.001088760780890229,
+    "statistic": {
+      "name": "t of the mean (cases of one day summed)",
+      "value": 2.6137720115809002
+    },
+    "threshold": "confirm: t >= 2 with supporting check > 0; reject: t <= -2; otherwise inconclusive; minimum 300 position days on 150 distinct days"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of non-zero forecasts, drift-adjusted next-day return",
+    "value": 0.00880166242777228,
+    "passed": true
+  },
+  "counts": {
+    "position days": 9226,
+    "distinct days": 2571
+  },
+  "decided_by": "The main measure's t is 2 or more and the supporting check is above 0 (confirm rule).",
+  "reading": "Agitated profile read as regime 'unknown' (the non-chop regime carrying the strategy) and the situation as a raw value above 0 there, long; positions are postRebalance_current_allocation != 0 with a next-day return in the same window, every bar counted (1-bar horizon), the t uses per-day sums of the products across coins, the coin mean is over all its windows' daily returns, and the thirds are floor(n/3) lowest and highest non-zero forecasts pooled over all coins; fewer cases than the plan's minimums is reported as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0009886 on the check folds against +0.001089 on every fold",
+    "main": 0.0009886091412801355,
+    "statistic": 1.7420599071397231,
+    "counts": {
+      "position days": 4787,
+      "distinct days": 1309
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "040-02_agitated-daily-rise-next-day-giveback_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.33638819999999997,
+  "findings": {
+    "F1": "On agitated up days the next-day give-back is not graded by the rise: the fade gain is +0.62 % (t 3.68, 944 cases) after rises up to one usual move, then +0.16 % (t 0.48), +0.00 % (t 0.00) and +0.20 % (t 0.29) for larger rises. The slope of the next-day excess return on the rise is +25.9 bp per usual move (t 1.99, 1505 cases), the wrong sign. This matches step 5's failed slope (\u22129.3e-05) and its main t of 1.33.",
+    "F2": "The up-side fade also changes sign across windows. It is \u22121.06 % (t \u22122.37, 320 cases) in w11 against +2.55 % (t 4.64) in w18. By coin it is positive everywhere but clear only in XMR (t 2.33) and ZEC (t 2.22), so the small average edge is mixed rather than a steady effect.",
+    "F3": "The mirror side carries the brief's graded reversal. On agitated down days the slope of the next-day excess return on the fall is \u221293.2 bp per usual move (t \u22125.64, 1439 cases), negative in all six coins (t from \u22121.77 to \u22123.01). On calm down days the same slope is only \u221221.9 bp (t \u22122.10), so the reversal is stronger in agitated markets, as the brief claims.",
+    "F4": "Inside agitated markets the graded rebound after falls lives in a falling trend. There the slope is \u2212134.0 bp per usual move (t \u22127.12, 377 cases), against \u22126.2 bp (t \u22120.14, 358 cases) in a rising trend.",
+    "F5": "The rebound is largest after the largest agitated falls, which makes it large against costs. The largest-fall tercile rebounds +1.37 % (t 2.26 over 199 days). Falls beyond three usual moves rebound +4.16 % (t 4.13, 56 cases). Both are far above the 0.19 % cost of a trade, while the tested idea's unusual move is only +0.38 % per case.",
+    "F6": "The down-side effect is not uniform across windows. It is strong in w15 (\u2212134 bp, t \u22123.12) and w16 (\u2212143 bp, t \u22124.26), but flat or reversed in w10, w12 and w13 (t \u22120.16, +0.05, +0.71), so it needs the held-out folds to confirm it."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall, measured as its percent change from the previous close, the larger its rise over the next day.",
+      "consequence": "After a sharp down day in a coin that is already falling and swinging more than usual, a trader can expect a next-day rebound that grows with the size of the fall, and should not chase the fall short.",
+      "name": "falling agitated fall rebound",
+      "from": "F3, F4, F5, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In an agitated market, the larger a coin's one-day fall, measured as its percent change from the previous close, the larger its rise over the next day.",
+      "consequence": "In any coin swinging more than usual, a larger down day is a graded reason to expect a next-day bounce, and a reason to refuse a short entered after the fall.",
+      "name": "agitated daily fall rebound",
+      "from": "F3, F5",
+      "profile": "agitated",
+      "refs": [
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "040-02.b1_falling-agitated-fall-rebound",
+    "040-02.b2_agitated-daily-fall-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

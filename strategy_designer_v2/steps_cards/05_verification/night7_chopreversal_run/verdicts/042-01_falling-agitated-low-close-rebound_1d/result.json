@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on low_close raw value (in-profile)",
+    "value": 0.018089077308258306,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": 2.9764556880954505
+    },
+    "threshold": "slope t >= +2 with bottom-fifth mean > 0 confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, in-profile bars with raw >= 0.8",
+    "value": 0.010602153701781384,
+    "passed": true
+  },
+  "counts": {
+    "in-profile bars": 2797,
+    "bottom-fifth bars": 540,
+    "days (in-profile)": 1135,
+    "active bars": 2786
+  },
+  "decided_by": "The slope's t is +2 or more and the bottom-fifth mean next-day excess return is above 0.",
+  "reading": "The falling agitated profile is read as the bars whose recorded regime is 'unknown' (the only regime with a strategy, the vetoes sending every other bar to 'chop'), the situation as an in-profile bar whose close sits below the day's high (raw value > 0) on the long side, the coin's mean daily return over all its windows' bars, every bar as a 1-bar case, and the slope's t as an OLS slope with day-clustered (per-day summed) standard error.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.006978 on the check folds against +0.01809 on every fold",
+    "main": 0.0069775558978369375,
+    "statistic": 1.0542105579720238,
+    "counts": {
+      "in-profile bars": 1499,
+      "bottom-fifth bars": 297,
+      "days (in-profile)": 668,
+      "active bars": 1497
+    }
+  }
+}

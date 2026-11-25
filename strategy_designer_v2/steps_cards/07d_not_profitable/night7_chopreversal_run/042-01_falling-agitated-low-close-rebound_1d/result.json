@@ -1,0 +1,51 @@
+{
+  "line": "7.d",
+  "backtest": "042-01_falling-agitated-low-close-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3696627,
+  "findings": {
+    "F1": "The book loses its money on the closes in the upper half of the day's range: in the falling agitated profile, closes in the top two fifths of the range (raw 0\u20130.2 and 0.2\u20130.4, n 231 and 270) were followed by next-day excess returns of \u22120.49 % and \u22120.84 %, and middle closes (0.4\u20130.6, n 254) by \u22120.06 %; the book still held positions of 0.07, 0.20 and 0.35 there and lost 0.09, 0.45 and 0.05 in summed bar gain, while closes in the bottom fifth (n 243) were followed by +2.17 % and earned 2.85.",
+    "F2": "The deepest fall (\u221214.4 %, the Calmar's denominator) came in w14 over 16 days, while the coins' daily returns summed to \u221237 %; in w14 the in-profile closes in the top three fifths of the range lost 0.03, 0.18 and 0.39 in bar gain (excess \u22121.2 %, \u22121.1 %, \u22122.4 %), while the bottom two fifths gained 0.29 and 0.68 (excess +0.5 %, +1.7 %), so the fall came from the long positions on high and middle closes.",
+    "F3": "Rebuilt from the recorded positions with the cost applied, a book that keeps only the lower half of the range has a Calmar of 1.52 against 0.82 for the rebuilt original, a deepest fall of \u22129.8 % against \u221214.4 %, a Sharpe of 1.22 against 0.91 and a yearly return of 14.9 % against 11.8 %, in a position on 8.0 % of coin-days; graded from the mid-range (zero at mid, largest at the low), it reaches a Calmar of 1.51 with a yearly return of 20.4 %. The rebuild reads higher than step 6's Calmar of 0.376, so these numbers compare the variants with each other, not with the reported value.",
+    "F4": "Adding the day's own fall (a down day) to the lower-half close gives a Calmar of 2.10, a deepest fall of \u22127.9 % and a Sharpe of 1.46 (graded version: Calmar 1.64, yearly 20.6 %). Measured as a condition: in the profile, a down day without a low close earns +0.51 % next day (n 111), a low close on an up day earns \u22120.82 % (n 108), and both together earn +1.40 % (n 564). The down day alone carries about a third of the joint move, and the low close alone carries none. It belongs to the theory: selling that presses into the close is a day that falls.",
+    "F5": "The day's own fall grades the move: in-profile bars in the lowest quintile of the day's return (mean \u22129.1 %) are followed by +2.37 % excess (bar gain 3.17), the second quintile (\u22122.9 %) by +1.12 %, and the three upper quintiles by \u22120.72 %, \u22121.21 % and \u22120.59 %; low-range closes in the lowest quintile still earn +2.03 % (n 239).",
+    "F6": "Outside the profile the effect is graded but small: excess next-day return runs from \u22120.34 % (raw 0\u20130.2, n 1540) to +0.23 % (raw 0.8\u20131, n 954), and a down day with a low close earns +0.20 % (n 2608) against +1.40 % inside the profile, so the effect lives in the falling agitated profile.",
+    "F7": "Cost is not the obstacle: the unusual move per case is +0.77 % (t 3.08, 656 days), 4.0 times the 0.19 % cost of a trade, and the failing measure is the falls, which come from the positions in F1\u2013F2."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the lower a coin's close sits below the middle of that day's high-low range, the larger its rise over the next day, with a close at the very bottom of the range followed by the strongest rise, and closes in the upper half of the range followed by no rise.",
+      "consequence": "A trader buys the rebound only on closes in the lower half of the day's range, larger the nearer the low, and stays out after mid- and high-range closes that carried the book's deepest falls.",
+      "name": "lower-half close rebound",
+      "from": "F1, F2, F3, F7",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, on a day the coin closes lower than the day before, the lower its close sits within that day's high-low range and the larger that day's fall, the larger its rise over the next day.",
+      "consequence": "A trader takes the low-close rebound only after a day that actually fell, larger the deeper the fall and the lower the close, which halves the book's deepest fall.",
+      "name": "down-day low-close rebound",
+      "from": "F4, F5, F2, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F4",
+        "F5",
+        "F2",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "042-01.d1_lower-half-close-rebound",
+    "042-01.d2_down-day-low-close-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

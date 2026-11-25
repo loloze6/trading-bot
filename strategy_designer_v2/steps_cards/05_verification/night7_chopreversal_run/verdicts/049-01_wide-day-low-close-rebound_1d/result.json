@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day return minus coin mean on forecast (pooled, every bar)",
+    "value": 0.0003737574266035235,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 3.4754480302288915
+    },
+    "threshold": "t >= 2 confirms (with the check passing), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return in the top fifth of the forecast > 0",
+    "value": 0.004470670626155313,
+    "passed": true
+  },
+  "counts": {
+    "bars with a forecast": 17216,
+    "distinct days of bars with a forecast": 2897,
+    "bars in the top fifth": 3476
+  },
+  "decided_by": "the slope's t is 2 or more and the top-fifth mean excess return is above 0.",
+  "reading": "Regression with intercept over every bar with a next-day return in its window, t from day-clustered (UTC day) standard errors with a G/(G-1) correction; 'bars with a forecast' are bars with a non-zero forecast; the top fifth is bars at or above the pooled 80th percentile of the forecast (non-zero only if that percentile is 0).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001439 on the check folds against +0.0003738 on every fold",
+    "main": 0.00014389975738692373,
+    "statistic": 1.1775242586184198,
+    "counts": {
+      "bars with a forecast": 8626,
+      "distinct days of bars with a forecast": 1449,
+      "bars in the top fifth": 1739
+    }
+  }
+}

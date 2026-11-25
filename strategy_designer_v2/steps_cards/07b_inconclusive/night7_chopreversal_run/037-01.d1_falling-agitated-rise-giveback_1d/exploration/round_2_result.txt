@@ -1,0 +1,52 @@
+## active bars: MR vs other regime
+           n  mean|pos|  share short     gain%    t gain  short move%    t move
+is_mr                                                                          
+False  354.0   0.026286          1.0  0.001650  0.227597    -0.384776 -1.569725
+True   409.0   0.180240          1.0  0.166671  2.432457     0.942328  3.170255
+
+## active non-MR bars by regime
+             n  mean|pos|  share short     gain%    t gain  short move%    t move
+regime                                                                           
+chop     267.0   0.024122          1.0  0.011141  1.616346    -0.231291 -0.834008
+unknown   87.0   0.032928          1.0 -0.027476 -1.350584    -0.855815 -1.646850
+
+## MR bars: pos zero vs not
+           n  mean|pos|  share short     gain%    t gain  short move%    t move
+pos                                                                            
+False   86.0    0.00000          0.0  0.000000       NaN     1.608814  3.081517
+True   409.0    0.18024          1.0  0.166671  2.432457     0.942328  3.170255
+
+## MR by |forecast| quartile
+                     n  mean|pos|  share short     gain%    t gain  short move%    t move
+fcb                                                                                      
+(0.0446, 1.714]  124.0   0.011000     0.395161  0.013740  1.517986     1.714660  3.799223
+(1.714, 4.129]   124.0   0.083440     0.911290  0.058790  1.164462     0.865430  1.557850
+(4.129, 7.403]   123.0   0.183464     1.000000  0.257824  3.328270     1.107629  2.601338
+(7.403, 17.465]  124.0   0.318075     1.000000  0.221473  1.072874     0.545165  0.859061
+
+## MR by z quartile
+                     n  mean|pos|  share short     gain%    t gain  short move%    t move
+zq                                                                                       
+(0.0029, 0.134]  108.0   0.011844     0.407407  0.015993  1.657084     1.046803  2.306678
+(0.134, 0.319]   108.0   0.088034     0.925926  0.045182  0.789596     1.084491  1.720666
+(0.319, 0.573]   108.0   0.181194     1.000000  0.141844  1.826907     0.509212  1.093717
+(0.573, 0.985]   108.0   0.303375     1.000000  0.420836  1.809362     1.384676  1.919479
+
+## MR share forecast>0 (long)
+0.0
+
+## MR unit short, day-clustered
+mean%      1.058121
+t          2.558463
+cases    495.000000
+days     231.000000
+
+## in-profile slope n1 on z, |z|<=2
+slope%      -1.198347
+t           -5.018037
+n         1059.000000
+
+## out-of-profile slope n1 on z, |z|<=2
+slope%      -0.173121
+t           -2.035172
+n         5523.000000

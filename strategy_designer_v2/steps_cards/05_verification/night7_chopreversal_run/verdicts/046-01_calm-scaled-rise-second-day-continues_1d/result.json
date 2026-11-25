@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day t of the slope of excess next-bar return on the forecast, forecast > 0 bars",
+    "value": 0.00020523892399218168,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 1.8805536265805256
+    },
+    "threshold": "confirm if t >= 2 and forecast-weighted mean excess return > 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess next-bar return > 0",
+    "value": 0.0013347999187805202,
+    "passed": true
+  },
+  "counts": {
+    "bars with a forecast above 0": 4720,
+    "distinct days": 1642
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "Calm is read from the recorded regime ('unknown', i.e. not vetoed to 'chop') and the rise from last_history_value > 0; the slope's t uses an OLS with intercept and standard errors clustered by UTC calendar day (scores summed per day, small-sample corrected); the coin's mean daily return is the mean of all its within-window one-bar returns; the minimum counts are on bars with a forecast above 0 and a next-bar return inside the window, and a shortfall is reported as 'not observable'."
+}

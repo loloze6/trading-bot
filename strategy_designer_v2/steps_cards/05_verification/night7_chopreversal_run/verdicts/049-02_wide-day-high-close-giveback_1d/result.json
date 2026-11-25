@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9728571428571429,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (pooled, day-clustered)",
+    "value": 0.00041239916559500996,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 1.7325751160125917
+    },
+    "threshold": "slope > 0 with t >= 2 (confirm); slope < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x excess return, top fifth of |forecast| minus bottom two fifths",
+    "value": 0.00026581380655337893,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a forecast": 2877,
+    "bars in regression": 17380
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Situation read as standardised width minus standardised distance under the high (rebuilt from raw values, short when positive); regression uses all bars with a next close in the window with an intercept and CR1 day-clustered errors; fifths of |forecast| are taken over those same bars (top fifth >= 80th percentile, bottom two fifths <= 40th percentile); a 'distinct day with a forecast' is a UTC day with a non-zero forecast on any coin among those bars."
+}

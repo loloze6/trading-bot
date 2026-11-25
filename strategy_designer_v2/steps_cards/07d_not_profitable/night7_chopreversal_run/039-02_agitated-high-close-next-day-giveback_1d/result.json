@@ -1,0 +1,64 @@
+{
+  "line": "7.d",
+  "backtest": "039-02_agitated-high-close-next-day-giveback_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3908193,
+  "findings": {
+    "F1": "The book's edge is spread thin over mostly mid-range closes. Of 5,074 bars in a position, 3,234 were mid-range closes (close between 0.2 and 0.8 of the range), earning only +0.016 % (short) and +0.021 % (long) per bar. The positions averaged 0.076 of the book, with a mean |forecast| of 1.8. Turnover cost 0.0107 % per bar against a gross gain of 0.021 % per bar, so half the gain went to fees, leaving a mean of 0.014 % on days in a position against the 0.05 % required.",
+    "F2": "The effect is graded and lopsided toward low closes. In agitated markets, the next day's move above the coin's drift falls from +0.84 % (t 2.6) and +0.87 % (t 2.7) in the two lowest close-location deciles to between -0.31 % and -0.75 % in the upper five deciles. Long trades on low closes earned +0.110 % per bar, against +0.035 % for shorts on high closes.",
+    "F3": "A wide day's range sharpens the low-close rebound in a graded way. Among agitated closes in the bottom 30 % of the range, the next-day excess rises with the day's range against its 30-day swing: +0.16 %, +0.05 %, +0.91 % (t 2.2) and +2.01 % (t 3.7) across range quartiles. The slope of excess on lowness is 3.19 % on wide days against 1.00 % on the others.",
+    "F4": "The wide range is not an effect of its own. Wide days without a low close earn +0.09 % (t 0.3, n 791), against +1.89 % (t 4.2, n 191) for wide days with a low close. That is about 10 times the 0.19 % cost of a trade, against 2 times for the idea's average case. It still holds over two days (+1.87 %, t 3.1).",
+    "F5": "The low-close wide-range rebound holds in 4 of 6 coins and every year.",
+    "F6": "The low-close rebound lives in a falling agitated market. Agitated low closes with a 60-day return below -10 % gain +3.00 % next day (t 5.1, n 139). The falling trend alone, without a low close, gives -0.47 % (t -2.3, n 599), so the trend is not the effect. In a rising market low closes lose 0.66 % (n 98).",
+    "F7": "The short side loses in rising markets. High closes in agitated markets are followed by -0.91 % (t -3.5, n 474) when the 60-day trend is not rising, and by +0.40 % (n 212) when it is rising. In a choppy agitated market high closes give -0.90 % (n 483) and low closes +0.63 % (n 302).",
+    "F8": "The book's falls come from the short-heavy, low-edge later windows."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, the lower a coin closes within its day's high-low range, the larger its rise over the next day, and the wider that day's range against the coin's usual daily swing over the past 30 days, the larger the rise.",
+      "consequence": "A trader buys only agitated days that close near their low after an unusually wide range, sized up as the close sits lower and the range is wider, and leaves the mid-range and high-close days that cost fees for little edge.",
+      "name": "wide-range low-close next-day rebound",
+      "from": "F1, F2, F3, F4, F5, F8",
+      "profile": "agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the lower a coin closes within its day's high-low range, the larger its rise over the next day.",
+      "consequence": "After a fall of the past two months with larger swings than usual, a close pinned at the day's low is a graded reason to buy for a day, since the forced selling reverts.",
+      "name": "falling-market low-close rebound",
+      "from": "F2, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, the higher a coin closes within its day's high-low range, the larger its fall over the next day.",
+      "consequence": "A trader shorts agitated high closes only while the coin has gone nowhere over two months, and so avoids the rising markets where high closes keep climbing.",
+      "name": "choppy-market high-close giveback",
+      "from": "F7, F8",
+      "profile": "choppy agitated",
+      "refs": [
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "039-02.d1_wide-range-low-close-next-day-rebound",
+    "039-02.d2_falling-market-low-close-rebound",
+    "039-02.d3_choppy-market-high-close-giveback"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

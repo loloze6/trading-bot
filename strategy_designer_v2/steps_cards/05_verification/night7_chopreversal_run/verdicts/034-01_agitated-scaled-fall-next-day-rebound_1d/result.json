@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (forecast > 0, pooled)",
+    "value": 0.0004892910381193172,
+    "statistic": {
+      "name": "t of slope, cases of one day taken together",
+      "value": 1.8938406150326044
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third mean next-day excess return (Welch t >= 1)",
+    "value": 0.0059913948965412,
+    "passed": true,
+    "welch_t": 2.6152126223669003
+  },
+  "counts": {
+    "cases with forecast > 0": 3753,
+    "distinct days": 1449
+  },
+  "decided_by": "The slope's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Agitated bars are those whose regime is not the detector's 'chop' veto and a fall is a recorded raw component value below 0; cases are forecast > 0 bars with a next-day return inside the window; the slope is OLS with intercept, its t clustered by UTC day (CR1, G/(G-1)); thirds are the floor(n/3) lowest and highest forecasts after a stable sort."
+}

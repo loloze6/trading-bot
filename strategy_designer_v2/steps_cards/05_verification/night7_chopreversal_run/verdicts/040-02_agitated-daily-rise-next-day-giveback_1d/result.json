@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess gain (position x next-day excess return) on short bars, summed per day",
+    "value": 0.002071943922355581,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 1.328637086264166
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on forecast",
+    "value": -9.283639577438708e-05,
+    "passed": false
+  },
+  "counts": {
+    "distinct days with a short case": 1517,
+    "short cases": 3955
+  },
+  "decided_by": "t between -2 and 2 (inconclusive rule).",
+  "reading": "The agitated profile is read as the recorded regime not being 'chop' (the detector's veto), the rise as the recorded raw day change > 0 (recomputed from closes if missing), the 100 distinct days are days with a measurable short case, and the slope is pooled over all short cases (not day sums)."
+}

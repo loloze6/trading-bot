@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Pearson correlation of forecast with next 7-bar return minus normal 7-bar drift (non-overlapping grid, forecast < 0)",
+    "value": -0.13498459831642967,
+    "statistic": {
+      "name": "t of Pearson correlation",
+      "value": -1.2995650122598794
+    },
+    "threshold": "confirm: correlation positive with t >= 2 and supporting check passes; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the signal's direction (fall beyond drift)",
+    "value": 0.001209092974905173,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a forecast below 0": 93
+  },
+  "decided_by": "The correlation t lies between -2 and 2.",
+  "reading": "Situation taken as a positive raw 7-day return (recorded rise7 value, recomputed from closes where missing) with a short forecast, profile not part of the check; drift is each coin's mean non-overlapping 7-bar return over all its windows; grid cases are grid bars with forecast < 0 and a full 7-bar return inside the window; the plan's 'fewer than 30 grid cases' minimum is applied as 'not observable'."
+}

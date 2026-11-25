@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 046-02_calm-scaled-rise-two-day-continues_1d
+idea tested: 046-02_calm-scaled-rise-two-day-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3798 USD
+---
+## Findings
+- **F1:** On agitated days (outside the calm profile), a fall is followed by a rebound the next day that grows with the fall's size against the 30-day daily swing: the slope of the next day's excess return on the scaled down move is -0.0128 (t -4.6, 1439 down days). The slope is negative in every year (t -1.5, -3.3, -3.5, -0.8 for 2018 to 2021) and for every coin (t -1.2 to -2.4).
+- **F2:** The rebound in F1 is large against the cost of a trade. Agitated falls beyond one usual swing are followed by a next-day excess return of +1.59 % (t 2.26 with each day's cases taken together, 345 cases on 144 days). Falls beyond two swings are followed by +4.75 % (t 4.4, 53 cases). A trade costs 0.19 %.
+- **F3:** The same falls in calm markets barely rebound: the next-day excess return after calm falls beyond two swings is +0.35 % (t 0.73, 106 cases), against +4.75 % in agitated markets. The effect lives in agitated markets.
+- **F4:** In calm markets, the second day after a rise (the return from day 1's close to day 2's close) grows with the rise against the 30-day swing, step by step across the bins: -0.02 %, +0.42 % (t 1.96, 434) and +1.00 % (t 2.64, 135) for rises of 0.3 to 1, 1 to 2 and over 2 swings. The regression slope on the scaled rise is 0.0030 (t 2.2, 2004 cases) and the z-weighted mean is +0.38 %.
+- **F5:** The evidence in F4 is weak and uneven. Its slope is negative in 2018 (t -0.2) and for BTC (t -0.3), positive but not significant for 4 of the 6 coins, and with every angle examined a t of 2.2 barely stands out.
+- **F6:** The tested two-day measure misses the effect in F4 because the first day goes the other way. After calm rises of 1 to 2 swings, the next day's excess return is -0.50 % (t -2.3, 438 cases). This is why the two-day slope is flat (t 0.39) and the idea's unusual move is -0.04 % (t -0.21), against a cost of 0.19 %.
+- **F7:** No weekday pattern stands out once the same day's cases are counted together: the largest weekday t is 1.5 (Friday, 206 days), and the signs change from year to year.
+
+## Ideas
+- `046-02.g2_calm-rise-second-day-follow-through` (from F4, F5, F6): In a calm market, the larger a one-day rise is against the coin's 30-day daily swing, the larger the coin's rise on the second day after it, from the next day's close to the close a day later.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `046-02.g1_agitated-scaled-fall-rebounds` (from F1, F2, F3): In an agitated market, the larger a one-day fall is against the coin's 30-day daily swing, the larger the coin's rebound over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

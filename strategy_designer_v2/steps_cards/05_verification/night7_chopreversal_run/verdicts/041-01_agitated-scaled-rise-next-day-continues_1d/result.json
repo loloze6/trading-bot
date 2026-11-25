@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return (over coin mean daily return) on forecast > 0",
+    "value": -0.0019359293411207157,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day clustered",
+      "value": -1.1142545489044535
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting check passes; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top third minus bottom third by forecast",
+    "value": 0.0015288558104157516,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with forecast > 0": 1517,
+    "cases with forecast > 0": 3955
+  },
+  "decided_by": "The main measure's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The agitated profile is read from the recorded regime (not 'chop', i.e. the vol-percentile veto did not fire) since the detector's component is not recorded; the 1-bar horizon uses every bar; the day-clustered t is the ratio-estimator t with per-day summed residuals f*(excess - mean); thirds are the lowest and highest floor(n/3) cases ranked by forecast pooled across coins; the 100-day minimum counts distinct UTC days of forecast > 0 cases with a next-day return."
+}
