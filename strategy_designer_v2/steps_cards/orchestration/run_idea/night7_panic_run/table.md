@@ -23,22 +23,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 047-01_falling-agitated-scaled-fall-rebound | - | plan | inconclusive (+0.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 047-01.b1_scaled-fall-rebound-more-coins; 7.g: 0 ideas, 2 discoveries (3 explorations) | 1.05 | 5.7 |
 | 048-01_scaled-up-week-continuation | - | plan | confirmed (+3.03) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: Every pattern beyond the tested idea is under t 2 once the many angles looked at are counted: the down-week mirror is flat (F1), no profile concentrates the effect (F3), the calm-market asymmetry is not graded (F4), and the bar angles show nothing (F5). | 0.58 | 4.6 |
 | 049-01_choppy-scaled-five-day-rise-continuation | - | plan | inconclusive (-0.29) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 049-01.b1_choppy-scaled-fall-continuation; 7.g: 049-01.g1_rising-market-scaled-rise-continuation, 049-01.g2_rising-scaled-rise-five-day-carry | 0.96 | 4.8 |
+| 050-01_falling-calm-scaled-week-fall-continuation | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-01.b1_calm-downtrend-fall-continuation-more-coins; 7.g: no ideas: Every pattern seen is a weak, same-sign version of the tested continuation (slopes with t at most 1.99 among about 50 cells looked at), it changes sign between years, and the book's gain comes from a handful of crash days, so nothing stands out enough from chance to support a new idea. | 0.97 | 5.7 |
+| 035-02_rising-market-narrowing-ranges-rise | - | plan | inconclusive (-0.11) | not profitable enough (failed: Calmar) | - | 7.b: 035-02.b1_narrowing-ranges-weekly-rise, 035-02.b2_strong-uptrend-narrowing-ranges-rise; 7.g: 035-02.g1_calm-level-uptrend-continuation, 035-02.g2_low-volatility-rising-coins-continue | 1.77 | 5.5 |
 
 ## Consumption
-19 ideas, 19.80 USD, 102.7 minutes in all.
+21 ideas, 22.54 USD, 114.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.18 | 10.0 |
-| step4_backtest | 0.00 | 34.4 |
-| step5_verdict | 3.26 | 12.4 |
-| step6_check | 0.00 | 0.6 |
+| step3_plan | 4.09 | 11.0 |
+| step4_backtest | 0.00 | 38.3 |
+| step5_verdict | 3.59 | 13.5 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.53 | 5.3 |
+| step7_7.d | 1.53 | 5.4 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 3.85 | 12.1 |
-| step7_7.g | 7.97 | 25.3 |
+| step7_7.b | 4.50 | 14.4 |
+| step7_7.g | 8.83 | 28.1 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 1.8 |
