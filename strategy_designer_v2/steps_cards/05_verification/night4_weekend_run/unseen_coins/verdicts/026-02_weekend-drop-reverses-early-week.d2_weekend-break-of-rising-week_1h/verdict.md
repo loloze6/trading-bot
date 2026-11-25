@@ -1,0 +1,17 @@
+---
+plan: 026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h
+idea: 026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week
+fit: exact
+status: inconclusive
+---
+Situation check: 99 % of the active bars match the plan's situation and side
+Evidence:
+- Main measure: mean short-side unusual 48-bar move per Sunday-close case: 0.00880901; t of the mean: 2.7761 (threshold: mean > 0 with t >= 2 confirms (with slope > 0); t <= -2 rejects; at least 100 cases)
+- Supporting check: slope of short-side unusual move on |forecast|: -0.000564915, passed: False
+- Counts: cases: 534
+- Decided by: t >= 2 but the supporting slope is at or below 0 (or undefined), which the plan calls inconclusive.
+- Reading: A case is every bar with forecast <= -2, at most one per 48-bar grid cell of its window, with its 48-bar return taken in bar positions inside the window; the drift is the coin's mean non-overlapping 48-bar return over all its windows; Sunday's last close is the bar starting Sunday 23:00 UTC; fewer than 100 cases is reported as not observable.
+- Size: unusual move +0.88 % (t 1.60, the cases of one day together: 191 days) per case over 48 bars, 0.102 of the coin's usual move (7.76 %); normal drift in its direction -0.42 %, total +0.47 %; 534 cases
+Plan: `steps_cards/03_test_plan/night4_weekend_run/plans/026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h.md`
+Record: `steps_cards/04_backtest/night4_weekend_run/unseen_coins/backtests/026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h`
+Measure: `measure.py`
