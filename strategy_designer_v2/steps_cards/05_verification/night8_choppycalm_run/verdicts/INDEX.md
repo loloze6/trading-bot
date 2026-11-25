@@ -1,3 +1,6 @@
+058-02.b1.b2.b1.b2.e2_calm-nearness-to-high-short-horizon_1d: confirmed (fit: exact) [main: 0.000702672; OLS slope t 3.95502; grid cases 5737, active bars 17583]
+058-02.b1.b2.b1.b2_calm-market-range-position_1d: inconclusive (fit: exact) [main: 0.000513035; slope t, clustered by day 1.69957; non-overlapping in-profile cases 3436, distinct days 506]
+058-02.b1.b2.b1_choppy-range-position-more-coins_1d: inconclusive (fit: exact) [main: 0.000391327; slope t, SE clustered by day 0.789797; grid cases inside the profile 1640, distinct days 429]
 058-02.b1.b2_choppy-range-position-continues_1d: inconclusive (fit: exact) [main: 0.000230954; OLS slope t 0.868905; active bars 4256, grid cases inside the profile 819]
 058-02.b1_calm-range-bottom-keeps-falling_1d: inconclusive (fit: exact) [main: -0.000588368; OLS slope t, day-clustered -0.676139; grid cases with forecast < 0 281, distinct days 162]
 058-02.b2.b1_calm-range-continuation-more-coins_1d: inconclusive (fit: exact) [main: 0.000394405; slope t (day-clustered) 0.874992; grid cases with a nonzero forecast 1050, distinct days 322]

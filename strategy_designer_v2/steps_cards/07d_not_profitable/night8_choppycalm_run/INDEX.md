@@ -1,3 +1,6 @@
+058-02.b1.b2.b1.b2.e2_calm-nearness-to-high-short-horizon_1d: 2 ideas (3 explorations)
+058-02.b1.b2.b1.b2_calm-market-range-position_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+058-02.b1.b2.b1_choppy-range-position-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1.b2_choppy-range-position-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1_calm-range-bottom-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b2.b1_calm-range-continuation-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

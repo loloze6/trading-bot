@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day t of the slope of 5-bar excess return on forecast, in-profile grid bars",
+    "value": 0.0005130354707620319,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 1.6995689658143425
+    },
+    "threshold": "t >= +2 confirms (with timing part > 0); t <= -2 rejects; between is inconclusive"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus market-rise gain (timing part)",
+    "value": 0.0008365233033254965,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping in-profile cases": 3436,
+    "distinct days": 506
+  },
+  "decided_by": "The slope's t lies between -2 and +2.",
+  "reading": "In-profile means regime 'unknown' on the grid bar (positions 0,5,10,... of each window, forward return inside the window), all such bars are regressed with an intercept on the recorded forecast including forecast 0, the slope's t uses day-clustered standard errors with the usual G/(G-1)*(N-1)/(N-K) correction, the drift is the coin's mean non-overlapping 5-bar return over all its windows, and the timing part uses each bar as a day with the coins present that day averaged."
+}
