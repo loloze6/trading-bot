@@ -7,6 +7,7 @@
 034-01_agitated-low-close-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 034-02_agitated-high-close-gives-back_1d: 1 ideas (3 explorations)
 035-01_wide-low-close-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+035-02_swing-wide-low-close-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 036-01_fall-vs-swing-next-day-rebound_1d: 1 ideas (2 explorations)
 037-01_wide-day-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 038-01_agitated-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

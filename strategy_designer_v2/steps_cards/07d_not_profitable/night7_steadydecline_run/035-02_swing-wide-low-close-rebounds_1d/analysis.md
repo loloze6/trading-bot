@@ -1,0 +1,26 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 035-02_swing-wide-low-close-rebounds_1d
+idea tested: 035-02_swing-wide-low-close-rebounds
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4127 USD
+---
+## Findings
+- **F1:** The failing measure is Calmar: 0.58 against the 0.75 required, from a deepest fall of -39.7 %. The fall sits in w14, where the book lost -0.13 % a day while holding lost -0.43 %. The book is in a position on 100 % of the coins' days, with a forecast above 0 on 98.9 % of bars. On the market's worst fifth of days the book lost -2.2 % a day against holding's -6.5 %, so the falls are the market's own falls carried by a book that is almost always long.
+- **F2:** The rebound lives only in the strong part of the reading. The mean next-day return by forecast band is:
+- **F3:** Holding only the bars with forecast at least 10 (same allocation, in a position on 36 % of coin-days) changes my approximate rebuilt book, which charges 0.095 % per unit of turnover:
+- **F4:** The effect needs both of its parts: a wide day and a low close. In the widest fifth of range against the 20-day swing, the mean next-day excess return is +1.19 % for closes near the low (564 bars), +0.67 % mid-range and -0.49 % near the high. In the narrowest fifth, closes near the low show only +0.22 %.
+- **F5:** The strong case pays more after a 20-day rise, and the rise alone does not earn it. Mean next-day returns are:
+- **F6:** The 5-day return separates the strong case the same way. With forecast at least 10, a positive 5-day return is followed by +0.81 % against +0.09 % for the condition without the signal. The book on the strong case with a positive 5-day return has Calmar 1.49 and a deepest fall of -16.4 %. After a 5-day fall it has Calmar 0.50 and a deepest fall of -29.0 %.
+- **F7:** The 60-day profile does not separate the effect, so no profile is named. In rising markets, bars without the strong signal earn +0.53 % next day against +0.45 % with it, so the trend alone carries that gain. In falling markets the strong case earns +0.42 % against -0.31 % without it.
+- **F8:** The cost is covered only in the strong part of the reading. Per case the total move is +0.22 % against a 0.19 % cost per trade, while the strong bands carry +0.40 % to +0.78 % a day, 2 to 4 times the cost.
+
+## Ideas
+- `035-02.d1_strong-flush-only-rebound` (from F1, F2, F3, F4, F8): The larger a day's high-to-low range is as a multiple of the standard deviation of the coin's daily returns over the past 20 days, and the nearer its close sits to the day's low, the larger the coin's rise over the next day, traded only on days that are both wide against that swing and closing in the lower part of their range, and out of the market on ordinary days.
+- `035-02.d2_flush-in-recent-advance` (from F1, F2, F5): The larger a day's high-to-low range is as a multiple of the standard deviation of the coin's daily returns over the past 20 days, and the nearer its close sits to the day's low, the larger the coin's rise over the next day, only while the coin's 20-day return is positive, when a wide low close is a flush of leveraged longs rather than informed selling.
+- `035-02.d3_sudden-flush-after-up-week` (from F1, F2, F6): The larger a day's high-to-low range is as a multiple of the standard deviation of the coin's daily returns over the past 20 days, and the nearer its close sits to the day's low, the larger the coin's rise over the next day, only while the coin's 5-day return is positive, so that the wide low close is a sudden break against the recent move rather than the end of a slide.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

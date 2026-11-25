@@ -7,6 +7,7 @@
 034-01_agitated-low-close-rebounds_1d: confirmed (fit: adapted) [main: 0.0311484; t of the mean (per-day cases) 2.94507; agitated days with a non-zero forecast 2214]
 034-02_agitated-high-close-gives-back_1d: inconclusive (fit: exact) [main: 0.000482827; t of the mean, cases of one day taken together 1.0225; agitated bars in a position 7510, coins 6, measure bars 7670, days 2212]
 035-01_wide-low-close-rebounds_1d: confirmed (fit: exact) [main: 0.000357586; OLS slope t, day-clustered SE 3.27302; distinct days with a recorded forecast 2922, cases 17380, days with cases 2898, top-fifth cases 3479]
+035-02_swing-wide-low-close-rebounds_1d: confirmed (fit: exact) [main: 0.00035356; OLS t, day-clustered 3.20275; independent days 2898, bars with forecast >= 2 15131, bars 17380]
 036-01_fall-vs-swing-next-day-rebound_1d: inconclusive (fit: adapted) [main: 0.00622551; t of the mean, cases clustered by day 2.74567; cases 2093, distinct days 738]
 037-01_wide-day-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000740075; t of the mean over days 2.37149; bars with forecast > 0 8605, distinct days 2219, days in main measure 2898]
 038-01_agitated-fall-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.0010705; t clustered by day 2.76736; cases 1468, distinct days 702]
