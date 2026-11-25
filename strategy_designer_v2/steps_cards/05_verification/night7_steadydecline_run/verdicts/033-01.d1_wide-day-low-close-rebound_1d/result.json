@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on post_pipeline_value",
+    "value": 0.0003632244677691864,
+    "statistic": {
+      "name": "t with cases summed per day (day-clustered OLS t)",
+      "value": 3.3623205003153966
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 (and top-fifth mean excess > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return on bars in the per-coin top fifth of forecast",
+    "value": 0.0037663387550918846,
+    "passed": true
+  },
+  "counts": {
+    "bars": 17380,
+    "distinct days": 2898,
+    "top-fifth bars": 3479
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-fifth mean excess return is above 0.",
+  "reading": "Every bar with a next close in its window and a post_pipeline_value is a case, the coin's mean is its mean 1-bar return over all windows, the t uses OLS score sums per UTC day without small-sample correction, the top fifth is forecast >= the coin's 80th percentile over all its windows, and missing minimum counts give 'not observable' rather than the plan's 'inconclusive'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001156 on the check folds against +0.0003632 on every fold",
+    "main": 0.00011563869932414307,
+    "statistic": 0.941044493665326,
+    "counts": {
+      "bars": 8691,
+      "distinct days": 1449,
+      "top-fifth bars": 1740
+    }
+  }
+}

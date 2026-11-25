@@ -20,22 +20,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 037-02_fall-range-beyond-loss-rebound | - | missing-components | - | - | - | - | 0.11 | 0.8 |
 | 038-02_agitated-fall-vs-swing-rebound | - | plan | confirmed (+4.80) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 038-02.g1_agitated-outsized-fall-rebounds, 038-02.g2_agitated-fall-three-day-rebound | 0.66 | 6.0 |
 | 039-02_agitated-range-fall-low-close-rebound | - | missing-components | - | - | - | - | 0.13 | 0.7 |
+| 033-01.d1_wide-day-low-close-rebound | 033-01_close-near-low-rebounds | plan | confirmed (+3.36) | not profitable enough (failed: Calmar) | - | 7.d: 033-01.d1.d1_strong-low-close-rebound-only, 033-01.d1.d2_agitated-wide-day-low-close-rebound, 033-01.d1.d3_wide-day-high-close-next-day-fade; 7.g: 033-01.d1.g1_falling-agitated-low-close-rebound | 1.07 | 5.8 |
 
 ## Consumption
-16 ideas, 12.84 USD, 73.8 minutes in all.
+17 ideas, 13.91 USD, 79.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.14 | 8.0 |
-| step4_backtest | 0.00 | 26.1 |
-| step5_verdict | 2.00 | 7.4 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 2.21 | 8.4 |
+| step4_backtest | 0.00 | 27.8 |
+| step5_verdict | 2.16 | 8.0 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 2.34 | 8.2 |
+| step7_7.d | 2.77 | 9.8 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.23 | 4.0 |
-| step7_7.g | 5.13 | 16.5 |
-| similarity_check | 0.00 | 0.5 |
+| step7_7.g | 5.55 | 17.8 |
+| similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 2.3 |

@@ -1,5 +1,6 @@
 032-01_calm-fall-depth-continues_1d: inconclusive (fit: adapted) [main: 0.00590473; t of the mean (per-day sums) 1.42539; distinct days with a non-zero forecast 1028, cases (coin-days) 2484]
 032-02_calm-fall-below-high-continues_1d: inconclusive (fit: exact) [main: 0.000767266; OLS slope t, clustered by day 1.21732; independent grid cases in a position 1071, days 435, active bars 3281]
+033-01.d1_wide-day-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000363224; t with cases summed per day (day-clustered OLS t) 3.36232; bars 17380, distinct days 2898, top-fifth bars 3479]
 033-01_close-near-low-rebounds_1d: confirmed (fit: adapted) [main: 0.00309886; t of the mean over days 2.64101; distinct days of cases 2898, days in main measure 2898, bars with forecast >= +2.5 4308, bars with forecast <= -2.5 4490]
 033-02_close-near-high-gives-back_1d: confirmed (fit: exact) [main: -0.00625462; t clustered by day -2.60742; distinct days of cases 2898, bars in the top fifth 3739, cases 17380]
 034-01_agitated-low-close-rebounds_1d: confirmed (fit: adapted) [main: 0.0311484; t of the mean (per-day cases) 2.94507; agitated days with a non-zero forecast 2214]

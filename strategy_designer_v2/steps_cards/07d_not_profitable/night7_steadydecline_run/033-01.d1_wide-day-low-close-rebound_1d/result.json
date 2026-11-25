@@ -1,0 +1,63 @@
+{
+  "line": "7.d",
+  "backtest": "033-01.d1_wide-day-low-close-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4258949,
+  "findings": {
+    "F1": "The book stays long even where the idea says nothing, and those bars lose; this drives its falls. The forecast is never negative, so the allocation is 0.07, 0.17 and 0.29 in the coin's lowest three fifths of the forecast. On those bars the next day returns -0.21 %, -0.03 % and -0.22 % (excess -0.35 %, -0.16 %, -0.36 %; about 1,740 cases each). Only the top two fifths gain: +0.40 % and +0.74 % (excess +0.26 % and +0.60 %).",
+    "F2": "The book's deepest falls are falls of the market it holds. Its daily returns correlate 0.82 with holding the coins (beta 0.35). On the 419 days it sat more than 15 % below its peak, the coins' 30-day return averaged -15.8 % and holding lost 0.53 % a day. The book's allocation was 0.39 on those days against 0.36 otherwise, and its forecast fifth was 2.07 against 1.98, so it was still mostly long on weak signals.",
+    "F3": "Keeping only the top two fifths of the forecast repairs the failing measure on a proxy book (folds B, C, cost 0.095 % per side). The deepest fall shrinks from -37.1 % to -30.6 %. Calmar rises from 1.11 to 1.47, the yearly return from 41.0 % to 45.0 %, and Sharpe from 1.07 to 1.22. The book is in a position 40 % of the time instead of 98 %. The top fifth alone gives a Calmar of 1.23 and a deepest fall of -24.4 %.",
+    "F4": "The proxy book is not the step-6 book. It covers folds B and C only, with a simplified cost: Calmar 1.11 against the official 0.54, deepest fall -37.3 % against holding's -81.2 %. Only the changes between proxy books are evidence.",
+    "F5": "The strong case is large enough to pay a trade. The idea's size over all cases is +0.09 % unusual move (t 0.81), half the 0.19 % cost of a trade. The top fifth's excess next-day return is +0.60 %, about 3 times that cost.",
+    "F6": "The effect lives in agitated markets. Here agitated means a 20-day swing above the coin's median, not the profile's exact definition. In agitated markets the top fifth returns +1.23 % the next day against +0.001 % for the other bars (t 4.25, 655 top cases). In calm markets it is +0.29 % against +0.03 % (t 1.47, 781 cases).",
+    "F7": "Agitation is not an effect of its own. Agitated bars outside the top fifth return +0.001 % a day, against +0.03 % for calm bars outside it. Agitation fits the idea's own theory: forced selling into the close pushes the price further from fair value when the coin is swinging hard.",
+    "F8": "Leaving out falling markets would cut away the effect instead of the losses. Where the 30-day return is below -7 %, the top fifth gains +0.90 % against -0.32 % for the other bars (t 4.33). Where the 60-day return is below -10 %, it is +0.84 % against -0.23 % (t 3.78). In rising markets it is only +0.63 % against +0.46 % (t 0.47).",
+    "F9": "The mirror side is the brief's own and loses when held long. A low forecast (close near the high) is followed by an excess next-day return of -0.35 % in the lowest fifth. A proxy book that is short below the coin's median forecast and long above it has the highest Calmar of the proxies: 1.76, yearly 74.7 %, deepest fall -42.5 %."
+  },
+  "ideas": [
+    {
+      "idea": "The nearer a coin's daily close sits to that day's low, and the wider that day's high-low range against the coin's usual daily swing over the past 20 days, the larger the rise in its price over the next day, with the rise concentrated in the days where the close is pinned near the low of a wide day and absent where the close sits mid-range or near the high.",
+      "consequence": "A trader buys only the strongest low closes after wide days and is out of the coin on every other day, instead of carrying a small long through ordinary days that lose in falling markets.",
+      "name": "strong low-close rebound only",
+      "from": "F1, F2, F3, F5, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In an agitated market, the nearer a coin's daily close sits to that day's low, and the wider that day's high-low range against the coin's usual daily swing over the past 20 days, the larger the rise in its price over the next day.",
+      "consequence": "A trader buys wide-day closes pinned near the low when the coin has been swinging more than usual, where the rebound is several times a trade's cost.",
+      "name": "agitated wide-day low-close rebound",
+      "from": "F5, F6, F7",
+      "profile": "agitated",
+      "refs": [
+        "F5",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The nearer a coin's daily close sits to that day's high, and the wider that day's high-low range against the coin's usual daily swing over the past 20 days, the larger the fall in its price over the next day relative to its usual daily drift.",
+      "consequence": "A trader stops holding a coin long after a wide day closed near its high, and shorts it there, the mirror of buying the close pinned near the low.",
+      "name": "wide-day high-close next-day fade",
+      "from": "F1, F9",
+      "refs": [
+        "F1",
+        "F9"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-01.d1.d1_strong-low-close-rebound-only",
+    "033-01.d1.d2_agitated-wide-day-low-close-rebound",
+    "033-01.d1.d3_wide-day-high-close-next-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
