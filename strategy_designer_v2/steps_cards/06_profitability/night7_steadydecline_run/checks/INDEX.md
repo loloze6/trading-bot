@@ -15,4 +15,5 @@
 038-01_agitated-fall-next-day-rebound_1d: profitable enough [Sharpe 1.072; Sharpe minus holding's Sharpe 0.5027; Calmar 0.8022]
 038-02_agitated-fall-vs-swing-rebound_1d: profitable enough [Sharpe 1.049; Sharpe minus holding's Sharpe 0.4795; Calmar 0.7684]
 039-01_agitated-swing-fall-low-close-rebound_1d: not profitable enough [Sharpe 0.8745; Sharpe minus holding's Sharpe 0.3049; Calmar 0.6849]
+039-02_agitated-range-fall-low-close-rebound_1d: profitable enough [Sharpe 0.9254; Sharpe minus holding's Sharpe 0.3558; Calmar 0.798]
 040-01_agitated-fall-size-next-day-rebound_1d: not profitable enough [Sharpe 0.8926; Sharpe minus holding's Sharpe 0.323; Calmar 0.7469]
