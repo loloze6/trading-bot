@@ -1,0 +1,1 @@
+058-01_agitated-rise-stretch-giveback_1d: no ideas: The theme's effect is not in the data. In rising agitated markets a close far above its 20-day average is followed by a further rise beyond drift, not a giveback (F2), and no graded fall shows at any horizon, coin or distance band (F1, F3, F4, F5).
