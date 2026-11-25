@@ -1,2 +1,3 @@
 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h: inconclusive (fit: exact) [main: -0.000321739; t of the mean -0.148484; bets (trending, |forecast| >= 2) 1259, cases with a full 48 bars left inside their window 1240]
 026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h: inconclusive (fit: exact) [main: 0.00880901; t of the mean 2.7761; cases 534]
+026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h: confirmed (fit: exact) [main: 0.000564264; OLS slope t 4.71365; cases 2724, active bars 2767, situation bars with non-zero forecast 2754]
