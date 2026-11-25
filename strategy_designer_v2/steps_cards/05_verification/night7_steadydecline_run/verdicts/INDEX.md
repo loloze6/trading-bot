@@ -4,6 +4,7 @@
 033-01.d2_low-close-rebound-long-side_1d: confirmed (fit: adapted) [main: 0.00117971; t, standard errors clustered by day 2.06946; regime bars 8067, distinct days 2177, forecast >= 2 regime bars 5199]
 033-01_close-near-low-rebounds_1d: confirmed (fit: adapted) [main: 0.00309886; t of the mean over days 2.64101; distinct days of cases 2898, days in main measure 2898, bars with forecast >= +2.5 4308, bars with forecast <= -2.5 4490]
 033-02_close-near-high-gives-back_1d: confirmed (fit: exact) [main: -0.00625462; t clustered by day -2.60742; distinct days of cases 2898, bars in the top fifth 3739, cases 17380]
+034-01.d1_wide-range-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000624062; OLS t, errors clustered by day 3.69206; agitated bars with forecast > 0 7650, distinct days 2211, top-quintile agitated bars 1543]
 034-01_agitated-low-close-rebounds_1d: confirmed (fit: adapted) [main: 0.0311484; t of the mean (per-day cases) 2.94507; agitated days with a non-zero forecast 2214]
 034-02_agitated-high-close-gives-back_1d: inconclusive (fit: exact) [main: 0.000482827; t of the mean, cases of one day taken together 1.0225; agitated bars in a position 7510, coins 6, measure bars 7670, days 2212]
 035-01_wide-low-close-rebounds_1d: confirmed (fit: exact) [main: 0.000357586; OLS slope t, day-clustered SE 3.27302; distinct days with a recorded forecast 2922, cases 17380, days with cases 2898, top-fifth cases 3479]

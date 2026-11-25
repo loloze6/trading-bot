@@ -49,6 +49,7 @@
 | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d | night6_yearlow_run | 1d | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d (1d) | 0.85 | same period | +0.0045 % (0.78) | 0.10 |
 | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d | night6_yearlow_run | 1d | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d (1d) | 0.85 | same period | +0.0037 % (0.72) | 0.08 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | night6_yearlow_run | 1d | 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d (1d) | 0.81 | same period | +0.0003 % (0.07) | 0.03 |
+| 034-01.d1_wide-range-low-close-rebound_1d | night7_steadydecline_run | 1d | 039-02_agitated-range-fall-low-close-rebound_1d (1d) | 0.77 | same period | +0.0039 % (0.36) | 0.45 |
 | 038-01_agitated-fall-next-day-rebound_1d | night7_steadydecline_run | 1d | 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d (1d) | 0.35 | same period | +0.0158 % (1.83) | 0.13 |
 | 038-02_agitated-fall-vs-swing-rebound_1d | night7_steadydecline_run | 1d | 038-01_agitated-fall-next-day-rebound_1d (1d) | 0.98 | same period | -0.0003 % (-0.22) | 0.12 |
 | 039-02_agitated-range-fall-low-close-rebound_1d | night7_steadydecline_run | 1d | 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d (1d) | 0.55 | same period | +0.0134 % (1.00) | 0.30 |
