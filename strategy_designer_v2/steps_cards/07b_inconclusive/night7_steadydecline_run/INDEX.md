@@ -8,4 +8,5 @@
 036-01_fall-vs-swing-next-day-rebound_1d: 1 ideas (2 explorations)
 037-01_wide-day-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 038-01_agitated-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+038-02_agitated-fall-vs-swing-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 039-01_agitated-swing-fall-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

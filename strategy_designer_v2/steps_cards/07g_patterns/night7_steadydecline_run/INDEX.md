@@ -8,4 +8,5 @@
 036-01_fall-vs-swing-next-day-rebound_1d: 2 ideas (2 explorations)
 037-01_wide-day-fall-next-day-rebound_1d: 2 ideas (2 explorations)
 038-01_agitated-fall-next-day-rebound_1d: 1 ideas (3 explorations)
+038-02_agitated-fall-vs-swing-rebound_1d: 2 ideas (2 explorations)
 039-01_agitated-swing-fall-low-close-rebound_1d: 2 ideas (2 explorations)
