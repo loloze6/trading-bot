@@ -172,6 +172,20 @@ PROFILE_AGITATION = {"calm": [("lte", 0.5)], "agitated": [("gt", 0.5)]}
 PROFILES = tuple(f"{t} {a}" for t in PROFILE_TREND for a in PROFILE_AGITATION)
 
 
+def coin_profile(close):
+    """Each day's market profile of one coin from its daily closes (common/market_profile.md), as step 3's components
+    compute it (topic 49's proof: 0 differences with the engine on 17,524 bars): a DataFrame of `trend` (rising,
+    choppy, falling) and `agitation` (calm, agitated), each None until its own history exists (60 days; a year).
+    Why this cannot leak: a day's labels use closes up to that day only."""
+    import pandas as pd
+    tr = (close / close.shift(60) - 1) * 100
+    ret = close.diff() / close                       # one-day returns as the component reads them
+    rank = ret.rolling(30).std().rolling(365 + 1).apply(lambda w: (w <= w[-1]).mean(), raw=True)
+    trend = pd.Series([None if pd.isna(x) else "rising" if x > 10 else "falling" if x < -10 else "choppy" for x in tr], index=close.index)
+    agit = pd.Series([None if pd.isna(x) else "agitated" if x > 0.5 else "calm" for x in rank], index=close.index)
+    return pd.DataFrame({"trend": trend, "agitation": agit})
+
+
 def profile_name(text):
     """An idea's profile from a line such as "falling, agitated", "Choppy market" or "calm": its trend, its agitation, or
     both (trend first); None when the line names none ("none", empty) or names two trends or two agitations."""
