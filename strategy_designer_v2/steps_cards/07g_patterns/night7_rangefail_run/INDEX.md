@@ -13,6 +13,7 @@
 034-01.e1_rising-market-breakout-distance-continuation_1d: 3 ideas (2 explorations)
 034-01_rising-nearness-to-high-rises_1d: 1 ideas, 1 discoveries (2 explorations)
 034-02_rising-break-swings-continues_1d: 3 ideas (2 explorations)
+034-03.b1_choppy-far-below-high-falls_1d: 1 ideas, 2 discoveries (2 explorations)
 034-03_rising-far-below-high-falls_1d: 1 ideas (2 explorations)
 035-01_nearness-to-high-rises_1d: 2 ideas (2 explorations)
 035-02_break-swings-above-continues_1d: no ideas: I looked at about 60 groupings: distance from the high and from the low, the last day's move, the volatility ratio, trend crossed with breakout, year, weekday, prior 5-day return, and trade duration, entry forecast and coin. No pattern outside the tested breakout effect reaches a day-clustered |t| of 2 in a graded way, so none stands out from chance across that many looks.

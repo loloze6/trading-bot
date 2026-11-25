@@ -13,6 +13,7 @@
 034-01.e1_rising-market-breakout-distance-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 034-01_rising-nearness-to-high-rises_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 034-02_rising-break-swings-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+034-03.b1_choppy-far-below-high-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 034-03_rising-far-below-high-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 035-01_nearness-to-high-rises_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 035-02_break-swings-above-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
