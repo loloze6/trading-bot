@@ -11,21 +11,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 036-01_scaled-rally-week-continuation | - | plan | inconclusive (-0.67) | not profitable enough (failed: Calmar) | - | 7.b: 036-01.b1_calm-market-rally-two-week-continuation; 7.g: 036-01.g1_scaled-two-week-rally-continues, 036-01.g2_scaled-weekly-rally-continues | 1.03 | 5.4 |
 | 037-01_falling-market-wide-day-decline | - | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 038-01_rising-market-scaled-rally-continuation | - | plan | confirmed (+3.88) | not profitable enough (failed: Calmar) | - | 7.d: 038-01.d1_scaled-rally-near-20-day-high, 038-01.d2_rally-held-near-recent-high; 7.g: 038-01.g2_scaled-rally-continues-calm-uptrend, 038-01.g3_ten-day-scaled-rally-continues | 1.09 | 6.1 |
+| 039-01_scaled-fall-next-day-rebound | - | plan | confirmed (+2.63) | not profitable enough (failed: Calmar) | - | 7.d: 039-01.d1_scaled-fall-rebound-capped, 039-01.d2_scaled-fall-within-slide, 039-01.d3_agitated-scaled-fall-rebound; 7.g: 039-01.g1_convex-rebound-after-extreme-falls, 039-01.g2_heavy-volume-fall-rebounds-more | 1.30 | 6.6 |
 
 ## Consumption
-7 ideas, 7.03 USD, 33.5 minutes in all.
+8 ideas, 8.33 USD, 40.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.30 | 3.2 |
-| step4_backtest | 0.00 | 11.2 |
-| step5_verdict | 1.06 | 4.0 |
-| step6_check | 0.00 | 0.2 |
+| step3_plan | 1.38 | 3.7 |
+| step4_backtest | 0.00 | 12.9 |
+| step5_verdict | 1.21 | 4.6 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.40 | 1.6 |
+| step7_7.d | 1.00 | 3.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.69 | 5.2 |
-| step7_7.g | 2.59 | 7.9 |
+| step7_7.g | 3.05 | 9.5 |
 | similarity_check | 0.00 | 0.2 |

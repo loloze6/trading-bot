@@ -4,3 +4,4 @@
 035-01_rising-market-quieting-swings-rise_1d: 0 ideas, 1 discoveries (2 explorations)
 036-01_scaled-rally-week-continuation_1d: 2 ideas, 1 discoveries (2 explorations)
 038-01_rising-market-scaled-rally-continuation_1d: 2 ideas, 2 discoveries (2 explorations)
+039-01_scaled-fall-next-day-rebound_1d: 2 ideas (2 explorations)

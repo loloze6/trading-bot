@@ -4,3 +4,4 @@
 035-01_rising-market-quieting-swings-rise_1d: 1 ideas (1 explorations)
 036-01_scaled-rally-week-continuation_1d: 1 ideas (2 explorations)
 038-01_rising-market-scaled-rally-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+039-01_scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
