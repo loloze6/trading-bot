@@ -6,3 +6,4 @@
 058-03_calm-rise-stretch-continuation_1d: profitable enough [Sharpe 0.9737; Sharpe minus holding's Sharpe 0.4041; Calmar 0.8299]
 059-01.b1_calm-swing-scaled-move-continues_1d: not profitable enough [Sharpe 0.5538; Sharpe minus holding's Sharpe -0.01577; Calmar 0.2727]
 059-01_swing-scaled-rise-continues_1d: not profitable enough [Sharpe 0.5322; Sharpe minus holding's Sharpe -0.02199; Calmar 0.2805]
+060-01_falling-agitated-high-close-fade_1d: not profitable enough [Sharpe 0.006541; Sharpe minus holding's Sharpe -0.5631; Calmar -0.02312]

@@ -6,3 +6,4 @@
 058-03_calm-rise-stretch-continuation_1d: inconclusive (fit: exact) [main: 0.00133421; OLS slope t, day-clustered 1.48801; grid cases with forecast > 0 428, distinct days 188]
 059-01.b1_calm-swing-scaled-move-continues_1d: inconclusive (fit: exact) [main: 0.0004374; t of slope, clustered by day 1.40816; grid cases 1829, distinct days 483]
 059-01_swing-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.000341715; slope t 2.0759; grid cases 3419]
+060-01_falling-agitated-high-close-fade_1d: confirmed (fit: exact) [main: -0.00587368; Welch t -2.46416; bars in top group 942, bars in middle group 886, bars in a position 2689]
