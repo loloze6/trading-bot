@@ -15,3 +15,4 @@
 040-02_agitated-daily-rise-next-day-giveback_1d: 1 ideas (2 explorations)
 041-01_agitated-scaled-rise-next-day-continues_1d: 1 ideas (3 explorations)
 042-01_falling-agitated-low-close-rebound_1d: 2 ideas, 1 discoveries (2 explorations)
+043-01_falling-agitated-intraday-drop-rebound_1d: 1 ideas (2 explorations)

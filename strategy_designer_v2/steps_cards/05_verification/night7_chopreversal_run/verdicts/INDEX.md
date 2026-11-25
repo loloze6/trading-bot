@@ -15,3 +15,4 @@
 040-02_agitated-daily-rise-next-day-giveback_1d: inconclusive (fit: adapted) [main: 0.00207194; t of the mean over days 1.32864; distinct days with a short case 1517, short cases 3955]
 041-01_agitated-scaled-rise-next-day-continues_1d: inconclusive (fit: adapted) [main: -0.00193593; t of the weighted mean, cases of one day clustered -1.11425; distinct days with forecast > 0 1517, cases with forecast > 0 3955]
 042-01_falling-agitated-low-close-rebound_1d: confirmed (fit: exact) [main: 0.0180891; slope t (day-clustered) 2.97646; in-profile bars 2797, bottom-fifth bars 540, days (in-profile) 1135, active bars 2786]
+043-01_falling-agitated-intraday-drop-rebound_1d: confirmed (fit: exact) [main: 0.000924804; day-clustered t of the slope 3.04012; cases 1467, distinct days 698]

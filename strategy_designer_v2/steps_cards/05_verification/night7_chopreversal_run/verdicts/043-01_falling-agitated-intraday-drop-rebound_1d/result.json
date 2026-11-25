@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (day-clustered t)",
+    "value": 0.0009248040411045751,
+    "statistic": {
+      "name": "day-clustered t of the slope",
+      "value": 3.040120119827994
+    },
+    "threshold": "confirm: t >= 2 with forecast-weighted mean excess > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess return of cases > 0",
+    "value": 0.010289257140960887,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1467,
+    "distinct days": 698
+  },
+  "decided_by": "The slope has a t of 2 or more and the forecast-weighted mean excess return is above 0.",
+  "reading": "Profile bars are those with regime 'unknown' (not vetoed to chop); the drop is the recorded raw oc_drop value, recomputed from open/close where missing; the coin's mean daily return is the mean of all its within-window 1-bar returns; cluster-robust SE uses the usual G/(G-1)*(N-1)/(N-K) correction; days are UTC dates of the bar; the plan's minimum counts give 'not observable' when unmet.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0005854 on the check folds against +0.0009248 on every fold",
+    "main": 0.0005854076238517601,
+    "statistic": 1.8494283878194446,
+    "counts": {
+      "cases": 792,
+      "distinct days": 410
+    }
+  }
+}

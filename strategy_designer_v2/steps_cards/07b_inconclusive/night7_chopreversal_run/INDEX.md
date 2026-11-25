@@ -15,3 +15,4 @@
 040-02_agitated-daily-rise-next-day-giveback_1d: 2 ideas (2 explorations)
 041-01_agitated-scaled-rise-next-day-continues_1d: 2 ideas (2 explorations)
 042-01_falling-agitated-low-close-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+043-01_falling-agitated-intraday-drop-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

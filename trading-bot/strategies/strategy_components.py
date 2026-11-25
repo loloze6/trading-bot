@@ -8054,30 +8054,29 @@ class VolatilityWeightedFallComponent(SubStrategyComponent):
 
 class BarBodySizeComponent(SubStrategyComponent):
     """
-    The size of the current bar's body, the net move from its open, on bar t:
+    The size of the current bar's body, on every bar:
 
         B = abs(close[t] - open[t])
-        relative_to = "open" (default):  body = B / open[t] x 100            (percent of the open)
-        relative_to = "range":           body = B / (high[t] - low[t])       (0.0 when high[t] = low[t])
-        form = "body" (default):         raw_value = body
-        form = "flatness" (needs relative_to "range"):
-                                         raw_value = 1 - B / (high[t] - low[t])   (1.0 when high[t] = low[t])
+        relative_to = "open" (default):
+            form = "body" (default): B / open[t] x 100
+            form = "drop":           max(0, open[t] - close[t]) / open[t] x 100
+        relative_to = "range" (R = high[t] - low[t]):
+            form = "body":     B / R                          (0.0 when R = 0)
+            form = "flatness": 1 - B / R                      (1.0 when R = 0)
+            form = "drop":     max(0, open[t] - close[t]) / R (0.0 when R = 0)
 
-    form "body" is the original output, unchanged. form "flatness" is 1 minus the body's share of the range.
-    It equals 1 when the close equals the open (or for a zero range) and 0 when the body spans the whole range.
-    It grows continuously as the close nears the open. No config step gives 1 minus a value, hence the setting.
-
-    Range & sign: "open" is 0 and up, never negative. "range" is 0 to 1 on real bars, never negative.
-    "flatness" is 0 to 1 on real bars, never negative. None of them has a direction.
+    form "body" is the original output, unchanged. form "drop" is the downward body only: it is 0 on bars closing
+    at or above their open and grows linearly with the fall from open to close.
+    Range: "body", "open": 0 and up. "body", "range" and "flatness": 0 to 1 on real bars. "drop", "open": 0 to below
+    100. "drop", "range": 0 to 1 on real bars. Never negative, no direction.
     Warm-up: 1 row (bar t only).
 
-    NaN: a NaN in any value read gives NaN. With "open", an open not above 0 gives NaN (never on real bars).
-    A missing column raises.
-    Building the component raises for a relative_to other than "open" or "range", for a form other than "body"
-    or "flatness", and for form "flatness" with relative_to "open".
+    WHY THIS CANNOT LEAK: it reads only the open and close (and, with relative_to "range", the high and low) of the
+    last row of data, bar t, all known at bar t's close.
 
-    WHY THIS CANNOT LEAK: it reads only the open, close (and, for "range", the high and low) of the last row of
-    data, bar t itself, all known at that bar's close.
+    NaN: a NaN in any value read gives NaN. With relative_to "open", an open not above 0 gives NaN (never on real
+    bars). A missing column raises. Building the component raises for a relative_to other than "open" or "range",
+    a form other than "body", "flatness" or "drop", or form "flatness" with relative_to "open".
     """
 
     def __init__(self, name="BarBodySize", weight=1.0, parameters=None):
@@ -8087,8 +8086,9 @@ class BarBodySizeComponent(SubStrategyComponent):
             raise ValueError(
                 f"BarBodySizeComponent: relative_to must be 'open' or 'range', got {self.relative_to!r}")
         self.form = self.parameters.get("form", "body")
-        if self.form not in ("body", "flatness"):
-            raise ValueError(f"BarBodySizeComponent: form must be 'body' or 'flatness', got {self.form!r}")
+        if self.form not in ("body", "flatness", "drop"):
+            raise ValueError(
+                f"BarBodySizeComponent: form must be 'body', 'flatness' or 'drop', got {self.form!r}")
         if self.form == "flatness" and self.relative_to != "range":
             raise ValueError("BarBodySizeComponent: form 'flatness' needs relative_to 'range'")
         self._raw_value = 0.0
@@ -8101,23 +8101,35 @@ class BarBodySizeComponent(SubStrategyComponent):
             return
         o = float(data["open"].iloc[-1])
         c = float(data["close"].iloc[-1])
-        if self.relative_to == "open":
-            if np.isnan(o) or np.isnan(c) or not o > 0:
-                value = float("nan")
-            else:
-                value = abs(c - o) / o * 100.0
-        else:
+        vals = [o, c]
+        h = l = float("nan")
+        if self.relative_to == "range":
             h = float(data["high"].iloc[-1])
-            lo = float(data["low"].iloc[-1])
-            if np.isnan(o) or np.isnan(c) or np.isnan(h) or np.isnan(lo):
-                value = float("nan")
+            l = float(data["low"].iloc[-1])
+            vals += [h, l]
+        if any(np.isnan(v) for v in vals):
+            value = float("nan")
+        else:
+            body = abs(c - o)
+            drop = max(0.0, o - c)
+            if self.relative_to == "open":
+                if not o > 0:
+                    value = float("nan")
+                elif self.form == "drop":
+                    value = drop / o * 100.0
+                else:
+                    value = body / o * 100.0
             else:
-                rng = h - lo
-                share = 0.0 if rng == 0 else abs(c - o) / rng
-                value = (1.0 - share) if self.form == "flatness" else share
+                r = h - l
+                if self.form == "flatness":
+                    value = 1.0 if r == 0 else 1.0 - body / r
+                elif self.form == "drop":
+                    value = 0.0 if r == 0 else drop / r
+                else:
+                    value = 0.0 if r == 0 else body / r
         self._raw_value = float(value)
         self.confidence = 1.0
-        self.debug_info = {"relative_to": self.relative_to, "form": self.form}
+        self.debug_info = {"open": o, "close": c, "relative_to": self.relative_to, "form": self.form}
 
     def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
