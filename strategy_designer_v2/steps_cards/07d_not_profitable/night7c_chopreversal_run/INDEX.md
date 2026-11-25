@@ -4,6 +4,7 @@
 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d: 1 ideas (2 explorations)
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: 3 ideas (3 explorations)
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: 3 ideas (3 explorations)
+032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d: 3 ideas (2 explorations)
 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d: 2 ideas (2 explorations)
 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d: 2 ideas (3 explorations)
 032-01.b1.b1_large-weekly-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)

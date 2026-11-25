@@ -188,6 +188,7 @@ An idea's latest record counts once.
 | 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:49:19 |
 | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d | confirmed | night7c_chopreversal_run | 1d | 6 | ce173ed84 | 2026-11-25T00:53:49 |
 | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:27:27 |
+| 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d | confirmed | night7c_chopreversal_run | 1d | 6 | 6f1adac3f | 2026-11-25T01:03:33 |
 | 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:32:27 |
 | 032-01.b1.b1.e2_choppy-market-weekly-move-continues_1d | confirmed | night7c_chopreversal_run | 1d | 6 | e6f7f2fc2 | 2026-11-25T00:22:39 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |

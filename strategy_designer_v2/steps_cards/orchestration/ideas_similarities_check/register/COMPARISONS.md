@@ -233,6 +233,7 @@
 | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
+| 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 032-01.b1.b1.e2.d2_chop-continuation-with-month_1d | night7c_chopreversal_run | 1d | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (1d) | 0.46 | same period | +0.0051 % (0.24) | 0.00 |
 | 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d | volume_run | 1d | 031-01.b1.e2_wide-day-in-strong-run_1d (1d) | 0.47 | same period | -0.0313 % (-2.50) | 0.17 |
 | 003-03_heavy-volume-rise-continues_1d | night_run | 1d | 031-01.b1.e2_wide-day-in-strong-run_1d (1d) | 0.47 | same period | -0.0313 % (-2.50) | 0.17 |

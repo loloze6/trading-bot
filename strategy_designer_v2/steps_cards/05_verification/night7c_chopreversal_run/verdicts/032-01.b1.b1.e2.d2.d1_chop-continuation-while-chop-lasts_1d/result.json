@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean signed 7-bar excess return",
+    "value": 0.017532708993522605,
+    "statistic": {
+      "name": "t of the weighted mean, cases summed per day",
+      "value": 2.656210085195107
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting check > 0; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean signed excess return (split at median |forecast|)",
+    "value": 0.010324351167022253,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1114,
+    "days": 366
+  },
+  "decided_by": "The weighted mean is positive with t >= 2 and the upper-minus-lower half difference is above 0.",
+  "reading": "The 30-bar efficiency ratio, 7- and 30-bar returns are recomputed from closes inside each window, bars without 30 prior bars in the window are left out of the agreement; a case is a grid bar (positions 0,7,14,... of each window) with non-zero forecast and a 7-bar forward return inside the window, the coin's mean 7-bar return is the mean over all its windows' grid returns, the t is the weighted mean over a day-clustered standard error (weighted deviations summed per day), and the supporting check splits cases into |forecast| above the median versus at or below it, comparing unweighted mean signed excess returns.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004321 on the check folds against +0.01753 on every fold",
+    "main": 0.004321130569473951,
+    "statistic": 0.6604929543448728,
+    "counts": {
+      "cases": 602,
+      "days": 194
+    }
+  }
+}

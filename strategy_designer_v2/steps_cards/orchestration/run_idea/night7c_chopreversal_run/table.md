@@ -18,21 +18,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation | plan | confirmed (+3.56) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift; 7.g: 032-01.b1.b1.e2.d1.d2.g1_scaled-daily-fall-rebounds, 032-01.b1.b1.e2.d1.d2.g2_close-at-low-next-day-bounce, 032-01.b1.b1.e2.d1.d2.g3_monthly-drift-persists-in-chop, 032-01.b1.b1.e2.d1.d2.g4_trending-market-weekly-fall-reverses | 1.06 | 5.8 |
 | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop | 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation | plan | confirmed (+3.90) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d3.d1_short-continuation-ends-with-chop, 032-01.b1.b1.e2.d1.d3.d2_continuation-held-only-inside-chop, 032-01.b1.b1.e2.d1.d3.d3_month-strength-graded-chop-continuation; 7.g: 032-01.b1.b1.e2.d1.d3.g1_volatile-down-day-next-day-rebound, 032-01.b1.b1.e2.d1.d3.g2_calm-volatility-weekly-continuation | 1.32 | 6.4 |
 | 032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift | 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop | plan | confirmed (+2.52) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e2.d1.d2.d1.d1_chop-continuation-exit-on-loss, 032-01.b1.b1.e2.d1.d2.d1.d2_chop-continuation-graded-drift, 032-01.b1.b1.e2.d1.d2.d1.d3_calm-chop-drift-continuation; 7.g: 032-01.b1.b1.e2.d1.d2.d1.g1_chop-drift-scaled-continuation | 1.09 | 6.1 |
+| 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts | 032-01.b1.b1.e2.d2_chop-continuation-with-month | plan | confirmed (+2.66) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e2.d2.d1.d1_chop-continuation-exit-on-break, 032-01.b1.b1.e2.d2.d1.d2_chop-continuation-month-strength-graded, 032-01.b1.b1.e2.d2.d1.d3_chop-continuation-long-side-only; 7.g: 032-01.b1.b1.e2.d2.d1.g1_calm-chop-weekly-continuation, 032-01.b1.b1.e2.d2.d1.g2_moderate-chop-monthly-momentum, 032-01.b1.b1.e2.d2.d1.g3_large-down-day-next-day-bounce | 1.07 | 5.9 |
 
 ## Consumption
-14 ideas, 16.90 USD, 85.7 minutes in all.
+15 ideas, 17.97 USD, 91.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.06 | 8.3 |
-| step4_backtest | 0.00 | 26.9 |
-| step5_verdict | 2.40 | 9.0 |
+| step3_plan | 2.15 | 8.8 |
+| step4_backtest | 0.00 | 28.7 |
+| step5_verdict | 2.56 | 9.6 |
 | step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 3.52 | 11.5 |
+| step7_7.d | 3.91 | 13.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.38 | 1.4 |
-| step7_7.g | 5.94 | 18.9 |
+| step7_7.g | 6.38 | 20.4 |
 | step7_7.b | 2.59 | 8.5 |
 | similarity_check | 0.00 | 0.5 |
