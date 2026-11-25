@@ -16,3 +16,4 @@
 046-01_falling-market-scaled-rise-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 047-01_falling-agitated-scaled-fall-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 048-01_scaled-up-week-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+049-01_choppy-scaled-five-day-rise-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

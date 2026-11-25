@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "049-01_choppy-scaled-five-day-rise-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3340385,
+  "findings": {
+    "F1": "The tested rise side has no continuation to find. In the shown folds B and C, the tested cases (forecast > 0, 3-day grid) average -0.41 % excess over 3 days (t -0.75, 184 cases), matching step 5's -0.085 % (t -0.29). They also flip sign by year: 2018 -2.77 % (t -3.41), 2019 -1.54 % (t -2.21), 2020 +2.07 % (t 1.65), 2021 +0.35 % (t 0.29).",
+    "F2": "Recomputed from prices, choppy-market five-day rises stay flat over 3 days, -0.45 % excess (t -0.62, 116 cases). Size does not help: the largest scaled-rise quintile gives +1.36 % (t 0.79, 13 cases) against -1.33 % (t -1.20) for the next one, so the rise side is not graded.",
+    "F3": "The continuation shows on the mirror side, which the brief names (\"up or down\"). In a choppy market, five-day falls are followed by a further 3-day excess fall of -2.41 % (t -1.82, 102 cases on 64 days) and by -4.50 % over 5 days (t -1.85, 61 cases).",
+    "F4": "That choppy-fall continuation is graded by the scaled fall, as the brief claims:",
+    "F5": "The choppy-fall continuation holds across the sample. All six coins are negative over 3 days (from ZEC -0.63 % to XRP -3.07 %, t -2.10), and all four years are negative (2018 -5.33 %, 2019 -0.99 %, 2020 -3.78 %, 2021 -1.01 %).",
+    "F6": "The rising-market contrast in the brief shows on falls. In rising markets, five-day falls are followed by +0.53 % (t 0.48, 203 cases) instead of continuation. In falling markets the continuation is weaker and not monotone in size: -1.26 % (t -1.38, 407 cases) overall, with quintile 3 at -3.53 % (t -2.58) but the largest quintile at -1.04 %.",
+    "F7": "Its size against the cost: a 3-day choppy-fall case moves about -2.4 % beyond the drift, and about -2.1 % in total after the coin's +0.35 % 3-day drift works against a short. That is roughly 11 times the 0.19 % cost of a trade. The tested rise side's total move was +0.07 %, 0.4 times the cost."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, after a five-day fall, a coin falls further over the next 3 days, more so the larger its 5-day fall in units of its 30-day daily-return swing.",
+      "consequence": "In a choppy market, a five-day fall that is large for the coin's own swing is a reason to be short for the next few days rather than to buy the dip.",
+      "name": "choppy scaled fall continuation",
+      "from": "F3, F4, F5, F6, F7",
+      "profile": "choppy",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "049-01.b1_choppy-scaled-fall-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

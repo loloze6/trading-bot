@@ -16,3 +16,4 @@
 046-01_falling-market-scaled-rise-fade_1d: inconclusive (fit: exact) [main: 0.0027919; t of the weighted mean, cases of one day summed 1.51186; cases 2951, case days 1126]
 047-01_falling-agitated-scaled-fall-rebound_1d: inconclusive (fit: exact) [main: 0.00710902; t of the mean, same-day cases summed per day 0.946873; case-days 223, cases 454, active bars 1482]
 048-01_scaled-up-week-continuation_1d: confirmed (fit: adapted) [main: 0.000951023; day-clustered OLS slope t 3.03352; grid cases with a positive forecast 2916, distinct days 796]
+049-01_choppy-scaled-five-day-rise-continuation_1d: inconclusive (fit: adapted) [main: -0.000851589; t of the mean, cases of a day pooled -0.288967; cases 717, distinct days 392]
