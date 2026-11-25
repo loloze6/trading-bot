@@ -9,7 +9,9 @@
 037-01_agitated-ordinary-rise-next-day-giveback_1d: confirmed (fit: exact) [main: 0.00384875; t, cases of one day taken together 2.19879; cases 1865, distinct days 1014]
 038-01_calm-scaled-weekly-rise-continues_1d: inconclusive (fit: exact) [main: 1.4567; OLS slope t 1.4567; grid cases with forecast > 0 941]
 038-02_calm-scaled-weekly-fall-continues_1d: inconclusive (fit: exact) [main: 0.00554501; t of the mean, cases of one day summed together 1.53369; cases 1093, distinct days 616, supporting grid bars 888]
+039-01.d1_falling-agitated-low-close-rebound_1d: mismatch: the test does not match its plan (agreement 0.5) (fit: exact)
 039-01_agitated-low-close-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.00100711; day-clustered t of the slope 2.95783; bars with a non-zero forecast 7715, distinct days 2214]
+039-02.d1_wide-range-low-close-next-day-rebound_1d: confirmed (fit: exact) [main: 0.00108876; t of the mean (cases of one day summed) 2.61377; position days 9226, distinct days 2571]
 039-02_agitated-high-close-next-day-giveback_1d: confirmed (fit: adapted) [main: 0.00100711; slope t, day-clustered 2.95764; bars in the profile 7715, distinct days 2214]
 040-01_agitated-daily-fall-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.00052954; OLS slope t, day-clustered standard errors 2.18444; bars with forecast > 0 across all coins and windows 3753, days 1449]
 040-02_agitated-daily-rise-next-day-giveback_1d: inconclusive (fit: adapted) [main: 0.00207194; t of the mean over days 1.32864; distinct days with a short case 1517, short cases 3955]

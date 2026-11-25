@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.5,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "t of the mean daily sum of forecast x (next-day return - coin mean daily return)",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 100 days of cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 2814,
+    "active bars in situation on long side": 1407
+  },
+  "decided_by": "Fewer than 90% of the active bars are in-profile bars with the close low in its range and a long forecast: the config also takes positions (short or long) where the plan's situation on its long side does not hold.",
+  "reading": "The plan's situation is read as regime not 'chop' (the profile, as the detector decided it) and the close in the lower half of the day's range ((high-close)/(high-low) >= 0.5), on the long side; the coin's mean daily return is the mean of all its 1-bar returns over all windows, and days are UTC calendar days of the bar's timestamp."
+}
