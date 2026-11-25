@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 5-day return on forecast, in-regime grid bars",
+    "value": 0.0002108014967727646,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 0.45849865331316275
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 5-day return on grid bars with forecast < 0",
+    "value": -0.0003743852703894464,
+    "passed": true
+  },
+  "counts": {
+    "in-regime grid bars": 931,
+    "bars with forecast below 0": 822,
+    "bars with forecast 0": 109,
+    "distinct days": 271
+  },
+  "decided_by": "The slope's |t| is below 2.",
+  "reading": "The situation is the 30-day close-to-close return below 0 (from prices, or the recorded 'trending' regime on a window's first 30 bars) with the bar's regime 'trending' standing for the falling-calm profile, side short; in-regime means regime == 'trending'; the coin's mean 5-day return is taken on the 5-bar grid of all its windows; the slope's t pools same-day cases as day-clustered standard errors; the supporting check is the sign of the mean; distinct days are the days of the in-regime grid bars."
+}

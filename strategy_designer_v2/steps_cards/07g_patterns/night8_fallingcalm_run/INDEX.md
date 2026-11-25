@@ -1,4 +1,7 @@
 058-01.b1_calm-downtrend-all-coins_1d: 1 ideas (2 explorations)
+058-01.b2.b1_quiet-calm-fall-more-coins_1d: 2 ideas (2 explorations)
+058-01.b2_quiet-volume-calm-fall-continues_1d: 1 ideas (2 explorations)
 058-01_calm-downtrend-depth-continues_1d: 2 ideas (2 explorations)
+058-02.b1_quiet-calm-fall-more-coins_1d: no ideas: The only pattern that clearly beats chance across the many angles examined (the next-day rebound after a sharp one-day fall, F1) is already held many times on the profile map. The falling-calm continuation (F2) is not graded by any situation measured (F2, F3), and the other candidates are grid or year artifacts or multiple-testing noise (F4, F5).
 058-02_quiet-volume-fall-continues_1d: 1 ideas (2 explorations)
 058-03_heavy-volume-fall-exhausts_1d: 1 ideas (2 explorations)
