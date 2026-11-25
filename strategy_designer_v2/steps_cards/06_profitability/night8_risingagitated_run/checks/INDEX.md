@@ -4,4 +4,5 @@
 058-03.e2.b1_choppy-distance-continuation-more-coins_1d: not profitable enough [Sharpe 0.2039; Sharpe minus holding's Sharpe -0.4036; Calmar 0.05743]
 058-03.e2_choppy-market-distance-continuation_1d: not profitable enough [Sharpe 0.1673; Sharpe minus holding's Sharpe -0.3869; Calmar 0.02334]
 058-03_calm-rise-stretch-continuation_1d: profitable enough [Sharpe 0.9737; Sharpe minus holding's Sharpe 0.4041; Calmar 0.8299]
+059-01.b1_calm-swing-scaled-move-continues_1d: not profitable enough [Sharpe 0.5538; Sharpe minus holding's Sharpe -0.01577; Calmar 0.2727]
 059-01_swing-scaled-rise-continues_1d: not profitable enough [Sharpe 0.5322; Sharpe minus holding's Sharpe -0.02199; Calmar 0.2805]

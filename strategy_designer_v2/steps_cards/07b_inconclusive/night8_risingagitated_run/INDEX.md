@@ -4,4 +4,5 @@
 058-03.e2.b1_choppy-distance-continuation-more-coins_1d: 1 ideas (2 explorations)
 058-03.e2_choppy-market-distance-continuation_1d: 1 ideas (1 explorations)
 058-03_calm-rise-stretch-continuation_1d: 1 ideas (1 explorations)
+059-01.b1_calm-swing-scaled-move-continues_1d: 1 ideas (2 explorations)
 059-01_swing-scaled-rise-continues_1d: 1 ideas (3 explorations)
