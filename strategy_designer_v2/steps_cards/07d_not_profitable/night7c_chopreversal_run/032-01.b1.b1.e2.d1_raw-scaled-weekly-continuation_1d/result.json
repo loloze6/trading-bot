@@ -1,0 +1,61 @@
+{
+  "line": "7.d",
+  "backtest": "032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5961397,
+  "findings": {
+    "F1": "The continuation lives only where the 7-day move points the same way as the coin's 30-day return. On in-regime grid cases those agreeing cases gave an unusual move of +3.77 % over 7 days (t 4.92, 344 cases), against +0.32 % (t 0.48, 556 cases) when the two disagreed. The disagreeing cases are 62 % of the signals, so they fill the book with trades worth less than the 0.19 % cost.",
+    "F2": "Inside the agreeing cases the effect is graded. By tercile of the absolute scaled move it rose from +1.42 % (t 1.03, 97) to +3.74 % (t 2.67, 112) to +5.47 % (t 4.54, 135). With disagreement the terciles read +0.91 %, \u22121.58 %, +1.42 %, all |t| < 1.",
+    "F3": "The 30-day sign is not an effect of its own. Following it in the regime when the 7-day move disagrees earned \u22120.18 % (t \u22120.21, 268 cases), so it belongs to the idea as a stronger case of the same trendless swing. The theory expects a choppy-range move that carries the month's lean to be the one that follows through.",
+    "F4": "The book's losses sit in shorts against the 30-day return. They held \u22120.066 % per bar over 2087 bars, while shorts with the 30-day return made +0.061 % (1839) and longs with it +0.315 % (1832). Over the whole book, shorts earned \u22120.0066 % per bar (3926 bars) and longs +0.195 % (3703). Short trades averaged \u22122.54 % net (1743 trades) and long trades +3.23 % (1343).",
+    "F5": "Outside the choppy regime, following the scaled 7-day move went the wrong way in the three lower size quartiles: \u22123.20 %, \u22123.62 % and \u22125.66 % (t \u22121.83, \u22121.91, \u22122.65; 56, 44 and 53 cases). Yet the book held 1174 position-bars with the regime off, because of the 7-bar minimum hold and the sizing. Its shorts there lost \u22120.127 % per bar (571 bars).",
+    "F6": "The effect strengthened in later years, and holding beat the book in the worst window. Agreeing cases gave +1.75 % (t 1.03) in 2018, +0.95 % (t 0.91) in 2019, +5.36 % (t 3.47) in 2020 and +6.51 % (t 3.99) in 2021. The book's deepest fall of \u221227.7 % came in w17, where it averaged \u22120.038 % a day against holding's +0.419 %.",
+    "F7": "A longer horizon does not help. At 14 days the agreeing cases gave +2.95 % (t 1.78, 154 cases), less sure than the 7-day reading."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way as that 7-day move. The larger that scaled 7-day move, the larger the following move.",
+      "consequence": "In choppy markets a trader should follow a large scaled weekly move only when it carries the month's lean, and refuse the weekly moves that go against the 30-day return.",
+      "name": "chop continuation with monthly lean",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while the past 30 days are still going back and forth at each day's close. The larger that scaled 7-day move, the larger the following move.",
+      "consequence": "A trader following scaled weekly moves in chop should not keep the position once the coin's 30-day path stops being choppy, because outside chop the following week tends to go the other way.",
+      "name": "continuation held only in chop",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way and the past 30 days are still going back and forth at each day's close. The larger that scaled 7-day move, the larger the following move.",
+      "consequence": "A trader should take the choppy-market weekly continuation only on moves aligned with the month and only for as long as the chop lasts, which removes both losing groups of trades.",
+      "name": "aligned continuation inside chop",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean",
+    "032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop",
+    "032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move of cases, in forecast direction",
+    "value": 0.010585084052086875,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 2.7451190057285593
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of |forecast| above median minus at or below median",
+    "value": 0.00937188004667906,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 1043,
+    "cases": 1758
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 and the large-minus-small difference above 0.",
+  "reading": "Active bars whose 30-bar efficiency ratio or 30-bar return cannot be computed inside their window (first 30 recorded bars) are left out of the situation check; a case is the first bet (forecast rise of at least 2 points on its side) in each 7-bar grid cell counted from the window's first row; the drift is the coin's mean 7-bar return on that grid over all its windows; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; large cases are |forecast| strictly above the cases' median.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0006365 on the check folds against +0.01059 on every fold",
+    "main": 0.0006365385786410821,
+    "statistic": 0.15297178717775636,
+    "counts": {
+      "distinct case days": 544,
+      "cases": 904
+    }
+  }
+}
