@@ -1,0 +1,26 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 032-02.b2_volatile-low-next-day-rebound_1d
+idea tested: 032-02.b2_volatile-low-next-day-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4141 USD
+---
+## Findings
+- **F1:** The book fails on trades per day (0.0027 against 0.01) because it rarely holds the signal. Folds B and C have only 75 case bars (mean_reversion regime with forecast > 0). Only 27 of them carry a position, the engine approved a rebalance on 35 % of them, the median forecast is 1.2 and the mean allocation 0.06. That gives 26 trades in all across 6 coins, even though the cases earn +4.60 % next day (t 2.54, 41 days), +8.27 % on the held ones.
+- **F2:** The three-condition regime is what makes the signal rare. A close below the prior 30-day low inside a 30-day fall occurs on 169 bars, and the added wide-range condition cuts this to 52 bars (21 days). The recorded cases fall in only 8 of the 12 windows (none in w8, w10, w11, w14).
+- **F3:** A broader case of the same situation carries the same effect at about 4 times the frequency. A close below the prior 10-day low inside a 30-day fall gives 285 cases on 111 days at +0.90 % next-day excess (t 1.43). Its deepest quartile, measured in units of the coin's mean daily range over the prior 30 days (depth ≤ −0.98 ranges, 72 cases), earns +2.02 %, against +0.45 % to +0.65 % for the other three quartiles.
+- **F4:** Depth grades the rebound most clearly when the month's ranges are wide against the coin's history. Among wide-range 10-day breaks in a fall, Spearman(depth, next-day excess) is 0.41 (p 0.0005, n 69), against 0.08 (p 0.16, n 285) over all falling breaks. Wide-range breaks deeper than half a daily range earn +4.47 % (36 cases, 15 days) and the 30-day version +6.75 % (t 2.03, 26 cases, 10 days).
+- **F5:** Depth in percent grades the same way. Among 10-day breaks in a fall, the deepest quartile (below −6.5 %) earns +2.45 % next day, against +0.13 % to +0.84 % for the shallower ones. Among 30-day breaks, those deeper than 3 % earn +2.11 % (85 cases) and the shallow ones −0.30 % (84 cases).
+- **F6:** The regime conditions are not an effect on their own. On bars with a 30-day fall and wide ranges but no 10-day break, the next day's excess is −0.49 % (t −1.02, 799 cases, 229 days), and adding a 10-day fall over 10 % gives −0.87 % (t −1.07, 301 cases). The rebound belongs to the break itself, as the brief's exhausted-sellers theory says.
+- **F7:** The effect lives in the first day only, so a broader signal must not be held longer. The 2-day excess after 10-day breaks in a fall is +0.56 % (t 0.88), and for its wide, deep part +1.72 % (t 0.86). The 3-day excess is +1.34 % (t 0.57) for the recorded cases and −0.98 % (t −0.66) for 30-day breaks in a fall.
+- **F8:** The broader case leans on one year. Among 10-day breaks in a fall, 2020 gives +5.65 % (29 cases), 2021 +1.49 % (51), 2018 +0.22 % (124) and 2019 −0.12 % (81). A repair has to be judged on the other folds.
+
+## Ideas
+- `032-02.b2.d1_volatile-ten-day-low-rebound` (from F1, F2, F3, F4, F6, F7): In a coin that has fallen over the past 30 days and whose daily high-low ranges over that month are wide compared with its own past year, a close below its lowest low of the prior 10 days is followed by a rise over the next 1 day. The further that close sits below the prior 10-day low, measured in units of the coin's mean daily high-low range over the past 30 days, the larger the rise.
+- `032-02.b2.d2_graded-monthly-low-rebound` (from F1, F2, F4, F5, F6, F7): In a coin that has fallen over the past 30 days, a close below its lowest low of the prior 30 days is followed by a rise over the next 1 day. The rise is larger the further that close sits below the prior 30-day low, measured in units of the coin's mean daily high-low range over the past 30 days, and larger the wider those ranges are compared with the coin's past year.
+- `032-02.b2.d3_falling-coin-short-low-bounce` (from F3, F5, F6, F7, F8): In a coin that has fallen over the past 30 days, a close below its lowest low of the prior 10 days is followed by a rise over the next 1 day, larger the further the close sits below that low in percent.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

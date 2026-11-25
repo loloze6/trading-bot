@@ -1,0 +1,143 @@
+{
+  "core": {
+    "net_return_pct": -9.779,
+    "sharpe": -1.542,
+    "max_drawdown_pct": -11.723,
+    "trade_count": 3,
+    "win_rate": 66.67,
+    "avg_trade_net_pnl": -32.819053,
+    "fees_paid": 3.258619,
+    "gross_pnl": -95.19854,
+    "net_pnl": -98.45716,
+    "cost_drag_pct": 3.423,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": -0.121915,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.187265,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 1.33,
+    "sigma_bar_bps": 367.8141,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -345.3898,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 58,
+      "avg_forecast": 1.37931,
+      "trade_count": 3,
+      "total_net_pnl": -98.45716
+    },
+    "unknown": {
+      "bar_count": 63,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "15_to_very_positive": {
+      "total_forecasts": 3,
+      "profitable_trades": 2,
+      "success_rate_pct": 66.67,
+      "total_net_pnl_usd": -98.4572,
+      "avg_pnl_per_trade_usd": -32.8191
+    }
+  },
+  "dynamic": {
+    "debug_info.components.depth_below_low.last_history_value": {
+      "mean_reversion": {
+        "mean": 0.017761,
+        "std": 0.07298
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.depth_below_low.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 1.37931,
+        "std": 5.112172
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.depth_below_low.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.depth_below_low.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 1.37931,
+        "std": 5.112172
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": -0.00521183,
+      "forward_return_std": 0.03258203,
+      "n_bars": 57,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00231761,
+      "forward_return_std": 0.04013009,
+      "n_bars": 63,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -11.7233,
+    "sharpe": -1.3522,
+    "sortino": -1.4103,
+    "exposure_pct": 3.3058,
+    "turnover": 6.545395,
+    "n_bars_total": 121,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 5,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2022-05-13 00:00:00",
+        "previous_timestamp": "2022-05-10 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 259200.0,
+        "bars_missing": 2,
+        "tier": "middle",
+        "active_tier": "middle"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

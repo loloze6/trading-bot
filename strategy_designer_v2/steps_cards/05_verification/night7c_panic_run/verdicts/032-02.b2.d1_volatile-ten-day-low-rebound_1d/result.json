@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 1-day move after a long bet (close to next close minus coin's mean daily return)",
+    "value": 0.020364323516795242,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.480794443937065
+    },
+    "threshold": "positive with t >= 2 over at least 30 distinct case days to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of deeper half minus shallower half (split at median post_pipeline_value of depth_below_low)",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 195,
+    "distinct case days": 124
+  },
+  "decided_by": "t >= 2 but the deeper half does not beat the shallower half, which the plan calls inconclusive.",
+  "reading": "Bets are taken on every bar (1-bar grid) as long rises of the forecast of >= 2 points from its lowest long level since the last bet; the regime part of the situation is read from the recorded `regime` column; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the deeper half is the cases strictly above the median depth and the shallower half those at or below it; a count below 30 days is reported as not observable."
+}

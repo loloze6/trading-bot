@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "next-bar excess return, top forecast tercile minus bottom tercile",
+    "value": 0.0017577981212953384,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.186479967686561
+    },
+    "threshold": "difference > 0 with Welch t >= 2 confirms (with timing part > 0); difference < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus market-rise gain (timing part)",
+    "value": 0.00027147924335509696,
+    "passed": true
+  },
+  "counts": {
+    "days in top tercile": 1814,
+    "days in bottom tercile": 1883
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Terciles are equal-count thirds of each coin's bars ranked by forecast with ties broken by time order, every bar is a 1-day case, cases of one UTC day are averaged per tercile before Welch's t, and the plan's 300-day minimum per tercile, when unmet, gives 'not observable'."
+}

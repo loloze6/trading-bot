@@ -9,20 +9,28 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-03_deep-fall-low-exhaustion-rebound | - | plan | inconclusive (+0.56) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 032-03.b1_deep-low-rebound-all-coins, 032-03.b2_deep-low-three-day-rebound, 032-03.b3_shallow-fall-low-breakdown; 7.g: 032-03.g1_near-monthly-high-continuation, 032-03.g2_long-lower-wick-weakness, 032-03.g3_wide-day-fall-next-day-rebound | 1.00 | 5.7 |
 | 032-02.b1_volatile-decline-low-rebound-more-coins | 032-02_volatile-decline-low-rebound | plan | inconclusive (-0.21) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar, Trades per day) | - | 7.b: 032-02.b1.b1_volatile-low-one-day-rebound; 7.g: 032-02.b1.g1_twenty-day-high-breakout-continuation, 032-02.b1.g2_wide-range-breakout-continuation | 1.09 | 8.7 |
 | 032-03.b1_deep-low-rebound-all-coins | 032-03_deep-fall-low-exhaustion-rebound | plan | inconclusive (+0.64) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 032-03.b1.b1_three-day-rebound-after-volatile-low, 032-03.b1.b2_capitulation-day-short-bounce; 7.g: 032-03.b1.g1_closeness-to-monthly-high | 1.07 | 9.5 |
+| 032-02.b2_volatile-low-next-day-rebound | 032-02_volatile-decline-low-rebound | plan | confirmed (+2.13) | not profitable enough (failed: Trades per day) | - | 7.d: 032-02.b2.d1_volatile-ten-day-low-rebound, 032-02.b2.d2_graded-monthly-low-rebound, 032-02.b2.d3_falling-coin-short-low-bounce; 7.g: 032-02.b2.g1_close-location-next-day-reversal, 032-02.b2.g2_volatile-close-near-low-rebound, 032-02.b2.g3_stretched-breakout-next-day-fade, 032-02.b2.g4_volatile-big-drop-next-day-rebound | 1.19 | 6.3 |
+| 032-02.b2.d3_falling-coin-short-low-bounce | 032-02.b2_volatile-low-next-day-rebound | plan | inconclusive (+1.18) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 032-02.b2.d3.b1_falling-coin-low-bounce-all-coins; 7.g: 032-02.b2.d3.g1_volatile-decline-one-day-reversal, 032-02.b2.d3.g2_standardised-down-day-bounce | 0.94 | 4.7 |
+| 032-02.b2.g1_close-location-next-day-reversal | 032-02.b2_volatile-low-next-day-rebound | plan | confirmed (+4.76) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 032-02.b2.g1.d1_close-location-on-wide-days, 032-02.b2.g1.d2_long-reversal-after-wide-days, 032-02.b2.g1.d3_short-fade-in-falling-month; 7.g: 032-02.b2.g1.g1_close-distance-from-midpoint, 032-02.b2.g1.g2_wide-day-close-reversal, 032-02.b2.g1.g3_next-day-rebound-after-shocks, 032-02.b2.g1.g4_five-day-range-continuation | 1.07 | 5.9 |
+| 032-02.b2.d1_volatile-ten-day-low-rebound | 032-02.b2_volatile-low-next-day-rebound | plan | inconclusive (+2.48) | not profitable enough (failed: Calmar) | - | 7.b: 032-02.b2.d1.b1_volatile-ten-day-low-rebound-wider; 7.g: 032-02.b2.d1.g1_wide-day-weak-close-rebound | 1.98 | 6.2 |
+| 032-02.b2.d2_graded-monthly-low-rebound | 032-02.b2_volatile-low-next-day-rebound | missing-components | - | - | - | - | 0.27 | 2.0 |
+| 032-02.b2.g1.d1_close-location-on-wide-days | 032-02.b2.g1_close-location-next-day-reversal | missing-components | - | - | - | - | 0.06 | 0.4 |
+| 032-02.b2.g1.d2_long-reversal-after-wide-days | 032-02.b2.g1_close-location-next-day-reversal | plan | inconclusive (+1.19) | not profitable enough (failed: Calmar) | - | 7.b: 032-02.b2.g1.d2.b1_wide-day-low-close-rebound-more-coins, 032-02.b2.g1.d2.b2_rebound-after-wide-days-in-decline; 7.g: 032-02.b2.g1.d2.g1_five-day-momentum-continues-briefly, 032-02.b2.g1.d2.g2_monthly-trend-carries-over-days | 1.01 | 5.5 |
 
 ## Consumption
-5 ideas, 5.31 USD, 35.4 minutes in all.
+12 ideas, 11.84 USD, 66.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.46 | 2.8 |
-| step4_backtest | 0.00 | 16.9 |
-| step5_verdict | 0.98 | 3.8 |
-| step6_check | 0.00 | 0.1 |
+| step3_plan | 2.09 | 8.9 |
+| step4_backtest | 0.00 | 25.3 |
+| step5_verdict | 1.83 | 7.1 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.00 | 0.0 |
+| step7_7.d | 0.78 | 2.8 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.54 | 4.6 |
-| step7_7.g | 1.93 | 5.8 |
+| step7_7.b | 2.55 | 7.8 |
+| step7_7.g | 4.18 | 12.6 |
 | step7_7.a | 0.41 | 1.3 |
+| similarity_check | 0.00 | 0.1 |

@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b2.g1.d2_long-reversal-after-wide-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3824322,
+  "findings": {
+    "F1": "Over the next 3 days, the coin's unusual move rises steadily with its past 5-day return. By quintile of the 5-day return the means run \u22121.35 %, \u22120.68 %, \u22120.04 %, +0.39 %, +0.80 % (non-overlapping 3-day cases, 168 to 260 days per quintile). Top minus bottom is +2.14 %, Welch t 2.06.",
+    "F2": "The past 20-day return gives the same rising pattern over the next 3 days. Its quintiles run \u22121.07 %, \u22120.45 %, \u22120.22 %, +0.86 %, +0.79 %, top minus bottom +1.86 % with t 1.91. Over the next 1 day the 20-day return spread is +0.72 % with t 1.86, so continuation, not reversal, is what longer past moves show.",
+    "F3": "The tested forecast reverses after its first day. Over 1 day its top quintile minus bottom is +0.58 % (t 1.80). Over 3 days it is \u22121.06 % (t \u22121.34), and the close-location part alone goes from +0.69 % (t 2.29) at 1 day to \u22120.71 % (t \u22120.93) at 3 days. The 1-day bounce after a low close on a wide day looks given back inside the larger multi-day trend.",
+    "F4": "The tested forecast's 1-day link is small but points the same way everywhere. Its Spearman correlation with the next day's unusual return is positive on all 6 coins (0.064 to 0.125) and in all 4 years (0.057 to 0.137). Its size per case is only +0.09 % (t 0.81), against a trade cost of 0.19 %, so its 1-day move cannot pay for a trade.",
+    "F5": "Several angles show nothing beyond chance."
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's 5-day return, the more the coin rises over the next 3 days, and the lower it is, the more the coin falls, in steady steps across the whole range of past returns.",
+      "consequence": "A trader would lean with a coin's last week of movement for the following few days, larger the stronger that move, instead of fading it, catching a move several times the cost of a trade.",
+      "name": "five-day momentum continues briefly",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The further a coin's 20-day return sits above its usual range, the more the coin rises over the next 3 days, and the further below, the more it falls.",
+      "consequence": "A trader would refuse to buy short-lived bounces in a coin whose month has been weak, since the month's direction tends to carry on over the next days.",
+      "name": "monthly trend carries over days",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.g1.d2.g1_five-day-momentum-continues-briefly",
+    "032-02.b2.g1.d2.g2_monthly-trend-carries-over-days"
+  ],
+  "no_ideas": null
+}

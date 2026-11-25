@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "position-weighted mean next-day excess return over the coin's mean",
+    "value": 0.006946129442077309,
+    "statistic": {
+      "name": "t of weighted mean, cases clustered by day",
+      "value": 1.1786468054996246
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess on break_depth post_pipeline_value > 0",
+    "value": 0.0029409841088031273,
+    "passed": true
+  },
+  "counts": {
+    "cases (distinct days)": 750,
+    "cases (bars)": 1278
+  },
+  "decided_by": "The t of the weighted mean excess lies between -2 and 2.",
+  "reading": "Situation recomputed from prices inside each window (30-bar close-to-close return < 0, close below the minimum low of the 10 prior bars, falling back to the recorded break_depth raw value), active bars whose 30-bar return cannot be computed inside the window are left out of the agreement; cases are bars with a held position > 0, the coin's mean is the mean next-bar return over all its windows, the weighted mean's t clusters cases by UTC day (weighted deviations summed per day), and the slope is an unweighted least-squares fit over cases with a recorded post_pipeline_value."
+}

@@ -1,0 +1,86 @@
+## case bars: forecast, alloc
+cases                 75.000000
+alloc>0               27.000000
+mean fc                2.238364
+median fc              1.200787
+mean alloc             0.059693
+mean sizing_target     0.078958
+approved share         0.346667
+fwd1 alloc>0 %         8.270285
+fwd1 alloc==0 %        2.535044
+
+## trades per coin
+BTCUSD    4
+ETHUSD    2
+LTCUSD    7
+XMRUSD    6
+XRPUSD    3
+ZECUSD    4
+
+## next-day excess
+                                       n   days     mean%         t
+below5&fall                        405.0  153.0  0.656770  1.223850
+below5&fall&wide                   115.0   44.0  1.660308  1.241331
+below5&fall zd<-0.5                161.0   61.0  1.205705  1.226992
+below5&fall&wide zd<-0.5            47.0   20.0  3.198400  1.273306
+below5&fall zd>=-0.5               244.0  125.0  0.294563  0.595356
+below10&fall                       285.0  111.0  0.904455  1.434278
+below10&fall&wide                   69.0   29.0  2.566972  1.597909
+below10&fall zd<-0.5               129.0   50.0  1.576511  1.389287
+below10&fall&wide zd<-0.5           36.0   15.0  4.470903  1.587298
+below10&fall zd>=-0.5              156.0   90.0  0.348717  0.707177
+below30&fall                       169.0   73.0  0.909999  1.022287
+below30&fall&wide                   52.0   21.0  3.341159  1.644371
+below30&fall zd<-0.5                80.0   39.0  2.401790  1.555318
+below30&fall&wide zd<-0.5           26.0   10.0  6.753419  2.033813
+below30&fall zd>=-0.5               89.0   57.0 -0.430937 -0.723298
+wide&fall, not below10             799.0  229.0 -0.492829 -1.024916
+wide&fall&ret10<-10%, not below10  301.0  106.0 -0.873719 -1.065563
+rising(ret30>0)&below10             62.0   41.0  0.772679  0.832436
+
+## 2-day excess
+                               n   days     mean%         t
+below10&fall               285.0  111.0  0.560931  0.884828
+below10&fall zd<-0.5       129.0   50.0  0.796772  0.841941
+below10&fall&wide zd<-0.5   36.0   15.0  1.719599  0.862259
+
+## below10&fall by zd10 quartile
+       n  mean_pct      zmin      zmax
+zd10                                  
+0     72  2.015886 -7.483132 -0.982086
+1     71  0.485905 -0.978609 -0.418872
+2     71  0.654457 -0.418082 -0.156874
+3     71  0.445919 -0.147429 -0.002034
+
+## spearman -zd10 vs fwd1 (below10&fall)
+rho      0.082926
+p        0.162653
+n      285.000000
+
+## spearman, wide only
+rho     0.407746
+p       0.000506
+n      69.000000
+
+## below10&fall by window count
+win
+w10     4
+w11     9
+w12    12
+w13    23
+w14    49
+w15    35
+w16    20
+w17     5
+w18    30
+w7     52
+w8      3
+w9     43
+
+## below10&fall by year: mean%
+      size  <lambda_0>
+ts                    
+2018   124    0.221247
+2019    81   -0.116114
+2020    29    5.650320
+2021    51    1.487862

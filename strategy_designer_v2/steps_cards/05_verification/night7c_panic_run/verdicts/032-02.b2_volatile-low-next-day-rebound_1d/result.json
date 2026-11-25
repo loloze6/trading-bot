@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return of mean_reversion bars with forecast > 0",
+    "value": 0.02361713495799545,
+    "statistic": {
+      "name": "day-clustered t of the mean",
+      "value": 2.12997373855002
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, next-day excess return) > 0",
+    "value": 0.2503570373288683,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 93,
+    "cases": 143
+  },
+  "decided_by": "The mean next-day excess return is positive with t >= 2 and the Spearman correlation is above 0.",
+  "reading": "The 365-to-30 range ratio (and the 30-bar return or prior-low distance where the window lacks the history) cannot be rebuilt inside a window, so the recorded mean_reversion regime stands for those conditions; the t is a day-clustered t (deviations summed per day, D/(D-1) correction); the plan's fewer-than-30-case-days rule is applied as the minimum count, giving 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (52 cases, 52 days)",
+    "main": -0.0012578226813283,
+    "statistic": -0.15385387144561632,
+    "counts": {
+      "distinct case days": 52,
+      "cases": 68
+    }
+  }
+}

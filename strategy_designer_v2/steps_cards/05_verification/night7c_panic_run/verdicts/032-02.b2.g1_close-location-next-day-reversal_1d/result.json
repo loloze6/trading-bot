@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9860762383017576,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-day return minus coin mean on forecast",
+    "value": 0.0006043167960300759,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 4.758689516448218
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing gain > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean daily timing gain (position gain minus drift)",
+    "value": 0.00021179861877994362,
+    "passed": true
+  },
+  "counts": {
+    "bars with a non-zero forecast": 17380,
+    "bars in the regression": 17380
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing gain is above 0 (confirm rule).",
+  "reading": "The situation 'close lower in the range' is read as the raw location (high-close)/(high-low) above its mean over the last 60 recorded bars of the window (bar left out, at least 20; mid-range 0.5 before that), the expected side long there and short below; the slope is an OLS with intercept on every bar with a next-day return in its window (zero forecasts included), the minimum count is the non-zero-forecast bars of that sample, and the book's day is the mean over coins of each bar's position gain minus drift.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001024 on the check folds against +0.0006043 on every fold",
+    "main": 0.00010236939532470684,
+    "statistic": 0.6778922967260212,
+    "counts": {
+      "bars with a non-zero forecast": 8691,
+      "bars in the regression": 8691
+    }
+  }
+}

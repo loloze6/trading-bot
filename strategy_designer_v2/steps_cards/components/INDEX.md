@@ -201,3 +201,5 @@ night6_streak_run | 031-02.b1.d2_rebound-graded-by-turbulence_1d | VolatilityRat
 night6_streak_run | 031-02.b1.g1_long-up-streaks-keep-rising_1d | UpCloseStreakLength | exists: UpCloseStreakLengthComponent {"base": "none", "max_bars": 30, "side": "up"}
 night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d | VolatilityRatioWeightedScaledReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 0, "base_period": 30, "period": 1, "return_scale": "base_std", "vol_period": 5}
 night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
+night7c_panic_run | 032-02.b2.d1_volatile-ten-day-low-rebound_1d | LowBreakDepthInMeanRangesComponent | built: BreakoutInMeanRangesComponent {"base_period": 30, "extreme": "low", "period": 10, "side": "below"}
+night7c_panic_run | 032-02.b2.d2_graded-monthly-low-rebound_1d | LowBreakDepthInMeanRangesTimesRangeRatio | exists: BreakoutInMeanRangesComponent {"base_exclude_current": 0, "base_period": 365, "extreme": "low", "high_current": 0, "period": 30, "side": "below"}

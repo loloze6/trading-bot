@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 032-02.b2.g1_close-location-next-day-reversal_1d
+idea tested: 032-02.b2.g1_close-location-next-day-reversal
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3614 USD
+---
+## Findings
+- **F1:** The tested effect sits almost entirely on days whose high-low range is wide against the coin's previous 20 days. The slope of the next-day unusual return on the close's place in the range rises steadily across the five range quintiles: 0.04 %, 0.18 %, 0.37 %, 0.60 % and 1.60 % (t 0.16, 0.80, 1.64, 2.33, 5.75; about 1,590 days each). The graded product of the signal and the relative range has a slope t of 9.39 over 7,968 days.
+- **F2:** On closes in the outer fifth of the range (|signal| ≥ 0.6), the next-day move in the signal's direction grows from −0.05 % to +0.21 %, +0.32 %, +0.34 % and +1.30 % from the narrowest to the widest range quintile. The widest quintile has t 5.53 over 670 cases and a total move of +1.29 %, 6.8 times the 0.19 % cost of a trade. Across the narrow-range days the move is only 0.2 to 0.3 %, about one cost. The book loses its gain there.
+- **F3:** The book's gain per day before fees follows the same steps by range quartile: 0.004 %, 0.019 %, 0.029 % and 0.095 %. Its fees stay about flat at 0.012 % to 0.014 %, so the three narrower quartiles earn about their fees or less. The mean absolute position is only 0.09 to 0.12 of the book. This is why the mean daily return on days in a position (4.7e-05), the yearly return (+1.3 %) and Calmar (0.078) all fail. The falls are modest, a mean deepest fall per coin-window of 4 % to 9 % across w7–w18; the yearly return is what is missing.
+- **F4:** The wide-range condition alone is not the effect. On wide-range days with a mid-range close the next day's unusual move is +0.37 %, and +0.41 % on all wide-range days. After a close near the low on wide-range days it is +1.59 % to +1.70 %, and after a close near the high it is −0.82 % to −0.93 %. The range widens the reversal on both sides rather than carrying a drift of its own. That fits the brief's theory that agitated days carry forced, exhausted selling (and buying) that reverses.
+- **F5:** The edge holds in every year of the explored folds. On widest-quintile extreme closes the directional move is +1.26 % (2018, 193 cases), +1.74 % (2019, 142), +0.96 % (2020, 170) and +1.33 % (2021, 165).
+- **F6:** The long side carries most of the book. Long days earn 0.056 % a day before fees against 0.013 % for short days, with the same fees (0.013 %).
+
+## Ideas
+- `032-02.b2.g1.d1_close-location-on-wide-days` (from F1, F2, F3, F4, F5): The lower a coin's daily close sits within that day's high-low range, the more the coin rises over the next 1 day, and the higher the close sits in the range, the more it falls. The effect grows with how wide that day's range is against the coin's average daily range over the previous 20 days.
+- `032-02.b2.g1.d2_long-reversal-after-wide-days` (from F1, F2, F4, F6): The lower a coin's daily close sits within that day's high-low range, the more the coin rises over the next 1 day. The rise is larger the wider that day's range is against the coin's average daily range over the previous 20 days.
+- `032-02.b2.g1.d3_short-fade-in-falling-month` (from F1, F4, F6): The higher a coin's daily close sits within that day's high-low range, the more the coin falls over the next 1 day while its 20-day return is negative. The fall is larger the wider that day's range is against its previous 20 days' average range.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

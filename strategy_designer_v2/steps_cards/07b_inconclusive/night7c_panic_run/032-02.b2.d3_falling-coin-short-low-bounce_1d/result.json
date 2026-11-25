@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "032-02.b2.d3_falling-coin-short-low-bounce_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3276255,
+  "findings": {
+    "F1": "In folds B and C the tested situation is followed by a next-day excess on the side the idea predicts: +0.87 % unweighted over 305 cases on 112 days (t 1.41, the cases of one day together) and +1.30 % weighted by the position held (t 0.83). Step 5's own measure is also positive but short of the bar: +0.69 %, t 1.18 over 750 days. The sign is right but the evidence is not sure enough.",
+    "F2": "The excess is positive in 5 of the 6 coins but sure in none except ZEC. Next-day excess runs from +1.02 % (BTC, 39 cases, t 1.40) to +1.63 % (ZEC, 59 cases, t 2.27), with LTC flat at \u22120.07 % (52 cases). Each coin has too few cases to show it clearly, so the six default coins give a small sample of a broadly present effect.",
+    "F3": "The gain is graded by depth as the idea says. By depth quintile, the next-day excess is +2.81 % in the deepest quintile (mean depth \u221213.0 %) against +0.02 % in the shallowest (\u22120.4 %), with a Pearson correlation of \u22120.40 between depth and next-day excess. The step-5 slope agreed (+0.0029, passed).",
+    "F4": "Much of the deepest-break gain comes from a few days in 2020. The deepest quintile earns +11.5 % on 13 cases over 4 days that year (t 2.34), but only +0.45 % on 48 cases over 20 days outside 2020 (t 0.41). Sizing that piles into the deepest breaks (mean allocation 0.35 in the deepest quintile against 0.01 in the shallowest) lowers the weighted t (0.83) below the unweighted t (1.41).",
+    "F5": "The effect is a one-day move that does not carry on. On non-overlapping grids, the situation's excess is +0.87 % over 1 day (305 cases), +0.57 % over 2 days (t 1.11, 172 cases), +0.05 % over 3 days (84 cases) and \u22120.60 % over 5 days (62 cases). The plan measured it at the horizon where it shows; another horizon would not sharpen it.",
+    "F6": "The move is large against what a trade costs. The total move per case is +0.57 % and the unusual move +0.45 % (t 0.75 over 167 days), which are 3.0 and 2.3 times the 0.19 % cost of a trade. What is missing is cases, not size per case, and the thirteen other coins in folds A and D (plus part of B and C) are available."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "falling-coin low bounce, all coins",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ],
+      "idea": "In a coin that has fallen over the past 30 days, a close below its lowest low of the prior 10 days is followed by a rise over the next 1 day, larger the further the close sits below that low in percent.",
+      "consequence": "A trader would buy deep 10-day lows in any falling coin for one day, sizing up with the depth of the break.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.d3.b1_falling-coin-low-bounce-all-coins"
+  ],
+  "no_ideas": null
+}

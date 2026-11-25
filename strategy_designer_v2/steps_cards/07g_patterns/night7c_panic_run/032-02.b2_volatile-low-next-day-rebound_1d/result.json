@@ -1,0 +1,64 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b2_volatile-low-next-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5292047,
+  "findings": {
+    "F1": "Over all 8330 coin-days of folds B and C, where the close sits inside the day's high-low range predicts the next day's excess return with the opposite sign (Spearman \u22120.095, p 2.5e-18). Closes in the lowest fifth of the range are followed by +0.53 % (t 2.15, 1659 cases, 614 days) and closes in the highest fifth by \u22120.37 % (t \u22121.84, 1663 cases).",
+    "F2": "The F1 relation is negative in every one of the six coins and in every year. By coin, rho runs from \u22120.074 for ZEC to \u22120.146 for XMR, all with p \u2264 0.005. By year, 2018 is \u22120.10, 2019 \u22120.13, 2020 \u22120.16 and 2021 \u22120.04 (p 0.09).",
+    "F3": "The F1 rebound after a close near the day's low appears only when ranges are wide, and the 1-day spread from lowest-fifth to highest-fifth close is about 0.9 % to 1.6 %, five to eight times the 0.19 % cost of a trade.",
+    "F4": "Among the 320 closes above the prior 30-day high, the further above the high the close sits, the lower the next day's excess return (Spearman \u22120.205, p 0.0002).",
+    "F5": "After a down day of 1.5 or more of its 20-day standard deviation, the next-day rebound appears only when the month's ranges are wide against the past 90 days.",
+    "F6": "The tested situation itself is rare, and in these folds its slices do not stand out from chance."
+  },
+  "ideas": [
+    {
+      "idea": "The lower a coin's daily close sits within that day's high-low range, the more the coin rises over the next 1 day, and the higher the close sits in the range, the more it falls.",
+      "consequence": "A trader would lean long into the next day after a close near the day's low and refuse longs after a close at the day's high.",
+      "name": "close location next-day reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a coin's daily high-low ranges over the past 30 days are wide compared with the past 90 days, the lower its close sits within the day's high-low range, the larger its rise over the next 1 day.",
+      "consequence": "In agitated markets, a trader would buy a close pinned near the day's low for a one-day rebound, sized up the closer the close is to the low.",
+      "name": "volatile close-near-low rebound",
+      "from": "F3, F1",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin closes above its highest high of the prior 30 days, the further the close sits above that high, the more the coin falls over the next 1 day.",
+      "consequence": "A trader would refuse to chase a stretched breakout above the monthly high for the next day and would favour fading the most extended ones.",
+      "name": "stretched breakout next-day fade",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's daily ranges over the past 30 days are wide compared with the past 90 days, the larger its 1-day fall measured against its 20-day volatility, the larger its rise over the next 1 day.",
+      "consequence": "A trader would buy a sharp down day in a volatile month for a one-day rebound, more heavily the larger the fall, giving many more trades than the monthly-low setup.",
+      "name": "volatile big-drop next-day rebound",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.g1_close-location-next-day-reversal",
+    "032-02.b2.g2_volatile-close-near-low-rebound",
+    "032-02.b2.g3_stretched-breakout-next-day-fade",
+    "032-02.b2.g4_volatile-big-drop-next-day-rebound"
+  ],
+  "no_ideas": null
+}

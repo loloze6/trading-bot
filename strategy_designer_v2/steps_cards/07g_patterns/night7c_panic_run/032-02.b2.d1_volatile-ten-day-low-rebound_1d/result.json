@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b2.d1_volatile-ten-day-low-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5773804,
+  "findings": {
+    "F1": "Across all bars of folds B and C, where the close sits in the day's high-low range grades the next day's unusual move. Closes in the bottom fifth of the range are followed by +0.52 % (strength 0.095, t 2.10, 617 days), and closes in the top fifth by -0.37 % (t -1.83, 636 days). The pooled slope is -0.054 of a usual move per standard deviation of close location (t -2.25, 1077 days). The sign is negative on all 6 coins (XMR -0.114, t -3.68; XRP weakest, -0.012), in 3 of 4 years and in 10 of 12 windows.",
+    "F2": "The close-location effect appears only on wider days. Within the coin's two upper terciles of the day's range against its prior 30-day mean range, the slope is -0.075 (t -2.22, 823 days) and -0.083 (t -2.22, 677 days). In the narrowest tercile it is +0.007 (t 0.20, 644 days).",
+    "F3": "The close-location effect largely overlaps the day's own fall. With the day's return in 30-day standard deviations and the relative range added to the regression, its slope shrinks to -0.014 (t -0.41). The day's return alone shows the same grading: the bottom fifth of standardized daily returns is followed by +0.58 % (t 2.00, 384 days), the fourth fifth by -0.42 % (t -2.01).",
+    "F4": "The distance from the day's high to the close, in 30-day mean ranges, also grades the next day. The slope is +0.068 of a usual move per standard deviation (t 2.18, 1089 days), falling to +0.097 with t 1.64 once the day's return and range are controlled. The farthest fifth is followed by +0.48 % (t 1.68). Over 3 days that fifth gives only +0.50 % (t 0.63, 154 days), so the effect is a 1-day one.",
+    "F5": "Inside the tested regime, breaks below the prior 10-day low carry the gain: +2.36 % (strength 0.43, t 1.84, 50 days) against -0.36 % on the regime's other days (t -1.12). By depth tercile the move rises from +1.11 % to +1.58 % to +4.33 %, but the deepest tercile has only 15 days and t 1.38. Two windows dominate: w16 at +6.93 % and w17 at +14.36 % on 3 cases.",
+    "F6": "The same 10-day-low breaks outside the regime are followed by only +0.33 % (t 0.61, 107 days), so the rebound belongs to the falling, wide-range situation.",
+    "F7": "The book's best 1 % of days (mean +3.08 %) account for 112 % of its total gain. Its worst 1 % average -0.91 %. A handful of rebound days carry the book, which fits its Calmar of 0.73 falling short of 0.75."
+  },
+  "ideas": [
+    {
+      "idea": "On a day whose high-low range is wide compared with the coin's mean daily range over the past 30 days, the further the close sits below that day's high, measured in units of the 30-day mean daily range, the larger the coin's rise over the next 1 day.",
+      "consequence": "A trader would buy coins that close near the bottom of a wide day and hold them one day, and would refuse to buy coins that close at the top of a wide day.",
+      "name": "wide-day weak-close rebound",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b2.d1.g1_wide-day-weak-close-rebound"
+  ],
+  "no_ideas": null
+}
