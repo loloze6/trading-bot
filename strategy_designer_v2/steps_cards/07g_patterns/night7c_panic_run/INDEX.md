@@ -7,6 +7,7 @@
 032-02.b2.g1_close-location-next-day-reversal_1d: 4 ideas (2 explorations)
 032-02.b2.g2.d1_near-low-rebound-in-falling-months_1d: 3 ideas (2 explorations)
 032-02.b2.g2.d2_below-midrange-close-rebound_1d: 2 ideas (2 explorations)
+032-02.b2.g2.d3_rebound-scaled-by-range-widening_1d: 2 ideas (2 explorations)
 032-02.b2.g2_volatile-close-near-low-rebound_1d: 1 ideas (2 explorations)
 032-02.b2_volatile-low-next-day-rebound_1d: 4 ideas (3 explorations)
 032-02_volatile-decline-low-rebound_1d: 2 ideas (2 explorations)

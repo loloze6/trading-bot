@@ -20,21 +20,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-02.b2.g2_volatile-close-near-low-rebound | 032-02.b2_volatile-low-next-day-rebound | plan | confirmed (+2.45) | not profitable enough (failed: Calmar) | - | 7.d: 032-02.b2.g2.d1_near-low-rebound-in-falling-months, 032-02.b2.g2.d2_below-midrange-close-rebound, 032-02.b2.g2.d3_rebound-scaled-by-range-widening; 7.g: 032-02.b2.g2.g1_volatile-large-fall-next-day-rebound | 1.04 | 5.3 |
 | 032-02.b2.g2.d1_near-low-rebound-in-falling-months | 032-02.b2.g2_volatile-close-near-low-rebound | plan | inconclusive (+1.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 032-02.b2.g2.d1.b1_near-low-rebound-more-coins, 032-02.b2.g2.d1.b2_near-high-close-fades; 7.g: 032-02.b2.g2.d1.g1_near-low-close-rebounds-anywhere, 032-02.b2.g2.d1.g2_volatility-scaled-one-day-fall-reversal, 032-02.b2.g2.d1.g3_down-day-close-at-low-rebounds | 1.00 | 5.3 |
 | 032-02.b2.g2.d2_below-midrange-close-rebound | 032-02.b2.g2_volatile-close-near-low-rebound | plan | inconclusive (+1.97) | not profitable enough (failed: Mean daily return, on days in a position) | - | 7.b: 032-02.b2.g2.d2.b1_below-midrange-rebound-all-coins, 032-02.b2.g2.d2.b2_close-location-in-wide-ranges; 7.g: 032-02.b2.g2.d2.g1_large-daily-fall-rebounds, 032-02.b2.g2.d2.g2_volatile-regime-daily-fall-rebound | 0.92 | 5.2 |
+| 032-02.b2.g2.d3_rebound-scaled-by-range-widening | 032-02.b2.g2_volatile-close-near-low-rebound | plan | mismatch | not profitable enough (failed: Calmar) | - | 7.g: 032-02.b2.g2.d3.g1_volatility-scaled-down-day-rebound, 032-02.b2.g2.d3.g2_calm-after-turbulence-daily-drift | 1.03 | 6.4 |
 
 ## Consumption
-16 ideas, 15.88 USD, 88.2 minutes in all.
+17 ideas, 16.91 USD, 94.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.61 | 12.3 |
-| step4_backtest | 0.00 | 31.4 |
-| step5_verdict | 2.50 | 9.6 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 2.83 | 13.9 |
+| step4_backtest | 0.00 | 32.9 |
+| step5_verdict | 2.67 | 10.3 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.18 | 4.2 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 3.46 | 11.1 |
-| step7_7.g | 5.72 | 17.5 |
+| step7_7.g | 6.36 | 19.7 |
 | step7_7.a | 0.41 | 1.3 |
 | similarity_check | 0.00 | 0.2 |
