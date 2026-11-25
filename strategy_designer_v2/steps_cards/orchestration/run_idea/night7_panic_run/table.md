@@ -14,21 +14,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 040-01_falling-calm-scaled-fall-continuation | - | plan | inconclusive (+1.93) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 040-01.b1_calm-downtrend-falls-more-coins; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.89 | 5.6 |
 | 037-01_falling-market-wide-day-decline | - | plan | inconclusive (-1.12) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. In a falling market, wide days are followed by no reliable decline at the planned 3 days or at 5, 7 or 10 days, and the decline does not grow with width (F1–F3). The only signs of one are period-bound (F4) or limited to down-closing days, which the brief itself says would refute the range explanation (F5). No coin or trend depth isolates it (F6).; 7.g: 037-01.g1_rising-market-wide-day-dip-rebound | 1.79 | 5.5 |
 | 041-01_wide-up-day-next-day-fade | - | plan | inconclusive (+1.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 041-01.b1_wide-up-day-fade-all-coins, 041-01.b2_wide-down-day-next-day-rebound; 7.g: 041-01.g1_wide-down-day-next-day-rebound, 041-01.g2_wide-low-close-day-rebound | 1.04 | 5.5 |
+| 042-01_low-close-next-day-rebound | - | plan | confirmed (+2.64) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 042-01.d1_wide-range-low-close-rebound, 042-01.d2_falling-market-low-close-rebound; 7.g: 042-01.g1_wide-day-low-close-rebound, 042-01.g2_falling-market-low-close-rebound | 1.31 | 6.7 |
 
 ## Consumption
-10 ideas, 11.99 USD, 56.5 minutes in all.
+11 ideas, 13.29 USD, 63.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.42 | 5.5 |
-| step4_backtest | 0.00 | 18.6 |
-| step5_verdict | 1.73 | 6.5 |
+| step3_plan | 2.56 | 6.4 |
+| step4_backtest | 0.00 | 20.3 |
+| step5_verdict | 1.91 | 7.3 |
 | step6_check | 0.00 | 0.4 |
-| chart_files | 0.00 | 0.1 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.00 | 3.6 |
+| step7_7.d | 1.53 | 5.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 2.58 | 8.0 |
-| step7_7.g | 4.26 | 13.5 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.g | 4.71 | 15.0 |
+| similarity_check | 0.00 | 0.3 |

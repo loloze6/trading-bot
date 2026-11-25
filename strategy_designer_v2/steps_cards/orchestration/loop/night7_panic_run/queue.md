@@ -1,57 +1,61 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 13.87 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 15.22 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 042-01_low-close-next-day-rebound | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 2 | 043-01_falling-market-narrow-day-rise | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 3 | 032-02_monthly-low-exhaustion-rebound | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 4 | 035-02_rising-market-narrowing-ranges-rise | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 5 | 036-02_range-scaled-rally-continuation | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 6 | 037-02_falling-market-range-jump-decline | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 7 | 038-02_rising-market-range-scaled-continuation | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 8 | 039-02_range-scaled-fall-rebound | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 9 | 040-02_falling-calm-range-scaled-continuation | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 10 | 041-02_wide-down-day-next-day-rebound | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 11 | 042-02_high-close-next-day-fade | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 12 | 043-02_falling-market-range-shrink-rise | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 13 | 037-03_falling-market-wide-up-day-decline | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 14 | 041-03_range-jump-up-day-fade | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 15 | 041-04_range-jump-down-day-rebound | step 2 | 0 | 0.1 | 0.1 | candidate |
-| 16 | 032-01.b1_monthly-low-exhaustion-rebound | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 17 | 033-01.b1_rising-market-dip-rebound-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 18 | 034-01.b1_agitated-downtrend-rally-fade | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 19 | 035-01.b1_quieting-swings-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 20 | 036-01.b1_calm-market-rally-two-week-continuation | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 21 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 22 | 041-01.b1_wide-up-day-fade-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 23 | 034-01.b2_next-day-agitated-rally-fade | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 24 | 041-01.b2_wide-down-day-next-day-rebound | 7.b | 1 | 0.245 | 0.1225 | candidate |
-| 25 | 038-01.d1_scaled-rally-near-20-day-high | 7.d | 1 | 0.298 | 0.149 | candidate |
-| 26 | 038-01.d2_rally-held-near-recent-high | 7.d | 1 | 0.298 | 0.149 | candidate |
-| 27 | 032-01.g1_monthly-low-exhaustion-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 28 | 033-01.g1_calm-uptrend-dip-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 29 | 036-01.g1_scaled-two-week-rally-continues | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 30 | 037-01.g1_rising-market-wide-day-dip-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 31 | 032-01.g2_monthly-low-closing-off-lows | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 32 | 036-01.g2_scaled-weekly-rally-continues | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 33 | 041-01.g2_wide-low-close-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 34 | 039-01.d1_scaled-fall-rebound-capped | 7.d | 1 | 0.298 | 0.149 | candidate |
-| 35 | 039-01.d2_scaled-fall-within-slide | 7.d | 1 | 0.298 | 0.149 | candidate |
-| 36 | 039-01.d3_agitated-scaled-fall-rebound | 7.d | 1 | 0.298 | 0.149 | candidate |
-| 37 | 038-01.g2_scaled-rally-continues-calm-uptrend | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 38 | 038-01.g3_ten-day-scaled-rally-continues | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 39 | 039-01.g1_convex-rebound-after-extreme-falls | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| 40 | 039-01.g2_heavy-volume-fall-rebounds-more | 7.g | 1 | 0.125 | 0.0625 | candidate |
-| - | 032-01_monthly-low-break-cascade | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (-1.97); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
-| - | 033-01_rising-market-sharp-drop-rebound | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (+1.11); step 6 not profitable enough (failed: Calmar) |
-| - | 034-01_falling-market-rally-fade | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (+0.05); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
-| - | 035-01_rising-market-quieting-swings-rise | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (+0.61); step 6 not profitable enough (failed: Calmar) |
-| - | 036-01_scaled-rally-week-continuation | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (-0.67); step 6 not profitable enough (failed: Calmar) |
-| - | 037-01_falling-market-wide-day-decline | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (-1.12); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
-| - | 038-01_rising-market-scaled-rally-continuation | step 2 | 0 | 0.1 | 0.1 | tested: step 5 confirmed (+3.88); step 6 not profitable enough (failed: Calmar) |
-| - | 039-01_scaled-fall-next-day-rebound | step 2 | 0 | 0.1 | 0.1 | tested: step 5 confirmed (+2.63); step 6 not profitable enough (failed: Calmar) |
-| - | 040-01_falling-calm-scaled-fall-continuation | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (+1.93); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
-| - | 041-01_wide-up-day-next-day-fade | step 2 | 0 | 0.1 | 0.1 | tested: step 5 inconclusive (+1.69); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| 1 | 043-01_falling-market-narrow-day-rise | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 2 | 032-02_monthly-low-exhaustion-rebound | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 3 | 035-02_rising-market-narrowing-ranges-rise | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 4 | 036-02_range-scaled-rally-continuation | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 5 | 037-02_falling-market-range-jump-decline | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 6 | 038-02_rising-market-range-scaled-continuation | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 7 | 039-02_range-scaled-fall-rebound | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 8 | 040-02_falling-calm-range-scaled-continuation | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 9 | 041-02_wide-down-day-next-day-rebound | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 10 | 042-02_high-close-next-day-fade | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 11 | 043-02_falling-market-range-shrink-rise | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 12 | 037-03_falling-market-wide-up-day-decline | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 13 | 041-03_range-jump-up-day-fade | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 14 | 041-04_range-jump-down-day-rebound | step 2 | 0 | 0.098 | 0.098 | candidate |
+| 15 | 042-01.d1_wide-range-low-close-rebound | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 16 | 042-01.d2_falling-market-low-close-rebound | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 17 | 042-01.g1_wide-day-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 18 | 042-01.g2_falling-market-low-close-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 19 | 032-01.b1_monthly-low-exhaustion-rebound | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 20 | 033-01.b1_rising-market-dip-rebound-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 21 | 034-01.b1_agitated-downtrend-rally-fade | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 22 | 035-01.b1_quieting-swings-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 23 | 036-01.b1_calm-market-rally-two-week-continuation | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 24 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 25 | 041-01.b1_wide-up-day-fade-all-coins | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 26 | 034-01.b2_next-day-agitated-rally-fade | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 27 | 041-01.b2_wide-down-day-next-day-rebound | 7.b | 1 | 0.245 | 0.1225 | candidate |
+| 28 | 038-01.d1_scaled-rally-near-20-day-high | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 29 | 038-01.d2_rally-held-near-recent-high | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 30 | 032-01.g1_monthly-low-exhaustion-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 31 | 033-01.g1_calm-uptrend-dip-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 32 | 036-01.g1_scaled-two-week-rally-continues | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 33 | 037-01.g1_rising-market-wide-day-dip-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 34 | 032-01.g2_monthly-low-closing-off-lows | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 35 | 036-01.g2_scaled-weekly-rally-continues | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 36 | 041-01.g2_wide-low-close-day-rebound | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 37 | 039-01.d1_scaled-fall-rebound-capped | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 38 | 039-01.d2_scaled-fall-within-slide | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 39 | 039-01.d3_agitated-scaled-fall-rebound | 7.d | 1 | 0.298 | 0.149 | candidate |
+| 40 | 038-01.g2_scaled-rally-continues-calm-uptrend | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 41 | 038-01.g3_ten-day-scaled-rally-continues | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 42 | 039-01.g1_convex-rebound-after-extreme-falls | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| 43 | 039-01.g2_heavy-volume-fall-rebounds-more | 7.g | 1 | 0.125 | 0.0625 | candidate |
+| - | 032-01_monthly-low-break-cascade | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (-1.97); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 033-01_rising-market-sharp-drop-rebound | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (+1.11); step 6 not profitable enough (failed: Calmar) |
+| - | 034-01_falling-market-rally-fade | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (+0.05); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 035-01_rising-market-quieting-swings-rise | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (+0.61); step 6 not profitable enough (failed: Calmar) |
+| - | 036-01_scaled-rally-week-continuation | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (-0.67); step 6 not profitable enough (failed: Calmar) |
+| - | 037-01_falling-market-wide-day-decline | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (-1.12); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 038-01_rising-market-scaled-rally-continuation | step 2 | 0 | 0.098 | 0.098 | tested: step 5 confirmed (+3.88); step 6 not profitable enough (failed: Calmar) |
+| - | 039-01_scaled-fall-next-day-rebound | step 2 | 0 | 0.098 | 0.098 | tested: step 5 confirmed (+2.63); step 6 not profitable enough (failed: Calmar) |
+| - | 040-01_falling-calm-scaled-fall-continuation | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (+1.93); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
+| - | 041-01_wide-up-day-next-day-fade | step 2 | 0 | 0.098 | 0.098 | tested: step 5 inconclusive (+1.69); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 042-01_low-close-next-day-rebound | step 2 | 0 | 0.098 | 0.098 | tested: step 5 confirmed (+2.64); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 041-01.g1_wide-down-day-next-day-rebound | 7.g | 1 | 0.125 | 0.0625 | duplicate of 041-01.b2_wide-down-day-next-day-rebound |

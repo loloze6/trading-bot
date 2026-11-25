@@ -1,0 +1,89 @@
+## clustered z1 ~ clv
+          beta     t_day     n  days
+c     0.007057  0.303212  8688  1448
+clvc  0.213375  2.919215  8688  1448
+
+## clustered z1 ~ ret0z
+           beta     t_day     n  days
+c      0.000970  0.042129  8617  1437
+ret0z -0.091896 -3.125795  8617  1437
+
+## clustered z1 ~ clv + ret0z
+           beta     t_day     n  days
+c      0.000198  0.008603  8616  1436
+clvc  -0.021106 -0.179886  8616  1436
+ret0z -0.095762 -2.206185  8616  1436
+
+## clustered z1 ~ clv + logrelrange + clv*logrelrange
+               beta     t_day     n  days
+c          0.014247  0.552414  7968  1328
+clvc       0.262338  3.340218  7968  1328
+lrr        0.079048  1.803891  7968  1328
+clv_x_rng  0.444228  2.786349  7968  1328
+
+## clustered z1 ~ clv*relrange (graded weighting)
+           beta     t_day     n  days
+c      0.004550  0.191711  7968  1328
+clvrw  0.164238  1.412860  7968  1328
+ret0z -0.057909 -1.261684  7968  1328
+
+## clustered clv*relrange in falling
+           beta     t_day     n  days
+c     -0.041893 -0.981876  2063   433
+clvrw  0.373709  2.401484  2063   433
+
+## clustered clv*relrange in choppy
+           beta     t_day    n  days
+c     -0.076637 -1.307926  654   349
+clvrw  0.370067  2.135335  654   349
+
+## clustered clv*relrange in rising
+           beta     t_day     n  days
+c      0.067801  1.507498  1652   419
+clvrw  0.013576  0.139959  1652   419
+
+## clustered clv*relrange agitated
+           beta     t_day     n  days
+c     -0.001903 -0.037013  1389   373
+clvrw  0.218706  1.432947  1389   373
+
+## clustered clv*relrange calm
+           beta     t_day     n  days
+c      0.067803  1.559569  1612   426
+clvrw  0.041091  0.409978  1612   426
+
+## relrange quintile x clv tercile mean z1
+cq         0         1         2
+rq                              
+0  -0.011203  0.003295 -0.014721
+1  -0.101473 -0.042564 -0.018995
+2  -0.044628 -0.115728  0.064052
+3  -0.022991 -0.032584  0.121980
+4  -0.180704  0.152539  0.215808
+
+## widest-range quintile: next-day drift-removed %, by clv tercile
+        mean  count  mean_pct
+cq                           
+0  -0.009566    524 -0.956560
+1   0.008427    386  0.842722
+2   0.012185    684  1.218530
+
+## 2-day nonoverlap z2 ~ clv*relrange
+           beta     t_day     n  days
+c      0.005093  0.155766  3966   714
+clvrw  0.169156  2.401554  3966   714
+
+## clustered z1 ~ clv*relvolume + clv*relrange
+           beta     t_day     n  days
+c      0.001561  0.065925  7968  1328
+clvvw -0.258820 -2.054877  7968  1328
+clvrw  0.512975  3.497341  7968  1328
+
+## by coin clv*relrange
+            beta     t_day       n    days
+BTCUSD  0.250788  2.434766  1328.0  1328.0
+ETHUSD  0.296117  2.708897  1328.0  1328.0
+LTCUSD  0.307651  2.799978  1328.0  1328.0
+XMRUSD  0.434822  4.233586  1328.0  1328.0
+XRPUSD  0.145862  1.368552  1328.0  1328.0
+ZECUSD  0.266259  3.483567  1328.0  1328.0
