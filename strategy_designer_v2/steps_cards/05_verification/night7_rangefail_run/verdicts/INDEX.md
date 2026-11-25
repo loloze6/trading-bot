@@ -18,6 +18,7 @@
 035-01.b1_calm-market-nearness-to-high_1d: confirmed (fit: exact) [main: 0.00198065; day-clustered OLS slope t 2.11329; grid cases 3436, distinct days 506]
 035-01_nearness-to-high-rises_1d: inconclusive (fit: exact) [main: 0.00151006; OLS slope t, clustered by day 1.57748; grid cases 7270, distinct days 617, non-rising-market cells 2140]
 035-02_break-swings-above-continues_1d: confirmed (fit: exact) [main: 0.0230332; t of the mean, cases of one day together 2.06709; cases 349, distinct days 159, active bars 1806]
+035-03.b1_choppy-far-below-high-falls_1d: inconclusive (fit: exact) [main: 0.00882686; t of the mean, cases of one day taken together 2.46608; independent case days across coins and windows 827, cases 1461]
 035-03_far-below-high-falls_1d: inconclusive (fit: adapted) [main: 0.00683512; t of the mean, clustered by day 1.98869; distinct case days 1149, cases 3666, active bars 20969]
 036-01_swing-scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000281788; slope t, clustered by day 2.15065; bars with forecast above 0 18271, distinct days 2413, bars in slope 36948, day clusters 2898]
 037-01_choppy-swing-scaled-fall-continues_1d: inconclusive (fit: exact) [main: 0.00653383; t of the mean, clustered by day 0.935135; cases 776, distinct days 288]

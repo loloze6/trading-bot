@@ -18,6 +18,7 @@
 035-01.b1_calm-market-nearness-to-high_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 035-01_nearness-to-high-rises_1d: 1 ideas (2 explorations)
 035-02_break-swings-above-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+035-03.b1_choppy-far-below-high-falls_1d: no ideas: Deep-below-high closes in choppy markets do underperform the coin's drift by a similar amount whatever their depth (F1, F2), the effect sits in no profile, horizon, side or set of cases a graded idea could keep (F3, F4, F5), and its total move per case is below the cost of a trade (F2), so no amended idea on the theme is worth testing, and the test already used every fold and coin available.
 035-03_far-below-high-falls_1d: 2 ideas (2 explorations)
 036-01_swing-scaled-fall-next-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 037-01_choppy-swing-scaled-fall-continues_1d: 1 ideas (2 explorations)

@@ -31,22 +31,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 038-01_calm-swing-scaled-rise-continues | - | plan | inconclusive (+1.12) | not profitable enough (failed: Calmar) | - | 7.b: 038-01.b1_calm-swing-scaled-move-continues, 038-01.b2_calm-scaled-rise-ten-days; 7.g: 038-01.g1_calm-two-sided-swing-continuation, 038-01.g2_calm-swing-scaled-fall-continues, 038-01.g3_calm-ten-day-swing-continuation, 038-01.g4_choppy-calm-break-continuation | 1.01 | 10.8 |
 | 038-02_calm-swing-scaled-fall-continues | - | plan | inconclusive (+1.48) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 038-02.b1_calm-swing-scaled-move-continues; 7.g: 038-02.g1_calm-swing-scaled-move-continues, 038-02.g2_calm-swing-scaled-rise-continues | 0.99 | 10.9 |
 | 035-01.b1_calm-market-nearness-to-high | 035-01_nearness-to-high-rises | plan | confirmed (+2.11) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 035-01.b1.g1_choppy-market-distance-from-high, 035-01.b1.g2_calm-breakout-day-size-continuation | 0.71 | 14.0 |
+| 035-03.b1_choppy-far-below-high-falls | 035-03_far-below-high-falls | plan | inconclusive (+2.47) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: Deep-below-high closes in choppy markets do underperform the coin's drift by a similar amount whatever their depth (F1, F2), the effect sits in no profile, horizon, side or set of cases a graded idea could keep (F3, F4, F5), and its total move per case is below the cost of a trade (F2), so no amended idea on the theme is worth testing, and the test already used every fold and coin available.; 7.g: 035-03.b1.g1_breakout-above-high-rises, 035-03.b1.g2_choppy-distance-from-high-gradient | 1.34 | 10.9 |
 
 ## Consumption
-27 ideas, 27.94 USD, 220.7 minutes in all.
+28 ideas, 29.28 USD, 231.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.95 | 15.8 |
-| step4_backtest | 0.00 | 117.2 |
-| step5_verdict | 4.56 | 16.3 |
-| step6_check | 0.00 | 1.2 |
+| step3_plan | 5.03 | 16.3 |
+| step4_backtest | 0.00 | 124.0 |
+| step5_verdict | 4.77 | 17.1 |
+| step6_check | 0.00 | 1.3 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.d | 1.48 | 5.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.7 |
-| step7_7.b | 5.63 | 16.6 |
-| step7_7.g | 10.64 | 31.7 |
+| step7_7.b | 6.24 | 18.2 |
+| step7_7.g | 11.08 | 33.0 |
 | similarity_check | 0.00 | 0.7 |
 | unseen_test | 0.00 | 13.8 |

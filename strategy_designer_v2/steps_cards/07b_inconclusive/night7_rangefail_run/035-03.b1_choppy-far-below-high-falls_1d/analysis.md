@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 035-03.b1_choppy-far-below-high-falls_1d
+idea tested: 035-03.b1_choppy-far-below-high-falls
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6116 USD
+---
+## Findings
+- **F1:** The fall does not grow with depth, which is why the result is inconclusive. In folds B and C, the Spearman correlation between depth in swings and the 5-day excess fall is 0.04 (p 0.44, 385 cases). By depth quartile, deepest to shallowest, the 5-day excess falls are 4.5 % (t 2.01), 0.6 % (t 0.44), 1.8 % (t 1.86) and 1.8 % (t 2.19). Step 5's above-median minus at-or-below-median |forecast| difference is -0.30 % on all folds.
+- **F2:** There is a fall below drift that does not depend on depth, but it does not pay. In B and C the mean excess 5-day fall is 1.77 % (t 2.24 with the cases of one day together; 439 cases on 273 days), and step 5 measures 0.88 % (t 2.47, 827 days) on all folds. Because the coins' normal drift runs -0.80 % against the short, the short's total move is only +0.08 % per case, 0.4 times the 0.22 % cost of a trade.
+- **F3:** The effect is not concentrated in a part of the data a condition could keep:
+- **F4:** Market splits do not isolate it.
+- **F5:** A longer horizon does not sharpen it. Over 10 days the excess fall is 2.4 % (t 1.93, 309 cases). By depth quartile, deepest to shallowest, it is 4.1 %, 1.6 %, 1.6 % and 3.9 %, which is U-shaped, not graded (Spearman 0.02, p 0.74).
+
+## Ideas
+- No ideas: Deep-below-high closes in choppy markets do underperform the coin's drift by a similar amount whatever their depth (F1, F2), the effect sits in no profile, horizon, side or set of cases a graded idea could keep (F3, F4, F5), and its total move per case is below the cost of a trade (F2), so no amended idea on the theme is worth testing, and the test already used every fold and coin available.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
