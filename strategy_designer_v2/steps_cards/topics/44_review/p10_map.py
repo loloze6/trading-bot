@@ -16,7 +16,10 @@ which are not"; "a pilot, and use proven results to see if it helps").
 4. Proven results, as a check: the map's portfolio against P4's (the 20, equal capital) and against the 22 at equal
    capital, on the folds (chained as step 6) and on the two unseen periods (already seen for P4: a check, not a verdict).
 Writes p10_map.csv (shares by cell), p10_portfolio.csv (weights), p10_results.csv.
-  python3 topics/44_review/p10_map.py"""
+P10b (next steps, 2026-11-25): `--night7` adds night 7's profile specialists (the new code's confirmed, profitable enough
+books whose idea names a profile: `topics/49_review/night7_ideas_full.csv`) to the candidates, the rule unchanged; writes
+p10b_map.csv, p10b_portfolio.csv, p10b_results.csv.
+  python3 topics/44_review/p10_map.py [--night7]"""
 import json, pathlib, sys, warnings
 import numpy as np, pandas as pd
 
@@ -55,6 +58,14 @@ c7 = pd.read_csv(HERE / "p7_night6_candidates.csv"); c7 = c7[c7.status == "candi
 c7 = pd.DataFrame({"family": c7.family.str.split(":").str[0].str.replace("_run", "") + ":" + c7.family.str.split(":").str[1],
                    "run": c7.family.str.split(":").str[0], "id": c7.id})
 cand = pd.concat([c1, c7], ignore_index=True)
+NIGHT7 = "--night7" in sys.argv
+OUT = "p10b" if NIGHT7 else "p10"
+if NIGHT7:
+    n7 = pd.read_csv(HERE.parent / "49_review" / "night7_ideas_full.csv")
+    n7 = n7[(n7.arm == "new") & n7.step5.fillna("").str.startswith("confirmed") & n7.step6.fillna("").str.startswith("profitable")
+            & n7.profile.notna()]
+    cand = pd.concat([cand, pd.DataFrame({"family": "n7:" + n7.idea.str.split("_").str[0] + " (" + n7.profile + ")",
+                                          "run": "night7_" + n7.theme + "_run", "id": n7.idea + "_1d"})], ignore_index=True)
 
 
 def daily_side(rec):
@@ -84,7 +95,7 @@ for r in cand.itertuples():
     br = returns(rec); ret_in[r.family] = br.set_index(["window", "period"]).book
 shares = pd.DataFrame(share_rows)
 shares["cell"] = shares.profile + " / " + shares.side
-shares.to_csv(HERE / "p10_map.csv", index=False, float_format="%.4g")
+shares.to_csv(HERE / f"{OUT}_map.csv", index=False, float_format="%.4g")
 wide = shares.pivot_table(index="family", columns="cell", values="share", fill_value=0.0)
 cells = [f"{p} / {s}" for p in PROFILES for s in ("long", "short")]
 wide = wide.reindex(columns=cells, fill_value=0.0)
@@ -103,7 +114,7 @@ for pf in filled_profiles:
     for c in cs:
         weights[chosen[c]] = weights.get(chosen[c], 0.0) + 1 / len(filled_profiles) / len(cs)
 w = pd.Series(weights); w = w / w.sum()
-pd.DataFrame([{"cell": c, "strategy": chosen.get(c, "-")} for c in cells]).to_csv(HERE / "p10_portfolio.csv", index=False)
+pd.DataFrame([{"cell": c, "strategy": chosen.get(c, "-")} for c in cells]).to_csv(HERE / f"{OUT}_portfolio.csv", index=False)
 
 pd.set_option("display.width", 250)
 print("days per profile (the six coins, 2018-2025 folds and the unseen periods together):")
@@ -136,7 +147,10 @@ def evaluate(series_by_family, weights, label):
 rows = []
 fold = lambda idx: (np.asarray(idx.get_level_values(0)).astype(str).astype(object))
 eq20 = {f: 1.0 for f in c1.family}; eq22 = {f: 1.0 for f in cand.family}
-for label, ws in (("P4: the 20, equal capital", eq20), ("the 22, equal capital", eq22), ("the map: one per cell, equal risk per profile", dict(w))):
+portfolios = [("P4: the 20, equal capital", eq20), ("the 22, equal capital", eq22), ("the map: one per cell, equal risk per profile", dict(w))]
+if NIGHT7:
+    portfolios[1] = (f"the {len(cand)}, equal capital", eq22)
+for label, ws in portfolios:
     allr = {k: v for k, v in ret_in.items() if k in ws}
     R = pd.DataFrame(allr).fillna(0.0).sort_index()
     wn = pd.Series(ws).reindex(R.columns).fillna(0.0); wn = wn / wn.sum()
@@ -156,7 +170,7 @@ for label, ws in (("P4: the 20, equal capital", eq20), ("the 22, equal capital",
         res = evaluate(u, {k: v for k, v in ws.items() if k in u}, label)
         res["period"] = period; res["strategies_with_data"] = f"{len(u)} of {len(ws)}"
         rows.append(res)
-out = pd.DataFrame(rows); out.to_csv(HERE / "p10_results.csv", index=False, float_format="%.4g")
+out = pd.DataFrame(rows); out.to_csv(HERE / f"{OUT}_results.csv", index=False, float_format="%.4g")
 print("\nproven results (a check: the unseen periods are already seen for P4):")
 print(out.pivot_table(index="period", columns="portfolio", values="sharpe").round(2).to_string())
 print("\nCalmar:"); print(out.pivot_table(index="period", columns="portfolio", values="calmar").round(2).to_string())
