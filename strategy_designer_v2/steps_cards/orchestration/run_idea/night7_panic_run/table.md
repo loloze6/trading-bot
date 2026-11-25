@@ -25,23 +25,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 049-01_choppy-scaled-five-day-rise-continuation | - | plan | inconclusive (-0.29) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 049-01.b1_choppy-scaled-fall-continuation; 7.g: 049-01.g1_rising-market-scaled-rise-continuation, 049-01.g2_rising-scaled-rise-five-day-carry | 0.96 | 4.8 |
 | 050-01_falling-calm-scaled-week-fall-continuation | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-01.b1_calm-downtrend-fall-continuation-more-coins; 7.g: no ideas: Every pattern seen is a weak, same-sign version of the tested continuation (slopes with t at most 1.99 among about 50 cells looked at), it changes sign between years, and the book's gain comes from a handful of crash days, so nothing stands out enough from chance to support a new idea. | 0.97 | 5.7 |
 | 035-02_rising-market-narrowing-ranges-rise | - | plan | inconclusive (-0.11) | not profitable enough (failed: Calmar) | - | 7.b: 035-02.b1_narrowing-ranges-weekly-rise, 035-02.b2_strong-uptrend-narrowing-ranges-rise; 7.g: 035-02.g1_calm-level-uptrend-continuation, 035-02.g2_low-volatility-rising-coins-continue | 1.77 | 5.5 |
-| 036-02_range-scaled-rally-continuation | - | missing-components | - | - | - | - | 0.05 | 0.3 |
+| 036-02_range-scaled-rally-continuation | - | plan | inconclusive (+1.43) | not profitable enough (failed: Calmar) | - | 7.b: 036-02.b1_scaled-rally-continuation-all-coins, 036-02.b2_rising-market-rally-continues-briefly; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.76 | 5.4 |
 
 ## Consumption
-22 ideas, 22.59 USD, 114.3 minutes in all.
+22 ideas, 24.30 USD, 119.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.14 | 11.4 |
-| step4_backtest | 0.00 | 38.3 |
-| step5_verdict | 3.59 | 13.5 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 4.96 | 11.8 |
+| step4_backtest | 0.00 | 40.0 |
+| step5_verdict | 3.74 | 14.0 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.53 | 5.4 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 4.50 | 14.4 |
-| step7_7.g | 8.83 | 28.1 |
+| step7_7.b | 4.83 | 15.4 |
+| step7_7.g | 9.24 | 29.5 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 1.8 |
