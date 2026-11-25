@@ -13,6 +13,7 @@
 039-01_scaled-fall-next-day-rebound_1d: 3 ideas (3 explorations)
 039-02_range-scaled-fall-rebound_1d: 1 ideas (2 explorations)
 040-01_falling-calm-scaled-fall-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+040-02_falling-calm-range-scaled-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 041-01_wide-up-day-next-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 042-01_low-close-next-day-rebound_1d: 2 ideas (3 explorations)
 043-01_falling-market-narrow-day-rise_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)

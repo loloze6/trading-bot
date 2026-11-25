@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move after short signals, short direction (day-clustered t)",
+    "value": 0.0063819674131082756,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.5850707316781412
+    },
+    "threshold": "confirm if t >= 2 (with supporting difference > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top minus bottom half by |forecast| of mean unusual move (Welch t)",
+    "value": 0.004494453880916819,
+    "passed": true,
+    "welch_t": 0.7883355217330961
+  },
+  "counts": {
+    "distinct case days": 434,
+    "cases": 715,
+    "top half cases": 357,
+    "bottom half cases": 358
+  },
+  "decided_by": "With at least 30 case days, the numbers meet neither the confirm rule nor the reject rule.",
+  "reading": "Profile taken as bars with regime 'unknown' (the detector's non-vetoed falling calm state) and the fall as a negative raw scaled_fall value; signals are forecast.md-7 bets (short size rising >= 2 points above its lowest level since the last bet, starting from 0 at each window start), the first bet of each 3-bar grid cell from the window's first row; drift is the mean of each coin's non-overlapping 3-bar grid returns pooled over all its windows; the t clusters case deviations summed per UTC day with a D/(D-1) correction; the median split puts |forecast| above the median in the top half and the rest in the bottom half; the plan's 30-day minimum is applied as 'not observable'."
+}

@@ -13,6 +13,7 @@
 039-01_scaled-fall-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000397677; slope t, residuals summed per day (day-clustered) 2.62617; down-day cases 8514, distinct days 2199, top-fifth cases 1706]
 039-02_range-scaled-fall-rebound_1d: confirmed (fit: exact) [main: 0.000434148; OLS slope t, day-clustered 2.86472; down-day cases 8514, distinct days 2199, top-quintile cases 1703]
 040-01_falling-calm-scaled-fall-continuation_1d: inconclusive (fit: exact) [main: 0.00914313; t of the mean, day-clustered 1.93359; cases 632, distinct days 303]
+040-02_falling-calm-range-scaled-continuation_1d: inconclusive (fit: exact) [main: 0.00638197; t of the mean, cases summed per day 1.58507; distinct case days 434, cases 715, top half cases 357, bottom half cases 358]
 041-01_wide-up-day-next-day-fade_1d: inconclusive (fit: adapted) [main: 0.00153978; t of the mean, cases of one day summed 1.68947; cases 8849, distinct days 2274]
 042-01_low-close-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000604317; t, day-clustered SE 2.6437; distinct days with recorded forecasts 2898, observations 17380, top quintile observations 3476, bottom quintile observations 3476]
 043-01_falling-market-narrow-day-rise_1d: mismatch: the test does not match its plan (agreement 0.643069) (fit: exact)
