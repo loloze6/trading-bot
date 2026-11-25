@@ -1,0 +1,1 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d: inconclusive (fit: exact) [main: 0.00273402; OLS slope t 3.95104; cases 1907, cases with forecast > 0 890, cases with positive 60-day return 484, cases with non-positive 60-day return 451]
