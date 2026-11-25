@@ -14,3 +14,4 @@
 034-03_rising-far-below-high-falls_1d: 1 ideas (2 explorations)
 035-01_nearness-to-high-rises_1d: 1 ideas (2 explorations)
 035-02_break-swings-above-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+035-03_far-below-high-falls_1d: 2 ideas (2 explorations)

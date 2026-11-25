@@ -22,22 +22,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 034-02_rising-break-swings-continues | - | plan | confirmed (+3.69) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 034-02.g1_choppy-deep-below-high-keeps-falling, 034-02.g2_nearness-to-high-every-market, 034-02.g3_rising-approach-to-high | 0.72 | 10.8 |
 | 035-02_break-swings-above-continues | - | plan | confirmed (+2.07) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: I looked at about 60 groupings: distance from the high and from the low, the last day's move, the volatility ratio, trend crossed with breakout, year, weekday, prior 5-day return, and trade duration, entry forecast and coin. No pattern outside the tested breakout effect reaches a day-clustered |t| of 2 in a graded way, so none stands out from chance across that many looks. | 0.66 | 10.8 |
 | 034-03_rising-far-below-high-falls | - | plan | inconclusive (+0.64) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 034-03.b1_choppy-far-below-high-falls; 7.g: 034-03.g1_rising-above-high-breakout-drift | 1.06 | 10.1 |
+| 035-03_far-below-high-falls | - | plan | inconclusive (+1.99) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 035-03.b1_choppy-far-below-high-falls, 035-03.b2_choppy-far-below-high-ten-day-falls; 7.g: 035-03.g1_deep-drawdown-bounce-fades, 035-03.g2_far-below-high-falls-when-falling | 1.75 | 10.1 |
 
 ## Consumption
-18 ideas, 17.91 USD, 120.6 minutes in all.
+19 ideas, 19.66 USD, 130.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.78 | 12.1 |
-| step4_backtest | 0.00 | 53.9 |
-| step5_verdict | 2.84 | 10.5 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 3.59 | 12.5 |
+| step4_backtest | 0.00 | 60.6 |
+| step5_verdict | 3.03 | 11.1 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.d | 1.03 | 3.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.7 |
-| step7_7.b | 3.76 | 11.3 |
-| step7_7.g | 6.83 | 20.5 |
+| step7_7.b | 4.11 | 12.4 |
+| step7_7.g | 7.21 | 21.7 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 5.7 |
