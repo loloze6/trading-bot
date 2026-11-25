@@ -16,6 +16,7 @@ STEPS = ORCH.parent
 sys.path.insert(0, str(ORCH / "run_idea" / "helper"))
 sys.path.insert(0, str(STEPS / "common"))
 from run_idea import Journal, copy_into  # noqa: E402  (one journal for every orchestration function)
+from lib import with_header_field, write_atomic  # noqa: E402
 
 BRIEFS = STEPS / "01_brief" / "briefs"          # step 1's list of every brief: one number per theory
 LOOP = ORCH / "loop" / "helper" / "loop.py"
@@ -58,7 +59,12 @@ def write_brief(run, theme=None, source=None, model=None):
         return None, f"step 1: already indexed: {ai.group(1)} (the source's theory is already a brief)"
     if not b:
         return None, f"step 1 wrote no brief: {' '.join(out.split())[-300:]}"
-    return Path(b.group(1)), None
+    brief = Path(b.group(1))
+    if source and Path(source).parent.name == "discoveries":
+        # a discovery's brief names its discovery, written by code: select_next ranks its ideas as follow-ups of the
+        # idea the discovery was found in (next steps 1n, the operator 2026-11-25)
+        write_atomic(brief, with_header_field(brief.read_text(), "discovery", Path(source).stem))
+    return brief, None
 
 
 def write_ideas(run, brief, model=None):

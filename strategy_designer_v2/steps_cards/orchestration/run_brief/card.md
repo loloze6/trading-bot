@@ -37,7 +37,9 @@ lines propose from them, until a stop rule is met.**
 4. **`loop`** on the run, without a starting idea: the brief's ideas are its first candidates.
 
 Steps 1 and 2 are two functions (`write_brief`, `write_ideas`) the loop also calls, to turn a discovery into a brief
-(`../loop/card.md`, "Discoveries become briefs"; topic 50): one way to write a brief and its first ideas.
+(`../loop/card.md`, "Discoveries become briefs"; topic 50): one way to write a brief and its first ideas. A brief
+written from a discovery gets a `discovery:` header field (the discovery's id), written by code: `select_next` ranks its
+ideas as follow-ups of the idea it was found in (next steps 1n, 2026-11-25).
 
 ## Stopping
 `loop`'s rules, unchanged: the operator stops it (it resumes); an optional budget is reached (`--budget USD`, the

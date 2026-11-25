@@ -39,7 +39,14 @@ In the words of `../../common/idea_created_from.md`.
 first, ranked by the score among themselves; then every other candidate, by the score. Every idea of a theory is tested
 once before the workflow goes deep on one of them. Why: with the score alone, a brief's idea scored 0.09 (step 2's
 record) against 0.15 to 0.33 for the lines' children, so one lineage took 26 of 30 turns in night_run and 28 of 33 in
-night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled). A brief written from a discovery (`../loop/card.md`; topic 50) is a brief: its ideas are generation 0, in this group.
+night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled). **A brief written from a discovery is not in this group (the operator, 2026-11-25; next steps 1n).** Its ideas rank as
+the discovery would: a follow-up of the idea it was found in, with the discovery's line, parent and generation, and
+their own follow-ups count their generation from it. The link is the brief's `discovery:` field, written by code
+(`run_brief`'s `write_brief`). Why: on night 7 the discovery briefs' first ideas came first, as any brief's, and took
+107 of 117 ideas tested; their themes' own follow-ups were written and never run. Proof (`../../runs/NIGHT7_RUN.md`):
+night 7's committed states replayed early in the night: panic after 2 turns, as it ran 033-01 and 034-01 (discovery
+briefs) first and the theme's 032-02 third; with the rule 032-02, then 032-01.b1 (on the theme), then the discovery
+ideas; rangefail after 7 turns, the theme's 032-02.b1.b1 moves from sixth to first.
 
 **Real ideas unlike what we hold next (operator, 2026-11-22; topic 45; the held books, 2026-11-24, P9).** After a brief's own ideas, the order has two
 more groups, each ranked by **priority = score x w**:

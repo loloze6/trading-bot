@@ -36,7 +36,7 @@ found not real; a discovery.
 | Lines 7.e and 7.g (what the book earns from; patterns) | Their ideas off the theme are discoveries: written as a new theme, which step 1 turns into a brief (its own number and family); on the theme, they stay follow-ups | a discovery is tested on its own theory, not counted as the old brief's |
 | Step 1 | Writes a brief from a discovery (the finding, its numbers, the backtest it came from); a source whose only theory is already a brief answers `already-indexed` | the discovery's theme gets its first ideas like any brief, once |
 | `loop` (with `run_brief`'s steps 1 and 2) | Before each turn, every new discovery of the run becomes a brief and its first ideas; one line each in `loop.jsonl`; steps 1 and 2 count in the run's spend | discoveries enter the search without the operator |
-| `select_next` | A brief from a discovery is a brief: its first ideas come in group 1; P9 still pushes copies of held books down | one rule for every brief |
+| `select_next` | A brief from a discovery ranks its ideas as follow-ups of the idea the discovery was found in (changed 2026-11-25, next steps 1n; at the build: group 1, as any brief) | a theme's own ideas run before the patterns found on the way; P9 weighs them |
 | The run's reading | Each brief ends with its answer: real, not real, or open (budget ended) | the brief's question is answered and recorded |
 
 ## Options
@@ -58,6 +58,7 @@ Recommended: A. It answers every theme and keeps what 7.g finds, under its own n
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
+| 2026-11-25 | A discovery's brief ranks its ideas as follow-ups (select_next, `discovery:` field); lines 7.e and 7.g are given the profile map (1q, option b) | the operator ("1n yes, 1q option b"), after night 7 | night 7: discovery briefs took 107 of 117 ideas tested, 0 of 4 themes answered; 31 of 51 confirmed books one effect | a morning review of discoveries (the operator: no manual step); no brief from a discovery far from the theme (1q a: loses finds such as night 6's Saturday carry) |
 | 2026-11-24 | Option A, built | the operator ("go for that"), on the designer's recommendation | every theme answered; discoveries kept under their own theory | B: loses discoveries such as the weekday carry; C: themes stay unanswered |
 | 2026-11-24 | An idea on the theme may change the effect's side (what the market does instead in the theme's situation), not only for a question brief | the designer, at the build | line 7.c's "what the market does instead" keeps the brief's situation and answers its question | side changes for question briefs only: 7.c's main proposal would be off the theme |
 | 2026-11-24 | Step 1, given a source whose theory is already a brief and which states no other, writes no brief and names the existing one | the designer, from the proof | the same pattern found in several backtests becomes one brief; step 1's rule "write another theory" made it invent one the source did not show | one brief per discovery: duplicates, and invented variants |

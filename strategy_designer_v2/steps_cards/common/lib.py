@@ -140,6 +140,15 @@ def header(text):
     return [l.strip() for l in m.group(1).splitlines() if l.strip()], m.group(2)
 
 
+def with_header_field(text, key, value):
+    """The text with one field of its --- header set by code (replaced when present, else added last)."""
+    m = re.match(r"(\s*---\n)(.*?)(---\n)", text, re.S)
+    if not m:
+        sys.exit("the file does not start with a --- header")
+    lines = [l for l in m.group(2).splitlines() if not re.match(rf"{re.escape(key)}\s*:", l)] + [f"{key}: {value}"]
+    return m.group(1) + "\n".join(lines) + "\n" + m.group(3) + text[m.end():]
+
+
 def header_fields(text):
     """The --- header of a Markdown file as a dict (empty when it has none)."""
     m = re.match(r"\s*---\n(.*?)---\n", text, re.S)
