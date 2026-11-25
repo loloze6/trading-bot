@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 3-day return on abs(forecast), short grid bars",
+    "value": -0.00198689582465932,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -4.085354751133794
+    },
+    "threshold": "confirm at t <= -2 with the supporting check; reject at t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-day return below 0",
+    "value": -0.008557963412143542,
+    "passed": true
+  },
+  "counts": {
+    "cases": 889,
+    "distinct days": 271
+  },
+  "decided_by": "Confirm: the slope's t is -2 or less and the mean excess 3-day return over the cases is below 0.",
+  "reading": "Cases are grid bars (positions 0, 3, 6, ... of each window) with forecast below 0 and a 3-bar forward return inside the window; the coin's mean 3-day return is the mean of its grid returns over all its windows; the slope's t is OLS slope over its standard error; the mean excess return's t is the ordinary t of the mean; the plan's 'fewer than 30 cases or days' rule is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure -0.00188 on the check folds against -0.001987 on every fold",
+    "main": -0.001879513572391693,
+    "statistic": -3.419549795727909,
+    "counts": {
+      "cases": 631,
+      "distinct days": 165
+    }
+  }
+}
