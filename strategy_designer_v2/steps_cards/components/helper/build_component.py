@@ -68,10 +68,14 @@ def with_class(module, name, source):
 
 
 def with_row(cat, name, table, row):
-    """The catalogue with the class's row replaced, or inserted at the end of its table; the class count updated."""
+    """The catalogue with the class's row replaced, or inserted at the end of its table; the class count updated.
+    The row is looked for only in the component rows (the part `catalogue_rows` reads): a class named in another
+    table (the misleading names) keeps that line."""
     row = row.strip()
     lines = cat.split("\n")
-    at = next((i for i, l in enumerate(lines) if l.startswith(f"| `{name}` |")), None)
+    first = next(i for i, l in enumerate(lines) if l.strip().startswith("## Component rows"))
+    last = next(i for i, l in enumerate(lines) if l.strip().startswith("## Variant patterns"))
+    at = next((i for i in range(first, last) if lines[i].startswith(f"| `{name}` |")), None)
     if at is not None:
         lines[at] = row
     else:
