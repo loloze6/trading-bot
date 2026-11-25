@@ -3,79 +3,83 @@ import pandas as pd
 from scipy import stats
 
 def explore(data):
-    bars = data["bars"]; days = data["days"]
-    H = 20
-    rows = []      # breakout cases
-    grid = []      # non-overlapping 20d grid, all bars
-    after = []     # daily: return next 1d/5d after large moves
-    for coin, wins in bars.items():
-        for w, b in wins.items():
-            c = b["close"].astype(float).values
-            n = len(c)
-            ts = pd.to_datetime(b["timestamp"])
-            lr = np.r_[np.nan, c[1:]/c[:-1]-1]
-            for i in range(0, n-H, H):
-                grid.append((coin, w, c[i+H]/c[i]-1))
-            # cases: first breakout per grid cell
-            for g0 in range(0, n-H, H):
-                for i in range(max(g0, 60), min(g0+H, n-H)):
-                    pm = c[i-60:i].max()
-                    if c[i] > pm:
-                        r60 = c[i-1]/c[i-61]-1 if i >= 61 else np.nan
-                        vol20 = np.nanstd(lr[i-19:i+1])
-                        vol120 = np.nanstd(lr[max(1,i-119):i+1])
-                        rng = c[i-60:i].max()/c[i-60:i].min()-1
-                        r5 = c[i]/c[i-5]-1
-                        rows.append(dict(coin=coin, w=w, day=ts.iloc[i].normalize(),
-                            fwd=c[i+H]/c[i]-1, fwd5=c[i+5]/c[i]-1 if i+5<n else np.nan,
-                            r60=r60, dist=c[i]/pm-1, volratio=vol20/vol120, rng60=rng,
-                            r1=lr[i], r5=r5, wd=ts.iloc[i].weekday(),
-                            fc=b["forecast"].iloc[i]))
-                        break
-    cs = pd.DataFrame(rows)
-    gd = pd.DataFrame(grid, columns=["coin","w","r"])
-    drift = gd.groupby("coin")["r"].mean(); sd = gd.groupby("coin")["r"].std()
-    cs["ex"] = cs["fwd"] - cs["coin"].map(drift)
-    cs["exz"] = cs["ex"]/cs["coin"].map(sd)
+    bars = data["bars"]
     out = {}
-    out["n_cases"] = len(cs)
-    def q(col, k=4):
-        d = cs.dropna(subset=[col]).copy()
-        d["q"] = pd.qcut(d[col].rank(method="first"), k, labels=False)
-        return d.groupby("q").agg(n=("ex","size"), lo=(col,"min"), hi=(col,"max"),
-                                  ex=("ex","mean"), exz=("exz","mean"), hit=("fwd", lambda x:(x>0).mean()))
-    for col in ["r60","dist","volratio","rng60","r1","r5"]:
-        out["by_"+col] = q(col)
-        d = cs.dropna(subset=[col])
-        r, p = stats.spearmanr(d[col], d["ex"])
-        out["spear_"+col] = f"rho {r:.3f} p {p:.3f} n {len(d)}"
-    out["by_coin"] = cs.groupby("coin").agg(n=("ex","size"), ex=("ex","mean"), t=("ex", lambda x: x.mean()/(x.std()/np.sqrt(len(x)))))
-    out["by_window"] = cs.groupby("w").agg(n=("ex","size"), ex=("ex","mean"))
-    # non-breakout baseline: grid return after big 20d move
-    big = []
-    for coin, wins in bars.items():
-        for w, b in wins.items():
-            c = b["close"].astype(float).values; n=len(c)
-            for i in range(20, n-H, H):
-                big.append((coin, c[i]/c[i-20]-1, c[i+H]/c[i]-1 - drift[coin], c[i]/c[max(0,i-60):i].max()-1))
-    bg = pd.DataFrame(big, columns=["coin","past20","ex","fromhigh"])
-    bg["q"] = pd.qcut(bg["past20"].rank(method="first"), 5, labels=False)
-    out["grid_by_past20"] = bg.groupby("q").agg(n=("ex","size"), lo=("past20","min"), hi=("past20","max"), ex=("ex","mean"), t=("ex", lambda x: x.mean()/(x.std()/np.sqrt(len(x)))))
-    bg["q2"] = pd.qcut(bg["fromhigh"].rank(method="first"), 5, labels=False)
-    out["grid_by_fromhigh60"] = bg.groupby("q2").agg(n=("ex","size"), lo=("fromhigh","min"), hi=("fromhigh","max"), ex=("ex","mean"), t=("ex", lambda x: x.mean()/(x.std()/np.sqrt(len(x)))))
-    # book days
-    dd = []
-    for coin, wins in days.items():
-        for w, d in wins.items():
-            x = d.copy(); x["coin"]=coin; x["w"]=w; dd.append(x)
-    dd = pd.concat(dd)
-    dd["wd"] = pd.to_datetime(dd["day"]).dt.weekday
-    dd["yr"] = pd.to_datetime(dd["day"]).dt.year
-    out["book_by_year"] = dd.groupby("yr").agg(book=("book_return","mean"), coin=("coin_return","mean"))
-    out["coin_by_weekday"] = dd.groupby("wd")["coin_return"].agg(["mean","count", lambda x: x.mean()/(x.std()/np.sqrt(x.count()))])
-    # top book days share
-    br = dd.dropna(subset=["book_return"])
-    br = br[br.book_return != 0]
-    s = br.book_return.sort_values()
-    out["book_tail"] = pd.Series({"n_active_days": len(s), "sum_all": s.sum(), "sum_top10": s.iloc[-10:].sum(), "sum_bottom10": s.iloc[:10].sum()})
+    H = 20
+    # coin mean 20d return over all windows (non-overlapping)
+    coin_mean = {}; coin_sd = {}
+    for c in bars:
+        rs = []
+        for w, df in bars[c].items():
+            cl = df["close"].values
+            for i in range(0, len(cl) - H, H):
+                rs.append(cl[i + H] / cl[i] - 1)
+        coin_mean[c] = np.mean(rs); coin_sd[c] = np.std(rs, ddof=1)
+    rows = []
+    for c in bars:
+        for w, df in bars[c].items():
+            cl = df["close"].reset_index(drop=True)
+            n = len(cl)
+            prior_max = cl.shift(1).rolling(60).max()
+            prior_min = cl.shift(1).rolling(60).min()
+            r60 = cl.shift(1) / cl.shift(61) - 1
+            r1 = cl / cl.shift(1) - 1
+            vol20 = r1.rolling(20).std()
+            vol120 = r1.rolling(120).std()
+            r5 = cl / cl.shift(5) - 1
+            r20p = cl / cl.shift(20) - 1
+            dist_hi = cl / prior_max - 1
+            dist_lo = cl / prior_min - 1
+            rng = prior_max / prior_min - 1
+            ts = pd.to_datetime(df["timestamp"]).reset_index(drop=True)
+            fc = df["forecast"].reset_index(drop=True)
+            for i in range(0, n - H, H):
+                # all-bar grid sample
+                rows.append(dict(coin=c, w=w, kind="grid", i=i, fwd=cl[i + H] / cl[i] - 1,
+                                 r60=r60[i], r20=r20p[i], r5=r5[i], vol20=vol20[i], vol120=vol120[i],
+                                 dhi=dist_hi[i], dlo=dist_lo[i], rng=rng[i], wd=ts[i].dayofweek, yr=ts[i].year,
+                                 fc=fc[i]))
+            # breakout cases: first breakout in each grid cell
+            for g in range(0, n - H, H):
+                for i in range(g, min(g + H, n - H)):
+                    if not np.isnan(prior_max[i]) and cl[i] > prior_max[i]:
+                        rows.append(dict(coin=c, w=w, kind="up", i=i, fwd=cl[i + H] / cl[i] - 1,
+                                         r60=r60[i], r20=r20p[i], r5=r5[i], vol20=vol20[i], vol120=vol120[i],
+                                         dhi=dist_hi[i], dlo=dist_lo[i], rng=rng[i], wd=ts[i].dayofweek,
+                                         yr=ts[i].year, fc=fc[i]))
+                        break
+                for i in range(g, min(g + H, n - H)):
+                    if not np.isnan(prior_min[i]) and cl[i] < prior_min[i]:
+                        rows.append(dict(coin=c, w=w, kind="dn", i=i, fwd=cl[i + H] / cl[i] - 1,
+                                         r60=r60[i], r20=r20p[i], r5=r5[i], vol20=vol20[i], vol120=vol120[i],
+                                         dhi=dist_hi[i], dlo=dist_lo[i], rng=rng[i], wd=ts[i].dayofweek,
+                                         yr=ts[i].year, fc=fc[i]))
+                        break
+    d = pd.DataFrame(rows)
+    d["ex"] = d["fwd"] - d["coin"].map(coin_mean)
+    d["z"] = d["ex"] / d["coin"].map(coin_sd)
+    def summ(g):
+        return pd.Series(dict(n=len(g), mean_ex=g["ex"].mean(), t=stats.ttest_1samp(g["ex"].dropna(), 0).statistic if len(g) > 2 else np.nan,
+                              hit=(g["fwd"] > 0).mean()))
+    out["by_kind"] = d.groupby("kind").apply(summ)
+    out["kind_by_coin"] = d.groupby(["kind", "coin"]).apply(summ)
+    out["kind_by_year"] = d.groupby(["kind", "yr"]).apply(summ)
+    up = d[d.kind == "up"].dropna(subset=["r60"])
+    up["q_r60"] = pd.qcut(up["r60"], 4, labels=False)
+    out["up_by_r60_q"] = up.groupby("q_r60").apply(summ)
+    up["q_dhi"] = pd.qcut(up["dhi"], 4, labels=False, duplicates="drop")
+    out["up_by_breakdist_q"] = up.groupby("q_dhi").apply(summ)
+    up["q_rng"] = pd.qcut(up["rng"], 4, labels=False)
+    out["up_by_range_width_q"] = up.groupby("q_rng").apply(summ)
+    up["vr"] = up["vol20"] / up["vol120"]
+    up["q_vr"] = pd.qcut(up["vr"], 4, labels=False)
+    out["up_by_volratio_q"] = up.groupby("q_vr").apply(summ)
+    dn = d[d.kind == "dn"].dropna(subset=["r60"])
+    dn["q_r60"] = pd.qcut(dn["r60"], 4, labels=False)
+    out["dn_by_r60_q"] = dn.groupby("q_r60").apply(summ)
+    gr = d[d.kind == "grid"].dropna(subset=["r60", "vol20", "dhi"])
+    for col in ["r60", "r20", "r5", "dhi", "dlo", "vol20", "rng"]:
+        gr["q"] = pd.qcut(gr[col], 5, labels=False, duplicates="drop")
+        out["grid_by_" + col] = gr.groupby("q").apply(summ)
+    out["grid_by_weekday"] = gr.groupby("wd").apply(summ)
     return out

@@ -1,57 +1,73 @@
+import numpy as np, pandas as pd
+from scipy import stats
+
 def explore(data):
-    import numpy as np, pandas as pd
-    from scipy import stats
+    bars = data["bars"]
+    H = 20
     rows = []
-    allret = {}
-    for coin, wins in data["bars"].items():
+    drift = {}
+    for coin, wins in bars.items():
+        rets = []
         for w, df in wins.items():
-            c = df["close"].astype(float).reset_index(drop=True)
+            c = df["close"].values
+            for i in range(0, len(c) - H, H):
+                rets.append(c[i + H] / c[i] - 1)
+        drift[coin] = (np.mean(rets), np.std(rets, ddof=1))
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            c = df["close"].values
+            wt = df["debug_info.components.brk_runup.last_history_value"].values
             n = len(c)
-            for h in (5, 10, 20, 40):
-                idx = np.arange(0, n - h, h)
-                if len(idx):
-                    allret.setdefault((coin, h), []).extend(list(c.values[idx + h] / c.values[idx] - 1))
-            prevmax = c.shift(1).rolling(60).max()
-            r60 = c.shift(1) / c.shift(61) - 1
-            m = r60.abs().rolling(120, min_periods=60).mean()
-            vol20 = np.log(c).diff().rolling(20).std()
-            dist = (c / prevmax - 1)
-            brk = c > prevmax
             seen = set()
-            for t in range(n):
-                if not brk.iloc[t] or t + 40 >= n:
-                    continue
-                cell = t // 20
-                if cell in seen:
-                    continue
-                seen.add(cell)
-                d = {"coin": coin, "w": w, "year": pd.Timestamp(df["timestamp"].iloc[t]).year,
-                     "day": str(pd.Timestamp(df["timestamp"].iloc[t]).date()),
-                     "r60": r60.iloc[t], "m": m.iloc[t], "dist": dist.iloc[t],
-                     "distv": dist.iloc[t] / vol20.iloc[t] if vol20.iloc[t] > 0 else np.nan,
-                     "wgt": max(0, 1 - r60.iloc[t] / m.iloc[t]) if m.iloc[t] > 0 else np.nan}
-                for h in (5, 10, 20, 40):
-                    d[f"f{h}"] = c.iloc[t + h] / c.iloc[t] - 1
-                rows.append(d)
-    X = pd.DataFrame(rows)
-    for h in (5, 10, 20, 40):
-        X[f"e{h}"] = X[f"f{h}"] - X["coin"].map(lambda k: np.mean(allret[(k, h)]))
-    X["r60m"] = X["r60"] / X["m"]
+            for t in range(60, n):
+                if c[t] > c[t - 60:t].max():
+                    cell = t // H
+                    if cell in seen:
+                        continue
+                    seen.add(cell)
+                    R = c[t - 1] / c[t - 61] - 1 if t >= 61 else np.nan
+                    rec = dict(coin=coin, w=w, t=t, day=str(df["timestamp"].iloc[t])[:10],
+                               year=str(df["timestamp"].iloc[t])[:4], wt=wt[t], R=R,
+                               brk=c[t] / c[t - 60:t].max() - 1)
+                    for h in (5, 10, 20, 40):
+                        rec[f"f{h}"] = c[t + h] / c[t] - 1 - drift[coin][0] * h / 20 if t + h < n else np.nan
+                    rows.append(rec)
+    d = pd.DataFrame(rows)
     out = {}
-    out["n"] = len(X)
+    out["n_cases"] = len(d)
+    out["n_with_f20"] = int(d["f20"].notna().sum())
+    dd = d.dropna(subset=["f20"])
+    # slope of f20 on weight
     def slope_t(x, y):
-        ok = ~(np.isnan(x) | np.isnan(y))
-        r = stats.linregress(x[ok], y[ok]); return pd.Series({"slope": r.slope, "t": r.slope / r.stderr, "n": ok.sum()})
-    tab = {}
+        m = pd.notna(x) & pd.notna(y)
+        if m.sum() < 5: return (np.nan, np.nan, int(m.sum()))
+        r = stats.linregress(x[m], y[m])
+        return (r.slope, r.slope / r.stderr, int(m.sum()))
+    res = {}
     for h in (5, 10, 20, 40):
-        for v in ("wgt", "r60m", "r60", "dist", "distv"):
-            tab[f"e{h}~{v}"] = slope_t(X[v].values, X[f"e{h}"].values)
-        e = X[f"e{h}"]; tab[f"e{h}_mean"] = pd.Series({"slope": e.mean(), "t": e.mean() / e.std() * np.sqrt(len(e)), "n": len(e)})
-    out["slopes"] = pd.DataFrame(tab).T
-    X["q"] = pd.qcut(X["r60m"], 4, labels=["q1low", "q2", "q3", "q4high"])
-    out["by_runup_q"] = X.groupby("q")[["e5", "e10", "e20", "e40", "r60m"]].agg(["mean", "count"]).iloc[:, [0, 2, 4, 6, 8, 9]]
-    X["dq"] = pd.qcut(X["distv"], 4, labels=["d1", "d2", "d3", "d4"])
-    out["by_dist_q"] = X.groupby("dq")[["e10", "e20", "e40", "distv"]].mean()
-    out["by_coin"] = X.groupby("coin")["e20"].agg(["mean", "count"])
-    out["by_year"] = X.groupby("year")["e20"].agg(["mean", "count"])
+        s = slope_t(d["wt"], d[f"f{h}"])
+        s2 = slope_t(d["R"], d[f"f{h}"])
+        s3 = slope_t(d["brk"], d[f"f{h}"])
+        y = d[f"f{h}"].dropna()
+        res[h] = dict(slope_wt=s[0], t_wt=s[1], slope_R=s2[0], t_R=s2[1],
+                      slope_brk=s3[0], t_brk=s3[1], mean_excess=y.mean(),
+                      t_mean=y.mean() / (y.std(ddof=1) / np.sqrt(len(y))), n=len(y))
+    out["by_horizon"] = pd.DataFrame(res).T
+    dd = dd.copy()
+    dd["wgrp"] = np.where(dd["wt"] > 0, "wt>0", "wt=0")
+    try:
+        dd["Rq"] = pd.qcut(dd["R"], 4, labels=["q1low", "q2", "q3", "q4high"])
+    except Exception:
+        dd["Rq"] = "na"
+    agg = lambda g: pd.Series(dict(n=len(g), mean20=g["f20"].mean(),
+                                    t=g["f20"].mean() / (g["f20"].std(ddof=1) / np.sqrt(len(g))) if len(g) > 1 else np.nan,
+                                    hit=(g["f20"] > 0).mean(), meanR=g["R"].mean(), mean_wt=g["wt"].mean()))
+    out["by_wgrp"] = dd.groupby("wgrp").apply(agg)
+    out["by_Rquart"] = dd.groupby("Rq").apply(agg)
+    out["by_coin"] = dd.groupby(["coin", "wgrp"]).apply(agg)
+    out["by_year"] = dd.groupby(["year", "wgrp"]).apply(agg)
+    dd["bq"] = pd.qcut(dd["brk"], 3, labels=["small", "mid", "large"])
+    out["by_breaksize"] = dd.groupby("bq").apply(agg)
+    out["wt_stats"] = dd["wt"].describe()
+    out["corr_wt_R"] = float(dd[["wt", "R"]].corr().iloc[0, 1])
     return out
