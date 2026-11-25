@@ -1,0 +1,1 @@
+030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b2_heavy-low-close-next-day-rebound.d1_heavy-volume-bottom-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00044563; OLS t of slope 1.39234; heavy-volume days 1928, lowest-quarter days 414, other heavy-volume days 1514]
