@@ -203,3 +203,4 @@ night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts
 night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
 night7_panic_run | 037-01_falling-market-wide-day-decline_1d | RangeInReturnStdComponent | built: RangeInReturnStdComponent {"vol_period": 30}
 night7_panic_run | 041-01_wide-up-day-next-day-fade_1d | RangeInUsualMovesComponent | exists: RangeInReturnStdComponent {"vol_period": 30}
+night7_panic_run | 036-02_range-scaled-rally-continuation_1d | RangeScaledReturnComponent | built: MeanAbsScaledReturnComponent {"base": "mean_relative_range", "period": 3, "window": 30}

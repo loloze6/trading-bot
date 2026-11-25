@@ -5791,22 +5791,31 @@ class HighProximityScaledReturnComponent(SubStrategyComponent):
 
 class MeanAbsScaledReturnComponent(SubStrategyComponent):
     """
-    The period-bar return in multiples of the coin's usual period-bar move, on every bar:
+    A period-bar simple return counted in usual moves, on every bar:
 
-        r(i) = close[i] / close[i - period] - 1
-        m    = mean(abs(r(i)) for i = t - window + 1 .. t)       (overlapping returns, bar t included)
-        raw_value = r(t) / m        (0.0 when m = 0)
+        R = close[t] / close[t - period] - 1
+        base = "mean_abs_return" (default):
+            m = mean over i = t-window+1 .. t of abs(close[i] / close[i - period] - 1)
+                (the overlapping period-bar returns ending at each of the last window bars, bar t included)
+        base = "mean_relative_range":
+            m = mean over i = t-window+1 .. t of (high[i] - low[i]) / close[i]   (bar t included)
+        raw_value = R / m, and 0.0 when m = 0
 
-    Graded and signed like the period-bar return: negative after a fall, more negative the deeper the fall in
-    usual moves; positive after a rise. Its size is at most `window`, because r(t) is one of the averaged returns.
-    Warm-up: window + period rows, bar t included (the oldest return needs close[t - window + 1 - period]).
+    The default base is the original output, unchanged. With period 3, window 30 and base "mean_relative_range"
+    on 1d bars it is the 3-day return in multiples of the 30-day mean daily range (as a fraction of the close).
+    Range and sign: unbounded in practice, signed like the period-bar return, 0 for a flat move. With
+    "mean_abs_return" its size is at most window.
+    Warm-up: window + period rows ("mean_abs_return"), max(window, period + 1) rows ("mean_relative_range"),
+    bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + period rows of data, the last
-    row being bar t; a bar's close is known at that bar's close.
+    NaN: "mean_abs_return": a NaN close, or a close not above 0, in the last window + period rows gives NaN.
+    "mean_relative_range": a NaN close, high or low in the last window rows, or a NaN close[t - period], gives
+    NaN, and so does a close not above 0 among those read (never on real bars). m = 0 gives 0.0.
+    Building raises for period < 1, window < 1, or a base other than "mean_abs_return" or "mean_relative_range".
 
-    NaN: a NaN close in the last window + period rows gives NaN, and so does a close not above 0 there (never on
-    real bars). m = 0 (every return flat, never on real bars) gives 0.0; the return is then 0 as well.
-    Building the component raises for a period below 1 or a window below 1.
+    WHY THIS CANNOT LEAK: it reads only the close (and, with "mean_relative_range", the high and low) of rows up
+    to and including bar t, the last row of data: at most the last window + period rows ("mean_abs_return") or
+    the last max(window, period + 1) rows ("mean_relative_range"). Every value is known at bar t's close.
     """
 
     def __init__(self, name="MeanAbsScaledReturn", weight=1.0, parameters=None):
@@ -5817,6 +5826,11 @@ class MeanAbsScaledReturnComponent(SubStrategyComponent):
         self.window = int(self.parameters.get("window", 720))
         if self.window < 1:
             raise ValueError(f"MeanAbsScaledReturnComponent: window must be >= 1, got {self.window}")
+        self.base = self.parameters.get("base", "mean_abs_return")
+        if self.base not in ("mean_abs_return", "mean_relative_range"):
+            raise ValueError(
+                "MeanAbsScaledReturnComponent: base must be 'mean_abs_return' or 'mean_relative_range', "
+                f"got {self.base!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -5825,23 +5839,46 @@ class MeanAbsScaledReturnComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.get_required_periods()
-        c = data['close'].astype(float).to_numpy()[-n:]
-        if np.isnan(c).any() or not (c > 0).all():
+        p = self.period
+        w = self.window
+        c = data["close"].astype(float).to_numpy()
+        n = len(c)
+        t = n - 1
+        if self.base == "mean_abs_return":
+            seg = c[n - w - p:]
+            if np.isnan(seg).any() or not (seg > 0).all():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            rets = np.abs(seg[p:] / seg[:-p] - 1.0)
+            m = float(np.mean(rets))
+        else:
+            h = data["high"].astype(float).to_numpy()[n - w:]
+            lo = data["low"].astype(float).to_numpy()[n - w:]
+            cw = c[n - w:]
+            cb = c[t - p]
+            if (np.isnan(h).any() or np.isnan(lo).any() or np.isnan(cw).any() or np.isnan(cb)
+                    or not (cw > 0).all() or not cb > 0):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            m = float(np.mean((h - lo) / cw))
+        r = float(c[t] / c[t - p] - 1.0)
+        if np.isnan(r):
             self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        r = c[self.period:] / c[:-self.period] - 1.0
-        m = float(np.mean(np.abs(r)))
-        ret = float(r[-1])
-        self._raw_value = float(ret / m) if m > 0 else 0.0
+        elif m == 0:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(r / m)
         self.confidence = 1.0
-        self.debug_info = {'return': ret, 'mean_abs_return': m}
+        self.debug_info = {"return": r, "usual_move": m, "base": self.base}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
+        if self.base == "mean_relative_range":
+            return max(self.window, self.period + 1)
         return self.window + self.period
 
 

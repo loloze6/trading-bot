@@ -1,34 +1,43 @@
-# MeanAbsScaledReturnComponent: night3_1h_run | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h | DropInMeanAbsDailyMoves
+# MeanAbsScaledReturnComponent: night7_panic_run | 036-02_range-scaled-rally-continuation_1d | RangeScaledReturnComponent
 
 ## attempt 1
 
 answer: built
 class: MeanAbsScaledReturnComponent
-settings: {"period": 24, "window": 720}
-reason: No component gives the signed `period`-bar return divided by the mean absolute overlapping `period`-bar return. `VolatilityScaledReturnComponent` divides by a standard deviation, `MeanAbsScaledFallTimesRiseComponent` clips the return and multiplies it by a rise, and `HighProximityScaledReturnComponent` always weights it by a nearness to the high (`power` must be above 0), so a new class computes this ratio.
+settings: {"period": 3, "window": 30, "base": "mean_relative_range"}
+reason: The wished measure is a `period`-bar return counted in usual moves, which `MeanAbsScaledReturnComponent` already computes. The only difference is the base: the mean of the bar range over the close instead of the mean absolute `period`-bar return. Under rule 1 that is the same measure with another base, so I rewrote that class with a new `base` setting whose default ("mean_abs_return") keeps today's output exactly.
 
 table: Directional components
-row: | `MeanAbsScaledReturnComponent` | `period` (24), `window` (720) | (close[t] / close[t-`period`] - 1) / m, m = mean over i = t-`window`+1 .. t of abs(close[i] / close[i-`period`] - 1), the overlapping `period`-bar simple returns ending at each of the last `window` bars, bar t included; 0 when m = 0 | unbounded in practice, signed like the `period`-bar return; its size is at most `window` (today's return is one of the `window` returns averaged in m); about -1 for a fall of one usual move, -3 for a fall of three | graded | usual `period`-bar moves | `window` + `period` (744) | closes only. A NaN close in the last `window` + `period` rows gives NaN; a close not above 0 there gives NaN (never on real bars). m = 0 gives 0 (never on real bars; the return is then 0 too). These settings raise when the component is built: `period` < 1, `window` < 1 | stateless. Equals `PriceEvolutionOnPeriodComponent` (`comparison_period` = `period`) / 100 divided by `MeanAbsReturnComponent` (`period`, `window`). On 1h bars the defaults give the 24h return in multiples of the 30-day mean absolute daily return. `negate` gives the fall-positive reading. No `scaling_factor`: scale it with transforms |
+row: | `MeanAbsScaledReturnComponent` | `period` (24), `window` (720), `base` ("mean_abs_return") | (close[t] / close[t-`period`] - 1) / m. `base` "mean_abs_return": m = mean over i = t-`window`+1 .. t of abs(close[i] / close[i-`period`] - 1), the overlapping `period`-bar simple returns ending at each of the last `window` bars, bar t included. `base` "mean_relative_range": m = mean over i = t-`window`+1 .. t of (high[i] - low[i]) / close[i], bar t included. 0 when m = 0. With `period` 3, `window` 30 and "mean_relative_range": the 3-bar return over the 30-bar mean of the bar range as a fraction of its close | unbounded in practice, signed like the `period`-bar return; 0 for a flat move. "mean_abs_return": its size is at most `window` (today's return is one of the `window` returns averaged in m), about -1 for a fall of one usual move. "mean_relative_range": its size grows as the move gets larger against the usual bar range, unbounded above | graded | "mean_abs_return": usual `period`-bar moves. "mean_relative_range": mean bar ranges (as a fraction of the close) | `window` + `period` (744) with "mean_abs_return"; max(`window`, `period` + 1) with "mean_relative_range" (30 at the wished settings) | "mean_abs_return": closes only; a NaN close in the last `window` + `period` rows gives NaN, and so does a close not above 0 there (never on real bars). "mean_relative_range": close (bars t-`window`+1 .. t and bar t-`period`), high and low (last `window` rows); a NaN in any of those gives NaN, and so does a close not above 0 among them (never on real bars). m = 0 gives 0 (never on real bars). These settings raise when the component is built: `period` < 1, `window` < 1, `base` other than "mean_abs_return" or "mean_relative_range" | stateless. `base` "mean_abs_return" (default) is the original output, unchanged. "mean_relative_range" counts the move in usual daily ranges (high − low over the close) rather than in usual `period`-bar moves, and no config step divides by a window's mean range, hence the setting. With "mean_relative_range" the value is continuous in the prices. On 1d bars, `period` 3, `window` 30 and "mean_relative_range" give the 3-day return in multiples of the 30-day mean daily range. `negate` gives the fall-positive reading. No `scaling_factor`: scale it with transforms |
 
 ```python class
 class MeanAbsScaledReturnComponent(SubStrategyComponent):
     """
-    The period-bar return in multiples of the coin's usual period-bar move, on every bar:
+    A period-bar simple return counted in usual moves, on every bar:
 
-        r(i) = close[i] / close[i - period] - 1
-        m    = mean(abs(r(i)) for i = t - window + 1 .. t)       (overlapping returns, bar t included)
-        raw_value = r(t) / m        (0.0 when m = 0)
+        R = close[t] / close[t - period] - 1
+        base = "mean_abs_return" (default):
+            m = mean over i = t-window+1 .. t of abs(close[i] / close[i - period] - 1)
+                (the overlapping period-bar returns ending at each of the last window bars, bar t included)
+        base = "mean_relative_range":
+            m = mean over i = t-window+1 .. t of (high[i] - low[i]) / close[i]   (bar t included)
+        raw_value = R / m, and 0.0 when m = 0
 
-    Graded and signed like the period-bar return: negative after a fall, more negative the deeper the fall in
-    usual moves; positive after a rise. Its size is at most `window`, because r(t) is one of the averaged returns.
-    Warm-up: window + period rows, bar t included (the oldest return needs close[t - window + 1 - period]).
+    The default base is the original output, unchanged. With period 3, window 30 and base "mean_relative_range"
+    on 1d bars it is the 3-day return in multiples of the 30-day mean daily range (as a fraction of the close).
+    Range and sign: unbounded in practice, signed like the period-bar return, 0 for a flat move. With
+    "mean_abs_return" its size is at most window.
+    Warm-up: window + period rows ("mean_abs_return"), max(window, period + 1) rows ("mean_relative_range"),
+    bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + period rows of data, the last
-    row being bar t; a bar's close is known at that bar's close.
+    NaN: "mean_abs_return": a NaN close, or a close not above 0, in the last window + period rows gives NaN.
+    "mean_relative_range": a NaN close, high or low in the last window rows, or a NaN close[t - period], gives
+    NaN, and so does a close not above 0 among those read (never on real bars). m = 0 gives 0.0.
+    Building raises for period < 1, window < 1, or a base other than "mean_abs_return" or "mean_relative_range".
 
-    NaN: a NaN close in the last window + period rows gives NaN, and so does a close not above 0 there (never on
-    real bars). m = 0 (every return flat, never on real bars) gives 0.0; the return is then 0 as well.
-    Building the component raises for a period below 1 or a window below 1.
+    WHY THIS CANNOT LEAK: it reads only the close (and, with "mean_relative_range", the high and low) of rows up
+    to and including bar t, the last row of data: at most the last window + period rows ("mean_abs_return") or
+    the last max(window, period + 1) rows ("mean_relative_range"). Every value is known at bar t's close.
     """
 
     def __init__(self, name="MeanAbsScaledReturn", weight=1.0, parameters=None):
@@ -39,6 +48,11 @@ class MeanAbsScaledReturnComponent(SubStrategyComponent):
         self.window = int(self.parameters.get("window", 720))
         if self.window < 1:
             raise ValueError(f"MeanAbsScaledReturnComponent: window must be >= 1, got {self.window}")
+        self.base = self.parameters.get("base", "mean_abs_return")
+        if self.base not in ("mean_abs_return", "mean_relative_range"):
+            raise ValueError(
+                "MeanAbsScaledReturnComponent: base must be 'mean_abs_return' or 'mean_relative_range', "
+                f"got {self.base!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -47,23 +61,46 @@ class MeanAbsScaledReturnComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.get_required_periods()
-        c = data['close'].astype(float).to_numpy()[-n:]
-        if np.isnan(c).any() or not (c > 0).all():
+        p = self.period
+        w = self.window
+        c = data["close"].astype(float).to_numpy()
+        n = len(c)
+        t = n - 1
+        if self.base == "mean_abs_return":
+            seg = c[n - w - p:]
+            if np.isnan(seg).any() or not (seg > 0).all():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            rets = np.abs(seg[p:] / seg[:-p] - 1.0)
+            m = float(np.mean(rets))
+        else:
+            h = data["high"].astype(float).to_numpy()[n - w:]
+            lo = data["low"].astype(float).to_numpy()[n - w:]
+            cw = c[n - w:]
+            cb = c[t - p]
+            if (np.isnan(h).any() or np.isnan(lo).any() or np.isnan(cw).any() or np.isnan(cb)
+                    or not (cw > 0).all() or not cb > 0):
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            m = float(np.mean((h - lo) / cw))
+        r = float(c[t] / c[t - p] - 1.0)
+        if np.isnan(r):
             self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        r = c[self.period:] / c[:-self.period] - 1.0
-        m = float(np.mean(np.abs(r)))
-        ret = float(r[-1])
-        self._raw_value = float(ret / m) if m > 0 else 0.0
+        elif m == 0:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(r / m)
         self.confidence = 1.0
-        self.debug_info = {'return': ret, 'mean_abs_return': m}
+        self.debug_info = {"return": r, "usual_move": m, "base": self.base}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
+        if self.base == "mean_relative_range":
+            return max(self.window, self.period + 1)
         return self.window + self.period
 ```
 
@@ -71,28 +108,38 @@ class MeanAbsScaledReturnComponent(SubStrategyComponent):
 def hand(df, params):
     p = int(params.get("period", 24))
     w = int(params.get("window", 720))
+    base = params.get("base", "mean_abs_return")
     c = [float(x) for x in list(df["close"])]
-    last = len(c) - 1
-    first = last - w + 1 - p
-    j = first
-    while j <= last:
-        x = c[j]
-        if x != x or not x > 0:
+    t = len(c) - 1
+
+    def bad(x):
+        return x != x or not x > 0
+
+    if base == "mean_relative_range":
+        h = [float(x) for x in list(df["high"])]
+        lo = [float(x) for x in list(df["low"])]
+        total = 0.0
+        for i in range(t - w + 1, t + 1):
+            if h[i] != h[i] or lo[i] != lo[i] or bad(c[i]):
+                return float("nan")
+            total = total + (h[i] - lo[i]) / c[i]
+        if bad(c[t - p]):
             return float("nan")
-        j = j + 1
-    total = 0.0
-    i = last - w + 1
-    while i <= last:
-        ri = c[i] / c[i - p] - 1.0
-        total = total + (ri if ri >= 0 else -ri)
-        i = i + 1
-    m = total / w
-    ret = c[last] / c[last - p] - 1.0
-    if not m > 0:
+        m = total / w
+    else:
+        for i in range(t - w - p + 1, t + 1):
+            if bad(c[i]):
+                return float("nan")
+        total = 0.0
+        for i in range(t - w + 1, t + 1):
+            total = total + abs(c[i] / c[i - p] - 1.0)
+        m = total / w
+    r = c[t] / c[t - p] - 1.0
+    if m == 0:
         return 0.0
-    return ret / m
+    return r / m
 ```
 
 checks:
 MeanAbsScaledReturnComponent: every check passed
-the bot's suite: ======= 1583 passed, 16 skipped, 75 deselected, 2244 warnings in 58.75s ========
+the bot's suite: == 1658 passed, 16 skipped, 75 deselected, 2244 warnings in 117.53s (0:01:57) ==

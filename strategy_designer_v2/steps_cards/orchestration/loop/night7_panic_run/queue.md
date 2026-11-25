@@ -1,6 +1,6 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 25.45 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 26.22 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
