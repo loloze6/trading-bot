@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned_1d
+idea tested: 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3895 USD
+---
+## Findings
+- **F1:** The effect is real but the forecast does not grade it, which is why the test failed its supporting check. On folds B and C, in-regime position bars earn a next-day excess move of +0.44 % (t 2.85 clustered by day, 3348 cases) against +0.03 % (t 0.22) outside the regime. By |forecast| quintile, though, the cases earn +0.26 %, +0.63 %, +0.50 %, +0.45 % and +0.36 %, and by |scaled 7-day move| quintile they are just as flat (slope t 0.26, 2774 grid cases).
+- **F2:** The test read the idea over 1 day, but it shows more clearly and far larger over 7 days. On non-overlapping grids inside the aligned-chop situation, the excess move is +0.46 % (t 3.01, 2774 cases) over 1 day, +1.06 % (t 2.62, 934) over 3 days and +3.76 % (t 3.07, 344) over 7 days. The 7-day move is about 20 times the 0.19 % cost of a trade, while the 1-day move (+0.14 % per case in step 5) is only 0.7 times that cost.
+- **F3:** Over 7 days the scaled 7-day move does grade the following move: the slope t is 2.11, and the top half minus the bottom half is +1.72 % (Welch t 1.12, 344 cases).
+- **F4:** The 30-day return counted in 30-day daily swings grades the move better than the 7-day move does. Over 1 day its quartiles run -0.00 %, +0.55 %, +0.87 %, +0.44 % (top half minus bottom +0.38 %, Welch t 1.94, against 1.07 for the scaled 7-day move). Over 7 days they run +2.2 %, +3.5 %, +5.4 %, +4.0 %.
+- **F5:** The continuation lives only in chop. On aligned 7-day grid cases, the 7-day excess move is +2.9 % (t 2.44) at efficiency ratio up to 0.15 and +4.6 % (t 2.81) at 0.15 to 0.3. It is -0.75 % (t -0.33) at 0.3 to 0.45 and -2.1 % (t -0.73) at 0.45 to 0.6. Inside chop, the most choppy quartile is the weakest (1 day: +0.006 %, t 0.03).
+- **F6:** Over 7 days the effect is broad but uneven in time. All six coins are positive (+1.9 % to +6.8 %, with LTC at t 3.01 and XRP at t 3.45), and both sides are positive (down +3.2 % t 1.79, up +4.3 % t 2.49). By year, 2020 and 2021 carry most of it (+5.4 % t 2.16, +6.5 % t 2.66), while 2018 and 2019 are weak (+1.7 % t 0.60, +1.0 % t 0.69).
+
+## Ideas
+- `032-01.b1.b1.e2.d1.d1.d1.b1_chop-continuation-over-a-week` (from F2, F3, F5, F6): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, while its 30-day return points the same way as its 7-day move and its past 30 days are choppy; the larger that scaled 7-day move, the larger the following 7-day move.
+- `032-01.b1.b1.e2.d1.d1.d1.b2_chop-month-lean-continuation` (from F1, F2, F4, F5): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, and its 7-day move points the same way as its 30-day return, the coin tends to keep moving that way over the next 7 days; the larger its 30-day return counted in 30-day daily swings, the larger the following move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
