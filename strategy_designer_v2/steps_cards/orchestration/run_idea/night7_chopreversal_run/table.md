@@ -31,13 +31,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 045-02_agitated-wide-high-close-giveback | - | plan | no verdict | not checked | - | 7.g: no ideas: The backtest record for 045-02_agitated-wide-high-close-giveback reached this line with 0 coins, 0 windows, 0 bars, 0 trades and 0 days, so no pattern could be measured and no idea can rest on a finding. The backtest should be re-run or its record reloaded before this line reads it again. | 0.34 | 3.4 |
 | 046-02_calm-scaled-rise-two-day-continues | - | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 046-02.b1_calm-rise-second-day-follow-through; 7.g: 046-02.g2_calm-rise-second-day-follow-through | 1.09 | 5.9 |
 | 044-01_agitated-wide-range-fall-rebound | - | plan | confirmed (+2.16) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-01.g1_falling-agitated-wide-fall-rebound | 2.40 | 7.0 |
+| 048-01_falling-agitated-wide-rise-giveback | - | missing-components | - | - | - | - | 0.08 | 0.5 |
 
 ## Consumption
-27 ideas, 29.60 USD, 173.9 minutes in all.
+28 ideas, 29.68 USD, 174.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.40 | 12.4 |
+| step3_plan | 4.48 | 12.9 |
 | step4_backtest | 0.00 | 67.2 |
 | step5_verdict | 4.26 | 15.5 |
 | step6_check | 0.00 | 0.9 |
