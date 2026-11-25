@@ -15,3 +15,4 @@
 045-01_rising-market-late-week-gain_1d: 0 ideas, 1 discoveries (2 explorations)
 046-01_falling-market-scaled-rise-fade_1d: 2 ideas (2 explorations)
 047-01_falling-agitated-scaled-fall-rebound_1d: 0 ideas, 2 discoveries (3 explorations)
+048-01_scaled-up-week-continuation_1d: no ideas: Every pattern beyond the tested idea is under t 2 once the many angles looked at are counted: the down-week mirror is flat (F1), no profile concentrates the effect (F3), the calm-market asymmetry is not graded (F4), and the bar angles show nothing (F5).

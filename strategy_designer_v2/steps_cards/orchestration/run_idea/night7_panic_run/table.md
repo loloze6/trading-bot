@@ -21,22 +21,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 046-01_falling-market-scaled-rise-fade | - | plan | inconclusive (+1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 046-01.b1_falling-market-rise-fade-more-coins; 7.g: 046-01.g1_scaled-fall-next-day-rebound, 046-01.g2_falling-market-fall-rebound | 0.85 | 4.7 |
 | 032-02_monthly-low-exhaustion-rebound | - | plan | inconclusive (+1.97) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-02.b1_monthly-low-rebound-more-coins; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.89 | 5.9 |
 | 047-01_falling-agitated-scaled-fall-rebound | - | plan | inconclusive (+0.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 047-01.b1_scaled-fall-rebound-more-coins; 7.g: 0 ideas, 2 discoveries (3 explorations) | 1.05 | 5.7 |
+| 048-01_scaled-up-week-continuation | - | plan | confirmed (+3.03) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: Every pattern beyond the tested idea is under t 2 once the many angles looked at are counted: the down-week mirror is flat (F1), no profile concentrates the effect (F3), the calm-market asymmetry is not graded (F4), and the bar angles show nothing (F5). | 0.58 | 4.6 |
 
 ## Consumption
-17 ideas, 18.25 USD, 93.3 minutes in all.
+18 ideas, 18.84 USD, 97.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.03 | 9.2 |
-| step4_backtest | 0.00 | 31.4 |
-| step5_verdict | 2.95 | 11.3 |
+| step3_plan | 3.11 | 9.6 |
+| step4_backtest | 0.00 | 32.9 |
+| step5_verdict | 3.10 | 11.8 |
 | step6_check | 0.00 | 0.6 |
-| chart_files | 0.00 | 0.2 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.53 | 5.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 3.52 | 11.0 |
-| step7_7.g | 7.22 | 23.0 |
-| similarity_check | 0.00 | 0.3 |
-| unseen_test | 0.00 | 0.9 |
+| step7_7.g | 7.58 | 24.1 |
+| similarity_check | 0.00 | 0.4 |
+| unseen_test | 0.00 | 1.8 |

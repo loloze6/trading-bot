@@ -15,3 +15,4 @@
 045-01_rising-market-late-week-gain_1d: profitable enough [Sharpe 1.088; Sharpe minus holding's Sharpe 0.5339; Calmar 0.9671]
 046-01_falling-market-scaled-rise-fade_1d: not profitable enough [Sharpe -0.1005; Sharpe minus holding's Sharpe -0.6547; Calmar -0.08324]
 047-01_falling-agitated-scaled-fall-rebound_1d: not profitable enough [Sharpe 0.5327; Sharpe minus holding's Sharpe -0.03693; Calmar 0.2998]
+048-01_scaled-up-week-continuation_1d: profitable enough [Sharpe 1.115; Sharpe minus holding's Sharpe 0.5611; Calmar 1.152]

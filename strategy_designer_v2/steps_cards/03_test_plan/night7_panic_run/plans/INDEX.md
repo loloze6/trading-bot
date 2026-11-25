@@ -15,3 +15,5 @@
 045-01_rising-market-late-week-gain_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 046-01_falling-market-scaled-rise-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 047-01_falling-agitated-scaled-fall-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+048-01_scaled-up-week-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+049-01_choppy-scaled-five-day-rise-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

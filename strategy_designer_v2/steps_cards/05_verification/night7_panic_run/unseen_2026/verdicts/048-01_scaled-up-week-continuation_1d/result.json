@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess next-3-bar return on forecast (forecast > 0 grid cases, pooled)",
+    "value": 0.0008384080252151363,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 0.7943833365238905
+    },
+    "threshold": "confirm: slope t >= 2 with mean excess return > 0; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return (long) on the same cases",
+    "value": 0.008634296371583215,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 280,
+    "distinct days": 78
+  },
+  "decided_by": "The plan's minimum of 200 grid cases with a positive forecast on at least 100 distinct days is not reached (280 cases on 78 days).",
+  "reading": "The slope is from an OLS of excess return on forecast with an intercept, its t from a day-clustered (CR1) sandwich variance, the normal drift is each coin's mean non-overlapping 3-bar grid return over all its windows, and grid bars without a full 3-bar return inside their window are left out."
+}
