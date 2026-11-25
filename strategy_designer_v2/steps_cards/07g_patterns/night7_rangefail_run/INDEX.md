@@ -25,3 +25,4 @@
 037-01_choppy-swing-scaled-fall-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 038-01_calm-swing-scaled-rise-continues_1d: 4 ideas (2 explorations)
 038-02_calm-swing-scaled-fall-continues_1d: 2 ideas (2 explorations)
+039-01_choppy-swing-scaled-weeks-rise-continues_1d: 1 ideas, 2 discoveries (3 explorations)

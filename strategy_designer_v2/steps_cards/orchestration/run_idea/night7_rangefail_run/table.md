@@ -33,22 +33,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 035-01.b1_calm-market-nearness-to-high | 035-01_nearness-to-high-rises | plan | confirmed (+2.11) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 035-01.b1.g1_choppy-market-distance-from-high, 035-01.b1.g2_calm-breakout-day-size-continuation | 0.71 | 14.0 |
 | 035-03.b1_choppy-far-below-high-falls | 035-03_far-below-high-falls | plan | inconclusive (+2.47) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: Deep-below-high closes in choppy markets do underperform the coin's drift by a similar amount whatever their depth (F1, F2), the effect sits in no profile, horizon, side or set of cases a graded idea could keep (F3, F4, F5), and its total move per case is below the cost of a trade (F2), so no amended idea on the theme is worth testing, and the test already used every fold and coin available.; 7.g: 035-03.b1.g1_breakout-above-high-rises, 035-03.b1.g2_choppy-distance-from-high-gradient | 1.34 | 10.9 |
 | 037-01.b1_choppy-extended-fall-continues | 037-01_choppy-swing-scaled-fall-continues | plan | inconclusive (+1.36) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 037-01.b1.b1_agitated-chop-falls-continue; 7.g: 037-01.b1.g1_choppy-twenty-day-fall-continues | 1.27 | 11.8 |
+| 039-01_choppy-swing-scaled-weeks-rise-continues | - | plan | inconclusive (+1.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 039-01.b1_choppy-calm-swing-continuation; 7.g: 039-01.g3_choppy-few-day-move-carries | 1.30 | 11.3 |
 
 ## Consumption
-29 ideas, 30.55 USD, 243.4 minutes in all.
+30 ideas, 31.86 USD, 254.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.11 | 16.7 |
-| step4_backtest | 0.00 | 131.6 |
-| step5_verdict | 4.98 | 17.8 |
-| step6_check | 0.00 | 1.4 |
+| step3_plan | 5.18 | 17.0 |
+| step4_backtest | 0.00 | 138.9 |
+| step5_verdict | 5.17 | 18.4 |
+| step6_check | 0.00 | 1.5 |
 | chart_files | 0.00 | 0.6 |
 | step7_7.d | 1.48 | 5.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.7 |
-| step7_7.b | 6.59 | 19.3 |
-| step7_7.g | 11.71 | 34.7 |
+| step7_7.b | 6.96 | 20.2 |
+| step7_7.g | 12.39 | 36.8 |
 | similarity_check | 0.00 | 0.7 |
 | unseen_test | 0.00 | 13.8 |

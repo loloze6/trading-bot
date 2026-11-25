@@ -1,0 +1,54 @@
+## pooled slopes
+z20 choppy                slope 0.0612 t 1.84 days 143
+z20 nonchoppy             slope 0.0091 t 1.29 days 254
+z20 all                   slope 0.0128 t 1.74 days 256
+r1z all                   slope 0.0098 t 1.23 days 243
+r1z choppy                slope 0.1125 t 3.63 days 134
+r1z nonchoppy             slope 0.0079 t 1.04 days 241
+fc choppy                 slope 0.0059 t 2.24 days 143
+z20 choppy <date>       slope -0.0142 t -1.07 days 69
+z20 choppy <date>         slope 0.1066 t 1.75 days 74
+z20 nonchoppy <date>     slope 0.0020 t 0.20 days 135
+z20 nonchoppy <date>     slope 0.0071 t 0.62 days 119
+
+## choppy: sign(forecast)==sign(z20) share
+1.0
+
+## choppy directional
+by z20 sign         dir ex 0.0291 t 1.99 days 143 n 346
+by forecast sign    dir ex 0.0291 t 1.99 days 143 n 346
+z20 side -1                dir ex 0.0337 t 2.42 days 90
+fc side -1                 dir ex 0.0337 t 2.42 days 90
+z20 side 1                 dir ex 0.0240 t 0.89 days 82
+fc side 1                  dir ex 0.0240 t 0.89 days 82
+
+## one-day move tails
+r1z top20% all           ex 0.0275 t 1.76 days 116 n 383
+r1z bot20% all          ex -0.0057 t -0.48 days 99 n 383
+r1z top20% nonchoppy     ex 0.0162 t 1.42 days 105 n 310
+r1z top20% choppy          ex 0.0755 t 1.35 days 49 n 73
+
+## weekday pooled
+0      ex 0.0149 t 0.97 days 37
+1      ex 0.0223 t 1.05 days 38
+2    ex -0.0293 t -1.88 days 35
+3    ex -0.0056 t -0.38 days 35
+4      ex 0.0110 t 0.66 days 37
+5    ex -0.0307 t -1.85 days 37
+6      ex 0.0314 t 1.27 days 37
+
+## nonchoppy z20 quint pooled
+0      z -1.41 ex 0.0059 t 0.32 days 102
+1    z -0.57 ex -0.0193 t -1.92 days 133
+2       z 0.02 ex 0.0028 t 0.35 days 142
+3       z 0.63 ex 0.0101 t 1.17 days 127
+4       z 1.49 ex 0.0218 t 1.63 days 102
+
+## book gain by alloc side x z20 sign
+            size     mean      sum
+aside zs                          
+-1.0  -1.0  1835  0.00044  0.80848
+       0.0     1 -0.00448 -0.00448
+       1.0   467 -0.00190 -0.88942
+ 1.0  -1.0   343 -0.00012 -0.04103
+       1.0  1342  0.00304  4.07497
