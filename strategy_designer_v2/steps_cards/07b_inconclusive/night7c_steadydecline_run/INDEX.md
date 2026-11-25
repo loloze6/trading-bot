@@ -1,6 +1,7 @@
 032-01.g1.b1_sharp-fall-rebound-more-coins_1d: 1 ideas (2 explorations)
 032-01.g1_sharp-daily-fall-rebounds_1d: 1 ideas (2 explorations)
 032-01_calm-decline-depth-continues_1d: no ideas: The tested effect is zero (F1) and no part of the data shows it clearly: depth does not grade the outcome (F3), the coins and windows contradict each other (F4), no horizon reaches t 2 (F5), and the quiet-range hint stays below t 2 and disappears when graded (F6). An amended idea would rest on noise.
+032-02.g1.b1_uptrend-near-high-more-coins_1d: 2 ideas (2 explorations)
 032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise_1d: 1 ideas (1 explorations)
 032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: 1 ideas (1 explorations)

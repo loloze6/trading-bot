@@ -1,6 +1,7 @@
 032-01.g1.b1_sharp-fall-rebound-more-coins_1d: not profitable enough [Sharpe 0.08139; Sharpe minus holding's Sharpe -0.5261; Calmar 0.009096]
 032-01.g1_sharp-daily-fall-rebounds_1d: not profitable enough [Sharpe 0.06241; Sharpe minus holding's Sharpe -0.4918; Calmar -0.002665]
 032-01_calm-decline-depth-continues_1d: not profitable enough [Sharpe -0.1806; Sharpe minus holding's Sharpe -0.7526; Calmar -0.0589]
+032-02.g1.b1_uptrend-near-high-more-coins_1d: profitable enough [Sharpe 1.213; Sharpe minus holding's Sharpe 0.6056; Calmar 1.265]
 032-02.g1.e1.e1.e1_unusual-nearness-ten-day-rise_1d: not profitable enough [Sharpe 0.839; Sharpe minus holding's Sharpe 0.2848; Calmar 0.5963]
 032-02.g1.e1.e1.e2_breakout-margin-over-28-day-high_1d: not profitable enough [Sharpe 0; Sharpe minus holding's Sharpe -0.5542; Calmar 0]
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: profitable enough [Sharpe 1.025; Sharpe minus holding's Sharpe 0.4706; Calmar 1.07]
