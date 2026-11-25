@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean signed 5-bar excess return (short side)",
+    "value": 0.0029012154772931056,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day pooled",
+      "value": 0.373080882579132
+    },
+    "threshold": "confirm above 0 with t >= 2 and the supporting check above 0; reject below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller-|forecast| half signed excess return",
+    "value": -0.000460063735563111,
+    "passed": false
+  },
+  "counts": {
+    "grid cases in a position (forecast < 0)": 475,
+    "days": 201
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "The falling calm profile is read from the recorded regime (not 'chop'); halves are split by rank of |forecast| (middle case left out when odd) and compared by their unweighted mean; the day-pooled t sums the weighted deviations per UTC day (cluster-robust, J/(J-1) correction); the plan's 'fewer than 30 grid cases' minimum is reported as not observable."
+}
