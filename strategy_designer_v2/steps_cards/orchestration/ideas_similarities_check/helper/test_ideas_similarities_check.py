@@ -189,20 +189,32 @@ def test_the_held_books_are_the_paying_books_and_the_portfolios(tmp_path):
     assert ISC.held_keys(tmp_path / "none") == set()
 
 
-def test_the_profile_map_places_each_paying_specialist_in_the_profiles_its_idea_names(tmp_path):
-    """Next steps 1q (2026-11-25): per market profile, the paying books whose idea names a profile holding it; the
-    others counted as acting in every profile; confirmed books that do not pay are left out."""
+def test_the_profile_map_places_each_paying_specialist_by_profile_and_side(tmp_path):
+    """Next steps 1q and 1t (2026-11-25): per market profile and side, the paying books whose idea names a profile
+    holding it; a "both" book on each side; the others counted by side as acting in every profile; confirmed books that
+    do not pay are left out."""
     reg = tmp_path / "register"; reg.mkdir()
-    rows = [("r_run", "001-01_fall-rebounds_1d", "paying", "falling agitated"), ("r_run", "002-01_breaks-continue_1d", "paying", "rising"),
-            ("r_run", "003-01_always_1d", "paying", None), ("r_run", "004-01_real-not-paying_1d", "confirmed", "choppy")]
-    (reg / "books.json").write_text(json.dumps([{"key": f"{r}__{i}", "run": r, "id": i, "kind": k} for r, i, k, _ in rows]))
-    for r, i, k, p in rows:
+    rows = [("r_run", "001-01_fall-rebounds_1d", "paying", "falling agitated", "long"), ("r_run", "002-01_breaks-continue_1d", "paying", "rising", "both"),
+            ("r_run", "003-01_always_1d", "paying", None, "short"), ("r_run", "004-01_real-not-paying_1d", "confirmed", "choppy", "long")]
+    (reg / "books.json").write_text(json.dumps([{"key": f"{r}__{i}", "run": r, "id": i, "kind": k, "side": sd} for r, i, k, _, sd in rows]))
+    for r, i, k, p, _ in rows:
         plans = tmp_path / "03_test_plan" / r / "plans"; plans.mkdir(parents=True, exist_ok=True)
         (plans / f"{i}.md").write_text("---\nidea: x\n---\n" + (f"Profile: {p} (the idea): no position outside it, by step 3's code\n" if p else ""))
     pb.write_profile_map(reg, steps=tmp_path)
     t = (reg / "PROFILE_MAP.md").read_text()
-    cell = {l.split("|")[1].strip(): l.split("|")[2].strip() for l in t.splitlines() if l.startswith("| ") and "Market profile" not in l}
-    assert cell == {"rising calm": "1", "rising agitated": "1", "choppy calm": "0", "choppy agitated": "0",
-                    "falling calm": "0", "falling agitated": "1"}
-    assert "001-01 (falling agitated): fall rebounds" in t and "real not paying" not in t
-    assert "acting in every profile (their idea names none): 1." in t
+    cell = {(l.split("|")[1].strip(), l.split("|")[2].strip()): l.split("|")[3].strip() for l in t.splitlines() if l.startswith("| ") and "Market profile" not in l}
+    assert cell[("falling agitated", "long")] == "1" and cell[("falling agitated", "short")] == "0"
+    assert cell[("rising calm", "long")] == cell[("rising calm", "short")] == cell[("rising agitated", "short")] == "1"
+    assert sum(int(v) for v in cell.values()) == 5 and "real not paying" not in t
+    assert "acting in every profile (their idea names none): 0 long, 1 short, 0 on both sides." in t
+
+
+def test_a_book_s_side_from_its_positions(tmp_path):
+    rec = tmp_path / "x_1d"; rec.mkdir()
+    pd.DataFrame({"position": [0.0, 0.5, 0.4] + [0.3] * 17 + [-0.1]}).to_csv(rec / "chart_bars.csv.gz", index=False)
+    assert pb.book_side(rec) == "long"                           # 20 of 21 days long: 95 %
+    pd.DataFrame({"position": [0.5, -0.5, 0.0]}).to_csv(rec / "chart_bars.csv.gz", index=False)
+    assert pb.book_side(rec) == "both"
+    pd.DataFrame({"position": [-0.2, -0.3]}).to_csv(rec / "chart_bars.csv.gz", index=False)
+    assert pb.book_side(rec) == "short"
+    assert pb.book_side(tmp_path / "none_1d") is None

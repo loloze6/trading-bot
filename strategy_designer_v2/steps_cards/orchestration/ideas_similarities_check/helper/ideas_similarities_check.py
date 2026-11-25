@@ -178,6 +178,46 @@ def write_books(rows, root=REGISTER):
     write_atomic(root / "INDEX.md", "\n".join(lines) + "\n")
 
 
+SIDE_SHARE = 0.9                   # common/market_profile.md, a strategy's side
+
+
+def book_side(record):
+    """A strategy's side (common/market_profile.md): "long" when at least 90 % of its coin-days in a position are long,
+    "short" when at least 90 % are short, else "both"; None when the record has no positions on this machine. Read from
+    the committed chart file, else the bars."""
+    record = Path(record)
+    chart = record / "chart_bars.csv.gz"
+    if chart.exists():
+        pos = pd.read_csv(chart, usecols=["position"])["position"]
+    else:
+        files = sorted(record.glob("*/w*/bars.csv.gz"))
+        if not files:
+            return None
+        col = "postRebalance_current_allocation"
+        frames = [pd.read_csv(f, usecols=lambda c: c == col) for f in files]
+        if any(col not in d.columns for d in frames):
+            return None
+        pos = pd.concat(d[col] for d in frames)
+    pos = pos.fillna(0.0); held = pos[pos.abs() > 1e-9]
+    if held.empty:
+        return None
+    long = (held > 0).mean()
+    return "long" if long >= SIDE_SHARE else "short" if long <= 1 - SIDE_SHARE else "both"
+
+
+def fill_sides(root=REGISTER, steps=STEPS):
+    """Each book without a side gets it from its record, when the record is on this machine (books added before 1t)."""
+    rows = books(root); n = 0
+    for r in rows:
+        if not r.get("side"):
+            side = book_side(steps / "04_backtest" / r["run"] / "backtests" / r["id"])
+            if side:
+                r["side"] = side; n += 1
+    if n:
+        write_books(rows, root)
+    return n
+
+
 def add(record, run, root=REGISTER, steps=STEPS):
     """Add a book of the register: a paying book, or a confirmed book whose book does not pay (operator, 2026-11-22): its
     period returns on every timeframe it can be compared on, and its line. An idea already in the register (the same
@@ -189,7 +229,7 @@ def add(record, run, root=REGISTER, steps=STEPS):
     bar = bar_of(record)
     m = json.loads(next(record.glob("*/w*/manifest.json")).read_text())
     row = {"key": key(run, rid), "run": run, "id": rid, "bar": bar, "kind": kind,
-           "coins": sorted(p.name for p in record.iterdir() if p.is_dir()),
+           "coins": sorted(p.name for p in record.iterdir() if p.is_dir()), "side": book_side(record),
            "git_sha": m.get("git_sha", ""), "made_utc": m.get("created_utc", "")[:19], "added_utc": utc_now()}
     rows = [r for r in books(root) if r["id"] != rid or r["made_utc"] > row["made_utc"]]
     if any(r["id"] == rid for r in rows):
@@ -294,25 +334,32 @@ def book_profile(r, steps=STEPS):
 
 
 def write_profile_map(root=REGISTER, steps=STEPS):
-    """`PROFILE_MAP.md` (common/market_profile.md, "The profile map", as the research keeps it): per market profile, the
-    paying books specialised in it, each with its idea; and how many paying books act in every profile. Read by lines
-    7.e and 7.g (next steps 1q, the operator 2026-11-25)."""
-    cells, every = {p: [] for p in PROFILES}, 0
+    """`PROFILE_MAP.md` (common/market_profile.md, "The profile map", as the research keeps it): per market profile and
+    side, the paying books specialised in it, each with its idea; and the paying books acting in every profile, by side.
+    Read by lines 7.e and 7.g (next steps 1q and 1t, the operator 2026-11-25)."""
+    sides = ("long", "short")
+    cells = {(p, s): [] for p in PROFILES for s in sides}
+    every = {"long": 0, "short": 0, "both": 0, "unknown": 0}
     for r in sorted((r for r in books(root) if r["kind"] == "paying"), key=lambda r: r["key"]):
-        named = book_profile(r, steps)
+        named, side = book_profile(r, steps), r.get("side")
+        on = [side] if side in sides else list(sides) if side == "both" else []
         if not named:
-            every += 1
+            every[side if side in every else "unknown"] += 1
             continue
-        what = f"{idea_code(BAR_RE.sub('', r['id']))} ({named}): {BAR_RE.sub('', r['id']).split('_', 1)[-1].replace('-', ' ')}"
+        what = f"{idea_code(BAR_RE.sub('', r['id']))} ({named}, {side or 'side unknown'}): {BAR_RE.sub('', r['id']).split('_', 1)[-1].replace('-', ' ')}"
         for p in PROFILES:
             if all(w in p.split() for w in named.split()):
-                cells[p].append(what)
-    lines = ["# The profile map: the proven and profitable strategies, by market profile",
-             "(written by code with the similarity register; definition: common/market_profile.md. A strategy counts in",
+                for s_ in on:
+                    cells[(p, s_)].append(what)
+    lines = ["# The profile map: the proven and profitable strategies, by market profile and side",
+             "(written by code with the similarity register; definitions: common/market_profile.md. A strategy counts in",
              "a profile when step 5 confirmed its idea, step 6 found its book profitable enough, and its idea names a",
-             "profile holding that one.)", "", "| Market profile | Strategies specialised in it | Their ideas |", "|---|---|---|"]
-    lines += [f"| {p} | {len(v)} | {'; '.join(v) if v else '-'} |" for p, v in cells.items()]
-    lines += ["", f"Proven and profitable strategies acting in every profile (their idea names none): {every}."]
+             "profile holding that one; on a side when it holds that side: long, short, or both.)", "",
+             "| Market profile | Side | Strategies specialised in it | Their ideas |", "|---|---|---|---|"]
+    lines += [f"| {p} | {s_} | {len(v)} | {'; '.join(v) if v else '-'} |" for (p, s_), v in cells.items()]
+    lines += ["", "Proven and profitable strategies acting in every profile (their idea names none): "
+              f"{every['long']} long, {every['short']} short, {every['both']} on both sides"
+              + (f", {every['unknown']} of unknown side" if every["unknown"] else "") + "."]
     write_atomic(root / "PROFILE_MAP.md", "\n".join(lines) + "\n")
 
 
@@ -377,6 +424,7 @@ def main():
     a.add_argument("--no-compare", action="store_true", help="add the book only (to fill the register first)")
     args = a.parse_args()
     if args.all:
+        fill_sides()
         for r in books():
             write_comparison(r["key"])
         write_summary()
