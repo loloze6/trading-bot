@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 7-day return (coin mean 7-day return removed)",
+    "value": 0.012001472937378388,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day summed",
+      "value": 0.9901613798202882
+    },
+    "threshold": "confirm: > 0 with t >= 2 and slope > 0; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 7-day return on forecast",
+    "value": 0.002335741033664298,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 163,
+    "cases": 409
+  },
+  "decided_by": "the t of the main measure is between -2 and 2 (inconclusive rule)",
+  "reading": "cases are grid bars (positions 0, 7, 14, ... of each window) with forecast > 0 and a 7-bar forward return inside the window; the t is the weighted mean over its day-clustered standard error (per day the sum of weight x deviation, with D/(D-1) correction); the plan's minimum of 30 distinct days is applied as 'not observable' as the workflow requires."
+}
