@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess position gain: position x (next-day return - coin's mean daily return), cases of a day summed across coins",
+    "value": -0.001481987596874989,
+    "statistic": {
+      "name": "t of the mean (daily sums)",
+      "value": -0.2652671481589283
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2; else inconclusive; at least 100 distinct days with a position"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess next-day return on forecast",
+    "value": 0.00025757968908746154,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a position": 209,
+    "bars with a position": 522
+  },
+  "decided_by": "The t of the mean excess position gain lies between -2 and 2.",
+  "reading": "Situation = coming bar (timestamp + 1 day) is a Friday or Saturday and the 60-bar return (trend60 raw value, or recomputed from closes where not recorded) is above 0, side long; 'bars with a position' = bars with a non-zero post-rebalance allocation and a next close in the same window; the coin's mean daily return is the mean of all its next-day returns over all windows; the slope is an OLS of the excess next-day return on the forecast on those bars."
+}

@@ -11,3 +11,4 @@
 042-01_low-close-next-day-rebound_1d: confirmed (fit: exact) [main: 0.000604317; t, day-clustered SE 2.6437; distinct days with recorded forecasts 2898, observations 17380, top quintile observations 3476, bottom quintile observations 3476]
 043-01_falling-market-narrow-day-rise_1d: mismatch: the test does not match its plan (agreement 0.643069) (fit: exact)
 044-01_rising-market-wide-down-day-rebound_1d: inconclusive (fit: adapted) [main: 0.0021228; t of the mean, clustered by day 0.609379; cases 1813, days 863]
+045-01_rising-market-late-week-gain_1d: confirmed (fit: adapted) [main: 0.0129453; t of the mean (daily sums) 3.01352; distinct days with a position 570, bars with a position 1894]

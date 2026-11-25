@@ -11,3 +11,4 @@
 042-01_low-close-next-day-rebound_1d: not profitable enough [Sharpe 0.1976; Sharpe minus holding's Sharpe -0.3566; Calmar 0.07773]
 043-01_falling-market-narrow-day-rise_1d: not profitable enough [Sharpe -0.5941; Sharpe minus holding's Sharpe -1.148; Calmar -0.1245]
 044-01_rising-market-wide-down-day-rebound_1d: not profitable enough [Sharpe 0.956; Sharpe minus holding's Sharpe 0.4018; Calmar 0.6886]
+045-01_rising-market-late-week-gain_1d: profitable enough [Sharpe 1.088; Sharpe minus holding's Sharpe 0.5339; Calmar 0.9671]
