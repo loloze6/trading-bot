@@ -3,6 +3,7 @@
 032-01_calm-decline-depth-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+032-02.g1.e1.e3_flat-base-high-breakout_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.g1.e1_raw-nearness-to-uptrend-high_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.g1.e2.e1_new-closing-high-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 032-02.g1.e2.e2_overextended-high-reverses_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

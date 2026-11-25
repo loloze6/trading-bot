@@ -3,6 +3,7 @@
 032-01_calm-decline-depth-continues_1d: inconclusive (fit: adapted) [main: 0.000401883; slope t, day-clustered 0.351918; independent days of cases 141, cases (coin-cells with forecast < 0) 173]
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: inconclusive (fit: exact) [main: 0.00077628; OLS slope t, day-clustered 1.56557; grid cases across coins and windows 3419, days 617]
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: inconclusive (fit: exact) [main: 1.47238; OLS slope t 1.47238; grid cases 327, top third cases 109, bottom third cases 109]
+032-02.g1.e1.e3_flat-base-high-breakout_1d: inconclusive (fit: exact) [main: 0.00089248; OLS slope t 0.787421; cases 327]
 032-02.g1.e1_raw-nearness-to-uptrend-high_1d: inconclusive (fit: exact) [main: 0.000675807; t of OLS slope 1.65271; grid cases with forecast > 0 1700]
 032-02.g1.e2.e1_new-closing-high-continuation_1d: confirmed (fit: exact) [main: 0.0437584; Welch t 2.40393; new-high grid cases 178, other in-regime grid cases 659, all in-regime grid cases 837]
 032-02.g1.e2.e2_overextended-high-reverses_1d: inconclusive (fit: exact) [main: -1.27432; OLS slope t -1.27432; independent cases 323]

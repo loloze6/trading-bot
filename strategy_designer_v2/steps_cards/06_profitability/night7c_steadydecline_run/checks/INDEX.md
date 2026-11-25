@@ -3,6 +3,7 @@
 032-01_calm-decline-depth-continues_1d: not profitable enough [Sharpe -0.1806; Sharpe minus holding's Sharpe -0.7526; Calmar -0.0589]
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: profitable enough [Sharpe 1.025; Sharpe minus holding's Sharpe 0.4706; Calmar 1.07]
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: not profitable enough [Sharpe -0.0582; Sharpe minus holding's Sharpe -0.6124; Calmar -0.04231]
+032-02.g1.e1.e3_flat-base-high-breakout_1d: not profitable enough [Sharpe 0.8843; Sharpe minus holding's Sharpe 0.3301; Calmar 0.7331]
 032-02.g1.e1_raw-nearness-to-uptrend-high_1d: profitable enough [Sharpe 1.069; Sharpe minus holding's Sharpe 0.5144; Calmar 0.9513]
 032-02.g1.e2.e1_new-closing-high-continuation_1d: profitable enough [Sharpe 1.019; Sharpe minus holding's Sharpe 0.4643; Calmar 0.8922]
 032-02.g1.e2.e2_overextended-high-reverses_1d: not profitable enough [Sharpe -1.107; Sharpe minus holding's Sharpe -1.664; Calmar -0.2557]

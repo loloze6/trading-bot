@@ -3,6 +3,7 @@
 032-01_calm-decline-depth-continues_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 032-02.g1.e1.e1_raw-nearness-to-28-day-high_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 032-02.g1.e1.e2_quiet-breakout-to-28-day-high_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+032-02.g1.e1.e3_flat-base-high-breakout_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 032-02.g1.e1_raw-nearness-to-uptrend-high_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 032-02.g1.e2.e1_new-closing-high-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 032-02.g1.e2.e2_overextended-high-reverses_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 22/24 (2 not run: the engine stopped); XRPUSD 21/24 (3 not run: the engine stopped); ZECUSD 23/24 (1 not run: the engine stopped) [1d, folds A, B, C, D]

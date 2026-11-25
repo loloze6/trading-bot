@@ -1,0 +1,60 @@
+{
+  "line": "7.b",
+  "backtest": "032-02.g1.e1.e3_flat-base-high-breakout_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3638604,
+  "findings": {
+    "F1": "Closes at the 28-day closing high are followed by a clear rise, whatever the run-up before them: on the 5-day grid in folds B and C, the 113 at-high cases had a mean excess 5-day return of +4.84 % (t 3.12), against \u22120.42 % (t \u22121.30) for the 1,165 other cases; the 151 \"trending\" cases had +3.79 % (t 2.84); step 5's size is +1.51 % per case (t 2.53, 370 days), 7.8 times the 0.19 % cost of a trade.",
+    "F2": "The predicted grading by a flat base is not linear but a cliff at the steepest run-ups: by 28-day-return quartile, the at-high cases earned +4.48 % (t 2.19), +8.62 % (t 2.44) and +9.03 % (t 2.29), then \u22122.77 % (t \u22121.32) in the top quartile (mean 28-day return +70 %); by forecast quartile, \u22121.18 % at forecast 0, then a flat +5.15 %, +5.33 % and +5.92 %, so the slope on the forecast has a t of only 1.11 (n 151), as step 5's 0.79.",
+    "F3": "The plan's standardised run-up hides the effect that the plain 28-day return shows: the excess 5-day return falls with the raw 28-day return at a slope t of \u22122.20 (n 113), but only at t \u22120.53 with the 60-bar standardised return the forecast uses (n 83) and t \u22121.02 with the vol-scaled return; the forecast's correlation with the raw return is only \u22120.63.",
+    "F4": "How close the close is to its 28-day high grades the next 5 days on all bars: by decile of distance from the high, the closest decile earned +4.23 % (t 3.06) and the next +1.75 % (t 2.04), while the deciles 14\u201324 % below the high earned \u22121.90 % to \u22123.90 % (t down to \u22123.96); the slope of the excess return on the distance has a t of 2.31 on all 1,278 cases and 2.20 within 10 % of the high (n 586).",
+    "F5": "The continuation after a high holds at longer horizons too: over 10 days the at-high cases earned +9.18 % excess (t 2.89, n 62) against \u22120.87 % for the others, and the raw 28-day return's slope reached t \u22122.00 over 20 days (n 26).",
+    "F6": "The at-high rise is broad and not one coin's: the mean excess over 5 days was positive in 5 of 6 coins (XRP +18.8 % t 2.30, ETH +3.7 % t 2.14, BTC +3.0 % t 1.62; only LTC \u22120.8 %) and in 7 of 11 windows. The steep run-up losses are spread too: LTC \u22124.9 % (t \u22121.96, 10 cases), w8 \u22129.2 % (t \u22123.12) and w17 \u22122.4 %."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "flat-base high, more coins",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ],
+      "idea": "Among coins closing near their highest close of the last 28 days, the smaller the coin's 28-day return, the larger its rise over the next 5 days, so a new high reached from a flat base is followed by more rise than one reached after a steep climb.",
+      "consequence": "A trader would prefer to go long a close at the 28-day high reached after a small 28-day rise, and would trim one that comes after a large rise.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The closer a coin closes to its highest close of the last 28 days, the larger its rise over the next 5 days, with closes at the high followed by the largest rise.",
+      "consequence": "A trader would lean long a coin closing at or just under its 28-day high and would refuse longs in a coin sitting well below that high.",
+      "name": "nearness to 28-day high",
+      "from": "F1, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "Among coins closing at their highest close of the last 28 days, the larger the coin's 28-day return, the smaller its rise over the next 5 days, so the steepest run-ups to a new high are followed by the weakest moves.",
+      "consequence": "A trader would keep long a new 28-day high after a moderate climb and would trim or skip one reached after a very steep climb.",
+      "name": "steep run-up high fades",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1.e1.e3.b1_flat-base-high-more-coins",
+    "032-02.g1.e1.e3.b2_nearness-to-28-day-high",
+    "032-02.g1.e1.e3.b3_steep-run-up-high-fades"
+  ],
+  "no_ideas": null
+}

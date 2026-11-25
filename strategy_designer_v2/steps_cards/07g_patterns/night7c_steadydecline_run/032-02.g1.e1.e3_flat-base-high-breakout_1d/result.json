@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.g1.e1.e3_flat-base-high-breakout_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3945303,
+  "findings": {
+    "F1": "On the 5-day grid of folds B and C (1278 cases), the excess 5-day return rises with closeness to the 28-day closing high (Spearman 0.114, p 0.00004). The quintile within 3.2 % of the high gains +2.99 % (t 3.67, n 256), and closes exactly at the high gain +4.84 % (t 3.12, n 113). The quintile 17\u201327 % below the high loses \u22123.17 % (t \u22124.88, n 255).",
+    "F2": "Volatility decides whether the 28-day return continues. Splitting the cases by thirds of 28-day return and of 20-day/60-day volatility ratio, the calm third shows a graded continuation: falling third \u22123.63 % (t \u22123.48, n 107), middle third +0.67 % (t 0.83, n 166), rising third +3.76 % (t 2.46, n 105). In the wild third, all three cells are flat (\u22120.35 %, \u22120.35 %, \u22120.26 %, every |t| < 0.3).",
+    "F3": "Closes near their 28-day lowest close are followed by excess falls. The quintile within 4 % of the low loses \u22121.83 % over 5 days (t \u22122.21, n 256), and the next quintile (4\u201310 % above the low) loses \u22121.58 % (t \u22122.74). Quintiles 10\u201335 % above the low gain +1.35 % (t 2.09) and +1.54 % (t 1.98); Spearman 0.073, p 0.009.",
+    "F4": "Among closes within 3 % of the 28-day high, the tested idea's grading fails.",
+    "F5": "The volatility ratio, the relative daily range and the relative volume each predict nothing on their own (Spearman \u22120.038, 0.006, 0.032, all p > 0.2). Calm matters only through how it changes the 28-day move's effect (F2)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily volatility over the last 20 days is low compared with the last 60 days, the larger its 28-day return, the larger its return over the next 5 days: calm declines keep falling and calm rises keep rising, more so the larger the past move.",
+      "consequence": "In a quiet market, a trader would lean in the direction of the coin's 28-day move, sized by its magnitude, and would refuse to fade a calm decline.",
+      "name": "calm regime monthly momentum",
+      "from": "F2, F5",
+      "refs": [
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The closer a coin's close is to its highest close of the last 28 days, the larger its rise over the next 5 days.",
+      "consequence": "A trader would favour longs in coins closing at or just under their 28-day high, more the closer they are, whatever the run-up that led there.",
+      "name": "proximity to monthly high",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The closer a coin's close is to its lowest close of the last 28 days, the larger its fall over the next 5 days.",
+      "consequence": "A trader would refuse to buy a coin sitting at its 28-day low as a bargain, and would expect further weakness there.",
+      "name": "monthly low keeps sinking",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1.e1.e3.g1_calm-regime-monthly-momentum",
+    "032-02.g1.e1.e3.g2_proximity-to-monthly-high",
+    "032-02.g1.e1.e3.g3_monthly-low-keeps-sinking"
+  ],
+  "no_ideas": null
+}
