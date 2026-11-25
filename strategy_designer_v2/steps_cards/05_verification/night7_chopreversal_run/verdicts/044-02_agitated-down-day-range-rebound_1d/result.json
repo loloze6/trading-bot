@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x next-bar excess return over cases",
+    "value": 0.0057547574692035355,
+    "statistic": {
+      "name": "t, cases of one day together",
+      "value": 3.20737428735978
+    },
+    "threshold": "confirm: t >= 2 with wide-minus-narrow > 0; reject: t <= -2 or difference Welch t <= -2 (difference Welch t = 3.454)"
+  },
+  "supporting_check": {
+    "name": "wide-minus-narrow mean next-bar excess return (split at coin median range multiple)",
+    "value": 0.0064453209050823945,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3752,
+    "distinct days": 1448
+  },
+  "decided_by": "Confirm rule: main t (3.21) >= 2 and wide-minus-narrow difference (0.00645) > 0.",
+  "reading": "Situation checked as close below the prior close within the window with a long forecast (the agitated profile is the code's added filter, not recomputable here; first bars of a window without a prior close left out); next-bar returns within windows; the coin's mean daily return is over all its windows' next-bar returns; the main t sums deviations per calendar day (clustered standard error); the range multiple is the recorded raw range_mult, the wider half being cases strictly above the coin's median and the narrower half at or below it; the plan's 'fewer cases -> inconclusive' is reported as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004013 on the check folds against +0.005755 on every fold",
+    "main": 0.00401335566072573,
+    "statistic": 2.0588898862043927,
+    "counts": {
+      "cases": 1949,
+      "distinct days": 789
+    }
+  }
+}

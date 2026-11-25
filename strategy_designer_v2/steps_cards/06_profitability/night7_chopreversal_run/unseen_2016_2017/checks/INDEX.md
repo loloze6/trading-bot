@@ -1,3 +1,4 @@
 035-01_falling-agitated-scaled-fall-rebound_1d: not profitable enough [Sharpe 0.869; Sharpe minus holding's Sharpe -2.321; Calmar 0.9045]
 039-02.d1_wide-range-low-close-next-day-rebound_1d: not profitable enough [Sharpe 1.26; Sharpe minus holding's Sharpe -1.93; Calmar 1.743]
 043-01_falling-agitated-intraday-drop-rebound_1d: not profitable enough [Sharpe 1.184; Sharpe minus holding's Sharpe -2.005; Calmar 1.859]
+044-02_agitated-down-day-range-rebound_1d: not profitable enough [Sharpe 0.7715; Sharpe minus holding's Sharpe -2.418; Calmar 0.8145]

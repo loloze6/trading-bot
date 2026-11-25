@@ -24,15 +24,17 @@ One row per idea run; every status is read from the step's own result file. Each
 | 043-01_falling-agitated-intraday-drop-rebound | - | plan | confirmed (+3.04) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 043-01.g1_falling-agitated-day-move-reversal | 1.43 | 6.3 |
 | 039-01.d1_falling-agitated-low-close-rebound | 039-01_agitated-low-close-next-day-rebound | plan | mismatch | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.g: 039-01.d1.g1_wide-day-low-close-rebound, 039-01.d1.g2_falling-wide-day-low-close-rebound | 0.60 | 4.9 |
 | 039-02.d1_wide-range-low-close-next-day-rebound | 039-02_agitated-high-close-next-day-giveback | plan | confirmed (+2.61) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 039-02.d1.g2_down-day-low-close-next-day-rebound | 0.64 | 6.2 |
+| 044-01_agitated-wide-range-fall-rebound | - | missing-components | - | - | - | - | 0.81 | 0.4 |
+| 044-02_agitated-down-day-range-rebound | - | plan | confirmed (+3.21) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-02.g1_agitated-wide-fall-run-rebound | 0.74 | 7.3 |
 
 ## Consumption
-20 ideas, 19.43 USD, 118.7 minutes in all.
+22 ideas, 20.99 USD, 126.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.28 | 8.8 |
-| step4_backtest | 0.00 | 49.0 |
-| step5_verdict | 3.29 | 12.0 |
+| step3_plan | 3.20 | 9.9 |
+| step4_backtest | 0.00 | 51.9 |
+| step5_verdict | 3.45 | 12.7 |
 | step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.d | 2.35 | 7.6 |
@@ -40,6 +42,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 3.35 | 10.6 |
-| step7_7.g | 8.17 | 25.9 |
-| similarity_check | 0.00 | 0.6 |
-| unseen_test | 0.00 | 3.2 |
+| step7_7.g | 8.64 | 27.5 |
+| similarity_check | 0.00 | 0.7 |
+| unseen_test | 0.00 | 4.4 |

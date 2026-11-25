@@ -18,3 +18,5 @@
 041-01_agitated-scaled-rise-next-day-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 042-01_falling-agitated-low-close-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 043-01_falling-agitated-intraday-drop-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+044-01_agitated-wide-range-fall-rebound_1d: missing-components: The forecast needs the day's fall in 30-day standard deviations multiplied by the day's range in 30-day average ranges. No [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+044-02_agitated-down-day-range-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
