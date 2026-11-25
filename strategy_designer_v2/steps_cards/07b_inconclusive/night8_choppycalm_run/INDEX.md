@@ -1,0 +1,5 @@
+058-02.b1.b2_choppy-range-position-continues_1d: 1 ideas (2 explorations)
+058-02.b1_calm-range-bottom-keeps-falling_1d: 2 ideas (2 explorations)
+058-02.b2.b1_calm-range-continuation-more-coins_1d: no ideas: The effect is not stronger where the idea places it (F4), it appears in one year only (F2), on neither side consistently (F3), it is not graded by nearness to the edge (F5) and it is not clearer at another horizon (F6), so no condition, side or horizon would give a clear answer, and the test already used all the data available (F7).
+058-02.b2_calm-range-position-continues_1d: 1 ideas (1 explorations)
+058-02_calm-range-bottom-drifts-up_1d: 2 ideas (2 explorations)

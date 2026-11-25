@@ -1,0 +1,5 @@
+058-02.b1.b2_choppy-range-position-continues_1d: not profitable enough [Sharpe 0.1147; Sharpe minus holding's Sharpe -0.4395; Calmar 0.01319]
+058-02.b1_calm-range-bottom-keeps-falling_1d: not profitable enough [Sharpe 0.04448; Sharpe minus holding's Sharpe -0.5251; Calmar -0.001271]
+058-02.b2.b1_calm-range-continuation-more-coins_1d: not profitable enough [Sharpe 0.3554; Sharpe minus holding's Sharpe -0.1973; Calmar 0.1653]
+058-02.b2_calm-range-position-continues_1d: not profitable enough [Sharpe 0.2078; Sharpe minus holding's Sharpe -0.3618; Calmar 0.062]
+058-02_calm-range-bottom-drifts-up_1d: not profitable enough [Sharpe -0.2031; Sharpe minus holding's Sharpe -0.7727; Calmar -0.08517]

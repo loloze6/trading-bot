@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 058-02.b1.b2_choppy-range-position-continues_1d
+idea tested: 058-02.b1.b2_choppy-range-position-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4215 USD
+---
+## Findings
+- **F1:** In calm markets a large one-day move continues over the next 5 days, and in agitated markets it does not. Calm here means a 30-day swing at or below the coin's median in these windows. On the 5-day grid, the slope of the excess 5-day return on the day's return scaled by its 30-day swing is 0.0176 (t 2.41, 182 cases) in choppy calm bars and 0.0175 (t 4.06, 562 cases) in trending calm bars. It is 0.0049 (t 0.81, 674 cases) in trending agitated bars and -0.0177 (t -1.05, 76 cases) in choppy agitated bars. In calm bars the top fifth of scaled one-day moves is followed by +2.81 % excess (t 3.05, 162 cases) and the bottom fifth by -1.45 % (t -2.11, 144 cases).
+- **F2:** The calm-market continuation of F1 does not rest on one period or one coin. Its slope is positive in every year: 2018 t 0.32, 2019 t 3.32, 2020 t 1.72, 2021 t 2.27. It is positive on all six coins, from ETH t 0.79 to XRP t 3.60 and XMR t 3.54. It is positive in 9 of the 11 windows with enough cases.
+- **F3:** The calm-market continuation of F1 is carried mostly by coins already up over 20 days. The slope is 0.0206 (t 4.00, 392 cases) when the 20-day return is positive and 0.0038 (t 0.71, 352 cases) when it is negative.
+- **F4:** In choppy calm bars, range position is followed by continuation, not by the brief's pull back to the middle.
+- **F5:** The tested idea, pooled over the whole choppy profile, is too small to tell from zero and too small to pay.
+- **F6:** The next-day return is +0.47 % above the coin's mean on Fridays (t 3.19) and +0.39 % on Saturdays (t 2.87), and -0.49 % on Thursdays (t -2.69). This repeats the late-week gain the map already holds (045-01), so it is not a discovery.
+- **F7:** The 20-day return's continuation in choppy calm bars (slope t 3.94, 178 cases) does not hold window by window. 5 of the 8 windows with enough cases have a negative slope, so it is not a finding on its own.
+
+## Ideas
+- `058-02.b1.b2.g2_choppy-calm-range-position-continues` (from F4, F5): In a choppy, calm market, the higher a coin's close sits within its 20-day high-low range, the larger its rise over the next 5 days.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-02.b1.b2.g1_calm-market-large-day-continues` (from F1, F2, F3): In a calm market, the larger a coin's one-day return against its usual daily swing over the last 30 days, the larger its move in the same direction over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

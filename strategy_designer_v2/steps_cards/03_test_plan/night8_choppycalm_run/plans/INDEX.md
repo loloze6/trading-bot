@@ -1,2 +1,6 @@
 058-01_calm-range-top-drifts-down_1d: missing-components: The idea measures where the close sits inside the 20-day high-low range. The only catalogue component that reads it is [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-058-02_calm-range-bottom-drifts-up_1d: missing-components: The idea needs where the close sits inside the 20-day high-low range. The listed `DonchianBreakoutComponent` params are only `period` and [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+058-02.b1.b2_choppy-range-position-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+058-02.b1_calm-range-bottom-keeps-falling_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+058-02.b2.b1_calm-range-continuation-more-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+058-02.b2_calm-range-position-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+058-02_calm-range-bottom-drifts-up_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

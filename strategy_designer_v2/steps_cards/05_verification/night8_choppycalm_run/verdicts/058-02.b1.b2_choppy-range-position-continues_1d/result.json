@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-day forward return minus coin mean 5-day return on range_pos post_pipeline_value",
+    "value": 0.0002309542198460298,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.8689046932448183
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 4256,
+    "grid cases inside the profile": 819
+  },
+  "decided_by": "the slope's t lies between -2 and +2 (inconclusive rule)",
+  "reading": "the choppy profile is the bars where range_pos is recorded and the expected side is the sign of its raw range position; the grid starts at each window's first row, the coin's mean 5-day return is taken over all its grid returns in all windows, the slope is a pooled OLS with intercept on all recorded grid bars (including zero values), and its t is slope over its standard error."
+}

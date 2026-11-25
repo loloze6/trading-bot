@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 058-02.b2_calm-range-position-continues_1d
+idea tested: 058-02.b2_calm-range-position-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3934 USD
+---
+## Findings
+- **F1:** Across all grid cases of folds B and C (812 cases, 152 days), the higher the close sits in its 20-day high-low range, the larger the 5-day excess return: slope +4.27 % per unit of range position, day-clustered t 2.61. This is continuation, not the reversion the brief claims. Its strength varies by year: 2018 slope +0.64 % (t 0.18), 2019 +3.82 % (t 1.59), 2020 +5.74 % (t 1.27), 2021 +2.57 % (t 0.87), so no single year carries it.
+- **F2:** The continuation shows in every calm trend group, using my own calm proxy (30-day over 60-day swing at or below 1), not the profile's. Falling calm: slope +5.51 %, t 2.15, 201 cases. Choppy calm: +6.99 %, t 2.24, 72 cases. Rising calm: +5.13 %, t 1.98, 159 cases. Long-top/short-bottom signed excess is +3.23 % (t 2.82), +3.56 % (t 2.28) and +2.99 % (t 2.03) per case. This is the effect of the held idea 035-01.b1, "calm market nearness to high".
+- **F3:** Falling agitated is the one group where the continuation is absent. Its slope is −1.93 % (t −0.48, 168 cases, 53 days) and its signed excess −0.96 % (t −0.55). That is where the map already holds 12 long rebound books.
+- **F4:** Inside the backtest's own profile bars, the excess return does not fall from the middle toward the edges. The top bin (0.6 to 1) is +2.38 % (t 0.94, 30 cases), the middle bin −2.66 % (t −2.63, 52 cases) and the bottom bin −3.07 % (t −1.98, 18 cases). No bin shows a pull back toward the middle.
+- **F5:** Out of the profile, the top fifth of the range (position above 0.6) is followed by a 5-day excess of +3.34 % (t 3.45, 206 cases). This is range-top continuation in every profile, which the map already holds (034-01.b1, 033-03.b2 and the books acting in every profile).
+- **F6:** Next-day excess returns by weekday are −0.50 % on Wednesday (t −2.78), +0.41 % on Thursday (t 2.80) and +0.38 % on Friday (t 2.75), about 1,190 cases each. These t's are not clustered by day, and the pattern is one of seven weekdays tested and ungraded. The late-week gain is already held (045-01).
+- **F7:** The 20-day-return quintiles are not monotonic: −2.65 % (t −4.23) in the second quintile, +2.28 % (t 3.15) in the fourth, and weaker at both extremes. As a graded slope, the 20-day return reaches only t 1.25 (day-clustered, 812 cases), so it is not a finding beyond the range position.
+- **F8:** The book's mean daily return is negative in w7 to w9 and w15, and its largest return is +0.160 % a day in w18. Its 29 best days sum to +0.72 and its 29 worst to −0.57, against a total of +0.25 over 1,449 days. No single cluster of days carries the book.
+
+## Ideas
+- No ideas: Every pattern that stands out after this many angles repeats an idea the map already holds. Calm range-position continuation is 035-01.b1, range-top continuation everywhere is 034-01.b1 and 033-03.b2, falling-agitated rebound is already held 12 times, and the late-week gain is 045-01. What remains (the Wednesday dip, the 20-day-return shape) does not survive a day-clustered or graded reading.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

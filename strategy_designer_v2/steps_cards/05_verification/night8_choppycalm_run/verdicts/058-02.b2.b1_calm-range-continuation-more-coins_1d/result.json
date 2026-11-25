@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 5-bar forward return on forecast (non-overlapping grid, nonzero forecast)",
+    "value": 0.00039440508016374214,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": 0.8749922422938913
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a nonzero forecast": 1050,
+    "distinct days": 322
+  },
+  "decided_by": "Inconclusive rule: the slope's t lies between -2 and 2.",
+  "reading": "The situation is the bars whose regime is 'unknown' (the choppy calm profile) and the side is the sign of the recorded range position (rebuilt from the 20-bar high/low where not recorded); the coin's mean 5-bar return is taken over all grid bars of all its windows; the slope is OLS of excess return on forecast with a day-clustered standard error (per-day sums of x-deviation times residual, with the G/(G-1) correction); the plan's minimum of 100 cases over 50 days is applied as 'not observable'."
+}

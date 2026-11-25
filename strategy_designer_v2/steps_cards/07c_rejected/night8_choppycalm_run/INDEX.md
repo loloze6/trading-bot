@@ -1,0 +1,5 @@
+058-02.b1.b2_choppy-range-position-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02.b1_calm-range-bottom-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02.b2.b1_calm-range-continuation-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02.b2_calm-range-position-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-02_calm-range-bottom-drifts-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

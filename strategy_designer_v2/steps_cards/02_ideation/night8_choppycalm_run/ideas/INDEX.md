@@ -1,2 +1,5 @@
 058-01_calm-range-top-drifts-down: In choppy calm markets, closes nearer the top of the 20-day range are followed by larger falls over 5 days. [profile: choppy calm]
 058-02_calm-range-bottom-drifts-up: In choppy calm markets, closes nearer the bottom of the 20-day range are followed by larger rises over 5 days. [profile: choppy calm]
+059-01_calm-large-up-day-continues: In calm markets, a one-day rise large against the 30-day daily swing is followed by a proportionally larger rise over 7 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: calm]
+059-02_calm-large-down-day-continues: In calm markets, a one-day fall large against the 30-day daily swing is followed by a proportionally larger fall over 7 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: calm]
+059-03_rising-calm-large-up-continues: In rising calm markets, a one-day rise large against the 30-day daily swing is followed by a proportionally larger rise over 7 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising calm]
