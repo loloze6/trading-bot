@@ -9,3 +9,4 @@
 033-03.b1_upper-range-drifts-higher_1d: inconclusive (fit: exact) [main: 0.00128057; day-clustered slope t 1.53497; grid cases in total 1691, cases above the 20-day high 108, grid cases with forecast below 0 880, days (clusters) 304]
 033-03.b2_rising-market-range-top-continuation_1d: confirmed (fit: exact) [main: 3.0848; OLS t of the slope 3.0848; non-overlapping in-profile cases 1345]
 033-03_downside-break-continues-falling_1d: inconclusive (fit: exact) [main: 0.00775672; t of the mean, cases on the same day pooled 0.668928; cases 232, distinct days 114]
+034-01_rising-nearness-to-high-rises_1d: inconclusive (fit: exact) [main: 0.00179148; slope t (day-clustered) 1.63695; independent in-profile grid cases 2841, distinct days 447]

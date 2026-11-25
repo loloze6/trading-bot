@@ -9,3 +9,4 @@
 033-03.b1_upper-range-drifts-higher_1d: 1 ideas (2 explorations)
 033-03.b2_rising-market-range-top-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 033-03_downside-break-continues-falling_1d: 2 ideas (2 explorations)
+034-01_rising-nearness-to-high-rises_1d: 2 ideas (2 explorations)

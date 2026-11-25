@@ -9,3 +9,4 @@
 033-03.b1_upper-range-drifts-higher_1d: not profitable enough [Sharpe 0.8031; Sharpe minus holding's Sharpe 0.2489; Calmar 0.5354]
 033-03.b2_rising-market-range-top-continuation_1d: profitable enough [Sharpe 0.919; Sharpe minus holding's Sharpe 0.3648; Calmar 0.871]
 033-03_downside-break-continues-falling_1d: not profitable enough [Sharpe 0.2099; Sharpe minus holding's Sharpe -0.3442; Calmar 0.07822]
+034-01_rising-nearness-to-high-rises_1d: profitable enough [Sharpe 1.324; Sharpe minus holding's Sharpe 0.717; Calmar 1.633]

@@ -17,22 +17,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 033-02.d1_upside-break-five-day-hold | 033-02_upside-break-continues-rising | plan | confirmed (+2.05) | not profitable enough (failed: Calmar) | - | 7.d: 033-02.d1.d1_rising-market-upside-break-hold, 033-02.d1.d2_narrow-range-upside-break-hold, 033-02.d1.d3_agitated-upside-break-hold; 7.g: 033-02.d1.g1_calm-range-position-drift, 033-02.d1.g2_calm-market-upside-break | 1.15 | 6.1 |
 | 033-02.d2_fresh-upside-break-rises | 033-02_upside-break-continues-rising | missing-components | - | - | - | - | 0.07 | 0.4 |
 | 032-02.b1.b1_choppy-downside-break-rebound | 032-02.b1_choppy-downside-break-one-day-rebound | plan | inconclusive (+1.90) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: 032-02.b1.b1.b1_agitated-choppy-break-rebound, 032-02.b1.b1.b2_sharp-fall-break-one-day-rebound; 7.g: 032-02.b1.b1.g1_rising-market-breakout-continuation | 1.08 | 9.0 |
+| 034-01_rising-nearness-to-high-rises | - | plan | inconclusive (+1.64) | profitable enough | - | 7.b: 034-01.b1_nearness-to-high-10-days, 034-01.b2_close-above-high-drifts; 7.e: 034-01.e1_rising-market-breakout-distance-continuation; 7.g: 034-01.g1_rising-nearness-ten-day-drift | 1.75 | 10.4 |
 
 ## Consumption
-13 ideas, 12.62 USD, 69.0 minutes in all.
+14 ideas, 14.37 USD, 79.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.35 | 9.6 |
-| step4_backtest | 0.00 | 25.4 |
-| step5_verdict | 1.90 | 6.8 |
+| step3_plan | 2.43 | 10.1 |
+| step4_backtest | 0.00 | 30.5 |
+| step5_verdict | 2.09 | 7.5 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.d | 1.03 | 3.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 2.62 | 7.9 |
-| step7_7.g | 4.73 | 14.1 |
+| step7_7.e | 0.68 | 1.7 |
+| step7_7.b | 2.96 | 8.9 |
+| step7_7.g | 5.18 | 15.4 |
 | similarity_check | 0.00 | 0.2 |
 | unseen_test | 0.00 | 0.9 |

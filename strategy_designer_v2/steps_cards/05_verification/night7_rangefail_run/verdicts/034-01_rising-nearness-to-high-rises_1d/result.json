@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9541455981159521,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-removed 5-day return on forecast (in-profile grid cases)",
+    "value": 0.001791484045210652,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": 1.6369490955714532
+    },
+    "threshold": "slope t >= 2 (with positive supporting difference) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 5-day return, forecast > 0 minus forecast < 0",
+    "value": 0.008009679484752858,
+    "passed": true
+  },
+  "counts": {
+    "independent in-profile grid cases": 2841,
+    "distinct days": 447
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Profile bars are those with regime 'unknown' (the config's only active regime, chop vetoed) and a non-missing forecast, all such grid bars enter the regression (forecast 0 included), the drift is the coin's mean 5-day return over all its non-overlapping grid bars, the slope's t uses day-clustered standard errors (CR1), and too few cases gives 'not observable'."
+}
