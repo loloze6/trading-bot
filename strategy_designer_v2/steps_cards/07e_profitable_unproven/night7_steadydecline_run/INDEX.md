@@ -22,3 +22,4 @@
 040-02_agitated-fall-vs-swing-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 041-01_agitated-fall-rise-vs-swing-giveback_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 041-02_agitated-fall-rise-vs-range-giveback_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+041-03_agitated-fall-drop-vs-range-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

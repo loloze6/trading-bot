@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return (vs coin's all-window mean daily return)",
+    "value": 0.010696201508845931,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases summed",
+      "value": 3.6390339868325734
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and positive slope; reject: mean < 0 with t <= -2; min 100 cases on 60 distinct days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on forecast",
+    "value": 0.0008772459002740798,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1468,
+    "distinct days": 702
+  },
+  "decided_by": "Weighted mean excess next-day return above 0 with t >= 2 and a positive slope on forecast.",
+  "reading": "Profile bars are those with recorded regime 'unknown' (the config's only active regime); cases are every in-profile bar with forecast > 0 and a next close in the same window; the coin's mean is the mean of all its within-window 1-bar returns; the t uses per-day sums of weighted deviations from the weighted mean (cluster-by-day standard error); the slope is ordinary least squares on all cases; the plan's minimum counts lead to 'not observable' when unmet.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004847 on the check folds against +0.0107 on every fold",
+    "main": 0.004847003547075972,
+    "statistic": 1.3978180351136178,
+    "counts": {
+      "cases": 793,
+      "distinct days": 413
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return (vs coin's all-window mean daily return)",
+    "value": 0.004810077873643225,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases summed",
+      "value": 0.768185875017044
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and positive slope; reject: mean < 0 with t <= -2; min 100 cases on 60 distinct days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on forecast",
+    "value": 0.0006175551680773923,
+    "passed": true
+  },
+  "counts": {
+    "cases": 19,
+    "distinct days": 19
+  },
+  "decided_by": "Minimum not reached: 19 cases (need 100) on 19 distinct days (need 60).",
+  "reading": "Profile bars are those with recorded regime 'unknown' (the config's only active regime); cases are every in-profile bar with forecast > 0 and a next close in the same window; the coin's mean is the mean of all its within-window 1-bar returns; the t uses per-day sums of weighted deviations from the weighted mean (cluster-by-day standard error); the slope is ordinary least squares on all cases; the plan's minimum counts lead to 'not observable' when unmet."
+}

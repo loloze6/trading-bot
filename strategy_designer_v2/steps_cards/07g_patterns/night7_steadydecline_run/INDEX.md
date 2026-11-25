@@ -22,3 +22,4 @@
 040-02_agitated-fall-vs-swing-rebound_1d: 2 ideas (2 explorations)
 041-01_agitated-fall-rise-vs-swing-giveback_1d: 2 ideas (3 explorations)
 041-02_agitated-fall-rise-vs-range-giveback_1d: 1 ideas (2 explorations)
+041-03_agitated-fall-drop-vs-range-rebound_1d: no ideas: Every pattern that stands out (F1, F2, F4, F5, F6) is the tested idea or the already-tested low-close idea from the same profile. The brief's symmetric up-day reversal (F3) is not graded and changes sign. After looking at the scaled move, the close location, profiles, weekdays, coins, years, two- and three-day horizons and the book's extreme days, nothing else stands out enough over the many angles examined to support a new idea.

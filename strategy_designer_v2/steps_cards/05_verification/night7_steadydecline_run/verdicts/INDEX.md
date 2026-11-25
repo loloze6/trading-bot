@@ -22,3 +22,4 @@
 040-02_agitated-fall-vs-swing-rebound_1d: confirmed (fit: exact) [main: 0.000636229; slope t, day-clustered 3.17556; profile bars with forecast above 0 3753, distinct days 1449, profile bars used 7715]
 041-01_agitated-fall-rise-vs-swing-giveback_1d: inconclusive (fit: exact) [main: 8.50512e-05; slope t, clustered by day 0.268764; cases (bars with forecast < 0) 1326, days 633]
 041-02_agitated-fall-rise-vs-range-giveback_1d: inconclusive (fit: exact) [main: -0.000134764; OLS slope t, clustered by day -0.52486; independent days with a negative forecast 633, cases (bars with a negative forecast) 1326]
+041-03_agitated-fall-drop-vs-range-rebound_1d: confirmed (fit: exact) [main: 0.0106962; t of weighted mean, same-day cases summed 3.63903; cases 1468, distinct days 702]
