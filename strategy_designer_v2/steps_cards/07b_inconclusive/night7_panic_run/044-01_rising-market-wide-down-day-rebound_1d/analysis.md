@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 044-01_rising-market-wide-down-day-rebound_1d
+idea tested: 044-01_rising-market-wide-down-day-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3169 USD
+---
+## Findings
+- **F1:** The test's result is on the side the idea predicts but far short of the bar: per case the excess 3-day return is +0.21 % (t 0.61 over 863 days, 1813 cases), only 0.028 of the coin's usual 7.96 % move, and the slope check passed (slope 0.00148), so the effect is graded the right way but too small to tell from zero on six coins.
+- **F2:** In folds B and C the effect sits in the widest down days. Days in the top 40 % of range per 30-day swing (above about 1.63 swings) earn +3.31 % excess over 3 days (t 2.17 clustered, 153 cases on 55 days). The bottom 60 % earn +0.08 % (t 0.08, 229 cases), and the top quintile alone earns +4.22 % (t 2.22).
+- **F3:** The widest-day rebound points the same way in every year of folds B and C (2019 +3.5 %, 2020 +3.3 %, 2021 +3.9 % excess; t 1.35 to 1.62 each; 2018 flat on 3 days) and on all six coins (+1.6 % BTC to +6.2 % XRP; only LTC has t above 2, at 2.37), so it is broad but thin on each slice.
+- **F4:** The test's own grading agrees: in folds B and C the top fifth of the recorded forecast earns +4.48 % excess over 3 days (t 2.49, 77 cases on 34 days), and the forecast correlates 0.87 with the raw range per swing.
+- **F5:** The horizon is short and the move reverses later. On rising-market down days the excess return is +0.50 % over 1 day (t 2.98, 1192 cases) and +1.38 % over 3 days (t 2.46, 382 cases), unclustered. Over 5 days the two widest quintiles turn to -3.7 % and -4.0 % (t -2.04 and -2.88). The 3-day horizon is near the end of the rebound, not past it.
+- **F6:** The idea is mixed across periods, which drowns its mean. In folds B and C, rising-market down days earn from +5.2 % (w17, t 2.45) to -5.3 % (w16, t -2.93) of excess 3-day return by window. The book had a Sharpe of 0.96 yet failed Calmar at 0.69.
+
+## Ideas
+- `044-01.b1_wide-down-day-shakeout-more-coins` (from F1, F2, F3, F4): In a rising market, a day that closes down rises over the next 3 days, and the rise is larger the wider that day's high-low range is in units of the coin's 30-day standard deviation of daily returns.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

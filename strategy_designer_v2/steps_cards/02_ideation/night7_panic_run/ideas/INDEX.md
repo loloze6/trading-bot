@@ -25,3 +25,4 @@
 043-02_falling-market-range-shrink-rise: In falling markets, a coin rises over 3 days, more so the narrower its daily range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
 044-01_rising-market-wide-down-day-rebound: In rising markets, a down-closing day rises over 3 days, more so the wider its range in units of 30-day daily-return swing. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
 044-02_rising-market-range-jump-down-rebound: In rising markets, a down-closing day rises over 3 days, more so the wider its range against its 30-day average daily range. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
+045-01_rising-market-late-week-gain: In rising markets, after a Thursday or Friday close, a coin rises over the next day, more so the larger its 60-day return. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
