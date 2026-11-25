@@ -192,6 +192,7 @@ An idea's latest record counts once.
 | 040-01_agitated-daily-fall-next-day-rebound_1d | confirmed | night7_chopreversal_run | 1d | 6 | ecc3ac6f0 | 2026-11-25T00:10:32 |
 | 042-01_falling-agitated-low-close-rebound_1d | confirmed | night7_chopreversal_run | 1d | 6 | 1ec701abc | 2026-11-25T00:46:47 |
 | 043-01_falling-agitated-intraday-drop-rebound_1d | paying | night7_chopreversal_run | 1d | 6 | 1cca49090 | 2026-11-25T00:55:51 |
+| 044-01_agitated-wide-range-fall-rebound_1d | paying | night7_chopreversal_run | 1d | 6 | f8fa94e4a | 2026-11-25T05:36:05 |
 | 044-02_agitated-down-day-range-rebound_1d | paying | night7_chopreversal_run | 1d | 6 | 3c0013d04 | 2026-11-25T04:44:42 |
 | 045-01_agitated-wide-low-close-rebound_1d | paying | night7_chopreversal_run | 1d | 6 | a6009763e | 2026-11-25T04:52:27 |
 | 047-01_falling-agitated-daily-fall-rebound_1d | paying | night7_chopreversal_run | 1d | 6 | 78e86b5bc | 2026-11-25T05:16:53 |

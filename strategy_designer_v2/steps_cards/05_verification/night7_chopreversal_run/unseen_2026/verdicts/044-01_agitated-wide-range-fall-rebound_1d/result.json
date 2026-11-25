@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (forecast > 0 bars)",
+    "value": 7.739308812932074e-05,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 0.14464034049505722
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 (and weighted mean > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-day excess return > 0",
+    "value": 0.001135751113833807,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 406,
+    "distinct days": 178
+  },
+  "decided_by": "Inconclusive: the slope's day-clustered t lies between -2 and 2.",
+  "reading": "Agitated profile read as regime == 'unknown' (not vetoed to chop), a down day as the recorded raw component > 0 (close below previous close where not recorded); cases are forecast > 0 bars with a next close in the same window; the clustered t uses the standard CR1 small-sample correction G/(G-1)*(N-1)/(N-K); the plan's 'fewer is inconclusive' minimum is reported as 'not observable' per the workflow."
+}

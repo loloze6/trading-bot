@@ -24,22 +24,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 043-01_falling-agitated-intraday-drop-rebound | - | plan | confirmed (+3.04) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 043-01.g1_falling-agitated-day-move-reversal | 1.43 | 6.3 |
 | 039-01.d1_falling-agitated-low-close-rebound | 039-01_agitated-low-close-next-day-rebound | plan | mismatch | not profitable enough (failed: Mean daily return, on days in a position, Calmar) | - | 7.g: 039-01.d1.g1_wide-day-low-close-rebound, 039-01.d1.g2_falling-wide-day-low-close-rebound | 0.60 | 4.9 |
 | 039-02.d1_wide-range-low-close-next-day-rebound | 039-02_agitated-high-close-next-day-giveback | plan | confirmed (+2.61) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 039-02.d1.g2_down-day-low-close-next-day-rebound | 0.64 | 6.2 |
-| 044-01_agitated-wide-range-fall-rebound | - | missing-components | - | - | - | - | 0.81 | 0.4 |
 | 044-02_agitated-down-day-range-rebound | - | plan | confirmed (+3.21) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-02.g1_agitated-wide-fall-run-rebound | 0.74 | 7.3 |
 | 045-01_agitated-wide-low-close-rebound | - | plan | confirmed (+3.83) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 045-01.g1_falling-agitated-low-close-rebound, 045-01.g2_agitated-high-close-next-day-fade | 0.63 | 6.2 |
 | 046-01_calm-scaled-rise-second-day-continues | - | plan | inconclusive (+1.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 046-01.b1_calm-rise-second-day-all-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 4.18 | 19.0 |
 | 047-01_falling-agitated-daily-fall-rebound | - | plan | confirmed (+2.77) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 047-01.g1_agitated-wide-up-day-next-day-fade, 047-01.g2_agitated-wide-down-day-rebound | 0.78 | 6.4 |
 | 045-02_agitated-wide-high-close-giveback | - | plan | no verdict | not checked | - | 7.g: no ideas: The backtest record for 045-02_agitated-wide-high-close-giveback reached this line with 0 coins, 0 windows, 0 bars, 0 trades and 0 days, so no pattern could be measured and no idea can rest on a finding. The backtest should be re-run or its record reloaded before this line reads it again. | 0.34 | 3.4 |
 | 046-02_calm-scaled-rise-two-day-continues | - | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 046-02.b1_calm-rise-second-day-follow-through; 7.g: 046-02.g2_calm-rise-second-day-follow-through | 1.09 | 5.9 |
+| 044-01_agitated-wide-range-fall-rebound | - | plan | confirmed (+2.16) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 044-01.g1_falling-agitated-wide-fall-rebound | 2.40 | 7.0 |
 
 ## Consumption
-27 ideas, 28.01 USD, 167.4 minutes in all.
+27 ideas, 29.60 USD, 173.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.59 | 12.1 |
-| step4_backtest | 0.00 | 64.4 |
-| step5_verdict | 4.10 | 15.0 |
+| step3_plan | 4.40 | 12.4 |
+| step4_backtest | 0.00 | 67.2 |
+| step5_verdict | 4.26 | 15.5 |
 | step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.d | 2.35 | 7.6 |
@@ -47,6 +47,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 7.34 | 26.0 |
-| step7_7.g | 10.64 | 33.4 |
-| similarity_check | 0.00 | 0.8 |
-| unseen_test | 0.00 | 6.7 |
+| step7_7.g | 11.26 | 35.0 |
+| similarity_check | 0.00 | 0.9 |
+| unseen_test | 0.00 | 7.8 |

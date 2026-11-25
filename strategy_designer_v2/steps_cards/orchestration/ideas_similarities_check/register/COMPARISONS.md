@@ -52,6 +52,7 @@
 | 035-01_falling-agitated-scaled-fall-rebound_1d | night7_chopreversal_run | 1d | 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d (1d) | 0.35 | same period | +0.0138 % (1.74) | 0.12 |
 | 039-02.d1_wide-range-low-close-next-day-rebound_1d | night7_chopreversal_run | 1d | 031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d (1d) | 0.46 | same period | +0.0218 % (1.33) | 0.39 |
 | 043-01_falling-agitated-intraday-drop-rebound_1d | night7_chopreversal_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.94 | same period | +0.0030 % (0.99) | 0.15 |
+| 044-01_agitated-wide-range-fall-rebound_1d | night7_chopreversal_run | 1d | 044-02_agitated-down-day-range-rebound_1d (1d) | 0.90 | same period | -0.0066 % (-1.15) | 0.27 |
 | 044-02_agitated-down-day-range-rebound_1d | night7_chopreversal_run | 1d | 039-02.d1_wide-range-low-close-next-day-rebound_1d (1d) | 0.78 | same period | +0.0104 % (1.49) | 0.31 |
 | 045-01_agitated-wide-low-close-rebound_1d | night7_chopreversal_run | 1d | 039-02.d1_wide-range-low-close-next-day-rebound_1d (1d) | 0.98 | same period | -0.0030 % (-0.89) | 0.46 |
 | 047-01_falling-agitated-daily-fall-rebound_1d | night7_chopreversal_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.98 | same period | +0.0010 % (0.66) | 0.13 |

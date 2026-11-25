@@ -202,3 +202,4 @@ night6_streak_run | 031-02.b1.g1_long-up-streaks-keep-rising_1d | UpCloseStreakL
 night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d | VolatilityRatioWeightedScaledReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 0, "base_period": 30, "period": 1, "return_scale": "base_std", "vol_period": 5}
 night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
 night7_chopreversal_run | 043-01_falling-agitated-intraday-drop-rebound_1d | OpenToCloseDropComponent | built: BarBodySizeComponent {"form": "drop", "relative_to": "open"}
+night7_chopreversal_run | 044-01_agitated-wide-range-fall-rebound_1d | FallStdScaledRangeMultipleComponent | built: ScaledFallRangeMultipleComponent {"lag": 0, "period": 1, "scale": "std", "window": 30}
