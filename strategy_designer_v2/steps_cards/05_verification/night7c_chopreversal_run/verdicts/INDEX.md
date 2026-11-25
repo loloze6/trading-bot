@@ -5,6 +5,7 @@
 032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop_1d: confirmed (fit: adapted) [main: 0.000970546; OLS slope t 3.55922; grid cases with a non-zero forecast 1889]
 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop_1d: confirmed (fit: exact) [main: 0.00123453; OLS slope t 3.89505; cases 1114, days 366, active bars 8133]
 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d: confirmed (fit: adapted) [main: 0.000970546; slope t (day-clustered) 2.14133; grid cases 1889, distinct days 420]
+032-01.b1.b1.e2.d2.d1.d1_chop-continuation-exit-on-break_1d: inconclusive (fit: exact) [main: 0.00516043; t of the mean over days 1.56568; days 2546, chop-regime cases 8058]
 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts_1d: confirmed (fit: adapted) [main: 0.0175327; t of the weighted mean, cases summed per day 2.65621; cases 1114, days 366]
 032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation_1d: inconclusive (fit: adapted) [main: 0.0118804; day-clustered t of the mean 1.34849; grid cases with a positive forecast 532, distinct days 233]
 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation_1d: confirmed (fit: adapted) [main: 0.0165404; t of the mean, cases clustered by day 3.66634; cases 1223, distinct days 798]

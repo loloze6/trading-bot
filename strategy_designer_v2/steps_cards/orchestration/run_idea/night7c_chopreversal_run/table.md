@@ -23,21 +23,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation | 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation | plan | inconclusive (+1.35) | profitable enough | - | 7.b: 032-01.b1.b1.e2.d2.d2.d1.b1_choppy-month-continuation-more-coins; 7.e: 032-01.b1.b1.e2.d2.d2.d1.e1_choppy-month-rise-carries-week, 032-01.b1.b1.e2.d2.d2.d1.e2_choppy-down-week-continuation, 032-01.b1.b1.e2.d2.d2.d1.e3_chop-graded-weekly-momentum; 7.g: 032-01.b1.b1.e2.d2.d2.d1.g1_next-day-rebound-after-sharp-falls | 2.18 | 7.2 |
 | 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned | 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean | plan | inconclusive (+2.19) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-01.b1.b1.e2.d1.d1.d1.b1_chop-continuation-over-a-week, 032-01.b1.b1.e2.d1.d1.d1.b2_chop-month-lean-continuation; 7.g: 032-01.b1.b1.e2.d1.d1.d1.g1_agitated-one-day-move-reversal | 1.05 | 5.6 |
 | 032-01.b1.b1.e2.d1.d3.d1_short-continuation-ends-with-chop | 032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop | untestable | - | - | - | - | 0.06 | 0.3 |
+| 032-01.b1.b1.e2.d2.d1.d1_chop-continuation-exit-on-break | 032-01.b1.b1.e2.d2.d1_chop-continuation-while-chop-lasts | plan | inconclusive (+1.57) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 032-01.b1.b1.e2.d2.d1.d1.b1_chop-continuation-more-coins, 032-01.b1.b1.e2.d2.d1.d1.b2_choppy-month-weekly-continuation; 7.g: 032-01.b1.b1.e2.d2.d1.d1.g1_choppy-month-weekly-continuation, 032-01.b1.b1.e2.d2.d1.d1.g2_agreeing-week-continues-weekly | 1.04 | 5.5 |
 
 ## Consumption
-19 ideas, 23.04 USD, 113.5 minutes in all.
+20 ideas, 24.08 USD, 119.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.21 | 10.7 |
-| step4_backtest | 0.00 | 34.3 |
-| step5_verdict | 3.08 | 11.6 |
+| step3_plan | 3.30 | 11.2 |
+| step4_backtest | 0.00 | 36.1 |
+| step5_verdict | 3.25 | 12.2 |
 | step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 4.79 | 16.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.82 | 2.9 |
-| step7_7.g | 7.83 | 24.9 |
-| step7_7.b | 3.31 | 10.8 |
+| step7_7.g | 8.24 | 26.2 |
+| step7_7.b | 3.68 | 12.0 |
 | similarity_check | 0.00 | 0.7 |

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the per-day sum of (forecast/10) x (next-day return - coin mean daily return) on chop-regime bars",
+    "value": 0.005160425355890106,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 1.565681257547768
+    },
+    "threshold": "confirm: t >= 2 over >= 100 days with top-minus-bottom third > 0; reject: t <= -2 over >= 100 days"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of |forecast|, mean direction-signed excess next-day return",
+    "value": 0.0005929418994307584,
+    "passed": true
+  },
+  "counts": {
+    "days": 2546,
+    "chop-regime cases": 8058
+  },
+  "decided_by": "The main t lies between -2 and 2.",
+  "reading": "Situation recomputed from closes inside each window (ER = |close[t]-close[t-30]| / sum of 30 absolute daily changes, 7- and 30-day returns), with active bars whose 30-day lookback lies before the window's first recorded bar left out of the agreement share; chop-regime bars are those whose recorded regime is 'chop' with a next-day close in the same window; terciles of |forecast| are cut by rank (ties in time order) over all chop-regime cases pooled, and a day is the UTC date of the bar's timestamp."
+}
