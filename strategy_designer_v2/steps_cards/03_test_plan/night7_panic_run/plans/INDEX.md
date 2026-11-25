@@ -5,7 +5,7 @@
 035-01_rising-market-quieting-swings-rise_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 035-02_rising-market-narrowing-ranges-rise_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 036-01_scaled-rally-week-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-036-02_range-scaled-rally-continuation_1d: missing-components: The idea scales the 3-day rise by the coin's mean daily high-to-low range over 30 days. No component computes a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+036-02_range-scaled-rally-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 037-01_falling-market-wide-day-decline_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 038-01_rising-market-scaled-rally-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 039-01_scaled-fall-next-day-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
