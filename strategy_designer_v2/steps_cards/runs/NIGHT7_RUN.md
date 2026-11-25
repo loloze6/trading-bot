@@ -160,3 +160,27 @@ Not reversed: reversing loses the profile's gain (39 confirmed against 19) and b
 (brief numbers: tonight 4 sessions numbered 032 to 053 each).
 
 **The one change a practitioner would make:** the discovery ranking above; it is what kept the themes unanswered.
+
+## Reading corrected (2026-11-25, about 10:05 Paris; the designer, after the operator asked for a deeper review)
+The reading above judged mostly on counts the rule fixed at 00:45 Paris says are "counted, not judged" (confirmed books,
+families, candidates), and it misread the control: by `common/theme.md`, an idea with the theme's situation and the
+opposite effect is **on** the theme and answers it. Judged by the rule fixed before the runs
+(`topics/44_review/night7_criteria.py`, `.csv`; on/off theme for the control read by the designer from the ideas' text):
+
+| Criterion (fixed before the runs) | New code | Control | Better |
+|---|---|---|---|
+| Ideas tested on the brief's theme | 10 of 86 (the brief's own; its on-theme follow-ups were written, never run) | about 56 of 82 | control |
+| Themes answered (an idea on the theme confirmed) | 0 of 4 | 3 of 4: range breaks in a flat market **continue** (rangefail); weekly moves in a choppy agitated market **continue** (chopreversal, 9 confirmed); after a volatile month's low, a **next-day rebound** (panic). Steadydecline drifted off | control |
+| Spend on the portfolio's effects (confirmed, nearest held book explains 0.5 or more) | 31.2 of 93.3 USD (29 ideas) | 4.0 of 98.8 USD (4 ideas) | control |
+| Days in a position inside the named profile | by construction (topic 49's gate; no fault all night) | not measured: the control's bar records were not kept | - |
+
+Counted, not judged: confirmed 38 against 19, but 29 of the 38 re-find the portfolio's effects (control 4 of 19);
+confirmed and unrelated to the portfolio 9 against 15 (the control's 9 chop continuations are one effect). The "32
+families against 5" above counts briefs (57 made from discoveries), not effects. Candidates by P1's rule 2 effects
+against 1, each holding on one unseen period of two.
+
+**Corrected outcome:** N3 for the new code (discoveries carried the night) and **the change went the wrong way on all
+three judged criteria**. The cause is topic 50's discovery rule (a discovery becomes a brief whose ideas are ranked
+first, outside P9: 76 of 86 turns, mostly the next-day rebound the portfolio holds). Topic 49's own effect is not
+separable on this night: the brief's first ideas were confirmed in neither arm (0 of 10, 0 of 11); 7 of the new code's
+9 unrelated confirmed books name a profile, and both candidate effects do.
