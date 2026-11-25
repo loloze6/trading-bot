@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 032-01.b1.b1.e1_tight-range-breakout-ten-days_1d
+idea tested: 032-01.b1.b1.e1_tight-range-breakout-ten-days
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5809 USD
+---
+## Findings
+- **F1:** In trendless coins (60-day efficiency ratio ≤ 0.3), a first daily close below the prior 60-day low was followed by a 10-day return below the coin's normal drift: -3.82 % (t -1.70 by day, 59 cases). The shortfall was graded by range width. In the narrowest third of prior 60-day ranges (12–53 % wide) it was -9.44 % (t -2.62, 20 cases); in the middle third (53–88 %) -5.18 % (t -1.77); in the widest third (88–201 %) +3.10 % (t 0.77). Long excess return rose with log range width, correlation +0.41 and slope +0.13. The book never trades this mirror of its signal, because it never goes short.
+- **F2:** The downside follow-through belongs to trendless coins. Downside breaks with an efficiency ratio above 0.3 gave -1.00 % (t -0.22, 11 cases), against -3.82 % in trendless coins. The fall points the same way in 9 of 11 coins and in 3 of the 4 years (2018 -9.3 %, 2019 -0.7 %, 2020 +8.7 %, 2021 -7.8 %).
+- **F3:** The tested upside break holds on the explored folds and is graded the same way. First trendless closes above the prior 60-day high gave +10.9 % excess over 10 days (t 2.68, 54 days). The narrowest quartile of range width gave +14.9 % (t 1.98) against +1.9 % (t 0.35) for the widest. The efficiency ratio sorts the effect: ER ≤ 0.15 gave +9.1 %, ER 0.15–0.3 gave +11.2 %, and ER above 0.3 gave -3.3 % (12 cases).
+- **F4:** The upside move is complete within 10 days. Excess return from day 10 to day 20 after the break was -1.85 % (t -0.81, 40 days), while the full 20-day excess equalled the 10-day one (+11.4 %, t 2.55).
+- **F5:** The book's gain rests on its tails. On the 2,671 coin-days with a non-zero book return, the top 5 % of days (above +2.32 %) carry 215 % of the summed gain. Among trades, the longest third earned a mean of +26.3 % (median +18.5 %), while the middle third had a median of -0.85 %.
+- **F6:** Other angles showed nothing that stood out after this many looks. Weekday effects in next-day excess return, with cases of the same day counted together, all had |t| < 1.5. Grid returns by 20-day volatility quartile all had |t| < 1.1. Grid returns by prior 10-day return had only a middle-quintile -2.3 % (t -2.07), with no monotone grading.
+
+## Ideas
+- `032-01.b1.b1.e1.g1_tight-range-downside-break-continues` (from F1, F2, F3): In a coin whose price has gone nowhere over the past 60 days, a daily close below its prior 60-day low is followed by a further fall over the next 10 days, and the narrower the prior 60-day high-low range is as a share of the price, the larger that fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -183,6 +183,7 @@ An idea's latest record counts once.
 | 031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | 75383ddb5 | 2026-11-24T01:55:09 |
 | 031-01.g1.g2_monthly-trend-carries-into-saturday_1d | confirmed | night6_yearlow_run | 1d | 6 | cf258ce23 | 2026-11-24T01:50:50 |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | paying | night6_yearlow_run | 1d | 6 | 19f1eb4c6 | 2026-11-24T01:30:32 |
+| 032-01.b1.b1.e1_tight-range-breakout-ten-days_1d | confirmed | night7c_rangefail_run | 1d | 19 | 9f4f2ad23 | 2026-11-25T00:30:45 |
 | 032-02.b1.e2_tight-range-breakouts-continue_1d | confirmed | night7c_rangefail_run | 1d | 6 | d4deaab1f | 2026-11-25T00:15:46 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |

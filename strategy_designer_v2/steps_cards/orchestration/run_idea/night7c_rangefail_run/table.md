@@ -10,23 +10,26 @@ One row per idea run; every status is read from the step's own result file. Each
 | 032-02.b1_flat-range-upside-break-continues | 032-02_flat-range-downside-break-recovers | plan | inconclusive (+2.17) | profitable enough | - | 7.b: 032-02.b1.b1_flat-range-upside-break-continues; 7.e: 032-02.b1.e1_quiet-breakouts-continue-longer, 032-02.b1.e2_tight-range-breakouts-continue; 7.g: 032-02.b1.g1_range-position-predicts-continuation, 032-02.b1.g2_top-of-range-keeps-rising | 1.60 | 7.1 |
 | 032-02.b1.e1_quiet-breakouts-continue-longer | 032-02.b1_flat-range-upside-break-continues | plan | inconclusive (+2.00) | profitable enough | - | 7.b: 032-02.b1.e1.b1_quiet-breakouts-more-coins, 032-02.b1.e1.b2_unextended-breakouts-keep-rising; 7.e: 032-02.b1.e1.e1_tight-range-breakouts-continue, 032-02.b1.e1.e2_unextended-breakouts-keep-rising; 7.g: 032-02.b1.e1.g1_next-day-rebound-after-shocks, 032-02.b1.e1.g2_big-up-days-keep-rising | 1.55 | 7.4 |
 | 032-02.b1.e2_tight-range-breakouts-continue | 032-02.b1_flat-range-upside-break-continues | plan | confirmed (+2.59) | not profitable enough (failed: Calmar) | - | 7.d: 032-02.b1.e2.d1_raw-tightness-graded-breakouts, 032-02.b1.e2.d2_tight-breakouts-held-longer, 032-02.b1.e2.d3_failed-breakouts-give-nothing; 7.g: 032-02.b1.e2.g1_choppy-coin-twenty-day-momentum | 1.19 | 6.1 |
-| 032-02.b1.e1.e1_tight-range-breakouts-continue | 032-02.b1.e1_quiet-breakouts-continue-longer | missing-components | - | - | - | - | 0.08 | 0.5 |
 | 032-02.b1.e1.e2_unextended-breakouts-keep-rising | 032-02.b1.e1_quiet-breakouts-continue-longer | missing-components | - | - | - | - | 0.10 | 0.7 |
+| 032-01.b1.b1_flat-range-breaks-more-coins | 032-01.b1_flat-range-upside-breaks-continue | plan | inconclusive (+2.53) | profitable enough | - | 7.b: 032-01.b1.b1.b1_compressed-range-breakouts-continue, 032-01.b1.b1.b2_tight-range-breaks-ten-days; 7.e: 032-01.b1.b1.e1_tight-range-breakout-ten-days, 032-01.b1.b1.e2_small-breaks-follow-through; 7.g: 032-01.b1.b1.g1_20-day-range-position-continues, 032-01.b1.b1.g2_flat-range-top-continues-briefly | 1.59 | 11.2 |
+| 032-01.b1.b1.e1_tight-range-breakout-ten-days | 032-01.b1.b1_flat-range-breaks-more-coins | plan | confirmed (+3.42) | not profitable enough (failed: Calmar) | - | 7.d: 032-01.b1.b1.e1.d1_narrow-range-breakout-continuation, 032-01.b1.b1.e1.d2_breakout-held-above-level; 7.g: 032-01.b1.b1.e1.g1_tight-range-downside-break-continues | 1.36 | 10.3 |
+| 032-02.b1.e1.e1_tight-range-breakouts-continue | 032-02.b1.e1_quiet-breakouts-continue-longer | plan | inconclusive (-0.57) | profitable enough | - | 7.b: 032-02.b1.e1.e1.b1_absolute-tight-range-breakouts-continue, 032-02.b1.e1.e1.b2_quiet-approach-breakouts-continue; 7.e: 032-02.b1.e1.e1.e1_tight-range-breaks-rise-faster, 032-02.b1.e1.e1.e2_compressed-ranges-precede-rises, 032-02.b1.e1.e1.e3_two-month-momentum-continues; 7.g: 032-02.b1.e1.e1.g1_nearness-to-high-momentum, 032-02.b1.e1.e1.g2_two-month-high-proximity-drift | 2.18 | 6.9 |
+| 032-01.b1.b1.e2_small-breaks-follow-through | 032-01.b1.b1_flat-range-breaks-more-coins | missing-components | - | - | - | - | 0.09 | 0.6 |
 
 ## Consumption
-8 ideas, 8.91 USD, 39.3 minutes in all.
+11 ideas, 14.05 USD, 67.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.73 | 6.9 |
-| step4_backtest | 0.00 | 9.2 |
-| step5_verdict | 1.11 | 4.3 |
-| step6_check | 0.00 | 0.1 |
+| step3_plan | 2.88 | 9.8 |
+| step4_backtest | 0.00 | 22.1 |
+| step5_verdict | 1.71 | 6.5 |
+| step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.d | 0.47 | 1.5 |
-| step7_7.e | 0.82 | 2.5 |
+| step7_7.d | 0.91 | 3.0 |
+| step7_7.e | 1.61 | 5.1 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.g | 2.78 | 8.5 |
-| step7_7.b | 2.00 | 6.0 |
+| step7_7.g | 4.20 | 12.4 |
+| step7_7.b | 2.74 | 8.3 |
 | similarity_check | 0.00 | 0.1 |
