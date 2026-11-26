@@ -21,14 +21,15 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.g1.d2.d1_own-range-close-height-fade | 060-01.g1.d2_wide-day-close-location-graded-fade | plan | confirmed (+2.23) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 060-01.g1.d2.d1.g3_wide-high-close-fade | 0.90 | 7.4 |
 | 060-01.g1.d2.d2_wider-squeeze-day-fades-harder | 060-01.g1.d2_wide-day-close-location-graded-fade | plan | inconclusive (+1.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.d2.d2.b1_wider-squeeze-fade-more-coins; 7.g: 060-01.g1.d2.d2.g1_agitated-downtrend-up-day-fades, 060-01.g1.d2.d2.g2_calm-downtrend-fall-continuation | 1.00 | 6.6 |
 | 060-01.g1.g1_graded-width-high-close-fade | 060-01.g1_wide-day-high-close-fade | plan | inconclusive (+1.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.g1.b1_graded-width-fade-all-coins; 7.g: 060-01.g1.g1.g1_agitated-downtrend-up-day-fade, 060-01.g1.g1.g2_swing-graded-downtrend-rally-fade | 0.88 | 6.0 |
+| 068-01_falling-agitated-lone-rise-fade | - | plan | no verdict | not checked | - | 7.g: no ideas: The backtest record is empty (0 coin-window tables in bars, trades and days, and no verdict, check or size), so no pattern could be measured and no finding supports an idea; the backtest should be rerun before this line reads it again. | 0.34 | 3.8 |
 
 ## Consumption
-17 ideas, 19.00 USD, 120.6 minutes in all.
+18 ideas, 19.34 USD, 124.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.16 | 7.9 |
-| step4_backtest | 0.00 | 55.1 |
+| step3_plan | 2.31 | 9.0 |
+| step4_backtest | 0.00 | 57.0 |
 | step5_verdict | 2.79 | 10.0 |
 | step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
@@ -37,6 +38,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.46 | 1.2 |
 | step7_7.b | 3.38 | 10.8 |
-| step7_7.g | 8.20 | 25.7 |
+| step7_7.g | 8.39 | 26.4 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 2.3 |
