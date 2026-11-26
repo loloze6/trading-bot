@@ -21,3 +21,5 @@
 066-02_agitated-low-close-rebounds: In an agitated market, a close lower in the day's range is followed by a larger rise the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: agitated]
 067-01_falling-calm-swing-keeps-falling: In a falling market, a lower 30-day swing against the coin's past year is followed by a larger fall over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
 067-02_falling-agitated-swing-rebounds: In a falling market, a higher 30-day swing against the coin's past year is followed by a larger rise over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
+068-01_falling-week-sunday-rebound: In a falling market, a deeper 7-day fall to Saturday's close is followed by a larger rise on Sunday. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
+068-02_heavy-selling-week-sunday-rebound: In a falling market, heavier volume during a 7-day fall to Saturday's close is followed by a larger rise on Sunday. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]

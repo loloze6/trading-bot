@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 060-02.d1.d1_volume-shrinkage-extends-running-falls_1d
+idea tested: 060-02.d1.d1_volume-shrinkage-extends-running-falls
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4104 USD
+---
+## Findings
+- **F1:** The effect sits entirely in the deepest volume shrinkage. On in-regime 5-day grid cases, the short-side unusual move is +2.98 % (t 3.0, n 135) when the forecast is at -10 or below. It falls to +0.73 % (t 0.8, n 114) for -10 to -3 and +0.06 % (t 0.03, n 38) for weaker shrinkage, and it is -2.20 % (t -2.2, n 212) when volume grew. The book's bars held show the same order: +0.30 % per bar on strong forecasts (669 bars), +0.14 % on mid (551), -0.01 % on weak (146) and -0.18 % on zero-forecast bars (244). So most of the time in a position is spent where nothing is earned.
+- **F2:** The strong case is carried by coins whose last 5 days were still falling, and the fall alone does not earn short.
+- **F3:** The strong case grows with a longer horizon. Its short-side unusual move is +2.98 % over 5 days (t 3.0), +5.42 % over 10 days (t 4.0) and +6.37 % over 20 days (t 2.8). The book's trades show the same pattern:
+- **F4:** Positions carried outside the situation lose: -0.12 % per bar in the chop regime (96 bars) and -0.23 % per bar in unknown (133 bars), against +0.20 % per bar while trending (1381 bars).
+- **F5:** Among shrinkage cases, the size of the 20-day fall matters. The middle tercile carries +5.22 % over 5 days (t 5.0, n 82). The deepest tercile gives only +0.19 % (t 0.15, n 84), so the oldest, sharpest falls no longer continue.
+- **F6:** The effect fails in 2020: -4.68 % over 5 days (t -3.6, n 21) on shrinkage cases, and -6.8 % for the 6 strong cases (t -5.2). It is flat in 2021 (-0.28 %, n 51), against +3.87 % in 2018 (t 3.1) and +1.83 % in 2019 (t 2.8). The year 2020 is a reason the book's falls stay large next to its small yearly gain.
+
+## Ideas
+- `060-02.d1.d1.d1_volume-dry-up-ten-day-fall` (from F1, F3): In a falling market, while the coin's 20-day return is still negative, the more its trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 10 days.
+- `060-02.d1.d1.d2_dry-up-while-still-sliding` (from F2, F3, F4): In a falling market, while the coin's 20-day return and its 5-day return are both still negative, the more its trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 10 days.
+- `060-02.d1.d1.d3_dry-up-in-moderate-falls` (from F5, F1): In a falling market, while the coin's 20-day return is negative but not among its sharpest, the more its trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

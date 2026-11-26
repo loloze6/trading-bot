@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "060-02.d1.d2_volume-signal-outside-crash-falls_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6305493,
+  "findings": {
+    "F1": "Inside the tested situation (falling market, 20-day return between -20 % and 0 %), the volume signal works only in the deeper half of the fall: the slope of the 5-day standardised excess return on the 30-day log volume ratio has t 3.61 (84 cases) when the 20-day return is -20 % to -10 %, against t -0.67 (68 cases) when it is -10 % to 0 %; the volume ratio times the depth of the 20-day fall has t 3.53 (152 cases).",
+    "F2": "On the book's active grid bars, the signal's signed 5-day excess return rises steadily with the depth of the 20-day fall: +0.6 % (t 0.54, 70 cases) at 0 to -5 %, +2.8 % (t 2.16, 47) at -5 to -10 %, +3.3 % (t 2.99, 53) at -10 to -15 %, +5.7 % (t 3.90, 66) at -15 to -21 %. Taken together, a 20-day fall of -10 % or deeper gives +4.6 % per case (t 3.40 with each day's cases together, 119 cases on 57 days), against +1.5 % (t 1.21, 117 cases on 64 days) for a shallower fall. It is positive in every year of 2018 to 2021 and on all six coins, from +2.5 % on BTC to +8.5 % on LTC.",
+    "F3": "The book earns mainly on its short side, when volume shrinks. Active short cases have a 5-day excess return of -2.4 % (t -1.91, 192 cases on 82 days); active long cases have +2.3 % (t 1.32, 87 cases on 50 days). The lowest forecast quintile alone (forecast -20 to -14.5) gives -5.3 % (t -3.44, 56 cases).",
+    "F4": "The signal is stronger when the coin is calmer than its own recent norm (30-day swing at or below its window median so far): the signed excess return is +4.0 % (t 2.48, 125 cases on 53 days) in calm bars, against +2.1 % (t 1.61, 48 cases on 31 days) in agitated bars. In calm bars the short side carries the gain: -4.5 % over 36 cases.",
+    "F5": "When the 20-day fall is a crash (below -20 %), volume does not grade the next 5 days. By terciles of the volume ratio the excess return is -1.7 %, +2.0 % and +1.5 % (each |t| \u2264 1.19, about 48 cases each), and the bars in that bucket of the falling market average +0.6 % (t 0.54, 146 cases). The dry-up continuation stops at a crash.",
+    "F6": "Outside falling markets (60-day return \u2265 -10 %) the volume ratio points the other way: its slope on the standardised 5-day excess return has t -2.29 (445 cases), and the lowest volume quintile averages +4.0 %. That quintile is not sure (t 1.51 with each day's cases together, 41 days) and it changes sign across years (2018 -7.1 %, 2021 +9.8 %), so it is not a finding to act on.",
+    "F7": "Moderate 20-day momentum continues across all bars: the -19 % to -5 % quintile of the 20-day return is followed by -2.8 % excess over 5 days (t -4.40, 284 cases), and the +4 % to +20 % quintile by +2.4 % (t 3.36, 284 cases). The extremes do not continue. In the falling market the moderate-fall bars average -2.8 %, but only with t -1.85 when each day's cases are taken together (152 cases on 56 days).",
+    "F8": "The book's worst 2 % of days (-1.83 % on average, 29 days) are days the coins rose +1.58 %. Its best 2 % (+2.90 %) are days the coins fell -1.93 %. The book's risk is a short book caught in rebounds, and that is what drives the Calmar of 0.32."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, the more a coin's trading volume over the past 30 days has shrunk against the 30 days before, the further it falls over the next 5 days, and the deeper its 20-day fall short of a crash, the larger that further fall.",
+      "consequence": "A trader leans short on volume dry-ups in falling coins and weights the bet by how far the last 20 days have already fallen, instead of treating every moderate decline alike.",
+      "name": "dry-up scaled by fall depth",
+      "from": "F1, F2, F3, F5",
+      "profile": "falling",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, the more a coin's trading volume over the past 30 days has shrunk against the 30 days before, the further it falls over the next 5 days.",
+      "consequence": "A trader looks for short continuation trades in quiet downtrends where volume is drying up, a profile and side where the research holds almost no strategy.",
+      "name": "calm fall volume dry-up",
+      "from": "F3, F4, F2",
+      "profile": "falling calm",
+      "refs": [
+        "F3",
+        "F4",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-02.d1.d2.g1_dry-up-scaled-by-fall-depth",
+    "060-02.d1.d2.g2_calm-fall-volume-dry-up"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

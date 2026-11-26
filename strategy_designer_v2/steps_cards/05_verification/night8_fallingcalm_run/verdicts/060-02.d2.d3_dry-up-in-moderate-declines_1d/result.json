@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean sign-flipped 5-bar excess return on short-signal grid bars",
+    "value": 0.01310315712135352,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.7617152743521731
+    },
+    "threshold": "mean > 0 with t >= 2 confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "OLS slope of sign-flipped excess return on |forecast|",
+    "value": 0.0006193815177643739,
+    "passed": true
+  },
+  "counts": {
+    "independent cases (days)": 202,
+    "cases": 479
+  },
+  "decided_by": "The main t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The situation is the 10-bar return below 0 and the 60-bar return below -10 % (the profile veto), both from closes inside the window, with the recorded regime 'trending' standing in for the part that cannot be computed on a window's first 60 bars; the main mean is over the cases, its t uses the deviations summed per day (cluster standard error), the drift is the coin's mean 5-bar return on the same grid over all its windows, and 'fewer than 30 days' is reported as not observable."
+}
