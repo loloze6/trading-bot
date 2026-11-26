@@ -1,0 +1,4 @@
+072-01_choppy-deep-close-continuation: In choppy markets, a deeper close below the 20-day high, scaled by recent swing, brings a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: choppy]
+072-02_choppy-deep-up-day-fade: In choppy markets, an up-day close deep below the 20-day high, scaled by recent swing, brings a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: choppy]
+072-03_choppy-deep-down-day-continuation: In choppy markets, a down-day close deep below the 20-day high, scaled by recent swing, brings a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: choppy]
+072-04_choppy-deep-close-multiday-fall: In choppy markets, a deeper close below the 20-day high, scaled by recent swing, brings a larger fall over three days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: choppy]
