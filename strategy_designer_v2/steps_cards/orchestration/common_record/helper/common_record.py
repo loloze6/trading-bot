@@ -180,7 +180,7 @@ def record_one(plan, run, python, steps=None, coin_list=None, usable=coins.usabl
         sys.exit(f"no in-sample measure.py for {rid} in {run}")
     coin_list = coin_list or coins.portfolio_group()
     windows = json.loads(WINDOWS.read_text(encoding="utf-8"))
-    t0 = time.time()
+    t0, made_by = time.time(), commit()      # the code, read before this call writes any (tracked) index
     record = f["backtests"] / rid
     for k in ("backtests", "verdicts", "checks", "result"):
         f[k].mkdir(parents=True, exist_ok=True)
@@ -211,7 +211,7 @@ def record_one(plan, run, python, steps=None, coin_list=None, usable=coins.usabl
            "step6": {"status": (c or {}).get("status", "not checked"), "measures": (c or {}).get("measures", []),
                      "informative": (c or {}).get("informative")},
            "seconds": round(time.time() - t0 + (old.get("seconds") or 0.0), 1),     # every call's time, a resume's added
-           "made_utc": old.get("made_utc") or utc_now(), "commit": old.get("commit") or commit()}
+           "made_utc": old.get("made_utc") or utc_now(), "commit": old.get("commit") or made_by}
     write_atomic(out_file, json.dumps(res, indent=2) + "\n")
     index = steps / "orchestration" / "common_record" / "INDEX.md"
     key = f"{run}/{rid}"
