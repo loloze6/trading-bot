@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "061-01.g1.d1.d2.d2_calm-large-breakout-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39838640000000003,
+  "findings": {
+    "F1": "The test's own result points the way the idea predicts but falls short of the bar. The slope of the 5-day excess return on the forecast is +0.00133 with a day-clustered t of 1.06, over 211 cases on 158 days. The size is effectively zero: an unusual move of +0.07 % per case (t 0.09), a strength of -0.015 of the coin's usual 10.60 % move.",
+    "F2": "In the folds shown (B, C), the profile's 20-day-high up days are too few to show any grading. There are only 72 cells over 5 days, and only 13 in a true choppy-calm proxy. Their 5-day slope on the rise in swing units is -0.33 % per unit (t -0.22). By quartile of the rise, the 5-day excess is +1.01 %, +3.29 %, +1.09 % and +0.79 %, so the largest rises do not continue more.",
+    "F3": "The comparison half of the idea holds in these folds. In profile, 20-day-high up days return +1.54 % in excess over 5 days (t 1.25). Rises closing at least 5 % below the high return -2.51 % (t -3.32, 114 cells), matching step 5's supporting difference of +1.48 %.",
+    "F4": "The in-profile cases split by coin and by year, which drowns any slope in six coins and two folds:",
+    "F5": "Graded follow-through of large 20-day-high rises does show, but outside the calm market the brief names, which is the brief's own falsifier.",
+    "F6": "More data exists than the test used, and the test's few cases are the problem. The idea ran on the six default coins only. Folds A and D also hold ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL and INJ, fold D adds NEAR, SUI, TAO and ONDO, and B and C hold some of these. Only about 7 % of the coins' days were in a position."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "calm breakout, all coins",
+      "from": "F1, F2, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F6"
+      ],
+      "idea": "In a choppy, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, when that rise closes the coin at its highest close of the past 20 days, the further it keeps rising over the next 5 days. A rise of the same size that ends well below the 20-day high continues much less.",
+      "consequence": "A trader sizes a calm-market breakout by the day's rise in swing units times its closeness to the 20-day high, so a near-high day with a small rise, or a large bounce far below the high, gets little or nothing.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "choppy calm"
+    }
+  ],
+  "idea_ids": [
+    "061-01.g1.d1.d2.d2.b1_calm-breakout-all-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

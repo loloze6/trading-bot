@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move after long bets (forecast rise >= 2), once per 10-bar grid cell",
+    "value": -0.008703631641760232,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.2704883928698256
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above median forecast minus below median",
+    "value": 0.019103302424496517,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 346,
+    "cases": 473
+  },
+  "decided_by": "The t is between -2 and 2, which is inconclusive.",
+  "reading": "Bets are tracked per window from 0 at its first bar, the first bet in each 10-bar grid cell (counted from the window's first row) is the case and cases without 10 bars ahead in the window are dropped, cases equal to the median forecast are left out of both halves, and the day-clustered t uses the D/(D-1) correction so it equals the ordinary t with one case per day."
+}

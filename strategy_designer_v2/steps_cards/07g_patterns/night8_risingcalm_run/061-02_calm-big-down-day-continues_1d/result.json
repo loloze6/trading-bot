@@ -1,0 +1,66 @@
+{
+  "line": "7.g",
+  "backtest": "061-02_calm-big-down-day-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3976043,
+  "findings": {
+    "F1": "In calm markets the brief's effect is present on both sides together. A day's move in units of its 30-day swing is followed by a 5-day excess return the same way of +1.52 % (t 2.75 with same-day cases summed; 771 cases on 195 days), and the slope is +1.74 % per swing unit (t 4.82). In agitated markets the same measure is +0.03 % (t 0.03; 587 cases), with a slope of -0.01 % per unit.",
+    "F2": "In calm markets the follow-through grows with the day's size. By quartile of |day's return / 30-day std| it runs from +0.80 % (t 1.12) in the lowest to +2.66 % (t 2.57, 86 days) in the highest. Measured from the next day's close, the highest quartile gains +4.08 % over 5 days (t 3.47) against +0.87 % in the lowest.",
+    "F3": "The tested idea took only down days, and that is why it fell short. Calm down days follow through by +1.56 % (t 1.97, 141 days) and calm up days by +1.47 % (t 1.58, 125 days, slope t 2.68). The verdict's down-only main measure had t 1.59, and its median split failed (-0.25), because the forecast is standardised over 60 values rather than read in raw swing units.",
+    "F4": "The calm follow-through is broad rather than carried by one slice:",
+    "F5": "The effect needs days to show. In calm markets it is +0.25 % at 3 days (t 0.72), +1.52 % at 5 days (t 2.75) and +1.54 % at 10 days (t 1.36), where the slope per swing unit is 2.03 % (t 2.87).",
+    "F6": "In calm markets, where a day closes inside its own range predicts the next 5 days, graded. By quartile of close location (0 = at the low, 1 = at the high) the 5-day excess return is -2.73 % (t -2.72), +0.07 %, +0.66 % and +1.47 %. In a joint fit it adds +1.58 % per unit of close location on top of the swing-scaled move, which adds +1.44 % per unit.",
+    "F7": "The close-location effect turns over in agitated markets. There, low-close days are followed by +0.91 % over 5 days (t 0.85) and high-close days by -1.45 % (t -1.28), the reverse of the calm reading in F6.",
+    "F8": "Two other patterns stand out but repeat ideas the profile map already holds, so I leave them out:"
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the larger a coin's one-day return against the standard deviation of its daily returns over the past 30 days, the larger its return in the same direction over the next 5 days.",
+      "consequence": "In calm markets, a trader follows a day that stands out against the coin's recent swing, long after a large up day and short after a large down day, with more size the larger the day.",
+      "name": "calm big day follows through",
+      "from": "F1, F2, F3, F4",
+      "profile": "calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a calm market, the larger a coin's one-day return against the standard deviation of its daily returns over the past 30 days, the larger its return in the same direction over the 5 days that start one day after it.",
+      "consequence": "A trader who misses the first day of a calm-market breakout can still join it the next day in the same direction, and the larger the day, the more is left to gain.",
+      "name": "calm big day delayed follow",
+      "from": "F2, F5",
+      "profile": "calm",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a calm market, the nearer a coin's daily close sits to the day's low within its high-low range, the lower its return over the next 5 days.",
+      "consequence": "In calm markets a close near the day's low is a reason to sell or stay out, and a close near the high a reason to hold, which is the opposite of the low-close rebound held in agitated markets.",
+      "name": "calm close location continues",
+      "from": "F6, F7",
+      "profile": "calm",
+      "theme": "discovery",
+      "refs": [
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-02.g1_calm-big-day-follows-through",
+    "061-02.g2_calm-big-day-delayed-follow"
+  ],
+  "discovery_ids": [
+    "061-02.g3_calm-close-location-continues"
+  ],
+  "no_ideas": null
+}

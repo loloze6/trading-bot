@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 058-02.g1.b1_rising-market-dip-continues_1d
+idea tested: 058-02.g1.b1_rising-market-dip-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4095 USD
+---
+## Findings
+- **F1:** The tested idea's own signal does predict continuation once it is read raw, without the 60-bar standardisation. On the non-overlapping 5-bar grid, the slope of the excess 5-day return on the raw scaled dip (close below the 5-day closing high, over the 30-day daily swing) is +4.86 % per usual move in rising calm markets (t 3.34 with days clustered, 178 cases on 65 days). The sign means deeper dips are followed by lower returns. The recorded forecast correlates only 0.84 with this raw dip, and the plan's slope on |forecast| was t -0.80.
+- **F2:** In rising calm markets the excess 5-day return falls with the depth of the dip, bin by bin: +5.15 % at a 5-day closing high (t 2.46, 31 days), +3.29 % for dips of 0 to 0.5 usual moves, +1.46 % for 0.5 to 2, and -5.68 % for 2 to 4 (t -1.83, 7 days). The grading holds, but only the deepest bin falls in absolute terms, so a short-only book fights the drift on most of its cases.
+- **F3:** The continuation slope is weaker in agitated markets than in calm ones. Rising agitated gives +2.64 % (t 1.31, 58 days) and falling agitated +0.76 % (t 0.84, 73 days). The calm profiles of other trends carry it too: choppy calm +3.89 % (t 2.70, 53 days) and falling calm +2.49 % (t 2.31, 53 days).
+- **F4:** The book is mainly a short bet on the coins. Its daily returns correlate -0.69 with the coins' mean daily return, and on its best 5 % of days the coins fell 8.5 %, while on its worst 5 % they rose 7.7 %.
+- **F5:** No other angle stands out once days are clustered. Next-day excess returns by weekday stay under |t| 1.6 for every weekday (Thursday +0.47 %, t 1.50; Friday +0.39 %, t 1.55). Large 3-day scaled falls in falling agitated markets (-7.4 %, t -4.15) rest on only 4 days.
+
+## Ideas
+- `058-02.g1.b1.g1_rising-calm-dip-continues` (from F1, F2, F3): In a rising, calm market, the further a coin's close sits below its highest close of the past 5 days, measured against its usual daily swing over the past 30 days, the lower its return over the next 5 days; a coin closing at its 5-day high gains the most.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

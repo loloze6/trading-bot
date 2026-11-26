@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-bar forward return on forecast (forecast > 0, grid cases)",
+    "value": 0.0015637334408243695,
+    "statistic": {
+      "name": "t of slope, day-clustered",
+      "value": 1.5484287620802772
+    },
+    "threshold": "slope > 0 with day-clustered t >= 2 confirms (with supporting check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, upper half minus lower half of forecasts",
+    "value": 0.015560421850420305,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 337,
+    "days": 176
+  },
+  "decided_by": "The slope has |t| < 2.",
+  "reading": "Profile from the recorded regime ('unknown' = not vetoed); coin mean = mean of its non-overlapping 5-bar grid returns over all windows; t is the OLS slope over a day-clustered (CR1, G/(G-1)) standard error; halves are the lower and upper n//2 cases sorted by forecast (middle case dropped if n is odd); the plan's 'fewer than 100 cases' minimum is reported as not observable."
+}

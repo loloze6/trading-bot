@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess forward return on forecast, grid bars with forecast < 0",
+    "value": 0.0004955840825791262,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 0.9699110772192704
+    },
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of short cases (>= 2 points) in short direction",
+    "value": 0.007910067912518358,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast < 0": 907,
+    "cases": 959
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "The calm profile is taken as the recorded regime not being 'chop' (the volatility-percentile veto), the coin's mean 5-bar return is the mean of its non-overlapping 5-bar grid returns over all its windows, the regression pools all coins' grid bars with forecast < 0, and the one case per grid cell is the first short bet (rise of at least 2 points in short size from its lowest level since the last bet) in that cell with a full 5-bar forward return."
+}

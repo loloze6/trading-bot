@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of 10-bar excess forward return on forecast (forecast > 0, grid bars)",
+    "value": 0.0006680256260127108,
+    "statistic": {
+      "name": "OLS slope t (day-summed cases)",
+      "value": 0.7426251074851015
+    },
+    "threshold": "slope t >= 2 confirms (with mean excess > 0); slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return on the same cases above 0",
+    "value": -0.010667721051106227,
+    "passed": false
+  },
+  "counts": {
+    "independent cases (days)": 165,
+    "grid bars with forecast > 0": 450,
+    "active bars": 4624
+  },
+  "decided_by": "Neither rule met: the slope's t is between -2 and 2, or it is 2 or more while the supporting check fails.",
+  "reading": "Grid bars on the same UTC day are summed (both excess return and forecast) into one case before the OLS regression; the coin's mean 10-bar return is the mean over all its windows' grid returns; the mean excess is over grid bars, and its t uses day-summed deviations."
+}

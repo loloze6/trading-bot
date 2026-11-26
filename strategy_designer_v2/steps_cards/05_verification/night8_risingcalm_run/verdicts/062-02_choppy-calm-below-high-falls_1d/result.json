@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess forward return on forecast, day-pooled",
+    "value": -0.00033652990838337754,
+    "statistic": {
+      "name": "OLS t of slope on day cases",
+      "value": -0.4411035037531838
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on grid bars with forecast <= -10 below 0",
+    "value": -0.009700443597408874,
+    "passed": true
+  },
+  "counts": {
+    "distinct days of grid cases with non-zero forecast": 233,
+    "grid cases with non-zero forecast": 425,
+    "grid cases with forecast <= -10": 232
+  },
+  "decided_by": "The slope's |t| is below 2, which the plan rules inconclusive.",
+  "reading": "Day pooling is read as averaging the forecast and excess return of the grid cases sharing a UTC day into one case and regressing those day means by OLS (t on n_days-2 df), the drift is each coin's mean 5-bar return over all grid bars of all its windows, the supporting check is the plain mean over grid bars, and the plan's 50-day minimum, when unmet, gives 'not observable' per the workflow."
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar forward excess return on forecast (pooled, non-overlapping grid, forecast != 0)",
+    "value": 0.0009054218460674241,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.065970198523945
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x excess 5-bar return on grid bars with |forecast| >= 10",
+    "value": 0.013187676524301485,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 566,
+    "grid cases with |forecast| >= 10": 248
+  },
+  "decided_by": "The slope is positive with t >= 2 and the supporting check is above 0 (confirm rule).",
+  "reading": "The plan's choppy calm profile is taken as the bars whose regime is 'unknown' (the detector's non-chop regime) and the expected side as the sign of the day's scaled move (raw component, else the close-to-close return); the coin's mean 5-bar return is the mean over all non-overlapping grid returns of all its windows; the slope is an OLS with intercept; the plan's minimum of 100 grid cases is applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0005568 on the check folds against +0.0009054 on every fold",
+    "main": 0.0005568107746175898,
+    "statistic": 1.6777978042675803,
+    "counts": {
+      "grid cases with a non-zero forecast": 365,
+      "grid cases with |forecast| >= 10": 178
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "061-01_calm-big-up-day-continues_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 0,
+  "cost": 0.22265950000000004,
+  "findings": {
+    "F1": "The idea's effect lives entirely on its long side. In folds B and C, calm cases after an up day are followed by a directional excess 5-day move of +1.63 % (t 3.19, 498 non-overlapping cases). Cases after a down day give only +0.31 % (t 0.64, 470 cases). In the book, long bars summed a gain of +3.64 against \u22120.42 for short bars (2,178 and 2,052 coin-bars), and the short side lost in 2018, 2020, 2022, 2023 and 2024.",
+    "F2": "The long side is graded and the short side barely is. Long cases rise with the size of the day: +0.81 % (t 1.1), +1.41 % (t 1.7) and +2.83 % (t 2.8) from the smallest to the largest third of |z|. Short cases go from \u22120.42 % to +1.02 %, none with a t above 1.2.",
+    "F3": "Removing the short side repairs most of what failed, before fees. This rebuild's Calmar runs slightly below the official 0.338, so it is a lower bound. The book as tested has a Sharpe of 0.548, a deepest fall of \u221242 % and a Calmar of 0.28, the same Sharpe as holding the coins (0.548, Calmar 0.24). The long-only book has a Sharpe of 0.781, a deepest fall of \u221229 %, a yearly return of +18.2 % and a Calmar of 0.63. That beats holding on Sharpe, though it is still under the 0.75 Calmar bar.",
+    "F4": "Inside the calm profile, the long effect concentrates in a rising 60-day trend. There, up-day cases are followed by +3.01 % (t 3.12, 172 cases), against +0.62 % in choppy (t 0.77) and +0.50 % in falling (t 0.43). It stays graded inside rising: +1.24 %, +2.84 % and +4.78 % (t 2.8) by forecast third.",
+    "F5": "The rising-trend condition alone does not carry this move. Every calm bar has a non-zero forecast, so the comparison is with calm-rising bars after a down day: they are followed by +0.02 % (t 0.01, 128 cases), against +3.01 % after an up day. The gain is the up day's continuation, not the trend's drift, which fits the theory's \"deliberate flow worked over several days\".",
+    "F6": "Restricting the long-only book to rising-trend bars still leaves the falls high. Its Sharpe is 0.70 with a deepest fall of \u221239 % and a Calmar of 0.33, so the profile helps the per-case move more than the book's falls. In agitated markets the same z gives \u22120.10 % (1,288 cases), as the brief says."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the larger its rise over the next 5 days, traded on the long side only: a one-day fall in a calm market carries no follow-through.",
+      "consequence": "Buy calm-market up days in proportion to their size in swing units and stay flat after down days, which removes the losing short book and its falls.",
+      "name": "calm big up-day, long only",
+      "from": "F1, F2, F3",
+      "profile": "calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a rising, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the larger its rise over the next 5 days.",
+      "consequence": "An outsized up day in a calm, rising coin is a reason to buy for the next five days, more so the larger the day, since this is where the continuation is strongest.",
+      "name": "rising calm up-day continuation",
+      "from": "F4, F5, F2, F6",
+      "profile": "rising calm",
+      "refs": [
+        "F4",
+        "F5",
+        "F2",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.d1_calm-big-up-day-long-only",
+    "061-01.d2_rising-calm-up-day-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

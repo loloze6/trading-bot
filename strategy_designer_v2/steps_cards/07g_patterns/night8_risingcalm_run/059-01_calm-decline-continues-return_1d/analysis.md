@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 059-01_calm-decline-continues-return_1d
+idea tested: 059-01_calm-decline-continues-return
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3740 USD
+---
+## Findings
+- **F1:** In calm markets (regime not 'chop', folds B–C, non-overlapping 5-day grid), the coin's 5-day excess return rises steadily with its 14-day return scaled by its 30-day swing. Across the whole range, falls and rises together, the slope has t 5.8 on 773 grid bars. The quintile means run -3.03 % (t -3.7), -2.49 % (t -3.5), +1.04 %, +1.25 % and +2.81 % (t 2.9). Pooled by day, the excess move in the direction of the 14-day move is +1.96 % with t 3.6 over 189 days, about ten times the 0.19 % cost of a trade.
+- **F2:** The same measure in agitated markets shows nothing. The slope has t 0.13 on 591 grid bars, and the deepest-decline quintile is followed by +1.63 %, not a fall. The continuation lives in calm markets only.
+- **F3:** Within calm markets, the grading on the falling side alone is weak. On bars with a negative 14-day return the slope has t 1.2 (n 364), close to the verdict's t 0.97. The rising side alone has t 1.6, and the 1-day scaled return on the rising side has t 3.5 (n 409). The effect is mostly the sign of the recent move and the contrast between falls and rises, not depth within the falls.
+- **F4:** The calm continuation holds in every trend. The full-range slope has t 2.8 in choppy (n 376), t 3.4 in falling (n 219) and t 2.2 in rising (n 178). In falling calm, declines deeper than 0.8 swing units are followed by -3.58 % excess over 5 days (81 cases). It also holds on every coin, with t from 1.4 (LTC) to 3.1 (ETH, XRP).
+- **F5:** A one-day move scaled by the 30-day swing also carries on in calm markets. The top quintile (mean +1.40 swing units) is followed by +3.11 % excess over 5 days (t 3.3, n 155), and the bottom two quintiles by -1.55 % and -2.30 %. In agitated markets every quintile has |t| < 0.9.
+- **F6:** The book's position-bars earned +0.049 % a day on calm bars (2,445 coin-bars) but -0.228 % on the 122 bars held into agitated regimes. The book was short-only in a profile whose upward drift (+0.64 % per 5 days against the short) nearly cancelled its edge, giving a total move per case of only +0.15 %.
+- **F7:** Next-day excess returns by weekday are negative on Wednesday (-0.50 %, t -2.8) and positive on Thursday (+0.41 %, t 2.8) and Friday (+0.38 %, t 2.7). These are about 1,190 days each, from one angle of many, so the pattern is too weak to stand on its own.
+
+## Ideas
+- `059-01.g2_falling-calm-decline-continues` (from F4, F1, F6): In a falling, calm market, the further a coin's 14-day return has fallen below zero in units of its own 30-day daily swing, the larger its fall over the next 5 days.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `059-01.g1_calm-market-two-week-continuation` (from F1, F2, F4, F6): In a calm market, the higher a coin's 14-day return measured in units of its own 30-day daily swing, the higher its return over the next 5 days, so recent swing-scaled moves carry on in their own direction.
+- `059-01.g3_calm-market-day-move-follow-through` (from F5, F2): In a calm market, the larger a coin's one-day return in units of its own 30-day daily swing, the larger its move in the same direction over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

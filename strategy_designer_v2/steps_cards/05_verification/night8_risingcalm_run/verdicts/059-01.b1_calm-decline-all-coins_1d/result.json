@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short drift-removed 5-day return",
+    "value": 0.005296761899587724,
+    "statistic": {
+      "name": "t of weighted mean, cases of a day grouped",
+      "value": 0.8619255964275269
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; at least 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean drift-removed 5-day return (must be < 0)",
+    "value": 0.0009425201996664211,
+    "passed": false
+  },
+  "counts": {
+    "distinct days": 379,
+    "cases": 1739
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Calm market = bars whose regime is 'unknown' (not vetoed to 'chop'), the situation is calm and raw component < 0 (recomputed from closes where not recorded), side short; cases are forecast<0 bars on the 0,5,10,... grid of each window with a 5-bar return inside the window, drift is the coin's mean 5-bar return over all its grid bars, the t is the weighted mean over a day-clustered standard error (weighted deviations summed per day), and the halves split at the median |forecast| (deeper: strictly above), compared on unweighted means of the unsigned drift-removed return."
+}

@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 058-02_rising-calm-below-recent-high_1d
+idea tested: 058-02_rising-calm-below-recent-high
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4283 USD
+---
+## Findings
+- **F1:** The tested idea's effect runs the other way in a rising calm market: on the 5-day grid, the deepest fifth of closes below the 5-day closing high (in 30-day swings) was followed by a -2.2 % excess 5-day return (t -1.66, 52 cases), while the fifth nearest the high was followed by +4.5 % (t 2.20, 52 cases). Depth against excess return gave a Spearman rho of -0.28 (p 0.0003, 165 cases). The clustered slope of excess return on the dip value was +0.041 (t 2.76, 165 cases on 64 days), but only 6 of 11 windows (55 %) had a positive slope. This continuation near the recent high is what the map already holds in rising calm (034-01.b1 nearness to high 10 days, 035-01.b1 calm market nearness to high, 033-03.b2 range top continuation), so no idea is written from it.
+- **F2:** In a choppy agitated market, closes below the 5-day closing high continue down: the mean excess 5-day return there was -5.5 % (t -3.28, 46 cases). The deeper the dip, the larger the fall: clustered slope +0.069 on the dip value (negative = deeper), t 2.88 on 46 cases over 35 days, Spearman rho of depth -0.37 (p 0.011). The deepest third was negative on every coin with cases (BTC -12.5 %, LTC -32.1 %, XMR -21.7 %, XRP -11.9 %, ZEC -6.1 %) and in 6 of 8 windows. The sample is small, and the effect does not show over 2 days (slope t 0.52, 132 cases).
+- **F3:** The rising calm profile itself carries the book's gain more than the dip does. In-profile grid cases had an excess 5-day return of +1.3 % (t 2.09, 333 cases) against -0.3 % outside it (t -0.96, 1,307 cases). The book's trades with the lowest entry forecast earned the most: +6.6 % per trade in the lowest quartile against +2.8 % in the highest (213 trades each).
+- **F4:** Across all profiles, short-term strength continued over 5 days. Cases in the top fifth of the 5-day return scaled by the 30-day swing were followed by +2.3 % excess (t 2.91, 245 cases), and those in the bottom fifth by -1.9 % (t -2.37, 246 cases). Closes in the top fifth of the height above the 5-day low were followed by +2.7 % (t 3.52, 245 cases). This is the nearness-to-high family the map already holds, so no idea is written from it.
+- **F5:** The other patterns found are ones the map already holds, so no idea is written from them:
+
+## Ideas
+- `058-02.g1_choppy-agitated-dip-continues` (from F2, F1): In a choppy, agitated market, the further a coin's close sits below its highest close of the past 5 days, measured against its usual daily swing over the past 30 days, the larger its fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

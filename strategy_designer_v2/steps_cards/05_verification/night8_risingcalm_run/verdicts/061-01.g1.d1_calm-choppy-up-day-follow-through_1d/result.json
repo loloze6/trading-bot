@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast (grid bars, forecast > 0, pooled)",
+    "value": 0.0022313338153727787,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.948734153898222
+    },
+    "threshold": "t >= 2 confirms (with mean unusual move > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of the cases > 0",
+    "value": 0.00281912097879307,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 285
+  },
+  "decided_by": "The slope's t is 2 or more and the mean unusual move of the cases is above 0.",
+  "reading": "The profile is read from the recorded regime ('unknown' = inside the choppy calm profile, since the detector's components are not recorded), the situation is a raw day_move value above 0 on such a bar on the long side, the coin's mean 5-bar return is taken on the non-overlapping grid of all its windows, the slope is a pooled OLS of excess return on forecast with its ordinary t, and the plan's 'fewer than 50 grid cases' minimum is applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001134 on the check folds against +0.002231 on every fold",
+    "main": 0.0011342514555927688,
+    "statistic": 1.347896534558942,
+    "counts": {
+      "grid cases with forecast > 0": 188
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "059-01.b1_calm-decline-all-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.41260979999999997,
+  "findings": {
+    "F1": "In calm markets the 5-day move follows the sign and size of the swing-scaled 14-day return on both sides, not only the falling side. The bottom quintile of the swing-scaled 14-day return is followed by a drift-removed 5-day return of -2.93 % (t -3.93, 188 cases) and the top quintile by +2.86 % (t 3.37, 200 cases). The signed product (scaled return clipped at \u00b13, times excess return) averages +2.13 % with a day-clustered t of 3.10 (904 cases, 200 days). It is positive in all 12 visible windows and all 4 years (2018 +2.41 %, 2019 +0.62 %, 2020 +3.96 %, 2021 +1.78 %).",
+    "F2": "The same continuation is absent in agitated markets. There the signed product averages +0.11 % (t 0.12, 718 cases, 186 days), and the deepest-decline quintile is followed by a rebound of +1.62 % (t 1.24, 137 cases). The calm condition carries the effect.",
+    "F3": "Inside calm markets the falling side is not graded in its tail. Moderate declines between -1 and -0.5 scaled units are followed by -3.97 % (t -3.30, 74 days), while the deepest declines between -2 and -1 are followed by only -1.80 % (t -1.17, 50 days). The tested forecast tracks the raw decline closely (correlation 0.91), and the deeper-half-falls-more check failed in step 5 (+0.09 %).",
+    "F4": "In calm markets the rising side is as strong as the falling side. Calm rising-trend coins with a positive 14-day return gain +3.12 % in excess over 5 days (t 2.13, 160 cases, 50 days). Calm choppy-trend coins show +2.96 % on the rising side (71 cases) and +3.12 % on the falling side (55 cases). A short-only book leaves half of the effect unused.",
+    "F5": "The short book is mostly the market's own move inverted. On its worst 2 % of days the coins rose +7.02 % on average, and on its best 2 % they fell -8.29 % (29 days each). Its window means are positive mainly where the coins fell (w14 book +0.13 %/day, coins -0.43 %; w7 book +0.10 %, coins -0.44 %). The per-case unusual move is +0.99 % (t 2.66) against a cost of 0.22 %, but the normal drift in the short direction is -0.68 %, which leaves only +0.31 % in total.",
+    "F6": "In calm markets a narrow day (range below the median in units of the 30-day swing) that closes in the lower third of its range is followed by a drift-removed 5-day return of -3.60 % (t -3.00, 109 cases, 58 days). The same day in agitated markets gives -1.59 % (t -1.01), and calm narrow days closing elsewhere give +1.56 %. It is negative in 8 of the 12 visible windows but positive in w11 (+8.8 %) and w17 (+5.7 %). Given the many angles examined, it is weaker evidence than F1."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the further a coin's 14-day return lies from zero in units of its own 30-day daily swing, the larger its move in the same direction over the next 5 days, up after a rise and down after a fall.",
+      "consequence": "In calm markets a trader would follow a coin's steady two-week drift both ways, more strongly the larger the drift is against the coin's usual swing, instead of only shorting declines.",
+      "name": "calm market swing-scaled continuation",
+      "from": "F1, F2, F4, F5",
+      "profile": "calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a calm market, the nearer a coin's close sits to the low of a day whose range is small against its 30-day daily swing, the larger its fall over the next 5 days.",
+      "consequence": "In calm markets a quiet day that ends near its low is a reason to expect further decline and to refuse buying it as a dip.",
+      "name": "calm narrow low close",
+      "from": "F6, F2",
+      "profile": "calm",
+      "refs": [
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-01.b1.g1_calm-market-swing-scaled-continuation",
+    "059-01.b1.g2_calm-narrow-low-close"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

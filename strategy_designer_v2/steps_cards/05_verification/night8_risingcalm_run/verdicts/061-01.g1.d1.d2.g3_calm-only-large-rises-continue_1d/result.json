@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move per long case (minus coin's normal 5-day drift)",
+    "value": 0.0038796092155040907,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.8660753099474456
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passed; reject: mean < 0 with t <= -2; fewer than 30 distinct days: not observable"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper half minus lower half of entry forecasts",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 917,
+    "distinct days with cases": 517
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Calm is read as the regime not being the 'chop' veto and the rise from the recorded rise component (recomputed from closes where missing); a case is the first bet bar in each 5-bar grid cell of its window; t uses day-clustered standard errors with a G/(G-1) correction; upper half = cases with entry forecast above the median, lower half = at or below it; the plan's 'fewer than 30 distinct days' minimum is reported as not observable."
+}
