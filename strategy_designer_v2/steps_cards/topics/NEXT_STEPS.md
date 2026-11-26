@@ -56,7 +56,6 @@ card; one now only confirmed, 006-04.g1, is out by rule 2).
 ## E. Machinery: nights run as planned, nothing lost, master up to date
 | # | Business objective | What to do | Evidence | Status | Next action |
 |---|---|---|---|---|---|
-| E1 (3h, 1l) | Master holds what is proven | Merge into master: 1l (engine), the component builds of nights 6 to 8 and their build records, the merge helper's fix, topic 15's pin | 1l's impact: 0 of 98 step 6 answers change (`runs/TOPIC51_IMPACT_RUN.md`); both test suites pass | **RUNNING** (the operator's go, 2026-11-26) | the designer: pull request and merge |
 | E2 (3j) | A plan the engine refuses never reaches step 4 | Step 3 runs `trading-bot/tools/validate_config.py` on its plan | Night 8, C's 068-01: an invalid regime name, 0 of 24 windows run, 0.34 USD | **REVIEW** (night 8 report, part 5) | discuss, then build |
 | E3 (3e) | Parallel sessions never share a brief number | A number range per session, given by `run_brief` | Night 6; night 8: 058 to 068 used by up to 6 briefs each | **REVIEW** (night 8 report, part 5) | discuss, then build |
 | E4 (3l) | Running the tests never changes a record | Rename `topics/47_review/fold_rules_test.py` (pytest collects `*_test.py`) | Night 8's morning merge: it rewrote its csv | **REVIEW** (night 8 report, part 8) | discuss, then fix |
@@ -81,7 +80,8 @@ card; one now only confirmed, 006-04.g1, is out by rule 2).
 | P10b, P6b v1, v2 | Combination built and judged (continues as A1) |
 | 3f, 3g | Night rules; `night_merge` (the same change on both sides kept once, 2026-11-26) |
 | E6 | `common/data_available.md`: NEAR has data in fold A's last window (2026-11-26) |
-| E7 (topic 15) | The GitHub alert: `claude-agent-sdk` raised from 0.2.82 to 0.2.180 (2026-11-26); the alert closes when E1 reaches master |
+| E1 (3h, 1l) | Master holds what is proven: PR #580 merged 2026-11-26 (71ba3b8f60; pushed directly on the operator's go after GitHub's merge failed twice on the PR's size): 1l, the component builds of nights 6 to 8, `night_merge`'s fix, topic 15's pin |
+| E7 (topic 15) | The GitHub alert: `claude-agent-sdk` raised from 0.2.82 to 0.2.180 (2026-11-26), in master since E1 |
 
 Deleted 2026-11-26 (the operator; git keeps them): 1y (the theme's lineage first: withdrawn in the review, no evidence:
 no session left a theme idea untested; D's theme was answered after 2 ideas), 1f (rebuild 18 old books: the combination reads where each really
