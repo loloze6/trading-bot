@@ -28,22 +28,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 066-01_falling-agitated-sixty-day-scaled-fall-rebound | - | plan | confirmed (+2.06) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: The only patterns that stand out are the tested idea itself (F1 to F3), the brief's yardstick claim being wrong (F2), and up-day reversal, wide-range rebound and out-of-profile fall rebound (F4 to F6), which are either weaker than chance across this many angles or already held in the profile map. The weekday effects (F8) are inconsistent. | 0.83 | 11.5 |
 | 065-02_falling-agitated-prior-slide-rebound | - | plan | inconclusive (+1.77) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 065-02.b1_five-day-slide-three-day-rebound; 7.g: no ideas: The theme's effect is not in the data: the slide's depth adds nothing once the latest day's fall is known (t -0.95, F1, F3, F4). The only graded pattern found, the falling agitated latest-day fall rebound (F2, F5), is already held (047-01, 038-01, 051-01, 045-01). The up-day fall in the empty short cell is not graded (F6). I looked at the forecast, the latest day, the slide, the 5- and 10-day returns, close position, volatility, weekday, year, the 2- and 3-day horizons and the book's extreme days. | 1.11 | 10.6 |
 | 066-02_falling-agitated-year-scaled-fall-rebound | - | plan | confirmed (+2.44) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.01 | 12.3 |
+| 065-03_falling-agitated-down-streak-rebound | - | plan | inconclusive (-0.36) | not profitable enough (failed: Calmar) | - | 7.b: 065-03.b1_slide-depth-sets-rebound; 7.g: 065-03.g1_down-close-count-rebound | 1.05 | 10.1 |
+| 058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation | 058-02.b1.b2.b1.b2.b1_calm-rising-range-position | plan | confirmed (+2.05) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 058-02.b1.b2.b1.b2.b1.b1.g1_choppy-calm-edge-continuation, 058-02.b1.b2.b1.b2.b1.b1.g2_choppy-agitated-low-continuation | 0.82 | 11.6 |
 
 ## Consumption
-24 ideas, 28.86 USD, 243.3 minutes in all.
+26 ideas, 30.73 USD, 265.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.58 | 12.9 |
-| step4_backtest | 0.00 | 140.0 |
-| step5_verdict | 4.14 | 14.4 |
+| step3_plan | 4.72 | 13.7 |
+| step4_backtest | 0.00 | 152.9 |
+| step5_verdict | 4.50 | 15.6 |
 | step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 1.87 | 5.6 |
 | step7_7.d | 1.02 | 3.6 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 6.15 | 20.4 |
-| step7_7.g | 11.11 | 34.4 |
-| similarity_check | 0.00 | 0.4 |
-| unseen_test | 0.00 | 10.4 |
+| step7_7.b | 6.51 | 21.5 |
+| step7_7.g | 12.11 | 37.5 |
+| similarity_check | 0.00 | 0.5 |
+| unseen_test | 0.00 | 12.7 |

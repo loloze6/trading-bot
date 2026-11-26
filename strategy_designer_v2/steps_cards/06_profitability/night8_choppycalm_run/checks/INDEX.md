@@ -1,3 +1,4 @@
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: profitable enough [Sharpe 1.063; Sharpe minus holding's Sharpe 0.5099; Calmar 0.8384]
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: profitable enough [Sharpe 1.04; Sharpe minus holding's Sharpe 0.4869; Calmar 0.8292]
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: profitable enough [Sharpe 1.122; Sharpe minus holding's Sharpe 0.5695; Calmar 1.367]
 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: not profitable enough [Sharpe 0.3554; Sharpe minus holding's Sharpe -0.1973; Calmar 0.1653]
@@ -19,5 +20,6 @@
 058-02_calm-range-bottom-drifts-up_1d: not profitable enough [Sharpe -0.2031; Sharpe minus holding's Sharpe -0.7727; Calmar -0.08517]
 065-01_falling-agitated-five-day-slide-rebound_1d: not profitable enough [Sharpe 0.4226; Sharpe minus holding's Sharpe -0.1302; Calmar 0.3629]
 065-02_falling-agitated-prior-slide-rebound_1d: not profitable enough [Sharpe 0.3873; Sharpe minus holding's Sharpe -0.1697; Calmar 0.3246]
+065-03_falling-agitated-down-streak-rebound_1d: not profitable enough [Sharpe 0.8252; Sharpe minus holding's Sharpe 0.2724; Calmar 0.6255]
 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: profitable enough [Sharpe 0.8083; Sharpe minus holding's Sharpe 0.2555; Calmar 0.915]
 066-02_falling-agitated-year-scaled-fall-rebound_1d: profitable enough [Sharpe 1.068; Sharpe minus holding's Sharpe 0.4872; Calmar 0.939]

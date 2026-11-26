@@ -1,3 +1,4 @@
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: 1 ideas (2 explorations)
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: no ideas: The continuation slope is positive only because of one year (2021, window w18) in the folds shown, and it vanishes on the full data (t 0.87). No side, edge strength, horizon or coin shows the effect clearly while it is absent elsewhere, so the theme's effect (choppy-calm range-edge continuation or reversion) is not in the data (F1–F6).
@@ -19,5 +20,6 @@
 058-02_calm-range-bottom-drifts-up_1d: 2 ideas (2 explorations)
 065-01_falling-agitated-five-day-slide-rebound_1d: 1 ideas (2 explorations)
 065-02_falling-agitated-prior-slide-rebound_1d: 1 ideas (2 explorations)
+065-03_falling-agitated-down-streak-rebound_1d: 1 ideas (2 explorations)
 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 066-02_falling-agitated-year-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

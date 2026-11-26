@@ -71,6 +71,7 @@
 | 038-02_agitated-fall-vs-swing-rebound_1d | night7_steadydecline_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 1.00 | same period | -0.0000 % (-25.77) | 0.12 |
 | 039-02_agitated-range-fall-low-close-rebound_1d | night7_steadydecline_run | 1d | 044-01_agitated-wide-range-fall-rebound_1d (1d) | 0.93 | same period | +0.0020 % (0.37) | 0.30 |
 | 041-03_agitated-fall-drop-vs-range-rebound_1d | night7_steadydecline_run | 1d | 043-01_falling-agitated-intraday-drop-rebound_1d (1d) | 0.98 | same period | +0.0010 % (0.62) | 0.15 |
+| 058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d | night8_choppycalm_run | 1d | 034-01.b1_nearness-to-high-10-days_1d (1d) | 0.62 | same period | +0.0049 % (0.36) | 0.11 |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d | night8_choppycalm_run | 1d | 035-01.b1_calm-market-nearness-to-high_1d (1d) | 0.59 | same period | +0.0147 % (0.92) | 0.00 |
 | 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d | night8_choppycalm_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.61 | same period | +0.0059 % (0.89) | 0.02 |
 | 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d | night8_choppycalm_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.80 | same period | -0.0028 % (-0.79) | 0.08 |

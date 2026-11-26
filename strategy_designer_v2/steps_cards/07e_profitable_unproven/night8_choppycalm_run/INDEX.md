@@ -1,3 +1,4 @@
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: no ideas: The book earns from long continuation near the recent high in rising calm markets, plus a third from the market's rise and a few strong 2020 windows (F1–F7); the profile map already holds this idea in rising calm (034-01.b1 nearness to high, 033-03.b2 range top continuation, 035-01.b1 calm nearness to high), so it is neither a new discovery nor on the brief's choppy-calm reversion theme.
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
@@ -19,5 +20,6 @@
 058-02_calm-range-bottom-drifts-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 065-01_falling-agitated-five-day-slide-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 065-02_falling-agitated-prior-slide-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+065-03_falling-agitated-down-streak-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 066-02_falling-agitated-year-scaled-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

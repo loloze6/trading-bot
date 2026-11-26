@@ -1,3 +1,4 @@
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: 2 ideas (2 explorations)
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: 1 ideas, 1 discoveries (2 explorations)
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: 1 ideas (2 explorations)
 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: 0 ideas, 1 discoveries (3 explorations)
@@ -19,5 +20,6 @@
 058-02_calm-range-bottom-drifts-up_1d: 1 ideas (2 explorations)
 065-01_falling-agitated-five-day-slide-rebound_1d: no ideas: The brief's claim that the depth of the multi-day slide sets the rebound is not in the data, since the prior days add nothing once the last day's fall is known (F1, F2, F3). What does pay is the one-day fall rebound in a falling, agitated market (F4, F5), which the profile map already holds (047-01, 051-01, 038-01). The only other pattern, a fall after an up day that ends a slide (F6), is not graded and not sure enough to count.
 065-02_falling-agitated-prior-slide-rebound_1d: no ideas: The theme's effect is not in the data: the slide's depth adds nothing once the latest day's fall is known (t -0.95, F1, F3, F4). The only graded pattern found, the falling agitated latest-day fall rebound (F2, F5), is already held (047-01, 038-01, 051-01, 045-01). The up-day fall in the empty short cell is not graded (F6). I looked at the forecast, the latest day, the slide, the 5- and 10-day returns, close position, volatility, weekday, year, the 2- and 3-day horizons and the book's extreme days.
+065-03_falling-agitated-down-streak-rebound_1d: 1 ideas (2 explorations)
 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: no ideas: The only patterns that stand out are the tested idea itself (F1 to F3), the brief's yardstick claim being wrong (F2), and up-day reversal, wide-range rebound and out-of-profile fall rebound (F4 to F6), which are either weaker than chance across this many angles or already held in the profile map. The weekday effects (F8) are inconsistent.
 066-02_falling-agitated-year-scaled-fall-rebound_1d: 0 ideas, 1 discoveries (3 explorations)

@@ -1,4 +1,5 @@
 058-01_calm-range-top-drifts-down_1d: missing-components: The idea measures where the close sits inside the 20-day high-low range. The only catalogue component that reads it is [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]

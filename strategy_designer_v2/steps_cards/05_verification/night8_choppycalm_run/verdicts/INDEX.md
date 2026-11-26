@@ -1,3 +1,4 @@
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: confirmed (fit: exact) [main: 0.00151386; t of slope (day-clustered) 2.04668; non-overlapping grid cases with a non-zero forecast 552, days 143]
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: inconclusive (fit: exact) [main: 0.0797568; t of the mean of per-day sums 1.5867; grid cases 552, distinct days 143]
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: confirmed (fit: exact) [main: 2.58323; day-clustered OLS slope t 2.58323; grid cases 8668, distinct days 1248]
 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: inconclusive (fit: exact) [main: 0.000394405; slope t, day-clustered 0.874575; grid cases 1050, days of cases 322]
@@ -19,5 +20,6 @@
 058-02_calm-range-bottom-drifts-up_1d: inconclusive (fit: exact) [main: -0.000195073; t of OLS slope -0.341318; grid cases with forecast above 0 281, profile grid cases 567]
 065-01_falling-agitated-five-day-slide-rebound_1d: inconclusive (fit: exact) [main: 0.000628279; day-clustered OLS slope t 1.8621; cases 3225, distinct days 896]
 065-02_falling-agitated-prior-slide-rebound_1d: inconclusive (fit: exact) [main: 0.000600422; day-clustered t 1.77455; bars with forecast > 0 3092, distinct days 875]
+065-03_falling-agitated-down-streak-rebound_1d: inconclusive (fit: exact) [main: -0.000145261; t (deviations summed per day) -0.360262; distinct days with forecast > 0 832, bars with forecast > 0 2872]
 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: confirmed (fit: adapted) [main: 0.0101253; t of weighted mean, same-day cases summed 2.05511; cases 2865, distinct days 830, active bars 2897]
 066-02_falling-agitated-year-scaled-fall-rebound_1d: confirmed (fit: adapted) [main: 0.000638455; slope t, cases of one day pooled (clustered by day) 2.44417; bars with forecast > 0 2814, distinct days 828]
