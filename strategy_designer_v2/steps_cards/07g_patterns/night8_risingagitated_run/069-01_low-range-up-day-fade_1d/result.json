@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "069-01_low-range-up-day-fade_1d",
+  "step5": "rejected",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34187310000000004,
+  "findings": {
+    "F1": "Among up days in folds B\u2013C, the next-day excess return falls steadily as the close sits lower in its 20-day high-low range: \u22120.91 % (t \u22122.25, 738 cases, 303 days) in the lowest fifth, \u22120.54 % (t \u22122.05) in the second, \u22120.17 % and \u22120.12 % in the middle fifths, and +0.25 % (t 0.75) in the top fifth; without the up-day condition the low fifths show only \u22120.12 % and \u22120.34 % (t \u22120.34, \u22121.61), so the up day carries the effect.",
+    "F2": "The step 5 reject conflicts with its own size line: the size says the short case gained +0.54 % unusual move (t 2.93, 911 days), and the book's short bars gained +0.21 % (choppy) and +0.39 % (falling) per bar; the main measure (excess \u00d7 \u2212forecast/10 = \u22120.39 %, t \u22122.71) rewards a rise on a short case and looks inverted, so the theme's effect appears to be in the data.",
+    "F3": "The effect lives outside rising markets: low-range up days (lowest two fifths) give next-day excess \u22120.75 % (t \u22122.10, 725 cases, 309 days) in choppy markets and \u22120.93 % (t \u22121.96, 563 cases, 193 days) in falling ones, but +0.01 % (t 0.01, 188 cases) in rising ones, where the book's short bars lost \u22120.08 % per bar.",
+    "F4": "Outside rising markets the grading holds across all five fifths of range position: \u22120.99 % (t \u22122.22), \u22120.67 % (t \u22122.27), \u22120.40 % (t \u22121.82), \u22120.18 % (t \u22120.64), \u22120.10 % (t \u22120.24); in rising markets there is no order (\u22120.29 %, +0.25 %, +0.58 %, \u22120.01 %, +0.78 %).",
+    "F5": "Outside rising markets the fade is broad: negative in 10 of 12 windows and on all six coins (BTC \u22121.03 % t \u22122.79, ZEC \u22121.22 % t \u22123.28, XMR \u22120.94 % t \u22122.57, LTC \u22120.82 % t \u22122.30, ETH \u22120.68 % t \u22121.84, XRP \u22120.37 % t \u22120.91), and it does not reverse on the second day (choppy \u22120.88 % t \u22121.76, falling \u22120.94 % t \u22121.49 over two days).",
+    "F6": "The mirror on down days, a down day closing high in its range rising the next day (top fifth +0.69 %, t 2.36; positive in 7 of 12 windows), is weaker and close to the held long ideas near the range top (034-01.b1, 033-03.b2), so it is not proposed."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, when a coin closes up on the day, the lower that close sits within its high-low range of the past 20 days, the larger its fall over the next day.",
+      "consequence": "In sideways markets, an up day that closes deep in the recent range is a short for the next day, sized by how low the close sits, a box (choppy, short) the map holds almost empty.",
+      "name": "choppy low-range rise fade",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling market, when a coin closes up on the day, the lower that close sits within its high-low range of the past 20 days, the larger its fall over the next day.",
+      "consequence": "In a downtrend, a rebound day that still closes near the bottom of the recent range is sold the next day, and should be faded more the deeper it closes.",
+      "name": "falling low-range rise fade",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "069-01.g1_choppy-low-range-rise-fade",
+    "069-01.g2_falling-low-range-rise-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

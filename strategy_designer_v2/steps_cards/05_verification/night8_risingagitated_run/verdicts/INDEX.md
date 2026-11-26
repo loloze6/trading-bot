@@ -16,3 +16,4 @@
 060-01.g1_wide-day-high-close-fade_1d: confirmed (fit: adapted) [main: 0.0203712; t of the mean, cases clustered by day 2.5037; cases 89, days 56]
 060-01_falling-agitated-high-close-fade_1d: confirmed (fit: exact) [main: -0.00587368; Welch t -2.46416; bars in top group 942, bars in middle group 886, bars in a position 2689]
 068-01_falling-agitated-lone-rise-fade_1d: no verdict: no backtest record
+069-01_low-range-up-day-fade_1d: rejected (fit: exact) [main: -0.00390595; t of the mean, cases pooled per day -2.71005; days with a case 1350, cases 3708, deep cases (forecast <= -10) 1269, up days with forecast 0 5141]

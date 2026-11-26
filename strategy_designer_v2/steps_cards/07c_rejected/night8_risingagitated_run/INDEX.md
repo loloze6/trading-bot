@@ -16,3 +16,4 @@
 060-01.g1_wide-day-high-close-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-01_falling-agitated-high-close-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 068-01_falling-agitated-lone-rise-fade_1d: not run: entry condition not met (step 5: none; step 6: none)
+069-01_low-range-up-day-fade_1d: 2 ideas (2 explorations)
