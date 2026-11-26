@@ -4,6 +4,7 @@
 058-01.b1_rally-giveback-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: 3 ideas (2 explorations)
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: 2 ideas (3 explorations)
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d3_one-day-rise-fades-over-5-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
