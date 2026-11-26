@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "074-01.b1.d3_agitated-falling-run-break-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6232852,
+  "findings": {
+    "F1": "In a falling (60-day return below -10 %) calm market, the first up day after 2 or more down days is followed by a next-day excess return of -1.59 % (t -2.58, 110 cases on 63 days). Over two days it is -2.74 % (t -3.04, 106 cases on 61 days), larger than in the tested falling agitated case (-1.15 %, t -1.58; two days -1.75 %, t -1.49).",
+    "F2": "The fade is graded by the run's depth (the run's loss in 30-day standard deviations) in both falling profiles. The slope of the next-day excess on depth is -0.0088 (t -3.82, 110 cases) in falling calm and -0.0103 (t -4.52, 143 cases) in falling agitated. In rising markets it is not negative: +0.0052 (t 1.18) agitated, -0.0048 (t -0.95) calm.",
+    "F3": "Depth carries the grading, not run length. Out of profile, on 728 run breaks, the slope on depth has t -4.43, while the slope on the number of down days has t -1.50. In profile, on 136 cases, depth gives t -2.48 and the count gives t -0.43.",
+    "F4": "In falling calm, the run breaks with the deepest third of runs fall -3.60 % the next day (t -3.65, 37 cases on 22 days), against -0.98 % and -0.14 % for the other two thirds.",
+    "F5": "The fade belongs to the run break, not to up days in general. Up days not ending a down run show -0.01 % next day (t -0.06, 2,257 cases). Falling calm up days without a run show -0.03 % (t -0.09, 236 cases), against -1.59 % for falling calm run breaks.",
+    "F6": "The pattern holds coin by coin. Run breaks after a 20-day fall of more than 5 % show a negative next-day excess on all six coins, from -1.13 % (LTC, t -1.79) to -2.29 % (BTC, t -2.58). The deepest third of these runs gives -2.88 % (t -3.72, 134 cases).",
+    "F7": "The general one-day reversal in the tested profile is strong: the slope of next-day excess on the day's own move in 30-day standard deviations is -0.0134 (t -7.08, 1,102 bars). This repeats 058-02.b1.g1.b1.b1 (falling agitated next day reversal), which is already held, so it is not a discovery.",
+    "F8": "The book's best fifth of position days comes after the deepest runs: mean depth 3.71 for that fifth, against 1.02 to 2.04 for the other fifths, and a book return of +3.97 %. Its worst fifth (-1.79 %) has a depth of 2.03."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next two days. The deeper the run's fall, measured as the coin's return over the run's down days against its usual daily swing over the last 30 days, the larger that fall.",
+      "consequence": "A trader shorts relief days in quiet downtrends, more heavily after deeper slides, and holds the short for two days rather than one.",
+      "name": "calm falling run break fade",
+      "from": "F1, F2, F4, F5",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next two days. The deeper the run's fall, measured as the coin's return over the run's down days against its usual daily swing over the last 30 days, the larger that fall.",
+      "consequence": "A trader shorts the first relief day in any downtrend, calm or agitated, sizing by how deep the slide was in units of the coin's own swing rather than by how many days it lasted.",
+      "name": "falling run depth two-day fade",
+      "from": "F1, F2, F3, F5, F6, F8",
+      "profile": "falling",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.d3.g1_calm-falling-run-break-fade",
+    "074-01.b1.d3.g2_falling-run-depth-two-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

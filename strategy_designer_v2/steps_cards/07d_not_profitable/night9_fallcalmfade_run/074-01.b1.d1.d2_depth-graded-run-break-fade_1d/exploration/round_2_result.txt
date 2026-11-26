@@ -1,0 +1,50 @@
+## falling: signal vs not, by 5d z
+                   n            mean                   t          
+sig            False True      False     True      False     True 
+z5                                                                
+(-99.0, -2.1]  366.0  71.0 -0.003227  0.035997 -1.044230  5.410869
+(-2.1, -0.85]  352.0  70.0  0.002783  0.010555  1.128878  1.650371
+(-0.85, 0.07]  329.0  67.0 -0.001055  0.006711 -0.403749  1.525030
+(0.07, 99.0]   741.0  67.0 -0.003538 -0.005507 -1.924329 -1.155059
+
+## falling: by agitation, signal only
+Empty DataFrame
+Columns: [coin, wn, day, nxt, nxt2, ret60, ret5z, upz, agit, sig, held, alloc, s, z5]
+Index: []
+
+## falling: by agitation x deep 5d, signal
+Empty DataFrame
+Columns: [coin, wn, day, nxt, nxt2, ret60, ret5z, upz, agit, sig, held, alloc, s, z5]
+Index: []
+
+## falling: all bars short next day
+n       2063.00000
+mean       0.00010
+t          0.08893
+
+## signal 2d short by z5
+                n        m2
+z5                         
+(-99.0, -2.1]  71  0.034869
+(-2.1, -0.85]  70  0.024974
+(-0.85, 0.07]  67  0.007786
+(0.07, 99.0]   67  0.001651
+
+## big-loss held cases profile
+n                   43.000000
+ret5z_mean          -0.627958
+ret5z_all           -1.063880
+upz_big              0.731871
+upz_all              0.665156
+share_z5_pos_big     0.325581
+share_z5_pos_all     0.251269
+agit_big                  NaN
+agit_all                  NaN
+
+## sim books
+                      yearly     maxdd    calmar    sharpe  ncase
+as held             0.179494 -0.075826  2.367203  1.541295  394.0
+held, 5d z<0.07     0.185327 -0.064096  2.891411  1.607125  295.0
+held, 5d z<-0.85    0.172623 -0.044995  3.836533  1.585775  197.0
+held, agitated      0.000000  0.000000       NaN       NaN    0.0
+held, size by -5dz  0.327172 -0.093500  3.499177  1.745517  292.0

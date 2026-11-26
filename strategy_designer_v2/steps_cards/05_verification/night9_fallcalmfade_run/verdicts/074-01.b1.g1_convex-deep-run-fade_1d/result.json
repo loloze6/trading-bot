@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "weighted mean next-day short-side excess fall",
+    "value": 0.015007308737261768,
+    "statistic": {
+      "name": "t of weighted mean, cases of one day pooled",
+      "value": 4.263079410880549
+    },
+    "threshold": "confirm: weighted mean > 0 with t >= 2 over >= 30 case-days and supporting check passes; reject: mean < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "deepest third excess per unit depth minus the rest's",
+    "value": 0.0014748896653907976,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 735,
+    "cases": 1685
+  },
+  "decided_by": "Weighted mean short-side excess fall above 0 with t >= 2 over at least 30 case-days, and the deepest third gains more per unit of depth.",
+  "reading": "Situation rebuilt from prices as an up close right after a down close (the raw depth > 0 on a window's first two bars) with the 60-bar price change below 0 (the recorded regime where 60 bars are not in the window); drift is each coin's mean 1-bar return over all its windows; t is cluster-by-day (weighted deviations summed per day); the deepest third is the top round(n/3) cases by raw depth, compared by unweighted mean excess over mean depth; fewer than 30 case-days is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.009798 on the check folds against +0.01501 on every fold",
+    "main": 0.009798212570841885,
+    "statistic": 2.0207950387329543,
+    "counts": {
+      "case-days": 379,
+      "cases": 750
+    }
+  }
+}

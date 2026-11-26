@@ -1,0 +1,51 @@
+## falling rb by depth, 1d, per-day t
+       n  days  shortret     t_day
+dq                                
+q1  64.0  46.0 -0.003347 -0.486413
+q2  63.0  37.0  0.004486  0.427298
+q3  63.0  40.0  0.008203  1.369275
+q4  63.0  33.0  0.038342  3.734535
+
+## falling rb by depth, 2d
+       n  days  shortret     t_day
+dq                                
+q1  64.0  46.0  0.011739  1.241861
+q2  63.0  37.0  0.015578  0.795842
+q3  60.0  40.0  0.013737  1.492068
+q4  60.0  33.0  0.034264  3.134914
+
+## falling rb q4 by window
+        n  days  shortret     t_day
+w                                  
+w12   5.0   4.0  0.006728  0.435512
+w13  10.0   7.0  0.027636  1.877201
+w14  18.0   9.0  0.053658  2.341381
+w15   8.0   3.0  0.007184  0.553067
+w16   4.0   1.0  0.077259       NaN
+w18   1.0   1.0 -0.022882       NaN
+w7    7.0   5.0  0.049184  1.403739
+w8    1.0   1.0  0.005344       NaN
+w9    9.0   2.0  0.049608       NaN
+
+## falling rb q4 by inpos(agitated)
+          n  days  shortret     t_day
+inpos                                
+False  48.0  29.0  0.033720  3.431052
+True   15.0  10.0  0.053135  2.721973
+
+## hypothetical books
+                             days       sum     worst   sum_neg  ratio_sum_to_worst5
+agitated lin                 45.0  0.045037 -0.005274 -0.016407             3.553549
+falling lin                 114.0  0.186741 -0.008948 -0.060916             7.515712
+falling sq                  114.0  0.284446 -0.004567 -0.044090            13.855811
+falling excess(depth-1.5)+  114.0  0.176337 -0.002513 -0.021595            15.431681
+
+## falling rb by run x depth half
+              n  days  shortret     t_day
+run depth                                
+2   False  91.0  49.0  0.006427  0.811934
+    True   41.0  21.0  0.029377  2.278546
+3   False  30.0  21.0 -0.017189 -1.305115
+    True   43.0  28.0  0.010054  1.107249
+4   False   6.0   6.0 -0.000137 -0.013315
+    True   42.0  29.0  0.030847  3.323763

@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-bar return minus coin mean, short direction, on forecast < 0",
+    "value": 0.009219467688761257,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 3.535507820273885
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "excess return top half minus bottom half of |forecast|",
+    "value": 0.011910544841526871,
+    "passed": true
+  },
+  "counts": {
+    "independent case-days": 426,
+    "cases": 834,
+    "active bars": 839
+  },
+  "decided_by": "Mean short-direction excess return > 0 with t >= 2 and the top-half minus bottom-half difference > 0.",
+  "reading": "Profile is the 60-bar close change in percent below -10 and the down-run is counted from closes inside the window, falling back to the recorded regime where the window lacks the history; t clusters cases by UTC day (deviations summed per day); top half of |forecast| is cases above the median |forecast|, bottom half at or below; fewer than 30 case-days is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003652 on the check folds against +0.009219 on every fold",
+    "main": 0.0036523722811548486,
+    "statistic": 1.1975910558834946,
+    "counts": {
+      "independent case-days": 216,
+      "cases": 378,
+      "active bars": 379
+    }
+  }
+}

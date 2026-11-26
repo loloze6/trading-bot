@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual next-day move of bars with forecast below -2",
+    "value": -0.0018919584630160988,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": -0.495366598377631
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of top half minus bottom half by |forecast|",
+    "value": 0.007156796082670506,
+    "passed": true
+  },
+  "counts": {
+    "cases": 75,
+    "distinct days": 38
+  },
+  "decided_by": "The plan's minimum of 50 cases on 50 distinct days is not reached (75 cases, 38 days).",
+  "reading": "Falling market read as the 60-bar close change below -10 % and the situation as an up close after at least 2 consecutive down closes, both from closes inside each window, with active bars whose 60-bar or 3-bar history is not in the window left out of the agreement; the top half of the split is |forecast| above the median and the bottom half the rest; the day-pooled t uses per-day summed deviations with a D/(D-1) correction; the plan's 50 cases / 50 days minimum is reported as not observable."
+}
