@@ -1,0 +1,51 @@
+{
+  "line": "7.d",
+  "backtest": "061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5041565,
+  "findings": {
+    "F1": "The book's losses come from shallow 5-day falls. Its 18 trades entered after a 5-day return between -5 % and -2 % lost 3.27 % each on average (\u221258.9 % summed). Its 22 trades entered after a 5-day fall deeper than 10 % earned 5.84 % each (+128.4 % summed). The profile's grid cases say the same over 5 days: deeper than \u221210 % gives an unusual move of +17.9 % (n 11, t 3.08), \u221210 % to \u22125 % gives +13.6 % (n 6, t 3.17), and \u22122 % to 0 % gives \u22126.9 % (n 3, t \u22122.39).",
+    "F2": "The size of the book's bet sorts its trades in order. The smallest third of entry |forecast| lost 1.90 % per trade (\u221249.4 % summed), the middle third earned 1.12 %, and the largest third earned 3.97 % (+103.3 %), over 26, 27 and 26 trades.",
+    "F3": "The deepest fall is \u22122.29 %, lasting 469 days from the peak in w9 to the trough in w13. With a yearly return of +2.4 %, it alone puts Calmar at 0.71, under 0.75. Inside it, trades lost \u221214.0 % summed in w11 and \u221256.6 % in w12. The losing trades of w12 and w17 had entered after a mean 5-day return of \u22126.0 %, the winners after \u221217.2 % (22 against 5 trades).",
+    "F4": "The book trades too little because a close in the top quarter of the range is rare. Only 4.4 % of grid bars are in the profile, and the book holds a position on 4 % of coin-days, with 79 trades (0.0096 trades per day). Widening the close to anywhere in the upper half of the range, after a negative 5-day return, more than doubles the 5-day cases (22 against 9) with a larger unusual move: +12.1 % (t 3.35) against +8.5 % (t 1.79). The added band, a close between 0.5 and 0.75 of the range, alone gives +14.6 % (n 13, t 2.81).",
+    "F5": "A deep fall without a high close is not the effect, so the depth of the fall is a valid grade of this idea, not an idea of its own.",
+    "F6": "The effect lives in the choppy agitated profile."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits in the upper part of that day's high-low range after its 5-day return has been negative, its price falls over the next five days, and the deeper that 5-day fall, the larger the fall.",
+      "consequence": "In a range-bound, agitated market, a trader shorts any close that sits high in its day's range after a 5-day fall, not only a close pinned at the high, and shorts more the deeper the fall, so the book trades more often and puts little on shallow falls, which were the trades that lost.",
+      "name": "upper close after deep fall",
+      "from": "F1, F2, F4, F5, F6",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range after its 5-day return has been negative, its price falls over the next five days, and the fall grows with the depth of that 5-day fall, a shallow 5-day fall being followed by only a small one.",
+      "consequence": "In a range-bound, agitated market, a trader sizes the short on a high close by how far the coin fell over the past five days, so the shallow-fall trades that made the book's deepest fall carry little weight.",
+      "name": "high close fall-depth graded",
+      "from": "F1, F2, F3, F5",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall",
+    "061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
