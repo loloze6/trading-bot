@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of drift-adjusted next 5-bar return on forecast",
+    "value": 0.0004807178116216693,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 1.1140791423230265
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top minus bottom third of |forecast|, mean sign(f) x drift-adjusted 5-bar return",
+    "value": 0.01080529207282324,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 818,
+    "days": 374,
+    "top third cases": 272,
+    "bottom third cases": 272
+  },
+  "decided_by": "The slope's t is between -2 and 2: inconclusive.",
+  "reading": "Grid of positions 0,5,10,... per window with a full 5-bar return inside the window; drift is the coin's mean 5-bar grid return over all its windows; slope t from OLS with intercept and standard errors clustered by UTC day; thirds are the n//3 cases with largest and smallest |forecast|; the choppy profile is the recorded regime 'unknown'."
+}

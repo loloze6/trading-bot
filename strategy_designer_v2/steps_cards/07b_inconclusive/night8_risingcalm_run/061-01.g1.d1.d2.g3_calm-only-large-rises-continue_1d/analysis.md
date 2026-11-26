@@ -1,0 +1,24 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.g1.d1.d2.g3_calm-only-large-rises-continue_1d
+idea tested: 061-01.g1.d1.d2.g3_calm-only-large-rises-continue
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4052 USD
+---
+## Findings
+- **F1:** In the folds shown (B, C), the tested situation (a calm market and a rise of at least one 30-day swing, read long) gives a small gain that grows with the horizon but stays below the bar: -0.35 % over 1 day (t -1.14, 268 days), +0.05 % over 3 days (t 0.11), +0.80 % over 5 days (t 1.15, 392 cases on 197 days) and +1.72 % over 10 days (t 1.28, 157 days). The full test matches this: +0.39 % over 5 days (t 0.87, 517 days, strength 0.034), on the side the idea predicts but too small to show clearly.
+- **F2:** The effect is mixed by trend. Over 5 days, the calm big-rise cases gain +3.36 % in a rising market (t 2.36, 118 cases, 71 days) and +2.76 % in a choppy one (t 1.75, 40 days), but lose -1.56 % in a falling one (t -1.19, 48 days). The falling-market cases drag the tested mean towards zero.
+- **F3:** The calm restriction holds where the effect lives. In a rising market, big rises in an agitated market gain only +1.12 % over 5 days (t 0.61, 58 days), against +3.36 % in a calm one. Over 10 days the agitated cases turn to -3.82 %, against +5.03 % in calm (t 1.85).
+- **F4:** Grading shows mainly at the largest days. Across all calm cases over 5 days, rises beyond 2 swings gain +6.96 % (t 2.03, 20 days), rises of 1 to 1.5 swings +2.82 %, and days below 0 swings lose -0.9 % to -1.6 %. In a rising, calm market, rises beyond 2 swings gain +13.1 % (t 2.15, 13 days), but rises of 1 to 1.5 swings gain only +0.63 %. There, the upper half of the rise cases gains +4.14 % against +2.58 % for the lower half.
+- **F5:** Much of the rising-calm gain belongs to the profile itself, not to the day. All rising, calm days, whatever their move, are followed by +2.94 % over 5 days (t 2.52, 100 days), close to the +3.36 % of the big-rise cases.
+- **F6:** The effect varies with the period. The calm big-rise cases lose -2.62 % in 2018 (t -2.25) and -0.94 % in 2019, then gain +3.69 % in 2020 (t 2.42) and +2.33 % in 2021. By coin, 5 of 6 are positive, LTC alone negative at -0.90 %. In a rising, calm market, the windows split w10 +5.9 % (t 2.17) and w17 +11.4 % against w12 -4.0 % (t -2.34).
+- **F7:** More data is available than the test used. Thirteen further coins have daily bars in folds A and D and in part of B and C (ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO). The test ran on the six default coins only.
+
+## Ideas
+- `061-01.g1.d1.d2.g3.b1_calm-big-rises-more-coins` (from F1, F7): In a calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the further it keeps rising over the next 5 days, beginning only from rises of more than one usual daily swing.
+- `061-01.g1.d1.d2.g3.b2_rising-calm-big-rises-continue` (from F2, F3, F4, F5): In a rising, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the further it keeps rising over the next 5 days, beginning only from rises of more than one usual daily swing.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "061-01.g1.d1.d2.g1_choppy-far-below-high-decline_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35853159999999995,
+  "findings": {
+    "F1": "In folds B and C, the cases do not grade overall the way step 5 reads them. Splitting by gap over all cases, the larger-gap half earns +4.2 % excess short against +0.4 % for the smaller half (Welch t 3.16). Step 5's own check on all four folds, however, gave a larger-gap half minus smaller-gap half of \u22120.07 %. The grading is mixed across the data, and that is part of why the result is unclear.",
+    "F2": "The grading lives in calm bars only. In calm choppy cases, the larger-gap half earns +3.6 % excess short over 5 days and the smaller half \u22120.3 % (difference +3.9 %, Welch t 2.98; Spearman of gap vs excess \u22120.20). In agitated choppy cases the halves are +4.6 % vs +3.4 % by gap (Welch t 0.45), and by forecast the order flips (\u22120.7 %, t \u22120.24). There, large and small gaps fall alike, with no grading.",
+    "F3": "Calm cases ranked by gap rise steadily across gap quintiles: excess short +9.2 % (t 2.15, 12 cases), +4.4 % (t 3.07, 29), +0.9 % (t 0.61), \u22121.3 % (t \u22120.97) and +0.8 % (t 0.64), from the largest gap to the smallest. The gap-weighted mean excess short over calm cases is +3.5 % with day-clustered t 2.57 (159 cases, 85 days). Here \"calm\" means the coin's 30-day swing is at or below its median over the explored windows, an approximation of the profile's past-year median.",
+    "F4": "In calm bars, the largest-gap third is positive in every year: +6.4 % (2018, t 2.26), +2.1 % (2019, t 1.91), +4.6 % (2020, t 1.21) and +7.4 % (2021, t 1.29). The middle and smallest-gap thirds are near zero or negative from 2019 on (for example \u22121.9 % and \u22125.7 % in 2020 and 2021). The calm-side effect is therefore not carried by one year. By contrast, the pooled effect over all cases is mostly 2018 (+6.2 %, t 3.61, against \u22120.005 % in 2021).",
+    "F5": "The tested result is on the predicted side but short of the bar: weighted mean excess short +1.02 % with t 1.68 (721 cases, 352 days). The unusual move is +0.61 % per case (t 1.87), which is 3.1 times the 0.19 % trade cost. The total move is only +0.04 %, because the coin's normal drift is \u22120.57 % in the short direction. A short on this signal can only beat holding; it cannot earn much on its own. The test used only the six default coins, while six more (ADA, DOGE, LINK, TRX, UNI, AAVE) have data in folds A and D and part of B and C.",
+    "F6": "In folds B and C, five of six coins carry the effect: BTC +2.6 % (t 2.10), ETH +3.7 % (t 2.46), LTC +2.5 %, XMR +2.5 % and XRP +1.9 % (t 1.37 to 1.68). ZEC is flat (\u22120.06 %, t \u22120.04)."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, the further a coin's close sits below its highest close of the past 20 days, the further it keeps falling over the next 5 days.",
+      "consequence": "A trader sells, or refuses to buy, coins in a quiet sideways market that have slid well below their 20-day high, more so the larger the gap, and does not apply this when the coin's swing is above its usual level.",
+      "name": "choppy calm far-below-high decline",
+      "from": "F2, F3, F4, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE; bar: 1d; period: folds A, B, C, D",
+      "name": "choppy far-below-high, more coins",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ],
+      "idea": "In a choppy market, the further a coin's close sits below its highest close of the past 20 days, the further it keeps falling over the next 5 days.",
+      "consequence": "A trader sells, or refuses to buy, coins in a sideways market that have slid well below their recent high, more so the larger the gap, since this is short-side ground the portfolio does not cover.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE; bar: 1d; period: folds A, B, C, D",
+      "profile": "choppy"
+    }
+  ],
+  "idea_ids": [
+    "061-01.g1.d1.d2.g1.b1_choppy-calm-far-below-high-decline",
+    "061-01.g1.d1.d2.g1.b2_choppy-far-below-high-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

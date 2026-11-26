@@ -1,0 +1,38 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-bar return on forecast (non-overlapping grid)",
+    "value": 0.00034924416868788096,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.032734287062035
+    },
+    "threshold": "slope > 0 with t >= 2 to confirm; slope < 0 with t <= -2 to reject; over at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x excess 5-bar return in top fifth of |forecast|",
+    "value": 0.005097227198386013,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 3419,
+    "top-fifth cases": 684
+  },
+  "decided_by": "Confirmed on every fold, but the main measure points the other way on the check folds (A, D), the years step 7 does not explore: main measure -8.497e-05 on the check folds against +0.0003492 on every fold.",
+  "reading": "All grid bars with a 5-bar forward return inside the window are cases (all coins pooled, forecast 0 included), the coin's mean is over its grid returns in all windows, the top fifth is |forecast| at or above its 80th percentile, and fewer than 300 cases is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": false,
+    "why": "main measure -8.497e-05 on the check folds against +0.0003492 on every fold",
+    "main": -8.497298295562279e-05,
+    "statistic": -0.41603798576989476,
+    "counts": {
+      "grid cases": 1709,
+      "top-fifth cases": 342
+    }
+  }
+}
