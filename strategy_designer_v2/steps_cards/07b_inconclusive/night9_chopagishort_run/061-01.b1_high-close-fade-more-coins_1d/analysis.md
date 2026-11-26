@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.b1_high-close-fade-more-coins_1d
+idea tested: 061-01.b1_high-close-fade-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3983 USD
+---
+## Findings
+- **F1:** In the folds shown (B, C), the fall after closes at or above 0.8 of the day's range inside the choppy-agitated profile is almost absent over the plan's 2 days: +0.49 % unusual fall, t 0.46, 86 cases on 70 days. It builds over the following days: +2.81 % at 4 days (t 2.00, 79 cases), +3.02 % at 5 days (t 2.50, 75 cases on 63 days, strength 0.24) and +2.85 % at 7 days (t 1.50).
+- **F2:** The 5-day fall is on the predicted side in every year shown: 2018 +6.2 % (7 cases), 2019 +4.7 % (t 2.97, 15 cases), 2020 +1.6 % (24 cases) and 2021 +2.5 % (29 cases). By contrast, 2021 is negative at 2 days (-1.5 %).
+- **F3:** The same high closes outside the profile show nothing at 5 days: -0.11 %, t -0.21, 1,314 cases. They also show almost nothing at 2 days: +0.04 %, t 0.13. So the fall belongs to the choppy-agitated market, as the brief says.
+- **F4:** How near the close is to the high does not grade the fall, which is why the supporting check failed (step 5: upper minus lower -0.31 %).
+- **F5:** What grades the fall is how little the coin gained on the high-close day itself: the smaller the day's return, the larger the fall.
+- **F6:** The test's own result is on the predicted side but short of the bar (+0.64 %, t 1.74, 411 cases on 283 days). It already used every fold and all 19 coins with daily data, so no more data is available. The 5-day effect in the folds shown rests on the core coins: 69 cases, +2.93 %, t 2.31.
+
+## Ideas
+- `061-01.b1.b1_small-gain-high-close-fades` (from F1, F2, F3, F5, F6): In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range, its price falls over the next five days, and the smaller the coin's gain on that day, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

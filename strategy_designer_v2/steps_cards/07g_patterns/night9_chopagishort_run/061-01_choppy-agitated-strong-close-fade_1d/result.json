@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "061-01_choppy-agitated-strong-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3950982,
+  "findings": {
+    "F1": "Across all profiles, a daily close in the top fifth of the day's high-low range is followed by a fall beyond the coin's drift: \u22120.56 % over the next day (t \u22123.14, 886 non-overlapping cases) and \u22120.54 % over the next two days outside the choppy-agitated profile (t \u22122.28, 851 cases). The fall shows in every year of folds B and C: 2018 \u22120.83 %, 2019 \u22121.06 % (t \u22122.86), 2020 \u22120.15 %, 2021 \u22120.44 %. It shows in 5 of 6 coins and in 9 of 12 windows.",
+    "F2": "The tested situation itself is too rare in folds B and C to read. Bars in the choppy-agitated profile are 4.9 % of the 2-day grid, and closes in the top fifth there number 35, with a 2-day unusual move of \u22121.24 % (t \u22120.71). The book's own cases gave +0.65 % short with t 1.49 over 194 days, so the theme's effect is about the right size but cannot be told from 0.",
+    "F3": "The fade after a high close is not graded at the very top. The 2-day unusual move is \u22120.84 % for closes at 0.8\u20130.9 of the range (t \u22122.57, 463), \u22121.04 % at 0.9\u20130.95 (t \u22121.99, 193) and +0.36 % at 0.95\u20131.0 (t 0.75, 230). The rank correlation of close location with the 2-day unusual move over all bars is only \u22120.06.",
+    "F4": "A coin's 5-day return predicts its next 2 days in the same direction, step by step across quintiles. The 2-day unusual move rises from \u22120.80 % in the bottom quintile (t \u22122.47) through \u22120.46 % (t \u22122.00), +0.14 %, +0.19 % to +0.59 % in the top quintile (t 1.91), 788 cases each. The bottom quintile is negative in all four years (\u22121.39 %, \u22120.65 %, \u22120.93 %, \u22120.11 %).",
+    "F5": "That continuation of a 5-day fall is strongest in a choppy market (60-day return between \u221210 % and +10 %). There the bottom 5-day quintile is followed by \u22123.73 % over 2 days (t \u22122.51, 49 cases) and the second by \u22121.59 % (t \u22122.12, 64 cases), against \u22120.03 % in the middle and +0.41 % / +0.46 % in the upper quintiles. In falling markets the same two quintiles give \u22120.92 % (t \u22121.77) and \u22121.15 % (t \u22122.75), and in rising markets none is below \u22120.09 %.",
+    "F6": "A single sharp day does the opposite of a 5-day run. The bottom quintile of 1-day returns (falls of more than 3.4 %) is followed outside the profile by +0.79 % over 2 days (t 2.48, 769). Wide days closing in the bottom fifth of their range are followed by +1.48 % (t 3.12, 188). Both are the one-day-fall rebounds the profile map already holds (044-01, 045-01, 039-02), so they are not new.",
+    "F7": "Weekday effects stand out, but they are conditions alone, not graded situations, and among about fifteen angles they are not strong enough to build on. Bars on Sunday are followed by \u22120.99 % over 2 days (t \u22122.81, 597), negative in 3 of 4 years, and Thursday bars by +0.70 % (t 3.02, 590), positive in 2 of 4 years."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that has fallen over its last five days keeps falling over the next two days in a choppy market (60-day return near flat), and the larger its 5-day fall, the larger the further fall.",
+      "consequence": "In a choppy market, a coin's fall over the last five days is a reason to be short for two days, sized with that fall, rather than to buy the dip.",
+      "name": "choppy five day fall continues",
+      "from": "F4, F5",
+      "profile": "choppy",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's daily close sits in the upper part of that day's high-low range, its price falls over the next day, and the higher the close sits in the range, the larger the fall.",
+      "consequence": "A close near the day's high, in any market, is a reason to lean short or to refuse a long for the next day.",
+      "name": "high close next day fade",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.g1_choppy-five-day-fall-continues",
+    "061-01.g2_high-close-next-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

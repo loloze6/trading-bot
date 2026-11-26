@@ -1,0 +1,3 @@
+061-01.b1.b1_small-gain-high-close-fades_1d: inconclusive (fit: adapted) [main: 0.0250603; t of the mean, cases of one day pooled 3.44141; cases 140, distinct days 122]
+061-01.b1_high-close-fade-more-coins_1d: inconclusive (fit: adapted) [main: 0.00640957; t of the mean, cases clustered by day 1.73898; cases 411, distinct days 283]
+061-01_choppy-agitated-strong-close-fade_1d: inconclusive (fit: adapted) [main: 0.00651057; t of the mean, cases pooled by day 1.49341; cases 233, days 194, cases loc >= 0.9 106, cases loc 0.8-0.9 127]

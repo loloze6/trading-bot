@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-bar fall per short case (drift removed, sign flipped)",
+    "value": 0.0064095678802442045,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.7389835113677887
+    },
+    "threshold": "mean unusual fall > 0 with t >= 2 confirms (with upper-minus-lower > 0); < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual fall, split at median close location",
+    "value": -0.0031468741032092355,
+    "passed": false
+  },
+  "counts": {
+    "cases": 411,
+    "distinct days": 283
+  },
+  "decided_by": "The t of the mean unusual fall lies between -2 and 2 (inconclusive rule).",
+  "reading": "The choppy-agitated profile is taken from the recorded regime (mean_reversion is only reached when no chop veto fires, since the detector's trend and volatility components are not recorded and their warm-up is not in the record) together with the close location >= 0.8 from the prices and the short side; a case is the first short bet (forecast rise of >= 2 points on the short side from its lowest level since the last bet) in each non-overlapping 2-bar grid cell of a window, its return taken from that bar's close 2 bars ahead in the same window; the median split puts cases above the median close location in the upper half; the t clusters cases by UTC day with a G/(G-1) correction; fewer than the plan's minimum counts is reported as not observable."
+}
