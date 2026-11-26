@@ -6,6 +6,8 @@
 058-01_calm-downtrend-depth-continues_1d: not profitable enough [Sharpe 0.2006; Sharpe minus holding's Sharpe -0.369; Calmar 0.09899]
 058-02.b1.b1_quiet-volume-fall-keeps-falling_1d: not profitable enough [Sharpe 0.07681; Sharpe minus holding's Sharpe -0.5037; Calmar -0.00508]
 058-02.b1_quiet-calm-fall-more-coins_1d: not profitable enough [Sharpe 0.265; Sharpe minus holding's Sharpe -0.2828; Calmar 0.1284]
+058-02.g1.b1_choppy-agitated-fall-all-coins_1d: not profitable enough [Sharpe 0.2008; Sharpe minus holding's Sharpe -0.3469; Calmar 0.12]
 058-02.g1_choppy-agitated-deep-fall-continues_1d: not profitable enough [Sharpe 0.0952; Sharpe minus holding's Sharpe -0.462; Calmar 0.03422]
 058-02_quiet-volume-fall-continues_1d: not profitable enough [Sharpe 0.2819; Sharpe minus holding's Sharpe -0.2753; Calmar 0.1429]
+058-03.g1_calm-downtrend-weekly-continuation_1d: not profitable enough [Sharpe 0.5329; Sharpe minus holding's Sharpe -0.0367; Calmar 0.3095]
 058-03_heavy-volume-fall-exhausts_1d: not profitable enough [Sharpe 0.08551; Sharpe minus holding's Sharpe -0.4961; Calmar 0.009195]

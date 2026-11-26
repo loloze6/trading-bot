@@ -6,6 +6,8 @@
 058-01_calm-downtrend-depth-continues_1d: inconclusive (fit: exact) [main: 0.00290122; t of the weighted mean, cases of one day pooled 0.373081; grid cases in a position (forecast < 0) 475, days 201]
 058-02.b1.b1_quiet-volume-fall-keeps-falling_1d: inconclusive (fit: adapted) [main: -5.87208e-06; day-clustered OLS slope t -0.0125038; grid bars in the fall regime 3104, grid bars in the fall regime with a forecast of -2 or lower 1840, distinct days of those bars 403]
 058-02.b1_quiet-calm-fall-more-coins_1d: inconclusive (fit: exact) [main: 0.00461103; t of the mean, cases of one day summed 0.674402; cases 907, distinct days 263]
+058-02.g1.b1_choppy-agitated-fall-all-coins_1d: inconclusive (fit: adapted) [main: 0.0186653; day-pooled t of the weighted mean 1.55139; cases 266, distinct days 141]
 058-02.g1_choppy-agitated-deep-fall-continues_1d: inconclusive (fit: exact) [main: 0.00110511; OLS slope t 0.767565; grid bars with forecast < 0 160]
 058-02_quiet-volume-fall-continues_1d: inconclusive (fit: exact) [main: -0.00421575; t of the mean, cases of one day summed -0.554834; grid cases 444, distinct days 193]
+058-03.g1_calm-downtrend-weekly-continuation_1d: inconclusive (fit: exact) [main: 0.00659382; t of the mean, cases of one day together 1.03243; distinct days 255, cases 654]
 058-03_heavy-volume-fall-exhausts_1d: inconclusive (fit: exact) [main: -0.0129266; Welch t -0.975751; heavy-volume cases (forecast > 0) 58, quiet-volume cases (forecast < 0) 408]

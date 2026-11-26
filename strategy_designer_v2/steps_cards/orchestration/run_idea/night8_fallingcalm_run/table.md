@@ -15,20 +15,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-01.g1_thin-volume-deep-fall-continues | 058-01_calm-downtrend-depth-continues | plan | inconclusive (+1.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g1.b1_thin-volume-fall-more-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.88 | 6.6 |
 | 058-01.g1.b1_thin-volume-fall-more-coins | 058-01.g1_thin-volume-deep-fall-continues | plan | inconclusive (+0.90) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g1.b1.b1_choppy-market-fall-continues; 7.g: 058-01.g1.b1.g1_choppy-market-fall-continues | 1.14 | 12.8 |
 | 058-02.g1_choppy-agitated-deep-fall-continues | 058-02_quiet-volume-fall-continues | plan | inconclusive (+0.77) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-02.g1.b1_choppy-agitated-fall-all-coins; 7.g: 058-02.g1.g1_calm-quiet-volume-fall-continues, 058-02.g1.g2_choppy-scaled-fall-continues | 0.99 | 6.9 |
+| 058-02.g1.b1_choppy-agitated-fall-all-coins | 058-02.g1_choppy-agitated-deep-fall-continues | plan | inconclusive (+1.55) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The result is on the predicted side, but no more data is available. The effect does not show clearly in one part of the data and not elsewhere: it is flat across fall depth (F2), changes sign between years and windows (F3), peaks at the tested horizon (F4), and splits by volume on too few cases (F5). No amended idea on the theme would give a clearer answer.; 7.g: no ideas: Across about fifteen angles (fall depth by quintile, volume terciles, trend × volume, depth × volume, fold halves, sharp down days by volume and trend, weekdays), the theme's effect is weak or not graded (F2, F3, F4), and nothing stands out enough beyond chance for that many looks. The one pattern near the bar (F5, t 2.33) repeats the one-day long rebounds the profile map already holds. | 1.21 | 12.8 |
+| 058-03.g1_calm-downtrend-weekly-continuation | 058-03_heavy-volume-fall-exhausts | plan | inconclusive (+1.03) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-03.g1.b1_calm-downtrend-weekly-continuation-more-coins; 7.g: 058-03.g1.g1_calm-downtrend-weekly-fall-continues | 0.81 | 5.8 |
 
 ## Consumption
-11 ideas, 11.23 USD, 104.6 minutes in all.
+13 ideas, 13.24 USD, 123.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.96 | 6.0 |
-| step4_backtest | 0.00 | 63.3 |
-| step5_verdict | 1.95 | 7.0 |
+| step3_plan | 1.10 | 6.8 |
+| step4_backtest | 0.00 | 75.1 |
+| step5_verdict | 2.29 | 8.1 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.70 | 12.5 |
-| step7_7.g | 4.61 | 15.1 |
+| step7_7.b | 4.25 | 14.4 |
+| step7_7.g | 5.59 | 18.0 |
