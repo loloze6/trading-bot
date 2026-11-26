@@ -32,22 +32,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 069-02.d1.d2_swing-graded-low-range-up-fade | 069-02.d1_falling-market-below-high-up-day-fade | plan | inconclusive (-0.61) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 069-02.d1.d2.b1_five-day-fall-graded-up-day-fade; 7.g: 069-02.d1.d2.g1_falling-range-depth-up-day-fade | 1.16 | 7.0 |
 | 071-01_falling-agitated-swing-rise-next-fade | - | plan | inconclusive (+0.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 071-01.b1_post-plunge-up-day-next-fade; 7.g: no ideas: The only graded patterns that stand out are the down-day rebound in falling, agitated markets and the wide-range down-day rebound (F2, F8), which the map already holds on the long side. The up-day fade is real on average but not graded by the rise's size (F1), and the trend, wick and weekday cuts (F4, F5, F6) are either not graded reliably or are calendar conditions that do not stand out from the many angles looked at (forecast size, profile, 60-day trend, close position, wicks, 3-day return, year, window, weekday, coin, range, and the book's tail days). | 1.82 | 6.6 |
 | 060-01.g1.d2.g1_up-day-high-close-fade | 060-01.g1.d2_wide-day-close-location-graded-fade | plan | inconclusive (+2.36) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.d2.g1.b1_up-day-fade-below-high; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.41 | 7.5 |
+| 060-01.g1.d2.d1.g3_wide-high-close-fade | 060-01.g1.d2.d1_own-range-close-height-fade | plan | confirmed (+2.36) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 060-01.g1.d2.d1.g3.d1_wide-high-close-fade-no-capitulation, 060-01.g1.d2.d1.g3.d2_wide-shallow-fall-high-close-fade; 7.g: 060-01.g1.d2.d1.g3.g1_falling-agitated-up-body-fade | 1.11 | 7.0 |
 
 ## Consumption
-28 ideas, 35.29 USD, 203.9 minutes in all.
+29 ideas, 36.41 USD, 211.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.95 | 15.7 |
-| step4_backtest | 0.00 | 82.0 |
-| step5_verdict | 4.47 | 16.5 |
+| step3_plan | 5.03 | 16.2 |
+| step4_backtest | 0.00 | 84.9 |
+| step5_verdict | 4.63 | 17.1 |
 | step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 2.78 | 9.0 |
+| step7_7.d | 3.21 | 10.5 |
 | step7_7.c | 0.42 | 1.2 |
 | step7_7.e | 0.46 | 1.3 |
 | step7_7.b | 9.16 | 32.6 |
-| step7_7.g | 13.05 | 41.5 |
-| similarity_check | 0.00 | 0.6 |
+| step7_7.g | 13.49 | 43.0 |
+| similarity_check | 0.00 | 0.7 |
 | unseen_test | 0.00 | 2.3 |

@@ -9,6 +9,7 @@
 059-01_swing-scaled-rise-continues_1d: not profitable enough [Sharpe 0.5322; Sharpe minus holding's Sharpe -0.02199; Calmar 0.2805]
 060-01.d1_wide-day-high-close-next-day-fade_1d: not profitable enough [Sharpe -0.1794; Sharpe minus holding's Sharpe -0.749; Calmar -0.06082]
 060-01.g1.d1_wider-than-usual-high-close-fade_1d: not profitable enough [Sharpe 0.5295; Sharpe minus holding's Sharpe -0.04015; Calmar 0.3531]
+060-01.g1.d2.d1.g3_wide-high-close-fade_1d: not profitable enough [Sharpe 0.4354; Sharpe minus holding's Sharpe -0.1343; Calmar 0.2416]
 060-01.g1.d2.d1_own-range-close-height-fade_1d: profitable enough [Sharpe 0.6857; Sharpe minus holding's Sharpe 0.1161; Calmar 0.8063]
 060-01.g1.d2.d2_wider-squeeze-day-fades-harder_1d: not profitable enough [Sharpe 0.4354; Sharpe minus holding's Sharpe -0.1343; Calmar 0.2416]
 060-01.g1.d2.g1_up-day-high-close-fade_1d: not profitable enough [Sharpe 0.3536; Sharpe minus holding's Sharpe -0.216; Calmar 0.1846]
