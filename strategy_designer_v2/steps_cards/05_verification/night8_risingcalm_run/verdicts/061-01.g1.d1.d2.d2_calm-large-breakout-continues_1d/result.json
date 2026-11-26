@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-day excess return on case forecast",
+    "value": 0.0013256818453145796,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 1.0597059630474297
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting difference > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 5-day excess: cases minus far-below rises",
+    "value": 0.014773707167272604,
+    "passed": true
+  },
+  "counts": {
+    "cases": 211,
+    "distinct days": 158,
+    "far-below rises": 240
+  },
+  "decided_by": "The slope's |t| is below 2.",
+  "reading": "Situation = close equal to the highest of the last 20 closes (today included, bars with fewer than 20 closes in the window left out) with a positive raw rise_sd (recomputed from prices where not recorded) outside the 'chop' profile regime, side long; a case is the first bet (forecast rise >= 2 from its low on the long side since the last bet) in each 5-bar grid cell of a window, with its 5-bar return from that bar; the coin's mean 5-day return uses the non-overlapping grid of all its windows; t uses day-clustered sandwich errors with the CR1 small-sample factor; the far-below rises are, inside non-'chop' bars, positive rises with recomputed 30-day-std size within [min, max] of the cases' raw sizes and close <= 95% of the 20-day closing high, read once per grid cell; the plan's 'fewer than 30 cases/days' is reported as not observable."
+}

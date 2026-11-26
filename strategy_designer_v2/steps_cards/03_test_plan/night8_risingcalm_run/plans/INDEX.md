@@ -12,6 +12,7 @@
 061-01.d2_rising-calm-up-day-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 061-01.g1.d1.d1_calm-big-rise-convex-follow-through_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 061-01.g1.d1.d2.d1_calm-outsized-rise-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+061-01.g1.d1.d2.d2_calm-large-breakout-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 061-01.g1_choppy-calm-day-follow-through_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
