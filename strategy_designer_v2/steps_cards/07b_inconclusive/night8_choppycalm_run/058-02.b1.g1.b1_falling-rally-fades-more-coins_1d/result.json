@@ -1,0 +1,51 @@
+{
+  "line": "7.b",
+  "backtest": "058-02.b1.g1.b1_falling-rally-fades-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4025013,
+  "findings": {
+    "F1": "Step 5's result points the way the idea predicts, a \u22120.25 % weighted excess next-day return, but it is too weak (t \u22121.47) and its slope is +2.5e-5; the cause is that the fade after a rise in a falling market does not grow with the rise: in folds B and C, up days in the falling profile are followed by \u22120.48 % excess (t \u22122.11, 2118 cases, 594 days), the smallest-forecast quintile by \u22120.82 % (t \u22122.22), the largest by only \u22120.37 % (t \u22120.90), and the Spearman correlation of the scaled rise with the next day is 0.002.",
+    "F2": "The effect lives on the plan's one-day horizon only: the excess return after a falling-market rise is \u22120.46 % at 1 day (t \u22122.05), \u22120.30 % at 2 days (t \u22120.95), \u22120.24 % at 3 days (t \u22120.68) and \u22120.11 % at 5 days (t \u22120.22).",
+    "F3": "The pull is graded once both sides of the day's move are measured, not rises only: across all falling-market days, the sextiles of the day's return over its 20-day swing go from a scaled move of \u22121.65 to +1.32, and the next day's excess falls from +0.73 % (t 1.43) through +0.29 %, \u22120.14 %, \u22120.69 % (t \u22122.13), \u22120.47 % to \u22120.41 %; the Spearman correlation is \u22120.10 over about 3,940 cases, and falling-market down days are followed by +0.32 % (t 1.35).",
+    "F4": "The reversal is concentrated in agitated falling markets: up days there are followed by \u22120.74 % (t \u22121.95, 999 cases) and down days by +0.68 % (t 1.84, 1061 cases), against \u22120.29 % (t \u22121.16) and \u22120.18 % (t \u22120.61) in calm falling markets.",
+    "F5": "The fade after a rise is broad but not uniform: it is negative on 10 of 12 coins (BTC \u22120.68 % t \u22122.43, LTC \u22120.62 % t \u22122.24, XMR \u22120.68 % t \u22122.14) and in 3 of 4 years (2018 \u22120.82 %, 2019 \u22120.62 % t \u22122.13, 2020 +0.04 %, 2021 \u22120.31 %).",
+    "F6": "Outside the falling profile the same reversal is weaker: up days are followed by \u22120.24 % (t \u22121.24, 4110 cases) and down days by +0.32 % (t 1.20).",
+    "F7": "The test's own size per case is small next to the cost of a trade: an unusual move of +0.27 % (t 1.62) is 1.2 times the 0.22 % cost, and the total move of +0.11 % is 0.5 times it; the one-day moves of 0.5 to 0.7 % in the agitated falling cells (F4) would cover the cost about 3 times."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day rise is against its usual daily swing over the last 20 days, the larger its fall over the next day, and the larger its one-day fall against that swing, the larger its rise over the next day.",
+      "consequence": "In a coin that has fallen for two months and swings more than usual, a trader has a reason to bet against each day's move for one day, the more the sharper that move.",
+      "name": "falling agitated next-day reversal",
+      "from": "F3, F4, F2, F7",
+      "profile": "falling agitated",
+      "refs": [
+        "F3",
+        "F4",
+        "F2",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a falling market, the larger a coin's one-day rise is against its usual daily swing over the last 20 days, the larger its fall over the next day, and the larger its one-day fall against that swing, the larger its rise over the next day.",
+      "consequence": "In a coin that has fallen for two months, a trader has a reason to fade each day's move for one day, sized by how large that move was against the coin's recent swing.",
+      "name": "falling market next-day reversal",
+      "from": "F1, F3, F5, F6",
+      "profile": "falling",
+      "refs": [
+        "F1",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal",
+    "058-02.b1.g1.b1.b2_falling-market-next-day-reversal"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

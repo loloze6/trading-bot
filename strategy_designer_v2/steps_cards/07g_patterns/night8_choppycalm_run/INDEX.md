@@ -2,6 +2,9 @@
 058-02.b1.b2.b1.b2_calm-market-range-position_1d: 2 ideas (2 explorations)
 058-02.b1.b2.b1_choppy-range-position-more-coins_1d: 2 ideas (2 explorations)
 058-02.b1.b2_choppy-range-position-continues_1d: 1 ideas, 1 discoveries (2 explorations)
+058-02.b1.g1.b1_falling-rally-fades-more-coins_1d: 1 ideas (3 explorations)
+058-02.b1.g1.b2_agitated-falling-rally-fades_1d: 2 ideas (2 explorations)
+058-02.b1.g1_falling-market-rally-fades_1d: 2 ideas (2 explorations)
 058-02.b1_calm-range-bottom-keeps-falling_1d: 1 ideas (2 explorations)
 058-02.b2.b1_calm-range-continuation-more-coins_1d: 1 ideas (2 explorations)
 058-02.b2_calm-range-position-continues_1d: no ideas: Every pattern that stands out after this many angles repeats an idea the map already holds. Calm range-position continuation is 035-01.b1, range-top continuation everywhere is 034-01.b1 and 033-03.b2, falling-agitated rebound is already held 12 times, and the late-week gain is 045-01. What remains (the Wednesday dip, the 20-day-return shape) does not survive a day-clustered or graded reading.

@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean excess next-bar return on forecast<0 bars",
+    "value": -0.0024864343281822544,
+    "statistic": {
+      "name": "day-clustered t of weighted mean",
+      "value": -1.4739782654098887
+    },
+    "threshold": "negative with t <= -2 confirms (with slope < 0); positive with t >= +2 rejects; 100 cases over 60 days minimum"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess next-bar return on abs(forecast) below 0",
+    "value": 2.5204448717300822e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 6519,
+    "distinct days": 1426
+  },
+  "reading": "Falling profile read from the recorded regime 'unknown' (the detector's 60-bar trend is not recorded); the situation is raw scaled_rise > 0 in that regime, expected side short; the day-clustered t uses per-day sums of w*(excess - weighted mean) over sum(w) with a D/(D-1) correction; days are UTC dates of the case bar.",
+  "status": "inconclusive",
+  "decided_by": "Inconclusive: the t lies between -2 and +2."
+}

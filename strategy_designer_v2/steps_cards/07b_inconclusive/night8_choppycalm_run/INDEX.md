@@ -2,6 +2,9 @@
 058-02.b1.b2.b1.b2_calm-market-range-position_1d: 2 ideas (1 explorations)
 058-02.b1.b2.b1_choppy-range-position-more-coins_1d: 2 ideas (2 explorations)
 058-02.b1.b2_choppy-range-position-continues_1d: 1 ideas (2 explorations)
+058-02.b1.g1.b1_falling-rally-fades-more-coins_1d: 2 ideas (2 explorations)
+058-02.b1.g1.b2_agitated-falling-rally-fades_1d: 1 ideas (2 explorations)
+058-02.b1.g1_falling-market-rally-fades_1d: 2 ideas (3 explorations)
 058-02.b1_calm-range-bottom-keeps-falling_1d: 2 ideas (2 explorations)
 058-02.b2.b1_calm-range-continuation-more-coins_1d: no ideas: The effect is not stronger where the idea places it (F4), it appears in one year only (F2), on neither side consistently (F3), it is not graded by nearness to the edge (F5) and it is not clearer at another horizon (F6), so no condition, side or horizon would give a clear answer, and the test already used all the data available (F7).
 058-02.b2_calm-range-position-continues_1d: 1 ideas (1 explorations)
