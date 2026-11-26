@@ -4,6 +4,8 @@
 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks_1d: 1 ideas (2 explorations)
 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues_1d: 1 ideas (2 explorations)
 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high_1d: no ideas: The test already used every daily fold and coin available, so more data cannot help. The effect flips sign by period (F2) with no condition I measured that separates the two, its grading fails (F3), and no other horizon shows it clearly (F4); after this many amendments, the theme's effect is not in the data.
+059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d: no ideas: The tested idea's effect points the predicted way only on average. It is negative in 2018 and 2019, positive in 2020 and 2021, and not graded cleanly by the scaled weekly rise. No coin, horizon or condition shows it clearly (F1, F3, F4, F5). The test already used every coin and fold available, so neither more data nor a narrower version would give a clear answer.
 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: 2 ideas (2 explorations)
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: 1 ideas (2 explorations)

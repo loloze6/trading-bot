@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 7-bar forward return (forecast > 0)",
+    "value": 0.009164592680701572,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day taken together",
+      "value": 0.703529046685718
+    },
+    "threshold": "above 0 with day-clustered t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third by forecast, mean excess 7-bar return (Welch t)",
+    "value": 0.03793578546055385,
+    "passed": true,
+    "welch_t": 2.3425680003123768
+  },
+  "counts": {
+    "cases": 278,
+    "distinct days": 130
+  },
+  "decided_by": "The t lies between -2 and +2 (or its sign disagrees with the mean), which is inconclusive.",
+  "reading": "Cases are grid bars (positions 0, 7, 14, ... of each window) with forecast > 0 and a 7-bar forward close inside the window; the coin's mean is over all its windows' grid returns; thirds are floor(n/3) cases sorted by forecast (ties by coin and time); the supporting check passes on a difference above 0, with its Welch t reported."
+}

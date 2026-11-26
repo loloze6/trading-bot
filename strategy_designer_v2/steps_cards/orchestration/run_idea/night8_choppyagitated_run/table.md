@@ -25,22 +25,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+3.07) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1.d3.b1_scaled-rise-second-week; 7.g: 059-01.b1.b1.d1.b1.b1.d3.g1_choppy-calm-immediate-rise-continues | 1.45 | 13.9 |
 | 060-01.b1.d1.b1.b1_deep-slide-bounce-fades-overnight | 060-01.b1.d1.b1_fresh-slide-bounce-fades-overnight | plan | inconclusive (+1.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.b1.d1.b1.b1.b1_small-bounce-deep-slide-fades; 7.g: no ideas: The only effect that stands out after the many angles looked at is the next-day rebound after scaled down days in falling agitated markets (F1, F2, F5), which the map already holds (047-01, 051-01, 039-02, 045-01). The short-side pattern on up days (F3) is not graded with the rise, and runs against the brief's grading, so it gives no graded idea to propose. | 1.14 | 12.8 |
 | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks | plan | confirmed (+2.48) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high, 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up, 059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.13 | 12.6 |
+| 059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | plan | inconclusive (+0.42) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The test already used every daily fold and coin available, so more data cannot help. The effect flips sign by period (F2) with no condition I measured that separates the two, its grading fails (F3), and no other horizon shows it clearly (F4); after this many amendments, the theme's effect is not in the data.; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.30 | 12.9 |
+| 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | plan | inconclusive (+0.70) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The tested idea's effect points the predicted way only on average. It is negative in 2018 and 2019, positive in 2020 and 2021, and not graded cleanly by the scaled weekly rise. No coin, horizon or condition shows it clearly (F1, F3, F4, F5). The test already used every coin and fold available, so neither more data nor a narrower version would give a clear answer.; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.10 | 12.4 |
 
 ## Consumption
-21 ideas, 25.86 USD, 250.5 minutes in all.
+23 ideas, 28.26 USD, 275.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.72 | 11.7 |
-| step4_backtest | 0.00 | 162.3 |
-| step5_verdict | 3.93 | 13.6 |
-| step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.4 |
+| step3_plan | 2.88 | 12.6 |
+| step4_backtest | 0.00 | 179.6 |
+| step5_verdict | 4.34 | 15.0 |
+| step6_check | 0.00 | 1.0 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.d | 3.11 | 9.7 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 5.86 | 17.8 |
-| step7_7.g | 10.23 | 30.4 |
+| step7_7.b | 6.63 | 20.1 |
+| step7_7.g | 11.30 | 33.6 |
 | similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 3.0 |

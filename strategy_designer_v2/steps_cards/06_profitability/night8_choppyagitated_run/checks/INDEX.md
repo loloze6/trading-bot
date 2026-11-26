@@ -4,6 +4,8 @@
 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks_1d: not profitable enough [Sharpe 0.6629; Sharpe minus holding's Sharpe 0.1102; Calmar 0.29]
 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues_1d: not profitable enough [Sharpe 0.1834; Sharpe minus holding's Sharpe -0.3694; Calmar 0.04018]
 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d: not profitable enough [Sharpe 0.4661; Sharpe minus holding's Sharpe -0.08664; Calmar 0.1823]
+059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high_1d: not profitable enough [Sharpe 0.6987; Sharpe minus holding's Sharpe 0.1459; Calmar 0.4747]
+059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d: not profitable enough [Sharpe 0.6895; Sharpe minus holding's Sharpe 0.1367; Calmar 0.3745]
 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d: not profitable enough [Sharpe 0.5244; Sharpe minus holding's Sharpe -0.02835; Calmar 0.3122]
 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: not profitable enough [Sharpe 0.4432; Sharpe minus holding's Sharpe -0.1096; Calmar 0.1505]
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: not profitable enough [Sharpe 0.569; Sharpe minus holding's Sharpe 0.01619; Calmar 0.2546]

@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6213434,
+  "findings": {
+    "F1": "Outside the tested profile, where a coin closes in its own 7-day closing range predicts the next 7 days. On the grid at offset 0 (1,143 cases), closes in the lowest quarter of the range trail the coin's normal 7-day drift (+1.43 %) by 2.7 %, and closes in the top quarter beat it by 1.2 % (Welch t 2.76). The top-minus-bottom difference is positive on 5 of the 7 grid offsets, with Welch t 2.76, 1.43, 3.49, 1.00 and 2.11, and slightly negative on the other two (-0.39 and -0.13).",
+    "F2": "The shortfall after a close in the bottom quarter of the 7-day range holds in every year shown: -2.6 % in 2018 (93 cases), -1.8 % in 2019 (60), -3.1 % in 2020 (72) and -2.2 % in 2021 (103).",
+    "F3": "In a falling market (60-day return below -10 %), closes in the lower half of the 7-day range trail the drift by 1.8 % (bottom quarter, 90 cases) and 4.1 % (second quarter, 63 cases). Closes in the upper half beat it by 1.7 % in each quarter (70 and 62 cases). So a fall in a falling market continues; this is the falling-agitated short box the map shows empty, and the falling-calm short box held only by 035-01.b1.",
+    "F4": "The tested idea's own grading is absent in its profile. The Spearman correlation of the scaled 7-day rise with the unusual move is 0.017 (p 0.84, 148 cases). Its quintiles go +1.5 %, -0.4 %, -3.4 % (t -2.29), +0.2 % and +4.9 % (t 2.14), and in-profile cases lost 7.5 % in 2018 (t -3.7) but gained 2.6 % in 2020 and 3.3 % in 2021.",
+    "F5": "In the profile, a high volume on the signal day against its 30-day mean looked strong on grid offset 0 (Spearman 0.28, p 0.0005, 151 cases; day-pooled graded t 2.85 over 65 days). The other six offsets give correlations of 0.05, -0.02, 0.15, 0.08, -0.05 and 0.06, and the 7-day volume ratio gives about 0 on every offset, so this is a grid artefact, not a finding.",
+    "F6": "Thursday and Friday 1-day returns beat the other days. The mean excess is +0.32 % (t 2.24) on Thursday and +0.37 % (t 2.85) on Friday, against -0.44 % (t -2.60) on Wednesday, and the late-week edge has t 2.65, 5.82 and 2.12 in 2018 to 2020. It is largest in rising markets (+0.94 % against +0.06 %), which the map already holds (045-01, rising market late week gain), and it is ungraded, so it yields no new idea."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, the nearer a coin closes to the lowest close of its last 7 days, the larger its further fall over the next 7 days.",
+      "consequence": "A trader in a coin that has been falling for two months should short, or refuse to buy, a close pinned at its weekly low, rather than expect a rebound.",
+      "name": "falling weekly low continues",
+      "from": "F1, F2, F3",
+      "profile": "falling",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "059-01.b1.b1.d1.b1.b2.d1.g1_falling-weekly-low-continues"
+  ],
+  "no_ideas": null
+}

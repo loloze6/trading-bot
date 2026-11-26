@@ -4,6 +4,8 @@
 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks_1d: 0 ideas, 1 discoveries (3 explorations)
 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues_1d: 1 ideas, 1 discoveries (3 explorations)
 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d: no ideas: Across the forecast, the profiles, the scaled one-day and weekly moves, the close location, the weekday and the windows, the only patterns that stand out are the next-day rebounds and late-week gains the map already holds. Nothing new stands out from chance in the choppy-calm profile (F2, F4), and the choppy-agitated signal is the profile's drift on 130 bars (F6).
+059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high_1d: 0 ideas, 1 discoveries (3 explorations)
+059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d: 0 ideas, 2 discoveries (2 explorations)
 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d: 0 ideas, 1 discoveries (2 explorations)
 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: 0 ideas, 1 discoveries (2 explorations)
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: 0 ideas, 1 discoveries (3 explorations)

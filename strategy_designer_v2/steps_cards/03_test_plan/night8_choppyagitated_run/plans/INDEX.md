@@ -5,6 +5,8 @@
 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
