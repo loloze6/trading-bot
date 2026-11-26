@@ -11,21 +11,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 059-01.b1.b1_choppy-calm-rise-two-weeks | 059-01.b1_choppy-calm-rise-more-coins | plan | confirmed (+2.76) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise, 059-01.b1.b1.d2_choppy-calm-rise-up-month; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.44 | 13.6 |
 | 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise | 059-01.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+0.82) | not profitable enough (failed: Calmar) | - | 7.b: 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.36 | 12.9 |
 | 059-01.b1.b1.d2_choppy-calm-rise-up-month | 059-01.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+0.86) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The unusual move is positive but small and uncertain (F1), and it does not grow with the scaled weekly rise (F3). It shows only in up years and turns over in down years (F2), and no horizon, condition or coin group gives it clearly (F4, F5), with no further data to test it on (F6).; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.08 | 12.0 |
+| 060-01_falling-agitated-rally-fades-three-days | - | plan | inconclusive (+1.01) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.b1_agitated-decline-rally-fades-next-day; 7.g: no ideas: The only graded pattern that stands out, a 1-to-3-day reversal in falling agitated markets (F1), is carried by the rebound after scaled falls the map already holds. The up-day giveback the brief claims lives in one year and is not graded (F2, F3), and continuation, weekday, range and close-position angles do not stand out beyond chance across the many cells examined (F4, F5). | 1.06 | 11.7 |
+| 060-01.b1_agitated-decline-rally-fades-next-day | 060-01_falling-agitated-rally-fades-three-days | plan | confirmed (+2.35) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 060-01.b1.d1_bounce-inside-fresh-slide-fades, 060-01.b1.d2_post-slide-bounce-next-day-giveback; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.09 | 12.3 |
 
 ## Consumption
-7 ideas, 8.06 USD, 70.1 minutes in all.
+9 ideas, 10.22 USD, 94.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.55 | 3.3 |
-| step4_backtest | 0.00 | 42.7 |
-| step5_verdict | 1.29 | 4.6 |
-| step6_check | 0.00 | 0.2 |
-| chart_files | 0.00 | 0.1 |
-| step7_7.d | 0.69 | 2.2 |
+| step3_plan | 0.70 | 4.1 |
+| step4_backtest | 0.00 | 59.4 |
+| step5_verdict | 1.66 | 5.9 |
+| step6_check | 0.00 | 0.3 |
+| chart_files | 0.00 | 0.2 |
+| step7_7.d | 1.12 | 3.6 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 2.08 | 6.5 |
-| step7_7.g | 3.45 | 10.4 |
-| similarity_check | 0.00 | 0.1 |
+| step7_7.b | 2.45 | 7.5 |
+| step7_7.g | 4.29 | 13.0 |
+| similarity_check | 0.00 | 0.2 |

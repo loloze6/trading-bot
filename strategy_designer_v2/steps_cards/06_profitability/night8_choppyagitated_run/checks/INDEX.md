@@ -5,3 +5,5 @@
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: not profitable enough [Sharpe 0.483; Sharpe minus holding's Sharpe -0.0698; Calmar 0.1988]
 059-01.b1_choppy-calm-rise-more-coins_1d: not profitable enough [Sharpe 0.5533; Sharpe minus holding's Sharpe 0.0004985; Calmar 0.3353]
 059-01_choppy-calm-weekly-rise-continues_1d: not profitable enough [Sharpe 0.4123; Sharpe minus holding's Sharpe -0.1573; Calmar 0.1792]
+060-01.b1_agitated-decline-rally-fades-next-day_1d: not profitable enough [Sharpe 0.3799; Sharpe minus holding's Sharpe -0.1729; Calmar 0.3348]
+060-01_falling-agitated-rally-fades-three-days_1d: not profitable enough [Sharpe -0.02873; Sharpe minus holding's Sharpe -0.5815; Calmar -0.04202]

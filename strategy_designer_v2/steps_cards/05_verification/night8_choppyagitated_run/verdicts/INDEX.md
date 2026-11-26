@@ -5,3 +5,5 @@
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: confirmed (fit: adapted) [main: 0.00878422; OLS slope t, clustered by day 2.75751; grid cells with forecast > 0 180, days of those cells 79]
 059-01.b1_choppy-calm-rise-more-coins_1d: inconclusive (fit: adapted) [main: 0.0120015; t of the weighted mean, cases of one day summed 0.990161; distinct days with cases 163, cases 409]
 059-01_choppy-calm-weekly-rise-continues_1d: inconclusive (fit: adapted) [main: 0.00214747; OLS slope t 1.95477; cases with forecast > 0 on the grid 220, days 127]
+060-01.b1_agitated-decline-rally-fades-next-day_1d: confirmed (fit: adapted) [main: 0.00517908; t of the mean, cases of one day together 2.34883; cases 2538, distinct days 758]
+060-01_falling-agitated-rally-fades-three-days_1d: inconclusive (fit: exact) [main: 0.0043441; day-clustered t 1.00916; distinct case days 488, cases 1357]
