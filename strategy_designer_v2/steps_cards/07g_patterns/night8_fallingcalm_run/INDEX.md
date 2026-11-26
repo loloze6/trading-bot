@@ -18,3 +18,7 @@
 060-01.d2_dry-up-in-moderate-declines_1d: no ideas: Across more than 40 groupings, no pattern stands out from chance once the cases of one day are taken together; the strongest is the theme's own dry-up continuation in falling markets (-3.59 %, t -1.80 over 34 days, F1), which the tested idea already covers and which reverses in 2020 (F2).
 060-01.d3_dry-up-without-bounce_1d: no ideas: The only pattern with |t| near 2 is the tested idea's own situation (F2, F3), which is unstable across years. Every other angle examined (forecast and regime splits, 1-, 5- and 20-day returns, volume ratios, range, close location, volatility level, weekday, and the book's best and worst days) gave nothing that stands out after this many comparisons (F5, F6). The profile map's empty cells, choppy agitated and falling agitated on the short side, showed no clear short-side pattern either.
 060-01_volume-shrink-fall-continues_1d: 1 ideas, 1 discoveries (2 explorations)
+060-02.d1_volume-growth-fall-still-running_1d: 0 ideas, 2 discoveries (2 explorations)
+060-02_volume-growth-fall-stalls_1d: 1 ideas, 1 discoveries (2 explorations)
+062-01_rising-volume-shrink-continues_1d: 1 ideas (2 explorations)
+062-02_rising-volume-growth-stalls_1d: 1 ideas (3 explorations)

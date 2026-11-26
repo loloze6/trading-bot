@@ -18,3 +18,7 @@
 060-01.d2_dry-up-in-moderate-declines_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.d3_dry-up-without-bounce_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01_volume-shrink-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+060-02.d1_volume-growth-fall-still-running_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+060-02_volume-growth-fall-stalls_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+062-01_rising-volume-shrink-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+062-02_rising-volume-growth-stalls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

@@ -24,21 +24,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.d1_deep-dry-up-longer-fall | 060-01_volume-shrink-fall-continues | plan | inconclusive (-0.02) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.d1.b1_falling-volume-ratio-grades-fall, 060-01.d1.b2_dry-up-fall-over-ten-days, 060-01.d1.b3_growing-volume-stalls-fall; 7.g: 060-01.d1.g1_falling-volume-growth-reversal | 1.01 | 5.7 |
 | 060-01.d2_dry-up-in-moderate-declines | 060-01_volume-shrink-fall-continues | plan | inconclusive (+1.70) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.d2.b1_dry-up-moderate-declines-all-coins; 7.g: no ideas: Across more than 40 groupings, no pattern stands out from chance once the cases of one day are taken together; the strongest is the theme's own dry-up continuation in falling markets (-3.59 %, t -1.80 over 34 days, F1), which the tested idea already covers and which reverses in 2020 (F2). | 1.97 | 6.3 |
 | 060-01.d3_dry-up-without-bounce | 060-01_volume-shrink-fall-continues | plan | inconclusive (+1.11) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.d3.b1_dry-up-slide-all-coins; 7.g: no ideas: The only pattern with |t| near 2 is the tested idea's own situation (F2, F3), which is unstable across years. Every other angle examined (forecast and regime splits, 1-, 5- and 20-day returns, volume ratios, range, close location, volatility level, weekday, and the book's best and worst days) gave nothing that stands out after this many comparisons (F5, F6). The profile map's empty cells, choppy agitated and falling agitated on the short side, showed no clear short-side pattern either. | 0.88 | 5.5 |
+| 062-01_rising-volume-shrink-continues | - | plan | inconclusive (+0.87) | not profitable enough (failed: Calmar) | - | 7.b: 062-01.b1_rising-volume-shrink-more-coins; 7.g: 062-01.g1_agitated-uptrend-volume-dry-up | 0.81 | 5.1 |
+| 062-02_rising-volume-growth-stalls | - | plan | inconclusive (+0.18) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The tested measure is zero (t 0.18, F1), and no part of the rising market shows the shrinking-volume rise clearly. Its only strong cases sit in one window (F4), and its sign flips across windows, years and coins (F5, F6).; 7.g: 062-02.g1_agitated-uptrend-volume-dry-up | 1.20 | 6.4 |
+| 060-02_volume-growth-fall-stalls | - | plan | confirmed (+2.96) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 060-02.d1_volume-growth-fall-still-running, 060-02.d2_volume-growth-recent-ten-day-fall, 060-02.d3_volume-growth-ten-day-hold; 7.g: 060-02.g2_calm-fall-volume-dry-up | 1.21 | 6.3 |
+| 060-02.d1_volume-growth-fall-still-running | 060-02_volume-growth-fall-stalls | plan | confirmed (+3.85) | not profitable enough (failed: Calmar) | - | 7.d: 060-02.d1.d1_volume-shrinkage-extends-running-falls, 060-02.d1.d2_volume-signal-outside-crash-falls, 060-02.d1.d3_shrinkage-short-in-moderate-falls; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.17 | 6.3 |
 
 ## Consumption
-20 ideas, 20.93 USD, 171.7 minutes in all.
+24 ideas, 25.32 USD, 195.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.58 | 11.1 |
-| step4_backtest | 0.00 | 98.4 |
-| step5_verdict | 3.40 | 12.4 |
-| step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 2.88 | 12.9 |
+| step4_backtest | 0.00 | 106.9 |
+| step5_verdict | 4.04 | 14.8 |
+| step6_check | 0.00 | 0.8 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 0.84 | 2.8 |
+| step7_7.d | 1.95 | 6.2 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 5.68 | 18.8 |
-| step7_7.g | 8.43 | 26.9 |
-| similarity_check | 0.00 | 0.1 |
+| step7_7.b | 6.25 | 20.8 |
+| step7_7.g | 10.20 | 32.7 |
+| similarity_check | 0.00 | 0.3 |

@@ -18,3 +18,7 @@
 060-01.d2_dry-up-in-moderate-declines_1d: not profitable enough [Sharpe -0.2247; Sharpe minus holding's Sharpe -0.7789; Calmar -0.08105]
 060-01.d3_dry-up-without-bounce_1d: not profitable enough [Sharpe 0.4286; Sharpe minus holding's Sharpe -0.1256; Calmar 0.1886]
 060-01_volume-shrink-fall-continues_1d: not profitable enough [Sharpe 0.2067; Sharpe minus holding's Sharpe -0.3475; Calmar 0.04506]
+060-02.d1_volume-growth-fall-still-running_1d: not profitable enough [Sharpe 0.6004; Sharpe minus holding's Sharpe 0.04623; Calmar 0.3257]
+060-02_volume-growth-fall-stalls_1d: not profitable enough [Sharpe 0.4668; Sharpe minus holding's Sharpe -0.08733; Calmar 0.2348]
+062-01_rising-volume-shrink-continues_1d: not profitable enough [Sharpe 0.5635; Sharpe minus holding's Sharpe 0.009339; Calmar 0.1679]
+062-02_rising-volume-growth-stalls_1d: not profitable enough [Sharpe -0.49; Sharpe minus holding's Sharpe -1.044; Calmar -0.1869]

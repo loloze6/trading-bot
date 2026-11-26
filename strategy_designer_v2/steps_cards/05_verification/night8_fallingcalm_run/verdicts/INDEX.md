@@ -18,4 +18,7 @@
 060-01.d2_dry-up-in-moderate-declines_1d: inconclusive (fit: exact) [main: 0.00912594; t of the mean, cases of one day taken together 1.69807; cases 487, days 377]
 060-01.d3_dry-up-without-bounce_1d: inconclusive (fit: exact) [main: 0.00902821; t of the mean, cases summed per day 1.11348; distinct days with cases 191, short cases 445]
 060-01_volume-shrink-fall-continues_1d: confirmed (fit: adapted) [main: 0.00147124; day-clustered t of slope 2.23111; in-profile grid bars 1255, grid bars with forecast <= -2 647, distinct days of forecast <= -2 cases 259, in-profile grid bars with forecast 0 535, distinct days of in-profile grid bars 384]
+060-02.d1_volume-growth-fall-still-running_1d: confirmed (fit: exact) [main: 0.00114721; OLS slope t 3.84557; cases 906]
+060-02_volume-growth-fall-stalls_1d: confirmed (fit: exact) [main: 0.000759295; OLS slope t 2.9606; grid cases with a nonzero forecast 1255, cases with a positive forecast 535, cases with a negative forecast 720]
 062-01_rising-volume-shrink-continues_1d: inconclusive (fit: exact) [main: 0.000509456; OLS slope t 0.871359; in-profile grid cases 1345, forecast > 0 572, forecast = 0 773]
+062-02_rising-volume-growth-stalls_1d: inconclusive (fit: exact) [main: 7.05547e-05; slope t, clustered by day 0.181387; non-overlapping in-profile cases 1345, days 409]
