@@ -18,6 +18,7 @@
 068-01_falling-agitated-lone-rise-fade_1d: no verdict: no backtest record
 068-02_falling-agitated-run-break-fade_1d: inconclusive (fit: exact) [main: -0.0022962; slope t (day-clustered) -0.997371; cases 759, distinct days 387]
 069-01_low-range-up-day-fade_1d: rejected (fit: exact) [main: -0.00390595; t of the mean, cases pooled per day -2.71005; days with a case 1350, cases 3708, deep cases (forecast <= -10) 1269, up days with forecast 0 5141]
+069-02.d1.d1_agitated-fall-up-day-fade_1d: inconclusive (fit: exact) [main: -0.000204858; t of the slope, cases clustered by day -0.409074; cases 1325, distinct days 633]
 069-02.d1_falling-market-below-high-up-day-fade_1d: confirmed (fit: exact) [main: 0.00457587; t of weighted mean, same-day cases summed 2.29117; case-days 2948, distinct days 1126]
 069-02.d2_agitated-below-high-up-day-fade_1d: inconclusive (fit: adapted) [main: -0.000409069; day-clustered OLS slope t -1.69869; distinct case days 1517, cases 3951]
 069-02.d3_below-high-up-day-two-day-fade_1d: inconclusive (fit: adapted) [main: 0.00251686; t of the mean, cases of one day taken together 1.48813; cases 4528, distinct days 1594]

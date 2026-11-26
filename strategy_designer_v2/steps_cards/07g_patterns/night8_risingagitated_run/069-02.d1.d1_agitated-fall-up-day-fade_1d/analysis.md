@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 069-02.d1.d1_agitated-fall-up-day-fade_1d
+idea tested: 069-02.d1.d1_agitated-fall-up-day-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4214 USD
+---
+## Findings
+- **F1:** Over all up days in every profile, the next-day excess return falls as the close sits deeper below the 20-day high. The deepest depth quintile is followed by -1.09 % (706 cases, t -5.0); the other quintiles give -0.08 %, -0.34 %, -0.10 % and +0.26 %. The slope of e on depth has a t of +2.08, clustered by day (3527 cases, 889 days), and a positive slope here means deeper closes are followed by larger falls.
+- **F2:** The deepest up-day quintile's fade is not confined to one coin, but it weakens over time. Five of six coins give between -1.09 % and -1.38 % with t from -2.2 to -2.8 (XRP: -0.26 %, t -0.4). By year it is negative in 2018, 2019 and 2020 (-1.76 %, -0.73 %, -1.58 %) and near zero in 2021 (-0.04 %).
+- **F3:** Inside the tested profile, falling agitated, the effect is not graded. The slope t is 0.12 (361 cases, 126 days). The depth quintiles give -1.71 %, -0.32 %, -2.00 %, -0.42 % and -0.44 %, and the book's own depth quartiles give -1.10 %, -0.19 %, -1.41 % and -0.73 %. Only the level of the fade is there (mean -1.05 %, t -2.08), which explains the inconclusive verdict.
+- **F4:** In falling calm markets the up-day fade is cleanly graded. Its depth quintiles run -1.01 %, -0.01 %, -0.08 %, +0.48 % and +0.69 % from deepest to shallowest (541 cases, 220 days). The slope t is 1.45 on its own, and this is the profile the tested idea excluded.
+- **F5:** In choppy markets a close deep below the 20-day high is followed by a further fall, whichever way the day closed. The deepest quintile gives -1.75 % after up days (58 cases) and -1.99 % after down days (54 cases). For down days the quintiles climb steadily to +0.86 % at the shallowest. The cases are few, with slope t 1.19 for up days and 1.13 for down days.
+- **F6:** Down days that close nearest their 20-day high are followed by a next-day rise of +0.70 % (685 cases, t 3.5). The rise is graded across the quintiles (+0.09 % to +0.70 %), but the day-clustered slope t is only 0.95 and the effect does not hold by year (only 2020 has t 2.2). It is close to the nearness-to-high continuation ideas the map already holds.
+- **F7:** Other angles look either already held or like chance, given how many angles were checked:
+
+## Ideas
+- `069-02.d1.d1.g1_deep-up-day-fade-everywhere` (from F1, F2, F3): When a coin closes up on the day, the further that close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next day.
+- `069-02.d1.d1.g2_calm-fall-up-day-fade` (from F4, F1): In a falling, calm market, when a coin closes up on the day, the further that close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next day.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `069-02.d1.d1.g3_choppy-deep-close-continuation` (from F5): In a choppy market, the further a coin's close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next day, whether the day itself closed up or down.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
