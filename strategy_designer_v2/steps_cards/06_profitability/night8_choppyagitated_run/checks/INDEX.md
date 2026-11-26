@@ -1,5 +1,6 @@
 058-01_choppy-agitated-weekly-rise-continues_1d: not profitable enough [Sharpe 0.5383; Sharpe minus holding's Sharpe -0.03129; Calmar 0.4194]
 058-02_choppy-agitated-weekly-fall-continues_1d: not profitable enough [Sharpe -0.4584; Sharpe minus holding's Sharpe -1.028; Calmar -0.1331]
+059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: not profitable enough [Sharpe 0.4432; Sharpe minus holding's Sharpe -0.1096; Calmar 0.1505]
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: not profitable enough [Sharpe 0.569; Sharpe minus holding's Sharpe 0.01619; Calmar 0.2546]
 059-01.b1.b1.d2_choppy-calm-rise-up-month_1d: not profitable enough [Sharpe 0.8078; Sharpe minus holding's Sharpe 0.255; Calmar 0.5213]
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: not profitable enough [Sharpe 0.483; Sharpe minus holding's Sharpe -0.0698; Calmar 0.1988]
@@ -9,3 +10,5 @@
 060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: not profitable enough [Sharpe 0.4642; Sharpe minus holding's Sharpe -0.08854; Calmar 0.4112]
 060-01.b1_agitated-decline-rally-fades-next-day_1d: not profitable enough [Sharpe 0.3799; Sharpe minus holding's Sharpe -0.1729; Calmar 0.3348]
 060-01_falling-agitated-rally-fades-three-days_1d: not profitable enough [Sharpe -0.02873; Sharpe minus holding's Sharpe -0.5815; Calmar -0.04202]
+060-02_falling-agitated-rally-fades-next-day_1d: not profitable enough [Sharpe 0.3799; Sharpe minus holding's Sharpe -0.1729; Calmar 0.3348]
+064-01_falling-agitated-heavy-volume-fall-rebound_1d: profitable enough [Sharpe 1.091; Sharpe minus holding's Sharpe 0.5382; Calmar 2.109]

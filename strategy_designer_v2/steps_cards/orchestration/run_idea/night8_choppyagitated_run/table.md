@@ -15,21 +15,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.b1_agitated-decline-rally-fades-next-day | 060-01_falling-agitated-rally-fades-three-days | plan | confirmed (+2.35) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 060-01.b1.d1_bounce-inside-fresh-slide-fades, 060-01.b1.d2_post-slide-bounce-next-day-giveback; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.09 | 12.3 |
 | 060-01.b1.d1_bounce-inside-fresh-slide-fades | 060-01.b1_agitated-decline-rally-fades-next-day | plan | inconclusive (+1.08) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.b1.d1.b1_fresh-slide-bounce-fades-overnight; 7.g: 060-01.b1.d1.g1_first-bounce-after-mild-dip-fades | 1.40 | 13.4 |
 | 060-01.b1.d2_post-slide-bounce-next-day-giveback | 060-01.b1_agitated-decline-rally-fades-next-day | plan | inconclusive (-0.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: no ideas: Rise days in falling agitated markets are followed by a next-day fall on average (F2). But that fall grows neither with the rise in swing units (F3) nor clearly with the depth of the prior slide in any coin, year or subset (F4), nor at a longer horizon (F5). So no amendment of this graded idea would give a clearer answer than this test, and the brief's own grading claim fails on the data.; 7.g: no ideas: The only graded patterns are the down-day and low-close rebounds in falling agitated markets (F1, F3, F6), which the profile map already holds. The rise-side giveback is neither graded by the rise nor by the prior fall (F2, F4, F5). Across the forecast, prior-fall quartiles, close position, range, weekday, trend outside the profile and the book's extreme days, nothing else stood out beyond what chance gives over that many angles (F7). | 1.39 | 13.6 |
+| 064-01_falling-agitated-heavy-volume-fall-rebound | - | plan | confirmed (+3.20) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 064-01.g1_deep-slide-heavy-volume-rebound | 0.79 | 14.8 |
+| 060-02_falling-agitated-rally-fades-next-day | - | plan | inconclusive (+0.40) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. Up days in a falling agitated market are given back only as a flat average over one day, and the giveback does not grow with the size of the rise, which the brief itself names as the test of its theory (the largest rises fade least, F2, and no other measure grades it, F5). No horizon (F3), part of the data (F6) or condition without a threshold (F4) turns it into a graded effect.; 7.g: 060-02.g1_falling-agitated-wide-rally-fades | 1.05 | 12.0 |
+| 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks | 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise | plan | inconclusive (+2.00) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks, 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.06 | 11.7 |
 
 ## Consumption
-11 ideas, 13.01 USD, 121.1 minutes in all.
+14 ideas, 15.91 USD, 159.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.06 | 6.5 |
-| step4_backtest | 0.00 | 76.6 |
-| step5_verdict | 2.06 | 7.2 |
-| step6_check | 0.00 | 0.4 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 1.29 | 7.8 |
+| step4_backtest | 0.00 | 102.1 |
+| step5_verdict | 2.62 | 9.1 |
+| step6_check | 0.00 | 0.5 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.d | 1.12 | 3.6 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 3.42 | 10.3 |
-| step7_7.g | 5.36 | 16.1 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.b | 4.19 | 12.7 |
+| step7_7.g | 6.70 | 20.1 |
+| similarity_check | 0.00 | 0.3 |
+| unseen_test | 0.00 | 3.0 |

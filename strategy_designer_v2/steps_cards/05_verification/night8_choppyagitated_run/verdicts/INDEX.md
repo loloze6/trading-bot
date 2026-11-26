@@ -1,5 +1,6 @@
 058-01_choppy-agitated-weekly-rise-continues_1d: inconclusive (fit: adapted) [main: -0.00120909; t of the mean, cases of one day taken together -0.123148; grid cases 93, distinct days 64]
 058-02_choppy-agitated-weekly-fall-continues_1d: inconclusive (fit: exact) [main: -0.000905795; t of the mean, cases of one day together -0.0931378; cases 209, days 168]
+059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: inconclusive (fit: adapted) [main: 0.0076227; day-clustered slope t 2.00035; cases 103, distinct days 48]
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: inconclusive (fit: adapted) [main: 0.0104527; t of the mean, cases of one day taken together 0.819701; cases 398, cases on distinct days 259]
 059-01.b1.b1.d2_choppy-calm-rise-up-month_1d: inconclusive (fit: exact) [main: 0.00973816; t of the mean, cases of one day together 0.862262; cases 431, distinct days 297, slope grid cells 129, active bars 1908]
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: confirmed (fit: adapted) [main: 0.00878422; OLS slope t, clustered by day 2.75751; grid cells with forecast > 0 180, days of those cells 79]
@@ -9,3 +10,5 @@
 060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: inconclusive (fit: exact) [main: -0.00027706; slope t, day-clustered SE -0.594882; active bars 2538, distinct days 758]
 060-01.b1_agitated-decline-rally-fades-next-day_1d: confirmed (fit: adapted) [main: 0.00517908; t of the mean, cases of one day together 2.34883; cases 2538, distinct days 758]
 060-01_falling-agitated-rally-fades-three-days_1d: inconclusive (fit: exact) [main: 0.0043441; day-clustered t 1.00916; distinct case days 488, cases 1357]
+060-02_falling-agitated-rally-fades-next-day_1d: inconclusive (fit: exact) [main: 0.000134197; slope t, clustered by day 0.399705; cases 2538, distinct days 758]
+064-01_falling-agitated-heavy-volume-fall-rebound_1d: confirmed (fit: exact) [main: 0.00144802; slope t, day-clustered 3.20265; distinct case days 412, cases 1027]

@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 060-02_falling-agitated-rally-fades-next-day_1d
+idea tested: 060-02_falling-agitated-rally-fades-next-day
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3926 USD
+---
+## Findings
+- **F1:** Inside the falling agitated profile, the tested idea is not graded at its own horizon. On up days, the short's next-day excess return falls slightly as the scaled rise grows (slope -0.57 % per unit of |z|, t -0.88, 639 cases on 235 days), even though its mean is +0.85 % (t 1.98). At 3 days the slope is +2.62 % (t 1.73, 225 cases, 88 days), still too weak to stand out.
+- **F2:** Inside the profile, the width of an up day's range is what grades the giveback, more than its close-to-close return. The short's 3-day excess return rises with the day's high-low range over its 30-day mean range: slope +4.46 % per unit, t 4.23, 225 non-overlapping cases. At 1 day the same slope is +0.77 % (t 1.00), so the effect shows over the next days, not the next day.
+- **F3:** Inside the profile, the next-day excess return is ordered by the day's scaled return in a clear way. After down days it is +6.20 % (t 3.69, 29 cases) for z ≤ -2, +2.17 % (t 3.22, 112 cases) for -2 to -1, and +1.21 % (t 4.57, 325 cases) for -1 to -0.3. After up days it is -1.03 % (t -2.67, 262 cases) for z 0.3 to 1, then near 0 for z above 1 (-0.17 %, t -0.32; +0.21 %, t 0.13). The largest rises are not the ones given back next day.
+- **F4:** Inside the profile, down days rebound in proportion to the size of the fall. The long's next-day excess return has a slope of +2.19 % per unit of |z| (t 2.52) and a mean of +1.25 % (t 2.74), over 658 cases on 248 days. Its slope on the range ratio is +2.03 % (t 4.12). Outside the profile the slope on |z| is +0.51 % (t 1.77, 3377 cases). This is the falling agitated rebound the map already holds 13 times (047-01, 035-01, 044-01 and others), so it is not a discovery.
+- **F5:** Within the profile, the day's range against its 30-day mean range sorts the next-day excess return. The widest fifth (ratio 1.30 to 9.9) is followed by +1.73 % (t 3.04, 225 cases), against +0.14 % (t 0.51) in the narrowest fifth. Most of this belongs to the down-day rebound in F4.
+- **F6:** The short's 3-day excess return after up days in the profile is not stable across years, before grading: 2018 +2.61 % (t 1.09), 2019 +0.67 % (t 0.62), 2020 +0.31 % (t 0.16), 2021 -0.21 % (t -0.11). Only the range-graded form in F2 carries a clear signal.
+- **F7:** The book's case size covers costs: the unusual move of +0.56 % per case is 2.5 times the 0.22 % cost of a trade. The book fails on Calmar (0.33) and on Sharpe against holding (-0.17), not on cost. This points to the next-day grading (F1) as the weakness, not the size of the move.
+
+## Ideas
+- `060-02.g1_falling-agitated-wide-rally-fades` (from F2, F1, F7): In a falling, agitated market, a coin's up day whose high-low range is wider against its average daily range of the past 30 days is followed by a larger fall over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

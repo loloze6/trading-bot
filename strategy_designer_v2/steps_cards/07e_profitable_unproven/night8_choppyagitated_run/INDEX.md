@@ -1,5 +1,6 @@
 058-01_choppy-agitated-weekly-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02_choppy-agitated-weekly-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01.b1.b1.d2_choppy-calm-rise-up-month_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
@@ -9,3 +10,5 @@
 060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.b1_agitated-decline-rally-fades-next-day_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-01_falling-agitated-rally-fades-three-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+060-02_falling-agitated-rally-fades-next-day_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+064-01_falling-agitated-heavy-volume-fall-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)

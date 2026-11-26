@@ -1,5 +1,6 @@
 058-01_choppy-agitated-weekly-rise-continues_1d: no ideas: The theme's effect is not in the data. In-profile weekly continuation after a rise is null or negative (F1), the profile is too rare on daily bars to grade (F2), and the fall-side mirror stays under t 2 (F3). The only patterns that stand out are the down-day rebounds and the late-week gain (F5, F6), which the profile map already holds. This rests on the angles looked at: the forecast by quintile, in and out of profile, by sign, coin, window and trend; 1-, 3- and 7-day horizons; the day's range and close location; and the weekday.
 058-02_choppy-agitated-weekly-fall-continues_1d: 0 ideas, 1 discoveries (2 explorations)
+059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: 0 ideas, 1 discoveries (2 explorations)
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: 0 ideas, 1 discoveries (3 explorations)
 059-01.b1.b1.d2_choppy-calm-rise-up-month_1d: 0 ideas, 1 discoveries (2 explorations)
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: 0 ideas, 1 discoveries (2 explorations)
@@ -9,3 +10,5 @@
 060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: no ideas: The only graded patterns are the down-day and low-close rebounds in falling agitated markets (F1, F3, F6), which the profile map already holds. The rise-side giveback is neither graded by the rise nor by the prior fall (F2, F4, F5). Across the forecast, prior-fall quartiles, close position, range, weekday, trend outside the profile and the book's extreme days, nothing else stood out beyond what chance gives over that many angles (F7).
 060-01.b1_agitated-decline-rally-fades-next-day_1d: 0 ideas, 1 discoveries (2 explorations)
 060-01_falling-agitated-rally-fades-three-days_1d: no ideas: The only graded pattern that stands out, a 1-to-3-day reversal in falling agitated markets (F1), is carried by the rebound after scaled falls the map already holds. The up-day giveback the brief claims lives in one year and is not graded (F2, F3), and continuation, weekday, range and close-position angles do not stand out beyond chance across the many cells examined (F4, F5).
+060-02_falling-agitated-rally-fades-next-day_1d: 1 ideas (2 explorations)
+064-01_falling-agitated-heavy-volume-fall-rebound_1d: 1 ideas (2 explorations)
