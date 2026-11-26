@@ -33,21 +33,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade | 058-01.g2.g1_agitated-decline-upper-wick-fade | plan | confirmed (+2.50) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade; 7.g: 058-01.g2.g1.g1.g1_agitated-decline-up-day-wick-fade | 1.23 | 6.9 |
 | 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade | 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade | plan | confirmed (+3.25) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade, 058-01.g2.g1.g1.d1.d2_first-up-day-fade-concave, 058-01.g2.g1.g1.d1.d3_wide-range-small-gain-fade; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.33 | 7.2 |
 | 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade | 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade | plan | confirmed (+3.38) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.g1.d1.d1.d1_deep-rejected-rally-fade, 058-01.g2.g1.g1.d1.d1.d2_rejected-rally-fade-before-capitulation; 7.g: 058-01.g2.g1.g1.d1.d1.g1_agitated-decline-first-bounce-fade | 1.11 | 6.7 |
+| 058-01.g2.g1.g1.d1.d2_first-up-day-fade-concave | 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade | plan | confirmed (+3.20) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.g1.d1.d2.d1_first-up-day-upper-wick-fade, 058-01.g2.g1.g1.d1.d2.d2_first-up-day-rise-share-fade; 7.g: 058-01.g2.g1.g1.d1.d2.g1_falling-agitated-3-day-rally-fade, 058-01.g2.g1.g1.d1.d2.g2_first-up-day-weak-close-fade | 1.27 | 7.2 |
 
 ## Consumption
-29 ideas, 41.81 USD, 324.2 minutes in all.
+30 ideas, 43.08 USD, 331.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.00 | 14.7 |
-| step4_backtest | 0.00 | 179.5 |
-| step5_verdict | 5.44 | 19.6 |
+| step3_plan | 4.12 | 15.5 |
+| step4_backtest | 0.00 | 182.2 |
+| step5_verdict | 5.61 | 20.2 |
 | step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.68 | 1.8 |
-| step7_7.d | 4.19 | 13.7 |
+| step7_7.d | 4.78 | 15.4 |
 | step7_7.b | 13.69 | 48.8 |
-| step7_7.g | 13.81 | 43.8 |
-| similarity_check | 0.00 | 0.7 |
+| step7_7.g | 14.20 | 45.1 |
+| similarity_check | 0.00 | 0.8 |

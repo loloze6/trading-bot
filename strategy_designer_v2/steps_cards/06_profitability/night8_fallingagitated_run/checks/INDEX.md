@@ -22,6 +22,7 @@
 058-01.g2.g1.d1.d3_wide-bounce-after-deep-fall_1d: not profitable enough [Sharpe 0.5266; Sharpe minus holding's Sharpe -0.04304; Calmar 0.3147]
 058-01.g2.g1.d1_bounce-in-decline-wick-fade_1d: not profitable enough [Sharpe 0.6727; Sharpe minus holding's Sharpe 0.1031; Calmar 0.6193]
 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade_1d: not profitable enough [Sharpe 0.7656; Sharpe minus holding's Sharpe 0.196; Calmar 0.6245]
+058-01.g2.g1.g1.d1.d2_first-up-day-fade-concave_1d: not profitable enough [Sharpe 0.7765; Sharpe minus holding's Sharpe 0.2069; Calmar 0.5587]
 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade_1d: not profitable enough [Sharpe 0.7765; Sharpe minus holding's Sharpe 0.2069; Calmar 0.5587]
 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade_1d: not profitable enough [Sharpe 0.5565; Sharpe minus holding's Sharpe -0.01313; Calmar 0.34]
 058-01.g2.g1_agitated-decline-upper-wick-fade_1d: not profitable enough [Sharpe 0.4723; Sharpe minus holding's Sharpe -0.09735; Calmar 0.2431]

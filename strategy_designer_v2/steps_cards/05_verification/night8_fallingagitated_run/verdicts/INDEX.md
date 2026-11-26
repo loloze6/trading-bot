@@ -22,6 +22,7 @@
 058-01.g2.g1.d1.d3_wide-bounce-after-deep-fall_1d: inconclusive (fit: exact) [main: 0.00508779; t of the mean, cases summed per day 1.62761; cases 792, days with cases 406, top-half cases 396, bottom-half cases 396]
 058-01.g2.g1.d1_bounce-in-decline-wick-fade_1d: confirmed (fit: adapted) [main: 0.00779632; t of the mean, cases of one day taken together 2.01576; cases 475, days with cases 274, cases in slope 475]
 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade_1d: confirmed (fit: exact) [main: 0.00976566; t of the mean, cases of one day taken together 3.3828; case-days 743, distinct days with cases 380]
+058-01.g2.g1.g1.d1.d2_first-up-day-fade-concave_1d: confirmed (fit: adapted) [main: 0.0185018; t of the mean across days 3.19895; case-days 387, cases 759, active bars 742]
 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade_1d: confirmed (fit: exact) [main: 0.00943373; t of the mean, cases of one day taken together 3.25308; cases 759, days 387]
 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade_1d: confirmed (fit: exact) [main: 0.0055899; day-clustered t of the mean 2.50447; cases across coins 1326, distinct days 633]
 058-01.g2.g1_agitated-decline-upper-wick-fade_1d: confirmed (fit: adapted) [main: 0.00796291; t of the mean, clustered by day 2.78121; distinct case days 412, cases 726]
