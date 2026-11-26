@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short-direction excess next-day return",
+    "value": 0.004575867635858206,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases summed",
+      "value": 2.291166170214626
+    },
+    "threshold": "confirm: > 0 with t >= 2 and rank correlation > 0; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman rank corr |forecast| vs short excess",
+    "value": 0.048372458671129985,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 2948,
+    "distinct days": 1126
+  },
+  "decided_by": "Weighted mean short excess return above 0 with t >= 2 and rank correlation above 0 (confirm rule).",
+  "reading": "The falling profile is recomputed from closes as a 60-bar price change below -10 % inside each window and active bars whose first 60 window bars do not allow it are left out of the agreement share; the plan's '100 case-days' is read as 100 (coin, day) cases with a nonzero forecast and a next-day return in the window, and the weighted t sums each day's weighted deviations into one piece.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.00162 on the check folds against +0.004576 on every fold",
+    "main": 0.001620395304255303,
+    "statistic": 0.7611576547628226,
+    "counts": {
+      "case-days": 1348,
+      "distinct days": 600
+    }
+  }
+}

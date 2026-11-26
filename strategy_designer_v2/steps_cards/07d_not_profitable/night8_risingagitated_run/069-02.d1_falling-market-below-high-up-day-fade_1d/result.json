@@ -1,0 +1,50 @@
+{
+  "line": "7.d",
+  "backtest": "069-02.d1_falling-market-below-high-up-day-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4023529,
+  "findings": {
+    "F1": "The fade works only when the coin is agitated as well as falling: on signal bars in a falling, agitated market the short-direction excess next-day return is +1.44 % (t 2.12 with same-day cases summed, 267 cases on 90 days), against +0.24 % (t 0.70, 703 cases on 244 days) in a falling, calm market; on the book's held bars the agitated ones earn 0.64 % per bar against 0.15 % for the calm ones, with fees of 0.076 against 0.338 summed.",
+    "F2": "Agitation is not an effect of its own: in a falling, agitated market the bars without the signal (the down days) give a short excess of \u22121.85 % (t \u22122.21, 256 cases), and all falling, agitated bars together give \u22120.16 % (t \u22120.28, 524 cases), so the short gain there comes from the idea's up-day signal and not from the market state. This fits the theory: an agitated fall is the one that leaves the most recent buyers trapped above the price.",
+    "F3": "The effect grows with how far the coin's 30-day swing sits above its own norm: when that swing, relative to its expanding median, is above 1.25 the signal's short excess is +1.49 % (t 3.71, 212 cases); between 1.0 and 1.25 it is +1.03 % (t 3.29, 205 cases); between 0.8 and 1.0 it is \u22120.05 % (t \u22120.17, 268 cases); below 0.8 it is +0.02 % (t 0.07, 304 cases).",
+    "F4": "In calm falling markets the shallow third of signals loses: \u22120.70 % (t \u22121.38, 226 cases), while the deep third earns +0.95 % (t 1.51); overall the shallowest forecast fifth is \u22120.17 % (t \u22120.52), and these calm, mostly marginal bars carry 82 % of the book's fees (0.338 of 0.415 summed).",
+    "F5": "The book's weak years are calm-market years: the signal's short excess is +0.80 % (t 3.36) in 2018 and +0.57 % (t 3.43) in 2019, but \u22120.04 % (t \u22120.14) in 2020 and \u22120.01 % (t \u22120.02) in 2021; the windows with losing held bars (w11 \u22120.22, w12 \u22120.10, w17 \u22120.03, all calm) had no or almost no agitated held bars.",
+    "F6": "The effect needs the falling market: up days outside a falling market, sorted by depth below the 20-day high, give at most +0.22 % (t 0.69) in the deepest fifth, and +0.36 % (t 0.52) in the deepest third even when agitated, against +1.05 % (t 2.25) for the deepest fifth of up days inside a falling market."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, when a coin closes up on the day, the further that close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next day.",
+      "consequence": "A trader fades deep-below-high up days only while the coin's 60-day trend is down and its 30-day swing is above its usual level, and stays flat in calm falls where the fade earns little and pays most of the fees.",
+      "name": "agitated fall up-day fade",
+      "from": "F1, F2, F4, F5, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a falling market, when a coin closes up on the day well below its 20-day high, the more its 30-day daily swing exceeds its usual swing over the past year, the larger its fall over the next day.",
+      "consequence": "A trader sizes the fade of a low-in-range up day by how unusually agitated the falling coin has been, shorting heavily in violent falls and hardly at all in quiet ones.",
+      "name": "swing-graded low-range up fade",
+      "from": "F2, F3, F5",
+      "profile": "falling",
+      "refs": [
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "069-02.d1.d1_agitated-fall-up-day-fade",
+    "069-02.d1.d2_swing-graded-low-range-up-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
