@@ -1,0 +1,44 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 5-bar forward return on forecast (in-profile grid bars)",
+    "value": 0.0014712439642391069,
+    "statistic": {
+      "name": "day-clustered t of slope",
+      "value": 2.2311115335602563
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 and check < 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, forecast <= -2 minus in-profile forecast == 0",
+    "value": -0.015541162807275133,
+    "passed": true
+  },
+  "counts": {
+    "in-profile grid bars": 1255,
+    "grid bars with forecast <= -2": 647,
+    "distinct days of forecast <= -2 cases": 259,
+    "in-profile grid bars with forecast 0": 535,
+    "distinct days of in-profile grid bars": 384
+  },
+  "reading": "The falling profile is the recorded regime 'unknown'; the grid is positions 0,5,10,... of each window keeping bars with a 5-bar return inside the window; the coin's mean 5-bar return is over all its grid bars in all windows; the slope is OLS with intercept and a CR1 day-clustered t; the 20-distinct-days minimum is read on the forecast <= -2 cases.",
+  "status": "confirmed",
+  "decided_by": "Confirm: the slope is positive with t >= 2 and the supporting difference is below 0.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.000153 on the check folds against +0.001471 on every fold",
+    "main": 0.00015298318986282895,
+    "statistic": 0.2011179179045983,
+    "counts": {
+      "in-profile grid bars": 578,
+      "grid bars with forecast <= -2": 298,
+      "distinct days of forecast <= -2 cases": 137,
+      "in-profile grid bars with forecast 0": 247,
+      "distinct days of in-profile grid bars": 206
+    }
+  }
+}

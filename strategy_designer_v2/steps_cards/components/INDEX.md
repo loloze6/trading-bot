@@ -219,3 +219,4 @@ pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | ReclaimAboveLowInRang
 pilot_panic_run | 054-03_deep-pierce-reclaim-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimNearnessInRange | built: PriorLowReclaimInRangeComponent {"form": "nearness", "period": 30}
+night8_fallingcalm_run | 060-01.d2_dry-up-in-moderate-declines_1d | VolumeDryUpTimesFallModerationComponent | built: VolumeDryUpTimesFallModerationComponent {"fall_period": 20, "volume_period": 30}

@@ -3,6 +3,7 @@
 058-01.b2_quiet-volume-calm-fall-continues_1d: 1 ideas (2 explorations)
 058-01.g1.b1_thin-volume-fall-more-coins_1d: 1 ideas (2 explorations)
 058-01.g1_thin-volume-deep-fall-continues_1d: 1 ideas (1 explorations)
+058-01.g2.d1_volume-dry-up-at-the-lows_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 058-01.g2_volume-drying-decline-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01_calm-downtrend-depth-continues_1d: 2 ideas (2 explorations)
 058-02.b1.b1_quiet-volume-fall-keeps-falling_1d: no ideas: The theme's effect is not in the data. Neither the lightness of the volume (slope t 0.15 overall, -0.89 in falling calm markets, F1 and F3) nor the depth of the fall (deepest tercile -0.01 %, F5) grades the continuation at any horizon, profile or year tested (F2, F4). The only effect left is an ungraded continuation smaller than the cost of a trade (F6).
@@ -13,3 +14,7 @@
 058-03.g1.b1_calm-downtrend-weekly-continuation-more-coins_1d: 2 ideas (2 explorations)
 058-03.g1_calm-downtrend-weekly-continuation_1d: 1 ideas (1 explorations)
 058-03_heavy-volume-fall-exhausts_1d: no ideas: The test's result is on the side the idea rules out. No coin, period, horizon or depth of fall shows the heavy-volume exhaustion clearly (F1, F3, F4, F5), and the brief's own continuation is absent too (F6), so the theme's effect is not in the data.
+060-01.d1_deep-dry-up-longer-fall_1d: 3 ideas (2 explorations)
+060-01.d2_dry-up-in-moderate-declines_1d: 1 ideas (3 explorations)
+060-01.d3_dry-up-without-bounce_1d: 1 ideas (1 explorations)
+060-01_volume-shrink-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

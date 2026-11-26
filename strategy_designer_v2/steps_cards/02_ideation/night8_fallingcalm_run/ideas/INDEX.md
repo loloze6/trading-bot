@@ -5,3 +5,8 @@
 059-02_down-day-volume-sizes-rebound: After a one-day fall, heavier volume against the coin's 30-day volume is followed by a larger next-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 060-01_volume-shrink-fall-continues: In a falling market, a larger 30-day volume shrinkage against the prior 30 days is followed by a larger fall over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
 060-02_volume-growth-fall-stalls: In a falling market, larger 30-day volume growth against the prior 30 days is followed by a smaller fall over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling]
+061-01_falling-agitated-high-close-fades: In a falling agitated market, a close higher in the day's range is followed by a larger fall the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
+061-02_calm-high-close-carries-on: In a calm market, a close higher in the day's range is followed by a larger rise the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: calm]
+061-03_rising-high-close-carries-on: In a rising market, a close higher in the day's range is followed by a larger rise the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
+062-01_rising-volume-shrink-continues: In a rising market, a larger 30-day volume shrinkage against the prior 30 days is followed by a larger rise over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]
+062-02_rising-volume-growth-stalls: In a rising market, larger 30-day volume growth against the prior 30 days is followed by a smaller rise over the next 5 days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: rising]

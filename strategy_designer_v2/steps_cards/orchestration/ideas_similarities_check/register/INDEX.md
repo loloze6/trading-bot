@@ -235,6 +235,7 @@ An idea's latest record counts once.
 | 040-02_agitated-fall-vs-swing-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | 91d2d7ca0 | 2026-11-25T04:52:37 |
 | 041-03_agitated-fall-drop-vs-range-rebound_1d | paying | night7_steadydecline_run | 1d | 6 | 48d4abd43 | 2026-11-25T05:19:56 |
 | 058-01.g2_volume-drying-decline-continues_1d | confirmed | night8_fallingcalm_run | 1d | 6 | b11d25dc5 | 2026-11-26T00:36:02 |
+| 060-01_volume-shrink-fall-continues_1d | confirmed | night8_fallingcalm_run | 1d | 6 | bfe0858f0 | 2026-11-26T00:48:58 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | 5cec10e5f | 2026-11-18T03:17:55 |

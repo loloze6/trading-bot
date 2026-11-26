@@ -3,6 +3,7 @@
 058-01.b2_quiet-volume-calm-fall-continues_1d: inconclusive (fit: exact) [main: -0.00589599; t of the mean, cases of one day taken together -0.678147; grid cases with forecast < 0 385, days of those cases 178, heavy-volume cases for the check 59]
 058-01.g1.b1_thin-volume-fall-more-coins_1d: inconclusive (fit: exact) [main: 0.00552967; t of the weighted mean, cases of one day pooled 0.904174; distinct days with cases 263, cases 907]
 058-01.g1_thin-volume-deep-fall-continues_1d: inconclusive (fit: exact) [main: 0.000844189; OLS slope t 1.21971; grid cells with a nonzero forecast 444, grid cells with forecast <= -2 393]
+058-01.g2.d1_volume-dry-up-at-the-lows_1d: mismatch: the test does not match its plan (agreement 0.726306) (fit: exact)
 058-01.g2_volume-drying-decline-continues_1d: confirmed (fit: exact) [main: 0.0111135; t of the mean, cases of one day together 2.00176; distinct case-days 270, cases 332]
 058-01_calm-downtrend-depth-continues_1d: inconclusive (fit: exact) [main: 0.00290122; t of the weighted mean, cases of one day pooled 0.373081; grid cases in a position (forecast < 0) 475, days 201]
 058-02.b1.b1_quiet-volume-fall-keeps-falling_1d: inconclusive (fit: adapted) [main: -5.87208e-06; day-clustered OLS slope t -0.0125038; grid bars in the fall regime 3104, grid bars in the fall regime with a forecast of -2 or lower 1840, distinct days of those bars 403]
@@ -13,3 +14,8 @@
 058-03.g1.b1_calm-downtrend-weekly-continuation-more-coins_1d: inconclusive (fit: exact) [main: 0.00425997; t of slope, day-clustered 0.904498; grid cases 1274, distinct days 309]
 058-03.g1_calm-downtrend-weekly-continuation_1d: inconclusive (fit: exact) [main: 0.00659382; t of the mean, cases of one day together 1.03243; distinct days 255, cases 654]
 058-03_heavy-volume-fall-exhausts_1d: inconclusive (fit: exact) [main: -0.0129266; Welch t -0.975751; heavy-volume cases (forecast > 0) 58, quiet-volume cases (forecast < 0) 408]
+060-01.d1_deep-dry-up-longer-fall_1d: inconclusive (fit: adapted) [main: -3.22396e-05; OLS slope t -0.0152591; grid cells with a negative forecast 179]
+060-01.d2_dry-up-in-moderate-declines_1d: inconclusive (fit: exact) [main: 0.00912594; t of the mean, cases of one day taken together 1.69807; cases 487, days 377]
+060-01.d3_dry-up-without-bounce_1d: inconclusive (fit: exact) [main: 0.00902821; t of the mean, cases summed per day 1.11348; distinct days with cases 191, short cases 445]
+060-01_volume-shrink-fall-continues_1d: confirmed (fit: adapted) [main: 0.00147124; day-clustered t of slope 2.23111; in-profile grid bars 1255, grid bars with forecast <= -2 647, distinct days of forecast <= -2 cases 259, in-profile grid bars with forecast 0 535, distinct days of in-profile grid bars 384]
+062-01_rising-volume-shrink-continues_1d: inconclusive (fit: exact) [main: 0.000509456; OLS slope t 0.871359; in-profile grid cases 1345, forecast > 0 572, forecast = 0 773]

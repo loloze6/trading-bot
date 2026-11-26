@@ -19,21 +19,26 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-03.g1_calm-downtrend-weekly-continuation | 058-03_heavy-volume-fall-exhausts | plan | inconclusive (+1.03) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-03.g1.b1_calm-downtrend-weekly-continuation-more-coins; 7.g: 058-03.g1.g1_calm-downtrend-weekly-fall-continues | 0.81 | 5.8 |
 | 058-03.g1.b1_calm-downtrend-weekly-continuation-more-coins | 058-03.g1_calm-downtrend-weekly-continuation | plan | inconclusive (+0.90) | not profitable enough (failed: Calmar) | - | 7.b: 058-03.g1.b1.b1_calm-downtrend-three-day-continuation, 058-03.g1.b1.b2_calm-downtrend-falls-continue; 7.g: no ideas: I looked at the forecast's quintiles in and out of the profile, volume, swing, daily range, weekday by profile and by year, the book's sides, windows and tails. Across about 60 groups only isolated cells reach a day-clustered |t| near 2 (one out-of-profile 20-day quintile at 2.22, in-profile Tuesday at −2.60, Thursday in 2019 alone), with nothing graded or consistent across years. None stands out from chance, and the volume interaction the brief rests on is absent (t 0.23). | 0.87 | 11.4 |
 | 058-01.g2_volume-drying-decline-continues | 058-01_calm-downtrend-depth-continues | plan | confirmed (+2.00) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.d1_volume-dry-up-at-the-lows; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.15 | 7.2 |
+| 058-01.g2.d1_volume-dry-up-at-the-lows | 058-01.g2_volume-drying-decline-continues | plan | mismatch | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.71 | 6.3 |
+| 060-01_volume-shrink-fall-continues | - | plan | confirmed (+2.23) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 060-01.d1_deep-dry-up-longer-fall, 060-01.d2_dry-up-in-moderate-declines, 060-01.d3_dry-up-without-bounce; 7.g: 060-01.g2_calm-fall-volume-dry-up | 1.09 | 6.2 |
+| 060-01.d1_deep-dry-up-longer-fall | 060-01_volume-shrink-fall-continues | plan | inconclusive (-0.02) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.d1.b1_falling-volume-ratio-grades-fall, 060-01.d1.b2_dry-up-fall-over-ten-days, 060-01.d1.b3_growing-volume-stalls-fall; 7.g: 060-01.d1.g1_falling-volume-growth-reversal | 1.01 | 5.7 |
+| 060-01.d2_dry-up-in-moderate-declines | 060-01_volume-shrink-fall-continues | plan | inconclusive (+1.70) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.d2.b1_dry-up-moderate-declines-all-coins; 7.g: no ideas: Across more than 40 groupings, no pattern stands out from chance once the cases of one day are taken together; the strongest is the theme's own dry-up continuation in falling markets (-3.59 %, t -1.80 over 34 days, F1), which the tested idea already covers and which reverses in 2020 (F2). | 1.97 | 6.3 |
+| 060-01.d3_dry-up-without-bounce | 060-01_volume-shrink-fall-continues | plan | inconclusive (+1.11) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.d3.b1_dry-up-slide-all-coins; 7.g: no ideas: The only pattern with |t| near 2 is the tested idea's own situation (F2, F3), which is unstable across years. Every other angle examined (forecast and regime splits, 1-, 5- and 20-day returns, volume ratios, range, close location, volatility level, weekday, and the book's best and worst days) gave nothing that stands out after this many comparisons (F5, F6). The profile map's empty cells, choppy agitated and falling agitated on the short side, showed no clear short-side pattern either. | 0.88 | 5.5 |
 
 ## Consumption
-15 ideas, 15.27 USD, 141.8 minutes in all.
+20 ideas, 20.93 USD, 171.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.25 | 7.7 |
-| step4_backtest | 0.00 | 86.4 |
-| step5_verdict | 2.56 | 9.4 |
-| step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 2.58 | 11.1 |
+| step4_backtest | 0.00 | 98.4 |
+| step5_verdict | 3.40 | 12.4 |
+| step6_check | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 0.44 | 1.5 |
+| step7_7.d | 0.84 | 2.8 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 4.61 | 15.4 |
-| step7_7.g | 6.41 | 20.5 |
+| step7_7.b | 5.68 | 18.8 |
+| step7_7.g | 8.43 | 26.9 |
 | similarity_check | 0.00 | 0.1 |
