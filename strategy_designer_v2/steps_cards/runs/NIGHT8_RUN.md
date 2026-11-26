@@ -174,4 +174,61 @@ the new books on the unseen coins (1u).
   the six runs: about 241 of 250 USD.
 
 ## Reading
-(written in the morning)
+(2026-11-26 morning; counts from `orchestration/run_idea/<run>/table.json`, `loop/<run>/loop.jsonl`, the unseen-dates
+index of each run, the box reader `orchestration/combine/helper/boxes.py` and the rebuilt similarity register)
+
+**Outcome: N1 once, N2 for two themes, N3 for three, and N4 in four faults, all found and fixed during the night.**
+One new specialist fills an empty box: C's 060-01.g1.d2.d1 (a wide day closing high fades), short, 99 % of its days in
+"falling agitated, short" (6.1 times the market), holding on both unseen periods, the nearest held book explaining 0.10.
+The other 7 confirmed and profitable books repeat effects already held (explained 0.59 to 0.91).
+
+**Per session** (spend by each loop's own count)
+| Session | Spent / budget USD | Tested (on the theme) | Theme ideas in the first 10 turns | Confirmed | Profitable enough | Both | Discoveries | Theme's answer |
+|---|---|---|---|---|---|---|---|---|
+| A falling calm | 45.34 / 45 | 36 (16) | 10 | 11 | 0 | 0 | 16 | real, narrowly (a fall continues as volume dries up, t +2.00); no book pays (Calmar) |
+| B falling agitated | 45.84 / 45 | 30 (30) | 10 | 10 | 1 (inconclusive) | 0 | 14 | real: a one-day rise with a wide range or upper wick fades; no book pays (Calmar) |
+| C rising agitated | 42.42 / 40 | 29 (7) | 7 | 9 | 3 | 2 | 22 | not real (the rise carries on, no giveback) |
+| D choppy agitated | 35.95 / 35 | 26 (2) | **2** | 6 | 1 | 1 | 13 | open, leaning not real (2 theme ideas run) |
+| E choppy calm | 35.11 / 35 | 25 (20) | 10 | 7 | 9 | 5 | 9 | not real in choppy calm (the range-edge continuation found in calm and rising calm) |
+| F rising calm | 36.89 / 30 | 33 (7) | 7 | 5 | 0 | 0 | 17 | not real |
+| All | 241.55 / 230 | 179 (82) | | 48 | 14 | 8 | 91 | 2 real, 3 not real, 1 open |
+
+**The 8 confirmed and profitable books, by box** (box = where 10 % or more of its days in a position fall; times the
+market in brackets)
+| Book | Boxes | Unseen 2016-17 / 2026 | Nearest held book, share explained |
+|---|---|---|---|
+| C 060-01.g1.d2.d1 own-range close-height fade | falling agitated short 99 % (6.1) | holds / holds | 025-02…b1 bounce fades in monthly fall, **0.10** |
+| C 058-03.e1 calm rise stretch, ten days | rising calm long 69 % (3.8), choppy calm long 14 %, rising agitated long 13 % | holds / holds | 001-01…c1 high-RSI continuation, 0.70 |
+| D 064-01 heavy-volume fall rebound | falling agitated long 99 % (5.9) | does not hold / does not hold | 066-01 (E, this night), 0.64 |
+| E 058-02.b1.g1.b1.b1 next-day reversal | falling agitated long 53 % (3.1), short 47 % (2.8) | holds / holds | 066-02 (E, this night), 0.64 |
+| E 058-02.b1.b2.b1.b2.b2.e1 range-edge continuation | six calm boxes, 10 to 26 % each (0.5 to 1.3) | holds / holds | 035-01.b1 calm nearness to high, 0.59 |
+| E 066-01 sixty-day scaled fall rebound | falling agitated long 99 % (5.9) | holds / holds | 066-02 (E, this night), 0.81 |
+| E 066-02 year-scaled fall rebound | falling agitated long 99 % (5.9) | holds / does not hold | 047-01 (night 7), 0.91 |
+| E 058-02.b1.b2.b1.b2.b1.b1 convex range-edge continuation | rising calm long 46 % (2.7), short 19 %, choppy calm long 10 % | does not hold / holds | 058-03.e1 (C, this night), 0.69 |
+5 of 8 hold on both unseen periods. "Choppy agitated" is still empty on both sides. The register's nearest book now
+includes the night's own books; against the books held before the night, E's three falling-agitated rebounds are the
+night 7 rebound again (035-01, 047-01: 0.61 to 0.91, E's and D's reports).
+
+**Spend on held effects:** 18 of the 48 books in the register from this night are explained at 0.5 or more by a held
+book; they cost 20.31 USD of the 217.15 USD the run tables record (the rest of the 241.55: briefs, discoveries,
+components).
+
+**N4, the machinery** (each found during the night, fixed, and recorded above under "During the night")
+1. The catalogue's stale Donchian row (since night 7): fixed in `with_row`, taken by 5 sessions.
+2. Theme profile drift: `common/theme.md` rule (a follow-up keeps or narrows the brief's profile), taken by A, B, C, D, F;
+   E's permission check refused it, and E's best books came from that drift.
+3. Resumes without `--budget` ran with no limit: C +2.42, F +6.89 USD over; NIGHT_RULES corrected.
+4. **D ran 2 theme ideas in its first 10 turns** (the 1n gap: a discovery brief's ideas rank as generation 0 and come
+   before the theme's deeper follow-ups); C and F 7 of 10.
+Also: the usage limit stopped every loop about 01:43 to 04:04 UTC; the morning merge stopped twice on a catalogue row
+that two sessions had changed the same way (`night_merge` fixed: the same change on both sides is one change, test and
+proof, 86cfdf6231); brief numbers 058 to 068 used by up to 6 briefs each (no file overwritten; idea keys carry the run).
+
+**Step back: what the night shows, and the one change**
+- Aiming each session at a regime finds that regime's effects (2 themes real; "a rise fades in a falling, agitated
+  market", short, confirmed 12 times by four sessions on their own: 05:40 audit), but step 6 turns most of them down on Calmar (A, B: 21 confirmed, 0 paying). The proven
+  effects in "falling" markets lose too much on their bad stretches to pay alone.
+- New earning books mostly repeat what we hold (7 of 8). One new box filled: falling agitated, short.
+- The one change a practitioner would make: **let the combination judge confirmed specialists, not step 6 alone.** A
+  confirmed effect that fails Calmar alone may still add to a portfolio whose other strategies are idle in its box.
+  This is a design question for the operator (next steps), not changed here.
