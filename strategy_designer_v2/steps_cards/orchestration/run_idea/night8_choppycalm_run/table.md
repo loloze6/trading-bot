@@ -19,22 +19,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal | 058-02.b1.g1.b1_falling-rally-fades-more-coins | plan | confirmed (+3.23) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 0 ideas, 1 discoveries (3 explorations) | 0.96 | 14.0 |
 | 058-02.b1.g1.b2.b1_agitated-falling-selloffs-rebound | 058-02.b1.g1.b2_agitated-falling-rally-fades | plan | confirmed (+3.24) | not profitable enough (failed: Calmar) | - | 7.d: 058-02.b1.g1.b2.b1.d1_second-day-selloff-rebound, 058-02.b1.g1.b2.b1.d2_low-close-selloff-rebound, 058-02.b1.g1.b2.b1.d3_capitulation-after-slide-rebounds; 7.g: no ideas: The patterns that stand out are either already held in the profile map or are not graded, so they give no new idea. These are the wide low-close rebound, range-top continuation in rising and calm markets, the late-week gain, and the falling agitated up-day reversal, whose short side 058-02.b1.g1.b1.b1 already covers and which fails the grading test (largest up days +0.32 %, t 0.35). The brief's choppy calm reversion is contradicted (F4). | 0.99 | 6.8 |
 | 058-02.b1.g1.b1.b2_falling-market-next-day-reversal | 058-02.b1.g1.b1_falling-rally-fades-more-coins | plan | inconclusive (+1.72) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 058-02.b1.g1.b1.b2.b1_falling-agitated-next-day-fade, 058-02.b1.g1.b1.b2.b2_agitated-downtrend-sharp-fall-rebound; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.25 | 11.7 |
+| 058-02.b1.b2.b1.b2.b1_calm-rising-range-position | 058-02.b1.b2.b1.b2_calm-market-range-position | plan | inconclusive (+1.59) | profitable enough | - | 7.b: 058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation; 7.e: no ideas: The book earns from long continuation near the recent high in rising calm markets, plus a third from the market's rise and a few strong 2020 windows (F1–F7); the profile map already holds this idea in rising calm (034-01.b1 nearness to high, 033-03.b2 range top continuation, 035-01.b1 calm nearness to high), so it is neither a new discovery nor on the brief's choppy-calm reversion theme.; 7.g: 058-02.b1.b2.b1.b2.b1.g1_choppy-range-edge-continuation | 1.48 | 12.8 |
+| 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation | 058-02.b1.b2.b1.b2_calm-market-range-position | plan | inconclusive (+1.71) | profitable enough | - | 7.b: 058-02.b1.b2.b1.b2.b2.b1_rising-calm-edge-continuation; 7.e: 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation, 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation; 7.g: 058-02.b1.b2.b1.b2.b2.g1_calm-range-top-surge-continuation | 1.51 | 13.6 |
+| 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation | 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation | plan | confirmed (+2.58) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 058-02.b1.b2.b1.b2.b2.e1.g1_choppy-calm-edge-continuation | 0.81 | 13.9 |
 
 ## Consumption
-15 ideas, 17.87 USD, 134.4 minutes in all.
+18 ideas, 21.67 USD, 174.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.84 | 8.6 |
-| step4_backtest | 0.00 | 75.1 |
-| step5_verdict | 2.43 | 8.4 |
-| step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 4.04 | 9.7 |
+| step4_backtest | 0.00 | 99.7 |
+| step5_verdict | 3.02 | 10.6 |
+| step6_check | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.e | 0.40 | 1.3 |
+| step7_7.e | 1.33 | 4.1 |
 | step7_7.d | 1.02 | 3.5 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 3.81 | 13.1 |
-| step7_7.g | 6.39 | 20.8 |
-| similarity_check | 0.00 | 0.2 |
-| unseen_test | 0.00 | 2.7 |
+| step7_7.b | 4.56 | 15.5 |
+| step7_7.g | 7.70 | 24.8 |
+| similarity_check | 0.00 | 0.3 |
+| unseen_test | 0.00 | 5.6 |

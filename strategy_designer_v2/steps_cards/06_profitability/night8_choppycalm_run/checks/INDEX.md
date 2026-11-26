@@ -1,3 +1,6 @@
+058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: profitable enough [Sharpe 1.04; Sharpe minus holding's Sharpe 0.4869; Calmar 0.8292]
+058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: profitable enough [Sharpe 1.122; Sharpe minus holding's Sharpe 0.5695; Calmar 1.367]
+058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation_1d: profitable enough [Sharpe 1.073; Sharpe minus holding's Sharpe 0.5206; Calmar 1.163]
 058-02.b1.b2.b1.b2.e2_calm-nearness-to-high-short-horizon_1d: not profitable enough [Sharpe 0.8284; Sharpe minus holding's Sharpe 0.2756; Calmar 0.6702]
 058-02.b1.b2.b1.b2_calm-market-range-position_1d: profitable enough [Sharpe 1.06; Sharpe minus holding's Sharpe 0.5072; Calmar 1.145]
 058-02.b1.b2.b1_choppy-range-position-more-coins_1d: not profitable enough [Sharpe 0.1976; Sharpe minus holding's Sharpe -0.4098; Calmar 0.055]

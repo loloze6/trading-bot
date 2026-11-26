@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3541862,
+  "findings": {
+    "F1": "The tested measure is on the side the idea predicts but short of the bar (mean 0.0798, t 1.59, 552 grid cases on 143 days); on folds B and C the same 10-day measure gives 0.151 with t 2.17 (196 cases, 64 days), and the test already used every coin and every fold available on daily bars, so no more data can be added.",
+    "F2": "All of the effect sits in the strongest forecasts. With |forecast| above 10, the signed excess 10-day return is +0.137 per day's cases (t 2.75, 108 cases, 46 days); with |forecast| of 10 or less it is \u22120.001 (t \u22120.02, 88 cases, 44 days). At 5 days the same split gives +0.070 (t 2.29) against \u22120.000 (t \u22120.02).",
+    "F3": "Read on the raw 20-day range position, the 10-day excess return is +6.4 % for closes in the top fifth of the range (62 cases) and \u22125.1 % for the bottom fifth (11 cases). The three middle fifths are flat by comparison (\u22125.2 % for 0.2\u20130.4, +1.7 % for 0.4\u20130.6, +1.4 % for 0.6\u20130.8; 23, 21 and 47 cases), so the move appears at the edges and not in a straight line across the range.",
+    "F4": "The 10-day measure is positive on both sides but stronger on the long side (0.156, t 1.80, 145 cases, against short 0.069, t 1.44, 51 cases). It is uneven across periods (2018 \u22120.062 with t \u22121.11, 2020 +0.273 with t 1.76; windows w12 \u22120.033 and w14 \u22120.100), which adds noise that dilutes the overall t.",
+    "F5": "The effect holds at 5 and 10 days (measure t 2.18 and 2.17) and fades by 20 days (t 0.61, long side \u22120.003). The plan's 10-day horizon is therefore not the problem."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm, rising market, the higher a coin's close sits within its 20-day high-low range, the larger its rise over the next 10 days, with the move growing faster and faster as the close nears the range's high or low, so that closes at the edges of the range carry most of it.",
+      "consequence": "In a rising, calm market, a trader should weight positions much more heavily the closer the coin closes to its 20-day high or low, and hold little near mid-range, for about ten days.",
+      "name": "convex range-edge continuation",
+      "from": "F1, F2, F3, F5",
+      "profile": "rising calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

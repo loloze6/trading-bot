@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation_1d
+idea tested: 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4012 USD
+---
+## Findings
+- **F1:** On the folds shown (B, C) the tested measure points the idea's way and is clearer than step 5's overall t of 1.71. The |forecast|-weighted signed excess 5-day return is +2.45 % with t 3.27 (1,056 cases on 236 days). It is positive in 11 of 12 windows, but under t 2 in 11 of them (for example w12 +0.15 %, t 0.07; w7 +0.48 %, t 0.22). The effect is real in direction but small against the 5-day noise, and folds A and D must be where it fades.
+- **F2:** The pull follows the close's place in its 20-day range evenly in calm markets and is absent in agitated ones. In calm markets the mean excess 5-day return rises through the range bins: -2.1 %, -3.3 %, -1.6 %, -0.2 %, +0.6 %, +2.4 % and +5.6 % at the very top (t 2.56). Weighted by the raw |position|, the calm cases earn +2.77 % with t 3.90 over 904 cases, against +0.54 % with t 0.42 over 718 agitated cases.
+- **F3:** Almost all of the effect comes from the strongest forecasts. The top quartile of |forecast| earns +4.03 % with t 3.79 (264 cases). The two lowest quartiles earn +0.45 % (t 0.52) and +0.31 % (t 0.41), which dilutes the weighted mean.
+- **F4:** The effect is strongest in rising calm markets and grows over a longer horizon there.
+- **F5:** The effect does not rest on one side or one year.
+
+## Ideas
+- `058-02.b1.b2.b1.b2.b2.b1_rising-calm-edge-continuation` (from F2, F3, F4): In a rising, calm market, the nearer a coin's close sits to the top of its 20-day high-low range, the larger its rise over the next 10 days, and the nearer to the bottom, the larger its fall, with the move growing faster than the close's distance from the range's middle.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
