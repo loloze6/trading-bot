@@ -8,5 +8,6 @@
 059-01.b1_calm-swing-scaled-move-continues_1d: 2 ideas, 1 discoveries (2 explorations)
 059-01_swing-scaled-rise-continues_1d: 2 ideas, 1 discoveries (2 explorations)
 060-01.d1_wide-day-high-close-next-day-fade_1d: no ideas: The only pattern that stands out once same-day cases are counted together is the wide-day low-close rebound (F1), which the portfolio already holds; the tested high-close fade, its grading, and the weekday, volatility and rising-trend angles stay under t 2 or repeat held books (F2–F6).
+060-01.g1.d1_wider-than-usual-high-close-fade_1d: 0 ideas, 1 discoveries (2 explorations)
 060-01.g1_wide-day-high-close-fade_1d: 1 ideas (2 explorations)
 060-01_falling-agitated-high-close-fade_1d: 1 ideas (2 explorations)

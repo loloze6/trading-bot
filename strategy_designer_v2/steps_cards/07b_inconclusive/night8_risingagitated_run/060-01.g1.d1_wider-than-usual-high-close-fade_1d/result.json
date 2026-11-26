@@ -1,0 +1,39 @@
+{
+  "line": "7.b",
+  "backtest": "060-01.g1.d1_wider-than-usual-high-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34708320000000004,
+  "findings": {
+    "F1": "The test's result points the way the idea predicts but falls just short of the bar: +0.80 % per case with t 1.89 over 212 case-days. On the folds shown (B, C) it is +1.26 % with t 1.82 over 151 cases on 87 days, and 64 % of cases are positive, with a median of +1.78 % against a mean of +1.26 % (skew -0.15). The effect is not carried by a few outliers; there are simply too few independent days to show it.",
+    "F2": "The effect varies a lot by coin and by period, and it rests on few cases per group. Over the next day, ETH gives +2.18 % (t 2.32, 30 cases) and ZEC +2.57 % (t 2.76, 28), while BTC gives -0.02 % (t -0.02, 34) and LTC +0.03 % (t 0.03, 23). Windows w14 (+2.67 %, 48 cases on 22 days) and w16 (+1.27 %, 42 on 17 days) hold most of the cases, and 2021 is -0.55 % (t -0.25, 21 cases).",
+    "F3": "The idea's grading by range is weak in these folds. By range-multiple quartile (means 1.06, 1.25, 1.52, 2.23), the next-day short-side move is +0.67 %, +1.36 %, +1.65 % and +1.38 %. The correlation of the range multiple with the move is -0.09, though step 5's wider-minus-narrower check was +0.77 % on all folds.",
+    "F4": "Where the close sits matters more than the range in these folds. Closes in the band 0.5\u20130.625 of the range lose -1.94 % on the short side (t -1.07, 25 cases). Closes in 0.625\u20130.75 give +1.45 %, in 0.75\u20130.875 +2.37 % (t 2.50, 60 cases) and in 0.875\u20131.0 +1.50 %. The correlation of close location with the move is +0.17.",
+    "F5": "The test measured at the horizon where the effect shows: the plan's one day gives +1.26 % (t 1.82), against +0.27 % (t 0.37) over 2 days and +0.40 % (t 0.34) over 3 days.",
+    "F6": "The signal days that closed up on the day carry the effect: +1.84 % (t 2.51, 126 cases on 73 days), against -1.65 % (t -1.13, 25 cases) on signal days that closed down.",
+    "F7": "More data is available than the six coins the test used. Thirteen other coins have daily bars: ADA, DOGE, LINK, TRX, UNI and AAVE in folds A and D and part of B and C; AVAX, SOL and INJ in A and D; NEAR, SUI, TAO and ONDO in D. In the test, the move per case (+0.67 % total) is 3.5 times the 0.19 % cost of a trade, so the gap to a clear answer is too few case-days, not the cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "wide high-close fade, more coins",
+      "from": "F1, F2, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F7"
+      ],
+      "idea": "In a falling, agitated market, a coin that closes in the upper half of a day whose high-low range is at least as wide as its average range of the last 20 days falls over the next day. The wider that day's range against its recent ranges, the larger the fall.",
+      "consequence": "A trader fades upper-half closes on any day wider than usual in a downtrend, not only extreme ones, getting about three times the trades at the same next-day edge.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "falling agitated"
+    }
+  ],
+  "idea_ids": [
+    "060-01.g1.d1.b1_wide-high-close-fade-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

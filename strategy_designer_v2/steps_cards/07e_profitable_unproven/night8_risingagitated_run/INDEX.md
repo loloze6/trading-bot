@@ -8,5 +8,6 @@
 059-01.b1_calm-swing-scaled-move-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01_swing-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.d1_wide-day-high-close-next-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+060-01.g1.d1_wider-than-usual-high-close-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.g1_wide-day-high-close-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-01_falling-agitated-high-close-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
