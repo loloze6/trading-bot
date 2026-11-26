@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 032-01.g1.b1_sharp-fall-rebound-more-coins_1d
+idea tested: 032-01.g1.b1_sharp-fall-rebound-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5083 USD
+---
+## Findings
+- **F1:** In folds B and C the rebound after a fall of at least 2 usual moves all comes on the first day. On the 253 recorded cases (83 days), the next-day unusual move is +1.58 % (t 1.83) and the 2-day move is +1.55 % (t 1.84), but the second day alone adds +0.09 % (t 0.12). Measuring over 2 bars therefore adds a day of noise and no move.
+- **F2:** On the first day the rebound is graded by the size of the fall in usual moves. The slope of the 1-day unusual move on the fall (minus the 1-day return over the 20-day standard deviation) is +0.026 per usual move (t 3.53, n 253), and the mean rises by bucket: +1.06 % at −2 to −2.5, +1.17 % at −2.5 to −3, +2.40 % at −3 to −4, and +12.5 % beyond −4. Over 2 days the slope is weaker (+0.015, t 1.90).
+- **F3:** The plan's slope check was not run on that grade. It used the forecast after the 60-bar standardisation, on which the 1-day slope is only +0.0013 per point (t 0.98) and the 2-day slope is +0.0011 (t 0.77), even though that forecast correlates 0.89 with the raw fall. This explains why step 5 found a slope of −1.5e-05, the wrong sign, while the raw fall's grading is clear.
+- **F4:** The case grid itself loses part of the move. Keeping only the recorded cases on the 2-bar grid (138 cases, 49 days) gives a 1-day move of +0.85 % (t 1.19) and a 2-day move of +1.05 % (t 1.03). All recorded cases give +1.58 % and +1.55 %. Step 5's all-fold mean is +0.11 % (t 0.21, 922 cases, 253 days), so the 2-bar reading is close to zero over the whole data.
+- **F5:** The effect varies across periods. By year the 2-day move is −1.27 % in 2018 (t −1.25) and +1.63 %, +2.73 % and +2.25 % in 2019 to 2021. Windows w7 (−1.72 %) and w14 (−1.90 %) are negative and most others positive. By coin, 11 of 13 are positive, but none has a t above 1.6.
+- **F6:** Per case, the first-day move after a fall (+1.48 % unusual with the threshold computed before the day's return, t 1.97, 305 cases, 95 days) is several times the 0.22 % cost of a trade. If the 1-day reading holds on all folds, the size is not what stops this book from paying.
+
+## Ideas
+- `032-01.g1.b1.b1_sharp-fall-next-day-rebound` (from F1, F2, F3, F4, F6): When a coin's daily return is a fall that is large against its own typical daily move over the past 20 days, the coin rises over the next 1 day, and the larger that fall in units of its typical daily move, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

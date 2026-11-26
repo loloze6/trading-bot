@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-day excess return on forecast (day-clustered t)",
+    "value": 0.0003187290005501593,
+    "statistic": {
+      "name": "day-clustered t of slope",
+      "value": 1.0281333491173528
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with supporting check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-day return of cases with forecast < 0 below 0",
+    "value": -0.005754145024835864,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3610,
+    "distinct days": 501
+  },
+  "decided_by": "The slope's |t| is below 2.",
+  "reading": "The situation is recomputed as close[t]/close[t-28]-1 < 0 inside each window (active bars with fewer than 28 prior bars in their window are left out of the agreement), the expected side is the sign of the raw log volume ratio (standardise keeps the sign, fall-side short when volume is thin); the coin's normal 5-day drift is the mean of its non-overlapping 5-bar grid returns over all its windows, and the slope's t uses a day-clustered standard error (per-day summed score deviations, with G/(G-1) correction)."
+}

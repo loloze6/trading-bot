@@ -1,0 +1,55 @@
+## thin cases: forecast vs raw r28 vs vol-scaled r28
+                    n  days     slope     t_ols     t_day
+fc              335.0  93.0  0.003566  2.144302  1.392872
+r28_cases       261.0  70.0  0.307641  3.764704  2.469518
+r28_thinfalls   261.0  70.0  0.307641  3.764704  2.469518
+r28z_thinfalls  261.0  70.0  0.071094  3.083111  1.882729
+
+## corr fc vs r28 in cases
+0.662943449923193
+
+## raw r28 slope, thin falls, by year
+         n  days     slope     t_ols     t_day
+year                                          
+2018  72.0  22.0 -0.025022 -0.181400 -0.100272
+2019  57.0  14.0  0.352295  2.498308  1.920046
+2020  36.0  14.0  0.694785  2.410676  3.645598
+2021  96.0  20.0  0.415922  2.713527  2.044812
+
+## raw r28 slope, thin falls, by coin
+            n  days     slope     t_ols     t_day
+coin                                             
+AAVEUSD   6.0   NaN       NaN       NaN       NaN
+ADAUSD   24.0  24.0  0.118428  0.465283  0.495064
+BTCUSD   26.0  26.0  0.580798  1.622999  2.326541
+DOGEUSD  19.0  19.0  0.549655  1.781946  2.499814
+ETHUSD   30.0  30.0  0.555485  1.967469  2.011405
+LINKUSD  12.0   NaN       NaN       NaN       NaN
+LTCUSD   34.0  34.0  0.049680  0.231147  0.254199
+TRXUSD   13.0   NaN       NaN       NaN       NaN
+UNIUSD    7.0   NaN       NaN       NaN       NaN
+XMRUSD   23.0  23.0  0.522825  1.934082  2.348518
+XRPUSD   36.0  36.0  0.215694  0.926426  0.628120
+ZECUSD   31.0  31.0  0.539190  3.033126  2.771885
+
+## thin falls by r28 quintile (0 deepest)
+    n       r28      sadj         t       raw
+q                                            
+0  53 -0.347224  0.067239  3.841534 -0.041124
+1  52 -0.209908  0.081840  3.934964 -0.056928
+2  52 -0.136895  0.003042  0.154717  0.020592
+3  52 -0.075960 -0.011202 -0.428072  0.041040
+4  52 -0.028426 -0.028781 -1.304169  0.054945
+
+## thin falls: r28 slope by steadiness
+            n  days     slope     t_ols     t_day
+steady                                           
+choppy  131.0  46.0  0.138263  1.162606  0.769039
+steady  130.0  55.0  0.684308  2.346672  2.591504
+
+## non-thin falls by r28 tercile (0 deepest)
+    n       r28      sadj         t
+q                                  
+0  55 -0.416637  0.006452  0.265316
+1  54 -0.241280  0.028834  1.377101
+2  55 -0.093524  0.022749  1.209862

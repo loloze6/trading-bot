@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of 5-bar excess return on the forecast, trending grid cases",
+    "value": 1.4723767904829792,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4723767904829792
+    },
+    "threshold": "confirm: t >= 2 with top-third minus bottom-third > 0; reject: t <= -2; under 100 grid cases: not observable"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, top third of forecasts minus bottom third",
+    "value": 0.019055050631536917,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 327,
+    "top third cases": 109,
+    "bottom third cases": 109
+  },
+  "decided_by": "The slope's t is between -2 and 2: inconclusive.",
+  "reading": "The situation is recomputed from closes as close equal to the 28-bar closing high inside each window (on a window's first 27 bars, the high of the bars available), its side per bar is long when the 20-to-60-day volatility ratio (recorded raw value, else recomputed from closes) is below 1 and short when above, since the Fidelity keeps the graded comparison; the cases are regime 'trending' bars at positions 0, 5, 10, ... of each window with a 5-bar forward close in the same window, the drift is the coin's mean 5-bar return on that grid over all windows, the regression is OLS with an intercept, and the thirds are the floor(n/3) largest and smallest forecasts."
+}

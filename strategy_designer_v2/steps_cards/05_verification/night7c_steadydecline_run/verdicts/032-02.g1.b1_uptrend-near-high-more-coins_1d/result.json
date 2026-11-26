@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-day return, top third minus bottom third of forecast",
+    "value": 0.006580576138938912,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.9413757266454447
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2 and top third mean excess > 0; reject: difference < 0 with Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "top third mean excess 5-day return > 0",
+    "value": 0.010523783783534383,
+    "passed": true
+  },
+  "counts": {
+    "cases in trending regime": 3537,
+    "top third cases": 1179,
+    "bottom third cases": 1179
+  },
+  "decided_by": "Welch t lies between -2 and 2.",
+  "reading": "Situation = 28-bar close-to-close return > 0 recomputed from closes inside the window (the detector's 'trending' regime on the first 28 bars where it cannot be recomputed), long side, with a positive recorded high proximity; cases = bars with regime 'trending' at grid positions 0,5,10,... of each window with a 5-bar forward return inside the window; normal drift = mean of the coin's non-overlapping 5-bar returns over all its windows; thirds = pooled cases sorted by forecast (stable sort), bottom and top floor(n/3) cases; a third below 30 cases is 'not observable'."
+}

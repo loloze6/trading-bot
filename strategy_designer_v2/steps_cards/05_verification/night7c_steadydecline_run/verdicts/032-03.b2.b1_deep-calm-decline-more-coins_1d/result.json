@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 10-bar forward return on the forecast",
+    "value": 0.0005588117666460135,
+    "statistic": {
+      "name": "OLS slope t, day-clustered SE",
+      "value": 0.3838085428859342
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting mean > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean of -(10-bar return - drift) over the cases",
+    "value": 0.016126909592764516,
+    "passed": true
+  },
+  "counts": {
+    "independent cases (distinct days)": 216,
+    "cases (coin grid cells)": 1179
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Cases are grid bars 0,10,20,... of each window with a full 10-bar forward return, regime mean_reversion and forecast < 0. The drift is the coin's mean grid 10-bar return over all its windows. 'Cases of the same day pooled' is read as a day-clustered (CR1) standard error of the slope. For the situation check, the volume ratio is rebuilt from in-window volumes where 118 bars exist, else taken from the recorded regime."
+}

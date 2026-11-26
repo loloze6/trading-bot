@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "032-03_low-volume-decline-continues-more_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36548440000000004,
+  "findings": {
+    "F1": "Where a coin's close sits in its own 28-day high-low range is graded against the next 5 days. On non-overlapping 5-day cells (1173 cases, 230 days), the excess 5-day return by quintile of range position runs -2.34 % (t -1.82), -1.43 %, -0.32 %, +0.69 %, +1.01 % (t 1.00), bottom to top. The slope is +1.61 % per standard deviation of range position (day-clustered t 2.36).",
+    "F2": "The range-position effect points the same way in all six coins and on nearby lookbacks. The 5-day slope is positive in BTC, ETH, LTC, XMR, XRP and ZEC (+0.87 % to +3.86 % per standard deviation; t 1.15 to 2.61; t \u2265 2 only in ETH and XRP). The 14-day range gives t 2.61 and the 56-day range t 1.97. At a 10-day horizon the slopes are +2.38 % (28-day range, t 1.89) and +3.36 % (56-day range, t 2.16).",
+    "F3": "The range-position effect is not carried by the 28-day return itself. The 28-day return has no slope on the 5-day excess (t 0.39 over all cells, t -0.06 inside 28-day declines). Range position still has a slope when the 28-day return is at or above 0 (+2.16 %, t 2.96, 619 cases) and a weaker one inside declines (+1.02 %, t 1.22, 554 cases).",
+    "F4": "The range-position effect is not steady over time. Its 5-day slope is negative in 2018 (-0.43 %, t -0.32) and in windows w7, w8, w9, w13 and w14. It is positive in 2019 to 2021 (+0.63 % to +2.19 %, t 0.69 to 1.27) and in w15 to w18. With about ten angles examined, its t of 2.36 to 2.61 is only modestly above chance.",
+    "F5": "The tested volume quantity and the other angles showed no pattern:",
+    "F6": "The book behaved like a plain short on the coin, not like a timing signal."
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's daily close sits within its own high-low range of the past 28 days, the higher its return over the next 5 days. A coin closing near the bottom of that range keeps falling more than its usual drift, and the lower it sits, the larger the fall.",
+      "consequence": "A trader would lean short a coin closing near the low of its 4-week range and long one closing near its high, sizing with how far it sits from the middle. The top-to-bottom quintile gap of about 3.3 % over 5 days is well above the 0.19 % cost of a trade.",
+      "name": "position in 28-day range",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-03.g1_position-in-28-day-range"
+  ],
+  "no_ideas": null
+}

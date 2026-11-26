@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "032-03.b2.b2_deep-calm-decline-five-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.394814,
+  "findings": {
+    "F1": "Inside the low-volume regime (28-day mean volume below the 90 days before it), the next 5-day unusual move rises with the past return rather than falling with it. By 28-day return quintile, the move in units of the coin's usual move goes from \u22120.130 (t \u22121.61, n 114) and \u22120.153 (t \u22122.26, n 166) in the two lowest quintiles to +0.158 (t 2.18, n 160) and +0.197 (t 1.87, n 96) in the two highest, a spread of about 4 % per 5 days (\u22121.5 % against +2.8 %).",
+    "F2": "The same continuation is clearer on the 14-day return. In the low-volume regime, the slope of the 5-day standardised unusual move on the standardised 14-day return is +0.123 (OLS t 3.97, day-clustered t 2.23, 806 cases on 211 days). Outside that regime it is \u22120.044 (t_day \u22120.60, 688 cases).",
+    "F3": "The 28-day slope inside the low-volume regime is positive on every coin. The values are 0.065 (BTC), 0.145 (ETH), 0.106 (LTC), 0.139 (XMR), 0.073 (XRP) and 0.210 (ZEC), about 100\u2013137 cases each. Outside the regime the 28-day slope is \u22120.054 (t_day \u22120.71), so the low-volume regime is where past moves carry on.",
+    "F4": "Inside the low-volume regime, only the part of the 28-day slope that comes from falls carries it. Among falls the slope is +0.241 (OLS t 2.10, t_day 1.46, 372 cases), so deeper calm falls do fall further. Among rises it is \u22120.001 (t_day \u22120.02, 347 cases).",
+    "F5": "The short-only book cannot capture this, because falls in the regime are mostly shallow. Over the tested cases the coin's normal drift in the short direction is \u22120.59 % per 5 days, which leaves a total move of \u22120.29 % against a 0.19 % trade cost. The 933 short trades lose \u22120.63 % on average, and every |entry forecast| quartile has a negative median, from \u22122.47 % to \u22121.12 %.",
+    "F6": "Over all bars, the 5-day move falls as the coin's recent quiet deepens. Its correlation with the 28-day/90-day range ratio is \u22120.141 (t \u22122.90, n 414), and with the 28-day/90-day volume ratio it is \u22120.118 (t \u22122.42, n 414). The lowest volume-ratio quintile is followed by +0.368 usual moves (t 2.86, n 84, +5.0 %). These cases were not clustered by day and come from a small sample.",
+    "F7": "Most other angles showed nothing beyond chance, given how many were tried:"
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose volume over the past 28 days is below its usual volume, the higher its 14-day return, the higher its return over the next 5 days, so recent gains and recent losses both continue more the larger they were.",
+      "consequence": "During thin-volume stretches, a trader should lean with the coin's two-week move for about five days, long after rises and short after falls, more so the larger the move.",
+      "name": "thin-volume two-week momentum",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The more a coin's daily high-low ranges over the past 28 days have shrunk compared with its ranges over the past 90 days, the larger its rise over the next 5 days.",
+      "consequence": "A coin that has gone unusually quiet is a reason to favour a long, or refuse a short, for about five days, more so the deeper the quiet.",
+      "name": "deep quiet precedes rise",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-03.b2.b2.g1_thin-volume-two-week-momentum",
+    "032-03.b2.b2.g2_deep-quiet-precedes-rise"
+  ],
+  "no_ideas": null
+}

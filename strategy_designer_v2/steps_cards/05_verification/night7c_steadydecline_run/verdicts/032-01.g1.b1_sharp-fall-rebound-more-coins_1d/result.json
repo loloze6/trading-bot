@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-bar move per case (long), day-pooled",
+    "value": 0.0010523616986626945,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.21145031569033018
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on fall post_pipeline_value",
+    "value": -1.4702115979137858e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 922,
+    "distinct case days": 253
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Cases are long-side bets (forecast rise >= 2 points from its lowest level on that side since the last bet, from 0 after a flat), the first bet in each 2-bar grid cell from each window's first row; the normal drift is the mean of the coin's non-overlapping 2-bar returns on that grid over all its windows; the t pools cases of the same UTC date by summing their deviations; the slope is OLS of the unusual move on post_pipeline_value of fall; the plan's 30-distinct-case-day minimum is treated as a minimum count (not observable)."
+}

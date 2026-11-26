@@ -162,3 +162,4 @@
 065_wide-counter-rally-next-day-fade: In any market, an up day inside a short fall falls back next day, more the wider its range in usual swings, as relief flow ends. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, source: line 7.g patterns, backtest 058-01.g2.g1.d1.d2_wide-range-bounce-fade-in-decline_1d (idea 058-01.g2.g1.d1.d2_wide-range-bounce-fade-in-decline, brief 058_falling-agitated-multiday-rallies-fail)]
 032_choppy-market-breakouts-fail: In a coin trendless for two months, a daily close beyond the range returns inside over days, more so the further it broke out. [bar: 1d]
 032_agitated-chop-weekly-reversal: In choppy, agitated, trendless markets, a coin's large past-week move partly reverses next week, as patient liquidity is paid for absorbing rushed flow. [bar: 1d]
+032_calm-decline-keeps-falling: In a calm multi-week decline, larger past falls predict further falls over the next days, as holders sell into every pause without a flush. [bar: 1d]
