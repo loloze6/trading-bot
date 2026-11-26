@@ -1,3 +1,4 @@
+058-01.b1.b1.b1_rally-giveback-over-twenty-days_1d: inconclusive (fit: exact) [main: -0.00834939; OLS slope t -2.91956; non-overlapping cases 112, days 36, active bars 2361]
 058-01.b1.b1_rally-giveback-over-fifteen-days_1d: inconclusive (fit: exact) [main: 0.00240682; OLS slope t 1.21005; cases 177]
 058-01.b1_rally-giveback-all-coins_1d: inconclusive (fit: exact) [main: 0.0110488; t of the mean, cases of one day summed 1.7378; distinct days carrying cases 341, cases 827, supporting top half cases 397, supporting bottom half cases 398]
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: inconclusive (fit: adapted) [main: 0.00431077; t of the mean, cases of one day taken together 0.970977; cases 1137, distinct days 430, cases with forecast <= -10 595, cases with forecast between -2 and -10 542]

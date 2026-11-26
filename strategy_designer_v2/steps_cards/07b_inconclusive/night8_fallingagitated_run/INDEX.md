@@ -1,3 +1,4 @@
+058-01.b1.b1.b1_rally-giveback-over-twenty-days_1d: no ideas: The give-back after rallies in falling, agitated markets points the predicted way but rests on one window (w18) and is not graded at any horizon (F2–F4). No more daily data exists to sharpen it (F6), and no condition, side or horizon isolates it clearly, so no amended idea on the theme is worth testing.
 058-01.b1.b1_rally-giveback-over-fifteen-days_1d: 2 ideas (2 explorations)
 058-01.b1_rally-giveback-all-coins_1d: 1 ideas (2 explorations)
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: no ideas: The result is on the predicted side but small (F1), and no more data is available. The grading the idea claims shows only weakly on raw swings at the 3-day horizon (slope t 1.92, rises above one swing t 1.51 on 24 days; F3). It reverses at 1 and 2 days (F4) and is not concentrated in any coin, window or year (F5). No part of the data shows the effect clearly enough for an amended idea to give a clear answer.

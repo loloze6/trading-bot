@@ -1,3 +1,4 @@
+058-01.b1.b1.b1_rally-giveback-over-twenty-days_1d: not profitable enough [Sharpe -0.03007; Sharpe minus holding's Sharpe -0.5829; Calmar -0.03558]
 058-01.b1.b1_rally-giveback-over-fifteen-days_1d: not profitable enough [Sharpe -0.03094; Sharpe minus holding's Sharpe -0.5837; Calmar -0.03235]
 058-01.b1_rally-giveback-all-coins_1d: not profitable enough [Sharpe -0.0005721; Sharpe minus holding's Sharpe -0.5534; Calmar -0.01416]
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: not profitable enough [Sharpe -0.03477; Sharpe minus holding's Sharpe -0.5876; Calmar -0.03951]

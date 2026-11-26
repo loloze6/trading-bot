@@ -1,3 +1,4 @@
+058-01.b1.b1.b1_rally-giveback-over-twenty-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.b1.b1_rally-giveback-over-fifteen-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.b1_rally-giveback-all-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
