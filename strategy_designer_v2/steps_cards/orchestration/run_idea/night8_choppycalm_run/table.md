@@ -22,22 +22,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-02.b1.b2.b1.b2.b1_calm-rising-range-position | 058-02.b1.b2.b1.b2_calm-market-range-position | plan | inconclusive (+1.59) | profitable enough | - | 7.b: 058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation; 7.e: no ideas: The book earns from long continuation near the recent high in rising calm markets, plus a third from the market's rise and a few strong 2020 windows (F1–F7); the profile map already holds this idea in rising calm (034-01.b1 nearness to high, 033-03.b2 range top continuation, 035-01.b1 calm nearness to high), so it is neither a new discovery nor on the brief's choppy-calm reversion theme.; 7.g: 058-02.b1.b2.b1.b2.b1.g1_choppy-range-edge-continuation | 1.48 | 12.8 |
 | 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation | 058-02.b1.b2.b1.b2_calm-market-range-position | plan | inconclusive (+1.71) | profitable enough | - | 7.b: 058-02.b1.b2.b1.b2.b2.b1_rising-calm-edge-continuation; 7.e: 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation, 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation; 7.g: 058-02.b1.b2.b1.b2.b2.g1_calm-range-top-surge-continuation | 1.51 | 13.6 |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation | 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation | plan | confirmed (+2.58) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 058-02.b1.b2.b1.b2.b2.e1.g1_choppy-calm-edge-continuation | 0.81 | 13.9 |
+| 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation | 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation | plan | inconclusive (+0.87) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The continuation slope is positive only because of one year (2021, window w18) in the folds shown, and it vanishes on the full data (t 0.87). No side, edge strength, horizon or coin shows the effect clearly while it is absent elsewhere, so the theme's effect (choppy-calm range-edge continuation or reversion) is not in the data (F1–F6).; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.39 | 12.2 |
+| 058-02.b1.g1.b1.b2.b2_agitated-downtrend-sharp-fall-rebound | 058-02.b1.g1.b1.b2_falling-market-next-day-reversal | plan | inconclusive (+1.78) | profitable enough | - | 7.b: no ideas: The result is on the predicted side in every coin and every year, but it is too small and too dependent on about 16 extreme falls to clear the bar (F1, F2). The test already used every coin and fold available on daily bars, so there is no more data to add. Neither a horizon, a trend depth nor a profile in these findings isolates a part of the data where the graded effect shows clearly (F5); where it does concentrate, broad sell-off days, cannot be written as a one-coin idea (F6).; 7.e: 0 ideas, 2 discoveries (2 explorations); 7.g: no ideas: Across about 80 groupings, the only pattern that clearly stands out is the falling agitated low-close rebound (F1, t -2.81), and the portfolio already holds it in that profile. The up-day fade (F3, t -2.44) is not graded and does not stand out given how many angles were examined. The choppy close-location pull that the brief's theme needs does not reach significance in any trend (F4). | 1.60 | 11.9 |
+| 065-01_falling-agitated-five-day-slide-rebound | - | plan | inconclusive (+1.86) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 065-01.b1_slide-ending-sharp-day-rebound; 7.g: no ideas: The brief's claim that the depth of the multi-day slide sets the rebound is not in the data, since the prior days add nothing once the last day's fall is known (F1, F2, F3). What does pay is the one-day fall rebound in a falling, agitated market (F4, F5), which the profile map already holds (047-01, 051-01, 038-01). The only other pattern, a fall after an up day that ends a slide (F6), is not graded and not sure enough to count. | 1.25 | 10.1 |
 
 ## Consumption
-18 ideas, 21.67 USD, 174.7 minutes in all.
+21 ideas, 25.91 USD, 208.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.04 | 9.7 |
-| step4_backtest | 0.00 | 99.7 |
-| step5_verdict | 3.02 | 10.6 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 4.25 | 10.8 |
+| step4_backtest | 0.00 | 120.5 |
+| step5_verdict | 3.60 | 12.6 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.e | 1.33 | 4.1 |
+| step7_7.e | 1.87 | 5.6 |
 | step7_7.d | 1.02 | 3.5 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 4.56 | 15.5 |
-| step7_7.g | 7.70 | 24.8 |
+| step7_7.b | 5.77 | 19.2 |
+| step7_7.g | 9.41 | 29.6 |
 | similarity_check | 0.00 | 0.3 |
 | unseen_test | 0.00 | 5.6 |

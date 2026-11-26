@@ -1,11 +1,13 @@
 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d: no ideas: The book earns from long continuation near the recent high in rising calm markets, plus a third from the market's rise and a few strong 2020 windows (F1–F7); the profile map already holds this idea in rising calm (034-01.b1 nearness to high, 033-03.b2 range top continuation, 035-01.b1 calm nearness to high), so it is neither a new discovery nor on the brief's choppy-calm reversion theme.
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation_1d: 2 ideas (2 explorations)
 058-02.b1.b2.b1.b2.e2_calm-nearness-to-high-short-horizon_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-02.b1.b2.b1.b2_calm-market-range-position_1d: 2 ideas (2 explorations)
 058-02.b1.b2.b1_choppy-range-position-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1.b2_choppy-range-position-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+058-02.b1.g1.b1.b2.b2_agitated-downtrend-sharp-fall-rebound_1d: 0 ideas, 2 discoveries (2 explorations)
 058-02.b1.g1.b1.b2_falling-market-next-day-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1.g1.b1_falling-rally-fades-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b1.g1.b2.b1_agitated-falling-selloffs-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
@@ -15,3 +17,4 @@
 058-02.b2.b1_calm-range-continuation-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02.b2_calm-range-position-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-02_calm-range-bottom-drifts-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+065-01_falling-agitated-five-day-slide-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d
+idea tested: 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6834 USD
+---
+## Findings
+- **F1:** The tested range-edge continuation depends on how much the coin has been swinging, not on the trend. On the 5-day grid, the slope of the unusual 5-day move on the 20-day range position is 0.0501 (t 3.17 day-clustered, 541 cases, 152 days) in each coin's lowest tercile of 20-day volatility, 0.0369 (t 2.59, 538 cases, 193 days) in the middle tercile and -0.0039 (t -0.20, 543 cases, 180 days) in the highest. In the lowest tercile, closes in the top fifth of the range are followed by +5.35 % against -2.69 % for the bottom fifth.
+- **F2:** Within the low-volatility tercile the continuation holds in a rising trend (slope 0.1016, t 3.26, 112 cases) as well as a choppy one (0.0849, t 2.57, 83 cases), and is weak in a falling one (0.0593, t 1.56, 138 cases). That is the calm and rising range-top continuation the profile map already holds (033-03.b2, 034-01.b1, 035-01.b1, 058-02…e1), so it is not new.
+- **F3:** The tested choppy-calm continuation is visible on these folds but unstable. In-profile choppy cases have slope 0.0923 (t 2.73, 126 cases, 58 days), but the window-by-window slopes are positive in 8 of 12 windows with none above t 1.04. The full-sample verdict t is 0.87, so it does not justify rerunning the same idea.
+- **F4:** A large up day relative to the coin's usual daily swing is followed by more rise over the next 5 days, and a large down day is not followed by more fall. Days above +2 of the prior 20-day swing are followed by an unusual +6.18 % (t 2.61, 52 cases) and days from +1 to +2 by +2.22 % (t 1.87, 126 cases), against -0.35 % for ordinary days (1153 cases). The up-day part has slope 0.0186 (t 2.39, 1540 cases, 243 days) and the down-day part 0.0052 (t 0.59).
+- **F5:** The up-day continuation is strongest in a choppy market (60-day return between -10 % and +10 %): slope 0.0545 (t 2.76, 152 cases, 68 days), against 0.0210 (t 1.42, 377 cases) in rising markets and 0.0079 (t 0.63, 437 cases) in falling ones. Its slope is positive in every year from 2018 to 2021 (0.0025 to 0.0117), but no single year exceeds t 1.25.
+- **F6:** The other angles repeat held ideas, so they give no new idea:
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-02.b1.b2.b1.b2.b2.e2.g1_choppy-large-up-day-continuation` (from F4, F5): In a choppy market, the larger a coin's one-day rise compared with its usual daily swing over the past 20 days, the larger its further rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
