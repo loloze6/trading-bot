@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day t of the slope of next-7-bar excess return on forecast (forecast > 0, 7-bar grid)",
+    "value": 2.4750073375237767,
+    "statistic": {
+      "name": "OLS slope t, standard errors clustered by day",
+      "value": 2.4750073375237767
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess > 0; reject: slope t <= -2, or mean excess < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return over cases with forecast > 0",
+    "value": 0.0017392696173616977,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 409,
+    "distinct days": 163
+  },
+  "decided_by": "Confirm rule met: the slope's t is 2 or more and the mean excess return is above 0.",
+  "reading": "The slope is from an OLS with intercept whose t uses day-clustered (CR1) standard errors, the normal drift is each coin's mean 7-bar return on the non-overlapping grid of all its windows, the reject rule's mean-excess t is the day-clustered t of the mean, and the plan's 'inconclusive with too few cases' is reported as 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +1.375 on the check folds against +2.475 on every fold",
+    "main": 1.3752209488952103,
+    "statistic": 1.3752209488952103,
+    "counts": {
+      "grid cases with forecast > 0": 320,
+      "distinct days": 118
+    }
+  }
+}

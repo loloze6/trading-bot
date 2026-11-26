@@ -22,22 +22,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks | plan | confirmed (+2.53) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation, 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks, 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues; 7.g: no ideas: Across the forecast, the profiles, the scaled one-day and weekly moves, the close location, the weekday and the windows, the only patterns that stand out are the next-day rebounds and late-week gains the map already holds. Nothing new stands out from chance in the choppy-calm profile (F2, F4), and the choppy-agitated signal is the profile's drift on 130 bars (F6). | 1.70 | 13.6 |
 | 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | plan | confirmed (+2.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks, 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues, 059-01.b1.b1.d1.b1.b1.d1.d3_rise-continues-in-upper-chop; 7.g: no ideas: Across the forecast, positions, trades, profiles, volatility levels, weekdays, years and windows, the largest pattern has a t of 1.97 among about thirty angles. The idea's own effect inside its profile is +1.8 % excess with a t of 0.37, and the book's gain is the coins' drift carried by a few large ADA and XRP trades, so no pattern stands out enough from chance to found an idea. | 2.06 | 12.6 |
 | 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+0.43) | not profitable enough (failed: Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1.d2.b1_choppy-calm-rise-two-weeks; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.13 | 12.1 |
+| 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+3.07) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1.d3.b1_scaled-rise-second-week; 7.g: 059-01.b1.b1.d1.b1.b1.d3.g1_choppy-calm-immediate-rise-continues | 1.45 | 13.9 |
+| 060-01.b1.d1.b1.b1_deep-slide-bounce-fades-overnight | 060-01.b1.d1.b1_fresh-slide-bounce-fades-overnight | plan | inconclusive (+1.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.b1.d1.b1.b1.b1_small-bounce-deep-slide-fades; 7.g: no ideas: The only effect that stands out after the many angles looked at is the next-day rebound after scaled down days in falling agitated markets (F1, F2, F5), which the map already holds (047-01, 051-01, 039-02, 045-01). The short-side pattern on up days (F3) is not graded with the rise, and runs against the brief's grading, so it gives no graded idea to propose. | 1.14 | 12.8 |
+| 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks | plan | confirmed (+2.48) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high, 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up, 059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.13 | 12.6 |
 
 ## Consumption
-18 ideas, 22.14 USD, 211.3 minutes in all.
+21 ideas, 25.86 USD, 250.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.42 | 9.8 |
-| step4_backtest | 0.00 | 135.9 |
-| step5_verdict | 3.38 | 11.7 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 2.72 | 11.7 |
+| step4_backtest | 0.00 | 162.3 |
+| step5_verdict | 3.93 | 13.6 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
-| step7_7.d | 2.64 | 8.1 |
+| step7_7.d | 3.11 | 9.7 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 5.05 | 15.4 |
-| step7_7.g | 8.64 | 25.6 |
-| similarity_check | 0.00 | 0.5 |
+| step7_7.b | 5.86 | 17.8 |
+| step7_7.g | 10.23 | 30.4 |
+| similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 3.0 |

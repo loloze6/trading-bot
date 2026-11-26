@@ -1,0 +1,34 @@
+{
+  "line": "7.b",
+  "backtest": "059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3928492,
+  "findings": {
+    "F1": "The slope comes from the signal week's scaled rise, not from the first-week confirmation. On the 83 grid cases of folds B and C, the excess 7-day return regressed on the lagged scaled rise has a slope t of 2.67, and on the first-week return a slope t of only 1.39. Cases whose first week rose earned about the same excess as cases whose first week fell (+2.3 % on 38 cases against +1.7 % on 45).",
+    "F2": "The supporting check failed because the small forecasts lose and only the largest ones gain. Over the forecast quintiles the mean excess 7-day return runs -1.3 %, -2.8 %, +3.2 %, -3.1 % and +10.0 % (top quintile t 2.20, 17 cases), and the regression's intercept is -4.2 %. By the scaled signal's terciles it runs -2.3 %, +2.9 % and +5.3 %. So the step-5 slope t of 3.07 sits beside a mean excess of -0.88 % over 404 cases.",
+    "F3": "The move shows in the second week after the signal week, not the first. The 7 days right after the signal week have a mean excess of -0.44 % (t -0.38, 77 cases) and a slope on the scaled rise with t 1.32. The plan's second week has a slope t of 2.67.",
+    "F4": "The effect is uneven across the years of folds B and C. In 2021 the mean excess is +7.0 % (t 2.59, 32 cases) with a slope t of 2.82, and the top signal tercile earned +13.5 % (t 3.74, 15 cases). In 2018 the mean excess is -8.5 % (t -1.85, 10 cases), and in 2019 it is -1.4 % (t -0.53). By window, w17 (+8.7 %) and w18 (+15.9 %) carry most of the gain.",
+    "F5": "Over all folds the idea's size cannot be told from zero and does not beat holding the coin. The unusual move is -0.33 % per case (t -0.55, 491 days, strength -0.032), the total move is +0.64 % against a trade cost of 0.22 %, and the book's Sharpe is 0.18 against holding's Sharpe of 0.55."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over 7 days in multiples of its usual 7-day swing over the past 30 days, the larger its rise in the second week after that rise. This holds whatever the coin did in the first week in between.",
+      "consequence": "A trader should size a second-week long position by how unusual the signal week's rise was, rather than by whether the first week extended it, and should refuse the small scaled rises that tend to give back.",
+      "name": "scaled rise second week",
+      "from": "F1, F2, F3",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-01.b1.b1.d1.b1.b1.d3.b1_scaled-rise-second-week"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues_1d
+idea tested: 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.7338 USD
+---
+## Findings
+- **F1:** The first week after a scaled weekly rise carries the effect, not the second week the plan traded. On 7-day grid cases in a choppy market (the coin's own 60-day return between -10 % and +10 %), the 7-day return over (30-day daily swing × √7) predicts the coin's excess return over the next 7 days with slope 0.059 and t 4.22 on 109 cases. Scaled weeks of +0.5 to +1.5 are followed by +10.8 % (t 3.16, 23 cases) and +1.5 or more by +6.1 % (t 1.59, 9 cases). Flat weeks (-0.5 to +0.5) are followed by -4.4 % (t -3.29, 46 cases).
+- **F2:** The continuation in F1 comes from rises and is strongest in calm markets. On rises only the slope is 0.094 (t 3.12, 53 cases); on falls only it is 0.041 (t 1.09, 56 cases). Split by agitation, measured within each window, the slope is 0.057 (t 2.11, 33 cases) in calm choppy markets and 0.023 (t 0.81, 22 cases) in agitated ones. It is positive in 3 of 4 years (2020 t 3.16, 2021 t 2.92, 2018 t 1.76; 2019 t -1.49) and in all 7 coins with enough cases. The signed excess move is +3.9 % per case (t 2.86, 109 cases), which is 18 times the 0.22 % cost of a trade.
+- **F3:** The tested idea reads the signal one week late and loses most of it. The lagged scaled week predicts the second week with slope 0.030 (t 2.13, 109 choppy cases), half the slope of the unlagged week (0.059, t 4.22). The book's cases had a mean excess of -0.88 % (unusual move -0.33 %, t -0.55, 755 cases). Its trades were driven by a few windows: w14 -11.2 % per trade, w7 -8.9 %, w17 +15.3 %, w18 +16.2 %.
+- **F4:** In a falling market (own 60-day return below -10 %), a large one-day rise is given back over the next 3 days. Rises of 1 to 2 of the coin's 30-day daily swings are followed by -3.53 % excess (t -3.46, 61 cases). Across all up days the slope is -0.022 (t -3.35, 393 cases).
+- **F5:** The fade in F4 lives in agitated falling markets. There the slope is -0.035 (t -2.58, 116 cases), against -0.005 in calm ones (t -0.50, 160 cases). Rises above 1 swing are followed by -2.8 % in agitated markets (t -1.96, 31 cases) and -0.3 % in calm ones (t -0.17, 27 cases). The fade appears in 3 of 4 years (2018 -4.7 % t -2.44, 2019 -4.6 % t -3.17, 2020 -6.2 % t -4.08; 2021 +2.9 % t 2.25). It also appears in 7 of 8 coins with more than one case (ETH -5.1 % t -2.49, LTC -5.2 % t -2.06, ADA -6.5 % t -2.16).
+- **F6:** In a rising market, a down day of 1 to 2 daily swings is followed by +6.4 % excess over 3 days (t 3.69, 61 cases). This is a dip rebound, and the long agitated-rebound books already in the map largely hold it.
+- **F7:** Next-day returns are highest on Thursdays and Fridays: +0.51 % (t 3.60) and +0.56 % (t 4.32), against -0.25 % on Wednesdays. The effect is absent in 2021 (+0.14 %, t 0.75). It is already held by 045-01 (rising market late week gain).
+- **F8:** In choppy and calm markets, a one-day rise above 2 daily swings is followed by -3.2 % over 3 days (t -3.09). This rests on only 12 cases, so it is too few to stand out among the many angles examined.
+
+## Ideas
+- `059-01.b1.b1.d1.b1.b1.d3.g1_choppy-calm-immediate-rise-continues` (from F1, F2, F3): In a choppy, calm market, the larger a coin's rise over the past 7 days in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 7 days, starting at once rather than a week later.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `059-01.b1.b1.d1.b1.b1.d3.g2_falling-agitated-rally-fades` (from F4, F5): In a falling, agitated market, the larger a coin's one-day rise in multiples of its usual daily swing over the past 30 days, the larger its fall over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

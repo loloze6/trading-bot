@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x next-day excess return, cases summed per day",
+    "value": 0.019079518419986792,
+    "statistic": {
+      "name": "t of the mean of daily sums",
+      "value": 1.5780452395331832
+    },
+    "threshold": "positive with t >= 2 confirms (with negative slope); negative with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on |forecast|",
+    "value": -0.0003262749275883158,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1598,
+    "distinct days": 535
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 (neither confirm nor reject).",
+  "reading": "Situation checked as a one-day close-to-close rise with the 5-day vol-scaled return at t-1 below 0 (recorded slide_depth raw value, recomputed from prices if missing) on the short side, over active bars where it can be computed (a window's first bar is left out), the code-added profile not being rechecked; cases are bars with forecast<0 and a next close in the same window, summed per UTC day before the mean and its t; the plan's minimum counts, when unmet, give 'not observable'."
+}

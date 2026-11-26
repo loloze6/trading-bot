@@ -236,6 +236,7 @@ An idea's latest record counts once.
 | 041-03_agitated-fall-drop-vs-range-rebound_1d | paying | night7_steadydecline_run | 1d | 6 | 48d4abd43 | 2026-11-25T05:19:56 |
 | 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation_1d | confirmed | night8_choppyagitated_run | 1d | 19 | 21364fbe6 | 2026-11-26T04:09:18 |
 | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d | confirmed | night8_choppyagitated_run | 1d | 19 | efec5242a | 2026-11-26T01:22:08 |
+| 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d | confirmed | night8_choppyagitated_run | 1d | 19 | 7d324cf77 | 2026-11-26T04:57:18 |
 | 059-01.b1.b1_choppy-calm-rise-two-weeks_1d | confirmed | night8_choppyagitated_run | 1d | 19 | 5e5ea5c0f | 2026-11-25T23:02:42 |
 | 060-01.b1_agitated-decline-rally-fades-next-day_1d | confirmed | night8_choppyagitated_run | 1d | 19 | 23526bddb | 2026-11-25T23:49:55 |
 | 064-01_falling-agitated-heavy-volume-fall-rebound_1d | paying | night8_choppyagitated_run | 1d | 19 | 742b121da | 2026-11-26T00:33:57 |
