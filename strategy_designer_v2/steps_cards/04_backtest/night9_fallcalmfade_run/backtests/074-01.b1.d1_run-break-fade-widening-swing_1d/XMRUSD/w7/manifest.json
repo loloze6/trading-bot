@@ -1,0 +1,183 @@
+{
+  "run_id": "20261126T230754Z_9833f584",
+  "created_utc": "2026-11-26T23:07:56.951171+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "run",
+          "class": "strategies.strategy_components.PriorDownRunLossOnUpCloseComponent",
+          "params": {
+            "max_bars": 30,
+            "base": "percent"
+          }
+        },
+        {
+          "id": "trend60",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 60,
+            "scaling_factor": 1.0
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "run",
+                "op": "gt",
+                "value": 0.0
+              },
+              {
+                "id": "trend60",
+                "op": "lt",
+                "value": -10.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "run_depth",
+              "class": "strategies.strategy_components.PriorDownRunLossOnUpCloseComponent",
+              "params": {
+                "max_bars": 30,
+                "base": "std",
+                "window": 30,
+                "exclude_current": 0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20,
+                    "target": 2.5
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "vol_ratio",
+              "class": "strategies.strategy_components.RecentToPriorVolatilityRatioComponent",
+              "params": {
+                "vol_period": 10,
+                "base_period": 60,
+                "base_lag": 0,
+                "form": "ratio"
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 1
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "9833f5845b3ed4f83e053348327aa1bbcdc22e295ee3c5cf9b4df4c4573e1e8c",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2017-11-20 00:00:00",
+    "end": "2018-08-31 00:00:00",
+    "bar_count": 284,
+    "data_sha256": "6bc4a554c4eebf3af9c3c389a09dd95ffecb8a3e250fad54452ffc16f77f95d9"
+  },
+  "git_sha": "cf8a40630f348bf90c04284bfe3b323e5543dfb2-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

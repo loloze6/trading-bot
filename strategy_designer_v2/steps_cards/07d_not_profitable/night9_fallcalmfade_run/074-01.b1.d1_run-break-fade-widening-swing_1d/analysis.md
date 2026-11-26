@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 074-01.b1.d1_run-break-fade-widening-swing_1d
+idea tested: 074-01.b1.d1_run-break-fade-widening-swing
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6441 USD
+---
+## Findings
+- **F1:** Calmar failed because of short squeezes. The book's worst days were -6.5 % (w14) and -4.8 % (w9), on days when the coins' mean return was +11 % and +12 %. Its deepest falls were -8.6 % (w7, 236 days), -7.5 % (w13, 107 days) and -6.6 % (w14, 16 days). The worst 10 % of cases cost 79 % of the cases' summed gain.
+- **F2:** The cases behind the w13 fall were up days that came after no real decline. Their mean 5-day return was +0.8 %, against -1.8 % for all cases, and they lost a summed -0.19. Across windows, cases with a 5-day return at or above 0 lost in w12, w13, w15, w17 and w18 (summed gains -0.09, -0.20, -0.04, -0.08, -0.04). Cases with a negative 5-day return gained in 8 of 12 windows (w7 +0.76, w13 +0.25, w14 +1.47).
+- **F3:** The next-day fall grows with the coin's 5-day fall measured against its 30-day daily swing. By quintile of that z, from deepest to highest: +2.61 % (t 5.3, 151 cases), +0.77 %, +0.72 %, +0.20 %, +0.55 %. By raw 5-day return, the deepest quartile (below -7.6 %) gave +2.39 %, against +0.19 % to +0.80 % for the others. These t are per case, not clustered by day.
+- **F4:** The deep 5-day fall is not an effect of its own. On falling-market bars without the signal, a 5-day z below -1 is followed by -0.53 % (t -1.57, 300 bars); with the signal it is followed by +3.53 % (t 5.9, 102 cases). For a raw 5-day return below -7.6 %, the same comparison gives -0.53 % (t -1.9, 414 bars) alone against +2.58 % (t 4.8, 144 cases) with the signal. A relief day after a sharp leg down is exactly the trapped-holder exit the theory describes.
+- **F5:** Limiting the short to the deep-fall cases cuts the falls. A cost-adjusted proxy book has these figures (its absolute level is above the engine's Calmar of 0.48, so compare the rows with each other):
+- **F6:** The widening-swing grade adds gain but not safety, so it cannot repair Calmar. Its top quartile (10-day over 60-day swing above 1.17) moved +2.59 % but with a 4.0 % standard deviation and a 1 % worst tail of -7.0 %. The same high ratio without the signal is followed by -1.10 % (t -3.2). A proxy book limited to a ratio above 1 has Calmar 1.51, the same as all cases (1.50).
+- **F7:** The effect lives in the next day only. The short-signed unusual move is +0.92 % at 1 day (t 5.7), +0.53 % at 2 days (t 2.1) and +0.54 % at 3 days (t 1.8), with a 5 % tail widening from -7.3 % to -14.7 %. The size of the up day itself is ungraded: +0.45 % to +1.31 % across its quartiles with no order.
+
+## Ideas
+- `074-01.b1.d1.d1_run-break-fade-after-sharp-leg` (from F1, F2, F3, F4, F5, F7): In a falling market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next day. That fall is larger the deeper the coin's fall over the last 5 days, measured against its usual daily swing over the last 30 days.
+- `074-01.b1.d1.d2_depth-graded-run-break-fade` (from F2, F3, F4, F6, F7): In a falling market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next day. That fall is larger the deeper both the run's own fall and the coin's 5-day fall, each measured against its usual daily swing over the last 30 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

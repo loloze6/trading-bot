@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed next-day return minus coin mean daily return, over forecast<0 bars",
+    "value": 0.005515265523933201,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 2.883627441312846
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (day-clustered) and check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half |forecast| mean short-signed unusual move",
+    "value": 0.00791214694222346,
+    "passed": true
+  },
+  "counts": {
+    "cases across the coins": 1692,
+    "days with cases": 739
+  },
+  "decided_by": "Mean above 0 with t >= 2 and top-minus-bottom |forecast| half difference above 0.",
+  "reading": "Situation from run_depth raw value > 0 (prices where unrecorded) and 60-bar in-window price return < -10 % (detector's regime where 60 bars are not available); cases with no next bar in the window are left out; top half = the n//2 cases with largest |forecast| (stable sort), bottom half = the rest; the 100-case minimum is applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001024 on the check folds against +0.005515 on every fold",
+    "main": 0.0010237179417281219,
+    "statistic": 0.4358001155319742,
+    "counts": {
+      "cases across the coins": 755,
+      "days with cases": 382
+    }
+  }
+}

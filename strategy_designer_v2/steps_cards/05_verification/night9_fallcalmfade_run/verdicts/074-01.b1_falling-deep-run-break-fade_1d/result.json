@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean drift-adjusted 1-bar short gain on forecast<0 bars",
+    "value": 0.008922569475122821,
+    "statistic": {
+      "name": "t of weighted mean, day-clustered",
+      "value": 3.535193818938761
+    },
+    "threshold": "t >= 2 confirm, t <= -2 reject, over at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half drift-adjusted next-day return <= 0",
+    "value": -0.005107576777039194,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1692,
+    "days": 739
+  },
+  "decided_by": "Weighted mean gain t >= 2 over at least 100 cases and the deeper half's drift-adjusted return is not above the shallower half's.",
+  "reading": "Situation from prices: up close after a down close, falling = 60-bar close change (percent) below -10, with run_depth raw > 0 and a non-chop regime used only where the window lacks the price lookback; t is the weighted mean over a day-clustered standard error (weighted deviations summed per day); halves split at the median |forecast| (deeper strictly above), compared by unweighted mean drift-adjusted next-day return.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004196 on the check folds against +0.008923 on every fold",
+    "main": 0.004196382100326046,
+    "statistic": 1.2529215478013165,
+    "counts": {
+      "cases": 755,
+      "days": 382
+    }
+  }
+}

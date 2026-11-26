@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess short return (return minus coin mean, sign flipped)",
+    "value": 0.009219467688761257,
+    "statistic": {
+      "name": "t of the mean, cases of the same day taken together",
+      "value": 3.5355078202738857
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess, larger-|forecast| half minus smaller half",
+    "value": 0.007748261445633172,
+    "passed": true
+  },
+  "counts": {
+    "cases (bars with forecast < 0)": 834,
+    "days with cases": 426
+  },
+  "decided_by": "The mean excess short return is above 0 with t >= 2 and the larger-minus-smaller forecast half difference is above 0.",
+  "reading": "The situation is rebuilt from closes (60-day return = close[t]/close[t-60]-1 in %, below -10; an up close after two consecutive down closes) and checked only on active bars where 60 prior bars exist inside the window; the coin's mean daily return pools all its windows' next-day returns; cases are bars with forecast < 0 that have a next-day return in the same window; the day-clustered t sums deviations per UTC day with a G/(G-1) correction; the larger half is cases with absolute forecast above the median, the smaller half those at or below it.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003652 on the check folds against +0.009219 on every fold",
+    "main": 0.0036523722811548486,
+    "statistic": 1.1975910558834946,
+    "counts": {
+      "cases (bars with forecast < 0)": 378,
+      "days with cases": 216
+    }
+  }
+}
