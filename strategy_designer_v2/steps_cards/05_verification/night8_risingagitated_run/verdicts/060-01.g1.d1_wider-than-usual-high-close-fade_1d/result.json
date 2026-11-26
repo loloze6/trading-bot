@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 1-bar move per case",
+    "value": 0.00801093003044366,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.8907663618036583
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (cases summed per day) and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "wider-half minus narrower-half mean move (split at median range_mult)",
+    "value": 0.007674196602456532,
+    "passed": true
+  },
+  "counts": {
+    "cases": 347,
+    "case-days": 212,
+    "active bars": 379
+  },
+  "decided_by": "t lies between -2 and 2",
+  "reading": "The falling agitated profile is not recomputed (its detector components are not recorded and need more history than a window) so the check covers the upper-half close and range multiple >= 1 on the short side; the wider half is cases strictly above the median range_mult and the narrower half those at or below it; the plan's 'fewer than 30 cases or case-days' rule is reported as not observable."
+}

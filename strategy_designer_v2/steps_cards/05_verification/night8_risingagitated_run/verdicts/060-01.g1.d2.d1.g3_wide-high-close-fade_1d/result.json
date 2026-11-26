@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "size-weighted mean next-day short excess gain",
+    "value": 0.006175076185880283,
+    "statistic": {
+      "name": "t of the weighted mean, cases grouped by day",
+      "value": 2.3638994528540733
+    },
+    "threshold": "t >= 2 confirms (with supporting check < 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "wider-range half minus narrower half, mean next-day excess return",
+    "value": -0.006224185715831495,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a case": 669,
+    "cases": 1380
+  },
+  "decided_by": "The main measure's t is 2 or more and the supporting check is below 0.",
+  "reading": "Situation = close location (close-low)/(high-low) > 0.5 recomputed from prices, with the falling-agitated profile read from the recorded regime (its 365-bar volatility lookback cannot be rebuilt inside a window), side short; t of the size-weighted mean groups size-weighted deviations per UTC day; the wider half is |forecast| strictly above the median, the narrower half the rest, compared on next-day return minus the coin's all-window mean; fewer than 30 days gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003332 on the check folds against +0.006175 on every fold",
+    "main": 0.003331744112186249,
+    "statistic": 1.068896982542483,
+    "counts": {
+      "distinct days with a case": 398,
+      "cases": 755
+    }
+  }
+}

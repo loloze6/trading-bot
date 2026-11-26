@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the OLS slope of 5-bar excess return (vs normal drift) on abs(forecast), short grid cases",
+    "value": 0.3945924732897056,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.3945924732897056
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and mean short unusual move > 0; reject: slope > 0 with t >= +2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction (minus excess return)",
+    "value": -0.010782906202031853,
+    "passed": false
+  },
+  "counts": {
+    "independent short cases": 436
+  },
+  "decided_by": "The slope's |t| is below 2.",
+  "reading": "The rising agitated profile is read from the recorded regime (the only regime with a strategy, 'unknown', i.e. not vetoed to chop) since the detector's components are not recorded, the distance from last_history_value (recomputed from in-window prices where missing), the normal drift as each coin's mean 5-bar return on the non-overlapping grid of all its windows, and the plan's 'fewer than 30 independent short cases' minimum is treated as a minimum count giving 'not observable'."
+}

@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "058-03_calm-rise-stretch-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.6073238000000001,
+  "findings": {
+    "F1": "In agitated markets the place of the close inside the day's range predicts the next day against itself. With the profile read as a 30-day trend and a 10-day swing above the coin's median, the day-clustered slope of the next-day return beyond drift on (close position \u2212 0.5) is \u22120.0258 (t \u22122.75, 1,392 cases, 537 days) in choppy agitated, \u22120.0286 (t \u22122.61, 1,226 cases, 383 days) in falling agitated and \u22120.0156 (t \u22121.97, 1,206 cases, 510 days) in rising agitated. The three calm profiles sit between \u22120.006 and +0.003 (t \u22121.06 to +0.40).",
+    "F2": "Read with the workflow's own profile elements (60-day trend, 30-day swing above the coin's median), the same next-day slope holds in falling agitated (\u22120.0274, t \u22122.43, 1,165 cases, 338 days) and choppy agitated (\u22120.0345, t \u22122.05, 167 cases, 126 days). It vanishes in rising agitated (+0.005, t 0.53) and in all calm profiles (|t| \u2264 0.75), so it is a falling or choppy agitated effect.",
+    "F3": "Over two days in choppy agitated, the slope is negative in all six coins (t \u22120.37 to \u22122.05) and in 3 of 4 years (2019 t \u22122.34, 2020 t \u22122.31, 2021 t \u22120.99, 2018 t \u22120.01). Closes in the top fifth of the range are followed by a two-day move beyond drift with t \u22122.83. Weighting the close position by the day's range keeps the slope at t \u22122.06 (714 cases, 288 days).",
+    "F4": "The tested rising-calm stretch is mostly a level effect, not a graded one. Rising-calm grid bars gain +2.83 % beyond drift over 5 days (t 2.54, 221 cases, 79 days), but the slope on the distance is only t 1.43 (h5) and t 1.40 (h10). The rising-agitated slope is negative at both horizons (t \u22120.95, \u22121.29), which leans the brief's way without reaching significance.",
+    "F5": "Next-day returns after the coin's own lowest decile of daily returns are +0.97 % beyond drift (t 2.22, 831 cases, 271 days). This is a fall rebound that the profile map already holds many times in the agitated profiles, so it is not a discovery.",
+    "F6": "The book's gain rests on a few days. Its top 2 % of days (mean +5.0 %) sum to 154 % of its total gain, and its bottom 2 % (mean \u22123.4 %) to \u2212105 %. Trades win only 46 % of the time, with a mean net of +4.04 % (613 trades, median 6 days).",
+    "F7": "The other angles did not stand out against the number of looks taken: weekday (largest |t| 1.52), recent-volatility ratio (|t| \u2264 1.31), 3-day return quintiles (|t| \u2264 1.82), and the distance slope in falling calm (t 2.84 at 1 day on 176 cases, but t 0.75 with the 60-day profile)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the nearer a coin's daily close stands to the top of that day's high-low range, the more the coin falls over the next day.",
+      "consequence": "In a falling, swinging market, a close near the day's high is bought by short-lived buyers and is a reason to sell or short for the next day; this is the short side, which no proven strategy holds in this profile.",
+      "name": "falling agitated high close fade",
+      "from": "F1, F2, F3",
+      "profile": "falling agitated",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, the nearer a coin's daily close stands to the top of that day's high-low range, the more the coin falls over the next two days.",
+      "consequence": "In a directionless but swinging market, a strong close is a reason to fade the coin for two days, which fills the empty choppy-agitated short cell.",
+      "name": "choppy agitated strong close fade",
+      "from": "F1, F2, F3",
+      "profile": "choppy agitated",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "058-03.g1_falling-agitated-high-close-fade",
+    "058-03.g2_choppy-agitated-strong-close-fade"
+  ],
+  "no_ideas": null
+}

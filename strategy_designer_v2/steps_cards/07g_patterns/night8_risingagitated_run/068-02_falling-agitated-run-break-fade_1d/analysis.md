@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 068-02_falling-agitated-run-break-fade_1d
+idea tested: 068-02_falling-agitated-run-break-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5627 USD
+---
+## Findings
+- **F1:** In the falling agitated profile (folds B, C), an up day's next-day excess return grows more negative with the unbroken run of down days before it, once up days that follow an up day are kept as the zero-run end of the scale. With no prior down day it is -0.19 % (t -0.33, 248 cases, 126 days); after 1 down day -1.02 % (t -1.74, 207 cases, 101 days); after 2 down days -2.92 % (t -3.02, 92 cases, 50 days); after 3 or more -1.05 % (t -1.21, 66 cases). The slope on run length capped at 5 is -0.61 % per day of run (t -2.32, 613 cases, 258 days).
+- **F2:** The tested plan kept only runs of 1 or more down days, and there its slope was t -1.0. The grading therefore lives mostly in comparing an up day that breaks falls with one that follows a rise. In the profile, an up day after a down day is followed by -1.54 % (t -3.22, 370 cases, 165 days). An up day after 1 or 2 up days is followed by +0.40 % (t 0.48) and +0.02 % (t 0.02).
+- **F3:** The same graded fade is present in the falling calm profile, which the brief's profile leaves out (60-day trend below -10 %, calm, so outside the book). The slope of an up day's next-day excess return on the prior down run is -0.52 % per day (t -2.85, 541 cases, 220 days). For up days after 2 or more falls, the mean is negative on 5 of 6 coins (XMR -1.51 % t -2.02, ZEC -1.78 % t -2.18, BTC -2.26 %, ETH -1.69 %, XRP -1.05 %; LTC -0.11 %) and on 6 of the 8 windows with more than 3 cases.
+- **F4:** The fade does not appear when the trend is rising: up days after 1, 2 and 3+ down days are followed by +0.31 %, +0.58 % and +0.08 % (all |t| < 1). Over all falling-trend days, up days after 1 and 2+ down days give -1.07 % (t -1.92) and -1.34 % (t -2.54), against +0.13 % after an up day.
+- **F5:** Neither the size of the bounce nor how high it closes grades the fade. In the profile, the slope on the bounce's share of the run's fall is +0.09 % (t 0.25, 365 cases). The quartiles of the run's scaled fall form a U shape (-2.53 %, -0.32 %, -0.38 %, -2.26 %). Up days in the top quintile of scaled return fade only -0.41 % (t -0.74).
+- **F6:** The book's short days earn alike on every coin: the next-day excess is -1.44 % to -1.59 %, with t from -2.0 to -2.8 on each of the 6 coins (45 to 79 days each). The per-case move (0.94 % unusual, 0.82 % total) is 4 to 5 times the 0.19 % trade cost. The book's weakness is its Calmar, not its edge per case.
+- **F7:** The in-profile reversal of the day's scaled return (slope 1.16 % per unit, t 2.78, 1,102 cases) comes from rebounds after down days (lowest quintile +1.87 %, t 2.40). Those rebounds are already held by 12 falling agitated long strategies, so they are not a new pattern.
+
+## Ideas
+- `068-02.g1_run-break-versus-continuation-fade` (from F1, F2, F5, F6): In a falling, agitated market, on a day that closes up, the longer the unbroken run of down days just before it, from none (the day before also rose) to several, the larger the coin's fall over the next day; an up day that follows a rise is barely given back.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `068-02.g2_falling-calm-run-break-fade` (from F3, F4): In a falling, calm market, on a day that closes up, the longer the unbroken run of down days just before it, the larger the coin's fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

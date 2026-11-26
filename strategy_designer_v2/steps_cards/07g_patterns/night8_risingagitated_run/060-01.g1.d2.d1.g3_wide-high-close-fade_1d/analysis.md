@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 060-01.g1.d2.d1.g3_wide-high-close-fade_1d
+idea tested: 060-01.g1.d2.d1.g3_wide-high-close-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4405 USD
+---
+## Findings
+- **F1:** Inside the falling agitated profile, the up-day part of the tested situation carries the fade. On days that closed above their open with a close above 0.5 of the range, the next day's excess return was -0.93 % (t -2.34, 516 cases over 231 days). On days that closed in the upper half but below their open, it was +0.52 % (t 0.33, 74 days). So the fade comes from days whose rise from the open filled the range, not from where the close sits.
+- **F2:** The tested sizing by range width is graded in direction but weak in each part. Among falling agitated high closes, the next-day excess return by tercile of range over its 20-day mean was +0.16 % (t -0.31, 114 days), -1.06 % (t -1.93, 114 days) and -1.36 % (t -1.36, 93 days). By year it was negative in every year, from -1.23 % in 2018 to -0.40 % in 2021, but no year reached |t| 1.4.
+- **F3:** The mirror inside falling agitated is larger than the fade, but the portfolio already holds it (044-01, 045-01, 039-02 in the map).
+- **F4:** In a choppy market (60-day return between -10 % and +10 %) with 30-day swing above the coin's median (a proxy, since the 365-day lookback cannot be rebuilt in a window), high closes were followed by -1.69 % excess the next day (t -2.28, 145 cases over 112 days). Low closes there were followed by +0.22 % (t 0.53). In the calm half of choppy markets, high closes gave only -0.23 % (t -0.38). The choppy agitated short cell of the profile map is empty.
+- **F5:** Outside the tested profile, the weakness in falling markets is trend drift, not close location. Every close-location quintile in falling or choppy non-tested bars had a negative next-day excess, from -0.14 % to -0.84 %. The middle quintile was strongest (t -2.73, 224 days) and the top quintile gave -0.42 % (t -1.61), so there is no grading by how near the close sits to the high.
+- **F6:** Rising markets show no fade after high closes. The top close-location quintile was followed by +0.45 % (t 0.76, 150 days), consistent with the brief's claim that the effect is absent there.
+- **F7:** The book's gain rests on one window and a few days.
+- **F8:** No weekday pattern stands out. The largest |t| by weekday was 1.62 on all bars and 0.87 inside falling agitated.
+
+## Ideas
+- `060-01.g1.d2.d1.g3.g1_falling-agitated-up-body-fade` (from F1, F2, F6): In a falling, agitated market, a coin whose day closes above its open falls over the next day, and the larger the share of the day's high-low range covered by the rise from open to close, the larger that next-day fall.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `060-01.g1.d2.d1.g3.g2_choppy-agitated-high-close-fade` (from F4, F5): In a choppy, agitated market, a coin that closes in the upper part of its day's high-low range falls over the next day, and the nearer the close sits to the day's high, the larger that next-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

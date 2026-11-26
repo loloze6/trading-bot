@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "069-02.d1_falling-market-below-high-up-day-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4335998,
+  "findings": {
+    "F1": "In a falling market (60-day return below -10 %), the next day runs against the day's own move whether or not the close sits deep below the high: up days are followed by a short-direction excess of +0.50 % (n 1578, t 3.75) and down days by a long excess of +0.41 % (n 1852, t 3.31); outside the falling market the same split is +0.15 % (t 1.37) and +0.18 % (t 1.50).",
+    "F2": "Inside the falling market this reversal lives in the agitated half. Agitated up days are followed by -0.76 % excess (n 776, t -3.74, t with same-day cases summed -1.95, 274 days) and agitated down days by +0.81 % (n 832, t 4.13, t_day 2.16). Calm up days are followed by -0.32 % (t_day -1.13) and calm down days by -0.25 % (t_day -0.93), so there is no reversal there.",
+    "F3": "Graded, in the falling agitated market the size of the day's move in units of its 20-day swing ranks against the next day's excess with Spearman -0.170 (n 1608, p 7e-12). Every other profile is weaker: falling calm -0.044 (p 0.13), rising agitated -0.019 (p 0.61). On agitated falling up days the larger two terciles of the rise give -0.96 % and -0.89 % against -0.43 % for the smallest (n about 259 each).",
+    "F4": "The tested idea's own grading, the close's place in its 20-day high-low range on up days, shows only in the falling calm market. There, a higher place ranks with a higher next-day return, Spearman +0.168 (n 533, p 1e-4), so a lower close falls more. In the falling agitated market the same reading has no grading: Spearman +0.031 (n 776, p 0.39).",
+    "F5": "Over all falling up days the depth below the 20-day high does not grade monotonically. By quintile, deepest first, the next-day excess is -1.01 %, -0.99 %, -0.13 %, -0.83 % and +0.11 %. By place in the 20-day range it is -0.82 %, -1.01 %, -0.52 %, -0.46 % and -0.04 %. The effect is a giveback of up days that weakens only near the top.",
+    "F6": "The giveback of falling up days sits in 2018 (-0.82 %, t -3.41, n 632) and 2019 (-0.68 %, t -4.13, n 417), and is absent in 2020 (+0.07 %, t 0.26) and 2021 (+0.01 %, t 0.02). XRP shows none (+0.02 %, n 280).",
+    "F7": "The book moves against the coins: its daily returns correlate -0.38 with the coins' mean daily return. On its best 5 % of days the coins fell 6.0 %, and on its worst 5 % they rose 5.1 %. The book is a short bet on falling days, and it pays 3.1 % a year."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, when a coin closes up on the day, the lower that close sits in its 20-day high-low range, the larger its fall over the next day.",
+      "consequence": "A trader fades up days that close near the bottom of the recent range while the coin trends down quietly, and leaves alone those that close near the range's top.",
+      "name": "calm falling low range fade",
+      "from": "F4, F5",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's rise on the day, measured in units of its 20-day daily swing, the larger its fall over the next day.",
+      "consequence": "A trader sells into sharp up days of a coin that is falling and swinging more than usual, and sizes the short with the size of the rise.",
+      "name": "agitated falling rise reversal",
+      "from": "F2, F3, F1",
+      "profile": "falling agitated",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "069-02.d1.g1_calm-falling-low-range-fade"
+  ],
+  "discovery_ids": [
+    "069-02.d1.g2_agitated-falling-rise-reversal"
+  ],
+  "no_ideas": null
+}

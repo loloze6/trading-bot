@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on abs(forecast), forecast<0 bars",
+    "value": 0.00015191895469486113,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 0.49023845922633214
+    },
+    "threshold": "confirm if slope t <= -2 (with mean excess < 0); reject if slope t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return on forecast<0 bars below 0",
+    "value": -0.005589897617253487,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1326,
+    "distinct days": 633
+  },
+  "decided_by": "The slope t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Profile read from regime 'unknown' and up day from raw scaled return > 0; the slope t uses an OLS of excess return on abs(forecast) with day-clustered (CR1) standard errors; the coin's mean daily return is the mean of all its within-window close-to-close returns; days are UTC calendar days of the bar's timestamp."
+}

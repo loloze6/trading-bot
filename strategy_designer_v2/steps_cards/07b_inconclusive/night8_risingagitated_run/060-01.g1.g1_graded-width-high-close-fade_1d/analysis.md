@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 060-01.g1.g1_graded-width-high-close-fade_1d
+idea tested: 060-01.g1.g1_graded-width-high-close-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2055 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but short of the bar: a mean excess next-day fall of +0.41 % with t 1.83 over 1,380 cases on 669 days, and the size reads +0.55 % (t 2.13, 501 days); in folds B and C alone it is +0.68 % with t 1.72 (625 cases, 271 days), so the effect is there but too small against daily noise for this sample.
+- **F2:** The effect is spread evenly rather than living in one place: all six coins point the same way in folds B and C (from +0.12 % for LTC, t 0.18, to +1.09 % for ZEC, t 2.16), and all four years are positive (+1.23 %, +0.81 %, +0.28 %, +0.40 %; t 0.38 to 1.80), so no coin or period subset carries it and none removes it.
+- **F3:** The grading the idea claims is present: by |forecast| quartile the excess fall rises steadily from −0.03 % (t −0.04) to +0.37 %, +0.89 % and +1.49 % (t 2.20). By the recomputed day-width quartile it rises from −0.12 % to +1.44 % (t 1.72). The narrow-day cases dilute the mean that step 5 judges.
+- **F4:** The effect is tied to the upper-half close, as the brief claims: in-profile lower-half closes are followed by a next-day rise (short-direction excess −1.04 %, t −2.53, 673 cases on 281 days), the opposite of upper-half closes.
+- **F5:** The plan measured the right horizon: over 3 days the excess fall after the same cases is −0.18 % (t −0.29, 617 cases), so the move is a one-day fade that is gone by day three.
+- **F6:** Upper-half closes after an up day carry most of the effect (+1.01 %, t 2.53, 505 cases on 225 days), while those after a down day do not (−0.51 %, t −0.59, 111 cases). This is a narrower situation that would cut the cases, when the problem is too few.
+
+## Ideas
+- `060-01.g1.g1.b1_graded-width-fade-all-coins` (from F1, F2, F3, F4, F5): In a falling, agitated market, a coin that closes in the upper half of its day's high-low range falls over the next day, and the wider that day's range is against its ranges of the last 20 days, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

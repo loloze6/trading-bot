@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on prior down-run length (forecast < 0)",
+    "value": -0.0022961984777756074,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": -0.9973713811957927
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and mean short-side unusual move > 0; reject: slope > 0 with t >= +2, or mean unusual move < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean short-side unusual move (drift removed, sign flipped)",
+    "value": 0.00943373338305816,
+    "passed": true,
+    "t": 3.2530752749635115
+  },
+  "counts": {
+    "cases": 759,
+    "distinct days": 387
+  },
+  "decided_by": "Inconclusive rule: the slope t lies between -2 and +2.",
+  "reading": "The profile is checked through the detector's regime (its vetoes send bars outside the falling agitated profile to chop and its components are not recorded), the up-close-after-down-day from prices; 'cases on the same day are summed' is read as a day-clustered standard error (scores and deviations summed per day) for the slope t and for the unusual move's t; fewer than 100 cases or 60 days is reported as not observable."
+}

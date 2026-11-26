@@ -467,58 +467,87 @@ class MacroTrendFilterComponent(SubStrategyComponent):
 
 class MovingAverageDistanceComponent(SubStrategyComponent):
     """
-    Percent distance of the close from its moving average, on every bar:
+    Distance of the close from its moving average, on every bar:
 
-        raw_value = (close[t] - MA[t]) / MA[t] x 100
+        MA = mean(close[t-period+1 .. t])                     (average "sma", default; bar t included)
+        MA = EMA(close, span=period, adjust=False) at bar t   (average "ema")
+        base = "percent" (default):  raw_value = (close[t] - MA) / MA x 100
+        base = "usual_moves":        raw_value = (close[t] - MA) / MA / s
+            s = std (ddof 1) of the vol_period one-bar returns close[j] / close[j-1] - 1,
+                j = t-vol_period+1 .. t (bar t's return included); raw_value = 0 when s = 0
 
-    MA is the simple average of the last `period` closes (average: "sma") or
-    their EMA (average: "ema", span = period, adjust=False -- the same EMA as
-    MacroTrendFilterComponent, which this replaces for new configs). Graded and
-    signed: positive above the average, negative below. No lag: MA includes
-    bar t's close (the engine decides and fills at the bar's close). No
-    scaling_factor: the config's transforms scale it.
+    base "percent" is the original output, unchanged.
+    Range & sign: unbounded, signed; positive when the close is above its average, negative below, 0 at it.
+    With "usual_moves" the size is the distance counted in usual one-bar moves.
+    Warm-up: period rows ("percent"); max(period, vol_period + 1) rows ("usual_moves").
 
-    NaN: an SMA window that holds a NaN close, or a NaN latest close, gives
-    NaN. An unknown `average` or a `period` below 2 raises when the component
-    is built.
+    NaN: an SMA window holding a NaN close, or a NaN latest close, gives NaN (interior NaN closes are skipped
+    by the EWM with "ema"). With "usual_moves", a NaN close among the last vol_period + 1 rows, or a close not
+    above 0 there, gives NaN; s = 0 (never on real bars) gives 0.
+    Building the component raises for a period below 2, an average other than "sma" or "ema", a base other
+    than "percent" or "usual_moves", or a vol_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the rows up to and including bar t (the last row
+    of data): the last period closes for the SMA (the window's closes up to bar t for the EMA) and the last
+    vol_period + 1 closes for s; a bar's close is known at that bar's close.
     """
-
-    AVERAGES = ("sma", "ema")
 
     def __init__(self, name="MovingAverageDistance", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.period = int(self.parameters.get("period", 50))
-        self.average = self.parameters.get("average", "sma")
-        if self.average not in self.AVERAGES:
-            raise ValueError(f"MovingAverageDistanceComponent: average must be one of "
-                             f"{self.AVERAGES}, got {self.average!r}")
         if self.period < 2:
             raise ValueError(f"MovingAverageDistanceComponent: period must be >= 2, got {self.period}")
+        self.average = self.parameters.get("average", "sma")
+        if self.average not in ("sma", "ema"):
+            raise ValueError(
+                f"MovingAverageDistanceComponent: average must be one of ('sma', 'ema'), got {self.average!r}")
+        self.base = self.parameters.get("base", "percent")
+        if self.base not in ("percent", "usual_moves"):
+            raise ValueError(
+                f"MovingAverageDistanceComponent: base must be one of ('percent', 'usual_moves'), got {self.base!r}")
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"MovingAverageDistanceComponent: vol_period must be >= 2, got {self.vol_period}")
         self._raw_value = 0.0
 
-    def update(self, data: pd.DataFrame):
+    def update(self, data):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
-
         if not self.is_ready():
             return
-
-        close = data['close']
+        close = data['close'].astype(float)
+        c = float(close.iloc[-1])
         if self.average == "sma":
             ma = float(close.iloc[-self.period:].mean(skipna=False))
         else:
             ma = float(close.ewm(span=self.period, adjust=False).mean().iloc[-1])
-        last_close = float(close.iloc[-1])
-
-        self._raw_value = (last_close - ma) / ma * 100.0
+        if np.isnan(c) or np.isnan(ma) or ma == 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rel = (c - ma) / ma
+        if self.base == "percent":
+            self._raw_value = float(rel * 100.0)
+            s = None
+        else:
+            w = close.iloc[-(self.vol_period + 1):].to_numpy(dtype=float)
+            if np.isnan(w).any() or not (w[:-1] > 0).all():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            rets = w[1:] / w[:-1] - 1.0
+            s = float(np.std(rets, ddof=1))
+            self._raw_value = 0.0 if s == 0 else float(rel / s)
         self.confidence = 1.0
-        self.debug_info = {'moving_average': ma, 'close': last_close}
+        self.debug_info = {'close': c, 'ma': ma, 'average': self.average, 'base': self.base, 'std': s}
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self) -> int:
+    def get_required_periods(self):
+        if self.base == "usual_moves":
+            return max(self.period, self.vol_period + 1)
         return self.period
 
 
@@ -9574,3 +9603,58 @@ class PriorLowReclaimInRangeComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return self.period + 1
+
+
+class PriorDownRunOnUpCloseComponent(SubStrategyComponent):
+    """
+    Length of the down run that bar t's up close has just ended:
+
+        if close[t] > close[t-1]:
+            n = number of consecutive bars i = t-1, t-2, ... with close[i] < close[i-1], capped at max_bars
+            raw_value = n
+        else:
+            raw_value = 0
+
+    Range: 0 to max_bars, integers, never negative, no direction. It is 0 on a down or flat bar t, and 0 on an
+    up bar whose previous bar was not a down bar. A flat bar (equal close) ends the down run.
+    Warm-up: max_bars + 2 rows, bar t included.
+    NaN: a NaN close in the last max_bars + 2 rows gives NaN.
+    Building the component raises for a max_bars below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + 2 rows of data, which end at
+    bar t (the last row); a bar's close is known at that bar's close.
+    """
+
+    def __init__(self, name="PriorDownRunOnUpClose", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(f"PriorDownRunOnUpCloseComponent: max_bars must be >= 1, got {self.max_bars}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).to_numpy()[-self.get_required_periods():]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = 0
+        if c[-1] > c[-2]:
+            i = len(c) - 2
+            while n < self.max_bars and c[i] < c[i - 1]:
+                n += 1
+                i -= 1
+        self._raw_value = float(n)
+        self.confidence = 1.0
+        self.debug_info = {'prior_down_run': n, 'up_close': bool(c[-1] > c[-2])}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.max_bars + 2

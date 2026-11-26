@@ -234,6 +234,15 @@ An idea's latest record counts once.
 | 040-01_agitated-fall-size-next-day-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | a706f9c5c | 2026-11-25T00:41:59 |
 | 040-02_agitated-fall-vs-swing-rebound_1d | confirmed | night7_steadydecline_run | 1d | 6 | 91d2d7ca0 | 2026-11-25T04:52:37 |
 | 041-03_agitated-fall-drop-vs-range-rebound_1d | paying | night7_steadydecline_run | 1d | 6 | 48d4abd43 | 2026-11-25T05:19:56 |
+| 058-03.b1_calm-rise-continuation-all-coins_1d | confirmed | night8_risingagitated_run | 1d | 19 | 0b1726ad0 | 2026-11-25T22:59:03 |
+| 058-03.e1_calm-rise-stretch-ten-days_1d | paying | night8_risingagitated_run | 1d | 6 | 8e3751b59 | 2026-11-25T22:47:43 |
+| 060-01.g1.d2.d1.g3_wide-high-close-fade_1d | confirmed | night8_risingagitated_run | 1d | 6 | b89fa4aeb | 2026-11-26T04:22:16 |
+| 060-01.g1.d2.d1_own-range-close-height-fade_1d | paying | night8_risingagitated_run | 1d | 6 | 284fb3424 | 2026-11-26T00:11:33 |
+| 060-01.g1.d2_wide-day-close-location-graded-fade_1d | confirmed | night8_risingagitated_run | 1d | 6 | fa1f0099a | 2026-11-26T00:05:28 |
+| 060-01.g1_wide-day-high-close-fade_1d | confirmed | night8_risingagitated_run | 1d | 6 | 75c66f590 | 2026-11-25T23:53:42 |
+| 060-01_falling-agitated-high-close-fade_1d | confirmed | night8_risingagitated_run | 1d | 6 | 38a3f79bb | 2026-11-25T23:31:25 |
+| 069-02.d1_falling-market-below-high-up-day-fade_1d | confirmed | night8_risingagitated_run | 1d | 6 | 7d679a4e7 | 2026-11-26T01:07:25 |
+| 069-02_below-high-up-day-fade_1d | confirmed | night8_risingagitated_run | 1d | 6 | 40eba429d | 2026-11-26T01:02:35 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | 5cec10e5f | 2026-11-18T03:17:55 |

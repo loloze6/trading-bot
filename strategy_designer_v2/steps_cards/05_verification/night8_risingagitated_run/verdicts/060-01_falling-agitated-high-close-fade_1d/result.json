@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "top-minus-middle close-location group mean next-day return net of coin mean",
+    "value": -0.005873682019352896,
+    "statistic": {
+      "name": "Welch t",
+      "value": -2.4641572960800424
+    },
+    "threshold": "confirm at Welch t <= -2 (with timing gain > 0), reject at Welch t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean timing gain per bar in a position (position x (next return - coin mean))",
+    "value": 0.0008456649036479075,
+    "passed": true
+  },
+  "counts": {
+    "bars in top group": 942,
+    "bars in middle group": 886,
+    "bars in a position": 2689
+  },
+  "decided_by": "The top-minus-middle Welch t is -2 or less and the timing gain is above 0 (confirm rule).",
+  "reading": "The profile is read from the recorded regime ('unknown', the regime left when neither chop veto fires, since the detector's components are not recorded) with the situation being any close above the day's low on the short side; the groups are top = raw close location >= 2/3 and middle = 1/3 <= location < 2/3 on profile bars where close_loc is recorded, every bar used (1-bar horizon, no overlap), the timing gain pooled over all coins' bars in a position, and the plan's 'fewer than 30 per group' minimum is reported as not observable as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure -0.002826 on the check folds against -0.005874 on every fold",
+    "main": -0.0028256471538090034,
+    "statistic": -1.0526707693148474,
+    "counts": {
+      "bars in top group": 514,
+      "bars in middle group": 464,
+      "bars in a position": 1425
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return x (-forecast/10) on short cases",
+    "value": -0.0039059523629613427,
+    "statistic": {
+      "name": "t of the mean, cases pooled per day",
+      "value": -2.7100521182509056
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting difference < 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, forecast <= -10 minus up days with forecast 0",
+    "value": -0.004910000149015492,
+    "passed": true
+  },
+  "counts": {
+    "days with a case": 1350,
+    "cases": 3708,
+    "deep cases (forecast <= -10)": 1269,
+    "up days with forecast 0": 5141
+  },
+  "decided_by": "The main measure's mean is below 0 with t <= -2.",
+  "reading": "The up day is the close-to-close return above 0 inside the window (on a window's first bar, where the previous close is not recorded, the recorded regime 'mean_reversion' stands for it); the per-day pooled t is the mean over its day-clustered standard error (deviations summed per day, G/(G-1) correction); 'up days with forecast 0' are up days by that same rule."
+}

@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 069-02_below-high-up-day-fade_1d
+idea tested: 069-02_below-high-up-day-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4268 USD
+---
+## Findings
+- **F1:** On up days, the next-day excess return falls steadily as the close sits deeper below its 20-day high in units of the 20-day swing: from +0.20 % (t 0.64) in the shallowest fifth to -0.08 %, -0.23 %, -0.61 % (t -2.25) and -1.04 % (t -2.56) in the deepest fifth (about 767 cases each, folds B and C). Every coin shows a negative Spearman correlation, from -0.04 to -0.08, and 9 of 12 windows show deep minus shallow below 0.
+- **F2:** The fade lives outside rising markets, by the 60-day trend. In rising markets, deep up days show no fade: the four depth quarters give +1.04 %, +0.14 %, -0.12 % and +0.39 %. In falling markets the grading is clear: +0.31 %, -0.61 %, -1.10 % (t -2.29) and -0.93 % (about 243 cases per quarter). In falling and choppy markets together it runs from +0.11 % to -1.15 % (t -2.27). Deep minus shallow is -2.15 % in falling calm and -1.00 % in choppy calm, against +0.30 % in rising agitated.
+- **F3:** The fade grows over the following days rather than reverting. For the deepest fifth of up days, the excess return is -1.04 % over 1 day, -1.27 % (t -2.23) over 2 days and -1.56 % (t -2.52) over 3 days. The shallowest two fifths go the other way: +0.65 % and +0.92 % over 2 and 3 days (t 1.68 to 1.94). These are 3-day forward returns from every signal, not a non-overlapping grid. The 3-day move is about 8 times the 0.19 % cost of a trade, against 1.1 times for the 1-day total move.
+- **F4:** The book's gain is concentrated in the falling year: it earned 0.136 % a day in 2018, when the coins fell 0.35 % a day. In 2019, 2020 and 2021 it earned 0.003 % to 0.026 % a day while the coins rose 0.05 % to 0.42 % a day. This fits F2: a short-only fade pays only where the market is not rising.
+- **F5:** The size of the up day does not drive the fade. Deep up days with a small rise give -0.75 % (t -2.82, 1143 cases), and deep up days with a large rise give -0.51 % (t -1.61, 773 cases). The depth below the high carries the effect.
+- **F6:** Three other patterns are already held in the map or did not stand out across the many angles looked at:
+
+## Ideas
+- `069-02.g1_falling-market-below-high-fade` (from F2, F4, F1): In a falling market, when a coin closes up on the day, the further that close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next day.
+- `069-02.g2_below-high-up-day-three-day-fade` (from F3, F1, F5): When a coin closes up on the day, the further that close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

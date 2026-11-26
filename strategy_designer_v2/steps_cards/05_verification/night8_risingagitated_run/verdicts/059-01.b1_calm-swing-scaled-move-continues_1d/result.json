@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar forward return minus normal drift on forecast (non-overlapping grid)",
+    "value": 0.00043739975355918965,
+    "statistic": {
+      "name": "t of slope, clustered by day",
+      "value": 1.4081569157474063
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 1829,
+    "distinct days": 483
+  },
+  "decided_by": "Inconclusive rule met: the slope's t lies between -2 and 2.",
+  "reading": "Calm bars are the bars whose recorded regime is the strategy's regime 'unknown' (not the 'chop' veto), the expected side is the sign of the raw scaled move; the regression is pooled OLS with an intercept, the slope's t from standard errors clustered by UTC calendar day (with the usual small-sample factor), and the normal 5-bar drift is the coin's mean 5-bar return over the non-overlapping grids of all its windows."
+}
