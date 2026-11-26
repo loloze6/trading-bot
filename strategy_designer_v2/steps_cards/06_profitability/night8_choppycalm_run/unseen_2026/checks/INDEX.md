@@ -1,2 +1,4 @@
 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d: profitable enough [Sharpe 2.108; Sharpe minus holding's Sharpe 2.042; Calmar 4.694]
 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d: not profitable enough [Sharpe 0.01547; Sharpe minus holding's Sharpe -0.05092; Calmar -0.05902]
+066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: not profitable enough [Sharpe 0.2335; Sharpe minus holding's Sharpe 0.1671; Calmar 0.3142]
+066-02_falling-agitated-year-scaled-fall-rebound_1d: not profitable enough [Sharpe -0.1618; Sharpe minus holding's Sharpe -0.2282; Calmar -0.3475]

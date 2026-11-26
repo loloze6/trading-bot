@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast, over bars with forecast > 0",
+    "value": 0.0006384549227247058,
+    "statistic": {
+      "name": "slope t, cases of one day pooled (clustered by day)",
+      "value": 2.4441652854882836
+    },
+    "threshold": "slope t >= 2 (with mean excess > 0) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return over bars with forecast > 0 above 0",
+    "value": 0.004892985406185889,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 2814,
+    "distinct days": 828
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess return is above 0.",
+  "reading": "The falling agitated profile is read from the recorded `regime` (bars left 'unknown' by the two chop vetoes, since the detector's components are not recorded and cannot be rebuilt inside ~120-bar windows), a fall is a negative raw scaled return, the slope's t is an OLS t with standard errors clustered by UTC day, and bars without a next close in the same window are left out.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003831 on the check folds against +0.0006385 on every fold",
+    "main": 0.00038305547636365006,
+    "statistic": 1.2967931438206666,
+    "counts": {
+      "bars with forecast > 0": 2068,
+      "distinct days": 526
+    }
+  }
+}

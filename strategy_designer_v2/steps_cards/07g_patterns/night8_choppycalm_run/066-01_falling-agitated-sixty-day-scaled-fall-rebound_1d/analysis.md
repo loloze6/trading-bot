@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d
+idea tested: 066-01_falling-agitated-sixty-day-scaled-fall-rebound
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.5246 USD
+---
+## Findings
+- **F1:** Inside the falling agitated profile, the next-day excess return rises steadily with the depth of the day's fall against the 60-day swing. In 60-day-swing units it is +8.40 % below -2.5 (n 20, t 4.23), +3.19 % from -2.5 to -1.5 (n 74, day-clustered t 1.75 on 33 days), +2.19 % from -1.5 to -0.75 (n 155, t 2.59 on 80 days), +0.94 % from -0.75 to -0.25 (t 1.89 on 120 days) and +0.02 % from -0.25 to 0 (t 0.03).
+- **F2:** The same falls measured against the 10-day swing grade the rise about as well, against the brief's claim that the longer yardstick grades better. The excess is +5.62 % below -2.5 (n 42, t 3.58), +1.19 % from -1.5 to -0.75 (n 218, t 3.04) and +0.95 % from -0.75 to 0 (n 411, t 3.25).
+- **F3:** The rebound is a one-day move. After in-profile falls below -1.25 units, days 2 to 3 add only +1.08 % excess (n 98 on 44 days, t 0.55), even though the 3-day return on a non-overlapping 3-day grid still ranks with the fall (Spearman rho 0.23, p 0.0008).
+- **F4:** Outside the profile, falls also rebound the next day, but by about a quarter as much. The excess is +0.87 % from -2.5 to -1.5 units (n 285, t 2.58) and +0.40 % from -1.5 to -0.75 (n 721, t 1.93), against +2.2 % to +3.2 % inside. This contradicts the brief's claim that the rebound is absent outside falling agitated markets.
+- **F5:** Inside the profile, up days are followed by a next-day excess fall of -0.98 % for moves of 0 to +0.75 units (n 462, t -3.88 unclustered). Clustered by day the t is only -1.86 and -1.63 across the two sub-bins. The fall is not graded (Spearman rho -0.02, p 0.62), and the up-day short in falling agitated markets is already held by 058-02.b1.g1.b1.b1 (next-day reversal, both sides).
+- **F6:** In-profile days in the widest range quintile are followed by +1.51 % excess (n 243, t 2.71), against about 0 in the other quintiles. These days are mostly the large falls of F1, and wide-range fall rebounds are already held (044-01, 045-01).
+- **F7:** The book's gain is concentrated on a few days. Its daily returns sum to +39.1 % over 1,449 days, of which the 10 best days give +36.6 % and the 10 worst -12.4 %, with only 263 days not flat. The in-profile fall rebound is positive in every window with enough cases (w9 +0.70 % to w16 +6.87 %), but its day-clustered t is above 2 only in w16 and w17.
+- **F8:** The weekday effects do not stand out given how many angles were tested. Across all bars, Wednesday shows -0.44 % (t -2.60) and Friday +0.37 % (t 2.85), but in-profile only Tuesday stands out (+1.25 %, t 3.13), and the days that stand out differ between the two sets.
+
+## Ideas
+- No ideas: The only patterns that stand out are the tested idea itself (F1 to F3), the brief's yardstick claim being wrong (F2), and up-day reversal, wide-range rebound and out-of-profile fall rebound (F4 to F6), which are either weaker than chance across this many angles or already held in the profile map. The weekday effects (F8) are inconsistent.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

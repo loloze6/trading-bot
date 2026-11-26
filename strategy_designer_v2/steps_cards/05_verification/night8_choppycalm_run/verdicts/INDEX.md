@@ -18,3 +18,6 @@
 058-02.b2_calm-range-position-continues_1d: inconclusive (fit: exact) [main: 0.000288097; t of slope, cases clustered by day 0.726371; grid cases inside the profile 567, distinct days 282]
 058-02_calm-range-bottom-drifts-up_1d: inconclusive (fit: exact) [main: -0.000195073; t of OLS slope -0.341318; grid cases with forecast above 0 281, profile grid cases 567]
 065-01_falling-agitated-five-day-slide-rebound_1d: inconclusive (fit: exact) [main: 0.000628279; day-clustered OLS slope t 1.8621; cases 3225, distinct days 896]
+065-02_falling-agitated-prior-slide-rebound_1d: inconclusive (fit: exact) [main: 0.000600422; day-clustered t 1.77455; bars with forecast > 0 3092, distinct days 875]
+066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d: confirmed (fit: adapted) [main: 0.0101253; t of weighted mean, same-day cases summed 2.05511; cases 2865, distinct days 830, active bars 2897]
+066-02_falling-agitated-year-scaled-fall-rebound_1d: confirmed (fit: adapted) [main: 0.000638455; slope t, cases of one day pooled (clustered by day) 2.44417; bars with forecast > 0 2814, distinct days 828]

@@ -25,22 +25,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation | 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation | plan | inconclusive (+0.87) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The continuation slope is positive only because of one year (2021, window w18) in the folds shown, and it vanishes on the full data (t 0.87). No side, edge strength, horizon or coin shows the effect clearly while it is absent elsewhere, so the theme's effect (choppy-calm range-edge continuation or reversion) is not in the data (F1–F6).; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.39 | 12.2 |
 | 058-02.b1.g1.b1.b2.b2_agitated-downtrend-sharp-fall-rebound | 058-02.b1.g1.b1.b2_falling-market-next-day-reversal | plan | inconclusive (+1.78) | profitable enough | - | 7.b: no ideas: The result is on the predicted side in every coin and every year, but it is too small and too dependent on about 16 extreme falls to clear the bar (F1, F2). The test already used every coin and fold available on daily bars, so there is no more data to add. Neither a horizon, a trend depth nor a profile in these findings isolates a part of the data where the graded effect shows clearly (F5); where it does concentrate, broad sell-off days, cannot be written as a one-coin idea (F6).; 7.e: 0 ideas, 2 discoveries (2 explorations); 7.g: no ideas: Across about 80 groupings, the only pattern that clearly stands out is the falling agitated low-close rebound (F1, t -2.81), and the portfolio already holds it in that profile. The up-day fade (F3, t -2.44) is not graded and does not stand out given how many angles were examined. The choppy close-location pull that the brief's theme needs does not reach significance in any trend (F4). | 1.60 | 11.9 |
 | 065-01_falling-agitated-five-day-slide-rebound | - | plan | inconclusive (+1.86) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 065-01.b1_slide-ending-sharp-day-rebound; 7.g: no ideas: The brief's claim that the depth of the multi-day slide sets the rebound is not in the data, since the prior days add nothing once the last day's fall is known (F1, F2, F3). What does pay is the one-day fall rebound in a falling, agitated market (F4, F5), which the profile map already holds (047-01, 051-01, 038-01). The only other pattern, a fall after an up day that ends a slide (F6), is not graded and not sure enough to count. | 1.25 | 10.1 |
+| 066-01_falling-agitated-sixty-day-scaled-fall-rebound | - | plan | confirmed (+2.06) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: The only patterns that stand out are the tested idea itself (F1 to F3), the brief's yardstick claim being wrong (F2), and up-day reversal, wide-range rebound and out-of-profile fall rebound (F4 to F6), which are either weaker than chance across this many angles or already held in the profile map. The weekday effects (F8) are inconsistent. | 0.83 | 11.5 |
+| 065-02_falling-agitated-prior-slide-rebound | - | plan | inconclusive (+1.77) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 065-02.b1_five-day-slide-three-day-rebound; 7.g: no ideas: The theme's effect is not in the data: the slide's depth adds nothing once the latest day's fall is known (t -0.95, F1, F3, F4). The only graded pattern found, the falling agitated latest-day fall rebound (F2, F5), is already held (047-01, 038-01, 051-01, 045-01). The up-day fall in the empty short cell is not graded (F6). I looked at the forecast, the latest day, the slide, the 5- and 10-day returns, close position, volatility, weekday, year, the 2- and 3-day horizons and the book's extreme days. | 1.11 | 10.6 |
+| 066-02_falling-agitated-year-scaled-fall-rebound | - | plan | confirmed (+2.44) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.01 | 12.3 |
 
 ## Consumption
-21 ideas, 25.91 USD, 208.9 minutes in all.
+24 ideas, 28.86 USD, 243.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 4.25 | 10.8 |
-| step4_backtest | 0.00 | 120.5 |
-| step5_verdict | 3.60 | 12.6 |
-| step6_check | 0.00 | 0.8 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 4.58 | 12.9 |
+| step4_backtest | 0.00 | 140.0 |
+| step5_verdict | 4.14 | 14.4 |
+| step6_check | 0.00 | 0.9 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 1.87 | 5.6 |
-| step7_7.d | 1.02 | 3.5 |
+| step7_7.d | 1.02 | 3.6 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 5.77 | 19.2 |
-| step7_7.g | 9.41 | 29.6 |
-| similarity_check | 0.00 | 0.3 |
-| unseen_test | 0.00 | 5.6 |
+| step7_7.b | 6.15 | 20.4 |
+| step7_7.g | 11.11 | 34.4 |
+| similarity_check | 0.00 | 0.4 |
+| unseen_test | 0.00 | 10.4 |

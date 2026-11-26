@@ -73,6 +73,8 @@
 | 041-03_agitated-fall-drop-vs-range-rebound_1d | night7_steadydecline_run | 1d | 043-01_falling-agitated-intraday-drop-rebound_1d (1d) | 0.98 | same period | +0.0010 % (0.62) | 0.15 |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d | night8_choppycalm_run | 1d | 035-01.b1_calm-market-nearness-to-high_1d (1d) | 0.59 | same period | +0.0147 % (0.92) | 0.00 |
 | 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d | night8_choppycalm_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.61 | same period | +0.0059 % (0.89) | 0.02 |
+| 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d | night8_choppycalm_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.80 | same period | -0.0028 % (-0.79) | 0.08 |
+| 066-02_falling-agitated-year-scaled-fall-rebound_1d | night8_choppycalm_run | 1d | 047-01_falling-agitated-daily-fall-rebound_1d (1d) | 0.91 | same period | +0.0013 % (0.41) | 0.12 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (1d) | 0.94 | same period | +0.0043 % (0.70) | 0.28 |
 | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 034-01.b1_nearness-to-high-10-days_1d (1d) | 0.45 | same period | +0.0046 % (0.30) | 0.00 |
