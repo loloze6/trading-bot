@@ -177,21 +177,23 @@ the new books on the unseen coins (1u).
 (2026-11-26 morning; counts from `orchestration/run_idea/<run>/table.json`, `loop/<run>/loop.jsonl`, the unseen-dates
 index of each run, the box reader `orchestration/combine/helper/boxes.py` and the rebuilt similarity register)
 
-**Outcome: N1 once, N2 for two themes, N3 for three, and N4 in four faults, all found and fixed during the night.**
+**Outcome: N1 once, N2 for two themes, N3 for four, and N4 in three faults, all found and fixed during the night**
+(corrected 2026-11-26 in the review with the operator: D's theme was answered, not open, and the first-10-turns
+count was not a fault; see "Correction" below).
 One new specialist fills an empty box: C's 060-01.g1.d2.d1 (a wide day closing high fades), short, 99 % of its days in
 "falling agitated, short" (6.1 times the market), holding on both unseen periods, the nearest held book explaining 0.10.
 The other 7 confirmed and profitable books repeat effects already held (explained 0.59 to 0.91).
 
 **Per session** (spend by each loop's own count)
-| Session | Spent / budget USD | Tested (on the theme) | Theme ideas in the first 10 turns | Confirmed | Profitable enough | Both | Discoveries | Theme's answer |
+| Session | Spent / budget USD | Tested (on the theme) | Theme answered at turn (spend then, USD) | Confirmed | Profitable enough | Both | Discoveries | Theme's answer |
 |---|---|---|---|---|---|---|---|---|
-| A falling calm | 45.34 / 45 | 36 (16) | 10 | 11 | 0 | 0 | 16 | real, narrowly (a fall continues as volume dries up, t +2.00); no book pays (Calmar) |
-| B falling agitated | 45.84 / 45 | 30 (30) | 10 | 10 | 1 (inconclusive) | 0 | 14 | real: a one-day rise with a wide range or upper wick fades; no book pays (Calmar) |
-| C rising agitated | 42.42 / 40 | 29 (7) | 7 | 9 | 3 | 2 | 22 | not real (the rise carries on, no giveback) |
-| D choppy agitated | 35.95 / 35 | 26 (2) | **2** | 6 | 1 | 1 | 13 | open, leaning not real (2 theme ideas run) |
-| E choppy calm | 35.11 / 35 | 25 (20) | 10 | 7 | 9 | 5 | 9 | not real in choppy calm (the range-edge continuation found in calm and rising calm) |
-| F rising calm | 36.89 / 30 | 33 (7) | 7 | 5 | 0 | 0 | 17 | not real |
-| All | 241.55 / 230 | 179 (82) | | 48 | 14 | 8 | 91 | 2 real, 3 not real, 1 open |
+| A falling calm | 45.34 / 45 | 36 (16) | 16 (17.0) | 11 | 0 | 0 | 16 | real, narrowly (a fall continues as volume dries up, t +2.00); no book pays (Calmar) |
+| B falling agitated | 45.84 / 45 | 30 (30) | still on the theme at the budget's end | 10 | 1 (inconclusive) | 0 | 14 | real: a one-day rise with a wide range or upper wick fades; no book pays (Calmar) |
+| C rising agitated | 42.42 / 40 | 29 (7) | 11 (15.2) | 9 | 3 | 2 | 22 | not real (the rise carries on, no giveback) |
+| D choppy agitated | 35.95 / 35 | 26 (2) | 2 (2.5) | 6 | 1 | 1 | 13 | not real: both theme ideas answered "the theme's effect is not in the data" by lines 7.b and 7.g (next-week excess return −0.12 %, t −0.12) |
+| E choppy calm | 35.11 / 35 | 25 (20) | still on the theme at the budget's end | 7 | 9 | 5 | 9 | not real in choppy calm (the range-edge continuation found in calm and rising calm) |
+| F rising calm | 36.89 / 30 | 33 (7) | 7 (7.7) | 5 | 0 | 0 | 17 | not real |
+| All | 241.55 / 230 | 179 (82) | | 48 | 14 | 8 | 91 | 2 real, 4 not real |
 
 **The 8 confirmed and profitable books, by box** (box = where 10 % or more of its days in a position fall; times the
 market in brackets)
@@ -218,8 +220,16 @@ components).
 2. Theme profile drift: `common/theme.md` rule (a follow-up keeps or narrows the brief's profile), taken by A, B, C, D, F;
    E's permission check refused it, and E's best books came from that drift.
 3. Resumes without `--budget` ran with no limit: C +2.42, F +6.89 USD over; NIGHT_RULES corrected.
-4. **D ran 2 theme ideas in its first 10 turns** (the 1n gap: a discovery brief's ideas rank as generation 0 and come
-   before the theme's deeper follow-ups); C and F 7 of 10.
+**Correction (2026-11-26, the review with the operator).** The morning reading listed a fourth fault: "D ran 2 theme
+ideas in its first 10 turns", read as the 1n gap (discovery ideas ranked before the theme's deeper follow-ups). The
+files say otherwise: no session left a theme idea untested (D wrote 2, C 7, F 7, A 16; 0 untested), and D's theme
+ended because its two ideas were answered "not in the data". F's queue at 00:40 Paris did show theme follow-ups waiting
+below two discovery ideas, but they were all run before the theme was answered. N4's check "theme ideas under half of
+each run's first 10 turns" cannot tell a theme that ran out from discoveries taking the turns; the column is replaced
+by the turn at which each theme was answered and the spend then. After its theme was answered, a session spent its
+budget on discoveries: A 28.3, C 27.3, D 33.5, F 29.2 USD (about 118 USD), which gave the night's only new specialist
+(C 060-01.g1.d2.d1) and one repeat (D 064-01). Decided with the operator: no stop rule; the morning reading records
+when each theme was answered and the spend after (`NIGHT_RULES.md`).
 Also: the usage limit stopped every loop about 01:43 to 04:04 UTC; the morning merge stopped twice on a catalogue row
 that two sessions had changed the same way (`night_merge` fixed: the same change on both sides is one change, test and
 proof, 86cfdf6231); brief numbers 058 to 068 used by up to 6 briefs each (no file overwritten; idea keys carry the run).

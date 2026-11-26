@@ -35,7 +35,8 @@ budget) and what changed since the last night; everything else is here.
    branches in the order the sessions ended. It merges by one rule per shared file, stops on what no rule covers,
    rebuilds the register, reports brief numbers used twice and runs both test suites. Never by hand.
 2. The reading, in the night's run file: which expected outcome happened; per brief, its answer (`common/theme.md`):
-   the theme found real, not real, or open (budget ended); the discoveries and the briefs they became; confirmed books,
+   the theme found real, not real, or open (budget ended), the turn at which it was answered and the spend after it;
+   the discoveries and the briefs they became; confirmed books,
    paying books, portfolio candidates; the cost. Counts, not impressions.
 3. Step back before anything else: what the night shows, and the one change a practitioner would make; added to the
    next-step list.
