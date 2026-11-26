@@ -33,21 +33,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 061-01.g1.d1.d2.g1_choppy-far-below-high-decline | 061-01.g1.d1.d2_calm-big-rise-near-highs | plan | inconclusive (+1.68) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 061-01.g1.d1.d2.g1.b1_choppy-calm-far-below-high-decline, 061-01.g1.d1.d2.g1.b2_choppy-far-below-high-more-coins; 7.g: 061-01.g1.d1.d2.g1.g1_calm-swing-unit-move-continues, 061-01.g1.d1.d2.g1.g2_calm-big-day-follow-through | 0.99 | 5.7 |
 | 061-01.g1.d1.d2.g2_choppy-swing-scaled-move-continues | 061-01.g1.d1.d2_calm-big-rise-near-highs | plan | inconclusive (+1.11) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 061-01.g1.d1.d2.g2.b1_choppy-scaled-move-more-coins; 7.g: 061-01.g1.d1.d2.g2.g1_calm-swing-scaled-move-continues, 061-01.g1.d1.d2.g2.g2_calm-big-day-five-day-follow-through | 1.08 | 5.7 |
 | 061-01.g1.d1.d2.g3_calm-only-large-rises-continue | 061-01.g1.d1.d2_calm-big-rise-near-highs | plan | inconclusive (+0.87) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 061-01.g1.d1.d2.g3.b1_calm-big-rises-more-coins, 061-01.g1.d1.d2.g3.b2_rising-calm-big-rises-continue; 7.g: 061-01.g1.d1.d2.g3.g1_calm-three-day-move-continues, 061-01.g1.d1.d2.g3.g2_calm-three-day-fall-continues | 1.06 | 6.6 |
+| 062-01.b1_choppy-calm-falls-all-coins | 062-01_choppy-calm-fall-continues | plan | inconclusive (+0.87) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 062-01.b1.b1_choppy-calm-falls-ten-days; 7.g: 062-01.b1.g1_choppy-calm-weeks-fall-continues | 1.29 | 12.9 |
+| 059-02_calm-below-high-keeps-falling | - | plan | inconclusive (+2.86) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 059-02.b1_falling-calm-declines-extend; 7.g: 059-02.g1_falling-calm-decline-continues | 0.99 | 6.5 |
+| 059-02.b1_falling-calm-declines-extend | 059-02_calm-below-high-keeps-falling | plan | inconclusive (+1.06) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 059-02.b1.b1_falling-calm-declines-more-coins, 059-02.b1.b2_falling-calm-declines-three-days; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.96 | 6.1 |
+| 061-02_calm-big-down-day-continues | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 061-02.b1_calm-big-fall-more-coins; 7.g: 061-02.g1_calm-big-day-follows-through, 061-02.g2_calm-big-day-delayed-follow | 0.97 | 6.2 |
 
 ## Consumption
-29 ideas, 29.46 USD, 194.3 minutes in all.
+33 ideas, 33.67 USD, 226.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.25 | 13.1 |
-| step4_backtest | 0.00 | 88.4 |
-| step5_verdict | 4.67 | 17.1 |
-| step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.4 |
-| step7_7.c | 0.00 | 0.0 |
+| step3_plan | 2.54 | 14.8 |
+| step4_backtest | 0.00 | 104.3 |
+| step5_verdict | 5.35 | 20.0 |
+| step6_check | 0.00 | 1.5 |
+| chart_files | 0.00 | 0.5 |
+| step7_7.c | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.1 |
 | step7_7.e | 0.00 | 0.1 |
 | step7_7.d | 1.81 | 6.7 |
-| step7_7.b | 7.78 | 25.5 |
-| step7_7.g | 12.96 | 41.8 |
+| step7_7.b | 9.20 | 30.1 |
+| step7_7.g | 14.77 | 47.7 |
 | similarity_check | 0.00 | 0.4 |

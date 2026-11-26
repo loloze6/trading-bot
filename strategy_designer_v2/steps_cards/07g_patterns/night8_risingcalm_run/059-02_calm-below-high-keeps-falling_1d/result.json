@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "059-02_calm-below-high-keeps-falling_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.411741,
+  "findings": {
+    "F1": "In calm markets (folds B, C, non-overlapping 5-day grid), the tested depth below the 14-day high is strongly graded. The deepest fifth (mean depth \u22124.94 swings) is followed by a 5-day excess return of \u22122.95 % (t \u22123.67, 155 cases) and the next fifth by \u22122.46 % (t \u22123.36). The fifth at the high is followed by +2.98 % (t 3.16). Across all calm grid bars the slope t of the excess move on depth is 6.06, and on the forecast 5.70 (forecast\u2013depth correlation 0.86).",
+    "F2": "The same graded effect is absent in agitated markets. Depth fifths there give \u22121.52 % to +1.68 % with no order and no |t| above 1.74, and the depth slope in falling agitated is the other way (t \u22121.93, 150 cases). The effect lives in calm markets only.",
+    "F3": "The brief's literal situation, the swing-scaled 14-day return, sorts calm cases the same way. The lowest fifth is followed by \u22123.03 % over 5 days (t \u22123.67) and the second by \u22122.49 % (t \u22123.49), against +2.81 % for the highest fifth (t 2.93).",
+    "F4": "The book still lost because it was short in every calm state, including rising ones. On its in-position days it gained +0.299 % a day in falling markets (1,101 coin-days) and lost \u22120.462 % a day in rising ones (884) and \u22120.063 % in choppy ones (2,502).",
+    "F5": "In falling calm markets the depth terciles are cleanly ordered. The deepest third (\u22125.57 swings) is followed by \u22123.45 % over 5 days (t \u22122.49) and the middle third by \u22122.72 % (t \u22122.49), against +2.06 % (t 2.12) for the third near its high; the slope t is 3.58 over 219 cases. By year the slope is unstable: t 3.45 in 2018, \u22121.33 in 2019 and 0.98 in 2021.",
+    "F6": "In calm markets a single day's swing-scaled return carries on over the next 5 days. The largest-up fifth (+1.40 swings) is followed by +3.11 % (t 3.25) and the two lowest fifths by \u22121.55 % (t \u22122.24) and \u22122.30 % (t \u22122.88). In agitated markets this is absent: every fifth has |t| \u2264 0.82.",
+    "F7": "The calm one-day continuation keeps its sign every year: slope t 0.68 in 2018, 3.99 in 2019, 1.57 in 2020 and 2.52 in 2021. It is strongest in rising calm (t 3.54, 178 cases) and choppy calm (t 2.67, 101 cases).",
+    "F8": "The calm depth slope keeps its sign on every coin, with t from 1.99 (BTC) to 2.98 (XMR), and in every year, with t from 1.62 to 2.43. Even so, step 5 found the slope reversed on the check folds A, D (\u22120.00036). The plain calm-wide version of the tested idea is fragile out of sample, and the 5-day move of 2 to 3 % in the deep cases is about 15 times the 0.19 % cost of a trade."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, the lower a coin's 14-day return sits measured in units of its own 30-day daily swing, the larger its fall over the next 5 days.",
+      "consequence": "A trader shorts a coin that has slid steadily in a quiet downtrend, sized by how many usual swings it has lost over two weeks, and stays out of the short in rising calm markets where it lost money.",
+      "name": "falling calm decline continues",
+      "from": "F3, F4, F5, F2",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a calm market, the larger a coin's one-day return measured in units of its own 30-day daily swing, the further it moves the same way over the next 5 days.",
+      "consequence": "In quiet markets a trader follows an unusually large day for a week, long after a large up-day and short after a large down-day, instead of fading it.",
+      "name": "calm day move continues",
+      "from": "F6, F7, F2",
+      "profile": "calm",
+      "theme": "discovery",
+      "refs": [
+        "F6",
+        "F7",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-02.g1_falling-calm-decline-continues"
+  ],
+  "discovery_ids": [
+    "059-02.g2_calm-day-move-continues"
+  ],
+  "no_ideas": null
+}

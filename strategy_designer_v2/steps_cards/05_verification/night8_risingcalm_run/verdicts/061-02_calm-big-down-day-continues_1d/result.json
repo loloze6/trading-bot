@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess gain of (forecast/10) x 5-bar excess return on grid cases",
+    "value": 0.008044117858352195,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": 1.586732479141521
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower |forecast| half, mean short-direction 5-bar excess return (Welch t >= 1)",
+    "value": -0.24676391174874807,
+    "passed": false
+  },
+  "counts": {
+    "cases": 930,
+    "cases on distinct days": 340
+  },
+  "decided_by": "The t of the mean excess gain lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The upper half is |forecast| strictly above the median and the lower half at or below it, the coin's mean 5-bar return is taken on the same non-overlapping grid of all its windows, the day-clustered t uses a G/(G-1) correction, and the supporting check's value is its Welch t (upper minus lower)."
+}

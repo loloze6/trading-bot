@@ -8,6 +8,8 @@
 059-01.b1_calm-decline-all-coins_1d: 2 ideas (2 explorations)
 059-01.b2_falling-calm-decline-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 059-01_calm-decline-continues-return_1d: 1 ideas, 2 discoveries (2 explorations)
+059-02.b1_falling-calm-declines-extend_1d: 0 ideas, 1 discoveries (2 explorations)
+059-02_calm-below-high-keeps-falling_1d: 1 ideas, 1 discoveries (2 explorations)
 061-01.d1_calm-big-up-day-long-only_1d: 0 ideas, 2 discoveries (3 explorations)
 061-01.d2_rising-calm-up-day-continuation_1d: 2 ideas (2 explorations)
 061-01.g1.d1.d1_calm-big-rise-convex-follow-through_1d: 2 ideas (2 explorations)
@@ -25,5 +27,7 @@
 061-01.g1.g3_calm-big-fall-rebounds_1d: 0 ideas, 1 discoveries (2 explorations)
 061-01.g1_choppy-calm-day-follow-through_1d: 3 ideas (2 explorations)
 061-01_calm-big-up-day-continues_1d: 1 ideas, 2 discoveries (2 explorations)
+061-02_calm-big-down-day-continues_1d: 2 ideas, 1 discoveries (2 explorations)
+062-01.b1_choppy-calm-falls-all-coins_1d: 1 ideas (3 explorations)
 062-01_choppy-calm-fall-continues_1d: 0 ideas, 1 discoveries (2 explorations)
 062-02_choppy-calm-below-high-falls_1d: no ideas: After seven angles at two horizons, the only new patterns are the deep-drop continuations (F2–F4); they rest on 26 days or fewer, are carried by the 2018 and 2020 crashes, and their day-pooled t stays under 2, while the patterns that do stand out (F5, F6) repeat ideas the profile map already holds.
