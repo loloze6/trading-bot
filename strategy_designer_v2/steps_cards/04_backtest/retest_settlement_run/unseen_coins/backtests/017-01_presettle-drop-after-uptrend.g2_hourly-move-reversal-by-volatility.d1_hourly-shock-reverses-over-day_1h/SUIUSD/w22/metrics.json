@@ -1,0 +1,129 @@
+{
+  "core": {
+    "net_return_pct": -20.851,
+    "sharpe": -3.384,
+    "max_drawdown_pct": -20.749,
+    "trade_count": 16,
+    "win_rate": 25.0,
+    "avg_trade_net_pnl": -13.090285,
+    "fees_paid": 1.577194,
+    "gross_pnl": -207.86737,
+    "net_pnl": -209.444564,
+    "cost_drag_pct": 0.7588,
+    "forecast_return_corr": 0.017544,
+    "forecast_return_corr_pvalue": 0.34712,
+    "forecast_return_corr_pvalue_block_adjusted": 0.850128,
+    "forecast_return_corr_n_eff": 119,
+    "forecast_return_corr_all_bars": 0.017533,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.850225,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.0348,
+    "avg_trade_duration_bars": 1272.25,
+    "sigma_bar_bps": 139.0924,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 87.0399,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 4.7049,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0175, p=0.8501 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -2994.385,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -2994.385,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 299.4385,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0175, p=0.8501 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2877,
+      "avg_forecast": 0.267284,
+      "trade_count": 16,
+      "total_net_pnl": -209.444563
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 16,
+      "profitable_trades": 4,
+      "success_rate_pct": 25.0,
+      "total_net_pnl_usd": -209.4446,
+      "avg_pnl_per_trade_usd": -13.0903
+    }
+  },
+  "dynamic": {
+    "debug_info.components.hour_move.last_history_value": {
+      "unknown": {
+        "mean": -0.015027,
+        "std": 1.022539
+      }
+    },
+    "debug_info.components.hour_move.post_pipeline_value": {
+      "unknown": {
+        "mean": 0.267284,
+        "std": 11.225528
+      }
+    },
+    "debug_info.components.hour_move.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.hour_move.weighted_contribution": {
+      "unknown": {
+        "mean": 0.267284,
+        "std": 11.225528
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 3.474e-05,
+      "forward_return_std": 0.01390683,
+      "n_bars": 2876,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -56.4718,
+    "sharpe": -0.4072,
+    "sortino": -0.5254,
+    "exposure_pct": 99.9652,
+    "turnover": 3.310361,
+    "n_bars_total": 2877,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 54,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "SUIUSD",
+        "timestamp": "2025-01-25 18:00:00",
+        "previous_timestamp": "2025-01-25 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

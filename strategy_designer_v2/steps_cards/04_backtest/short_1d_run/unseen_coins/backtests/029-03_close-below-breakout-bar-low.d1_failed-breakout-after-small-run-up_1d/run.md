@@ -1,0 +1,1585 @@
+# Backtest of 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d
+
+- Plan: `../../../../../03_test_plan/short_1d_run/plans/029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d.md`
+- Config: `config.json` (a copy of the plan's config)
+- Data: AAVE, ADA, AVAX, DOGE, INJ, LINK, NEAR, ONDO, SOL, SUI, TAO, TRX, UNI as AAVEUSD, ADAUSD, AVAXUSD, DOGEUSD, INJUSD, LINKUSD, NEARUSD, ONDOUSD, SOLUSD, SUIUSD, TAOUSD, TRXUSD, UNIUSD; 1d bars; folds A, B, C, D
+- Venue: Kraken spot prices as a proxy for Kraken futures; funding not modelled
+- Engine: trading-bot/backtest/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window
+
+- AAVEUSD: 14 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 0 | None | 0.0 |
+| w2 | 0 | None | 0.0 |
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 1 | 0.045361 | 2.339 |
+| w6 | 0 | None | 0.0 |
+| w12 | 0 | None | 0.0 |
+| w18 | 0 | None | 0.0 |
+| w19 | 3 | 0.107494 | -1.432 |
+| w20 | 1 | 0.132595 | 2.266 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 4 | -0.040034 | -0.878 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 17 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AAVEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- ADAUSD: 21 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 1 | 0.102449 | 13.946 |
+| w2 | 1 | 0.04863 | 18.39 |
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 0 | None | 0.0 |
+| w6 | 0 | None | 0.0 |
+| w8 | 0 | None | 0.0 |
+| w9 | 2 | -0.015554 | -2.342 |
+| w10 | 0 | None | 0.0 |
+| w11 | 0 | None | 0.0 |
+| w12 | 2 | -0.053321 | 1.208 |
+| w15 | 0 | None | 0.0 |
+| w16 | 0 | None | 0.0 |
+| w17 | 0 | None | 0.0 |
+| w18 | 0 | None | 0.0 |
+| w19 | 0 | None | 0.0 |
+| w20 | 1 | 0.113374 | 5.542 |
+| w21 | 2 | -0.01788 | -9.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ADAUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ADAUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- AVAXUSD: 11 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w2 | 0 | None | 0.0 |
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 0 | None | 0.0 |
+| w6 | 0 | None | 0.0 |
+| w19 | 0 | None | 0.0 |
+| w20 | 0 | None | 0.0 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w1 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 11 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w12 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for AVAXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- DOGEUSD: 17 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 2 | 0.044117 | 4.437 |
+| w2 | 0 | None | 0.0 |
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 0 | None | 0.0 |
+| w6 | 3 | 0.103295 | -16.085 |
+| w10 | 2 | -0.070548 | -3.385 |
+| w11 | 2 | -0.056077 | -5.559 |
+| w12 | 0 | None | 0.0 |
+| w17 | 2 | -0.400981 | -14.612 |
+| w18 | 0 | None | 0.0 |
+| w19 | 0 | None | 0.0 |
+| w20 | 0 | None | 0.0 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for DOGEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for DOGEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for DOGEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for DOGEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for DOGEUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 13 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- INJUSD: 12 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 0 | None | 0.0 |
+| w2 | 0 | None | 0.0 |
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 0 | None | 0.0 |
+| w6 | 2 | -0.026581 | -7.71 |
+| w19 | 0 | None | 0.0 |
+| w20 | 0 | None | 0.0 |
+| w21 | 2 | 0.066827 | -4.963 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w12 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 22 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for INJUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- LINKUSD: 18 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 1 | 0.146846 | 7.983 |
+| w2 | 2 | 0.162084 | 5.231 |
+| w3 | 0 | None | 0.0 |
+| w4 | 1 | 0.147622 | 3.332 |
+| w5 | 0 | None | 0.0 |
+| w6 | 2 | 0.076617 | 2.737 |
+| w10 | 2 | 0.043734 | 1.374 |
+| w11 | 2 | -0.052301 | -4.161 |
+| w12 | 4 | -0.088852 | -5.576 |
+| w16 | 0 | None | 0.0 |
+| w17 | 0 | None | 0.0 |
+| w18 | 0 | None | 0.0 |
+| w19 | 0 | None | 0.0 |
+| w20 | 2 | 0.148543 | 10.748 |
+| w21 | 4 | 0.124852 | -3.85 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for LINKUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for LINKUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for LINKUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for LINKUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for LINKUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- NEARUSD: 10 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 0 | None | 0.0 |
+| w6 | 2 | 0.011459 | 0.39 |
+| w19 | 2 | -0.270438 | -1.628 |
+| w20 | 0 | None | 0.0 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w1 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w2 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w12 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for NEARUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- ONDOUSD: 4 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 0 | None | 0.0 |
+
+- w1 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w2 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w3 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w4 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w5 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w6 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w12 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for ONDOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w19 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w20 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 20 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- SOLUSD: 13 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 0 | None | 0.0 |
+| w2 | 0 | None | 0.0 |
+| w3 | 1 | 0.239294 | 46.257 |
+| w4 | 0 | None | 0.0 |
+| w5 | 1 | 0.198062 | 28.243 |
+| w6 | 0 | None | 0.0 |
+| w12 | 0 | None | 0.0 |
+| w19 | 4 | -0.153367 | -5.24 |
+| w20 | 0 | None | 0.0 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 4 | -0.060032 | -0.62 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SOLUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- SUIUSD: 7 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w6 | 0 | None | 0.0 |
+| w19 | 2 | 0.03642 | -12.372 |
+| w20 | 0 | None | 0.0 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 1 | 0.012917 | 13.998 |
+
+- w1 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w2 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w3 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w4 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w5 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w12 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for SUIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- TAOUSD: 4 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w21 | 2 | -0.028594 | -9.846 |
+| w22 | 0 | None | 0.0 |
+| w23 | 0 | None | 0.0 |
+| w24 | 1 | 0.230591 | 13.293 |
+
+- w1 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w2 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w3 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w4 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w5 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w6 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w11 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w12 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w18 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w19 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TAOUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w20 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- TRXUSD: 16 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 0 | None | 0.0 |
+| w2 | 0 | None | 0.0 |
+| w3 | 0 | None | 0.0 |
+| w4 | 7 | -0.007474 | -20.249 |
+| w5 | 5 | -0.028573 | -12.164 |
+| w6 | 0 | None | 0.0 |
+| w11 | 6 | 0.024713 | -10.654 |
+| w12 | 5 | 0.047276 | -6.368 |
+| w17 | 2 | -0.102186 | -6.684 |
+| w18 | 0 | None | 0.0 |
+| w19 | 0 | None | 0.0 |
+| w20 | 0 | None | 0.0 |
+| w21 | 2 | 0.014695 | -7.153 |
+| w22 | 0 | None | 0.0 |
+| w23 | 4 | 0.049941 | -2.159 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TRXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TRXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TRXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 57 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TRXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TRXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for TRXUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+
+- UNIUSD: 15 of 24 windows run.
+
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 0 | None | 0.0 |
+| w2 | 0 | None | 0.0 |
+| w3 | 0 | None | 0.0 |
+| w4 | 0 | None | 0.0 |
+| w5 | 1 | 0.019126 | 0.323 |
+| w6 | 0 | None | 0.0 |
+| w11 | 0 | None | 0.0 |
+| w12 | 4 | -0.045948 | 14.025 |
+| w18 | 0 | None | 0.0 |
+| w19 | 0 | None | 0.0 |
+| w20 | 1 | 0.069982 | 4.396 |
+| w21 | 0 | None | 0.0 |
+| w22 | 0 | None | 0.0 |
+| w23 | 2 | -0.032638 | 0.616 |
+| w24 | 0 | None | 0.0 |
+
+- w7 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w8 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w9 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w10 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w13 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w14 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w15 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w16 not run: no historical data on the venue.
+
+```
+    raise RuntimeError(
+    ...<4 lines>...
+    )
+RuntimeError: No historical data for UNIUSD over <date>..<date> (exchange=kraken). The fetch returned nothing, so there is nothing to backtest. Refusing to emit a zero-metric run that would be indistinguishable from a strategy that simply never traded.
+```
+
+- w17 not run: the engine stopped.
+
+```
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/user/trading-bot/trading-bot/core/backtester.py", line 368, in simulate_on_loaded_data
+    raise AssertionError(bot.warmup_not_ready)
+AssertionError: warmup_prefetch: strategy not ready after 0 warm-up bars -- required_bars=61. 2x-required_bars was insufficient for this config; investigate before proceeding.
+```
+

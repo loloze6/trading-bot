@@ -8,7 +8,10 @@
   - the books alone: each book's own unseen result (orchestration/unseen_test/<run>/<id>.json): holds, Sharpe;
   - where the result comes from: each book's mean net position (its coins' positions averaged, long +, short -; from the
     record's chart files) and the correlation of its daily returns with holding its coins.
-  python3 topics/44_review/p4_portfolio.py"""
+  python3 topics/44_review/p4_portfolio.py [unseen_coins]
+With unseen_coins (common/unseen_coins.md, runs/UNSEEN_COINS_RUN.md): the same, on each book's unseen coins over its
+own folds (04_backtest/<run>/unseen_coins/backtests/<id>/; a book on every coin of the data has none and is left out);
+written to p4_portfolio_unseen_coins.csv and p4_books_unseen_coins.csv."""
 import json, pathlib, sys, warnings
 import numpy as np, pandas as pd
 
@@ -20,7 +23,8 @@ sys.path.insert(0, str(STEPS / "orchestration" / "ideas_similarities_check" / "h
 from book_returns import book_returns   # noqa: E402
 from p2_weights import calmar, sharpe   # noqa: E402
 
-PERIODS = ["unseen_2016_2017", "unseen_2026"]
+PERIODS = sys.argv[1:] or ["unseen_2016_2017", "unseen_2026"]
+SUFFIX = "" if not sys.argv[1:] else "_" + "_".join(sys.argv[1:])
 books = pd.read_csv(HERE / "p1_candidates_earning.csv"); books = books[books.status == "candidate"]
 rows, summary = [], []
 for period in PERIODS:
@@ -66,4 +70,5 @@ for period in PERIODS:
 pd.set_option("display.width", 220)
 s = pd.DataFrame(summary); print(s.round(3).T.to_string())
 d = pd.DataFrame(rows); print(d.round(2).to_string(index=False))
-s.to_csv(HERE / "p4_portfolio.csv", index=False, float_format="%.4g"); d.to_csv(HERE / "p4_books.csv", index=False, float_format="%.4g")
+s.to_csv(HERE / f"p4_portfolio{SUFFIX}.csv", index=False, float_format="%.4g")
+d.to_csv(HERE / f"p4_books{SUFFIX}.csv", index=False, float_format="%.4g")

@@ -1,0 +1,154 @@
+{
+  "core": {
+    "net_return_pct": -20.621,
+    "sharpe": -1.815,
+    "max_drawdown_pct": -23.024,
+    "trade_count": 16,
+    "win_rate": 25.0,
+    "avg_trade_net_pnl": -12.918158,
+    "fees_paid": 1.069572,
+    "gross_pnl": -205.620949,
+    "net_pnl": -206.690521,
+    "cost_drag_pct": 0.5202,
+    "forecast_return_corr": 0.009759,
+    "forecast_return_corr_pvalue": 0.603158,
+    "forecast_return_corr_pvalue_block_adjusted": 0.917011,
+    "forecast_return_corr_n_eff": 117,
+    "forecast_return_corr_all_bars": 0.009736,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.91649,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 3,
+    "gap_skipped_pct": 0.1038,
+    "avg_trade_duration_bars": 1579.81,
+    "sigma_bar_bps": 121.44,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 47.1053,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 2.5462,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0098, p=0.9170 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -4347.1648,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -4347.1648,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 434.7165,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0098, p=0.9170 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2890,
+      "avg_forecast": -0.042316,
+      "trade_count": 16,
+      "total_net_pnl": -206.690522
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 15,
+      "profitable_trades": 3,
+      "success_rate_pct": 20.0,
+      "total_net_pnl_usd": -264.1043,
+      "avg_pnl_per_trade_usd": -17.607
+    },
+    "minus_15_to_minus_10": {
+      "total_forecasts": 1,
+      "profitable_trades": 1,
+      "success_rate_pct": 100.0,
+      "total_net_pnl_usd": 57.4138,
+      "avg_pnl_per_trade_usd": 57.4138
+    }
+  },
+  "dynamic": {
+    "debug_info.components.hour_move.last_history_value": {
+      "unknown": {
+        "mean": -0.003595,
+        "std": 1.017177
+      }
+    },
+    "debug_info.components.hour_move.post_pipeline_value": {
+      "unknown": {
+        "mean": -0.042316,
+        "std": 11.12954
+      }
+    },
+    "debug_info.components.hour_move.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.hour_move.weighted_contribution": {
+      "unknown": {
+        "mean": -0.042316,
+        "std": 11.12954
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 1.53e-05,
+      "forward_return_std": 0.01229417,
+      "n_bars": 2889,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -62.8427,
+    "sharpe": -0.0782,
+    "sortino": -0.1028,
+    "exposure_pct": 99.9654,
+    "turnover": 2.84048,
+    "n_bars_total": 2890,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 56,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 3,
+    "events": [
+      {
+        "symbol": "AVAXUSD",
+        "timestamp": "2024-01-08 11:00:00",
+        "previous_timestamp": "2024-01-08 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "AVAXUSD",
+        "timestamp": "2024-01-20 21:00:00",
+        "previous_timestamp": "2024-01-20 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 21600.0,
+        "bars_missing": 5,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "AVAXUSD",
+        "timestamp": "2024-04-14 09:00:00",
+        "previous_timestamp": "2024-04-14 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 25200.0,
+        "bars_missing": 6,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

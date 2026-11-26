@@ -1,0 +1,5 @@
+034-01.d1_wide-range-low-close-rebound_1d: confirmed (fit: exact) [main: 0.000516811; OLS t, errors clustered by day 2.3784; agitated bars with forecast > 0 6799, distinct days 1644, top-quintile agitated bars 1370]
+038-01_agitated-fall-next-day-rebound_1d: inconclusive (fit: adapted) [main: 0.000452843; t clustered by day 1.00924; cases 1404, distinct days 444]
+038-02_agitated-fall-vs-swing-rebound_1d: inconclusive (fit: exact) [main: 0.000477552; OLS slope t 1.9782; cases with forecast > 0 1404]
+039-02_agitated-range-fall-low-close-rebound_1d: inconclusive (fit: exact) [main: 0.00337211; t of weighted mean, same-day cases summed (day-clustered) 1.41614; distinct days with forecast > 0 1096, cases (coin-bars with forecast > 0) 3444]
+041-03_agitated-fall-drop-vs-range-rebound_1d: inconclusive (fit: exact) [main: 0.00363466; t of weighted mean, same-day cases summed 1.04838; cases 1404, distinct days 444]
