@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast, heavy-volume days",
+    "value": 0.0007990802219830491,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 4.6226262146862
+    },
+    "threshold": "confirm: slope positive with t >= 2; reject: slope negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, lowest-quarter minus other heavy days (Welch t >= 2)",
+    "value": 0.009177864939048864,
+    "passed": true
+  },
+  "counts": {
+    "heavy-volume days": 5690,
+    "lowest-quarter days": 1302,
+    "other heavy-volume days": 4388
+  },
+  "decided_by": "Confirm: the slope is positive with t >= 2 and lowest-quarter days beat the other heavy days with Welch t >= 2.",
+  "reading": "The volume ratio is recomputed inside each window as volume over the mean of the 20 prior bars, so active bars with fewer than 20 prior bars in their window are left out of the agreement; heavy-volume days are the bars with regime mean_reversion and a next-day return in the same window; the coin's mean daily return is over all its 1-day returns in all windows; the slope's t is the OLS slope over its standard error; the 'other heavy-volume days' are heavy days with loc_low post_pipeline_value below 8.4; the minimum counts make the result 'not observable' when not reached. Welch t = 4.164.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
