@@ -1,0 +1,8 @@
+064-01_calm-decline-big-rise-fades_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+070-01.b1.b1_calm-decline-depth-fade_1d: missing-components: Everything the idea needs is in the coin's closes, and the config can hold it: a regime on the up [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+070-01.b1_calm-decline-fade-more-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+070-01.g1_calm-decline-long-run-break_1d: missing-components: The run length is in the coin's own closes, but only `PriorDownRunOnUpCloseComponent` computes it, and the catalogue classes it as [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+070-01_calm-decline-run-break-fade_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+074-01.b1_falling-deep-run-break-fade_1d: missing-components: `DownStreakLossInUsualMovesComponent` measures a down run's loss in usual moves only while the run lasts, and is 0 on the up [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+074-01.g1_falling-agitated-scaled-run-break-fade_1d: missing-components: `DownStreakLossInUsualMovesComponent` measures a down-run's loss in usual one-bar moves, but it reads 0 on the first up day, and no [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+074-01_falling-market-run-break-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

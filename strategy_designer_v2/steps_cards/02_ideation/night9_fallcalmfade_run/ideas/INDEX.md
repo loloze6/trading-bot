@@ -1,2 +1,3 @@
 064-01_calm-decline-big-rise-fades: In a falling, calm market, a large one-day rise in 20-day swing units is given back over the next three days, more for larger rises. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling calm]
 070-01_calm-decline-run-break-fade: In a falling, calm market, the first up day after a run of down days is followed by a next-day fall that grows with run length. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: falling calm]
+074-01_falling-market-run-break-fade: In a falling market, the first up day after a run of down days is followed by a next-day fall that grows with run length. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: falling]

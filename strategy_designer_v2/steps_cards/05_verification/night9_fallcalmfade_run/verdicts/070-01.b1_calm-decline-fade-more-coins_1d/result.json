@@ -1,0 +1,29 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day return beyond the coin's drift, short direction, on forecast<0 bars",
+    "value": 0.0003853270618511815,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 0.23916921594371182
+    },
+    "threshold": "above 0 with t >= 2 confirms; below 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "next-day excess return, runs >=3 minus runs 1-2 (Welch t -2.143)",
+    "value": -0.004455711886573775,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1667,
+    "distinct days": 658,
+    "cases with runs of 3 or more": 469,
+    "cases with runs of 1 to 2": 1198
+  },
+  "reading": "The falling-calm profile is read from the recorded regime ('mean_reversion' means both vetoes passed) since its components are not recorded, the run length from run_len's last_history_value (logit of the sigmoid) or from closes inside the window; the main mean is over cases with a t whose deviations are summed per day; the supporting check uses the unflipped excess return; 'fewer than 150 cases on fewer than 80 days' is read as two minimum counts, either one missed making the result not observable.",
+  "status": "inconclusive",
+  "decided_by": "Inconclusive: the main t lies between -2 and 2."
+}

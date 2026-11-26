@@ -1,0 +1,3 @@
+070-01.b1_calm-decline-fade-more-coins_1d: inconclusive (fit: adapted) [main: 0.000385327; t of the mean, cases summed per day 0.239169; cases 1667, distinct days 658, cases with runs of 3 or more 469, cases with runs of 1 to 2 1198]
+070-01_calm-decline-run-break-fade_1d: inconclusive (fit: adapted) [main: 0.00200413; t of the mean, cases summed per day 0.981443; case-days in total 870, case-days with run >= 3 236, case-days with run 1-2 634, distinct days with cases 488]
+074-01_falling-market-run-break-fade_1d: inconclusive (fit: exact) [main: 0.00921947; day-clustered t 3.53551; cases 834, distinct days 426, cases run >= 3 428, cases run == 2 406]

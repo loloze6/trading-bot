@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side next-day move minus coin drift",
+    "value": 0.009219467688761257,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 3.5355078202738857
+    },
+    "threshold": "confirm: positive with day-clustered t >= 2 and check passes; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean after runs >= 3 minus mean after runs == 2",
+    "value": -0.004740093473218532,
+    "passed": false
+  },
+  "counts": {
+    "cases": 834,
+    "distinct days": 426,
+    "cases run >= 3": 428,
+    "cases run == 2": 406
+  },
+  "decided_by": "Confirming t but the supporting check failed, so neither confirm nor reject.",
+  "reading": "Falling profile recomputed as the 60-bar close change in percent below -10 (the detector's regime veto where 60 window bars are lacking), run length from run_len.last_history_value or recomputed from closes, t clustered by summing deviations per UTC day with a G/(G-1) correction, and the plan's 'at least 30 cases on distinct days' read as the minimum count."
+}
