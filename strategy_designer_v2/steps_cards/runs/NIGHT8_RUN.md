@@ -127,6 +127,12 @@ the new books on the unseen coins (1u).
     verdict and line 7.g still read the empty record (0.34 USD, 4 minutes). For the morning: step 3 runs the engine's
     config check (`trading-bot/tools/validate_config.py`) on its own config and refuses it there. C's theme answered
     not real (lines 7.b twice "not in the data": the rise continues).
+- **The usage limit, about 02:35 to 02:45 Paris:** every session's last turn failed between 01:35 and 01:45 UTC (A, B,
+  C, D, E and the resumed F; the 1l impact session at 02:00 UTC); the designer's own 02:30 watch could not run (its
+  worker restarted). **04:58 Paris, after the reset:** each told to resume its loop (`loop.py`, the budget in the run's
+  files; no new idea after 07:00 UTC). Also finished during the night: the unseen-coins check (9 of 35 books hold on
+  coins they were never tested on; daily books carry to other coins, hourly ones mostly not) and v1 on the unseen
+  coins (its reading on branch `combine-v1-unseen`), both read in the morning.
 
 ## Reading
 (written in the morning)
