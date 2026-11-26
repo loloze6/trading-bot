@@ -13,12 +13,18 @@ open"; effect "the coin moves back over the next days".
 
 **An idea on the theme** has the theme's situation, or a narrower case of it:
 - a stronger case of the same situation ("a wider day", "a longer run");
-- the same situation in one market profile (`market_profile.md`);
+- the same situation in one market profile (`market_profile.md`), or, when the brief names a profile, in a narrower
+  one (a brief in a "rising" market may be followed in "rising calm");
 - its mirror, when the brief names both directions (a run up and a run down);
 - the same situation on other coins, another bar size or another horizon.
 
 It may change the effect: its side (what the market does instead in the theme's situation), its measure, its horizon;
-and the coins, the bar size and the profile. A changed effect still answers the brief's question.
+and the coins and the bar size. A changed effect still answers the brief's question.
+
+**The brief's market profile is part of its situation** (the operator, 2026-11-26, night 8: follow-ups had moved from
+"choppy calm" to "choppy" to "calm", out of the market the brief was about). When the brief names a profile, an idea
+on the theme keeps it, or narrows it; the same situation in another or a wider profile is off the theme: a discovery.
+A brief that names no profile may be followed in any one.
 
 **An idea off the theme** has another situation. Example (night 6): from the indecision brief, "a wide day that closes
 near its low rebounds" is another situation (a low close after a fall, not a flat close after a run): off the theme.
