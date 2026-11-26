@@ -1,2 +1,5 @@
 060-01.b1_falling-calm-high-close-fade_1d: 1 ideas (2 explorations)
 060-01_falling-calm-wide-high-close-fade_1d: 1 ideas (2 explorations)
+074-01.b1.d1_wide-lower-close-calm-rebound_1d: 2 ideas (2 explorations)
+074-01.b1_low-close-nearness-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+074-01_rising-calm-wide-low-close-rebound_1d: 2 ideas (2 explorations)

@@ -1,2 +1,5 @@
 060-01.b1_falling-calm-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00298976; t of the mean, cases grouped by day 1.00175; cases 321, distinct days 186]
 060-01_falling-calm-wide-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00298976; t of the mean, same-day cases summed 1.00175; cases 321, distinct days 186]
+074-01.b1.d1_wide-lower-close-calm-rebound_1d: inconclusive (fit: exact) [main: 0.00473888; t of the mean, same-day cases taken together 1.70785; distinct days with cases 330, cases 641]
+074-01.b1_low-close-nearness-rebound_1d: confirmed (fit: adapted) [main: 0.00841435; t of the mean, cases of one day pooled 2.30515; cases 300, days 169]
+074-01_rising-calm-wide-low-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00634202; t of the mean, pooled by day 1.92506; distinct case days 225, cases 426, active bars 427]
