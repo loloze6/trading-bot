@@ -26,29 +26,20 @@ coins were picked for their long history; the new years were looked at when port
 
 ## 1. The coins
 
-**1.1 The universe:** every coin that trades against USD on Kraken with at least 3 years of daily data, listed with
-its category in `common/coins.md` (to write, from one public category source named there, read once; the list is
-fixed until the next final draw). Today (checked 2026-11-26): 39 coins, 19 with files, 20 being fetched (session
-`data-coins`):
-
-| Category | Coins |
-|---|---|
-| Payments / store of value | BTC, LTC, XRP, XLM, BCH |
-| Smart-contract platforms | ETH, ETC, ADA, XTZ, ATOM, ALGO, TRX, DOT, SOL, AVAX, NEAR, SUI |
-| Privacy | ZEC, XMR, DASH |
-| Decentralised finance | COMP, CRV, SNX, YFI, UNI, AAVE, INJ, LDO, ONDO |
-| Data / storage / infrastructure | LINK, STORJ, FIL, GRT |
-| AI | OCEAN, FET, TAO |
-| Meme | DOGE, SHIB, PEPE |
+**1.1 The universe:** every coin that trades against USD on Kraken with at least 3 years of daily data and a median
+daily traded value of at least 100,000 USD over the last 12 months, listed with its category in `common/coins.md`
+(the rules, the categories and the final draw of 2026-11-26; fixed until the next final draw). On 2026-11-26: 32
+coins; final group XLM, SOL, DASH, UNI, LINK, FET, SHIB; portfolio group the other 25. The 39 coins with files (19 earlier, 20 fetched on 2026-11-26, `runs/DATA_COINS_RUN.md`) and their
+categories are listed there.
 
 **1.2 Three groups, with three roles:**
 | Group | Role | How it is chosen | When it changes |
 |---|---|---|---|
-| **Final** | the one confirmation before live | one coin per category, drawn at random among the category's coins with at least 5 years of data; the seed is written in `common/coins.md` | only after it has been used (rule 6): a new draw, the used coins join the portfolio group |
+| **Final** | the one confirmation before live | one coin per category, drawn at random among the category's coins with at least 4 years of data; the seed is written in `common/coins.md` | only after it has been used (rule 6): a new draw, the used coins join the portfolio group |
 | **Portfolio** | every candidate's common record; building and adjusting the portfolio | every coin not in the final group | when the final group changes |
 | **Research, for one run** | finding and checking strategies | 8 coins drawn at random among the portfolio group, at least one per category (the 8th among all); the seed is the run's name | at the start of every run, written in the run's header |
 
-Why 8 coins per run and not all: 32 coins in every backtest would make each idea about 6 times longer to test; a new
+Why 8 coins per run and not all: 25 coins in every backtest would make each idea about 6 times longer to test; a new
 draw at every run makes a strategy work on changing coins (the operator, 2026-11-26: "random in a recurrent way"),
 and step 9 then measures every candidate on all the portfolio coins.
 
@@ -112,7 +103,7 @@ it, each branch holds only its own candidates). No person builds a version; ever
 
 ## 7. Build plan (each part proven before the next; shared code only on the operator's go)
 1. The 20 coins' daily files (session `data-coins`, 2026-11-26).
-2. `common/coins.md`: the categories, their source, the final draw and its seed.
+2. `common/coins.md`: the categories, their source, the final draw and its seed (written 2026-11-26).
 3. Step 4's coins and windows: the run's draw, the 2016-2026 windows, the explore and check halves (`run_brief`,
    `run_backtest`, `explore_and_check.md`), with a rerun proof on a fixed plan.
 4. Step 9: a candidate's common record (from `unseen_test --coins`), and its call by `run_idea`.
@@ -125,7 +116,6 @@ it, each branch holds only its own candidates). No person builds a version; ever
 2. The category source.
 3. Step 11's bar: earns more than holding (proposed), or a fixed target.
 4. The 90-day exclusion after a coin's listing.
-5. A liquidity rule (the data session, 2026-11-26: OCEAN still trades but barely, a median 16k USD a day in 2026): a
-   coin left out of a window where its median daily traded value is under a fixed amount (to choose).
+5. ~~A liquidity rule~~: settled in `common/coins.md` (100,000 USD a day over the last 12 months, for the universe).
 6. Kraken rebuilt its archive: the 20 new files come from the new edition, the 19 old ones from the earlier one (BTC:
    8 highs in 2013 and volumes up to 4.5 % apart). Refetch the 19 from the new edition, with a rerun proof?
