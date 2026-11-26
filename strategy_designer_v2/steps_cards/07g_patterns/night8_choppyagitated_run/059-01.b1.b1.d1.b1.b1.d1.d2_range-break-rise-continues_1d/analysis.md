@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues_1d
+idea tested: 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3637 USD
+---
+## Findings
+- **F1:** Across all coins and every profile, on the 14-day non-overlapping grid of folds B and C (575 cases in all), the cases whose day had the largest one-day fall (bottom fifth of one-day returns, 115 cases) underperformed their coin's mean 14-day return by -6.65 % (t -3.85). The next fifths went -1.10 % (t -0.58), +0.09 % (t 0.05), +5.09 % (t 1.78) and -1.68 % (t -0.72). This is the only angle that clears the bar for the roughly 30 groupings looked at, but its t does not pool same-day cases, so it is likely somewhat overstated.
+- **F2:** The tested idea's own grading is not steady inside the choppy calm profile, on 66 grid cases in thirds of 22. The top third of the 7-day rise scaled by its usual 7-day move earned +21.7 % excess (t 2.61), but the middle third earned -9.74 % (t -2.81) and the bottom third -2.56 % (t -0.65). Nearness to the 30-day high runs the wrong way: the farthest third earned +13.4 % (t 1.48) and the nearest -0.36 % (t -0.09). This matches step 5's inconclusive t of 1.26 and size t of 0.40.
+- **F3:** Outside the profile (345 grid cases in fifths of 69), the scaled 7-day rise predicts no continuation. Its fifths earned -4.56 %, -1.36 %, -3.07 %, +4.38 % and -3.83 % excess, with the top fifth at t -1.45. In-profile cases with a positive forecast earned +6.36 % (t 1.21, 42 cases) against -3.21 % (t -1.02, 38 cases) with a zero forecast.
+- **F4:** A week quieter than the month predicts weakness only at the extreme. The bottom fifth of the ratio of 7-day to 30-day daily swing earned -6.05 % excess over 14 days (t -3.24, 82 cases), while the other fifths ranged from -2.33 % to +2.03 % with every t under 1. Because it is not graded and its t is unpooled, it is not strong enough to carry an idea alone.
+- **F5:** The weekday splits (Friday +9.84 % t 3.98, Sunday -5.83 % t -3.10) are a grid artifact, not a finding. Each window's 14-day grid falls on one weekday, so weekday stands in for the window.
+- **F6:** The book's mean daily return swings by window, from -0.30 % (w14, daily std 1.69 %) to +0.34 % (w17, daily std 1.81 %). Several windows are near flat (w11 at +0.0001 % with std 0.009 %), so its gain rests on a few windows.
+
+## Ideas
+- `059-01.b1.b1.d1.b1.b1.d1.d2.g1_sharp-down-day-continues` (from F1, F4): The larger a coin's one-day fall, the more it falls further over the next 14 days, against its usual 14-day move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

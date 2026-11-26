@@ -29,22 +29,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | plan | inconclusive (+0.70) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The tested idea's effect points the predicted way only on average. It is negative in 2018 and 2019, positive in 2020 and 2021, and not graded cleanly by the scaled weekly rise. No coin, horizon or condition shows it clearly (F1, F3, F4, F5). The test already used every coin and fold available, so neither more data nor a narrower version would give a clear answer.; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.10 | 12.4 |
 | 059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | plan | inconclusive (+0.15) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: the theme's effect is not in the data. The test's main measure (the grading slope) is at zero (F1, F7), and no condition, horizon or side shows it clearly (F4, F5, F6). The only continuation seen is confined to one window and year, w18 in 2021 (F2, F3), which is a period and not a situation in a coin's bars.; 7.g: no ideas: Across the angles examined, nothing stands out from chance once cases on the same day are clustered and the number of angles is weighed. The strongest candidate, a low 30-to-90-day swing ratio, reaches only t 2.30 on 21 days, mostly from one window, and fails on the 14/60 and 7/30 spans. The angles examined were the forecast, week-range position, 30-day return, three volatility ratios, the last day's return, weekday, year, window, coin and trades. | 1.23 | 13.0 |
 | 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks | 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation | plan | inconclusive (-0.04) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1.d1.d1.b1_raw-scaled-rise-two-weeks; 7.g: no ideas: Across the forecast, the positions and trades, the trends and the bars (weekly and daily scaled moves, volatility, weekday, horizons from 3 to 28 days, by year), no pattern keeps a day-clustered t of 2 or more. The book's loss is the short side paying the coins' upward drift (F1), and the one sizeable daily pattern is a rebound the map already holds (F5). | 1.96 | 13.2 |
+| 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues | 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation | plan | inconclusive (+1.26) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1.d1.d2.b1_range-break-rise-one-week; 7.g: 059-01.b1.b1.d1.b1.b1.d1.d2.g1_sharp-down-day-continues | 1.02 | 12.2 |
 
 ## Consumption
-25 ideas, 31.45 USD, 302.0 minutes in all.
+26 ideas, 32.48 USD, 314.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.93 | 14.2 |
-| step4_backtest | 0.00 | 197.7 |
-| step5_verdict | 4.74 | 16.4 |
+| step3_plan | 4.01 | 14.7 |
+| step4_backtest | 0.00 | 206.7 |
+| step5_verdict | 4.92 | 17.0 |
 | step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.d | 3.11 | 9.7 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 7.52 | 22.6 |
-| step7_7.g | 12.15 | 36.1 |
+| step7_7.b | 7.92 | 23.7 |
+| step7_7.g | 12.51 | 37.2 |
 | similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 3.0 |
