@@ -258,3 +258,16 @@ def test_data_use_runs_the_runs_coins_on_its_windows_and_leaves_windows_out(monk
     seen.clear()
     rb.main()                                        # the same data use again: the record is kept
     assert seen == []
+
+
+def test_the_record_ran_when_every_coin_has_a_window_not_run(monkeypatch, plan, tmp_path):
+    """A coin with one window not run still ran: the index line says "ran" (found by the first run in data use 2, where
+    every coin had a warm-up window not run, and the line said "not run")."""
+    def wrapper(symbol, windows, out):
+        if any(w["label"] == "W1" for w in windows):
+            return 1, "Traceback\nAssertionError: warmup", out
+        return fake_call(out, windows)
+
+    out_root = tmp_path / "backtests"
+    run_main(monkeypatch, plan, out_root, wrapper)
+    assert (out_root / "INDEX.md").read_text().startswith("001-01_some-idea_1d: ran: BTCUSD 2/3 (1 not run: the engine stopped)")

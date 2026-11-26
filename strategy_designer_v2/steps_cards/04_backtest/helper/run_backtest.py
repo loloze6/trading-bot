@@ -367,7 +367,8 @@ def main():
                  f"- Data: {instruments} as {', '.join(f'{b}USD' for b in coins(instruments))}; {bar} bars; {period}\n"
                  f"- Venue: {venue}\n- Engine: trading-bot/backtest/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window\n\n"
                  + "\n".join(report) + "\n")
-    ran = any(" not run" not in s for s in summary)
+    # "ran" when a coin ran at least one window (a coin with a window not run, a "(1 not run: ...)" in its summary, still ran)
+    ran = any(rows for _, rows, _ in results)
     index_line(index_path, plan_id, f"{plan_id}: {'ran' if ran else 'not run'}: {'; '.join(summary)} [{bar}, {period}]")
     print(f"{plan_id}: {'; '.join(summary)}")
 
