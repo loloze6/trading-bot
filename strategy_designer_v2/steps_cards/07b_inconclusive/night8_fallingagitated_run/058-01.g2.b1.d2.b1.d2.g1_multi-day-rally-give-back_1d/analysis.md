@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back_1d
+idea tested: 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3561 USD
+---
+## Findings
+- **F1:** The test missed its bar because the whole result rests on the larger rises; the smaller rises show nothing. On the plan's 3-day grid in folds B and C, the larger-|forecast| half gives back +2.17 % beyond drift (t 1.77, 107 cases), while the smaller half gives -0.46 % (t -0.39, 107 cases). By quartile, q1 and q2 give -0.46 % and -0.46 %, while q3 and q4 give +1.86 % and +2.47 %.
+- **F2:** The step-5 result is on the predicted side but short of the bar: +0.98 %, t 1.71, 779 cases on 256 days. No more data exists than the test already used, which was all 19 coins and folds A to D on daily bars. Averaging all cases dilutes the effect: in folds B and C the full set gives +0.85 % (t 0.87, 214 cases, 90 days).
+- **F3:** The give-back is specific to the falling, agitated profile. Outside it, the same 3-day rises continue: the short-side unusual move is -1.27 % and -1.28 % in the top two rise quartiles (265 cases each). Inside the profile, the raw-rise quartiles q3 and q4 give +1.91 % and +2.48 %.
+- **F4:** The 3-day horizon is the right one for the largest rises.
+- **F5:** The effect is mixed across periods, which also lowers the t.
+- **F6:** Over all cases the move is about the size of a trade's cost. The total move is +0.26 % per case against a 0.22 % cost (1.1 times). The larger-half unusual move of +2.17 % over 3 days would be about 10 times that cost.
+
+## Ideas
+- `058-01.g2.b1.d2.b1.d2.g1.b1_sharp-rally-give-back-falling-agitated` (from F1, F2, F3, F4, F6): In a falling, agitated market, after a sharp rise over the past 3 days against its usual 3-day swing (the standard deviation of its daily returns over the past 30 days, scaled to 3 days), the larger that rise is in usual swings, the larger the fall over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -4,9 +4,12 @@
 058-01.b1_rally-giveback-all-coins_1d: 1 ideas (2 explorations)
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: no ideas: The result is on the predicted side but small (F1), and no more data is available. The grading the idea claims shows only weakly on raw swings at the 3-day horizon (slope t 1.92, rises above one swing t 1.51 on 24 days; F3). It reverses at 1 and 2 days (F4) and is not concentrated in any coin, window or year (F5). No part of the data shows the effect clearly enough for an amended idea to give a clear answer.
 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day_1d: no ideas: The theme's effect is not in the data. In-profile up days are followed by a small give-back the next day, but it does not grow with the rise against the coin's usual swing, at one day or over several days, in any part of the data (F1 to F5). The brief names exactly this as the case where its theory is wrong, and the test already used every coin and fold available.
+058-01.g2.b1.d2.b1.d2.d1.d1_capped-rise-fade-three-days_1d: 1 ideas (2 explorations)
+058-01.g2.b1.d2.b1.d2.d1.d2_capped-rise-fade-two-days_1d: 2 ideas (2 explorations)
 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades_1d: 2 ideas (2 explorations)
 058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day_1d: 1 ideas (2 explorations)
+058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back_1d: 1 ideas (2 explorations)
 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: 2 ideas (2 explorations)

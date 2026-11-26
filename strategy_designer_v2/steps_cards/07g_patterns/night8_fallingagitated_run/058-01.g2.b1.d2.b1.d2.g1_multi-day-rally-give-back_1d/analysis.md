@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back_1d
+idea tested: 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4276 USD
+---
+## Findings
+- **F1:** In falling calm markets, falls continue and the effect is graded. On the 5-day grid, the next-5-day unusual move rises steadily across quintiles of the 5-day return in usual swings: -4.38 % (t -1.65, 23 days), -3.21 % (t -1.44), -0.33 %, +0.95 %, +2.38 % (53 cases each). On the 3-day grid, the second-lowest quintile alone gives -2.74 % (t -2.64, 52 days).
+- **F2:** The falling-calm continuation after a 3-day fall holds across most of the shown data, though the grading inside the falls is weak. After a 3-day fall, the unusual next-3-day move was negative in 2018 (-2.93 %, t -1.76), 2019 (-2.50 %, t -1.77) and 2021 (-0.70 %). It was negative in 7 of the 9 windows with more than 3 cases, for example w13 -3.58 %, w14 -5.38 % and w15 -4.74 %. Across those falls, the correlation between the size of the fall and the move that follows is only 0.025.
+- **F3:** In the tested profile (falling agitated), the give-back appears only after the largest rises. The top quintile of the 3-day rise in usual swings is followed by an unusual 3-day move of -2.94 % (t -1.83, 29 days). The second- to fourth-quintile cases sit between -0.32 % and +0.24 %. Among rises only, the top tercile gives -3.24 % (t -1.88) and the lower two terciles +0.22 % and +0.16 %. This matches step 5's t of 1.71 and the book's flat yearly return (-0.0 % over 7.94 years).
+- **F4:** Outside the profile, large 3-day rises continue. The top quintile is followed by +1.43 % (t 2.11, 164 days), against -0.44 % to -0.81 % for the middle quintiles. This fits the brief's claim that rallies continue outside falling agitated markets, and the map already holds rising continuation books.
+- **F5:** Next-day moves follow where the day closed in its range, most clearly inside the profile, but these patterns are already held. In falling agitated markets, a close in the lowest fifth of the day's range is followed by +1.24 % the next day (t 2.11, 163 days), and the fourth fifth by -0.98 % (t -2.06). Across all bars the same gradient runs from +0.49 % to -0.37 % (t 1.91 and -1.75). The low-close rebound repeats ideas the map holds (039-02, 045-01).
+- **F6:** In choppy agitated markets (agitation approximated within the window), the largest 3-day falls continue: -3.71 % (t -3.57). This rests on only 18 cases on 15 days, too few to build an idea on after this many angles.
+- **F7:** Weekday shows no pattern. Next-day unusual moves by weekday range from -0.44 % to +0.37 %, all with |t| < 1.5.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-01.g2.b1.d2.b1.d2.g1.g1_falling-calm-fall-continues` (from F1, F2): In a falling, calm market, the larger a coin's fall over the past 5 days against its usual 5-day swing (the standard deviation of its daily returns over the past 30 days, scaled to 5 days), the larger its further fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

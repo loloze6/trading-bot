@@ -21,21 +21,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | confirmed (+2.04) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 058-01.g2.b1.d2.b1.d2.d1.d1_capped-rise-fade-three-days, 058-01.g2.b1.d2.b1.d2.d1.d2_capped-rise-fade-two-days; 7.g: no ideas: The strong patterns are already tested or already held: the capped up-day fade in F1 and F2 is this backtest's idea, and the falling agitated rebounds in F3 and F4 repeat the 12 long strategies the map holds there. The remaining candidates are weak given the angles examined: the brief's multi-day give-back (F6: n 6 to 33, |t| ≤ 2.3) and the 3-day continuation outside the profile (|t| ≈ 2). The other angles also showed nothing that stands out: weekday, close location, distance from the day's low, and year. | 1.25 | 13.0 |
 | 058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | inconclusive (+1.92) | not profitable enough (failed: Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d2.b1_bounce-after-steep-slide-fades, 058-01.g2.b1.d2.b1.d2.d2.b2_larger-bounce-in-slide-fades; 7.g: 058-01.g2.b1.d2.b1.d2.d2.g1_deep-slide-bounce-fades, 058-01.g2.b1.d2.b1.d2.d2.g2_calm-slide-bounce-fades | 1.89 | 11.4 |
 | 058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | inconclusive (+1.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d3.b1_prior-rally-fades-next-day; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.31 | 11.5 |
+| 058-01.g2.b1.d2.b1.d2.d1.d1_capped-rise-fade-three-days | 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day | plan | inconclusive (+0.82) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d1.d1.b1_capped-rise-fade-next-day; 7.g: 058-01.g2.b1.d2.b1.d2.d1.d1.g1_large-rise-fade-falling-agitated | 1.08 | 11.3 |
+| 058-01.g2.b1.d2.b1.d2.d1.d2_capped-rise-fade-two-days | 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d1.d2.b1_capped-rise-fade-next-day, 058-01.g2.b1.d2.b1.d2.d1.d2.b2_graded-rise-fade-three-days; 7.g: 058-01.g2.b1.d2.b1.d2.d1.d2.g1_capped-rise-fade-next-day | 1.11 | 11.4 |
+| 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | inconclusive (+1.71) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.g1.b1_sharp-rally-give-back-falling-agitated; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.04 | 10.9 |
 
 ## Consumption
-17 ideas, 24.88 USD, 211.2 minutes in all.
+20 ideas, 28.11 USD, 244.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.03 | 8.8 |
-| step4_backtest | 0.00 | 128.0 |
-| step5_verdict | 3.30 | 11.8 |
-| step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 3.25 | 10.1 |
+| step4_backtest | 0.00 | 150.7 |
+| step5_verdict | 3.90 | 13.9 |
+| step6_check | 0.00 | 0.8 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.d | 1.90 | 6.2 |
-| step7_7.b | 8.24 | 28.8 |
-| step7_7.g | 8.41 | 26.1 |
+| step7_7.b | 9.38 | 32.1 |
+| step7_7.g | 9.69 | 30.1 |
 | similarity_check | 0.00 | 0.4 |
