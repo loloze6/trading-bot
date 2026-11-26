@@ -1,38 +1,38 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 44.36 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 45.34 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 064-01_rising-agitated-volume-shrink-rises | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 2 | 063-02_calm-big-down-day-continues | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 3 | 064-02_rising-agitated-volume-growth-stalls | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 4 | 063-03_agitated-big-up-day-reverses | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 5 | 063-04_agitated-big-down-day-rebounds | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 6 | 060-02.d1.d2.d1.d1_dry-up-shorts-in-real-falls | 7.d | 6 | 0.2883 | 0.0412 | candidate |
-| 7 | 060-02.d1.d2.d1.d2_volume-growth-buys-steepest-crashes | 7.d | 6 | 0.2883 | 0.0412 | candidate |
-| 8 | 060-02.d1.d2.d1.d3_volume-growth-before-the-bounce | 7.d | 6 | 0.2883 | 0.0412 | candidate |
-| 9 | 060-02.d2.d2.d1_capitulation-rebound-five-days | 7.d | 5 | 0.2883 | 0.0481 | candidate |
-| 10 | 060-02.d2.d2.d2_deep-fall-capitulation-volume-rebound | 7.d | 5 | 0.2883 | 0.0481 | candidate |
-| 11 | 060-02.d1.d1.d1_volume-dry-up-ten-day-fall | 7.d | 5 | 0.2883 | 0.0481 | candidate |
-| 12 | 060-02.d1.d1.d2_dry-up-while-still-sliding | 7.d | 5 | 0.2883 | 0.0481 | candidate |
-| 13 | 060-02.d1.d1.d3_dry-up-in-moderate-falls | 7.d | 5 | 0.2883 | 0.0481 | candidate |
-| 14 | 060-02.d2.d1.d1_deep-volume-dry-up-shorts | 7.d | 5 | 0.2883 | 0.0481 | candidate |
-| 15 | 067-01_falling-calm-swing-keeps-falling | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 16 | 068-01_falling-week-sunday-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 17 | 067-02_falling-agitated-swing-rebounds | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 18 | 068-02_heavy-selling-week-sunday-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 19 | 066-01_choppy-calm-low-close-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 20 | 060-01.g2_calm-fall-volume-dry-up | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 21 | 066-02_agitated-low-close-rebounds | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 22 | 060-02.d1.d2.g1_dry-up-scaled-by-fall-depth | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 23 | 060-02.d1.d2.g2_calm-fall-volume-dry-up | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 24 | 060-02.d1.d2.d1.g1_rising-market-pullback-continues | 7.g | 6 | 0.121 | 0.0173 | candidate |
-| 25 | 060-02.d1.d1.g2_deep-fall-volume-dry-up-continuation | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 26 | 060-02.d2.d1.g1_calm-fall-volume-dry-up | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 27 | 062-01.b1_rising-volume-shrink-more-coins | 7.b | 2 | 0.2339 | 0.078 | candidate |
-| 28 | 058-01.g1.b1.b1_choppy-market-fall-continues | 7.b | 3 | 0.2339 | 0.0585 | candidate |
-| 29 | 058-03.g1.b1.b1_calm-downtrend-three-day-continuation | 7.b | 3 | 0.2339 | 0.0585 | candidate |
+| 1 | 063-02_calm-big-down-day-continues | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 2 | 064-02_rising-agitated-volume-growth-stalls | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 3 | 063-03_agitated-big-up-day-reverses | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 4 | 063-04_agitated-big-down-day-rebounds | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 5 | 060-02.d1.d2.d1.d1_dry-up-shorts-in-real-falls | 7.d | 6 | 0.2883 | 0.0412 | candidate |
+| 6 | 060-02.d1.d2.d1.d2_volume-growth-buys-steepest-crashes | 7.d | 6 | 0.2883 | 0.0412 | candidate |
+| 7 | 060-02.d1.d2.d1.d3_volume-growth-before-the-bounce | 7.d | 6 | 0.2883 | 0.0412 | candidate |
+| 8 | 060-02.d2.d2.d1_capitulation-rebound-five-days | 7.d | 5 | 0.2883 | 0.0481 | candidate |
+| 9 | 060-02.d2.d2.d2_deep-fall-capitulation-volume-rebound | 7.d | 5 | 0.2883 | 0.0481 | candidate |
+| 10 | 060-02.d1.d1.d1_volume-dry-up-ten-day-fall | 7.d | 5 | 0.2883 | 0.0481 | candidate |
+| 11 | 060-02.d1.d1.d2_dry-up-while-still-sliding | 7.d | 5 | 0.2883 | 0.0481 | candidate |
+| 12 | 060-02.d1.d1.d3_dry-up-in-moderate-falls | 7.d | 5 | 0.2883 | 0.0481 | candidate |
+| 13 | 060-02.d2.d1.d1_deep-volume-dry-up-shorts | 7.d | 5 | 0.2883 | 0.0481 | candidate |
+| 14 | 067-01_falling-calm-swing-keeps-falling | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 15 | 068-01_falling-week-sunday-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 16 | 067-02_falling-agitated-swing-rebounds | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 17 | 068-02_heavy-selling-week-sunday-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 18 | 066-01_choppy-calm-low-close-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 19 | 060-01.g2_calm-fall-volume-dry-up | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 20 | 066-02_agitated-low-close-rebounds | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 21 | 060-02.d1.d2.g1_dry-up-scaled-by-fall-depth | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 22 | 060-02.d1.d2.g2_calm-fall-volume-dry-up | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 23 | 060-02.d1.d2.d1.g1_rising-market-pullback-continues | 7.g | 6 | 0.121 | 0.0173 | candidate |
+| 24 | 060-02.d1.d1.g2_deep-fall-volume-dry-up-continuation | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 25 | 060-02.d2.d1.g1_calm-fall-volume-dry-up | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 26 | 062-01.b1_rising-volume-shrink-more-coins | 7.b | 2 | 0.2339 | 0.078 | candidate |
+| 27 | 058-01.g1.b1.b1_choppy-market-fall-continues | 7.b | 3 | 0.2339 | 0.0585 | candidate |
+| 28 | 058-03.g1.b1.b1_calm-downtrend-three-day-continuation | 7.b | 3 | 0.2339 | 0.0585 | candidate |
+| 29 | 064-01.b1_volume-shrink-rises-more-coins | 7.b | 3 | 0.2339 | 0.0585 | candidate |
 | 30 | 058-03.g1.b1.b2_calm-downtrend-falls-continue | 7.b | 3 | 0.2339 | 0.0585 | candidate |
 | 31 | 063-01.d1_calm-big-up-day-uptrend | 7.d | 3 | 0.2883 | 0.0721 | candidate |
 | 32 | 063-01.d2_rising-calm-big-day | 7.d | 3 | 0.2883 | 0.0721 | candidate |
@@ -60,20 +60,22 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | 54 | 061-01_falling-agitated-high-close-fades | 7.g | 3 | 0.121 | 0.0302 | candidate |
 | 55 | 058-01.b2.b1.g2_steady-calm-fall-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
 | 56 | 061-02_calm-high-close-carries-on | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 57 | 061-03_rising-high-close-carries-on | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 58 | 060-01.d1.g1_falling-volume-growth-reversal | 7.g | 4 | 0.121 | 0.0242 | candidate |
-| 59 | 060-02.d3.g1_volume-growth-twenty-day-hold | 7.g | 4 | 0.121 | 0.0242 | candidate |
-| 60 | 060-02.d2.d3.g1_calm-falling-volume-dry-up | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 61 | 063-01.g1_calm-narrow-range-rise-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 62 | 060-02.d2.d3.g2_dry-up-short-mid-decline | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| - | 058-01_calm-downtrend-depth-continues | step 2 | 0 | 0.1961 | 0.1961 | tested: step 5 inconclusive (+0.37); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
-| - | 058-02_quiet-volume-fall-continues | step 2 | 0 | 0.1961 | 0.1961 | tested: step 5 inconclusive (-0.55); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
-| - | 058-03_heavy-volume-fall-exhausts | step 2 | 0 | 0.1961 | 0.1961 | tested: step 5 inconclusive (-0.98); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| 57 | 064-01.g2_rising-agitated-volume-growth-fades | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 58 | 061-03_rising-high-close-carries-on | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 59 | 060-01.d1.g1_falling-volume-growth-reversal | 7.g | 4 | 0.121 | 0.0242 | candidate |
+| 60 | 060-02.d3.g1_volume-growth-twenty-day-hold | 7.g | 4 | 0.121 | 0.0242 | candidate |
+| 61 | 060-02.d2.d3.g1_calm-falling-volume-dry-up | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 62 | 063-01.g1_calm-narrow-range-rise-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 63 | 060-02.d2.d3.g2_dry-up-short-mid-decline | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| - | 058-01_calm-downtrend-depth-continues | step 2 | 0 | 0.1942 | 0.1942 | tested: step 5 inconclusive (+0.37); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
+| - | 058-02_quiet-volume-fall-continues | step 2 | 0 | 0.1942 | 0.1942 | tested: step 5 inconclusive (-0.55); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 058-03_heavy-volume-fall-exhausts | step 2 | 0 | 0.1942 | 0.1942 | tested: step 5 inconclusive (-0.98); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 060-01_volume-shrink-fall-continues | 7.g | 2 | 0.121 | 0.0403 | tested: step 5 confirmed (+2.23); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 060-02_volume-growth-fall-stalls | 7.g | 2 | 0.121 | 0.0403 | tested: step 5 confirmed (+2.96); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 062-01_rising-volume-shrink-continues | 7.g | 1 | 0.121 | 0.0605 | tested: step 5 inconclusive (+0.87); step 6 not profitable enough (failed: Calmar) |
 | - | 062-02_rising-volume-growth-stalls | 7.g | 1 | 0.121 | 0.0605 | tested: step 5 inconclusive (+0.18); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 063-01_calm-big-up-day-continues | 7.g | 2 | 0.121 | 0.0403 | tested: step 5 confirmed (+5.22); step 6 not profitable enough (failed: Calmar) |
+| - | 064-01_rising-agitated-volume-shrink-rises | 7.g | 2 | 0.121 | 0.0403 | tested: step 5 inconclusive (+1.58); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 058-01.b1_calm-downtrend-all-coins | 7.b | 1 | 0.2339 | 0.117 | tested: step 5 inconclusive (-0.61); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 058-01.b2_quiet-volume-calm-fall-continues | 7.b | 1 | 0.2339 | 0.117 | tested: step 5 inconclusive (-0.68); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 058-01.g1_thin-volume-deep-fall-continues | 7.g | 1 | 0.121 | 0.0605 | tested: step 5 inconclusive (+1.22); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |

@@ -39,21 +39,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-02.d1.d2.d1_volume-signal-in-deeper-falls | 060-02.d1.d2_volume-signal-outside-crash-falls | plan | confirmed (+2.45) | not profitable enough (failed: Calmar) | - | 7.d: 060-02.d1.d2.d1.d1_dry-up-shorts-in-real-falls, 060-02.d1.d2.d1.d2_volume-growth-buys-steepest-crashes, 060-02.d1.d2.d1.d3_volume-growth-before-the-bounce; 7.g: 060-02.d1.d2.d1.g1_rising-market-pullback-continues | 2.25 | 7.2 |
 | 060-02.d1.d2.d2_volume-dry-up-longer-hold | 060-02.d1.d2_volume-signal-outside-crash-falls | plan | inconclusive (+0.61) | not profitable enough (failed: Calmar) | - | 7.b: 060-02.d1.d2.d2.b1_volume-growth-fall-more-coins; 7.g: no ideas: Across the forecast, the sides, the horizons, the grid offsets, the trend and agitation regimes, the weekdays, the post-move bars and the book's extreme days, no pattern stands out from chance once one day's cases are pooled and the grid is shifted (F1–F3, F6–F8). The only clear asymmetry, the book earning on its volume-growth longs (F4), is not significant on the grid and is concentrated in a few windows (F5). | 1.06 | 5.7 |
 | 063-01_calm-big-up-day-continues | - | plan | confirmed (+5.22) | not profitable enough (failed: Calmar) | - | 7.d: 063-01.d1_calm-big-up-day-uptrend, 063-01.d2_rising-calm-big-day; 7.g: 063-01.g1_calm-narrow-range-rise-continues | 0.99 | 6.8 |
+| 064-01_rising-agitated-volume-shrink-rises | - | plan | inconclusive (+1.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 064-01.b1_volume-shrink-rises-more-coins; 7.g: 064-01.g2_rising-agitated-volume-growth-fades | 0.97 | 6.4 |
 
 ## Consumption
-35 ideas, 39.81 USD, 265.9 minutes in all.
+36 ideas, 40.78 USD, 272.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.43 | 18.6 |
-| step4_backtest | 0.00 | 130.0 |
-| step5_verdict | 5.91 | 22.0 |
+| step3_plan | 5.51 | 19.1 |
+| step4_backtest | 0.00 | 132.9 |
+| step5_verdict | 6.06 | 22.5 |
 | step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.1 |
 | step7_7.d | 5.37 | 17.6 |
 | step7_7.e | 0.00 | 0.1 |
 | step7_7.c | 0.00 | 0.1 |
-| step7_7.b | 7.24 | 24.2 |
-| step7_7.g | 15.86 | 50.7 |
+| step7_7.b | 7.59 | 25.5 |
+| step7_7.g | 16.25 | 51.9 |
 | similarity_check | 0.00 | 0.9 |

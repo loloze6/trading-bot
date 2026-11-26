@@ -33,3 +33,4 @@
 062-01_rising-volume-shrink-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 062-02_rising-volume-growth-stalls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 063-01_calm-big-up-day-continues_1d: 2 ideas (2 explorations)
+064-01_rising-agitated-volume-shrink-rises_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

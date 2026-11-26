@@ -33,3 +33,4 @@
 062-01_rising-volume-shrink-continues_1d: inconclusive (fit: exact) [main: 0.000509456; OLS slope t 0.871359; in-profile grid cases 1345, forecast > 0 572, forecast = 0 773]
 062-02_rising-volume-growth-stalls_1d: inconclusive (fit: exact) [main: 7.05547e-05; slope t, clustered by day 0.181387; non-overlapping in-profile cases 1345, days 409]
 063-01_calm-big-up-day-continues_1d: confirmed (fit: adapted) [main: 0.00175408; slope t 5.21924; grid cases 1829, grid cases with forecast above 0 897, grid cases with forecast at or above 10 407]
+064-01_rising-agitated-volume-shrink-rises_1d: inconclusive (fit: adapted) [main: 1.57796; OLS slope t 1.57796; non-overlapping grid cases with forecast > 0 211, profile grid bars in total 718]

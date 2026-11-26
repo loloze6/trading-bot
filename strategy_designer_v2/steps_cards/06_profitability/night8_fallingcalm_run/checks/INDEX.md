@@ -33,3 +33,4 @@
 062-01_rising-volume-shrink-continues_1d: not profitable enough [Sharpe 0.5635; Sharpe minus holding's Sharpe 0.009339; Calmar 0.1679]
 062-02_rising-volume-growth-stalls_1d: not profitable enough [Sharpe -0.49; Sharpe minus holding's Sharpe -1.044; Calmar -0.1869]
 063-01_calm-big-up-day-continues_1d: not profitable enough [Sharpe 0.606; Sharpe minus holding's Sharpe 0.03642; Calmar 0.3092]
+064-01_rising-agitated-volume-shrink-rises_1d: not profitable enough [Sharpe 0.2915; Sharpe minus holding's Sharpe -0.2781; Calmar 0.07305]
