@@ -1,88 +1,91 @@
 def explore(data):
     import numpy as np, pandas as pd
-    from scipy import stats
-    bars=data["bars"]; days=data["days"]; trades=data["trades"]
-    H=14
-    rows=[]
-    drift={}
+    bars = data["bars"]; days = data["days"]
+    out = {}
+    rows = []
     for c in bars:
-        rr=[]
-        for w,df in bars[c].items():
-            cl=df["close"].values
-            for i in range(0,len(df)-H,H):
-                rr.append(cl[i+H]/cl[i]-1)
-        drift[c]=np.mean(rr) if rr else np.nan
-    for c in bars:
-        for w,df in bars[c].items():
-            df=df.reset_index(drop=True)
-            cl=df["close"].values
-            f=df["forecast"].fillna(0).values
-            raw=df.get("debug_info.components.scaled_rise.last_history_value")
-            reg=df["regime"].values
-            r7=pd.Series(cl).pct_change(7).values
-            r30=pd.Series(cl).pct_change(30).values
-            dr=pd.Series(cl).pct_change()
-            vol30=dr.rolling(30).std().values
-            sc=pd.Series(r7)/ (pd.Series(cl).pct_change(7).abs().rolling(30).mean())
-            for i in range(0,len(df)-H,H):
-                fr=cl[i+H]/cl[i]-1
-                rows.append(dict(coin=c,w=w,day=df["timestamp"].iloc[i].floor("D"),f=f[i],inprof=reg[i]=="unknown",
-                    r7=r7[i],r30=r30[i],sc=sc.iloc[i],vol=vol30[i],fr=fr,un=fr-drift[c],
-                    mdd=(cl[i:i+H+1].min()/cl[i]-1)))
-    g=pd.DataFrame(rows)
-    out={}
-    def summ(s):
-        s=s.dropna(); return pd.Series(dict(n=len(s),mean=s.mean(),t=s.mean()/(s.std()/np.sqrt(len(s))) if len(s)>2 else np.nan))
-    pos=g[g.f>0].copy()
-    pos["fb"]=pd.qcut(pos.f,4,labels=False,duplicates="drop")
-    out["by_forecast_quartile_unusual"]=pos.groupby("fb").apply(lambda x: pd.concat([summ(x.un),pd.Series(dict(fmin=x.f.min(),fmax=x.f.max(),total=x.fr.mean()))]))
-    ip=g[g.inprof]
-    ip=ip.assign(scb=pd.cut(ip.sc,[-99,-1,0,0.5,1,1.5,2,99]))
-    out["in_profile_by_rawscaled_rise"]=ip.groupby("scb").apply(lambda x: pd.concat([summ(x.un),pd.Series(dict(fpos=(x.f>0).mean(),total=x.fr.mean()))]))
-    out["in_vs_out_profile_sc_gt1"]=g[g.sc>1].groupby("inprof").apply(lambda x: summ(x.un))
-    out["all_bars_by_sc"]=g.assign(scb=pd.cut(g.sc,[-99,-1,0,1,2,99])).groupby("scb").apply(lambda x: summ(x.un))
-    out["pos_by_window"]=pos.groupby("w").apply(lambda x: pd.Series(dict(n=len(x),un=x.un.mean(),tot=x.fr.mean())))
-    out["pos_by_coin"]=pos.groupby("coin").apply(lambda x: pd.Series(dict(n=len(x),un=x.un.mean(),tot=x.fr.mean(),drift=drift[x.name])))
+        for w, b in bars[c].items():
+            b = b.reset_index(drop=True)
+            cl = b["close"].values
+            n = len(b)
+            fc = b["forecast"].fillna(0).values
+            inprof = (b["regime"] == "unknown").values
+            r7 = pd.Series(cl).pct_change(7)
+            sc = r7 / r7.abs().rolling(30).mean()
+            r60 = pd.Series(cl).pct_change(60)
+            for h in (7, 14, 28):
+                for i in range(0, n - h, h):
+                    rows.append(dict(coin=c, w=w, h=h, i=i, ts=b["timestamp"].iloc[i],
+                                     ret=cl[i + h] / cl[i] - 1, fc=fc[i], prof=inprof[i],
+                                     sc=sc.iloc[i], r60=r60.iloc[i]))
+    df = pd.DataFrame(rows)
+    df["day"] = pd.to_datetime(df["ts"]).dt.floor("D")
+    df["drift"] = df.groupby(["coin", "h"])["ret"].transform("mean")
+    df["um"] = df["ret"] - df["drift"]
+    df["year"] = pd.to_datetime(df["ts"]).dt.year
+
+    def summ(g):
+        d = g.groupby("day")["um"].sum()
+        nd = len(d)
+        t = d.mean() / (d.std(ddof=1) / np.sqrt(nd)) * 1 if nd > 2 else np.nan
+        return pd.Series(dict(n=len(g), days=nd, um=g["um"].mean(), tot=g["ret"].mean(), t_day=t))
+
+    res = []
+    for h in (7, 14, 28):
+        d = df[df.h == h]
+        sig = d[(d.fc > 0) & d.prof]
+        noprofsig = d[d.prof & (d.fc <= 0)]
+        allp = d[d.prof]
+        for name, g in [("sig", sig), ("prof_nosig", noprofsig), ("prof_all", allp), ("all", d)]:
+            s = summ(g); s["h"] = h; s["grp"] = name; res.append(s)
+        if len(sig) > 20:
+            q = pd.qcut(sig["fc"].rank(method="first"), 3, labels=["lo", "mid", "hi"])
+            for k, g in sig.groupby(q):
+                s = summ(g); s["h"] = h; s["grp"] = "sig_" + str(k); s["fc_mean"] = g.fc.mean(); res.append(s)
+        # scaled rise in profile, recomputed, terciles of positive sc
+        ps = d[d.prof & (d.sc > 0)]
+        if len(ps) > 20:
+            q = pd.qcut(ps["sc"].rank(method="first"), 3, labels=["lo", "mid", "hi"])
+            for k, g in ps.groupby(q):
+                s = summ(g); s["h"] = h; s["grp"] = "rawsc_" + str(k); s["sc_mean"] = g.sc.mean(); res.append(s)
+        # scaled rise everywhere (not profile)
+        ns = d[(~d.prof) & (d.sc > 0)]
+        if len(ns) > 20:
+            q = pd.qcut(ns["sc"].rank(method="first"), 3, labels=["lo", "mid", "hi"])
+            for k, g in ns.groupby(q):
+                s = summ(g); s["h"] = h; s["grp"] = "outprof_sc_" + str(k); res.append(s)
+    out["cases"] = pd.DataFrame(res).set_index(["h", "grp"])
+
+    s14 = df[(df.h == 14) & (df.fc > 0) & df.prof]
+    out["sig14_by_year"] = s14.groupby("year").agg(n=("um", "size"), um=("um", "mean"), tot=("ret", "mean"))
+    out["sig14_by_coin"] = s14.groupby("coin").agg(n=("um", "size"), um=("um", "mean"), tot=("ret", "mean"))
+    # r60 inside profile
+    s14 = s14.copy()
+    s14["r60b"] = pd.cut(s14.r60, [-1, -0.03, 0.03, 1])
+    out["sig14_by_r60"] = s14.groupby("r60b").agg(n=("um", "size"), um=("um", "mean"), tot=("ret", "mean"))
+
     # book daily
-    dd=[]
+    br = []
     for c in days:
-        for w,df in days[c].items():
-            b=bars[c][w].copy(); b["day"]=b["timestamp"].dt.floor("D")
-            al=b.groupby("day")["postRebalance_current_allocation"].last()
-            d=df.copy(); d["coin"]=c; d["w"]=w; d["al"]=d["day"].map(al)
-            dd.append(d)
-    D=pd.concat(dd)
-    D["al_prev"]=D.groupby(["coin","w"])["al"].shift(1)
-    bk=D.groupby(["w","day"]).agg(br=("book_return","mean"),cr=("coin_return","mean"),inpos=("al_prev",lambda s:(s.abs()>1e-6).mean())).reset_index().sort_values(["w","day"])
-    bk=bk.dropna(subset=["br"])
-    out["book_by_window"]=bk.groupby("w").agg(n=("br","size"),mean=("br","mean"),hold=("cr","mean"),inpos=("inpos","mean"))
-    v=(1+bk.br).cumprod().values; peak=np.maximum.accumulate(v); ddn=v/peak-1
-    bk["dd"]=ddn
-    # find 3 deepest troughs episodes
-    eps=[]; i=0; n=len(ddn)
-    while i<n:
-        if ddn[i]<0:
-            j=i
-            while j<n and ddn[j]<0: j+=1
-            k=i+np.argmin(ddn[i:j]); eps.append((ddn[k],i,k,j)); i=j
-        else: i+=1
-    eps=sorted(eps)[:4]
-    er=[]
-    for depth,s,k,e in eps:
-        seg=bk.iloc[s:k+1]
-        er.append(dict(depth=depth,days_to_trough=k-s+1,windows=",".join(sorted(seg.w.unique())),book_sum=seg.br.sum(),coins_mean_ret_sum=seg.cr.sum(),inpos=seg.inpos.mean()))
-    out["deepest_falls"]=pd.DataFrame(er)
-    # trade outcomes
-    tr=[]
-    for c in trades:
-        for w,t in trades[c].items():
-            t=t.copy(); t["coin"]=c; tr.append(t)
-    T=pd.concat(tr)
-    T["fb"]=pd.qcut(T.entry_forecast,4,labels=False,duplicates="drop")
-    out["trades_by_entry_forecast"]=T.groupby("fb").agg(n=("net_profit_loss_percent","size"),net=("net_profit_loss_percent","mean"),gross=("profit_loss_percent","mean"),days=("duration_minutes",lambda s:(s/1440).mean()),fmin=("entry_forecast","min"))
-    # positive cases split by mid-path drawdown and by r30
-    pos["r30b"]=pd.qcut(pos.r30,3,labels=False)
-    out["pos_by_r30_tercile"]=pos.groupby("r30b").apply(lambda x: pd.concat([summ(x.un),pd.Series(dict(r30=x.r30.mean()))]))
-    ip0=ip[ip.f<=0]
-    out["inprof_f0_vs_fpos"]=pd.DataFrame({"f0":summ(ip0.un),"fpos":summ(pos.un)})
+        for w, d in days[c].items():
+            x = d[["day", "book_return", "coin_return"]].copy(); x["coin"] = c; x["w"] = w; br.append(x)
+    br = pd.concat(br)
+    bk = br.groupby(["w", "day"])[["book_return", "coin_return"]].mean().reset_index()
+    bw = bk.groupby("w").agg(days=("day", "size"), book=("book_return", "mean"), coin=("coin_return", "mean"),
+                             bsd=("book_return", "std"))
+    bw["book_sh"] = bw.book / bw.bsd * np.sqrt(365)
+    out["book_by_window"] = bw
+    # deepest fall
+    v = (1 + bk.sort_values(["w", "day"])["book_return"].fillna(0)).cumprod()
+    dd = v / v.cummax() - 1
+    out["maxdd"] = float(dd.min())
+    bk2 = bk.sort_values(["w", "day"]).reset_index(drop=True); bk2["dd"] = dd.values
+    out["dd_by_window"] = bk2.groupby("w")["dd"].min()
+    # trades
+    tr = pd.concat([t.assign(coin=c) for c in data["trades"] for t in data["trades"][c].values()])
+    tr["win"] = tr.net_profit_loss_percent > 0
+    tr["fcb"] = pd.qcut(tr.entry_forecast.rank(method="first"), 3, labels=["lo", "mid", "hi"])
+    out["trades_by_fc"] = tr.groupby("fcb").agg(n=("win", "size"), win=("win", "mean"),
+                                                net=("net_profit_loss_percent", "mean"),
+                                                dur_d=("duration_minutes", lambda x: x.mean() / 1440))
     return out
