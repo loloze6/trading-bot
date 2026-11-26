@@ -165,5 +165,13 @@ the new books on the unseen coins (1u).
   explaining each at 0.59 to 0.91, all long rebounds or continuations in boxes already held; theme not found real in
   choppy calm, the continuation at the range's edge confirmed in "calm" and "rising calm" instead).
 
+- **07:20 Paris, the last two runs ended on their budgets; all six have ended, no loop runs:** D (35.95 of 35: 26
+  ideas, 6 confirmed, 1 profitable, 064-01, explained 0.53 by the held 035-01 and not observable on the unseen
+  periods; theme open, leaning not real) and B (06:14 UTC, 45.84 of 45: 30 ideas, all on the theme, 10 confirmed, 0
+  confirmed and profitable; theme REAL: in a falling agitated market a one-day rise with a wide range or an upper wick
+  fades over the next day(s); the books fail Calmar; the multi-day form stayed inconclusive; 10 of its first 10 turns
+  on the theme; 7 discovery briefs written, none run; 1 component built, which unblocked a confirmed idea). Spend of
+  the six runs: about 241 of 250 USD.
+
 ## Reading
 (written in the morning)
