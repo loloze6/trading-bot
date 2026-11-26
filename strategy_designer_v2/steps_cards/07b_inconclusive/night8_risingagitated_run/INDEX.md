@@ -10,6 +10,7 @@
 060-01.d1_wide-day-high-close-next-day-fade_1d: 2 ideas (2 explorations)
 060-01.g1.d1_wider-than-usual-high-close-fade_1d: 1 ideas (2 explorations)
 060-01.g1.d2.d1_own-range-close-height-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+060-01.g1.d2.d2_wider-squeeze-day-fades-harder_1d: 1 ideas (1 explorations)
 060-01.g1.d2_wide-day-close-location-graded-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-01.g1_wide-day-high-close-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-01_falling-agitated-high-close-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
