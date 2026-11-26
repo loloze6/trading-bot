@@ -1,0 +1,1 @@
+061-01_choppy-agitated-strong-close-fade: In choppy agitated markets, a daily close nearer the day's high is followed by a larger fall over the next two days. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: choppy agitated]
