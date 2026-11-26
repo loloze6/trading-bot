@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed unusual 10-bar move of short bets (minus coin drift, x -1)",
+    "value": 0.018195919308955314,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.408406256414635
+    },
+    "threshold": "t >= 2 with positive mean confirms (with check); t <= -2 with negative mean rejects"
+  },
+  "supporting_check": {
+    "name": "largest-forecast third minus smallest third of signed unusual move",
+    "value": 0.02685960857719479,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 425,
+    "cases": 636
+  },
+  "decided_by": "Mean signed unusual move positive with t >= 2 and largest third minus smallest third > 0.",
+  "reading": "The 60-day return is recomputed from closes inside the window (recorded regime used where 60 prior bars are not in the window) and the 30-day fall is the recorded fall30 raw value < 0; a bet is a rise of the short forecast's size of >= 2 points from its lowest level since the last bet (reset at flat), the first bet in each 10-bar grid cell of a window is the case, drift is the coin's mean 10-bar grid return over all its windows, the t clusters cases by UTC day with a G/(G-1) correction, thirds are equal splits of cases sorted by |forecast|, and fewer than 30 distinct days gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.009682 on the check folds against +0.0182 on every fold",
+    "main": 0.00968159621119892,
+    "statistic": 1.0714588524252469,
+    "counts": {
+      "distinct days with cases": 289,
+      "cases": 461
+    }
+  }
+}

@@ -1,5 +1,8 @@
 064-01_choppy-large-up-day-continuation_1d: inconclusive (fit: adapted) [main: -0.02397; t of the mean, cases grouped by day -0.201982; cases 259, distinct days 174]
 067-01.b1.d1_agitated-chop-weak-month-falls_1d: inconclusive (fit: adapted) [main: 0.00165791; OLS slope t 1.09368; non-overlapping cases 215, distinct days 108]
+067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: confirmed (fit: adapted) [main: 0.0181959; t of the mean, cases summed per day 2.40841; distinct days with cases 425, cases 636]
+067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: inconclusive (fit: adapted) [main: 0.00751602; t of the mean, same-day cases pooled 0.445208; independent case-days 376, cases 571, large cases 113, smaller cases 458]
+067-01.b1.g1.b1_choppy-month-fall-continues_1d: confirmed (fit: adapted) [main: 0.0139983; t clustered by day 2.07387; cases 850, distinct days 522]
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.00165791; ordinary OLS slope t 1.09368; independent grid cases with a forecast below 0 215]
 067-01.b1_choppy-weak-month-keeps-falling_1d: confirmed (fit: exact) [main: 0.0112626; day-clustered t 2.07863; cases 1024, distinct days 624, grid bars with forecast < 0 633]
 067-01_choppy-strong-month-rise-continues_1d: inconclusive (fit: adapted) [main: 0.00071782; OLS slope t 0.858863; cells 587]

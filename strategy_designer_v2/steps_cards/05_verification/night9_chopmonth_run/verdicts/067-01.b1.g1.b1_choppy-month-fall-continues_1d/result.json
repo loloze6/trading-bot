@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move in the short direction of the short bets",
+    "value": 0.013998253065443403,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 2.0738690372375315
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and size correlation > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "correlation of |forecast| with the unusual short move",
+    "value": 0.05836542637007382,
+    "passed": true
+  },
+  "counts": {
+    "cases": 850,
+    "distinct days": 522
+  },
+  "decided_by": "The mean unusual short move is positive with t >= 2 and the size correlation is above 0.",
+  "reading": "Choppy is read as the bars whose regime is 'unknown' (the config's only traded regime, the trend vetoes giving 'chop'); a case is the first short bet (forecast more negative by >= 2 points from its smallest short size since the last bet, from 0 after a flat) in each 10-bar grid cell of a window, dropped if its 10-bar return leaves the window; drift is the coin's mean 10-bar return on the grid of all its windows; the day-clustered t uses the sum of deviations per UTC day with a G/(G-1) correction; the 30-distinct-day minimum gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.006569 on the check folds against +0.014 on every fold",
+    "main": 0.006569219658586102,
+    "statistic": 0.8019530734081541,
+    "counts": {
+      "cases": 620,
+      "distinct days": 346
+    }
+  }
+}
