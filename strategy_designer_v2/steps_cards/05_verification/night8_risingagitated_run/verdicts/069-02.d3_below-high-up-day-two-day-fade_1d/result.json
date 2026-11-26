@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction excess 2-bar return of the cases",
+    "value": 0.002516856322865001,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.4881349407236266
+    },
+    "threshold": "above 0 with t >= 2 (confirm); below 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "slope of short excess return on |forecast|",
+    "value": 0.0006560512908584394,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4528,
+    "distinct days": 1594
+  },
+  "decided_by": "t lies between -2 and 2, so the plan calls it inconclusive.",
+  "reading": "Up day = close above the previous close inside the window, with window-first bars left out of the situation check; depth below the high = raw depth < 0 (else close below the 20-bar max high); a bet is a short-side rise in |forecast| of >= 2 points from its lowest level since the last bet (reset at flat or side change); one case per 2-bar grid cell (the first bet in the cell), return from that bet's close; drift = mean of the coin's non-overlapping 2-bar grid returns over all windows; day-clustered t with D/(D-1) correction; the plan's minimum counts lead to 'not observable' when not reached."
+}

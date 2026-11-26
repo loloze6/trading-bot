@@ -20,4 +20,5 @@
 069-01_low-range-up-day-fade_1d: rejected (fit: exact) [main: -0.00390595; t of the mean, cases pooled per day -2.71005; days with a case 1350, cases 3708, deep cases (forecast <= -10) 1269, up days with forecast 0 5141]
 069-02.d1_falling-market-below-high-up-day-fade_1d: confirmed (fit: exact) [main: 0.00457587; t of weighted mean, same-day cases summed 2.29117; case-days 2948, distinct days 1126]
 069-02.d2_agitated-below-high-up-day-fade_1d: inconclusive (fit: adapted) [main: -0.000409069; day-clustered OLS slope t -1.69869; distinct case days 1517, cases 3951]
+069-02.d3_below-high-up-day-two-day-fade_1d: inconclusive (fit: adapted) [main: 0.00251686; t of the mean, cases of one day taken together 1.48813; cases 4528, distinct days 1594]
 069-02_below-high-up-day-fade_1d: confirmed (fit: exact) [main: 0.00276565; t of the mean, cases of one day taken together 2.72784; up-day cases 8849, distinct days 2274]

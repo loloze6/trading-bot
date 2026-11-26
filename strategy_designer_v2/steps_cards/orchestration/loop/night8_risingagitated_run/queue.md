@@ -1,39 +1,39 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 33.81 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 35.08 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 069-02.d3_below-high-up-day-two-day-fade | 7.d | 5 | 0.2981 | 0.0497 | candidate |
-| 2 | 069-02.d1.d1_agitated-fall-up-day-fade | 7.d | 6 | 0.2981 | 0.0426 | candidate |
-| 3 | 069-02.d1.d2_swing-graded-low-range-up-fade | 7.d | 6 | 0.2981 | 0.0426 | candidate |
-| 4 | 071-01_falling-agitated-swing-rise-next-fade | 7.g | 2 | 0.122 | 0.0407 | candidate |
-| 5 | 060-01.g1.d2.g1_up-day-high-close-fade | 7.g | 4 | 0.122 | 0.0244 | candidate |
-| 6 | 060-01.g1.d2.d1.g3_wide-high-close-fade | 7.g | 5 | 0.122 | 0.0203 | candidate |
-| 7 | 069-02.g2_below-high-up-day-three-day-fade | 7.g | 5 | 0.122 | 0.0203 | candidate |
-| 8 | 069-02.d1.g1_calm-falling-low-range-fade | 7.g | 6 | 0.122 | 0.0174 | candidate |
-| 9 | 061-01_choppy-agitated-high-close-fade | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 10 | 066-01_calm-up-shock-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 11 | 067-01_choppy-stretch-above-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 12 | 070-01_falling-calm-run-break-fade | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 13 | 059-02_swing-scaled-fall-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 14 | 066-02_calm-down-shock-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 15 | 067-02_choppy-stretch-below-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
-| 16 | 058-03.e2.b1.b1_choppy-distance-continuation-recent-swings | 7.b | 3 | 0.2395 | 0.0599 | candidate |
-| 17 | 059-01.b1.b1_calm-scaled-move-more-coins | 7.b | 3 | 0.2395 | 0.0599 | candidate |
-| 18 | 060-01.d1.b1_wide-day-upper-close-next-day-fade | 7.b | 3 | 0.2395 | 0.0599 | candidate |
-| 19 | 060-01.d1.b2_wide-up-day-high-close-fade | 7.b | 3 | 0.2395 | 0.0599 | candidate |
-| 20 | 058-03.b1.d1_calm-rise-moderate-stretch | 7.d | 2 | 0.2981 | 0.0994 | candidate |
-| 21 | 058-03.b1.d2_calm-rise-longer-hold | 7.d | 2 | 0.2981 | 0.0994 | candidate |
-| 22 | 060-01.g1.d1.b1_wide-high-close-fade-more-coins | 7.b | 4 | 0.2395 | 0.0479 | candidate |
-| 23 | 060-01.g1.g1.b1_graded-width-fade-all-coins | 7.b | 4 | 0.2395 | 0.0479 | candidate |
-| 24 | 059-01.g1_calm-swing-scaled-move-continues | 7.g | 2 | 0.122 | 0.0407 | candidate |
-| 25 | 062-01_falling-agitated-wide-high-close-fade | 7.g | 2 | 0.122 | 0.0407 | candidate |
-| 26 | 059-01.g2_calmer-scaled-move-carries-further | 7.g | 2 | 0.122 | 0.0407 | candidate |
-| 27 | 062-02_falling-agitated-swing-scaled-close-fade | 7.g | 2 | 0.122 | 0.0407 | candidate |
-| 28 | 060-01.g1.d2.d2.b1_wider-squeeze-fade-more-coins | 7.b | 5 | 0.2395 | 0.0399 | candidate |
-| 29 | 068-02.b1_run-break-fade-more-coins | 7.b | 5 | 0.2395 | 0.0399 | candidate |
-| 30 | 069-02.d2.b1_agitated-up-day-fade-more-coins | 7.b | 6 | 0.2395 | 0.0342 | candidate |
+| 1 | 069-02.d1.d1_agitated-fall-up-day-fade | 7.d | 6 | 0.2981 | 0.0426 | candidate |
+| 2 | 069-02.d1.d2_swing-graded-low-range-up-fade | 7.d | 6 | 0.2981 | 0.0426 | candidate |
+| 3 | 071-01_falling-agitated-swing-rise-next-fade | 7.g | 2 | 0.122 | 0.0407 | candidate |
+| 4 | 060-01.g1.d2.g1_up-day-high-close-fade | 7.g | 4 | 0.122 | 0.0244 | candidate |
+| 5 | 060-01.g1.d2.d1.g3_wide-high-close-fade | 7.g | 5 | 0.122 | 0.0203 | candidate |
+| 6 | 069-02.g2_below-high-up-day-three-day-fade | 7.g | 5 | 0.122 | 0.0203 | candidate |
+| 7 | 069-02.d1.g1_calm-falling-low-range-fade | 7.g | 6 | 0.122 | 0.0174 | candidate |
+| 8 | 061-01_choppy-agitated-high-close-fade | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 9 | 066-01_calm-up-shock-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 10 | 067-01_choppy-stretch-above-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 11 | 070-01_falling-calm-run-break-fade | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 12 | 059-02_swing-scaled-fall-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 13 | 066-02_calm-down-shock-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 14 | 067-02_choppy-stretch-below-continues | 7.g | 1 | 0.122 | 0.061 | candidate |
+| 15 | 058-03.e2.b1.b1_choppy-distance-continuation-recent-swings | 7.b | 3 | 0.2395 | 0.0599 | candidate |
+| 16 | 059-01.b1.b1_calm-scaled-move-more-coins | 7.b | 3 | 0.2395 | 0.0599 | candidate |
+| 17 | 060-01.d1.b1_wide-day-upper-close-next-day-fade | 7.b | 3 | 0.2395 | 0.0599 | candidate |
+| 18 | 060-01.d1.b2_wide-up-day-high-close-fade | 7.b | 3 | 0.2395 | 0.0599 | candidate |
+| 19 | 058-03.b1.d1_calm-rise-moderate-stretch | 7.d | 2 | 0.2981 | 0.0994 | candidate |
+| 20 | 058-03.b1.d2_calm-rise-longer-hold | 7.d | 2 | 0.2981 | 0.0994 | candidate |
+| 21 | 060-01.g1.d1.b1_wide-high-close-fade-more-coins | 7.b | 4 | 0.2395 | 0.0479 | candidate |
+| 22 | 060-01.g1.g1.b1_graded-width-fade-all-coins | 7.b | 4 | 0.2395 | 0.0479 | candidate |
+| 23 | 059-01.g1_calm-swing-scaled-move-continues | 7.g | 2 | 0.122 | 0.0407 | candidate |
+| 24 | 062-01_falling-agitated-wide-high-close-fade | 7.g | 2 | 0.122 | 0.0407 | candidate |
+| 25 | 059-01.g2_calmer-scaled-move-carries-further | 7.g | 2 | 0.122 | 0.0407 | candidate |
+| 26 | 062-02_falling-agitated-swing-scaled-close-fade | 7.g | 2 | 0.122 | 0.0407 | candidate |
+| 27 | 060-01.g1.d2.d2.b1_wider-squeeze-fade-more-coins | 7.b | 5 | 0.2395 | 0.0399 | candidate |
+| 28 | 068-02.b1_run-break-fade-more-coins | 7.b | 5 | 0.2395 | 0.0399 | candidate |
+| 29 | 069-02.d2.b1_agitated-up-day-fade-more-coins | 7.b | 6 | 0.2395 | 0.0342 | candidate |
+| 30 | 069-02.d3.b1_below-high-fade-more-coins | 7.b | 6 | 0.2395 | 0.0342 | candidate |
 | 31 | 069-01.c1_low-range-up-day-fade-retest | 7.c | 5 | 0.2 | 0.0333 | candidate |
 | 32 | 069-01.c2_falling-market-low-range-fade | 7.c | 5 | 0.2 | 0.0333 | candidate |
 | 33 | 059-01.b1.g1_choppy-calm-scaled-continuation | 7.g | 3 | 0.122 | 0.0305 | candidate |
@@ -49,6 +49,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | 43 | 068-02.g1_run-break-versus-continuation-fade | 7.g | 5 | 0.122 | 0.0203 | candidate |
 | 44 | 069-01.g1_choppy-low-range-rise-fade | 7.g | 5 | 0.122 | 0.0203 | candidate |
 | 45 | 060-01.g1.d2.d2.g2_calm-downtrend-fall-continuation | 7.g | 5 | 0.122 | 0.0203 | candidate |
+| 46 | 069-02.d3.g1_low-in-range-up-day-next-day-fade | 7.g | 6 | 0.122 | 0.0174 | candidate |
 | - | 058-01_agitated-rise-stretch-giveback | step 2 | 0 | 0.2039 | 0.2039 | tested: step 5 inconclusive (+0.39); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 058-02_agitated-rise-swing-scaled-giveback | step 2 | 0 | 0.2039 | 0.2039 | tested: step 5 inconclusive (-0.79); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 058-03_calm-rise-stretch-continuation | step 2 | 0 | 0.2039 | 0.2039 | tested: step 5 inconclusive (+1.49); step 6 profitable enough |
@@ -66,6 +67,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 060-01.g1_wide-day-high-close-fade | 7.g | 2 | 0.122 | 0.0407 | tested: step 5 confirmed (+2.50); step 6 not profitable enough (failed: Calmar, Trades per day) |
 | - | 069-02.d1_falling-market-below-high-up-day-fade | 7.d | 5 | 0.2981 | 0.0497 | tested: step 5 confirmed (+2.29); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 069-02.d2_agitated-below-high-up-day-fade | 7.d | 5 | 0.2981 | 0.0497 | tested: step 5 inconclusive (-1.70); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 069-02.d3_below-high-up-day-two-day-fade | 7.d | 5 | 0.2981 | 0.0497 | tested: step 5 inconclusive (+1.49); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 058-03.e2.b1_choppy-distance-continuation-more-coins | 7.b | 2 | 0.2395 | 0.0798 | tested: step 5 inconclusive (+0.97); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 060-01.g1.d1_wider-than-usual-high-close-fade | 7.d | 3 | 0.2981 | 0.0745 | tested: step 5 inconclusive (+1.89); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 060-01.g1.d2_wide-day-close-location-graded-fade | 7.d | 3 | 0.2981 | 0.0745 | tested: step 5 confirmed (+2.23); step 6 not profitable enough (failed: Calmar) |
