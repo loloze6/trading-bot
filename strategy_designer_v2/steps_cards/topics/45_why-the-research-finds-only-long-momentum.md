@@ -1,6 +1,6 @@
 # Topic 45: why the research finds almost only long momentum, and what the workflow misses
 
-Status: open (investigated 2026-11-22; four changes built and proven the same day; the next run reads their effect)  
+Status: closed 2026-11-26 (all five decisions of 2026-11-22 built; what is left of the question, the long lean, is carried by the side map (1t), next steps A2 and B2)  
 Where: research: step 6's rule (`06_profitability/helper/rule.yaml`), the books judged alone (topic 44), the one-coin rule
 (`common/idea_definition.md`), step 7's lines  
 Opened: 2026-11-22, the operator: "really surprised that we are struggling to find non-momentum and non-long-only

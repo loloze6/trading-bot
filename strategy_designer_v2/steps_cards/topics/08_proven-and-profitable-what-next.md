@@ -1,6 +1,6 @@
 # Topic 08: An idea proven and profitable: what next
 
-Status: open (larger topic)  
+Status: closed 2026-11-26 (the operator: redundant; answered by next steps A1 the combination, A4 the stage moves to the holdout, F1 to F3 toward live)  
 Where: research and live  
 Opened: 2026-11-15 (operator)
 
