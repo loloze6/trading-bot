@@ -185,6 +185,7 @@
 | 058-01.g2_volume-drying-decline-continues_1d | night8_fallingcalm_run | 1d | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d (1d) | 0.13 | same period | +0.0004 % (0.05) | 0.16 |
 | 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_four-hour-volatile-evening-rise_1h | step7ab_bp_run | 1h | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d3_weekly-rise-keeps-running_1h (1h) | 0.13 | same period | -0.0022 % (-3.72) | 0.16 |
 | 037-01_agitated-ordinary-rise-next-day-giveback_1d | night7_chopreversal_run | 1d | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h (1h) | 0.14 | same period | +0.0049 % (0.99) | 0.24 |
+| 061-01.b1.b1.b1.d2_quiet-high-close-fades_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.14 | new one period ahead | +0.0004 % (0.45) | 0.09 |
 | 031-03.g1.b1.d2.e2_volume-swell-predicts-rise_1d | night6_longreversal_run | 1d | 031-03.g1.b1.g2_swelling-volume-after-rises_1d (1d) | 0.15 | same period | +0.0104 % (0.42) | 0.00 |
 | 031-03.g1.b1_volume-surge-more-coins_1d | night6_longreversal_run | 1d | 031-03.g1.b1.g2_swelling-volume-after-rises_1d (1d) | 0.15 | same period | +0.0104 % (0.42) | 0.00 |
 | 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h | hold_confirmed_1h_run | 1h | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.15 | same period | -0.0330 % (-4.12) | 0.15 |

@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 061-01.b1.b1.b1.d2_quiet-high-close-fades_1d
+idea tested: 061-01.b1.b1.b1.d2_quiet-high-close-fades
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4287 USD
+---
+## Findings
+- **F1:** The strongest pattern in the bars is a rebound after wide-range days that close low, and the profile map already holds it. Over the next 2 days, the widest fifth of days (range in usual daily moves) is followed by +1.87 % above drift when the day fell (t 2.25, 520 cases on 158 days), against +0.30 % when it rose (t 0.47, 196 days). Among wide days, a close in the lowest third of the range is followed by +2.03 % (t 2.90, 130 days), and a close in the top third by -0.49 % (t -0.79, 156 days). This repeats held ideas 039-02.d1, 044-01 and 045-01 (agitated, long).
+- **F2:** The rebound after wide down days is concentrated where the coin was rising, so it is not new either. Over 2 days, wide down days are followed by +2.92 % in a rising 60-day trend (t 2.36, 42 days), against +0.31 % falling (t 0.24, 46 days) and +0.17 % choppy (t 0.12, 32 days). Rising agitated long already holds 10 strategies.
+- **F3:** In the raw bars, the brief's own situation barely shows. Over 2 days, the top fifth of close-in-range is followed by -0.39 % (t -1.59, 986 cases) and the fourth fifth by -0.58 % (t -2.39). Inside the profile, the correlation of close location with the 2-day move is -0.094 (p 0.16, 227 cases). Choppy days with a high close are followed by +2.24 % over 5 days (t 0.94, 39 cases), the opposite side.
+- **F4:** The book fails on frequency, not on size. Only 4.6 % of bars are in the profile and 0.48 % carry a signal, giving 49 trades in folds B and C. One coin, BTC, carries 0.159 of the book's summed daily returns, against at most 0.035 for any other coin.
+- **F5:** The other angles do not stand out once the number of angles looked at is counted.
+
+## Ideas
+- No ideas: The only patterns that stand out after many angles are the wide-range low-close rebound and its rising-market case (F1, F2), both already held by the profile map. The brief's own high-close fade does not show beyond the tested signal (F3). The rest cannot be told apart from chance (F5).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

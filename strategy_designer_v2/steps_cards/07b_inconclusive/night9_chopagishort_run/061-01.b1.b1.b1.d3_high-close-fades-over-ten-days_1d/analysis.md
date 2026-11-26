@@ -1,0 +1,24 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.b1.b1.b1.d3_high-close-fades-over-ten-days_1d
+idea tested: 061-01.b1.b1.b1.d3_high-close-fades-over-ten-days
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4170 USD
+---
+## Findings
+- **F1:** The test's result is on the predicted side but fails its grading check. The mean unusual 10-day move per short case is +2.58 % (t 2.90 over 206 case-days, 289 cases), but the stronger-|forecast| half earns 1.35 points less than the weaker half. In folds B and C the forecast quartiles fall steadily from strongest to weakest: +8.2 % (t 2.47) at the weakest |forecast|, then +6.9 %, +5.2 %, and +1.9 % (t 0.42) at the strongest.
+- **F2:** The tested grading, nearness of the close to the day's high, does not grade the fall. In folds B and C the Spearman correlation of close location with the unusual 10-day move is 0.03 (p 0.81, 63 cases). By close-location band the mean moves only from +4.3 % (0.80 to 0.85) to +6.4 % (0.95 to 1.0), with no band reaching t 2.
+- **F3:** The forecast's 60-bar standardisation inverts the grading. |Forecast| has a Spearman correlation of -0.66 with the coin's mean close location over the prior 60 days. So the "strongest" shorts are high closes in a coin that has been closing low, and those cases fade least.
+- **F4:** The fall shows where the coin has kept closing near its highs over the past 60 days. That mean close location correlates with the unusual 10-day move at Spearman 0.30 (p 0.036, 48 cases). Cases above its median fall +9.2 % (t 2.62, 23 days); cases at or below it fall +1.9 % (t 0.68, 24 days).
+- **F5:** The fall also concentrates on high closes after a small daily move against the coin's 20-day swing. The day's return against its 20-day swing correlates with the unusual 10-day move at Spearman -0.30 (p 0.025). Cases with the smaller daily move fall +11.0 % (t 3.76, 27 days); cases with the larger move fall +0.1 % (t 0.04). The day's range against its swing splits the cases the same way: +10.1 % (t 3.12) against +1.1 %.
+- **F6:** The effect lives on the plan's horizon, not at two days. The unusual move per case is +0.7 % (t 0.58) at 2 days, +3.0 % (t 2.20) at 5 days, +5.6 % (t 2.64) at 10 days and +4.3 % (t 1.26) at 20 days. So ten days is the right horizon and the problem is the grading.
+- **F7:** The effect is uneven across coins. ETH is strongest (+10.2 %, t 3.17, 11 cases), while LTC is at -1.1 % and XMR at +0.4 %. Every year from 2018 to 2021 is positive, from +3.7 % to +10.7 %. So the fall is not one period's move, but it rests on few cases per coin.
+
+## Ideas
+- `061-01.b1.b1.b1.d3.b1_persistent-high-closes-fade` (from F1, F2, F3, F4, F6): In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range, its price falls over the next ten days. The more its daily closes over the past 60 days have also sat near the top of their day's range, the larger the fall.
+- `061-01.b1.b1.b1.d3.b2_quiet-high-close-fades` (from F1, F2, F5, F6): In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range, its price falls over the next ten days. The smaller that day's rise against the coin's usual daily swing over the past 20 days, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

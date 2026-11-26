@@ -9,21 +9,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 061-01.b1.b1_small-gain-high-close-fades | 061-01.b1_high-close-fade-more-coins | plan | inconclusive (+3.44) | not profitable enough (failed: Calmar, Trades per day) | - | 7.b: 061-01.b1.b1.b1_high-close-location-fades-weekly; 7.g: 061-01.b1.b1.g1_choppy-agitated-close-height-fade, 061-01.b1.b1.g2_high-close-without-gain-fades | 1.04 | 13.2 |
 | 061-01.b1.b1.b1_high-close-location-fades-weekly | 061-01.b1.b1_small-gain-high-close-fades | plan | confirmed (+3.13) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 061-01.b1.b1.b1.d1_high-close-after-fall-fades, 061-01.b1.b1.b1.d2_quiet-high-close-fades, 061-01.b1.b1.b1.d3_high-close-fades-over-ten-days; 7.g: 061-01.b1.b1.b1.g1_falling-coin-high-close-fade | 1.20 | 13.9 |
 | 061-01.b1.b1.b1.d1_high-close-after-fall-fades | 061-01.b1.b1.b1_high-close-location-fades-weekly | plan | confirmed (+3.80) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall, 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.33 | 13.9 |
+| 061-01.b1.b1.b1.d2_quiet-high-close-fades | 061-01.b1.b1.b1_high-close-location-fades-weekly | plan | confirmed (+2.45) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade, 061-01.b1.b1.b1.d2.d2_upper-close-quiet-day-fade, 061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade; 7.g: no ideas: The only patterns that stand out after many angles are the wide-range low-close rebound and its rising-market case (F1, F2), both already held by the profile map. The brief's own high-close fade does not show beyond the tested signal (F3). The rest cannot be told apart from chance (F5). | 1.21 | 13.9 |
+| 061-01.b1.b1.b1.d3_high-close-fades-over-ten-days | 061-01.b1.b1.b1_high-close-location-fades-weekly | plan | inconclusive (+2.90) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 061-01.b1.b1.b1.d3.b1_persistent-high-closes-fade, 061-01.b1.b1.b1.d3.b2_quiet-high-close-fades; 7.g: no ideas: Across close location, prior-day return, range size, weekday, year and profile on 1-, 2-, 5- and 10-day horizons, nothing stands out from chance given that many angles. The strongest pattern, a one-day gradient with close location (F1), is at t 1.7 on its high-close side and is already the tested situation in a wider profile. The in-profile cells rest on about ten cases each (F2, F3, F6). | 1.10 | 12.8 |
+| 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade | 061-01.b1.b1.b1.d2_quiet-high-close-fades | plan | inconclusive (+3.16) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 061-01.b1.b1.b1.d2.d1.b1_raw-range-location-ten-day-fade, 061-01.b1.b1.b1.d2.d1.b2_smallest-gain-high-close-fade; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.17 | 13.2 |
 
 ## Consumption
-5 ideas, 6.65 USD, 61.6 minutes in all.
+8 ideas, 10.13 USD, 101.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.31 | 3.0 |
-| step4_backtest | 0.00 | 41.2 |
-| step5_verdict | 1.00 | 3.7 |
-| step6_check | 0.00 | 0.2 |
+| step3_plan | 1.61 | 4.8 |
+| step4_backtest | 0.00 | 69.5 |
+| step5_verdict | 1.62 | 5.9 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.d | 0.96 | 3.0 |
+| step7_7.d | 1.42 | 4.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 0.89 | 2.9 |
-| step7_7.g | 2.49 | 7.4 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.b | 1.70 | 5.2 |
+| step7_7.g | 3.78 | 11.0 |
+| similarity_check | 0.00 | 0.3 |
