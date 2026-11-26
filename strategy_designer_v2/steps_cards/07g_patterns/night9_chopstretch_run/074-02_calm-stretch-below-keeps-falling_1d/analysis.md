@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 074-02_calm-stretch-below-keeps-falling_1d
+idea tested: 074-02_calm-stretch-below-keeps-falling
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4131 USD
+---
+## Findings
+- **F1:** In calm markets, a coin's past move continues. Its 10-day return, scaled by its 20-day daily swing, predicts its drift-removed return over the next 5 days in the same direction: slope t 5.15 on 773 non-overlapping cases. In agitated markets the same slope is t −0.57 on 591 cases.
+- **F2:** The calm continuation is graded and runs both ways. On the 5-day grid, calm cases in the lowest quintile of the swing-scaled past 5-day return lose a further −3.25 % over 5 days beyond drift (t −4.15, 140 cases). Those in the highest quintile gain +2.39 % (t 2.52, 167 cases). The middle quintiles sit near 0 (t −0.51 to 0.51).
+- **F3:** The calm 5-day continuation is not carried by one period or one coin. By year its slope t is 2.17 in 2018, 0.20 in 2019, 2.51 in 2020 and 2.20 in 2021. By coin it is 1.86 to 3.51 for BTC, ETH, XMR, XRP and ZEC, and 0.93 for LTC.
+- **F4:** The calm continuation is strongest in falling calm markets (slope t 3.76, 219 cases) and choppy calm markets (t 3.63, 101 cases). In rising calm it is t 2.70 on 178 cases. The profile map holds only 2 strategies on each side of falling calm and of choppy calm, against 9 long ones in rising calm.
+- **F5:** The tested idea's own measure fails in folds B and C. Calm cases below the 20-day average do fall more than drift on average (lowest stretch quintile −3.04 %, t −1.93; second quintile −5.11 %, t −3.48). The fall does not grow with depth, though: the slope below the average is t −0.82 on 183 cases. This matches step 5's slope t of 0.29.
+- **F6:** The brief's theme, that agitated stretches below the average rebound, does not show here. In agitated markets the slope of the 10-day drift-removed return on the stretch below the average is t 0.54 (172 cases), and the deepest quintile returns −2.12 % (t −0.99).
+- **F7:** In falling agitated markets the next day reverses today's move, measured in units of the 20-day swing: slope t −8.14 over 738 days. After up days the next day returns −1.06 % beyond drift (t −4.00), and agitated days below −2 swings are followed by +4.15 % (t 4.30, 64 days). This is concentrated in 2018 (up-day t −4.25; other years −0.19 to −1.96). The map already holds it (falling agitated next-day reversal and rebound ideas), so it is no discovery.
+- **F8:** The book lost money because the short side earned nothing reliable. Its daily book returns summed to +1.71 in w14 and −0.99 in w10, with 6 of the 12 windows negative. The idea's unusual move is +0.69 % per case (t 0.99, 392 days), set against a −1.30 % drift in the short direction and a 0.19 % cost per trade.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `074-02.g1_falling-calm-swing-momentum` (from F1, F2, F3, F4): In a falling, calm market, the larger a coin's 10-day return measured in units of the standard deviation of its daily returns over the last 20 days, the further it moves the same way over the next 5 days: deeper falls keep falling and sharper rises keep rising.
+- `074-02.g2_choppy-calm-swing-momentum` (from F1, F2, F3, F4): In a choppy, calm market, the larger a coin's 10-day return measured in units of the standard deviation of its daily returns over the last 20 days, the further it moves the same way over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

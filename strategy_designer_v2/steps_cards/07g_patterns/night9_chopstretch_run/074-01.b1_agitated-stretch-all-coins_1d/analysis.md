@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 074-01.b1_agitated-stretch-all-coins_1d
+idea tested: 074-01.b1_agitated-stretch-all-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6276 USD
+---
+## Findings
+- **F1:** The tested rebound is not in the agitated bars: on the 10-day grid of folds B and C, agitated cases below the average ended -1.5 % (t -0.71, 78 cases) at a stretch of 0 to -1, +1.4 % (t 0.62, 55) at -1 to -2 and -1.8 % (t -0.89, 76) beyond -2 against the 10-day drift; the rank correlation of stretch with the excess return is only 0.054 (p 0.30, 360 cases); the forecast's quartiles give -0.5 %, -0.8 %, -2.1 % and +0.005 % (t -0.13 to 0.00, 19 to 34 days each); this matches step 5's size of -0.56 % (t -0.75).
+- **F2:** In a choppy, agitated market a close below the average keeps falling, more the deeper it sits. Over 3 days a stretch below -1.5 gave -10.0 % (t -2.07, 16 cases on 12 days) and 0 to -1.5 gave -3.0 % (t -2.60, 17 cases on 15 days). Over 5 days below -1.5 gave -21.6 % (t -2.33, 9 cases on 5 days). Over 10 days below -1.5 gave -21.0 % (t -5.25, 7 cases on 3 days). The rank correlation of stretch with the following excess return is 0.29 over 3 days (p 0.06, 41), 0.36 over 5 days (p 0.07, 26) and 0.74 over 10 days (p 0.003, 14). The cases are few, and this profile is about 3 % of days.
+- **F3:** The choppy-agitated fall below the average is negative in every year and every coin with at least 4 cases over 3 days. By year: 2019 -3.9 % (t -5.38, 10 days), 2020 -12.7 % (t -1.83, 7 days), 2021 -3.1 % (t -1.68, 6 days). By coin: BTC -8.5 %, ETH -5.7 %, LTC -10.1 %, XMR -8.4 %, ZEC -1.0 %. The profile map has no strategy in the choppy agitated short cell.
+- **F4:** In calm markets the stretch carries forward over 10 days. The rank correlation is 0.245 (p 1.8e-7, 442 cases). Cases below -1 ended -5.2 % (t -3.23) and -2.9 % (t -1.80). Cases above +2 ended +5.6 % (t 3.50). This is the calm continuation already held by 035-01.b1 and 058-02 calm range edge, so it is not a discovery.
+- **F5:** The next day after the largest fifth of daily falls is up, in agitated markets +1.21 % (t 5.59, 1158 coin-days) and in calm markets +0.74 % (t 3.96, 807). Over the next 3 days in agitated markets it is +1.74 % (t 4.84). These t's are not grouped by day, and this one-day-fall rebound is already held by many falling agitated specialists.
+- **F6:** The book's gain is concentrated in one window: w11 averaged +0.21 % a day (t 4.26), while the other windows ranged from -0.11 % (t -1.37) to +0.10 % (t 2.16). Its Sharpe of 0.46 is below holding's by 0.097.
+- **F7:** Next-day returns are higher on Thursday (+0.51 %, t 3.60) and Friday (+0.54 %, t 4.11) than on other weekdays (-0.25 % to +0.40 %). Grouped by day, this survives only in rising calm markets (+1.18 %, t 2.15). It repeats the held idea 045-01 (rising late-week gain).
+
+## Ideas
+- `074-01.b1.g1_choppy-agitated-stretch-keeps-falling` (from F2, F3, F1): In a choppy, agitated market, the further a coin's close sits below its 20-day average, measured in units of the standard deviation of its daily returns over the same 20 days, the more it falls over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

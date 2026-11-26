@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 10-bar return",
+    "value": 0.009210724075969066,
+    "statistic": {
+      "name": "t of the weighted mean, cases summed per day",
+      "value": 0.6792190060578619
+    },
+    "threshold": "confirm: > 0 with t >= 2 and deep-minus-shallow > 0; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deep minus shallow mean excess 10-bar return",
+    "value": 0.0020343581019614688,
+    "passed": true
+  },
+  "counts": {
+    "cases": 764,
+    "distinct days": 166
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Agitated profile read as regime not 'chop' and below the average as raw stretch < 0; cases are grid bars (positions 0,10,20,... per window) with forecast > 0 and a 10-bar return inside the window; the t is the weighted mean over a day-clustered standard error (each day's weighted deviations summed); deep half = forecast strictly above the cases' median, shallow = the rest, compared on unweighted mean excess; the plan's minimum counts not reached give 'not observable'."
+}

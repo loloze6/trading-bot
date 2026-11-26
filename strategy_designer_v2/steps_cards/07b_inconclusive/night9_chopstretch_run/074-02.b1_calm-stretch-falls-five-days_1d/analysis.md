@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 074-02.b1_calm-stretch-falls-five-days_1d
+idea tested: 074-02.b1_calm-stretch-falls-five-days
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2247 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but well short of the bar: the slope of the 5-day unusual return on depth is -0.00061 with a day-clustered t of -0.85, on 903 grid cases over 322 days, and the size is an unusual move of +0.72 % per case in the short's direction (t 1.80 over 558 days, strength 0.070 of a usual 10.60 % move).
+- **F2:** The horizon is not why the result is unclear: in folds B and C the slope is negative at every horizon, -0.00030 (t -0.59) at 1 day, -0.00095 (t -1.16) at 3, -0.00213 (t -1.69) at 5, -0.00237 (t -1.41) at 10 and -0.00272 (t -1.31) at 15 days, on 400 to 435 cases over 138 to 148 days, and it is steepest around the plan's 5 days.
+- **F3:** The effect is spread thinly across coins rather than held by one: five of six coins have a negative 5-day slope (ETH -0.0050 with t -2.36; LTC, XMR, XRP and ZEC -0.0014 to -0.0023 with t -0.69 to -1.27; BTC +0.0002 with t 0.13), each on only 63 to 79 cases, too few for any coin to show it alone.
+- **F4:** The grading shows mostly in the deepest stretches: the 5-day move in the short's direction is +0.62 % in the shallowest depth quartile (mean depth 2.1), -0.17 % in the second (6.5), +1.26 % in the third (11.0) and +3.29 % in the deepest (18.2), with the 10-day move following the same pattern (+1.47 %, +0.52 %, +1.61 %, +4.63 %).
+- **F5:** The slope is negative in every year shown (-0.0012 to -0.0037 for 2018 to 2021), but the mean move flips from +2.77 % and +2.00 % in 2018 and 2019 to -2.39 % and -0.57 % in 2020 and 2021, so the market's own swings between years drown a small, steady gradient.
+- **F6:** Across 60-day trends the slope is negative in falling (-0.0032, t -1.73, 162 cases) and rising (-0.0039, t -1.01, 36 cases) and nearly flat in choppy (-0.0007, t -0.33, 43 cases), so no single trend clearly holds the effect.
+- **F7:** The coin's normal drift works against the short (-0.64 % per case over 5 days), so the total move is only +0.07 %, 0.4 times the 0.19 % cost of a trade, while the unusual move is 3.7 times it: the effect is real-sized against costs only once the drift is removed.
+
+## Ideas
+- `074-02.b1.b1_calm-stretch-falls-more-coins` (from F1, F2, F3, F5): In a calm market, the further a coin's close sits below its 20-day average, measured in units of the standard deviation of its daily returns over the same 20 days, the more it keeps falling, over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

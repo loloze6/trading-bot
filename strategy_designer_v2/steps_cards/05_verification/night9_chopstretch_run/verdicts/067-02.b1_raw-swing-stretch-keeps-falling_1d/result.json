@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 10-bar return on raw stretch",
+    "value": 0.0015549309901657473,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 0.1777331193689008
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean short-direction excess 10-bar return > 0",
+    "value": 0.007227726060878583,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 200,
+    "days": 114
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "Choppy profile = regime 'unknown' (the only regime with a strategy); cases = grid bars (0,10,20,... of each window) with forecast < 0 and a 10-bar return inside the window; coin mean = mean of all its grid 10-bar returns over all windows; slope t = OLS slope over a day-clustered standard error (scores summed per day, G/(G-1) correction); the plan's 'fewer than 60 grid cases' is treated as a minimum count, so 'not observable'."
+}
