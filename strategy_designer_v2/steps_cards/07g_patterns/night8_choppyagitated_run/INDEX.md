@@ -5,5 +5,6 @@
 059-01.b1.b1_choppy-calm-rise-two-weeks_1d: 0 ideas, 1 discoveries (2 explorations)
 059-01.b1_choppy-calm-rise-more-coins_1d: 1 ideas, 1 discoveries (2 explorations)
 059-01_choppy-calm-weekly-rise-continues_1d: no ideas: Over about 30 angles (profiles × horizons × years × weekdays × quintiles), the only patterns near a clustered t of 2 are noise around the tested idea (F1), single-year or single-tail effects (F3, F4), or effects the map already holds (F5, F6), so none stands out enough to be a finding worth testing.
+060-01.b1.d1_bounce-inside-fresh-slide-fades_1d: 1 ideas (3 explorations)
 060-01.b1_agitated-decline-rally-fades-next-day_1d: 0 ideas, 1 discoveries (2 explorations)
 060-01_falling-agitated-rally-fades-three-days_1d: no ideas: The only graded pattern that stands out, a 1-to-3-day reversal in falling agitated markets (F1), is carried by the rebound after scaled falls the map already holds. The up-day giveback the brief claims lives in one year and is not graded (F2, F3), and continuation, weekday, range and close-position angles do not stand out beyond chance across the many cells examined (F4, F5).
