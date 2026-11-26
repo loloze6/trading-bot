@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x next-day excess return on up days",
+    "value": 0.0027656492639557954,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.727841981173797
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deepest third minus shallowest third mean excess next-day return < 0",
+    "value": -0.006154364830295791,
+    "passed": true
+  },
+  "counts": {
+    "up-day cases": 8849,
+    "distinct days": 2274
+  },
+  "decided_by": "The mean gain is positive with t >= 2 and the deepest third's mean excess next-day return minus the shallowest third's is below 0.",
+  "reading": "Up-day cases are the bars whose regime is mean_reversion with a next-day close in the same window, the coin's mean daily return is over all its windows' next-day returns, the t clusters cases by UTC day (deviations summed per day, with a D/(D-1) correction), the thirds are n//3 cases each from sorting the forecast (lowest = deepest), the situation check leaves out each window's first bar, and the plan's 'too few cases' rule is reported as not observable as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0008131 on the check folds against +0.002766 on every fold",
+    "main": 0.0008131311280072365,
+    "statistic": 0.8272011593530499,
+    "counts": {
+      "up-day cases": 4437,
+      "distinct days": 1194
+    }
+  }
+}

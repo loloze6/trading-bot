@@ -18,3 +18,4 @@
 068-01_falling-agitated-lone-rise-fade_1d: no verdict: no backtest record
 068-02_falling-agitated-run-break-fade_1d: inconclusive (fit: exact) [main: -0.0022962; slope t (day-clustered) -0.997371; cases 759, distinct days 387]
 069-01_low-range-up-day-fade_1d: rejected (fit: exact) [main: -0.00390595; t of the mean, cases pooled per day -2.71005; days with a case 1350, cases 3708, deep cases (forecast <= -10) 1269, up days with forecast 0 5141]
+069-02_below-high-up-day-fade_1d: confirmed (fit: exact) [main: 0.00276565; t of the mean, cases of one day taken together 2.72784; up-day cases 8849, distinct days 2274]

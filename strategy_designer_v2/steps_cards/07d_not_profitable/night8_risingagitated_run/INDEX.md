@@ -18,3 +18,4 @@
 068-01_falling-agitated-lone-rise-fade_1d: not run: entry condition not met (step 5: none; step 6: none)
 068-02_falling-agitated-run-break-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 069-01_low-range-up-day-fade_1d: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)
+069-02_below-high-up-day-fade_1d: 3 ideas (2 explorations)
