@@ -8,3 +8,5 @@
 061-02_calm-big-down-day-continues: In calm markets, a larger one-day fall, scaled by 30-day swing, is followed by a larger 5-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: calm]
 062-01_choppy-calm-fall-continues: In choppy calm markets, a deeper 5-day fall, scaled by 30-day swing, is followed by a larger 5-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]
 062-02_choppy-calm-below-high-falls: In choppy calm markets, a deeper drop below the 5-day high close, scaled by 30-day swing, is followed by a larger 5-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]
+063-01_falling-agitated-fall-rebounds: In falling agitated markets, a deeper 5-day fall, scaled by 30-day swing, is followed by a larger 10-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
+063-02_falling-agitated-below-high-rebounds: In falling agitated markets, a deeper drop below the 10-day high close, scaled by 30-day swing, is followed by a larger 10-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: falling agitated]
