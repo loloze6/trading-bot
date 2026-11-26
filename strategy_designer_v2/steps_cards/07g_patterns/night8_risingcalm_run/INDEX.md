@@ -11,6 +11,7 @@
 061-01.d1_calm-big-up-day-long-only_1d: 0 ideas, 2 discoveries (3 explorations)
 061-01.d2_rising-calm-up-day-continuation_1d: 2 ideas (2 explorations)
 061-01.g1.d1.d1_calm-big-rise-convex-follow-through_1d: 2 ideas (2 explorations)
+061-01.g1.d1.d2.d1_calm-outsized-rise-continues_1d: no ideas: The backtest record has no bars, days or trades (0 coins, 0 windows), so I found no pattern to support an idea; the backtest of 061-01.g1.d1.d2.d1 should be re-run or its record re-attached before this line reads it again.
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: 3 ideas (2 explorations)
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: 1 ideas (3 explorations)
 061-01.g1_choppy-calm-day-follow-through_1d: 3 ideas (2 explorations)

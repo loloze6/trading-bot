@@ -23,14 +23,15 @@ One row per idea run; every status is read from the step's own result file. Each
 | 061-01.g1.d1_calm-choppy-up-day-follow-through | 061-01.g1_choppy-calm-day-follow-through | plan | confirmed (+2.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 061-01.g1.d1.d1_calm-big-rise-convex-follow-through, 061-01.g1.d1.d2_calm-big-rise-near-highs; 7.g: 061-01.g1.d1.g1_day-move-follow-through-both-sides | 1.25 | 7.1 |
 | 061-01.g1.d1.d1_calm-big-rise-convex-follow-through | 061-01.g1.d1_calm-choppy-up-day-follow-through | plan | inconclusive (-0.32) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The result is near zero (t -0.32 on 314 cases) and has no clear home. Its grading runs opposite to the idea (F2), its sign follows the year's market (F3) and the coin (F4), and it is no stronger inside the choppy calm profile than outside (F5), so no amendment would give a clear answer.; 7.g: 061-01.g1.d1.d1.g1_calm-big-day-both-way-continuation, 061-01.g1.d1.d1.g2_high-close-next-day-fade | 1.16 | 6.9 |
 | 061-01.g1.d1.d2_calm-big-rise-near-highs | 061-01.g1.d1_calm-choppy-up-day-follow-through | plan | confirmed (+2.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 061-01.g1.d1.d2.d1_calm-outsized-rise-continues, 061-01.g1.d1.d2.d2_calm-large-breakout-continues, 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold; 7.g: 061-01.g1.d1.d2.g1_choppy-far-below-high-decline, 061-01.g1.d1.d2.g2_choppy-swing-scaled-move-continues, 061-01.g1.d1.d2.g3_calm-only-large-rises-continue | 1.23 | 7.8 |
+| 061-01.g1.d1.d2.d1_calm-outsized-rise-continues | 061-01.g1.d1.d2_calm-big-rise-near-highs | plan | no verdict | not checked | - | 7.g: no ideas: The backtest record has no bars, days or trades (0 coins, 0 windows), so I found no pattern to support an idea; the backtest of 061-01.g1.d1.d2.d1 should be re-run or its record re-attached before this line reads it again. | 0.37 | 4.5 |
 
 ## Consumption
-19 ideas, 19.23 USD, 133.1 minutes in all.
+20 ideas, 19.60 USD, 137.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.44 | 8.2 |
-| step4_backtest | 0.00 | 63.4 |
+| step3_plan | 1.54 | 8.9 |
+| step4_backtest | 0.00 | 66.3 |
 | step5_verdict | 3.13 | 11.2 |
 | step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.3 |
@@ -39,5 +40,5 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.d | 1.81 | 6.7 |
 | step7_7.b | 4.51 | 15.2 |
-| step7_7.g | 8.34 | 27.2 |
+| step7_7.g | 8.60 | 28.0 |
 | similarity_check | 0.00 | 0.4 |

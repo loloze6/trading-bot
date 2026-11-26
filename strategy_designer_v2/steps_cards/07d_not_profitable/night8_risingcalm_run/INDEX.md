@@ -11,6 +11,7 @@
 061-01.d1_calm-big-up-day-long-only_1d: 2 ideas (2 explorations)
 061-01.d2_rising-calm-up-day-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 061-01.g1.d1.d1_calm-big-rise-convex-follow-through_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+061-01.g1.d1.d2.d1_calm-outsized-rise-continues_1d: not run: entry condition not met (step 5: none; step 6: none)
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: 3 ideas (2 explorations)
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: 2 ideas (2 explorations)
 061-01.g1_choppy-calm-day-follow-through_1d: 1 ideas (2 explorations)

@@ -11,6 +11,7 @@
 061-01.d1_calm-big-up-day-long-only_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 061-01.d2_rising-calm-up-day-continuation_1d: 1 ideas (2 explorations)
 061-01.g1.d1.d1_calm-big-rise-convex-follow-through_1d: no ideas: The result is near zero (t -0.32 on 314 cases) and has no clear home. Its grading runs opposite to the idea (F2), its sign follows the year's market (F3) and the coin (F4), and it is no stronger inside the choppy calm profile than outside (F5), so no amendment would give a clear answer.
+061-01.g1.d1.d2.d1_calm-outsized-rise-continues_1d: not run: entry condition not met (step 5: none; step 6: none)
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 061-01.g1_choppy-calm-day-follow-through_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
