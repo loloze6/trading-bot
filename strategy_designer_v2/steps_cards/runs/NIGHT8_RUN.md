@@ -224,6 +224,21 @@ Also: the usage limit stopped every loop about 01:43 to 04:04 UTC; the morning m
 that two sessions had changed the same way (`night_merge` fixed: the same change on both sides is one change, test and
 proof, 86cfdf6231); brief numbers 058 to 068 used by up to 6 briefs each (no file overwritten; idea keys carry the run).
 
+**Combination v2** (`orchestration/combine/portfolios/v2/`, the card's rules unchanged, over the register after the
+merge: 117 earning books read by box): v1's 9 books plus C's 060-01.g1.d2.d1 at weight 1/4 (four strategies share
+"falling agitated, short"). The night's other 7 earning books are left out by the card's rules 3 and 4 (one per family;
+related at 0.5 or more to a book already in that shares a box).
+| Portfolio | In-sample Sharpe | Calmar | Unseen coins Sharpe | Yearly | Worst fall |
+|---|---|---|---|---|---|
+| v2 | 2.06 | 3.69 | **1.01** | 8.6 % | 9.0 % |
+| v1 | 1.97 | 3.39 | 0.99 | 8.4 % | 8.9 % |
+| (a) v2's books at equal weight | 2.01 | 3.37 | 1.00 | 5.9 % | 6.3 % |
+| P4's 20 at equal weight | 1.48 | 1.36 | 0.13 | 0.4 % | 9.3 % |
+On the unseen coins the new book alone holds by the rule (main measure's sign kept, Sharpe 0.07 above 0) but is weak:
+its main measure halves (0.0090 to 0.0050), step 5 inconclusive, against holding's Sharpe 1.00 on those coins (they rose
+over 2018-2025, a short book's worst case). v2 adds +0.02 over v1 there: within noise. The judge of years remains the
+unseen dates (the new book holds on both) and, once, the sealed holdout.
+
 **Step back: what the night shows, and the one change**
 - Aiming each session at a regime finds that regime's effects (2 themes real; "a rise fades in a falling, agitated
   market", short, confirmed 12 times by four sessions on their own: 05:40 audit), but step 6 turns most of them down on Calmar (A, B: 21 confirmed, 0 paying). The proven

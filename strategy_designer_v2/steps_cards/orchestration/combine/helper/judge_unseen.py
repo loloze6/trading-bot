@@ -60,9 +60,10 @@ def main():
            f"P4: its {len(p4)} strategies at equal weight": judged(p4, rows)}
     v = res["this version"]["sharpe"]
     others = [res[k]["sharpe"] for k in res if k != "this version"]
-    outcome = ("O3: v1 does not hold" if v <= 0 else "O1: v1 holds and does better than (a) and P4" if v > max(others)
-               else "O2: v1 holds, no better than (a)" if v <= res["alternative (a): the same books at equal weight"]["sharpe"]
-               else "v1 holds, above (a) but not above P4")
+    n = args.version
+    outcome = (f"O3: {n} does not hold" if v <= 0 else f"O1: {n} holds and does better than (a) and P4" if v > max(others)
+               else f"O2: {n} holds, no better than (a)" if v <= res["alternative (a): the same books at equal weight"]["sharpe"]
+               else f"{n} holds, above (a) but not above P4")
     alone = {k: book_alone(rows[k]) for k in weights}
     p4_alone = {k: book_alone(rows[k]) for k in p4}
     m = json.loads((out / "measures.json").read_text())
