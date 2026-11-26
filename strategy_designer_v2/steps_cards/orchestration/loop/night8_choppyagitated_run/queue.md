@@ -1,23 +1,23 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 22.59 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 23.87 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks | 7.d | 7 | 0.2938 | 0.0367 | candidate |
-| 2 | 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues | 7.d | 7 | 0.2938 | 0.0367 | candidate |
-| 3 | 060-01.b1.d1.b1.b1_deep-slide-bounce-fades-overnight | 7.b | 6 | 0.2353 | 0.0336 | candidate |
-| 4 | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | 7.b | 6 | 0.2353 | 0.0336 | candidate |
-| 5 | 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks | 7.d | 8 | 0.2938 | 0.0326 | candidate |
-| 6 | 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues | 7.d | 8 | 0.2938 | 0.0326 | candidate |
-| 7 | 059-01.b1.b1.d1.b1.b1.d1.d3_rise-continues-in-upper-chop | 7.d | 8 | 0.2938 | 0.0326 | candidate |
-| 8 | 059-01.b1.g1_calm-market-weekly-rise-continues | 7.g | 3 | 0.124 | 0.031 | candidate |
-| 9 | 060-02.g1_falling-agitated-wide-rally-fades | 7.g | 3 | 0.124 | 0.031 | candidate |
-| 10 | 061-01_rising-calm-scaled-dip-rebound | 7.g | 3 | 0.124 | 0.031 | candidate |
-| 11 | 061-02_rising-calm-dip-rebound-delayed | 7.g | 3 | 0.124 | 0.031 | candidate |
-| 12 | 061-03_choppy-calm-scaled-fall-continues | 7.g | 3 | 0.124 | 0.031 | candidate |
-| 13 | 061-04_falling-calm-scaled-fall-continues | 7.g | 3 | 0.124 | 0.031 | candidate |
-| 14 | 064-01.g1_deep-slide-heavy-volume-rebound | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 1 | 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues | 7.d | 7 | 0.2938 | 0.0367 | candidate |
+| 2 | 060-01.b1.d1.b1.b1_deep-slide-bounce-fades-overnight | 7.b | 6 | 0.2353 | 0.0336 | candidate |
+| 3 | 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week | 7.b | 6 | 0.2353 | 0.0336 | candidate |
+| 4 | 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks | 7.d | 8 | 0.2938 | 0.0326 | candidate |
+| 5 | 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues | 7.d | 8 | 0.2938 | 0.0326 | candidate |
+| 6 | 059-01.b1.b1.d1.b1.b1.d1.d3_rise-continues-in-upper-chop | 7.d | 8 | 0.2938 | 0.0326 | candidate |
+| 7 | 059-01.b1.g1_calm-market-weekly-rise-continues | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 8 | 060-02.g1_falling-agitated-wide-rally-fades | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 9 | 061-01_rising-calm-scaled-dip-rebound | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 10 | 061-02_rising-calm-dip-rebound-delayed | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 11 | 061-03_choppy-calm-scaled-fall-continues | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 12 | 061-04_falling-calm-scaled-fall-continues | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 13 | 064-01.g1_deep-slide-heavy-volume-rebound | 7.g | 3 | 0.124 | 0.031 | candidate |
+| 14 | 059-01.b1.b1.d1.b1.b1.d2.b1_choppy-calm-rise-two-weeks | 7.b | 8 | 0.2353 | 0.0261 | candidate |
 | 15 | 062-01_rising-calm-dip-rebound-next-day | 7.g | 4 | 0.124 | 0.0248 | candidate |
 | 16 | 063-01_falling-market-rally-fades-next-day | 7.g | 4 | 0.124 | 0.0248 | candidate |
 | 17 | 060-01.b1.d1.g1_first-bounce-after-mild-dip-fades | 7.g | 5 | 0.124 | 0.0207 | candidate |
@@ -40,3 +40,4 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks | 7.b | 5 | 0.2353 | 0.0392 | tested: step 5 inconclusive (+2.00); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | 7.b | 6 | 0.2353 | 0.0336 | tested: step 5 confirmed (+2.53); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation | 7.d | 7 | 0.2938 | 0.0367 | tested: step 5 confirmed (+2.30); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks | 7.d | 7 | 0.2938 | 0.0367 | tested: step 5 inconclusive (+0.43); step 6 not profitable enough (failed: Calmar) |
