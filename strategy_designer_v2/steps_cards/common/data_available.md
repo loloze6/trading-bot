@@ -11,5 +11,5 @@ The coins with data in each fold (the same on daily and hourly bars):
 - All four folds A, B, C and D: BTC, ETH, LTC, XMR, XRP, ZEC (the default data).
 - Folds A and D, and part of B and C: ADA, DOGE, LINK, TRX, UNI, AAVE (in B and C: ADA 8 of 12 windows, DOGE 5,
   LINK 6, TRX 4, UNI 2, AAVE 1).
-- Folds A and D only: AVAX, SOL, INJ.
-- Fold D only: NEAR, SUI, TAO, ONDO.
+- Folds A and D only: AVAX, SOL, INJ, NEAR (NEAR in fold A: its last window only).
+- Fold D only: SUI, TAO, ONDO.
