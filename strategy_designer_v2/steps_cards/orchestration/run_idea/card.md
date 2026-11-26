@@ -31,6 +31,10 @@ step before it, and recorded under one run name.**
 - **The unseen test** (2026-11-18): after step 7, for an idea step 5 confirmed and step 6 found profitable enough, it
   calls `orchestration/unseen_test/` (code only): the plan unchanged on every unseen period; one journal line
   (`unseen_test`). Step 7 has run before it and never reads its files. The rule is steps 5 and 6's results.
+- **The portfolio update** (2026-11-26, `common/data_use.md` step 10): in a run whose `orchestration/loop/<run>/data_use.json`
+  says `"version": 2`, right after a candidate's common record (its chart file and its result exist), it calls
+  `orchestration/combine/helper/update.py` (code only): a new portfolio version when the list of candidates changed;
+  one journal line (`portfolio_update`). A run without that file never calls it. The rule is the record's existence.
 - **A step that fails stops it** (2026-11-21, night 3): a called step whose helper fails ends the run of the idea, for
   steps 3 to 6, whose outputs the next step reads (an output left on disk by an earlier call is not read as this call's
   answer: step 3 called again for an unblocked refusal failed on the usage limit, and its old refusal was read instead).

@@ -1,0 +1,155 @@
+"""combine, step 12 of common/data_use.md (card: ../card.md, "The final test"): a ready version's strategies,
+unchanged, on the final coins, once; go or no-go for live.
+
+  python3 orchestration/combine/helper/final_test.py VERSION --python VENV_PYTHON
+
+Refuses unless the version is ready (its measures.json, step 11) and no final test was made for the current final
+group (`common/coins.py`, FINAL). Then, in this order:
+1. The record, written before any run: `../final_tests/<group>.json` (the group, the version, the version's commit,
+   this commit, the measures expected and the bar, the start time, status "started"). Its existence marks the group
+   used: a second call is refused, whatever happened to the first (a run that fails does not give the group back).
+2. Each of the version's strategies, its plan unchanged (`03_test_plan/<run>/plans/<plan id>.md`), on each final coin,
+   one series per coin: from 2016-01-01 or the coin's 91st day, whichever is later, to the coin's last complete day
+   (step 4 with `--coins COIN --windows FILE`, one call per coin; then step 4's chart files). The records:
+   `04_backtest/<run>/<group>/by_coin/<COIN>/<plan id>/`; the book's chart file over its coins:
+   `04_backtest/<run>/<group>/backtests/<plan id>/chart_bars.csv.gz`.
+3. The portfolio at the version's weights, coin by coin (combine.py's rule 6), against holding the same coins (equal
+   weight, the same days); go when its Sharpe after costs is above 0 and above holding's. Written in the record
+   (status "done"), in the version's measures.json (`final_test`) and in its INDEX line.
+Why this cannot leak: the version, its strategies and its weights are fixed before the run and written in the record;
+nothing read here changes them; each bar's decision is the engine's, on data up to that bar's close.
+"""
+import argparse, csv, datetime as dt, json, subprocess, sys, tempfile
+from pathlib import Path
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import combine as cb  # noqa: E402
+import update as up  # noqa: E402
+sys.path.insert(0, str(cb.STEPS / "common"))
+import coins  # noqa: E402
+
+START = dt.date(2016, 1, 1)                       # data_use.md, section 2: portfolio and final from 2016-01-01
+MARKS = cb.FUNC / "final_tests"
+
+
+def group():
+    """The current final group's name: its coins, in coins.py's order."""
+    return "final_" + "-".join(coins.FINAL)
+
+
+def mark():
+    return MARKS / f"{group()}.json"
+
+
+def refusal(version):
+    """Why the final test cannot be made for this version now, or None."""
+    m = cb.FUNC / "portfolios" / version / "measures.json"
+    if not m.exists():
+        return f"{version} has no measures.json: not a version built by update.py"
+    if json.loads(m.read_text()).get("ready") is not True:
+        return f"{version} is not ready for the final test (step 11)"
+    if mark().exists():
+        return f"a final test was already made for the final group {group()} ({mark().name}): one test per group"
+    return None
+
+
+def last_complete_day(coin, data=coins.DATA, today=None):
+    """The coin's last day in its daily file before today (UTC): today's bar is not complete."""
+    today = today or dt.datetime.now(dt.timezone.utc).date()
+    last = None
+    with open(Path(data) / f"kraken_{coin}USD_1d.csv") as f:
+        next(f)
+        for row in csv.reader(f):
+            d = dt.date.fromisoformat(row[0][:10])
+            if d < today:
+                last = d
+    return last
+
+
+def series(coin, data=coins.DATA, today=None):
+    """The coin's one window: from 2016-01-01 or its 91st day, whichever is later, to its last complete day."""
+    return {"label": "all", "test": {"start": str(max(START, coins.first_usable_day(coin, data))),
+                                     "end": str(last_complete_day(coin, data, today))}}
+
+
+def run_book(r, python, data=coins.DATA):
+    """One strategy, its plan unchanged, on every final coin (one step 4 call per coin), then its chart file over
+    the coins. Returns the coins that gave bars."""
+    plan = cb.STEPS / "03_test_plan" / r["run"] / "plans" / f"{r['id']}.md"
+    base = cb.STEPS / "04_backtest" / r["run"] / group()
+    parts = []
+    for coin in coins.FINAL:
+        out = base / "by_coin" / coin
+        with tempfile.TemporaryDirectory() as d:
+            w = Path(d) / f"{coin}.json"
+            w.write_text(json.dumps([series(coin, data)]))
+            subprocess.run([sys.executable, cb.STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", python,
+                            "--out-root", out, "--coins", coin, "--windows", w])
+        rec = out / r["id"]
+        if rec.exists():
+            subprocess.run([sys.executable, cb.STEPS / "04_backtest/helper/chart_files.py", rec])
+        chart = rec / "chart_bars.csv.gz"
+        if chart.exists():
+            parts.append(pd.read_csv(chart))
+    dest = up.record_dir(r, group())
+    dest.mkdir(parents=True, exist_ok=True)
+    if parts:
+        pd.concat(parts, ignore_index=True).to_csv(dest / "chart_bars.csv.gz", index=False)
+    return sorted({c for p in parts for c in p.coin.unique()})
+
+
+def go(m):
+    v, h = m["this version"], m[up.HOLDING]
+    return bool(v and h and v["sharpe"] > 0 and v["sharpe"] > h["sharpe"])
+
+
+def final_test(version, python, run_book=run_book):
+    why = refusal(version)
+    if why:
+        sys.exit(f"final test refused: {why}")
+    folder = cb.FUNC / "portfolios" / version
+    port = json.loads((folder / "portfolio.json").read_text())
+    measures = json.loads((folder / "measures.json").read_text())
+    weights = {b["key"]: b["weight"] for b in port["books"]}
+    rows = {r["key"]: r for r in json.loads((cb.REG / "books.json").read_text())}
+    sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=cb.STEPS).stdout.strip()
+    rec = {"group": group(), "coins": list(coins.FINAL), "version": version, "version_commit": port.get("commit"),
+           "commit": sha, "started_utc": cb.utc_now(), "status": "started",
+           "books": weights,
+           "measures_expected": {"what": f"the version's daily Sharpe after costs on the final coins, against {up.HOLDING}",
+                                 "days": "every complete day from 2016-01-01 or the coin's 91st day",
+                                 "go_if": "Sharpe above 0 and above holding's (common/data_use.md, section 4)",
+                                 "step 11 on the portfolio coins": measures.get("portfolio_coins")}}
+    MARKS.mkdir(parents=True, exist_ok=True)
+    cb.write_atomic(mark(), json.dumps(rec, indent=1))           # before any run: the group is used from here
+    ran = {k: run_book(rows[k], python) for k in weights}
+    m = up.measure(weights, rows, group()) if any(ran.values()) else {"this version": None, up.HOLDING: None}
+    m.pop("ready", None)
+    rec.update({"status": "done", "finished_utc": cb.utc_now(), "coins_with_bars": ran, "result": m,
+                "go": go(m)})
+    cb.write_atomic(mark(), json.dumps(rec, indent=1))
+    measures["final_test"] = {"record": str(mark().relative_to(cb.STEPS)), "go": rec["go"], **m}
+    cb.write_atomic(folder / "measures.json", json.dumps(measures, indent=1))
+    idx = up.PORTFOLIOS / "INDEX.md"
+    v = m["this version"]
+    said = (f"{'go' if rec['go'] else 'no-go'}: Sharpe {v['sharpe']} (holding {m[up.HOLDING]['sharpe']})" if v
+            else "no-go: no bars on the final coins")
+    lines = [l.rsplit("|", 2)[0] + f"| {group()}: {said} |" if l.startswith(f"| {version} |") else l
+             for l in idx.read_text().splitlines()]
+    cb.write_atomic(idx, "\n".join(lines) + "\n")
+    return rec
+
+
+def main():
+    a = argparse.ArgumentParser()
+    a.add_argument("version")
+    a.add_argument("--python", required=True, help="a venv with trading-bot/requirements.txt (step 4)")
+    args = a.parse_args()
+    rec = final_test(args.version, args.python)
+    print(f"final test of {args.version} on {rec['group']}: {'go' if rec['go'] else 'no-go'}")
+
+
+if __name__ == "__main__":
+    main()

@@ -42,6 +42,33 @@ agitated").
 **Parked** (topic 53, option D): moving the money each day to the strategies that hold a position that day (more
 capital used, weights changing every day).
 
+## Versions by rule, on the common records (`../../common/data_use.md`, steps 10 to 12; built 2026-11-26)
+Once `data_use.md` runs (a run whose `orchestration/loop/<run>/data_use.json` says `"version": 2`), no person builds
+or judges a version: three rules do.
+
+| Step | Rule | Where | Output |
+|---|---|---|---|
+| **10, a new version** | **when the list of candidates changes**, the next version (`v<n+1>`) is built by rules 1 to 5 above, each candidate read on its **common record** (all portfolio coins, every complete day; step 9) in place of its research record; rule 4's correlation on the common records' daily returns | `helper/update.py`, called by `run_idea` right after a candidate's common record (version 2 runs only) and by `night_merge` at the end, after the register's rebuild | the version's folder and its INDEX line |
+| **11, ready for the final test** | the version's daily Sharpe after costs on the portfolio coins **above** holding the same coins (equal weight, the coin-days it trades, the same days) | `update.py`, on every new version | `measures.json` (`portfolio_coins`, `ready`), the INDEX line |
+| **12, the final test, once** | a ready version's strategies, unchanged, at its weights, on the **final coins** (`common/coins.py`, `FINAL`), one series per coin from 2016-01-01 or the coin's 91st day to its last complete day; **go** when its Sharpe after costs is above 0 and above holding the same coins; **once per final group** | `helper/final_test.py VERSION`, by hand (the operator's act) | `final_tests/<group>.json`, `measures.json` (`final_test`), the INDEX line |
+
+- **A candidate:** a register book of kind `paying` (`books.json`; steps 5 and 6 answered) with a common record: its
+  chart file `04_backtest/<run>/common/backtests/<plan id>/chart_bars.csv.gz` and its result
+  `orchestration/common_record/<run>/<plan id>.json` (both, the interface of step 9).
+- **The list compared:** the sorted keys of the candidates, against `candidates` in the `portfolio.json` of the last
+  version built this way (the INDEX's order). The same list: nothing is written. No candidate: nothing is written (so
+  until step 9 has made a record, every call changes nothing).
+- **Why holding as the bar** (`data_use.md`, Open 3, proposed): a portfolio that earns less than holding its own coins
+  adds nothing an investor could not get by buying them. Same days, same coins: the comparison reads the market the
+  version was in, not another one.
+- **The final test's record is written before the run** (the group, the version and its commit, this commit, the
+  measures expected and the go bar); its existence marks the final group used, so a second test on the same group is
+  refused, even when the first stopped half-way (a test that could be rerun until it says go would be a search).
+- **Rule 6 above** (judged on the folds, then the unseen coins, then the sealed holdout) **is replaced in this mode**
+  by steps 11 and 12. **`judge_unseen.py` is no longer the judge**: it stays only to read the versions built on the
+  research records (v1, v2, v2b), and goes with `unseen_coins.md` in the clean-up list of `data_use.md` (section 6,
+  for the operator's go).
+
 ## Input
 The register (`../ideas_similarities_check/register/books.json`, each book's `side`), each book's records (steps 5
 and 6; step 4's chart file: positions and value per coin and day), the coins' daily data, the unseen coins' results
@@ -51,11 +78,18 @@ and 6; step 4's chart file: positions and value per coin and day), the coins' da
 `orchestration/combine/portfolios/<version>/`: `boxes.csv` (each strategy's presence and times the market per box, its
 boxes, its return there), `portfolio.json` (the strategies, their boxes and weights, the commit), `measures.json`
 (in-sample; then the unseen coins; the overlap shown); one line per version in `portfolios/INDEX.md`.
+Versions by rule (steps 10 to 12): the same folder, `boxes.csv` read on the common records, `portfolio.json` with
+`records: common` and `candidates`, `measures.json` with `portfolio_coins`, `ready` and, after step 12, `final_test`;
+their lines in INDEX.md's second table ("Versions by rule"); `final_tests/<final group>.json`, one per final group;
+the final records in `04_backtest/<run>/<final group>/` (`by_coin/<COIN>/<plan id>/`, and `backtests/<plan id>/`
+with the book's chart file over the final coins).
 
 ## How to call it (when built)
 ```
 python3 orchestration/combine/helper/boxes.py                    # each register book's presence by box
 python3 orchestration/combine/helper/combine.py --version NAME    # a version, by the rules above
+python3 orchestration/combine/helper/update.py                    # steps 10 and 11: a version if the list changed
+python3 orchestration/combine/helper/final_test.py VERSION --python VENV_PYTHON   # step 12, once per final group
 ```
 Why this cannot leak: it reads finished records after the fact; each day's profile uses closes up to that day.
 
@@ -63,6 +97,12 @@ Why this cannot leak: it reads finished records after the fact; each day's profi
 The box reader's tests pass (hand-made records whose boxes are known); on night 7's specialists it gives the profile
 their idea names; a first version is built and judged on the unseen coins against (a) and (b).
 
+Steps 10 to 12: their tests pass on hand-made records (`helper/test_update.py`: a changed list builds a version, an
+unchanged one does not, ready and not ready against holding, the final test's refusals, its record before the run);
+status 2026-11-26: met on hand-made records only; no common record exists yet, and no final test has been made
+(`../../runs/BUILD_A4_PORTFOLIO.md`).
+
 ## What this function does not do
 It does not change a strategy, choose ideas (step 7 and `select_next` never read it), read the unseen results to
-choose, move money by the day (parked), or trade (the portfolio layer, P5).
+choose, move money by the day (parked), or trade (the portfolio layer, P5); nor, after the final test, draw the next
+final group (step 13).

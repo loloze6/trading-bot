@@ -46,6 +46,21 @@ def active_lines():
     return out
 
 
+def data_use_version(run):
+    """The run's data rules: orchestration/loop/<run>/data_use.json's "version" (2: common/data_use.md), else None."""
+    f = STEPS / "orchestration" / "loop" / run / "data_use.json"
+    try:
+        return json.loads(f.read_text()).get("version")
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def has_common_record(run, rid):
+    """A candidate's common record (common/data_use.md, step 9): its chart file and its result."""
+    return ((STEPS / "04_backtest" / run / "common" / "backtests" / rid / "chart_bars.csv.gz").exists()
+            and (STEPS / "orchestration" / "common_record" / run / f"{rid}.json").exists())
+
+
 def find_brief(brief_id):
     hits = sorted(STEPS.glob(f"01_brief/*/briefs/{brief_id}.md"))
     if not hits:
@@ -302,6 +317,11 @@ def main():
         j.step("unseen_test", [unseen / "helper/unseen_test.py", plan, "--run", args.run, "--python", args.python],
                [unseen / args.run / f"{rid}.json"], done=(unseen / args.run / f"{rid}.json").exists())
         row["unseen"] = index_says(unseen / args.run / "INDEX.md", rid) or "no answer"
+    # Step 10 (common/data_use.md, version 2 only): right after a candidate's common record, a new portfolio version
+    # when the list of candidates changed (code only; orchestration/combine/card.md). The rule is the record's existence.
+    if data_use_version(args.run) == 2 and has_common_record(args.run, rid):
+        combine = STEPS / "orchestration" / "combine"
+        j.step("portfolio_update", [combine / "helper/update.py"], [combine / "portfolios" / "INDEX.md"])
     write_row(f["table"], row)
     print(f"{rid}: step 3 {row['step3']}; step 5 {row['step5']}; step 6 {row['step6']}; "
           + (f"unseen dates: {row['unseen']}; " if row.get("unseen") else "") +

@@ -111,3 +111,18 @@ def test_a_failed_step_stops_the_run_and_a_refused_call_says_so(tmp_path, monkey
     assert cost == 0.0
     lines = (tmp_path / "t" / "journal.jsonl").read_text().splitlines()
     assert all("its helper failed" in l for l in lines)
+
+
+def test_the_portfolio_update_is_called_only_in_data_use_version_2_with_a_common_record(tmp_path, monkeypatch):
+    monkeypatch.setattr(r, "STEPS", tmp_path)
+    assert r.data_use_version("a_run") is None                          # no data_use.json: today's runs
+    (tmp_path / "orchestration/loop/a_run").mkdir(parents=True)
+    (tmp_path / "orchestration/loop/a_run/data_use.json").write_text('{"version": 2}')
+    assert r.data_use_version("a_run") == 2
+    assert not r.has_common_record("a_run", "x_1d")
+    (tmp_path / "04_backtest/a_run/common/backtests/x_1d").mkdir(parents=True)
+    (tmp_path / "04_backtest/a_run/common/backtests/x_1d/chart_bars.csv.gz").write_text("")
+    assert not r.has_common_record("a_run", "x_1d")                    # the result file too
+    (tmp_path / "orchestration/common_record/a_run").mkdir(parents=True)
+    (tmp_path / "orchestration/common_record/a_run/x_1d.json").write_text("{}")
+    assert r.has_common_record("a_run", "x_1d")
