@@ -6,7 +6,7 @@ cache's own row format. Rows already in the cache are never changed; on the days
 equal or nothing is written for that coin. The days added are recorded in local_data/coverage.yaml (data/coverage.py),
 which a backtest checks before reading.
 
-  python tools/extend_kraken_daily.py [--until YYYY-MM-DD] [--dry-run]
+  python tools/extend_kraken_daily.py [--until YYYY-MM-DD] [--coins BTC ETH ...] [--dry-run]
 
 Why this can't leak: only finished days are written (today's bar, still forming, is dropped; --until can only move
 the last day earlier); the engine hands each bar's decision the rows up to that bar.
@@ -63,10 +63,14 @@ def main():
     a = argparse.ArgumentParser()
     yesterday = (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)).isoformat()
     a.add_argument("--until", default=yesterday, help="the last day to add (at most yesterday, UTC)")
+    a.add_argument("--coins", nargs="+", help="only these coins' files (e.g. BCH XLM); default: every cached daily file")
     a.add_argument("--dry-run", action="store_true")
     args = a.parse_args()
     until = min(args.until, yesterday)
-    for path in sorted(DATA.glob("kraken_*USD_1d.csv")):
+    paths = sorted(DATA.glob("kraken_*USD_1d.csv"))
+    if args.coins:
+        paths = [DATA / f"kraken_{c}USD_1d.csv" for c in args.coins]
+    for path in paths:
         print(extend(path, until, args.dry_run))
         time.sleep(1)
 
