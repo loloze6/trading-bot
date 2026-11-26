@@ -108,6 +108,13 @@ the new books on the unseen coins (1u).
   rerun on E's 058-02.b1 ("choppy calm"; step 4 rerun first, 0.45 USD): during the night it wrote 2 follow-ups, one in
   "choppy calm" and one widened to "choppy"; with the rule, 1, in "choppy calm". Given to the 6 sessions to take
   between turns.
+  Taken by A, B, C, D and F; E's own permission check refused a change asked by another session, not by the operator,
+  and E rightly did not work around it: E reads the old definition until the morning merge (its branch does not touch
+  the file). **C's result at 01:20 Paris:** 060-01.g1.d2.d1 (falling agitated, SHORT the day after a wide day closing
+  near its high) confirmed (+2.23), profitable enough, holding on both unseen periods: the first specialist in an empty
+  box of the map.
+- **01:30 Paris, limit watch:** all 6 running (last commits 00:02 to 00:15 UTC), no call refused. 80 turns, 71 ideas
+  tested, about 78 USD; confirmed 11, profitable enough 3.
 
 ## Reading
 (written in the morning)
