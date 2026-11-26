@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess return on forecast (grid cells with forecast < 0)",
+    "value": 0.0005696258882151609,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.081724254853383
+    },
+    "threshold": "confirm: slope t >= 2 with supporting check; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return, deepest third minus shallowest third of forecasts (must be < 0)",
+    "value": -0.009646532850206673,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 819,
+    "distinct days": 374
+  },
+  "decided_by": "Slope t lies between -2 and 2: inconclusive rule.",
+  "reading": "Choppy profile read as the bars where regime is the config's active regime 'unknown' (|60-day trend| <= 10, the depth component's regime), situation as depth raw value < 0 there; normal drift is the coin's mean 5-bar return on all grid cells of all its windows; slope from pooled OLS over all coins; thirds are the lowest and highest n//3 forecasts by rank; the plan's minimum counts, if not reached, give 'not observable'."
+}

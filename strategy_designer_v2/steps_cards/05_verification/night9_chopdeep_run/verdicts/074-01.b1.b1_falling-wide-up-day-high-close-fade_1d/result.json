@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction excess next-day return",
+    "value": 0.006330673327635191,
+    "statistic": {
+      "name": "day-clustered t of the mean",
+      "value": 1.37331335478185
+    },
+    "threshold": "confirm: >0 with day-clustered t >= 2 (and larger-minus-smaller > 0); reject: <0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half mean excess (Welch t 1.904)",
+    "value": 0.009662226636233116,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 341,
+    "cases": 656,
+    "larger-forecast half cases": 328,
+    "smaller-forecast half cases": 328
+  },
+  "decided_by": "Main t between -2 and 2 (or sign and t disagree): neither confirm nor reject.",
+  "reading": "Falling market read as the 60-bar simple return in percent below -10 (the veto at gte -10), recomputed inside each window, and the detector's regime used for it only where 60 bars of history are missing. The range multiple is taken as high-low over its 20-bar mean including the day, or the recorded width where present. Horizon 1, so every bar is on the grid. The day-clustered t uses deviations summed per UTC day with a G/(G-1) correction. The larger half is |forecast| above the median and the smaller half the rest. The plan's 'fewer than 30 distinct days' rule is applied as the minimum count, giving 'not observable'."
+}

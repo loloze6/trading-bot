@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9751552795031055,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction next-bar unusual move (return minus drift)",
+    "value": 0.00472924098678024,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.177844457194329
+    },
+    "threshold": "mean > 0 with t >= 2 confirms (with wider half beating narrower half); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "wider-half minus narrower-half mean unusual move (median split of range_multiple)",
+    "value": 0.008538033393919285,
+    "passed": true
+  },
+  "counts": {
+    "cases": 893,
+    "distinct days": 416
+  },
+  "decided_by": "The t lies between -2 and 2 (or the mean is not above 0), meeting neither the confirm nor the reject rule.",
+  "reading": "Situation computed as close above prior close with range multiple >= 1 (recorded value where present, else recomputed), bars where it cannot be computed left out of the agreement; cases are short bets (forecast rising >= 2 points on the short side) on mean_reversion bars with a next bar in the window; the wider half is cases above the median range multiple, the narrower half at or below it; fewer than the plan's minimum counts is reported as not observable."
+}

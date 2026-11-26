@@ -1,3 +1,6 @@
+072-01.b1_choppy-deep-close-five-day_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 072-01_choppy-deep-close-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+074-01.b1.b1.b1_falling-widest-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+074-01.b1.b1_falling-wide-up-day-high-close-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 074-01.b1_falling-wide-up-fade-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 074-01_falling-wide-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

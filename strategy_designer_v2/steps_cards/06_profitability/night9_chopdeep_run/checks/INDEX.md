@@ -1,3 +1,6 @@
+072-01.b1_choppy-deep-close-five-day_1d: not profitable enough [Sharpe -0.1898; Sharpe minus holding's Sharpe -0.744; Calmar -0.09816]
 072-01_choppy-deep-close-continuation_1d: not profitable enough [Sharpe -0.2462; Sharpe minus holding's Sharpe -0.8004; Calmar -0.1123]
+074-01.b1.b1.b1_falling-widest-up-day-fade_1d: not profitable enough [Sharpe -0.07056; Sharpe minus holding's Sharpe -0.678; Calmar -0.0298]
+074-01.b1.b1_falling-wide-up-day-high-close-fade_1d: not profitable enough [Sharpe 0.2204; Sharpe minus holding's Sharpe -0.387; Calmar 0.1078]
 074-01.b1_falling-wide-up-fade-more-coins_1d: not profitable enough [Sharpe 0.1639; Sharpe minus holding's Sharpe -0.4436; Calmar 0.06712]
 074-01_falling-wide-up-day-fade_1d: not profitable enough [Sharpe 0.0506; Sharpe minus holding's Sharpe -0.5036; Calmar 0.01417]
