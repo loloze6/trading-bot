@@ -19,21 +19,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 061-01.d2_rising-calm-up-day-continuation | 061-01_calm-big-up-day-continues | plan | inconclusive (+1.55) | not profitable enough (failed: Calmar) | - | 7.b: 061-01.d2.b1_rising-calm-continuation-more-coins; 7.g: 061-01.d2.g1_rising-calm-down-day-continuation, 061-01.d2.g2_choppy-calm-up-day-continuation | 1.01 | 6.4 |
 | 062-01_choppy-calm-fall-continues | - | plan | inconclusive (+0.97) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 062-01.b1_choppy-calm-falls-all-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.81 | 5.7 |
 | 062-02_choppy-calm-below-high-falls | - | plan | inconclusive (-0.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The further fall after a swing-scaled drop is not graded with the drop's depth (U-shaped in F2 and F5, slope t -0.44 in F1), and what fall there is comes mostly from 2018 (F4), a period rather than a market profile an idea could name.; 7.g: no ideas: After seven angles at two horizons, the only new patterns are the deep-drop continuations (F2–F4); they rest on 26 days or fewer, are carried by the 2018 and 2020 crashes, and their day-pooled t stays under 2, while the patterns that do stand out (F5, F6) repeat ideas the profile map already holds. | 0.99 | 6.2 |
+| 061-01.g1_choppy-calm-day-follow-through | 061-01_calm-big-up-day-continues | plan | confirmed (+3.07) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 061-01.g1.d1_calm-choppy-up-day-follow-through; 7.g: 061-01.g1.g1_big-up-day-continues, 061-01.g1.g2_agitated-big-day-continues, 061-01.g1.g3_calm-big-fall-rebounds | 1.05 | 6.7 |
+| 061-01.g1.d1_calm-choppy-up-day-follow-through | 061-01.g1_choppy-calm-day-follow-through | plan | confirmed (+2.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 061-01.g1.d1.d1_calm-big-rise-convex-follow-through, 061-01.g1.d1.d2_calm-big-rise-near-highs; 7.g: 061-01.g1.d1.g1_day-move-follow-through-both-sides | 1.25 | 7.1 |
+| 061-01.g1.d1.d1_calm-big-rise-convex-follow-through | 061-01.g1.d1_calm-choppy-up-day-follow-through | plan | inconclusive (-0.32) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The result is near zero (t -0.32 on 314 cases) and has no clear home. Its grading runs opposite to the idea (F2), its sign follows the year's market (F3) and the coin (F4), and it is no stronger inside the choppy calm profile than outside (F5), so no amendment would give a clear answer.; 7.g: 061-01.g1.d1.d1.g1_calm-big-day-both-way-continuation, 061-01.g1.d1.d1.g2_high-close-next-day-fade | 1.16 | 6.9 |
+| 061-01.g1.d1.d2_calm-big-rise-near-highs | 061-01.g1.d1_calm-choppy-up-day-follow-through | plan | confirmed (+2.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 061-01.g1.d1.d2.d1_calm-outsized-rise-continues, 061-01.g1.d1.d2.d2_calm-large-breakout-continues, 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold; 7.g: 061-01.g1.d1.d2.g1_choppy-far-below-high-decline, 061-01.g1.d1.d2.g2_choppy-swing-scaled-move-continues, 061-01.g1.d1.d2.g3_calm-only-large-rises-continue | 1.23 | 7.8 |
 
 ## Consumption
-15 ideas, 14.54 USD, 104.7 minutes in all.
+19 ideas, 19.23 USD, 133.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.10 | 6.2 |
-| step4_backtest | 0.00 | 51.5 |
-| step5_verdict | 2.46 | 8.8 |
-| step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 1.44 | 8.2 |
+| step4_backtest | 0.00 | 63.4 |
+| step5_verdict | 3.13 | 11.2 |
+| step6_check | 0.00 | 0.6 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 0.57 | 2.4 |
-| step7_7.b | 4.14 | 14.0 |
-| step7_7.g | 6.27 | 20.8 |
-| similarity_check | 0.00 | 0.1 |
+| step7_7.d | 1.81 | 6.7 |
+| step7_7.b | 4.51 | 15.2 |
+| step7_7.g | 8.34 | 27.2 |
+| similarity_check | 0.00 | 0.4 |

@@ -1,0 +1,22 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 061-01.g1_choppy-calm-day-follow-through_1d
+idea tested: 061-01.g1_choppy-calm-day-follow-through
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4172 USD
+---
+## Findings
+- **F1:** The book's loss comes from its short side. The 341 short trades lost a mean -2.12 % each after fees and won only 32 % of the time, while the 310 long trades earned +0.87 % after fees and won 51 %. The shorts entered on the strongest forecasts lost the most: -6.07 % (69 trades, |forecast| 10–15) and -2.77 % (135 trades, |forecast| 15–20).
+- **F2:** On the book's own daily-bar gains inside the choppy calm profile, long positions earned +0.194 in sum over 546 coin-bars (+0.036 % a bar). Short positions lost -0.358 over 470 coin-bars (-0.076 % a bar). That short loss is more than the book's whole positive gain.
+- **F3:** On the non-overlapping 5-day grid inside the profile, large up days carry the effect and large down days do not:
+- **F4:** A crude long-only version, long for 5 days after each in-profile up day, sized by min(z, 2)/2 and charged 0.19 % per round trip, earned +0.33 in sum, or +0.034 % per bar in a position. The matching short-only version on down days lost -0.27, or -0.030 % per bar in a position. Dropping the short side turns the gain on days in a position positive, though still below the 0.05 % bar.
+- **F5:** Leaving out the short side adds no condition of its own; it only selects one direction of the tested signal. Big up days outside the profile also continued: z above 1.5 gave +4.65 % (57 cases) and z from 0.75 to 1.5 gave +0.77 % (121 cases). Inside choppy calm the 0.75–1.5 bucket gave +5.80 % against +0.77 % outside, so the profile adds strength at moderate sizes, as the brief's calm-market theory says.
+- **F6:** The idea's size is small against cost. Its strength is 0.041 (t 1.41 over 577 days) and its total move is +0.47 % per case against a 0.19 % round trip, so the both-sided book's thin edge is spent by the losing shorts. The up-side cases alone move several percent (F3), well above the cost.
+
+## Ideas
+- `061-01.g1.d1_calm-choppy-up-day-follow-through` (from F1, F2, F3, F4, F5, F6): In a choppy, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the further it keeps rising over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
