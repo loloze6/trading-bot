@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9430199430199431,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return in the short direction (vs coin's mean daily return)",
+    "value": 0.014744612268905565,
+    "statistic": {
+      "name": "t of the mean, deviations summed per day",
+      "value": 1.9742203300209078
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and |forecast|-weighted mean > unweighted mean); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "|forecast|-weighted mean minus unweighted mean of the excess fall",
+    "value": 0.00044608934016742915,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 160,
+    "cases": 313
+  },
+  "decided_by": "t lies between -2 and 2, meeting neither the confirm nor the reject rule.",
+  "reading": "Situation checked as up day (close above the previous close in the same window) with high-low range over its 20-bar mean range (recorded width where present, else recomputed from prices; first bar of a window counted as not in the situation), side short, the profile not rechecked; cases are short bets on the 1-bar grid, the per-day t uses the sums of each day's deviations from the mean with a D/(D-1) correction, and the plan's 'fewer than 30 distinct days' minimum gives 'not observable'."
+}

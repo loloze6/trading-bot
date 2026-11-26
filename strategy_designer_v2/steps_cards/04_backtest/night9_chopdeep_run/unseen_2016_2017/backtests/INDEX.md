@@ -1,0 +1,1 @@
+074-01.g1.d1_wide-close-high-bounce-fade_1d: ran: BTCUSD 6/6; ETHUSD 3/6 (3 not run: the engine stopped); LTCUSD 6/6; XMRUSD not run (no historical data on the venue); XRPUSD not run (no historical data on the venue); ZECUSD not run (no historical data on the venue) [1d, windows unseen_2016_2017]
