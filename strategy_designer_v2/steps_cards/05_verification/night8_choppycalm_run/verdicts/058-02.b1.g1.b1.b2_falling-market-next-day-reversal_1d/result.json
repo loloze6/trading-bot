@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean over days of the cross-coin daily sum of forecast (post_pipeline_value) x (next-day return - coin mean daily return)",
+    "value": 0.14242275411823807,
+    "statistic": {
+      "name": "t of the mean of daily sums",
+      "value": 1.7173605131992415
+    },
+    "threshold": "confirm if t >= 2 and timing part > 0; reject if t <= -2; otherwise inconclusive; at least 200 distinct days with a nonzero forecast"
+  },
+  "supporting_check": {
+    "name": "book mean daily return before costs minus market-rise gain (timing part) > 0",
+    "value": 0.0003409423335991629,
+    "passed": true
+  },
+  "counts": {
+    "distinct days carrying a nonzero forecast": 2085,
+    "days in the main measure": 2069,
+    "bars with a nonzero forecast": 14200
+  },
+  "decided_by": "The main measure's t is 1.72, between -2 and 2.",
+  "reading": "The falling profile is read from the recorded regime (not 'chop', the config's veto of a 60-bar change >= -10) with the component recorded; a bar's evidence and book gain are dated by its own bar's day; the 200-day minimum counts all distinct days with a nonzero forecast and, per the workflow, a shortfall gives 'not observable'; the book's daily return before costs is the mean over the coins present that day of position held x next-day return, and its market part the same with the coin's mean daily return."
+}

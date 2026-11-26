@@ -2,7 +2,10 @@
 058-02.b1.b2.b1.b2_calm-market-range-position_1d: 2 ideas (2 explorations)
 058-02.b1.b2.b1_choppy-range-position-more-coins_1d: 2 ideas (2 explorations)
 058-02.b1.b2_choppy-range-position-continues_1d: 1 ideas, 1 discoveries (2 explorations)
+058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d: 0 ideas, 1 discoveries (3 explorations)
+058-02.b1.g1.b1.b2_falling-market-next-day-reversal_1d: 0 ideas, 1 discoveries (3 explorations)
 058-02.b1.g1.b1_falling-rally-fades-more-coins_1d: 1 ideas (3 explorations)
+058-02.b1.g1.b2.b1_agitated-falling-selloffs-rebound_1d: no ideas: The patterns that stand out are either already held in the profile map or are not graded, so they give no new idea. These are the wide low-close rebound, range-top continuation in rising and calm markets, the late-week gain, and the falling agitated up-day reversal, whose short side 058-02.b1.g1.b1.b1 already covers and which fails the grading test (largest up days +0.32 %, t 0.35). The brief's choppy calm reversion is contradicted (F4).
 058-02.b1.g1.b2_agitated-falling-rally-fades_1d: 2 ideas (2 explorations)
 058-02.b1.g1_falling-market-rally-fades_1d: 2 ideas (2 explorations)
 058-02.b1_calm-range-bottom-keeps-falling_1d: 1 ideas (2 explorations)

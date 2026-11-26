@@ -16,21 +16,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-02.b1.g1_falling-market-rally-fades | 058-02.b1_calm-range-bottom-keeps-falling | plan | inconclusive (+1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-02.b1.g1.b1_falling-rally-fades-more-coins, 058-02.b1.g1.b2_agitated-falling-rally-fades; 7.g: 058-02.b1.g1.g1_choppy-range-position-continuation, 058-02.b1.g1.g2_falling-market-range-low-continuation | 1.13 | 6.4 |
 | 058-02.b1.g1.b1_falling-rally-fades-more-coins | 058-02.b1.g1_falling-market-rally-fades | plan | inconclusive (-1.47) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal, 058-02.b1.g1.b1.b2_falling-market-next-day-reversal; 7.g: 058-02.b1.g1.b1.g1_choppy-calm-range-continuation | 1.31 | 12.0 |
 | 058-02.b1.g1.b2_agitated-falling-rally-fades | 058-02.b1.g1_falling-market-rally-fades | plan | inconclusive (-0.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 058-02.b1.g1.b2.b1_agitated-falling-selloffs-rebound; 7.g: 058-02.b1.g1.b2.g1_falling-agitated-close-in-range-reversion, 058-02.b1.g1.b2.g2_agitated-falling-high-close-fade | 0.95 | 6.5 |
+| 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal | 058-02.b1.g1.b1_falling-rally-fades-more-coins | plan | confirmed (+3.23) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 0 ideas, 1 discoveries (3 explorations) | 0.96 | 14.0 |
+| 058-02.b1.g1.b2.b1_agitated-falling-selloffs-rebound | 058-02.b1.g1.b2_agitated-falling-rally-fades | plan | confirmed (+3.24) | not profitable enough (failed: Calmar) | - | 7.d: 058-02.b1.g1.b2.b1.d1_second-day-selloff-rebound, 058-02.b1.g1.b2.b1.d2_low-close-selloff-rebound, 058-02.b1.g1.b2.b1.d3_capitulation-after-slide-rebounds; 7.g: no ideas: The patterns that stand out are either already held in the profile map or are not graded, so they give no new idea. These are the wide low-close rebound, range-top continuation in rising and calm markets, the late-week gain, and the falling agitated up-day reversal, whose short side 058-02.b1.g1.b1.b1 already covers and which fails the grading test (largest up days +0.32 %, t 0.35). The brief's choppy calm reversion is contradicted (F4). | 0.99 | 6.8 |
+| 058-02.b1.g1.b1.b2_falling-market-next-day-reversal | 058-02.b1.g1.b1_falling-rally-fades-more-coins | plan | inconclusive (+1.72) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 058-02.b1.g1.b1.b2.b1_falling-agitated-next-day-fade, 058-02.b1.g1.b1.b2.b2_agitated-downtrend-sharp-fall-rebound; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.25 | 11.7 |
 
 ## Consumption
-12 ideas, 14.67 USD, 101.9 minutes in all.
+15 ideas, 17.87 USD, 134.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.64 | 7.5 |
-| step4_backtest | 0.00 | 56.5 |
-| step5_verdict | 1.88 | 6.4 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 3.84 | 8.6 |
+| step4_backtest | 0.00 | 75.1 |
+| step5_verdict | 2.43 | 8.4 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.40 | 1.3 |
-| step7_7.d | 0.61 | 2.0 |
+| step7_7.d | 1.02 | 3.5 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 3.42 | 11.9 |
-| step7_7.g | 4.72 | 15.6 |
-| similarity_check | 0.00 | 0.1 |
+| step7_7.b | 3.81 | 13.1 |
+| step7_7.g | 6.39 | 20.8 |
+| similarity_check | 0.00 | 0.2 |
+| unseen_test | 0.00 | 2.7 |

@@ -71,6 +71,7 @@
 | 038-02_agitated-fall-vs-swing-rebound_1d | night7_steadydecline_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 1.00 | same period | -0.0000 % (-25.77) | 0.12 |
 | 039-02_agitated-range-fall-low-close-rebound_1d | night7_steadydecline_run | 1d | 044-01_agitated-wide-range-fall-rebound_1d (1d) | 0.93 | same period | +0.0020 % (0.37) | 0.30 |
 | 041-03_agitated-fall-drop-vs-range-rebound_1d | night7_steadydecline_run | 1d | 043-01_falling-agitated-intraday-drop-rebound_1d (1d) | 0.98 | same period | +0.0010 % (0.62) | 0.15 |
+| 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d | night8_choppycalm_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.61 | same period | +0.0059 % (0.89) | 0.02 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (1d) | 0.94 | same period | +0.0043 % (0.70) | 0.28 |
 | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d | paying_rerun_run | 1d | 034-01.b1_nearness-to-high-10-days_1d (1d) | 0.45 | same period | +0.0046 % (0.30) | 0.00 |
@@ -397,4 +398,5 @@
 | 040-01_agitated-fall-size-next-day-rebound_1d | night7_steadydecline_run | 1d | 044-01_agitated-wide-range-fall-rebound_1d (1d) | 0.95 | same period | -0.0005 % (-0.13) | 0.28 |
 | 022-02_combination-beats-best-single.g1_weekend-continuation-after-strong-week_1d | night3_learned_run | 1d | 031-01.g1_weekly-gains-carry-into-saturday_1d (1d) | 0.96 | same period | +0.0020 % (1.00) | 0.03 |
 | 031-01.g1_wide-day-low-close-rebounds_1d | night6_indecision_run | 1d | 031-01.g1.d3_deeper-wide-day-fall-rebounds-more_1d (1d) | 0.96 | same period | +0.0009 % (0.40) | 0.08 |
+| 058-02.b1.g1.b2.b1_agitated-falling-selloffs-rebound_1d | night8_choppycalm_run | 1d | 035-01_falling-agitated-scaled-fall-rebound_1d (1d) | 0.99 | same period | -0.0014 % (-1.30) | 0.12 |
 | 039-01_agitated-swing-fall-low-close-rebound_1d | night7_steadydecline_run | 1d | 039-02_agitated-range-fall-low-close-rebound_1d (1d) | 0.99 | same period | -0.0027 % (-1.25) | 0.32 |

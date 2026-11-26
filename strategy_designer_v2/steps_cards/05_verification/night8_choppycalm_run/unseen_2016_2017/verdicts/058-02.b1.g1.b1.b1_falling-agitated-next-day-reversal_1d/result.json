@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on post_pipeline forecast (day-clustered t)",
+    "value": 0.0004291172932600845,
+    "statistic": {
+      "name": "day-clustered OLS t",
+      "value": 0.9678211163753413
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return in forecast direction, top fifth of |forecast|",
+    "value": 0.005913598045813359,
+    "passed": true
+  },
+  "counts": {
+    "non-zero-forecast bars": 36,
+    "distinct days": 36
+  },
+  "decided_by": "Minimum count not reached: 36 non-zero-forecast bars (< 200) and 36 distinct days (< 60).",
+  "reading": "Situation bars are active bars whose raw scaled move (last_history_value, recomputed from prices if missing) is non-zero with the forecast of the opposite sign; the excess return subtracts the coin's mean 1-bar return over all its windows; the t uses day-clustered standard errors with a G/(G-1) correction; the top fifth is |forecast| at or above the 80th percentile of the regression cases; the plan's minimum counts are applied to the regression cases and, per instructions, give 'not observable' when not met."
+}
