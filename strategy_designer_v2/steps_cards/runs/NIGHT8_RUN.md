@@ -101,6 +101,13 @@ the new books on the unseen coins (1u).
     follow-ups, D 060-01.b1), none profitable enough yet; one confirmed, profitable book holding on both unseen periods
     (C 058-03.e1, rising calm, long). The confirmed calm continuations of E and F (E's nearness to the 20-day high, t
     3.96) may be the held "near its high" books again: the morning's similarity check says.
+- **01:20 Paris, an adjustment during the night (the operator: "if some adjustment needs to be made on live sessions,
+  feel free"):** `common/theme.md`: when a brief names a market profile, that profile is part of its situation; a
+  follow-up keeps it or narrows it, and the same situation in another or a wider profile is a discovery (before: a
+  follow-up could change "the profile"). Only the definition the step 7 lines read changes, no code. Proof: line 7.b
+  rerun on E's 058-02.b1 ("choppy calm"; step 4 rerun first, 0.45 USD): during the night it wrote 2 follow-ups, one in
+  "choppy calm" and one widened to "choppy"; with the rule, 1, in "choppy calm". Given to the 6 sessions to take
+  between turns.
 
 ## Reading
 (written in the morning)
