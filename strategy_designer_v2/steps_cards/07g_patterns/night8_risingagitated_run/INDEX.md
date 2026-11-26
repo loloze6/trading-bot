@@ -24,3 +24,4 @@
 069-02.d2_agitated-below-high-up-day-fade_1d: 1 ideas (2 explorations)
 069-02.d3_below-high-up-day-two-day-fade_1d: 1 ideas, 1 discoveries (3 explorations)
 069-02_below-high-up-day-fade_1d: 2 ideas (2 explorations)
+071-01_falling-agitated-swing-rise-next-fade_1d: no ideas: The only graded patterns that stand out are the down-day rebound in falling, agitated markets and the wide-range down-day rebound (F2, F8), which the map already holds on the long side. The up-day fade is real on average but not graded by the rise's size (F1), and the trend, wick and weekday cuts (F4, F5, F6) are either not graded reliably or are calendar conditions that do not stand out from the many angles looked at (forecast size, profile, 60-day trend, close position, wicks, 3-day return, year, window, weekday, coin, range, and the book's tail days).

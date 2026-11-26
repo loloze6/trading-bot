@@ -24,3 +24,4 @@
 069-02.d2_agitated-below-high-up-day-fade_1d: not profitable enough [Sharpe 0.2946; Sharpe minus holding's Sharpe -0.275; Calmar 0.1066]
 069-02.d3_below-high-up-day-two-day-fade_1d: not profitable enough [Sharpe 0.02336; Sharpe minus holding's Sharpe -0.5308; Calmar -0.05007]
 069-02_below-high-up-day-fade_1d: not profitable enough [Sharpe 0.03815; Sharpe minus holding's Sharpe -0.516; Calmar -0.03327]
+071-01_falling-agitated-swing-rise-next-fade_1d: not profitable enough [Sharpe 0.2325; Sharpe minus holding's Sharpe -0.3371; Calmar 0.1043]

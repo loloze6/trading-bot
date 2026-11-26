@@ -30,22 +30,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 069-02.d3_below-high-up-day-two-day-fade | 069-02_below-high-up-day-fade | plan | inconclusive (+1.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 069-02.d3.b1_below-high-fade-more-coins; 7.g: 069-02.d3.g1_low-in-range-up-day-next-day-fade | 1.10 | 6.3 |
 | 069-02.d1.d1_agitated-fall-up-day-fade | 069-02.d1_falling-market-below-high-up-day-fade | plan | inconclusive (-0.41) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 069-02.d1.d1.b1_deep-below-high-up-day-fade, 069-02.d1.d1.b2_falling-trend-deep-up-day-fade; 7.g: 069-02.d1.d1.g1_deep-up-day-fade-everywhere, 069-02.d1.d1.g2_calm-fall-up-day-fade | 1.04 | 6.5 |
 | 069-02.d1.d2_swing-graded-low-range-up-fade | 069-02.d1_falling-market-below-high-up-day-fade | plan | inconclusive (-0.61) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 069-02.d1.d2.b1_five-day-fall-graded-up-day-fade; 7.g: 069-02.d1.d2.g1_falling-range-depth-up-day-fade | 1.16 | 7.0 |
+| 071-01_falling-agitated-swing-rise-next-fade | - | plan | inconclusive (+0.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 071-01.b1_post-plunge-up-day-next-fade; 7.g: no ideas: The only graded patterns that stand out are the down-day rebound in falling, agitated markets and the wide-range down-day rebound (F2, F8), which the map already holds on the long side. The up-day fade is real on average but not graded by the rise's size (F1), and the trend, wick and weekday cuts (F4, F5, F6) are either not graded reliably or are calendar conditions that do not stand out from the many angles looked at (forecast size, profile, 60-day trend, close position, wicks, 3-day return, year, window, weekday, coin, range, and the book's tail days). | 1.82 | 6.6 |
 
 ## Consumption
-26 ideas, 32.06 USD, 189.9 minutes in all.
+27 ideas, 33.88 USD, 196.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.98 | 14.6 |
-| step4_backtest | 0.00 | 76.8 |
-| step5_verdict | 4.12 | 15.2 |
+| step3_plan | 4.84 | 15.1 |
+| step4_backtest | 0.00 | 79.5 |
+| step5_verdict | 4.29 | 15.8 |
 | step6_check | 0.00 | 0.8 |
-| chart_files | 0.00 | 0.3 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 2.78 | 9.0 |
 | step7_7.c | 0.42 | 1.2 |
 | step7_7.e | 0.46 | 1.3 |
-| step7_7.b | 8.24 | 29.5 |
-| step7_7.g | 12.06 | 38.3 |
+| step7_7.b | 8.60 | 30.7 |
+| step7_7.g | 12.48 | 39.9 |
 | similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 2.3 |

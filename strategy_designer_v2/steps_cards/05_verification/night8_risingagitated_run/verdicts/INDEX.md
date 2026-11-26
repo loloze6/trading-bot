@@ -24,3 +24,4 @@
 069-02.d2_agitated-below-high-up-day-fade_1d: inconclusive (fit: adapted) [main: -0.000409069; day-clustered OLS slope t -1.69869; distinct case days 1517, cases 3951]
 069-02.d3_below-high-up-day-two-day-fade_1d: inconclusive (fit: adapted) [main: 0.00251686; t of the mean, cases of one day taken together 1.48813; cases 4528, distinct days 1594]
 069-02_below-high-up-day-fade_1d: confirmed (fit: exact) [main: 0.00276565; t of the mean, cases of one day taken together 2.72784; up-day cases 8849, distinct days 2274]
+071-01_falling-agitated-swing-rise-next-fade_1d: inconclusive (fit: exact) [main: 0.000151919; OLS slope t, day-clustered 0.490238; cases 1326, distinct days 633]
