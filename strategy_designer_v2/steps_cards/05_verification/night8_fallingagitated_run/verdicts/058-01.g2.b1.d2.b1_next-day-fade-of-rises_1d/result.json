@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move of short cases (return minus coin drift, short direction)",
+    "value": 0.005590972573668756,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 2.08792372360181
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger half of |forecast| minus smaller half",
+    "value": 0.0018996088518603797,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 565,
+    "cases": 1669
+  },
+  "decided_by": "Confirm rule met: mean unusual move above 0 with t >= 2 and the supporting check above 0.",
+  "reading": "Cases are short-side bets (forecast deepening by >= 2 points from its least-short level since the last bet, reset at flat), the drift is the coin's mean daily return over all its windows, the t sums deviations per UTC day, the halves are the top and bottom floor(n/2) cases by |forecast| (middle case dropped if odd), the 30-day minimum gives 'not observable', and the profile is the recorded regime 'unknown'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004753 on the check folds against +0.005591 on every fold",
+    "main": 0.0047525778401303195,
+    "statistic": 1.468260782480151,
+    "counts": {
+      "distinct days with cases": 370,
+      "cases": 1216
+    }
+  }
+}
