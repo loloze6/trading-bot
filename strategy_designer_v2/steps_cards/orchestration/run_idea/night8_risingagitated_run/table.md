@@ -20,22 +20,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.g1.d2_wide-day-close-location-graded-fade | 060-01.g1_wide-day-high-close-fade | plan | confirmed (+2.23) | not profitable enough (failed: Calmar) | - | 7.d: 060-01.g1.d2.d1_own-range-close-height-fade, 060-01.g1.d2.d2_wider-squeeze-day-fades-harder; 7.g: 060-01.g1.d2.g1_up-day-high-close-fade | 1.13 | 7.2 |
 | 060-01.g1.d2.d1_own-range-close-height-fade | 060-01.g1.d2_wide-day-close-location-graded-fade | plan | confirmed (+2.23) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 060-01.g1.d2.d1.g3_wide-high-close-fade | 0.90 | 7.4 |
 | 060-01.g1.d2.d2_wider-squeeze-day-fades-harder | 060-01.g1.d2_wide-day-close-location-graded-fade | plan | inconclusive (+1.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.d2.d2.b1_wider-squeeze-fade-more-coins; 7.g: 060-01.g1.d2.d2.g1_agitated-downtrend-up-day-fades, 060-01.g1.d2.d2.g2_calm-downtrend-fall-continuation | 1.00 | 6.6 |
+| 060-01.g1.g1_graded-width-high-close-fade | 060-01.g1_wide-day-high-close-fade | plan | inconclusive (+1.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.g1.b1_graded-width-fade-all-coins; 7.g: 060-01.g1.g1.g1_agitated-downtrend-up-day-fade, 060-01.g1.g1.g2_swing-graded-downtrend-rally-fade | 0.88 | 6.0 |
 
 ## Consumption
-16 ideas, 18.11 USD, 114.6 minutes in all.
+17 ideas, 19.00 USD, 120.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.06 | 7.4 |
-| step4_backtest | 0.00 | 52.3 |
-| step5_verdict | 2.63 | 9.4 |
+| step3_plan | 2.16 | 7.9 |
+| step4_backtest | 0.00 | 55.1 |
+| step5_verdict | 2.79 | 10.0 |
 | step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 2.00 | 6.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.46 | 1.2 |
-| step7_7.b | 3.18 | 10.2 |
-| step7_7.g | 7.78 | 24.2 |
+| step7_7.b | 3.38 | 10.8 |
+| step7_7.g | 8.20 | 25.7 |
 | similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 2.3 |
