@@ -27,21 +27,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 061-01.g1.d1.d2.d2_calm-large-breakout-continues | 061-01.g1.d1.d2_calm-big-rise-near-highs | plan | inconclusive (+1.06) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 061-01.g1.d1.d2.d2.b1_calm-breakout-all-coins; 7.g: 061-01.g1.d1.d2.d2.g1_calm-day-move-continues-both-ways, 061-01.g1.d1.d2.d2.g2_choppy-calm-day-follow-through | 1.34 | 7.4 |
 | 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold | 061-01.g1.d1.d2_calm-big-rise-near-highs | plan | inconclusive (-1.27) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 061-01.g1.d1.d2.d3.b1_calm-big-rise-nearness-graded; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.31 | 7.6 |
 | 061-01.g1.g1_big-up-day-continues | 061-01.g1_choppy-calm-day-follow-through | plan | inconclusive (-0.84) | not profitable enough (failed: Calmar) | - | 7.b: 061-01.g1.g1.b1_calm-big-up-day-continues, 061-01.g1.g1.b2_rising-calm-up-day-continuation; 7.g: 061-01.g1.g1.g1_calm-big-day-follow-through | 1.18 | 6.1 |
+| 061-01.g1.g2_agitated-big-day-continues | 061-01.g1_choppy-calm-day-follow-through | plan | inconclusive (-1.49) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 061-01.g1.g2.b1_agitated-big-day-reverts, 061-01.g1.g2.b2_calm-big-day-continues; 7.g: 061-01.g1.g2.g1_calm-big-day-continues, 061-01.g1.g2.g2_choppy-calm-day-follow-through | 0.94 | 6.0 |
 
 ## Consumption
-23 ideas, 23.42 USD, 158.7 minutes in all.
+24 ideas, 24.37 USD, 164.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.83 | 10.7 |
-| step4_backtest | 0.00 | 73.9 |
-| step5_verdict | 3.70 | 13.5 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 1.89 | 11.1 |
+| step4_backtest | 0.00 | 76.6 |
+| step5_verdict | 3.86 | 14.1 |
+| step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.d | 1.81 | 6.7 |
-| step7_7.b | 5.80 | 19.1 |
-| step7_7.g | 10.28 | 33.3 |
+| step7_7.b | 6.14 | 20.1 |
+| step7_7.g | 10.66 | 34.5 |
 | similarity_check | 0.00 | 0.4 |

@@ -17,6 +17,7 @@
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 061-01.g1.g1_big-up-day-continues_1d: 2 ideas (2 explorations)
+061-01.g1.g2_agitated-big-day-continues_1d: 2 ideas (2 explorations)
 061-01.g1_choppy-calm-day-follow-through_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 061-01_calm-big-up-day-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 062-01_choppy-calm-fall-continues_1d: 1 ideas (1 explorations)

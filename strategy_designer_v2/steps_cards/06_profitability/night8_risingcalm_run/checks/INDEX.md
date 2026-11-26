@@ -17,6 +17,7 @@
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: not profitable enough [Sharpe 0.167; Sharpe minus holding's Sharpe -0.4026; Calmar 0.03854]
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: not profitable enough [Sharpe 0.04444; Sharpe minus holding's Sharpe -0.5252; Calmar -0.01194]
 061-01.g1.g1_big-up-day-continues_1d: not profitable enough [Sharpe 0.6417; Sharpe minus holding's Sharpe 0.08754; Calmar 0.347]
+061-01.g1.g2_agitated-big-day-continues_1d: not profitable enough [Sharpe -0.04431; Sharpe minus holding's Sharpe -0.6139; Calmar -0.07786]
 061-01.g1_choppy-calm-day-follow-through_1d: not profitable enough [Sharpe -0.1259; Sharpe minus holding's Sharpe -0.6955; Calmar -0.08523]
 061-01_calm-big-up-day-continues_1d: not profitable enough [Sharpe 0.5484; Sharpe minus holding's Sharpe -0.02116; Calmar 0.3379]
 062-01_choppy-calm-fall-continues_1d: not profitable enough [Sharpe 0.0376; Sharpe minus holding's Sharpe -0.532; Calmar -0.007324]
