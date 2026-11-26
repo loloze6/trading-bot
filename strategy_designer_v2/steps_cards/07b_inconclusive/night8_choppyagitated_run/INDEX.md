@@ -6,5 +6,6 @@
 059-01.b1_choppy-calm-rise-more-coins_1d: 1 ideas (2 explorations)
 059-01_choppy-calm-weekly-rise-continues_1d: 1 ideas (1 explorations)
 060-01.b1.d1_bounce-inside-fresh-slide-fades_1d: 1 ideas (2 explorations)
+060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: no ideas: Rise days in falling agitated markets are followed by a next-day fall on average (F2). But that fall grows neither with the rise in swing units (F3) nor clearly with the depth of the prior slide in any coin, year or subset (F4), nor at a longer horizon (F5). So no amendment of this graded idea would give a clearer answer than this test, and the brief's own grading claim fails on the data.
 060-01.b1_agitated-decline-rally-fades-next-day_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-01_falling-agitated-rally-fades-three-days_1d: 1 ideas (2 explorations)

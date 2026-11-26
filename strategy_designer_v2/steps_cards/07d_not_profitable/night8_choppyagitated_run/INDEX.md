@@ -6,5 +6,6 @@
 059-01.b1_choppy-calm-rise-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01_choppy-calm-weekly-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.b1.d1_bounce-inside-fresh-slide-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.b1_agitated-decline-rally-fades-next-day_1d: 2 ideas (2 explorations)
 060-01_falling-agitated-rally-fades-three-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

@@ -6,5 +6,6 @@
 059-01.b1_choppy-calm-rise-more-coins_1d: inconclusive (fit: adapted) [main: 0.0120015; t of the weighted mean, cases of one day summed 0.990161; distinct days with cases 163, cases 409]
 059-01_choppy-calm-weekly-rise-continues_1d: inconclusive (fit: adapted) [main: 0.00214747; OLS slope t 1.95477; cases with forecast > 0 on the grid 220, days 127]
 060-01.b1.d1_bounce-inside-fresh-slide-fades_1d: inconclusive (fit: adapted) [main: 0.00552629; t with same-day cases pooled 1.08055; cases 1039, distinct days 380]
+060-01.b1.d2_post-slide-bounce-next-day-giveback_1d: inconclusive (fit: exact) [main: -0.00027706; slope t, day-clustered SE -0.594882; active bars 2538, distinct days 758]
 060-01.b1_agitated-decline-rally-fades-next-day_1d: confirmed (fit: adapted) [main: 0.00517908; t of the mean, cases of one day together 2.34883; cases 2538, distinct days 758]
 060-01_falling-agitated-rally-fades-three-days_1d: inconclusive (fit: exact) [main: 0.0043441; day-clustered t 1.00916; distinct case days 488, cases 1357]
