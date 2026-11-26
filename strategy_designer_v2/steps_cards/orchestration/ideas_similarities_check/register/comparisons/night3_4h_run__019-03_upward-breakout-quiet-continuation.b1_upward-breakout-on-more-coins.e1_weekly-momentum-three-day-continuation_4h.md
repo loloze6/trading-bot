@@ -1,11 +1,12 @@
 # 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.e1_weekly-momentum-three-day-continuation_4h (night3_4h_run, 4h, confirmed): what it shares with the paying books
 
-- Nearest relative: 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d (night8_choppycalm_run, 1d): share explained 0.43, same period, direction +, what is left -0.0014 % per period (t -0.05), on 1d, 2898 days in common
-- Nearest held book (paying, or in the portfolio): 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d (night8_choppycalm_run, 1d): share explained 0.43, same period, direction +, what is left -0.0014 % per period (t -0.05), on 1d, 2898 days in common
+- Nearest relative: 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.50, same period, direction +, what is left +0.0110 % per period (t 0.42), on 1d, 2898 days in common
+- Nearest held book (paying, or in the portfolio): 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.50, same period, direction +, what is left +0.0110 % per period (t 0.42), on 1d, 2898 days in common
 - Against holding its coins: share explained 0.01, same period, direction -, what is left +0.0131 % per period (t 2.19), on 4h, 2916 days in common
 
 | Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
+| 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d | night7c_chopreversal_run | 1d | 1d | 2898 | 0.50 | same period | + | +0.0110 % (0.42) |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.43 | same period | + | -0.0014 % (-0.05) |
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying_rerun_run | 1d | 1d | 2898 | 0.41 | same period | + | +0.0088 % (0.31) |
 | 035-01.b1_calm-market-nearness-to-high_1d | night7_rangefail_run | 1d | 1d | 2898 | 0.40 | same period | + | -0.0030 % (-0.10) |
@@ -69,6 +70,7 @@
 | 028-04_low-volume-down-fade.b1_quiet-dip-in-uptrend-recovers_1h | night4_volumehour_run | 1h | 4h | 2916 | 0.11 | same period | + | +0.0064 % (1.12) |
 | 023-03_flatter-range-stronger-reversion.c1_near-range-top-continuation.d1_top-of-range-continuation-only_1d | night4_range_run | 1d | 1d | 2898 | 0.11 | same period | + | +0.0399 % (1.13) |
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h | retest_weekend_run | 1h | 4h | 2916 | 0.10 | same period | + | +0.0061 % (1.07) |
+| 032-02.g1.e2.e1_new-closing-high-continuation_1d | night7c_steadydecline_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0422 % (1.19) |
 | 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d | paying_rerun_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0420 % (1.19) |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d | paying_rerun_run | 1d | 1d | 2898 | 0.09 | same period | + | +0.0373 % (1.05) |
 | 024-02_fading-volume-downrun-rebound-size.d1_fading-dip-in-uptrend_4h | night4_exhaustion_run | 4h | 4h | 2916 | 0.09 | same period | + | +0.0068 % (1.18) |
@@ -94,6 +96,7 @@
 | 051-01_falling-agitated-scaled-fall-next-day-rebound_1d | night7_panic_run | 1d | 1d | 2898 | 0.04 | same period | - | +0.0980 % (2.68) |
 | 038-02_agitated-fall-vs-swing-rebound_1d | night7_steadydecline_run | 1d | 1d | 2898 | 0.04 | same period | - | +0.0980 % (2.68) |
 | 066-02_falling-agitated-year-scaled-fall-rebound_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.04 | same period | - | +0.0978 % (2.68) |
+| 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further_1d | night7c_rangefail_run | 1d | 1d | 2898 | 0.04 | same period | + | +0.0577 % (1.58) |
 | 047-01_falling-agitated-daily-fall-rebound_1d | night7_chopreversal_run | 1d | 1d | 2898 | 0.04 | same period | - | +0.0974 % (2.66) |
 | 038-01_agitated-fall-next-day-rebound_1d | night7_steadydecline_run | 1d | 1d | 2898 | 0.04 | same period | - | +0.0974 % (2.66) |
 | 031-01.g1_weekly-gains-carry-into-saturday_1d | night6_yearlow_run | 1d | 1d | 2898 | 0.04 | same period | + | +0.0552 % (1.51) |

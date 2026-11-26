@@ -1,11 +1,12 @@
 # 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week.g2_two-week-trend-continues-weekly_1d (night_run, 1d, confirmed): what it shares with the paying books
 
-- Nearest relative: 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d (night8_choppycalm_run, 1d): share explained 0.51, same period, direction +, what is left -0.0231 % per period (t -0.92), on 1d, 2898 days in common
-- Nearest held book (paying, or in the portfolio): 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d (night_013_run, 1d): share explained 0.52, same period, direction +, what is left +0.0363 % per period (t 1.47), on 1d, 2898 days in common
+- Nearest relative: 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.54, same period, direction +, what is left -0.0068 % per period (t -0.28), on 1d, 2898 days in common
+- Nearest held book (paying, or in the portfolio): 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.54, same period, direction +, what is left -0.0068 % per period (t -0.28), on 1d, 2898 days in common
 - Against holding its coins: share explained 0.00, new one period behind, direction +, what is left +0.0555 % per period (t 1.55), on 1d, 2898 days in common
 
 | Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
+| 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d | night7c_chopreversal_run | 1d | 1d | 2898 | 0.54 | same period | + | -0.0068 % (-0.28) |
 | 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d | night_013_run | 1d | 1d | 2898 | 0.52 | same period | + | +0.0363 % (1.47) |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.51 | same period | + | -0.0231 % (-0.92) |
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying_rerun_run | 1d | 1d | 2898 | 0.50 | same period | + | -0.0135 % (-0.54) |
@@ -38,6 +39,7 @@
 | 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation_1d | night6_streak_run | 1d | 1d | 2898 | 0.24 | same period | + | +0.0031 % (0.10) |
 | 058-03.e1_calm-rise-stretch-ten-days_1d | night8_risingagitated_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0064 % (0.21) |
 | 031-03.b1_wide-day-extends-up-run_1d | night6_indecision_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0070 % (0.22) |
+| 032-02.g1.e2.e1_new-closing-high-continuation_1d | night7c_steadydecline_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0078 % (0.25) |
 | 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues_1d | night6_streak_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0024 % (0.08) |
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | night6_indecision_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0069 % (0.22) |
 | 031-01.b1.e2_wide-day-in-strong-run_1d | night6_indecision_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0047 % (0.15) |
@@ -81,6 +83,7 @@
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d | paying_rerun_run | 1d | 1d | 2898 | 0.11 | same period | + | +0.0162 % (0.48) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h | paying_rerun_run | 1h | 1d | 2898 | 0.10 | same period | + | +0.0156 % (0.46) |
 | 031-03.g1.b1.g2_swelling-volume-after-rises_1d | night6_longreversal_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0209 % (0.62) |
+| 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further_1d | night7c_rangefail_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0287 % (0.85) |
 | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d | night6_indecision_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0161 % (0.48) |
 | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h | retest_weekend_run | 1h | 1d | 2898 | 0.10 | same period | + | +0.0246 % (0.73) |
 | 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d | volume_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0537 % (1.59) |

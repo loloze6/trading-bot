@@ -1,11 +1,12 @@
 # 023-03_flatter-range-stronger-reversion.d1_flat-range-breakout-continuation_1d (night4_range_run, 1d, confirmed): what it shares with the paying books
 
-- Nearest relative: 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (paying_rerun_run, 1d): share explained 0.38, same period, direction +, what is left -0.0282 % per period (t -1.22), on 1d, 2898 days in common
-- Nearest held book (paying, or in the portfolio): 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (paying_rerun_run, 1d): share explained 0.38, same period, direction +, what is left -0.0282 % per period (t -1.22), on 1d, 2898 days in common
+- Nearest relative: 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.48, same period, direction +, what is left -0.0277 % per period (t -1.31), on 1d, 2898 days in common
+- Nearest held book (paying, or in the portfolio): 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.48, same period, direction +, what is left -0.0277 % per period (t -1.31), on 1d, 2898 days in common
 - Against holding its coins: share explained 0.03, same period, direction -, what is left +0.0293 % per period (t 1.01), on 1d, 2898 days in common
 
 | Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
+| 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d | night7c_chopreversal_run | 1d | 1d | 2898 | 0.48 | same period | + | -0.0277 % (-1.31) |
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying_rerun_run | 1d | 1d | 2898 | 0.38 | same period | + | -0.0282 % (-1.22) |
 | 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d | night_013_run | 1d | 1d | 2898 | 0.37 | same period | + | +0.0078 % (0.33) |
 | 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d | night4_range_run | 1d | 1d | 2898 | 0.35 | same period | + | -0.0241 % (-1.02) |
@@ -37,6 +38,7 @@
 | 048-01_scaled-up-week-continuation_1d | night7_panic_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0046 % (-0.16) |
 | 022-03_combined-extremes-larger-moves.d1_strong-monthly-rises-continue_1d | paying_rerun_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0027 % (-0.10) |
 | 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d | paying_rerun_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0025 % (-0.09) |
+| 032-02.g1.e2.e1_new-closing-high-continuation_1d | night7c_steadydecline_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0017 % (-0.06) |
 | 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues_1d | night6_streak_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0042 % (-0.15) |
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | night6_indecision_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0020 % (-0.07) |
 | 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d | night6_indecision_run | 1d | 1d | 2898 | 0.08 | same period | + | -0.0066 % (-0.23) |
@@ -95,6 +97,7 @@
 | 031-01.b1.b1_wide-day-extends-run-more-coins_1d | night6_indecision_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0071 % (0.24) |
 | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d | night6_yearlow_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0042 % (0.14) |
 | 031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d | night6_longreversal_run | 1d | 1d | 2897 | 0.03 | same period | - | +0.0352 % (1.22) |
+| 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further_1d | night7c_rangefail_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0101 % (0.35) |
 | 002-03_price-cross-above-long-sma.b1_distance-above-200-day-more-coins_1d | validation_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0109 % (0.38) |
 | 044-01_agitated-wide-range-fall-rebound_1d | night7_chopreversal_run | 1d | 1d | 2898 | 0.03 | same period | - | +0.0342 % (1.18) |
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins_1d | night3_ichimoku_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0197 % (0.68) |

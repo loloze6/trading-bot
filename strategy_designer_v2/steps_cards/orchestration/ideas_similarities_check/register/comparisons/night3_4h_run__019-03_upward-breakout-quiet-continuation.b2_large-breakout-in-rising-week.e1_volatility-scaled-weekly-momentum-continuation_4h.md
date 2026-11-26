@@ -1,11 +1,12 @@
 # 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation_4h (night3_4h_run, 4h, confirmed): what it shares with the paying books
 
-- Nearest relative: 033-03.b2_rising-market-range-top-continuation_1d (night7_rangefail_run, 1d): share explained 0.38, same period, direction +, what is left -0.0172 % per period (t -0.56), on 1d, 2898 days in common
-- Nearest held book (paying, or in the portfolio): 033-03.b2_rising-market-range-top-continuation_1d (night7_rangefail_run, 1d): share explained 0.38, same period, direction +, what is left -0.0172 % per period (t -0.56), on 1d, 2898 days in common
+- Nearest relative: 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.50, same period, direction +, what is left -0.0221 % per period (t -0.81), on 1d, 2898 days in common
+- Nearest held book (paying, or in the portfolio): 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.50, same period, direction +, what is left -0.0221 % per period (t -0.81), on 1d, 2898 days in common
 - Against holding its coins: share explained 0.00, same period, direction -, what is left +0.0071 % per period (t 1.17), on 4h, 2916 days in common
 
 | Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
+| 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d | night7c_chopreversal_run | 1d | 1d | 2898 | 0.50 | same period | + | -0.0221 % (-0.81) |
 | 033-03.b2_rising-market-range-top-continuation_1d | night7_rangefail_run | 1d | 1d | 2898 | 0.38 | same period | + | -0.0172 % (-0.56) |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.37 | same period | + | -0.0296 % (-0.96) |
 | 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d | night_013_run | 1d | 1d | 2898 | 0.37 | same period | + | +0.0259 % (0.84) |
@@ -57,6 +58,7 @@
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | night6_indecision_run | 1d | 1d | 2898 | 0.12 | same period | + | +0.0049 % (0.14) |
 | 022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d | paying_rerun_run | 1d | 1d | 2898 | 0.12 | same period | + | +0.0058 % (0.16) |
 | 031-03.b1.b1.e2.e2_raw-scaled-rise-continuation_1d | night6_streak_run | 1d | 1d | 2898 | 0.12 | same period | + | +0.0036 % (0.10) |
+| 032-02.g1.e2.e1_new-closing-high-continuation_1d | night7c_steadydecline_run | 1d | 1d | 2898 | 0.12 | same period | + | +0.0069 % (0.19) |
 | 019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h | paying_rerun_run | 4h | 4h | 2916 | 0.12 | same period | + | -0.0018 % (-0.31) |
 | 031-02.b1.b1.b1.d1.g2_wide-day-after-strong-month_1d | night6_indecision_run | 1d | 1d | 2898 | 0.11 | same period | + | -0.0013 % (-0.04) |
 | 031-02.b1.b1.b1.g2_wide-day-after-long-climb_1d | night6_indecision_run | 1d | 1d | 2898 | 0.11 | same period | + | -0.0013 % (-0.04) |
@@ -93,6 +95,7 @@
 | 031-03.g1.b1.g2_swelling-volume-after-rises_1d | night6_longreversal_run | 1d | 1d | 2898 | 0.04 | same period | + | +0.0197 % (0.52) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h | paying_rerun_run | 1h | 4h | 2916 | 0.04 | same period | + | +0.0019 % (0.32) |
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d | paying_rerun_run | 1d | 1d | 2898 | 0.04 | same period | + | +0.0278 % (0.73) |
+| 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further_1d | night7c_rangefail_run | 1d | 1d | 2898 | 0.04 | same period | + | +0.0265 % (0.70) |
 | 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h | night4_weekend_run | 1h | 4h | 2916 | 0.04 | same period | + | +0.0056 % (0.94) |
 | 045-01_rising-market-late-week-gain_1d | night7_panic_run | 1d | 1d | 2898 | 0.04 | same period | + | +0.0226 % (0.59) |
 | 031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d | night6_yearlow_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0240 % (0.63) |

@@ -1,12 +1,13 @@
 # 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation_1d (night_013_run, 1d, confirmed): what it shares with the paying books
 
-- Nearest relative: 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d (paying_rerun_run, 1d): share explained 0.48, same period, direction +, what is left -0.0207 % per period (t -0.79), on 1d, 2898 days in common
+- Nearest relative: 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d (night7c_chopreversal_run, 1d): share explained 0.51, same period, direction +, what is left -0.0134 % per period (t -0.53), on 1d, 2898 days in common
 - Nearest held book (paying, or in the portfolio): 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d (night_013_run, 1d): share explained 0.53, same period, direction +, what is left +0.0286 % per period (t 1.15), on 1d, 2898 days in common
 - Against holding its coins: share explained 0.00, new one period behind, direction +, what is left +0.0470 % per period (t 1.29), on 1d, 2898 days in common
 
 | Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |
 |---|---|---|---|---|---|---|---|---|
 | 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d | night_013_run | 1d | 1d | 2898 | 0.53 | same period | + | +0.0286 % (1.15) |
+| 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d | night7c_chopreversal_run | 1d | 1d | 2898 | 0.51 | same period | + | -0.0134 % (-0.53) |
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying_rerun_run | 1d | 1d | 2898 | 0.48 | same period | + | -0.0207 % (-0.79) |
 | 022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d | paying_rerun_run | 1d | 1d | 2898 | 0.47 | same period | + | -0.0176 % (-0.67) |
 | 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d | night4_range_run | 1d | 1d | 2898 | 0.44 | same period | + | -0.0113 % (-0.42) |
@@ -39,6 +40,7 @@
 | 058-03.e1_calm-rise-stretch-ten-days_1d | night8_risingagitated_run | 1d | 1d | 2898 | 0.23 | same period | + | -0.0014 % (-0.04) |
 | 031-03.b1_wide-day-extends-up-run_1d | night6_indecision_run | 1d | 1d | 2898 | 0.23 | same period | + | -0.0007 % (-0.02) |
 | 031-02.b1.b2_flat-day-after-strong-rise_1d | night6_indecision_run | 1d | 1d | 2898 | 0.23 | same period | + | -0.0013 % (-0.04) |
+| 032-02.g1.e2.e1_new-closing-high-continuation_1d | night7c_steadydecline_run | 1d | 1d | 2898 | 0.23 | same period | + | +0.0003 % (0.01) |
 | 031-03.b1.b1.e2.e1_extreme-scaled-rise-continues_1d | night6_streak_run | 1d | 1d | 2898 | 0.23 | same period | + | -0.0051 % (-0.16) |
 | 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | night4_fallingbounce_run | 1d | 1d | 2898 | 0.22 | same period | + | -0.0100 % (-0.31) |
 | 031-01.b1.b2.b2.e2_short-rise-in-uptrend-continues_1d | night6_indecision_run | 1d | 1d | 2898 | 0.22 | same period | + | +0.0025 % (0.08) |
@@ -81,6 +83,7 @@
 | 031-03.g1.b1.g2_swelling-volume-after-rises_1d | night6_longreversal_run | 1d | 1d | 2898 | 0.11 | same period | + | +0.0128 % (0.37) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h | paying_rerun_run | 1h | 1d | 2898 | 0.10 | same period | + | +0.0084 % (0.25) |
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_five-day-rise-keeps-going_1d | paying_rerun_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0106 % (0.31) |
+| 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further_1d | night7c_rangefail_run | 1d | 1d | 2898 | 0.10 | same period | + | +0.0215 % (0.63) |
 | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d | night6_indecision_run | 1d | 1d | 2898 | 0.09 | same period | + | +0.0104 % (0.30) |
 | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e1_dip-depth-in-uptrend-rebounds_1h | paying_rerun_run | 1h | 1d | 2898 | 0.09 | same period | + | +0.0206 % (0.60) |
 | 035-01_falling-agitated-scaled-fall-rebound_1d | night7_chopreversal_run | 1d | 1d | 2898 | 0.09 | same period | - | +0.0812 % (2.34) |
