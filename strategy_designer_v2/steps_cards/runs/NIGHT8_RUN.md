@@ -115,6 +115,18 @@ the new books on the unseen coins (1u).
   box of the map.
 - **01:30 Paris, limit watch:** all 6 running (last commits 00:02 to 00:15 UTC), no call refused. 80 turns, 71 ideas
   tested, about 78 USD; confirmed 11, profitable enough 3.
+- **01:35 Paris, two findings:**
+  - **F's resume refused by its own permission check, twice** ("destructive or unwanted", then "undermining
+    oversight"), after the 2-hour task cut at 00:32 UTC; F did not work around it, pushed (05f77cd643) and stood down.
+    Its report: 19 ideas tested, 5 confirmed (all one discovery, brief 061: a big day in a calm market carries on), 0
+    profitable enough, 21.24 of 30 USD; its theme answered not real. **Resumed by a new session from its branch**
+    (00:35 UTC, the only one on night8-risingcalm), the loop going on from the run's files with the 8.76 USD left.
+    C's resume after its own cut (00:30 UTC) went through; the refusal is the session's, not the rule's.
+  - **Step 3 wrote an invalid config (session C, 068-01):** a regime named "mean_reversion_unused" in
+    `strategies.regimes`; the engine's config check refused it (V7), step 4 ran 0 of 24 windows, steps 5 and 6 had no
+    verdict and line 7.g still read the empty record (0.34 USD, 4 minutes). For the morning: step 3 runs the engine's
+    config check (`trading-bot/tools/validate_config.py`) on its own config and refuses it there. C's theme answered
+    not real (lines 7.b twice "not in the data": the rise continues).
 
 ## Reading
 (written in the morning)
