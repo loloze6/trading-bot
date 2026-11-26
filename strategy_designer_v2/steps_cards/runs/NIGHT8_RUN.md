@@ -151,12 +151,19 @@ the new books on the unseen coins (1u).
   most 239 USD for the six runs if A, B, D and E reach their budgets.
 - **05:40 Paris, path audit (146 ideas tested):** every plan exact or adapted to its idea. **The night's effect:**
   "a rise fades in a falling, agitated market" (short), confirmed by four sessions on their own (B 4 times, C 5, D 1, E
-  2); 2 of them profitable enough and holding on both unseen periods (C 060-01.g1.d2.d1, E 058-02.b1.g1.b1.b1). Others
-  confirmed and profitable: C 058-03.e1 (rising calm, long; both unseen periods), E 058-02.b1.b2.b1.b2.b2.e1 (calm,
+  2); 1 of them profitable enough and holding on both unseen periods (C 060-01.g1.d2.d1). Others
+  confirmed and profitable: E 058-02.b1.g1.b1.b1 (falling agitated, a next-day reversal after a fall: long, both unseen
+  periods holding, 0.61 explained by the held 035-01; corrected 06:25 Paris from E's report, the audit had read it as
+  a fade), C 058-03.e1 (rising calm, long; both unseen periods), E 058-02.b1.b2.b1.b2.b2.e1 (calm,
   a close at the range's edge carries on; both), D 064-01 (falling agitated rebound, 0.53 explained by the held
   035-01). Volume in declines (A: 7 confirmed, none profitable, all failing Calmar). Profile drift: E's theme lineage
   still moves out of "choppy calm" (into falling and falling agitated: E reads the old theme definition, its
   permission check having refused the new one); its best book came from that drift.
+- **06:25 Paris, two runs ended on their budgets:** A (05:14 UTC, 45.34 of 45: 36 ideas, 11 confirmed, 0 profitable
+  enough, most failing only Calmar; theme real narrowly: a fall continues as volume dries up, t +2.00; 2 components
+  built and committed) and E (05:22 UTC, 35.11 of 35: 25 ideas, 7 confirmed, 5 confirmed and profitable, a held book
+  explaining each at 0.59 to 0.91, all long rebounds or continuations in boxes already held; theme not found real in
+  choppy calm, the continuation at the range's edge confirmed in "calm" and "rising calm" instead).
 
 ## Reading
 (written in the morning)
