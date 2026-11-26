@@ -546,17 +546,26 @@ def main() -> None:
              "Selects the source-file suffix (_60 / _1440) and the cache "
              f"timeframe. Default {RESOLUTION_MINUTES}.",
     )
+    parser.add_argument(
+        "--assets", nargs="+", default=BREADTH_ASSETS,
+        help="Standard base tickers to ingest (e.g. BCH XLM). Default: the 20-pair breadth set.",
+    )
+    parser.add_argument(
+        "--archive-dir", type=Path, default=PROJECT_ROOT / "local_data" / "Kraken_batch" / "master_q4",
+        help="Directory holding the archive's <PAIR>_<resolution>.csv files. Default: local_data/Kraken_batch/master_q4.",
+    )
     args = parser.parse_args()
     resolution = args.resolution
+    assets = args.assets
 
-    archive_dir = PROJECT_ROOT / "local_data" / "Kraken_batch" / "master_q4"
+    archive_dir = args.archive_dir
     data_dir = PROJECT_ROOT / "local_data"
 
     print(f"Kraken archive : {archive_dir}")
     print(f"Cache data_dir : {data_dir}")
-    print(f"Breadth assets : {len(BREADTH_ASSETS)} @ {QUOTE} {resolution}m\n")
+    print(f"Assets         : {len(assets)} @ {QUOTE} {resolution}m\n")
 
-    done, skipped, failures = run_all(BREADTH_ASSETS, archive_dir, data_dir,
+    done, skipped, failures = run_all(assets, archive_dir, data_dir,
                                       resolution)
 
     # A resolution that matches NO source file for ANY asset skips everything
@@ -567,7 +576,7 @@ def main() -> None:
     # absent while the rest ingest). Fail loudly, naming the likely cause.
     if not done and not failures:
         print(
-            f"[FATAL] Nothing ingested: all {len(BREADTH_ASSETS)} assets were "
+            f"[FATAL] Nothing ingested: all {len(assets)} assets were "
             f"skipped for resolution {resolution}m — no *_{resolution}.csv source "
             f"files under {archive_dir}. Likely a --resolution typo.",
             file=sys.stderr,
@@ -590,7 +599,7 @@ def main() -> None:
         for asset, exc in failures:
             print(f"{asset:6}{type(exc).__name__}: {exc}", file=sys.stderr)
 
-    print(f"\nIngested {len(done)}/{len(BREADTH_ASSETS)}; skipped "
+    print(f"\nIngested {len(done)}/{len(assets)}; skipped "
           f"{skipped or 'none'}; failed {[a for a, _ in failures] or 'none'}. "
           f"Pilot 2017+ BTC benchmark = 0.11%.")
 

@@ -243,6 +243,11 @@ source tickers to market-standard store symbols (`XBT`→`BTC`, `XDG`→`DOGE`,
 slot, so the fetcher layer reads them transparently. Coverage inherits the archive's
 2025-12-31 cutoff.
 
+Daily files: the same 19 coins as `kraken_<COIN>USD_1d.csv`, and since 2026-11-26 20 more
+(`kraken_{ALGO,ATOM,BCH,COMP,CRV,DASH,DOT,ETC,FET,FIL,GRT,LDO,OCEAN,PEPE,SHIB,SNX,STORJ,XLM,XTZ,YFI}USD_1d.csv`), from
+Kraken's newer full archive (to 2026-09-30, read by byte ranges) then the public OHLC API
+(`strategy_designer_v2/steps_cards/runs/DATA_COINS_RUN.md`).
+
 ### 3.3 Funding rates — `FundingRateFetcher` (**Binance convention**)
 
 `AVAXUSDT_funding_8h.csv`, `BTCUSDT_funding_8h.csv`, `ETHUSDT_funding_8h.csv`,
