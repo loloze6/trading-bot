@@ -75,6 +75,18 @@ box; the spend after each brief was answered.
   calls from `run_idea` (new mode only) and `night_merge`; 8 tests; on today's files it writes nothing (INDEX.md
   unchanged); cards 184 passed, bot 1677. For the merge: its call in `run_idea` after part 4's step; one runner for "one
   series per coin" with part 4; a "complete" field in the common record's json.
+- **00:00 Paris, steps 9, 11 and 12 on the same 32 windows** (part 5 raised the mismatch with `data_use.md`'s "every
+  complete day"; decided: one kind of record; the card corrected, 04c942cc8b; part 5 aligned, 066b0d0cff).
+- **00:27 Paris, part 4 built** (`build-a4-common`, 1522e63, `runs/BUILD_A4_COMMON.md`): `orchestration/common_record/`
+  (25 portfolio coins × 32 windows, from each coin's usable windows; step 5 by the plan's own measure, step 6); the call
+  from `run_idea` (new mode only); `--register --shard i/n`; 7 tests; the default path: 1,853 of 2,127 files identical,
+  the rest only run ids, times, paths. Measured: 881 s and 776 s per daily book; the engine's warm-up (not the 90-day
+  rule) decides where a coin starts (375 of 466 coin-windows ran). First two records: 060-01.g1.d2.d1 on the common data
+  step 5 inconclusive, step 6 not profitable (Sharpe 0.59, 0.35 below holding); 058-03.e1 confirmed and profitable
+  (Sharpe 1.20, +0.25 over holding, Calmar 0.78). **00:28 Paris:** the 120 paying books in 6 shard sessions
+  (`common-shard-1` to `-6`, about 5.5 h each; only the files the combination reads committed): session_012maTgTp2Ga59drvc8Q5nR6,
+  session_012maTgXxFUnkNga346MP4P2, session_012maTgYGU794NAAhShSdrCg, session_012maTgXJVsLfJQ2ySu8vG52,
+  session_012maTgTxq6gqHYWn9QXmiZy, session_012maTgWXAatuQQz9BBcw6f7.
 
 ## Reading
 (written in the morning)
