@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next 5-bar excess return on forecast (nonzero-forecast grid cells)",
+    "value": 0.0008441893860946221,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.2197081490153148
+    },
+    "threshold": "slope t >= 2 with check passing confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean of minus excess 5-bar return on cells with forecast <= -2",
+    "value": 0.0049225451163888165,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with a nonzero forecast": 444,
+    "grid cells with forecast <= -2": 393
+  },
+  "decided_by": "The slope's t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cells from all coins are pooled into one OLS regression of the excess return on the forecast, with the coin's mean 5-bar return taken over the same non-overlapping grid of all its windows; the plan's minimum of 100 nonzero cells is treated as a minimum count, so missing it gives 'not observable'; and the supporting check fails when no cell has a forecast of -2 or below."
+}

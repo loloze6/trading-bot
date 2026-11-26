@@ -11,20 +11,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-02.b1_quiet-calm-fall-more-coins | 058-02_quiet-volume-fall-continues | plan | inconclusive (+0.67) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-02.b1.b1_quiet-volume-fall-keeps-falling; 7.g: no ideas: The only pattern that clearly beats chance across the many angles examined (the next-day rebound after a sharp one-day fall, F1) is already held many times on the profile map. The falling-calm continuation (F2) is not graded by any situation measured (F2, F3), and the other candidates are grid or year artifacts or multiple-testing noise (F4, F5). | 1.31 | 13.6 |
 | 058-01.b2_quiet-volume-calm-fall-continues | 058-01_calm-downtrend-depth-continues | plan | inconclusive (-0.68) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.b2.b1_quiet-calm-fall-more-coins; 7.g: 058-01.b2.g1_quiet-volume-against-three-months | 0.99 | 6.8 |
 | 058-01.b2.b1_quiet-calm-fall-more-coins | 058-01.b2_quiet-volume-calm-fall-continues | plan | inconclusive (+0.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The test already used every coin and fold available, its result is a zero (F1), and neither the volume grading nor the depth continuation shows at any horizon, coin, year or depth (F2–F5).; 7.g: 058-01.b2.b1.g1_choppy-market-decline-continues, 058-01.b2.b1.g2_steady-calm-fall-continues | 0.99 | 12.2 |
+| 058-02.b1.b1_quiet-volume-fall-keeps-falling | 058-02.b1_quiet-calm-fall-more-coins | plan | inconclusive (-0.01) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. Neither the lightness of the volume (slope t 0.15 overall, -0.89 in falling calm markets, F1 and F3) nor the depth of the fall (deepest tercile -0.01 %, F5) grades the continuation at any horizon, profile or year tested (F2, F4). The only effect left is an ungraded continuation smaller than the cost of a trade (F6).; 7.g: 058-02.b1.b1.g1_calm-scaled-fall-continues | 1.07 | 12.7 |
+| 058-01.g1_thin-volume-deep-fall-continues | 058-01_calm-downtrend-depth-continues | plan | inconclusive (+1.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g1.b1_thin-volume-fall-more-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.88 | 6.6 |
+| 058-01.g1.b1_thin-volume-fall-more-coins | 058-01.g1_thin-volume-deep-fall-continues | plan | inconclusive (+0.90) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g1.b1.b1_choppy-market-fall-continues; 7.g: 058-01.g1.b1.g1_choppy-market-fall-continues | 1.14 | 12.8 |
+| 058-02.g1_choppy-agitated-deep-fall-continues | 058-02_quiet-volume-fall-continues | plan | inconclusive (+0.77) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-02.g1.b1_choppy-agitated-fall-all-coins; 7.g: 058-02.g1.g1_calm-quiet-volume-fall-continues, 058-02.g1.g2_choppy-scaled-fall-continues | 0.99 | 6.9 |
 
 ## Consumption
-7 ideas, 7.15 USD, 65.7 minutes in all.
+11 ideas, 11.23 USD, 104.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.60 | 3.8 |
-| step4_backtest | 0.00 | 39.1 |
-| step5_verdict | 1.27 | 4.6 |
-| step6_check | 0.00 | 0.2 |
-| chart_files | 0.00 | 0.1 |
+| step3_plan | 0.96 | 6.0 |
+| step4_backtest | 0.00 | 63.3 |
+| step5_verdict | 1.95 | 7.0 |
+| step6_check | 0.00 | 0.4 |
+| chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 2.44 | 8.5 |
-| step7_7.g | 2.84 | 9.2 |
+| step7_7.b | 3.70 | 12.5 |
+| step7_7.g | 4.61 | 15.1 |

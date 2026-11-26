@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 5-bar forward return on forecast, fall-regime grid bars",
+    "value": -5.872084010586113e-06,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": -0.012503751900110228
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 (and supporting check passes); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 5-bar return in the short direction, forecast <= -2",
+    "value": 0.004736755534661949,
+    "passed": true
+  },
+  "counts": {
+    "grid bars in the fall regime": 3104,
+    "grid bars in the fall regime with a forecast of -2 or lower": 1840,
+    "distinct days of those bars": 403
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The 30-day fall is close[t]/close[t-30]-1 < 0 within the window, using the recorded regime where the window has fewer than 30 prior bars; the regime sample uses the recorded regime 'trending'; the drift is the coin's mean 5-bar return on the non-overlapping grid of all its windows; the slope's t is cluster-robust (CR1) by UTC day; the plan's 'fewer cases' rule is reported as 'not observable' per the workflow."
+}

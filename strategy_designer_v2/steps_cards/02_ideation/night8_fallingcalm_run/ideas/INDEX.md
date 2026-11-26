@@ -1,3 +1,5 @@
 058-01_calm-downtrend-depth-continues: In a falling calm market, a deeper 30-day fall is followed by a larger fall over the next 5 days. [profile: falling calm]
 058-02_quiet-volume-fall-continues: In a falling calm market, a deep 30-day fall on light volume is followed by a larger fall over the next 5 days. [profile: falling calm]
 058-03_heavy-volume-fall-exhausts: In a falling calm market, heavier volume during a 30-day fall is followed by a smaller fall over the next 5 days. [profile: falling calm]
+059-01_heavy-volume-deep-fall-rebounds: A one-day fall that is deep against the coin's usual move and on heavy volume is followed by a larger next-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+059-02_down-day-volume-sizes-rebound: After a one-day fall, heavier volume against the coin's 30-day volume is followed by a larger next-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]

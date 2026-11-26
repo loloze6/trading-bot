@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short-direction 5-bar excess return",
+    "value": 0.0055296681397460955,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day pooled",
+      "value": 0.9041738837276586
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess of larger-|forecast| half minus smaller half",
+    "value": 0.011319709822269222,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 263,
+    "cases": 907
+  },
+  "decided_by": "t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "Situation bars are bars with regime 'unknown' (the falling calm profile, the only regime with a strategy) and a negative thin_fall raw value (30-day return from prices where it is not recorded), on the short side; cases are grid bars 0,5,10,... of each window with forecast < 0 and a 5-bar return inside the window, the coin's mean is over all its grid cells in all windows, t is the |forecast|-weighted mean over a day-clustered standard error (weighted deviations summed per UTC day, G/(G-1) correction), and the supporting check splits at the median |forecast| into |forecast| > median versus <= median with unweighted half means."
+}
