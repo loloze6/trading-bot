@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast, bars with forecast > 0",
+    "value": -0.0001452607639423518,
+    "statistic": {
+      "name": "t (deviations summed per day)",
+      "value": -0.36026168034253725
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day return minus coin mean, forecast > 0",
+    "value": 0.004724489261715051,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with forecast > 0": 832,
+    "bars with forecast > 0": 2872
+  },
+  "decided_by": "|t| < 2 (inconclusive rule).",
+  "reading": "The profile is read from the recorded regime ('unknown' = both vetoes off, the falling agitated profile) and the streak from the raw down_streak value (> 0, price down-close if missing); the slope's t uses day-clustered errors (x-deviation times residual summed per day); the 100-day minimum counts distinct UTC days of bars with forecast > 0 and a next-day return, and below it the status is 'not observable'."
+}

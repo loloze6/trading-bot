@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of demeaned next-day return on post_pipeline_value (forecast < 0)",
+    "value": -0.0001519189546948632,
+    "statistic": {
+      "name": "t, errors clustered by day",
+      "value": -0.49023845922633885
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction",
+    "value": 0.005589897617253487,
+    "passed": true
+  },
+  "counts": {
+    "bars with a forecast below 0": 1326,
+    "distinct days": 633
+  },
+  "decided_by": "the t of the slope lies between -2 and 2",
+  "reading": "the profile is read from the recorded regime ('unknown' = neither chop veto fired) and the rise from the recorded raw value (1-bar return when unrecorded); the coin's mean daily return is the mean of all its within-window next-day returns; the slope is OLS with intercept and CR1 day-clustered errors; the plan's 'fewer is inconclusive' minimum is reported as 'not observable' as the workflow requires"
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-day return on forecast, in-profile grid cases",
+    "value": 0.0007026717436619989,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.9550165867203977
+    },
+    "threshold": "confirm: slope t >= 2 with top-minus-bottom > 0; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean excess 3-day return (Welch t 3.388)",
+    "value": 0.008159973283841606,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 5737,
+    "active bars": 17583
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom difference is above 0.",
+  "reading": "Calm profile read as regime other than 'chop'; the coin's mean 3-day return is taken on the same non-overlapping grid over all its windows; thirds are the n//3 lowest and highest forecasts after a stable sort, pooled across coins; the plan's 'inconclusive' under 300 cases is reported as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002896 on the check folds against +0.0007027 on every fold",
+    "main": 0.00028963981805060546,
+    "statistic": 1.3813919219114714,
+    "counts": {
+      "grid cases": 3961,
+      "active bars": 12117
+    }
+  }
+}

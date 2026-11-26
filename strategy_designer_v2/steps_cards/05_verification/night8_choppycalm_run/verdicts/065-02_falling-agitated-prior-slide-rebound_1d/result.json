@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of next-day excess return on forecast (forecast > 0)",
+    "value": 0.0006004218493585635,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 1.7745459280962426
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast slope with latest day's return added, day-clustered t",
+    "value": 1.9339048036476483,
+    "passed": false
+  },
+  "counts": {
+    "bars with forecast > 0": 3092,
+    "distinct days": 875
+  },
+  "decided_by": "The main t lies between -2 and 2.",
+  "reading": "The profile is the recorded regime 'unknown', the slide the raw component's sign; excess return uses each coin's mean next-day return over all its bars in all windows; SEs are CR1 clustered by UTC day; the supporting regression drops each window's first bar (no latest-day return); the plan's minimum of 100 bars and 50 days is applied as a minimum count."
+}

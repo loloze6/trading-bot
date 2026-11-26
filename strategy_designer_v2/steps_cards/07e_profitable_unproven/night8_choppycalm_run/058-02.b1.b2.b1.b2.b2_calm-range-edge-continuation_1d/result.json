@@ -1,0 +1,50 @@
+{
+  "line": "7.e",
+  "backtest": "058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.42647820000000003,
+  "findings": {
+    "F1": "The book's gain is timing, not the market's own rise: on folds B, C the position-day gains sum to 14.10 (long 11.81, short 2.28), of which the market's rise accounts for only 0.77 (long +3.60, short \u22122.83), leaving 13.32 of timing (long 8.21, short 5.11); the book's Sharpe is 1.50 against holding's 0.61.",
+    "F2": "The gain is not one coin or one period: 10 of 12 windows have a positive mean daily return (only w9 \u22120.07 % and w12 \u22120.04 % are negative), no coin carries more than 26 % of the summed book return (ETH 26 %, BTC 16 %, ADA 15 %, LTC 13 %, XMR 11 %), and the 20 best of 2706 trades hold 25 % of the summed trade profit (1560 of 6366).",
+    "F3": "In the calm profile, the next 5 days follow the close's place in its 20-day range on the continuation side, rising and graded at the edges: the mean excess 5-day return is \u22122.41 % (t \u22123.14, 163 cases) for the bottom fifth of the range, \u22122.38 % (t \u22123.78, 193) for the next, \u22120.17 % (t \u22120.24, 173) at the middle, +0.68 % (t 1.13, 198) and +4.40 % (t 4.40, 177) at the top edge, so the brief's reversion is not there and its mirror, continuation, is.",
+    "F4": "The effect is as clear at shorter horizons as at the plan's 5 days, with more independent cases: the forecast-signed excess return is +0.30 % over 1 day (t 4.80, 5416 non-overlapping cases), +0.91 % over 3 days (t 4.77, 1776), +1.44 % over 5 days (t 4.24, 1056), +2.29 % over 10 days (t 3.48, 518) and then flattens at +2.44 % over 20 days (t 1.72, 250); these t are not clustered by day, unlike step 5's 1.71.",
+    "F5": "The edge continuation is stronger in calm bars than in the other bars of the same coins: the top-edge excess 5-day return is +4.40 % in calm against +1.78 % otherwise, and the bottom edge \u22122.41 % in calm against +0.28 % otherwise.",
+    "F6": "Inside calm, the grading is steepest in a choppy 60-day trend, the brief's own choppy calm profile: excess 5-day return \u22126.38 % (11 cases) at the bottom edge, \u22123.33 % (28), \u22121.80 % (36) at the middle, +2.82 % (26), +7.76 % (25) at the top edge; the forecast-signed move there is +4.43 % on longs (t 2.72, 60) and +3.44 % on shorts (t 3.29, 66). In a falling trend the top half and the middle earn alike (+2.3 % each), so there is no grading.",
+    "F7": "The signed 5-day effect points the same way in every year seen: 2018 +2.72 % (t 3.70, 203), 2019 +1.80 % (t 2.96, 227), 2020 +2.66 % (t 3.75, 208), 2021 +1.35 % (t 2.08, 266)."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the nearer a coin's close sits to the top of its 20-day high-low range, the larger its rise over the next 2 days, and the nearer to the bottom, the larger its fall.",
+      "consequence": "A trader in a calm coin can lean with a close near its 20-day edge on a short hold, where the move per day is as reliable as over a week and the cases are more numerous.",
+      "name": "calm range edge short continuation",
+      "from": "F3, F4, F5, F7",
+      "profile": "calm",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the nearer a coin's close sits to the top of its 20-day high-low range, the larger its rise over the next 5 days, and the nearer to the bottom, the larger its fall.",
+      "consequence": "In a coin that has neither trended nor swung for weeks, a close near a 20-day edge is a reason to trade in that edge's direction, not against it as range traders expect.",
+      "name": "choppy calm edge continuation",
+      "from": "F3, F5, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation",
+    "058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

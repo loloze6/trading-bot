@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 058-02.b2.b1_calm-range-continuation-more-coins_1d
+idea tested: 058-02.b2.b1_calm-range-continuation-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3667 USD
+---
+## Findings
+- **F1:** In folds B and C the slope of the excess 5-day return on the forecast is positive, 0.0024 with t 2.25 over 211 grid cases, but across all four folds it is only 0.00039 with t 0.87 over 1050 cases on 322 days, so folds A and D must carry a slope near zero or against the idea.
+- **F2:** Even inside folds B and C, the effect comes from 2021 alone. The 5-day slope is t 2.81 in 2021 (63 cases) and t −0.43, −0.54 and 0.49 in 2018, 2019 and 2020. Without 2021 it falls to t 0.35 (148 cases), and one window, w18, has t 3.65 on 18 cases.
+- **F3:** Neither side holds up year by year. Short cases near the range's low gain a signed excess of +6.1 % (t 3.4) in 2018, +0.9 % (t 0.8) in 2019, −1.7 % (t −1.5) in 2020 and +5.8 % (t 2.8) in 2021. Long cases near the top gain −2.8 %, −1.5 %, +0.3 % and +6.0 % in those years, so only 2021 is positive on both sides.
+- **F4:** The effect is not specific to the choppy calm profile. Outside the profile the slope on range position is also positive, 0.026 with t 2.09 over 1411 cases at 5 days, and none of its years reaches t 2 (0.08, 1.50, 1.31 and 0.25 for 2018 to 2021).
+- **F5:** The pull is not graded by nearness to the edge. Short cases from the middle, the near zone and the edge of the range earn +2.4 %, +3.2 % and +2.6 % over 5 days. Long cases earn +0.7 %, −0.1 % and +4.6 %. The middle quintile of range position averages −2.0 %, against −3.8 % at the bottom and +3.8 % at the top.
+- **F6:** Another horizon does not clarify it. On the forecast, the slope's t is 1.25 at 1 day, 1.09 at 3, 2.25 at 5, 1.99 at 10 and 1.54 at 20 days, so 5 days is already the best horizon.
+- **F7:** The size measured in step 5 is +0.71 % per case, 0.064 of a usual move, with t 2.12 over 827 days. The plan's slope is t 0.87, and the test already used all 19 coins and all four folds of daily bars. A finer bar adds no independent 5-day cases, so more data cannot be added.
+
+## Ideas
+- No ideas: The effect is not stronger where the idea places it (F4), it appears in one year only (F2), on neither side consistently (F3), it is not graded by nearness to the edge (F5) and it is not clearer at another horizon (F6), so no condition, side or horizon would give a clear answer, and the test already used all the data available (F7).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

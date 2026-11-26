@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 058-02.b1.g1.b1.b2_falling-market-next-day-reversal_1d
+idea tested: 058-02.b1.g1.b1.b2_falling-market-next-day-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6095 USD
+---
+## Findings
+- **F1:** The tested fade lives in falling agitated markets, a profile the portfolio already holds through 058-02.b1.g1.b1.b1, "falling agitated next day reversal". In falling agitated markets the next-day excess return is graded by the day's move: +1.42 % and +1.56 % after falls of -2 to -0.3 swings, and -1.38 % (t -1.88, 41 days) and -3.04 % (t -1.62, 9 days) after rises of 0.3 to 1 and over 2 swings. The close-location fade there earns +1.27 % per case (t 2.59, 435 cases, 108 days), against +0.30 % (t 1.20, 234 days) in falling calm markets. Among large moves (|z| > 1) in falling markets, the fade earns +1.71 % (t 3.94, 239 cases) in the most-swinging third and +0.18 % (t 0.53, 204 cases) in the least-swinging third.
+- **F2:** In falling calm markets the next day is lopsided: down days are not followed by rises, while large up days are followed by falls. After falls the next-day excess return is -0.14 % (t -0.16, 49 days) for -2 to -1 swings and -0.40 % (t -0.19, 14 days) for falls beyond -2 swings. After rises it is -1.42 % (t -1.71, 95 cases, 53 days) for 1 to 2 swings and -2.18 % (t -1.91, 21 cases, 16 days) beyond 2 swings, against +0.39 % after flat days (t 0.95, 131 days).
+- **F3:** Across the whole falling profile, the short leg after up days is mostly the falling coin's own drift, and the down-day rebound carries the edge. Flat days (|z| < 0.3) are followed by -0.45 % (t -3.04, 1185 cases), about the same as up days of 0.3 to 1, 1 to 2 and over 2 swings (-0.48 %, -0.47 %, -0.69 %). Falls of -2 to -1 swings are followed by +0.81 % (t 2.65, 430 cases).
+- **F4:** The book cannot pay as tested. Its total move per case is +0.18 % against a 0.22 % cost per trade, because small moves dilute it. In falling markets the fade earns +0.22 % per case on moves under 1 swing (2000 cases) and +0.75 % on moves over 1 swing (t 3.43, 697 cases).
+- **F5:** The brief's own theme does not show in choppy calm markets.
+- **F6:** No weekday pattern stands out.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-02.b1.g1.b1.b2.g1_falling-calm-rally-fade` (from F2, F3): In a falling, calm market, the larger a coin's one-day rise is against its usual daily swing over the last 20 days, the larger its fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

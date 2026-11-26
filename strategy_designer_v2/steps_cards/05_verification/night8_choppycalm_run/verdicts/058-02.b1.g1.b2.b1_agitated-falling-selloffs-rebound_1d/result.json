@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess next-day return",
+    "value": 0.01097599983456858,
+    "statistic": {
+      "name": "day-clustered t of the weighted mean",
+      "value": 3.240899278958579
+    },
+    "threshold": "confirm: positive with t >= 2 (and top-minus-bottom third > 0); reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third mean excess next-day return",
+    "value": 0.013251424622593436,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1468,
+    "distinct days": 702
+  },
+  "decided_by": "The weighted mean excess return is positive with t >= 2 and the top third beats the bottom third.",
+  "reading": "Situation bars are bars where the recorded scaled return (recomputed from prices if missing) is below 0, on the long side; the t is a day-clustered t of the weighted mean (per-day sums of w*(x-mean), with G/(G-1) correction); thirds are split by sorted forecast with np.array_split and compared on unweighted mean excess returns; the plan's minimum of 100 cases on 60 days is applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.00483 on the check folds against +0.01098 on every fold",
+    "main": 0.004830287006264555,
+    "statistic": 1.1966363400649396,
+    "counts": {
+      "cases": 793,
+      "distinct days": 413
+    }
+  }
+}

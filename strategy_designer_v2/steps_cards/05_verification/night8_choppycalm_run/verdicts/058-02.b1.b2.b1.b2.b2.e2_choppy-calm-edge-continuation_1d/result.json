@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-day forward return minus coin mean on forecast (grid, non-zero forecast)",
+    "value": 0.00039440508016374187,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 0.8745750826790984
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 on >= 100 cases and timing gain > 0; reject: slope < 0 with t <= -2 on >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return before costs minus market-rise gain)",
+    "value": 0.00015177237790771282,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1050,
+    "days of cases": 322
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Situation bars are bars whose regime is 'unknown' (the choppy calm profile, no veto fired) where the forecast's sign equals the sign of the raw range position; the slope's t uses OLS with an intercept and day-clustered (CR1) standard errors; the coin's mean 5-day return is taken on all grid bars of all its windows; the plan's 'fewer than 100 grid cases' is applied as the minimum count (not observable); the book's daily return is the mean over coins with a bar that day of position x next close-to-close return."
+}

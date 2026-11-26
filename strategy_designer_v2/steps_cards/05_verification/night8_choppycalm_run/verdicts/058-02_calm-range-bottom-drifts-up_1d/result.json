@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-bar forward return on forecast (profile bars, non-overlapping grid, pooled)",
+    "value": -0.00019507304042043572,
+    "statistic": {
+      "name": "t of OLS slope",
+      "value": -0.3413181534805412
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return of grid cases with forecast > 0",
+    "value": -0.009611587436223246,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast above 0": 281,
+    "profile grid cases": 567
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Profile bars are bars with regime 'unknown' (the config's only active regime, i.e. choppy calm); the coin's mean 5-bar return is taken on the non-overlapping grid of all its bars over all windows; the regression uses all profile grid cases including forecast 0; the plan's 'fewer than 50 grid cases with forecast above 0' is applied as a minimum count giving 'not observable'."
+}

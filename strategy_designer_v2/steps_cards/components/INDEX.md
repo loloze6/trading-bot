@@ -223,3 +223,6 @@ night8_risingagitated_run | 058-02_agitated-rise-swing-scaled-giveback_1d | Movi
 night8_risingagitated_run | 068-02_falling-agitated-run-break-fade_1d | PriorDownRunOnUpCloseComponent | built: PriorDownRunOnUpCloseComponent {"max_bars": 30}
 night8_fallingcalm_run | 060-01.d2_dry-up-in-moderate-declines_1d | VolumeDryUpTimesFallModerationComponent | built: VolumeDryUpTimesFallModerationComponent {"fall_period": 20, "volume_period": 30}
 night8_fallingcalm_run | 060-02.d1.d2.d1_volume-signal-in-deeper-falls_1d | VolumeChangeTimesFallDepth | built: VolumeChangeTimesFallDepthComponent {"fall_period": 20, "volume_period": 30}
+night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night8_choppycalm_run | 058-02_calm-range-bottom-drifts-up_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePositionComponent | cannot build: no answer passed the checks after 3 attempts

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean next-day unusual move, short direction",
+    "value": 0.0027345424440998406,
+    "statistic": {
+      "name": "t of weighted mean, cases of one day pooled",
+      "value": 1.5085147669848833
+    },
+    "threshold": "positive with t >= 2 to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "unusual move above-median minus at-or-below-median abs(forecast) (Welch t -0.913)",
+    "value": -0.00156965835205035,
+    "passed": false
+  },
+  "counts": {
+    "distinct days carrying cases": 1126,
+    "cases": 2951
+  },
+  "decided_by": "The main t lies between -2 and 2.",
+  "reading": "Falling profile taken from the recorded regime ('unknown' = not vetoed to 'chop'), plus a negative 60-bar close change where computable inside the window; next-day return minus the coin's mean daily return over all its windows, sign-flipped for the short; the weighted mean's t uses day-clustered standard errors (weighted deviations summed per UTC day, small-sample factor K/(K-1)); the supporting check uses unweighted group means of the unusual move with Welch's t; fewer than 30 distinct days is treated as a minimum count not reached (not observable)."
+}
