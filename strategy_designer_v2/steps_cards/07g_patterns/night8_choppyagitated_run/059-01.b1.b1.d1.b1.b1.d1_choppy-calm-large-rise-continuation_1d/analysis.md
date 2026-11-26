@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation_1d
+idea tested: 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.5011 USD
+---
+## Findings
+- **F1:** On folds B and C, the 14-day grid cases inside the choppy-calm profile number only 80, on 34 days, with a mean excess 14-day return of +1.8 % (t 0.37). This matches step 5's size of +0.12 % unusual move per case (t 0.11, 348 days, 531 cases) against a 0.22 % trade cost, so the book's +2.34 % total move per case is almost all the coins' normal drift.
+- **F2:** Inside the profile, the top two bins of the scaled weekly rise (0.75 to 1.5, and above 1.5) are followed by +23.6 % (n 12, t 1.28) and +13.8 % (n 12, t 1.60) excess over 14 days, while the bin from 0.25 to 0.75 gives back −17.3 % (n 5, t −1.47). The day-clustered slope on the scaled rise is 0.052 (t 1.44, 71 cases, 29 days), so the gradient leans the idea's way but cannot be told from chance.
+- **F3:** Outside the profile, the scaled weekly rise has a 14-day excess slope of −0.029 for rises (t −1.72, n 194) and +0.034 for falls (t 1.93, n 227), and its 7-day slope is 0.015 in falling markets (t 1.17) and 0.010 in rising markets (t 0.97); no out-of-profile slope reaches a t of 2.
+- **F4:** Over all profiles, the scaled weekly move predicts the next 7 days most in choppy markets: slope 0.035 with t 1.97 (n 109, 46 days). Among the roughly thirty angles looked at, this is the largest t, and it does not stand out from what that many looks produce by chance.
+- **F5:** The book's trade gains come from a few coins and a few large winners. ADA (16 trades, mean +24.3 %) and XRP (36 trades, mean +20.6 %) carry it, while ETH (−2.9 %), XMR (−1.5 %) and TRX (−3.5 %) lose. The median trade by entry-forecast tercile is +0.87 %, −0.06 % and −0.19 %, against means of +2.6 %, +7.1 % and +5.1 %.
+- **F6:** The book moves with its coins rather than against them: on its 29 worst days the coins return −7.1 % on average, and on its 29 best days +7.4 %. This fits a book whose gain is the market's rise while in a position, not timing.
+- **F7:** The calendar and volatility angles show nothing that stands out:
+
+## Ideas
+- No ideas: Across the forecast, positions, trades, profiles, volatility levels, weekdays, years and windows, the largest pattern has a t of 1.97 among about thirty angles. The idea's own effect inside its profile is +1.8 % excess with a t of 0.37, and the book's gain is the coins' drift carried by a few large ADA and XRP trades, so no pattern stands out enough from chance to found an idea.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,5 +1,7 @@
 058-01_choppy-agitated-weekly-rise-continues_1d: inconclusive (fit: adapted) [main: -0.00120909; t of the mean, cases of one day taken together -0.123148; grid cases 93, distinct days 64]
 058-02_choppy-agitated-weekly-fall-continues_1d: inconclusive (fit: exact) [main: -0.000905795; t of the mean, cases of one day together -0.0931378; cases 209, days 168]
+059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation_1d: confirmed (fit: exact) [main: 0.00621488; slope t, clustered by day 2.30226; grid cases with a forecast above 0 180, days of the cases 79, top third cases 60]
+059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks_1d: inconclusive (fit: adapted) [main: 0.0256593; t of the weighted mean, cases of one day taken together 0.43113; cases with a positive forecast 97, distinct days 36, upper half cases 48, lower half cases 49]
 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d: confirmed (fit: exact) [main: 0.00793875; OLS slope t, clustered by day 2.53421; grid cases with forecast > 0 180, days 79]
 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: inconclusive (fit: adapted) [main: 0.0076227; day-clustered slope t 2.00035; cases 103, distinct days 48]
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: inconclusive (fit: adapted) [main: 0.0104527; t of the mean, cases of one day taken together 0.819701; cases 398, cases on distinct days 259]
