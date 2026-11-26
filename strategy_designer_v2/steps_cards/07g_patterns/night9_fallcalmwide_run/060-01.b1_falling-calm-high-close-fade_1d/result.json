@@ -1,0 +1,59 @@
+{
+  "line": "7.g",
+  "backtest": "060-01.b1_falling-calm-high-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6608429,
+  "findings": {
+    "F1": "In folds B and C, the tested situation's own cases (falling calm, a wide day closing near its high) had a next-day return below the coin's mean of \u22121.25 % (105 cases on 63 days, day-grouped t \u22122.65), which is +1.25 % in the short direction. The full-fold verdict is +0.26 % with t 0.87, so folds A and D must point weakly or the other way, and the pattern is not stable across folds.",
+    "F2": "Over all agitation levels, when the 60-day trend is falling, wide days (range at least 2 swings) closing in the top quarter are followed by \u22121.90 % next-day excess (109 cases, 50 days, t \u22122.40). The same days fall in every year shown: 2018 \u22121.99 %, 2020 \u22123.70 %, 2021 \u22120.75 %. The same days in a rising trend are followed by +0.72 % (190 cases, t 1.05). Falling agitated short already holds 060-01.g1.d2.d1, an own-range close-height fade, so the agitated part is already held.",
+    "F3": "In a falling 60-day trend, the next-day excess return falls step by step as the day's close-to-close move rises against its 30-day swing: z below \u22122.5 +3.34 %, \u22122.5 to \u22121.5 +0.67 %, \u22121.5 to \u22120.5 +0.40 %, \u22120.5 to 0.5 \u22120.33 %, 0.5 to 1.5 \u22120.74 % (400 cases, t \u22121.99), 1.5 to 2.5 \u22120.69 %, above 2.5 \u22122.96 % (18 cases, t \u22122.29). The fade after up days (z above 0.5) held in 2018 (\u22121.34 %, t \u22121.81), 2019 (\u22120.87 %, t \u22121.89) and 2020 (\u22121.18 %, t \u22121.27), but not in 2021 (+0.27 %).",
+    "F4": "Wide days closing in the bottom quarter of their range are followed by a next-day rebound that grows with width: range 1\u20131.5 swings \u22120.30 %, 1.5\u20132 swings +0.68 % (t 1.42), 2\u20133 swings +1.02 % (332 cases, 159 days, t 2.21), above 3 swings +2.21 % (165 cases, 79 days, t 2.21). The rebound is positive in every year: 2018 +0.77 %, 2019 +0.88 %, 2020 +2.61 %, 2021 +1.56 % (t 2.01). It is strongest in a rising 60-day trend: +1.91 % (105 cases, 53 days, t 2.68), against +1.54 % in falling (t 1.52) and +1.15 % in choppy (t 1.21). The map already holds this pattern in the agitated profiles (039-02.d1, 044-01, 045-01), but not in rising calm.",
+    "F5": "Down days (z below \u22121) are followed by a rebound that grows with the day's volume against its 20-day mean, by volume tercile within each coin: low +0.36 % (73 cases), middle +0.94 % (248 cases, t 1.50), high +1.22 % (641 cases, 212 days, t 2.61). Up days show no such grading (+0.24 %, \u22120.20 %, \u22120.23 %). Over all bars, the top volume-ratio quintile is followed by +0.56 % (t 1.95) and the bottom quintile by \u22120.43 % (t \u22122.11). The map holds the heavy-volume fall rebound only in falling agitated (064-01).",
+    "F6": "The other angles show nothing that stands out from chance after about 60 cells were looked at. No weekday has a day-grouped |t| above 1.5, and the signed-volume quintiles all have |t| below 0.9. The book is small: 2 % of coin-days in a position, +1.1 % a year, and a total move per case of only 0.6 times the 0.22 % cost of a trade. A next-day fade therefore needs a much larger move per case (F2 \u22121.90 %, F3 top bucket \u22122.96 %) to pay."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a wide day that closes near its high is followed by a fall over the next day, larger the larger the day's close-to-close rise against the coin's 30-day swing of daily returns.",
+      "consequence": "In a falling, calm coin, the fade after a wide high-closing day should be sized by how big the day's rise was against the coin's usual swing, not by where the close sits in the range.",
+      "name": "falling calm rise-size fade",
+      "from": "F1, F3",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a rising, calm market, a day whose range is wide against the coin's 30-day swing of daily returns and that closes near its low is followed by a rise over the next day, larger the wider the day.",
+      "consequence": "In a rising, calm coin, a wide day that ends at its low is a next-day buy, stronger the wider the day.",
+      "name": "rising calm wide low-close rebound",
+      "from": "F4",
+      "profile": "rising calm",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    },
+    {
+      "idea": "A down day traded on heavier volume than the coin's 20-day average is followed by a rise over the next day, larger the heavier the volume against that average.",
+      "consequence": "A trader buys the day after a heavy-volume down day in any market, more the heavier the volume.",
+      "name": "heavy volume down-day rebound",
+      "from": "F5",
+      "theme": "discovery",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-01.b1.g1_falling-calm-rise-size-fade"
+  ],
+  "discovery_ids": [
+    "060-01.b1.g2_rising-calm-wide-low-close-rebound",
+    "060-01.b1.g3_heavy-volume-down-day-rebound"
+  ],
+  "no_ideas": null
+}

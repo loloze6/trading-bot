@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move, short direction",
+    "value": 0.0029897640671114984,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": 1.0017464282974406
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2, or slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": 0.00025766751505438483,
+    "passed": true
+  },
+  "counts": {
+    "cases": 321,
+    "distinct days": 186
+  },
+  "decided_by": "Neither the confirm rule nor a reject rule is met: inconclusive.",
+  "reading": "Situation taken as raw width >= 2.0 and close location >= 0.75 (recorded raw values, recomputed from prices where missing) with a short forecast; the falling calm profile is added by code and not recomputed (its 365-day lookback exceeds a window); cases are all bars with forecast < 0 and a next bar in the same window; t of the mean uses deviations summed per UTC day; the slope's t is the ordinary least-squares t."
+}

@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "060-01.b1_falling-calm-high-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38134460000000003,
+  "findings": {
+    "F1": "Step 5's main measure is on the predicted side but short of the bar: +0.30 % next-day short-direction excess, t 1.00, over 321 cases on 186 days. In folds B and C alone, the same cases give +1.25 % (t 2.65, 105 cases, 63 days), so folds A and D must sit near zero or below and pull the whole result down; the effect is mixed across the data, not uniformly weak.",
+    "F2": "Inside B and C the effect is concentrated in some periods and absent in others. It is +1.96 % (t 2.03) in 2018 and +1.48 % (t 2.53, hit 88 %) in 2019, but +0.04 % (t 0.05) in 2020 and +0.58 % (t 0.64) in 2021. Window w18 is negative (\u22120.83 %, hit 25 %, 16 cases).",
+    "F3": "The effect lives where the close pins the day's high. Among active cases, closes in the top tenth of the range give +2.13 % next day (t 2.99, 29 cases, 22 days, hit 79 %), against +0.69 % (t 1.18, 60 cases, 39 days) for the rest of the top quarter. By close-location tercile, the lowest gives +0.08 % (t 0.11), against +2.12 % (t 2.73) and +1.60 % (t 2.48) for the two upper ones.",
+    "F4": "The day's width does not grade the effect. The width terciles give +1.28 %, +1.30 % and +0.90 %, and the Spearman correlation of width with the next-day excess is \u22120.09, against +0.18 for close location. Among top-tenth closes, ranges of 1.5\u20132 usual moves even give \u22121.72 % (t \u22121.30), against +2.51 % (t 3.15, 22 cases) for ranges of 2\u20133 usual moves, so the width cut matters but more width adds nothing.",
+    "F5": "The plan's 1-day horizon is where the effect shows; it fades over longer holds. The 2-day excess is +0.63 % (t 0.93) and the 3-day +0.81 % (t 0.75), against +1.25 % (t 2.65) at 1 day. At 3 days the widest tercile turns negative (\u22121.16 %).",
+    "F6": "Per case the move is too small to pay its cost. The total move is +0.13 % against a 0.22 % trade cost (0.6 times). The unusual move is +0.26 % (1.2 times, t 0.87), so only the top-of-range cases of F3, with about +2 % per case, could cover it."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a day whose high-to-low range is wide against the coin's 30-day swing of daily returns and that closes at the very top of its range, pinned to its high, is followed by a fall over the next day, larger the closer the close sits to the day's high.",
+      "consequence": "In a falling, calm coin, only a wide day that ends essentially at its high is worth fading for one day, and closes merely in the upper part of the range are no reason to short.",
+      "name": "falling calm pinned-high fade",
+      "from": "F1, F3, F4, F5, F6",
+      "profile": "falling calm",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-01.b1.b1_falling-calm-pinned-high-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
