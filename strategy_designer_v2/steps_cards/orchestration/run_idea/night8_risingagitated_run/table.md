@@ -17,22 +17,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.d1_wide-day-high-close-next-day-fade | 060-01_falling-agitated-high-close-fade | plan | inconclusive (-1.78) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 060-01.d1.b1_wide-day-upper-close-next-day-fade, 060-01.d1.b2_wide-up-day-high-close-fade; 7.g: no ideas: The only pattern that stands out once same-day cases are counted together is the wide-day low-close rebound (F1), which the portfolio already holds; the tested high-close fade, its grading, and the weekday, volatility and rising-trend angles stay under t 2 or repeat held books (F2–F6). | 1.03 | 6.4 |
 | 060-01.g1_wide-day-high-close-fade | 060-01_falling-agitated-high-close-fade | plan | confirmed (+2.50) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 060-01.g1.d1_wider-than-usual-high-close-fade, 060-01.g1.d2_wide-day-close-location-graded-fade; 7.g: 060-01.g1.g1_graded-width-high-close-fade | 1.11 | 7.1 |
 | 060-01.g1.d1_wider-than-usual-high-close-fade | 060-01.g1_wide-day-high-close-fade | plan | inconclusive (+1.89) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.d1.b1_wide-high-close-fade-more-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.10 | 7.0 |
+| 060-01.g1.d2_wide-day-close-location-graded-fade | 060-01.g1_wide-day-high-close-fade | plan | confirmed (+2.23) | not profitable enough (failed: Calmar) | - | 7.d: 060-01.g1.d2.d1_own-range-close-height-fade, 060-01.g1.d2.d2_wider-squeeze-day-fades-harder; 7.g: 060-01.g1.d2.g1_up-day-high-close-fade | 1.13 | 7.2 |
 
 ## Consumption
-13 ideas, 15.09 USD, 93.4 minutes in all.
+14 ideas, 16.22 USD, 100.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.81 | 5.8 |
-| step4_backtest | 0.00 | 43.1 |
-| step5_verdict | 2.12 | 7.5 |
+| step3_plan | 1.89 | 6.3 |
+| step4_backtest | 0.00 | 46.0 |
+| step5_verdict | 2.29 | 8.2 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 1.54 | 4.7 |
+| step7_7.d | 2.00 | 6.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.46 | 1.2 |
-| step7_7.b | 2.96 | 9.4 |
-| step7_7.g | 6.20 | 19.6 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.b | 2.96 | 9.5 |
+| step7_7.g | 6.61 | 21.0 |
+| similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 1.1 |
