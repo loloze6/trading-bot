@@ -21,22 +21,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.b1.d1.b1_fresh-slide-bounce-fades-overnight | 060-01.b1.d1_bounce-inside-fresh-slide-fades | plan | inconclusive (-0.65) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.b1.d1.b1.b1_deep-slide-bounce-fades-overnight; 7.g: no ideas: The only graded pattern that stands out among the many angles examined (F3, F4) is the agitated down-day rebound the profile map already holds. The brief's own up-day giveback appears as a level but does not grow with the rise (F1, F2), and the other cells reaching a t near 2 to 3 lack grading and do not stand out from chance given how many were looked at (F5). | 1.34 | 13.4 |
 | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks | plan | confirmed (+2.53) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation, 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks, 059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues; 7.g: no ideas: Across the forecast, the profiles, the scaled one-day and weekly moves, the close location, the weekday and the windows, the only patterns that stand out are the next-day rebounds and late-week gains the map already holds. Nothing new stands out from chance in the choppy-calm profile (F2, F4), and the choppy-agitated signal is the profile's drift on 130 bars (F6). | 1.70 | 13.6 |
 | 059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | plan | confirmed (+2.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks, 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues, 059-01.b1.b1.d1.b1.b1.d1.d3_rise-continues-in-upper-chop; 7.g: no ideas: Across the forecast, positions, trades, profiles, volatility levels, weekdays, years and windows, the largest pattern has a t of 1.97 among about thirty angles. The idea's own effect inside its profile is +1.8 % excess with a t of 0.37, and the book's gain is the coins' drift carried by a few large ADA and XRP trades, so no pattern stands out enough from chance to found an idea. | 2.06 | 12.6 |
+| 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks | 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks | plan | inconclusive (+0.43) | not profitable enough (failed: Calmar) | - | 7.b: 059-01.b1.b1.d1.b1.b1.d2.b1_choppy-calm-rise-two-weeks; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.13 | 12.1 |
 
 ## Consumption
-17 ideas, 21.01 USD, 199.2 minutes in all.
+18 ideas, 22.14 USD, 211.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.34 | 9.4 |
-| step4_backtest | 0.00 | 127.7 |
-| step5_verdict | 3.20 | 11.2 |
-| step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 2.42 | 9.8 |
+| step4_backtest | 0.00 | 135.9 |
+| step5_verdict | 3.38 | 11.7 |
+| step6_check | 0.00 | 0.8 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.d | 2.64 | 8.1 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 4.74 | 14.3 |
-| step7_7.g | 8.08 | 23.9 |
+| step7_7.b | 5.05 | 15.4 |
+| step7_7.g | 8.64 | 25.6 |
 | similarity_check | 0.00 | 0.5 |
 | unseen_test | 0.00 | 3.0 |
