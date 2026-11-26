@@ -16,4 +16,5 @@
 060-01.g1_wide-day-high-close-fade_1d: 1 ideas (2 explorations)
 060-01_falling-agitated-high-close-fade_1d: 1 ideas (2 explorations)
 068-01_falling-agitated-lone-rise-fade_1d: no ideas: The backtest record is empty (0 coin-window tables in bars, trades and days, and no verdict, check or size), so no pattern could be measured and no finding supports an idea; the backtest should be rerun before this line reads it again.
+068-02_falling-agitated-run-break-fade_1d: 1 ideas, 1 discoveries (3 explorations)
 069-01_low-range-up-day-fade_1d: 2 ideas (2 explorations)
