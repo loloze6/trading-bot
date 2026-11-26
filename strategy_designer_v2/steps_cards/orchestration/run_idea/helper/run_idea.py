@@ -36,6 +36,15 @@ def folders(run):
             "table": HERE.parent / run}
 
 
+def data_use_version(run):
+    """The data-use mode of the run (common/data_use.md): the version in orchestration/loop/<run>/data_use.json, written
+    by the loop's mode; None when the file is absent or unreadable (the runs as before)."""
+    try:
+        return json.loads((STEPS / "orchestration" / "loop" / run / "data_use.json").read_text()).get("version")
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
 def active_lines():
     """The step 7 lines to run: every line folder whose line.yaml does not say active: false."""
     out = []
@@ -267,6 +276,15 @@ def main():
         row["step6"] = rc["status"] + (f" (failed: {', '.join(failed)})" if failed else "")
     else:
         row["step6"] = "not checked"
+    # Step 9, the candidate's common record (common/data_use.md; orchestration/common_record/card.md): right after a
+    # strategy becomes a candidate (confirmed and profitable enough), only in a run of the data-use mode (the loop's
+    # data_use.json with version 2); any other run is unchanged. Code only, no model call.
+    cr = STEPS / "orchestration" / "common_record"
+    if (data_use_version(args.run) == 2 and (result(v) or {}).get("status") == "confirmed"
+            and (rc or {}).get("status") == "profitable enough"):
+        j.step("common_record", [cr / "helper/common_record.py", plan, "--run", args.run, "--python", args.python],
+               [cr / args.run / f"{rid}.json"], done=(cr / args.run / f"{rid}.json").exists())
+        row["common_record"] = index_says(cr / "INDEX.md", f"{args.run}/{rid}") or "no answer"
     # The similarity register (code only; operator, 2026-11-22): every confirmed idea's book, paying or not, added and
     # compared with the paying books (a repair also with the idea it repairs); select_next reads it. After the chart
     # files: a confirmed book's returns are rebuilt from them where its bars are not kept.
