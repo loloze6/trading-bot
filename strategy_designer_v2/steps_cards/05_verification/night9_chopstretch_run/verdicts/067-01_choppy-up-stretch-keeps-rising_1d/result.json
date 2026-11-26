@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar excess return on forecast (grid, active bars)",
+    "value": 0.0005667068325972073,
+    "statistic": {
+      "name": "slope t, cases summed by date",
+      "value": 0.7273802563882357
+    },
+    "threshold": "t >= 2 (with both sides' mean positive) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess return in forecast direction, long and short sides",
+    "value": -0.0035017386616689973,
+    "passed": false,
+    "long_mean": -0.0035017386616689973,
+    "short_mean": 0.007227726060878583
+  },
+  "counts": {
+    "grid cases in total": 408,
+    "long cases": 208,
+    "short cases": 200,
+    "dates": 187
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Choppy bars are bars whose recorded regime is not the veto regime 'chop' (the profile's trend gate, whose component is not recorded); the stretch's side is the sign of the raw stretch, or of close minus its 20-bar SMA when the raw value is missing; the drift is the mean next-10-bar return over every grid bar of all the coin's windows; the slope t uses an OLS slope with a standard error clustered by date (residual-weighted deviations summed per date, G/(G-1) correction); the plan's 'fewer than 100 / 30' rule is treated as a minimum count (not observable)."
+}

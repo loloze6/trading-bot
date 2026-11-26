@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar unusual forward return on forecast, grid bars with forecast > 0",
+    "value": 0.002351960071444451,
+    "statistic": {
+      "name": "t of slope, same-day cases pooled (clustered by day)",
+      "value": 1.031967029605282
+    },
+    "threshold": "confirm if t >= 2 (with mean unusual move > 0); reject if t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual 10-bar move over the same grid bars above 0",
+    "value": 0.004466303974622994,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with a forecast above 0": 405,
+    "days the cases fall on": 152
+  },
+  "decided_by": "The slope has t between -2 and 2 (inconclusive rule).",
+  "reading": "Agitated profile read as a regime other than 'chop' (the config's veto of volatility percentile <= 0.5), below the average as raw distance < 0; slope from an OLS of each grid case's unusual 10-bar return on its forecast pooled over coins and windows, with a t from standard errors clustered by calendar day; drift is each coin's mean non-overlapping 10-bar return over all its windows; the plan's minimum of 30 cases is applied as 'not observable' per the workflow's rule."
+}

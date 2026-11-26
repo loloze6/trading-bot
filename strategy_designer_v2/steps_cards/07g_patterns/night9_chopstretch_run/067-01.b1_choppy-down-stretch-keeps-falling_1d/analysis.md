@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 067-01.b1_choppy-down-stretch-keeps-falling_1d
+idea tested: 067-01.b1_choppy-down-stretch-keeps-falling
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4163 USD
+---
+## Findings
+- **F1:** Over all profiles together, the 5-day unusual move after a close rises with the close's stretch from its 20-day average, measured in 20-day swings. It runs from -1.68 % (t -2.08) in the lowest stretch quintile to +2.22 % (t 2.85) in the highest, with about 285 grid cases per quintile. The slope of the scaled unusual move on the stretch is 0.042 (t 4.26, 1,422 non-overlapping cases), so the carry the brief claims exists across the market, not in choppy markets only.
+- **F2:** In calm markets with a trend, a stretch carries the same way it points. Taking the cases with a stretch above one swing, the move in the stretch's direction is +2.71 % in falling calm markets (t 2.86 with one day's cases pooled, 230 cases) and +3.12 % in rising calm markets (t 2.87, 190 cases). The direction-signed slopes on the stretch's size are 0.049 (t 1.68) and 0.055 (t 1.96).
+- **F3:** In falling calm markets the carry shows on both sides. A close above the average is followed by +2.89 % unusual move over 5 days (t 2.06, 88 cases on 42 days, strength 0.235). A close below it is followed by -1.39 % (t -1.37, 245 cases on 87 days).
+- **F4:** In choppy markets, the tested situation, the carry does not stand out from chance in folds B and C. The below-side slope has a t of 1.81 on 128 cases. Choppy calm gives +1.02 % above the average (t 0.85) and -2.20 % below it (t -1.87), with a direction-signed slope t of 1.13. This matches step 5's inconclusive slope (t -0.56 on 405 cases).
+- **F5:** In choppy agitated markets the coin falls over the next 5 days on both sides of the average: -5.53 % below (t -2.10, 39 cases) and -5.44 % above (t -2.76, 19 cases). This is a fall that does not follow the stretch, it rests on only 58 cases, and it is not a graded effect.
+- **F6:** In falling agitated markets a stretch below the average does not carry. The direction-signed slope on the stretch's size is -0.122 (t -3.14, 340 cases), and the below side earns -0.02 % (t -0.01). This is the rebound the profile map already holds 16 times on the long side.
+- **F7:** The book lost money in 7 of the 12 windows seen. Its trades lose on 5 of the 6 coins, ZEC worst with a mean of -7.41 % per trade over 68 trades. Per case the total move is +0.03 % against a cost of 0.19 % per trade, because the short side gives up the coins' normal drift of -0.57 %.
+- **F8:** The next day's return is +0.61 % after Thursday bars (t 4.12) and +0.52 % after Friday bars (t 3.90) across 1,240 coin-days each. These t's count the six coins of one day separately, so they overstate how sure the effect is. A late-week gain is already held (045-01, rising).
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `067-01.b1.g1_falling-calm-stretch-continues` (from F2, F3, F1): In a falling, calm market, the further a coin's close stands from its 20-day average, in units of its 20-day standard deviation of daily returns, the more the coin keeps moving the same way over the next 5 days: up after a close above the average, down after one below it.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

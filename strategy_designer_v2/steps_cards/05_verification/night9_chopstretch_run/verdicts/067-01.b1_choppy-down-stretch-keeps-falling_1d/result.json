@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast (grid bars, forecast < 0)",
+    "value": -0.0003916039080248481,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.5587580754453443
+    },
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of bets in short direction",
+    "value": 0.005963210149659363,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 405,
+    "bets (cases)": 605,
+    "days of bets": 449
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The drift is each coin's mean non-overlapping 5-bar return over all its windows, the slope's t is the OLS t pooled over coins and windows, the supporting check's cases are the short bets (forecast deepening by >= 2 points) taken once per 5-bar grid cell with the mean over cases, and the plan's 'fewer than 100 grid cases' minimum is applied as not observable."
+}

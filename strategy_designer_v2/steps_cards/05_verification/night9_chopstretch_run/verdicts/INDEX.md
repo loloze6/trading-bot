@@ -1,0 +1,4 @@
+067-01.b1.b1_choppy-stretch-carries-both-ways_1d: inconclusive (fit: exact) [main: 0.000353043; slope t, clustered by day 0.910955; grid cases 819, long cases 414, short cases 405, days 374]
+067-01.b1_choppy-down-stretch-keeps-falling_1d: inconclusive (fit: exact) [main: -0.000391604; OLS slope t -0.558758; grid cases with forecast < 0 405, bets (cases) 605, days of bets 449]
+067-01_choppy-up-stretch-keeps-rising_1d: inconclusive (fit: exact) [main: 0.000566707; slope t, cases summed by date 0.72738; grid cases in total 408, long cases 208, short cases 200, dates 187]
+074-01_agitated-stretch-below-rebounds_1d: inconclusive (fit: exact) [main: 0.00235196; t of slope, same-day cases pooled (clustered by day) 1.03197; non-overlapping grid cases with a forecast above 0 405, days the cases fall on 152]

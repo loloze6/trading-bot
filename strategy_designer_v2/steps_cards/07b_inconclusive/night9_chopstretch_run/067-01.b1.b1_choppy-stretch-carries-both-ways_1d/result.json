@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "067-01.b1.b1_choppy-stretch-carries-both-ways_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3859878,
+  "findings": {
+    "F1": "The test missed because only one side carried. In folds B and C at the plan's 5 days, below-average closes kept falling: mean excess \u22122.68 % over 145 short cases. Above-average closes did not keep rising: \u22120.19 % over 142 long cases. Step 5's supporting check failed for the same reason, at \u22120.0053 on the long side, while the pooled slope was only t 0.91 (819 cases, 374 days).",
+    "F2": "On the short side the carry grows with the stretch. Short-case mean excess by quartile of raw stretch, smallest to largest, is \u22121.21 %, \u22121.21 %, \u22123.79 % and \u22124.93 %. On the long side three of the four quartiles of forecast size give negative signed excess (\u22121.37 %, \u22121.85 %, \u22121.62 %; t \u22120.98 to \u22121.09), and only the largest gives +2.37 % (t 1.20).",
+    "F3": "The effect sits on the predicted side and is stronger at 5 days than at other horizons. Signed excess is t 1.05 at 1 day, 0.84 at 3, 2.05 at 5, 1.58 at 10 and \u22120.72 at 20. The slope is t 2.87 at 5 days on 287 cases, with a strength of 0.10. Over all four folds it is still too small to show: +0.24 % per case, t 0.78, strength 0.018.",
+    "F4": "The effect is uneven across periods and coins, which dilutes the pooled test. In 2020 signed excess is +2.80 % (t 2.31, slope t 2.80), while 2018 and 2019 are near zero (t 0.40 and 0.08). Windows w16 (t 3.63) and w18 (t 2.58) carry most of it. ETH and LTC are slightly negative (t \u22120.15 and \u22120.25), while XRP is the strongest coin (slope t 2.90).",
+    "F5": "The effect is missing when the coin is swinging least. In the lowest third of 20-day swing, signed 5-day excess is \u22120.36 % (t \u22120.45). In the middle third it is +2.86 % (t 2.91) and in the top third +2.55 % (t 1.81).",
+    "F6": "The book cannot pay on the effect at its full-sample size. The total move per case is +0.23 % against a 0.19 % round-trip cost, 1.2 times the cost. Step 6 found a Sharpe of 0.23 and a Calmar of 0.07, and the book trailed holding by 0.32 in Sharpe."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, the further a coin's close stands below its 20-day average, measured in units of its 20-day standard deviation of daily returns, the more the coin keeps falling over the next 5 days.",
+      "consequence": "In a range-bound coin, a close stretched below its recent average for its usual swing is a reason to short with it for about a week, more so the deeper the stretch, rather than to buy the dip.",
+      "name": "choppy downside stretch keeps falling",
+      "from": "F1, F2, F3",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "choppy stretch carry, all coins",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ],
+      "idea": "In a choppy market, the further a coin's close stands from its 20-day average, measured in units of its 20-day standard deviation of daily returns, the more the coin keeps moving the same way over the next 5 days, rising after closes above the average and falling after closes below it.",
+      "consequence": "In a range-bound coin, a close stretched away from its recent average for its usual swing is a reason to trade with the stretch for about a week rather than to fade it, more so the larger the stretch.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "choppy"
+    }
+  ],
+  "idea_ids": [
+    "067-01.b1.b1.b1_choppy-downside-stretch-keeps-falling",
+    "067-01.b1.b1.b2_choppy-stretch-carry-all-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
