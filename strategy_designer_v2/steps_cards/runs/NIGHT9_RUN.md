@@ -87,6 +87,14 @@ box; the spend after each brief was answered.
   (`common-shard-1` to `-6`, about 5.5 h each; only the files the combination reads committed): session_012maTgTp2Ga59drvc8Q5nR6,
   session_012maTgXxFUnkNga346MP4P2, session_012maTgYGU794NAAhShSdrCg, session_012maTgXJVsLfJQ2ySu8vG52,
   session_012maTgTxq6gqHYWn9QXmiZy, session_012maTgWXAatuQQz9BBcw6f7.
+- **00:47 Paris, part 3 built** (`build-a4-research`, eaf4e3f, `runs/BUILD_A4_RESEARCH.md`): `run_brief --data-use 2`
+  writes the run's `data_use.json` (its 8 coins); `run_idea` alone decides the data (step 4 on the 8 coins and the 32
+  windows, a coin left out of a window before its 91st day or with a hole over 1 day, counted); step 7 explores w1-w18
+  (before 2022), step 5's direction check w19-w32. Proof: the default path, 602 of 818 files identical (the rest run
+  ids, times, paths), the same verdicts; the new mode, a 3-idea run (3.80 USD) whose explorations show only 2017-2021.
+  Cards 182, bot 1678 passed. For the merge: step 4's index line fixed ("ran" when any coin ran a window); a component
+  built (ScaledMoveSmallnessComponent, standing go); `run_idea` must not call `unseen_test` in the new mode (its dates
+  overlap the research windows). **All three builds done; the night's research and the 6 shards run on.**
 
 ## Reading
 (written in the morning)
