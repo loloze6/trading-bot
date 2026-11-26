@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean strength of long cases over 5 bars (unusual move / usual 5-bar move)",
+    "value": -0.02397002037756949,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": -0.20198202786758818
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above-median forecast minus at/below-median",
+    "value": 0.0373805971168354,
+    "passed": true
+  },
+  "counts": {
+    "cases": 259,
+    "distinct days": 174
+  },
+  "decided_by": "The t of the mean strength is between -2 and 2.",
+  "reading": "A case is the first long bet (forecast rise of at least 2 points from its lowest long level since the last bet) in each 5-bar grid cell of a window, the day t uses the day-summed deviations with a D/(D-1) correction, the supporting check uses the unusual move (not divided by the usual move), and fewer than 30 cases or 30 days is reported as not observable."
+}

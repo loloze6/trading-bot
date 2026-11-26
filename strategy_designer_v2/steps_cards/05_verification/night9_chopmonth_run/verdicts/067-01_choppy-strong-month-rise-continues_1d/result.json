@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar forward excess return on forecast, cells with forecast > 0",
+    "value": 0.0007178198054289881,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.8588632715676606
+    },
+    "threshold": "t >= 2 with mean excess > 0 confirms; t <= -2 rejects; at least 100 cells"
+  },
+  "supporting_check": {
+    "name": "mean 7-bar forward excess return on the same cells > 0",
+    "value": 0.003055222219558562,
+    "passed": true
+  },
+  "counts": {
+    "cells": 587
+  },
+  "decided_by": "The slope's t is between -2 and 2, on at least 100 cells.",
+  "reading": "Cells are pooled over all coins and windows. The slope is a one-variable OLS with an intercept of the excess return (a fraction) on the forecast. Each coin's mean 7-bar return is the mean over its non-overlapping grid cells of all windows. The situation counts a regime other than the config's trend veto label 'chop' as choppy."
+}
