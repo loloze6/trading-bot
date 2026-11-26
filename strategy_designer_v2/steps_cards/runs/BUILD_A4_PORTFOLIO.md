@@ -44,13 +44,16 @@ Session session_012maTgXAtxsdTfut9XYn1TR, branch `build-a4-portfolio` from 80957
 ## Not done, untested, for the merge
 - **No final test was run** (as asked); `final_test.py`'s step 4 calls (`run_backtest.py --coins C --windows FILE`,
   one 10-year window per coin) were not run on real data: untested on the engine, hourly books included.
-- **The common record's interface** is read as two files existing; nothing is read from the `.json` yet. If step 9
-  writes a partial record, `update.py` would read it: a "complete" field in the json would settle that (asked to the
-  part 4 session).
 - **Order in `run_idea`:** the update is placed after the unseen test, where part 4's common record is expected; at
   the merge of `build-a4-common`, the update must come after its step.
-- **One series per coin over every complete day** is also what step 9 needs: if part 4 has its own runner, the final
-  test should use it (one place for each thing) after the merge.
+- **Step 9 and step 12 do not cut the days the same way** (part 4's answer, 22:45 UTC): step 9 runs the 32 four-month
+  windows of `research_2016.json`, per coin only those whose start is past its 90 days (`common_record.coin_windows`,
+  `common_record.backtest`, branch `build-a4-common` 5ea8ec3); `final_test.py` runs one window per coin over every
+  complete day (data_use.md's table). Step 11 and step 12 should read the same kind of record: the designer settles
+  which (data_use.md says "every complete day"; the brief to part 4 said the 32 windows); then `final_test.run_book`
+  calls `common_record.backtest` with `coin_list=coins.FINAL` after the merge (one place for each thing).
+- **The common record's json is written last** (after steps 4 to 6, part 4's answer): requiring both files, as
+  `update.py` does, reads only finished records.
 - `combine.py`'s in-sample Sharpe on this machine reads 2.18 where `v2b` says 2.055 (the same books and weights): the
   records on this machine, not this change (the old code gives the same 2.18).
 - `trading-bot/` not changed; `campaign_data_policy.yaml` and `local_data/holdout_sealed/` not touched.
