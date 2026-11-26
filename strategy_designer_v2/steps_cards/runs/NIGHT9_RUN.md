@@ -46,7 +46,10 @@ Also counted: each brief's answer and the turn and spend at which it was answere
 box; the spend after each brief was answered.
 
 ## During the night (the designer's watch)
-(written during the night)
+- **23:07 Paris, launched** (each from the working branch at cb0082585f): A session_012maTgUzR7xXwQD1YPANVoh, B
+  session_012maTgU5oYFjQviY1WCoPbJ, C session_012maTgXQjABpAt28f1NaT6W, D session_012maTgWKHxciErKS8p8QxBx, E
+  session_012maTgXZeByYDKaY7hNoCyZ, F session_012maTgXSHfqjCc58AZKxYqd; the data session session_012maTgYEHsvC54ogG22iB3h
+  (branch `data-coins`). The designer's check-ins: 01:15, 03:30, 05:45 Paris; the morning merge from 08:15 Paris.
 
 ## Reading
 (written in the morning)
