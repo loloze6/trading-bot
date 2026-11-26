@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 076-01.b1_agitated-wide-close-fade-more-coins_1d
+idea tested: 076-01.b1_agitated-wide-close-fade-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5627 USD
+---
+## Findings
+- **F1:** The tested fade points the wrong way and is too small to trade: on the 1,613 cases, the short-side unusual move is -0.35 % (t -1.05, 714 days) and the total move is -0.49 %, against a trade cost of 0.22 %, so the book's shorts lose before any fee.
+- **F2:** The book's losses come from shorting wide days that closed low, not high. Its held shorts on low-close days were followed by a next-day rise of +2.50 % above drift (t 2.36, 127 cases, 77 days), on mid closes by +1.05 % (t 1.22), and only high closes fell, -1.14 % (t -1.57, 207 cases). This happens because the forecast standardises the push over 60 bars, so a very wide day closing low can still read above its mean.
+- **F3:** Across all days, the size of the low-side push (range multiple × (1 − close location)) ranks with the next-day unusual return: Spearman rho +0.100 in agitated markets (n 3,619) and +0.073 in calm ones (n 4,727). On the high side the link is weak, rho -0.056 and -0.033.
+- **F4:** The wide low-close rebound is largest on the widest agitated days. Days at over twice the 20-day mean range that closed low gained +4.53 % the next day (t 1.93, 48 cases, 31 days), and on the 3-day grid agitated wide low closes gained +5.29 % (t 2.01, 48 cases, 25 days). This is the "agitated wide low close rebound" family the map already holds (039-02, 044-01, 045-01, 039-02.d1).
+- **F5:** The brief's own falsification test is met in rising markets. Agitated wide high-close days in a rising market moved +0.13 % above drift the next day (t 0.12, 72 cases, 54 days), not down. Choppy agitated has only 3 such cases.
+- **F6:** The fade exists only in falling agitated markets, and only in two windows. There, wide high-close days fell -3.83 % the next day (t -3.31, 38 cases, 17 days), but 35 of the 38 cases fall in w14 (mean -3.6 %) and w16 (mean -4.3 %). The map's falling agitated short cell already holds a close-height fade (060-01.g1.d2.d1 "own range close height fade").
+- **F7:** In choppy calm markets, wide high-close days fell -1.53 % (t -2.15, 37 cases, 29 days), but the effect is not graded. The rank correlation of the push with the next-day return is -0.004 (p 0.93, n 640), the push quintiles run -0.65, +0.54, +0.08, -0.45, +0.27 % with no order, and the 2-day top quintile is +1.30 %. Among the more than 70 cells examined, a single cell at t -2.15 does not stand out from chance.
+- **F8:** Wide low-close days in rising calm markets gained +1.84 % the next day (t 2.71, 58 cases, 35 days). Among more than 70 cells this does not clear the bar for many comparisons, and it repeats the wide low-close rebound already held in every profile (F3).
+
+## Ideas
+- No ideas: The brief's fade of wide high-closing agitated days is absent in rising markets and too small to cover costs (F1, F5). Its one strong cell (falling agitated, F6) rests on two windows and repeats a close-height fade the map already holds. The clear pattern in the book, the rebound after wide low-closing days (F2–F4, F8), is a family the map already holds, and the choppy calm cell is ungraded and indistinguishable from chance across the many angles examined (F7).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "076-01.b1_agitated-wide-close-fade-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.349256,
+  "findings": {
+    "F1": "The test's result is on the side opposite to the idea. Mean short-side move was \u22120.55 % with t \u22121.85 (866 days). In the folds shown, the 482 cases gave a short-side mean of \u22120.50 % (t \u22120.85, 256 days), and \u22121.21 % over 3 days (t \u22121.46). So the wrong sign is not a matter of horizon.",
+    "F2": "The cases mix two opposite groups, sorted by where the close sits in the day's range. In the lowest quarter of close location, the coin rose next day: short-side mean \u22122.74 %, t \u22122.41, 121 cases. The top two quarters fell: +1.17 % (t 1.39) and +0.78 % (t 1.02). The product quartiles show the same, from \u22122.13 % (t \u22122.06) up to +1.37 % (t 1.37). This matches the step-5 supporting check, larger half minus smaller half +0.98 %.",
+    "F3": "On all agitated days, wide days (range at least 1.5 times the 20-day mean range) split by close:",
+    "F4": "The fade is weaker in calm markets, as the brief predicts. Wide, high-closing calm days gave +0.35 % (t 0.65, 224 cases), against +1.31 % in agitated markets. Narrow high-closing agitated days gave +0.53 % (t 1.51).",
+    "F5": "Among the cases, days that fell on the day rebounded next day: \u22121.58 %, t \u22121.83, 237 cases. Days that rose faded: +0.55 %, t 0.79, 245 cases. The idea's push-up-and-give-back shows only on true high closes.",
+    "F6": "No single coin or year carries the negative mean. Every year from 2018 to 2021 is between \u22120.06 % and \u22120.59 % with |t| under 0.9. Every coin has |t| at or under 1.55. So the result comes from the case definition, not from one part of the data."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, a day whose high-low range is wide against the coin's average range over the past 20 days and which closes in the upper part of its range, near its high, is followed by a fall over the next day. The fall is larger the wider the day's range and the farther above the middle of its range it closes, the two multiplying.",
+      "consequence": "Fade only the wide agitated days that truly close near their high, more for wider and higher closes, and leave alone the wide days that close in the lower part of their range, which tend to rebound.",
+      "name": "agitated wide upper-close fade",
+      "from": "F2, F3, F4, F5",
+      "profile": "agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "076-01.b1.b1_agitated-wide-upper-close-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

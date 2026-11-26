@@ -7,3 +7,6 @@
 074-01_agitated-stretch-below-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 074-02.b1_calm-stretch-falls-five-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 074-02_calm-stretch-below-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+076-01.b1_agitated-wide-close-fade-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+076-01_agitated-wide-high-close-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+077-01_choppy-calm-swing-rise-carries_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

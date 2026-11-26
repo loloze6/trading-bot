@@ -7,3 +7,6 @@
 074-01_agitated-stretch-below-rebounds_1d: not profitable enough [Sharpe 0.6037; Sharpe minus holding's Sharpe 0.03407; Calmar 0.3841]
 074-02.b1_calm-stretch-falls-five-days_1d: not profitable enough [Sharpe 0.05912; Sharpe minus holding's Sharpe -0.5105; Calmar -0.02168]
 074-02_calm-stretch-below-keeps-falling_1d: not profitable enough [Sharpe -0.1319; Sharpe minus holding's Sharpe -0.7015; Calmar -0.09935]
+076-01.b1_agitated-wide-close-fade-more-coins_1d: not profitable enough [Sharpe -0.8378; Sharpe minus holding's Sharpe -1.391; Calmar -0.1602]
+076-01_agitated-wide-high-close-fades_1d: not profitable enough [Sharpe -0.01647; Sharpe minus holding's Sharpe -0.5861; Calmar -0.03612]
+077-01_choppy-calm-swing-rise-carries_1d: not profitable enough [Sharpe 0.5164; Sharpe minus holding's Sharpe -0.05325; Calmar 0.1875]

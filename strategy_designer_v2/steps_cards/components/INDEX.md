@@ -233,3 +233,4 @@ night7c_rangefail_run | 032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d | Br
 night7c_rangefail_run | 032-01.b1.b1.e2_small-breaks-follow-through_1d | BreakProximityAboveHigh | cannot build: no answer passed the checks after 3 attempts
 night7c_rangefail_run | 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d | BreakoutMarginProximityComponent | built: BreakoutMarginProximityComponent {"period": 60}
 night7c_chopreversal_run | 032-03_reversal-grows-with-choppiness_1d | ChopWeightedScaledReversal | built: ChoppinessWeightedScaledReversalComponent {"er_period": 30, "period": 7, "vol_period": 30}
+night9_chopstretch_run | 076-01_agitated-wide-high-close-fades_1d | CloseAboveLowInMeanRangesComponent | built: BreakoutInMeanRangesComponent {"base_exclude_current": 0, "base_period": 20, "extreme": "low", "high_current": 1, "period": 1, "side": "above", "source": "high"}

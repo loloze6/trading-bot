@@ -7,4 +7,7 @@
 074-01_agitated-stretch-below-rebounds_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-02.b1_calm-stretch-falls-five-days_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-02_calm-stretch-below-keeps-falling_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-076-01_agitated-wide-high-close-fades_1d: missing-components: The forecast must be graded by the product of the day's range multiple and its close location. That product equals [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+076-01.b1_agitated-wide-close-fade-more-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+076-01_agitated-wide-high-close-fades_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+077-01.b1_swing-rise-carry-more-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+077-01_choppy-calm-swing-rise-carries_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

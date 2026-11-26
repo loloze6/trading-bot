@@ -1,6 +1,6 @@
 """Spec of BreakoutInMeanRangesComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'BreakoutInMeanRangesComponent'
-SETTINGS = [{}, {"period": 12, "base_period": 180}, {"period": 12, "base_period": 180, "side": "below"}, {"period": 1, "base_period": 20, "side": "below", "high_current": 1, "base_exclude_current": 1}, {"period": 1, "base_period": 30, "side": "below", "high_current": 0, "base_exclude_current": 1, "source": "close"}]
+SETTINGS = [{}, {"period": 12, "base_period": 180}, {"period": 12, "base_period": 180, "side": "below"}, {"period": 1, "base_period": 20, "side": "below", "high_current": 1, "base_exclude_current": 1}, {"period": 1, "base_period": 30, "side": "below", "high_current": 0, "base_exclude_current": 1, "source": "close"}, {"period": 1, "base_period": 20, "side": "above", "high_current": 1, "base_exclude_current": 0, "source": "high", "extreme": "low"}]
 
 
 def hand(df, params):
@@ -10,36 +10,61 @@ def hand(df, params):
     hc = int(params.get("high_current", 0))
     bex = int(params.get("base_exclude_current", 0))
     source = params.get("source", "high")
-    closes = [float(x) for x in list(df["close"])]
-    highs = [float(x) for x in list(df["high"])]
-    lows = [float(x) for x in list(df["low"])]
-    t = len(closes) - 1
-    xs = closes if source == "close" else highs
+    extreme = params.get("extreme", "high")
+    h = [float(x) for x in list(df["high"])]
+    l = [float(x) for x in list(df["low"])]
+    c = [float(x) for x in list(df["close"])]
+    t = len(c) - 1
 
-    # reference level: stretch ends at t-1 (hc 0) or at t (hc 1), p bars long
-    end = t if hc == 1 else t - 1
-    level_vals = [xs[i] for i in range(end - p + 1, end + 1)]
-    # base: bp bar ranges ending at t (bex 0) or t-1 (bex 1)
-    bend = t - bex
-    ranges = [highs[i] - lows[i] for i in range(bend - bp + 1, bend + 1)]
-    c = closes[t]
-    for v in level_vals + ranges + [c]:
+    if source == "close":
+        x = c
+    elif extreme == "high":
+        x = h
+    else:
+        x = l
+
+    # stretch bars
+    if hc == 1:
+        idx = [t - k for k in range(p)]          # t-p+1 .. t
+    else:
+        idx = [t - 1 - k for k in range(p)]      # t-p .. t-1
+    vals = [x[i] for i in idx]
+
+    # base rows
+    last = t - bex
+    ranges = []
+    for k in range(bp):
+        i = last - k
+        if h[i] != h[i] or l[i] != l[i]:
+            return float("nan")
+        ranges.append(h[i] - l[i])
+
+    for v in vals:
         if v != v:
             return float("nan")
-    H = level_vals[0]
-    for v in level_vals:
-        if v > H:
-            H = v
+    if c[t] != c[t]:
+        return float("nan")
+
+    level = vals[0]
+    for v in vals:
+        if extreme == "high":
+            if v > level:
+                level = v
+        else:
+            if v < level:
+                level = v
+
     total = 0.0
     for r in ranges:
-        total += r
-    B = total / len(ranges)
-    if B == 0:
-        return 0.0
+        total = total + r
+    mean_range = total / len(ranges)
+
     if side == "above":
-        d = c - H
+        d = c[t] - level
     else:
-        d = H - c
+        d = level - c[t]
     if d < 0:
         d = 0.0
-    return d / B
+    if mean_range == 0:
+        return 0.0
+    return d / mean_range

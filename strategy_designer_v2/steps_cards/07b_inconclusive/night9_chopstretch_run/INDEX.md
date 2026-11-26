@@ -7,3 +7,6 @@
 074-01_agitated-stretch-below-rebounds_1d: 1 ideas (1 explorations)
 074-02.b1_calm-stretch-falls-five-days_1d: 1 ideas (1 explorations)
 074-02_calm-stretch-below-keeps-falling_1d: 1 ideas (2 explorations)
+076-01.b1_agitated-wide-close-fade-more-coins_1d: 1 ideas (2 explorations)
+076-01_agitated-wide-high-close-fades_1d: 1 ideas (2 explorations)
+077-01_choppy-calm-swing-rise-carries_1d: 1 ideas (1 explorations)

@@ -7,3 +7,6 @@
 074-01_agitated-stretch-below-rebounds_1d: inconclusive (fit: exact) [main: 0.00235196; t of slope, same-day cases pooled (clustered by day) 1.03197; non-overlapping grid cases with a forecast above 0 405, days the cases fall on 152]
 074-02.b1_calm-stretch-falls-five-days_1d: inconclusive (fit: exact) [main: -0.000609616; day-clustered OLS t of slope -0.846334; grid cases 903, distinct days 322]
 074-02_calm-stretch-below-keeps-falling_1d: inconclusive (fit: exact) [main: 0.291446; OLS t of the slope 0.291446; grid cells with a negative forecast 445]
+076-01.b1_agitated-wide-close-fade-more-coins_1d: inconclusive (fit: adapted) [main: -0.0054794; t of the mean, cases of one day together -1.84897; distinct days with a case 866, cases 2138]
+076-01_agitated-wide-high-close-fades_1d: inconclusive (fit: exact) [main: 0.0029342; t of the mean, deviations summed per day 1.29098; distinct days of cases 827, cases 1450]
+077-01_choppy-calm-swing-rise-carries_1d: inconclusive (fit: exact) [main: 0.014229; t of the mean, cases grouped by day 1.27729; cases 162, case-days 140]
