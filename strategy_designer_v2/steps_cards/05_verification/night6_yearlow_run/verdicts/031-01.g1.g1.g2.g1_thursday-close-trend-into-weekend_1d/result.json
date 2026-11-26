@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of the 2-bar forward return minus the coin's mean 2-bar return, regressed on the forecast, on Thursday-close bars",
+    "value": 0.0005701315026778593,
+    "statistic": {
+      "name": "t of the OLS slope, clustered by Thursday date",
+      "value": 2.7418340933198566
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; over at least 100 distinct Thursdays"
+  },
+  "supporting_check": null,
+  "counts": {
+    "distinct Thursdays": 411,
+    "cases (coin-Thursdays)": 2465
+  },
+  "decided_by": "The slope is positive with t >= 2 over at least 100 distinct Thursdays (the plan's confirm rule).",
+  "reading": "A Thursday-close bar is a bar whose next daily bar starts on a Friday (UTC); the expected side is the sign of the recorded 14-bar return (recomputed from closes where not recorded); the coin's mean 2-bar return is taken on the non-overlapping grid of all its windows; every Thursday-close bar with a recorded forecast (zero included) and an in-window 2-bar return is a case; the t is an OLS slope t with standard errors clustered by Thursday date (small-sample correction G/(G-1)*(N-1)/(N-2)); fewer than 100 distinct Thursdays gives 'not observable'."
+}

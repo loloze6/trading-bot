@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks_1d
+idea tested: 059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3068 USD
+---
+## Findings
+- **F1:** The test's own result is on the predicted side but far from the bar: a forecast-weighted excess of +2.57 % over 28 days with t 0.43 (97 cases on 36 days). The size is a strength of 0.009 of a 28.73 % usual move (t 0.42, 267 days), so a 4-week horizon buries a modest continuation under the coin's own swings. Cost is not the limit: the unusual move is 4.2 times the 0.22 % cost of a trade.
+- **F2:** The 28-day horizon leaves very few independent cases, only 14 cases on 8 days in the visible folds B and C. The 14-day grid gives 42 cases on 21 days and the 7-day grid 89 cases on 45 days.
+- **F3:** The grading the idea claims is clearest at 14 days. There the slope of excess return on forecast is +0.0161 per forecast unit (t 2.33) and the Spearman correlation is 0.41. At 28 days the slope is +0.0205 (t 1.05) and at 7 days +0.0049 (t 2.58), but the 7-day high tercile adds only +1.7 % (t 0.93).
+- **F4:** At 14 days the effect is graded the way the theory says. The lowest tercile of scaled rises gives back −13.0 % (t −2.96, hit 14 %), while the middle tercile gains +20.5 % (t 1.56) and the top tercile +11.5 % (t 2.41, hit 64 %). The smallest rises dilute the mean over all positive cases.
+- **F5:** At 14 days the effect varies by year. The upper half earns +23.6 % in 2020 (14 cases) and +23.1 % in 2021 (4 cases), against −12.0 % in 2019 (3 cases).
+- **F6:** The effect is also uneven across coins. At 28 days XMR goes against it (−26.9 %, t −2.50, 4 cases) while LTC (+27.9 %), XRP (+58.0 %) and ADA (+40.2 %) follow it. The main test already used every fold and every coin with 1d data, so no more data is available.
+
+## Ideas
+- `059-01.b1.b1.d1.b1.b1.d2.b1_choppy-calm-rise-two-weeks` (from F1, F2, F3, F4): In a choppy, calm market, the larger a coin's rise over the past 7 days in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 14 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

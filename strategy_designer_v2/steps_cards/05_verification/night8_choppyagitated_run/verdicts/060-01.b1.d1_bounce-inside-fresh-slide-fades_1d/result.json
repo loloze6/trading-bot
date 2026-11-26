@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move after short bets, in the short direction",
+    "value": 0.0055262939037511675,
+    "statistic": {
+      "name": "t with same-day cases pooled",
+      "value": 1.08055263496773
+    },
+    "threshold": "mean > 0 with day-pooled t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "large-minus-small (median |forecast|) mean unusual move, Welch t",
+    "value": 0.001627303706340971,
+    "passed": true,
+    "welch_t": 0.30213461899454214
+  },
+  "counts": {
+    "cases": 1039,
+    "distinct days": 380
+  },
+  "decided_by": "Inconclusive: the main t lies between -2 and 2.",
+  "reading": "A case is the first short bet (|forecast| rise of >= 2 points from its lowest level since the last bet) in each 3-bar grid cell of a window, its 3-bar return taken from that bar's close; the median split puts |forecast| above the median in the larger group and the rest in the smaller; the plan's 'else inconclusive' for too few cases is reported as 'not observable' per the workflow; the day-pooled t sums deviations per UTC day with a G/(G-1) correction."
+}

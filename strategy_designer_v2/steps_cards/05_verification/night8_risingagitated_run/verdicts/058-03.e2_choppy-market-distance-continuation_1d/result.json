@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar excess forward return on forecast",
+    "value": 0.0006201526703311914,
+    "statistic": {
+      "name": "day-clustered t of slope",
+      "value": 0.7191322516118103
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a non-zero forecast": 408,
+    "days": 187
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Choppy profile read as regime 'unknown' (no trend veto); slope is OLS with intercept of excess return on forecast, t from day-clustered standard errors with G/(G-1) correction; drift is the mean of each coin's non-overlapping 10-bar grid returns over all its windows."
+}

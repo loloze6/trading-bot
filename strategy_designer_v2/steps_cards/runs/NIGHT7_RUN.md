@@ -1,0 +1,227 @@
+# Night 7 (2026-11-24): four briefs aimed at market profiles, under topics 49 and 50 (written before the runs)
+
+**The operator (2026-11-24, about 00:15 Paris):** "So I will go off, time to prepare for the night." The standing rules
+are `NIGHT_RULES.md` (first use); this file says what is new.
+
+## Purpose
+The first night with ideas that name their market profile (topic 49) and follow-ups that stay on their brief's theme,
+with discoveries turned into briefs (topic 50). One question: **do briefs aimed at market profiles the portfolio has no
+specialist in give confirmed books that earn on their own and are unrelated to the portfolio's 20?** The profiles
+chosen are those of 2026, where the portfolio failed (P4: choppy, slowly falling): choppy and falling markets, on both
+sides.
+
+## Expected outcomes (one of them, by the counts)
+| # | Outcome | What would show it |
+|---|---|---|
+| N1 | A profile specialist enters the portfolio's candidates | a confirmed book naming a profile, step 6's Sharpe above 0, correlation under 0.5 with the 20 (P1's rule, `topics/44_review/p7_night6_candidates.py`) |
+| N2 | Themes answered real, books not earning | confirmed ideas on the theme, none earning on its own (or all close to held books) |
+| N3 | Themes answered not real; the search moves to discoveries | lines 7.b/7.c answer "not in the data"; discoveries become briefs and carry the night |
+| N4 | The new machinery fails | a profile not built, a discovery not turned into a brief, a merge stopped: the defect named |
+
+Also counted, per brief: its answer (real, not real, open), the discoveries and the briefs they became, the share of
+ideas naming a profile, and how many confirmed books are profile specialists.
+
+## Sessions
+| Session | Run | Theme (step 1 writes the brief) | Bar | Budget (model calls) |
+|---|---|---|---|---|
+| 1 | `night7_rangefail_run` | In a choppy market (a coin with no clear trend over the past two months), a close beyond its recent range fails: the coin comes back inside the range over the next days, the more so the further it broke out. | 1d | 35 USD |
+| 2 | `night7_chopreversal_run` | In a choppy, agitated market, a coin's move over the past week is given back over the next week: with no trend to carry it, a large swing is noise that reverses. | 1d | 35 USD |
+| 3 | `night7_steadydecline_run` | In a falling, calm market (a steady decline without panic), the decline carries on: the more a coin has fallen over the past weeks, the more it keeps falling over the next days, as holders sell into every pause. | 1d | 35 USD |
+| 4 | `night7_panic_run` | In a falling, agitated market, does a coin's new low over the past month lead to more falling, as forced selling feeds itself, or to a rebound, as sellers run out? | 1d | 35 USD |
+| designer | the night 6 replay of `night_merge` (3g's proof); check-ins; the morning merge and reading | - | - | 0 USD |
+
+Each session: `run_brief --theme` with its theme and budget, on branch `night7-<name>` from the working branch
+(`ccr-6624e33e-aakrpv`), by `NIGHT_RULES.md`. Brief numbers (3e) are not yet ruled: the sessions will number from the
+same list, so the morning merge reports the numbers used twice and the reading names briefs by their full file name.
+
+## The control arm (added 2026-11-25 about 00:30 Paris, before its runs)
+**The operator (about 00:30 Paris):** "You even have until 250 to spend ... In the morning we will look at results and
+advise if such major change is useful and going into the good direction. If not we might reverse." To judge the change
+by evidence, the same four themes also run on the code before topics 49 and 50 were built (`bf8dd5bff2`: no profile
+line, no theme rule, no discoveries; P9 and the folds rule as today): 4 sessions, 25 USD each (night total 240 USD).
+
+| Session | Run | Branch | Theme | Budget |
+|---|---|---|---|---|
+| C1 | `night7c_rangefail_run` | `night7c-rangefail` | as session 1 | 25 USD |
+| C2 | `night7c_chopreversal_run` | `night7c-chopreversal` | as session 2 | 25 USD |
+| C3 | `night7c_steadydecline_run` | `night7c-steadydecline` | as session 3 | 25 USD |
+| C4 | `night7c_panic_run` | `night7c-panic` | as session 4 | 25 USD |
+
+**The comparison, fixed now (revised 2026-11-25 about 00:45 Paris, before any result, after the operator asked
+whether the control is really useful):** each new-code run cut at its first 25 USD (`loop.jsonl`'s spend) against its
+control, theme by theme. Judged on what has enough cases to show a difference:
+- follow-ups on the brief's theme (by `common/theme.md`), as a share of the ideas written;
+- the spend on ideas re-finding the portfolio's effects (nearest held book explains 0.5 or more);
+- each brief's answer (real, not real, open);
+- for ideas naming a profile: the share of their days in a position inside it, against the control's reading of the
+  same words.
+Counted but not judged: portfolio candidates (night 6 found 2 for 140 USD; at 25 USD a theme, 0 or 1 per arm is
+chance). **The change goes the good way** if the new code keeps more follow-ups on the theme, answers more themes, and
+does not spend more on the portfolio's effects; whether it finds better strategies needs several nights and their
+unseen test, and the reading says so.
+The control branches are read in place, not merged.
+
+## During the night (the designer's watch)
+- **00:35 Paris, first watch** (a script reads each pushed branch: profile lines, the profile gate in every plan, theme
+  marks, discoveries and their briefs, failures): no defect. The 4 new-code runs: every idea from a brief names a
+  profile; the 3 plans whose idea names one have the gate, none without; lines 7.e/7.g mark discoveries and leave ideas
+  on the theme unmarked (read as on the theme, as intended); 3 discoveries already turned into briefs.
+- **A gap between topic 50's card and the code:** the card says P9 still pushes copies of held books down for a brief
+  from a discovery; it does not: P9 weighs only follow-ups of confirmed ideas, and a brief's first ideas are always group
+  1. Of the first 5 discoveries, 3 are the next-day rebound after a fall (an effect the portfolio holds); session 2 made
+  it brief 033. Not changed during the night (the sessions run the code they cloned); the reading counts the spend on
+  such briefs, and the fix is proposed in the morning.
+
+- **00:46 Paris:** the 4 new-code sessions alive and progressing, no fault (steadydecline and panic 5 turns each, 3
+  confirmed in steadydecline; 11 discoveries turned into briefs). **The 4 control sessions had never started:** the
+  cloud refused the short commit id (`bf8dd5bff2`: "ref not found"), nothing spent; archived and relaunched at 00:48
+  Paris with the full id, all four running. They start about 30 minutes after the new-code sessions; the comparison at
+  equal spend is not affected.
+- **00:50 Paris, 3g proven:** night 6's merge replayed with `night_merge` (its card): the components file and the
+  register's pages identical to the hand repair, the catalogue right where the hand repair was wrong. It will merge
+  night 7.
+
+- **01:40 Paris watch:** no fault on the 8 branches (every plan has the profile gate exactly when its idea names a
+  profile); all 8 sessions committed within the last 20 minutes. The designer's container restarted at about 01:32
+  Paris: nothing lost (tree clean, last commit in place). New code, about 75 minutes in: 54 ideas tested, 20 confirmed,
+  5 profitable enough, 53 USD; 31 discoveries made into briefs (panic alone 13). Control, about 45 minutes in: 25 tested,
+  1 confirmed, 3 profitable enough, 26 USD.
+
+- **The usage limit stopped the whole night at about 02:10 Paris:** all 8 sessions on the account's 5-hour limit
+  (reset 05:20 Paris); none could schedule its wake-up, since its own model calls were refused too. The designer's
+  check-ins of 02:30, 03:30 and 04:30 Paris did not run (its worker restarted several times and its triggers waited).
+  State at the stop: new code 74 ideas tested, 30 confirmed, 10 profitable enough, 74 USD; control 47 tested, 12
+  confirmed, 5 profitable enough, 54 USD. **05:35 Paris:** the watch: no fault; all 8 sessions told to resume (their
+  branch first if their machine was replaced), the time rule unchanged (no new idea after 08:00 Paris). About 2.5 hours
+  of the night remain: the budgets will not be spent.
+
+- **05:45 Paris:** all 8 sessions resumed at 05:40-05:42 Paris, each on its own branch and venv (their machines were not
+  replaced), each finishing the idea the limit cut first. Spent before the stop: new code 17.9, 20.7, 23.0, about 23
+  USD; control 12.4 to 18.1 USD. **A commit gap:** two sessions had built components without committing the classes
+  under `trading-bot/` (session 3: 5 components, now committed by itself; control C2: 1, asked to commit). The other 6
+  branches have every built class in their components file (checked). Without it the morning merge would have carried
+  build records for classes that do not exist.
+
+- **05:56 Paris:** the 8 sessions confirmed running (new code committed within 5 minutes; controls at their resume, they
+  commit hourly); control C2 committed its missing component class (checked on its branch).
+
+- **06:35 Paris watch:** no fault; the 4 new-code runs and control C3 moving (commits within 10 minutes); controls C1,
+  C2, C4 ended on their budgets (reports received). The "already indexed" answer works in the runs: two repeated
+  rebound discoveries were not made into briefs (chopreversal, panic). It cannot see other sessions' briefs: rangefail
+  made the same rebound its brief 036 (each branch indexes its own briefs; the merge reports such repeats only by number).
+
+- **07:30 Paris watch:** no fault on the 8 branches. 7 sessions ended on their budgets (reports received); session 1
+  (rangefail) still running (turn 30 at 07:30 Paris), stops starting ideas at 08:00 Paris.
+
+## Reading (2026-11-25, about 08:40 Paris; the designer)
+**Merged** with `night_merge` (its first real use): the 4 new-code branches, conflicts resolved by rule (0, 9, 9, 10).
+It stopped once, rightly by its rule as then coded: two sessions changed two neighbouring catalogue rows, which git joins
+into one conflict; the code now keeps both (only lines both sides changed stop), as its card says, with a test; then the
+other two merged. The control branches are read in place (not merged).
+
+**Cost:** new code 142.7 USD, control 104.1 USD: 246.8 of the operator's 250. The 5-hour usage limit stopped all 8
+sessions from 02:10 to 05:40 Paris; each resumed and finished.
+
+**The comparison, at equal spend (each new-code run cut at 25 USD; `topics/44_review/p7_night7_candidates.py`, `.csv`):**
+| | New code (topics 49, 50) | Control (code before them) |
+|---|---|---|
+| Ideas tested | 87 | 82 |
+| Confirmed | 39 | 19 |
+| Profitable enough (step 6) | 17 | 17 |
+| Families earning on their own (size and Sharpe above 0) | 32 | 5 |
+| Of them, related to the portfolio's 20 (correlation 0.5 or more) | 29 | 4 |
+| Portfolio candidates (P1's rule) | 3 books, 2 effects: "in a falling, agitated market, a fall rebounds the next day" (038-01 and 042-01, correlation 0.85 with each other; 0.39 and 0.50 with 011-01) and "in a rising market, the late week gains" (045-01, 0.42) | 1: "after a volatile month's low, a rebound next day" (032-02.b2, 0.24), no profile |
+| Unseen dates of the candidates | 038-01 holds on 2016-17, not 2026; 045-01 holds on 2026, not 2016-17; 042-01 not tested (not profitable enough) | not tested (not profitable enough) |
+| Ideas tested from the brief's own theme (032) | 10 of 87 | 82 of 82 |
+| The brief's theme answered (`common/theme.md`) | 0 of 4 closed; 2 lean "not real" (line 7.b: "not in the data") | none answered; in 3 of 4 the follow-ups turned the theme around ("breakouts continue", "moves continue", "near highs continue") |
+
+**What it shows:**
+1. **The market profile (topic 49) works as built and helps:** about 70 % of the new code's ideas name a profile (281 of 406 written); every plan
+   carries its gate exactly (the watch: no fault all night); at equal spend twice as many ideas are confirmed. Its best
+   result is in the profile the night aimed at: two sessions independently found the same falling-agitated rebound.
+   Caveat: it is a rebound, close to the portfolio's 011-01 (0.39 to 0.50).
+2. **Topic 50 works in its parts and fails as a whole:** lines 7.b/7.c stayed on the theme and twice answered "not in
+   the data" (the control's follow-ups drifted to the opposite effect in 3 of 4 themes); but discoveries became 57
+   briefs, and their ideas, ranked first as any brief's first ideas, took 77 of 87 turns: no theme was closed, its
+   on-theme follow-ups were queued and never run. The gap noted at 00:35 Paris is the cause: a discovery's brief is
+   ranked like an operator's brief, and outside P9.
+3. **Most of what both arms find is the portfolio's effects again** (29 of 32 and 4 of 5 families related at 0.5 or
+   more), mostly next-day rebounds and continuation.
+4. Four themes, one night: the counts are indicative; the candidates are 1 or 2 per arm and none holds on both unseen
+   periods.
+
+**Outcome:** between N1 and N3. N1 narrowly (2 candidates by P1's rule against the control's 1; the night's target
+profile gave one); N3 for the themes (discoveries carried the night).
+
+**Recommendation (for the operator):** keep both changes, and fix one rule of topic 50 before the next night: **a
+discovery's brief is ranked as a follow-up, not as a first brief** (its ideas keep the generation of the idea they were
+found from, so P9 and the score apply to them), so that a theme's own follow-ups run before the patterns found on the way.
+Not reversed: reversing loses the profile's gain (39 confirmed against 19) and brings back the drift. Also needed: 3e
+(brief numbers: tonight 4 sessions numbered 032 to 053 each).
+
+**The one change a practitioner would make:** the discovery ranking above; it is what kept the themes unanswered.
+
+## Reading corrected (2026-11-25, about 10:05 Paris; the designer, after the operator asked for a deeper review)
+The reading above judged mostly on counts the rule fixed at 00:45 Paris says are "counted, not judged" (confirmed books,
+families, candidates), and it misread the control: by `common/theme.md`, an idea with the theme's situation and the
+opposite effect is **on** the theme and answers it. Judged by the rule fixed before the runs
+(`topics/44_review/night7_criteria.py`, `.csv`; on/off theme for the control read by the designer from the ideas' text):
+
+| Criterion (fixed before the runs) | New code | Control | Better |
+|---|---|---|---|
+| Ideas tested on the brief's theme | 10 of 86 (the brief's own; its on-theme follow-ups were written, never run) | about 56 of 82 | control |
+| Themes answered (an idea on the theme confirmed) | 0 of 4 | 3 of 4: range breaks in a flat market **continue** (rangefail); weekly moves in a choppy agitated market **continue** (chopreversal, 9 confirmed); after a volatile month's low, a **next-day rebound** (panic). Steadydecline drifted off | control |
+| Spend on the portfolio's effects (confirmed, nearest held book explains 0.5 or more) | 31.2 of 93.3 USD (29 ideas) | 4.0 of 98.8 USD (4 ideas) | control |
+| Days in a position inside the named profile | by construction (topic 49's gate; no fault all night) | not measured: the control's bar records were not kept | - |
+
+Counted, not judged: confirmed 38 against 19, but 29 of the 38 re-find the portfolio's effects (control 4 of 19);
+confirmed and unrelated to the portfolio 9 against 15 (the control's 9 chop continuations are one effect). The "32
+families against 5" above counts briefs (57 made from discoveries), not effects. Candidates by P1's rule 2 effects
+against 1, each holding on one unseen period of two.
+
+**Corrected outcome:** N3 for the new code (discoveries carried the night) and **the change went the wrong way on all
+three judged criteria**. The cause is topic 50's discovery rule (a discovery becomes a brief whose ideas are ranked
+first, outside P9: 76 of 86 turns, mostly the next-day rebound the portfolio holds). Topic 49's own effect is not
+separable on this night: the brief's first ideas were confirmed in neither arm (0 of 10, 0 of 11); 7 of the new code's
+9 unrelated confirmed books name a profile, and both candidate effects do.
+
+**The whole night, by the objectives of topics 49 and 50 (2026-11-25 about 11:00 Paris; `topics/49_review/night7_home.py`,
+`night7_home.csv`, `night7_ideas_full.csv`):**
+| Objective (from the topics) | New code (whole night: 117 ideas, 129 USD) | Control (82 ideas, 99 USD) |
+|---|---|---|
+| 49: books that act in one profile only (a specialist) | 29 confirmed books name a profile; median 82 % of their days in a position inside it, against 39 % for the market (falling agitated: 81 to 92 % against 16 %) | none: each book's largest profile holds 20 to 42 % of its days, about the market's own; its "choppy" ideas trade in every profile (as P10 saw) |
+| 49: in the profiles the portfolio lacks (choppy, falling) | falling agitated: 7 books, one effect (the next-day rebound after a fall); choppy, falling calm: none confirmed | - |
+| 50: themes answered | 0 of 4 | 3 of 4 |
+| 50: spend not on the portfolio's effects | 40 of 51 confirmed books re-find them (71 % of confirmed are next-day rebounds); 107 of 117 ideas from discovery briefs | 4 of 19 |
+| Earns where the portfolio failed (2026) | of 22 books on the unseen dates, 9 hold on 2026: rising-market continuation and agitated rebounds, all related to held books (0.7 to 0.9); the falling-agitated specialists hold on 2016-17 and none on 2026 (038-01: Sharpe -0.07) | 2 of 3: "close near a new high continues" (related, 0.94) and "calm chop continuation" (0.44; correlation 0.57 with 013-03) |
+
+**What it shows:** topic 49 does what it was built for (specialists exist only with it); topic 50's discovery rule
+took the night and fed the portfolio's own rebound, so the themes, and with them the choppy and falling-calm cells, were
+never tested; the one target cell filled (falling agitated) holds the portfolio's rebound restricted to it, and it does
+not earn on 2026. Next steps: 1n (revised), 1o, 1p in `topics/NEXT_STEPS.md`.
+
+**Measures M4 to M8 (2026-11-25 about 12:30 Paris; the operator's go; `topics/49_review/night7_measures.py`, its print
+`night7_measures.txt`):**
+- **M4, ideas by profile:** choppy 10 tested, 0 confirmed, median 746 cases, median t 1.15; falling 5, t -0.18; falling
+  calm 5, all five with t between 1 and 2 (677 cases); agitated 13 of 20 confirmed, falling agitated 8 of 18, rising 7
+  of 14. The quiet profiles have the cases: their effects are weak or absent, not unobserved.
+- **M5, distinct effects (books correlated 0.7 or more are one effect):** new code 51 confirmed books, about 6 effects,
+  31 of the books one effect (the next-day rebound after a fall, in every profile it was named in); control 19 books, 6
+  effects (10 of them chop continuation). The same variety; the new code paid for it with more copies.
+- **M6, specialists combined** (falling agitated and rising, which cannot hold on the same coin-day; one book per
+  effect, equal capital per profile): Sharpe in-sample 1.77, 2016-17 2.49, 2026 0.29; P4's 20 books 1.64, 1.08, -0.73;
+  the control's 3 profitable books 1.16, 3.67, 1.11. By profile on 2026: rising 1.33, calm 2.21, agitated 0.28,
+  falling agitated -0.33. Correlation with P4 0.35 to 0.48.
+- **M7, the unseen periods by profile:** 2016-17 holds 2 % falling-agitated coin-days (11 to 20 days in a position): the
+  falling-agitated books' "holds" there rests on almost nothing; 2026 holds 19 % (about 276 days in a position) and they
+  lose there (Sharpe -0.06 to -0.33). The rising specialists earn on 2026 (0.9 to 1.8), though their effect is the
+  held books' continuation (explained 0.7 to 0.87 in-sample) and those books lost on 2026.
+- **M8, days in a position outside the profile:** median 15 % beyond the idea's horizon (positions left open, a median
+  size 0.04 to 0.1 of the capital against 0.1 to 0.5 inside) and 1 % in the holding period. The 18 % outside the
+  profile is topic 51's band, not the holding period (the earlier reading said otherwise).
+
+**Correction (2026-11-25, evening):** the measuring scripts (`night7_measures.py`, `night7_home.py`) left out a coin's
+day until its agitation had a year of history, though an idea naming a trend only needs the trend (60 days). Rerun:
+M8's "beyond the horizon" is 15 % (16 % first read); the specialists' median share inside their profile stays 82 %.
+After 1l (topic 51's rerun records), every day a specialist holds outside its profile is within its idea's horizon
+after the profile ended (034-02 "rising": 94 % inside, 6 % within its 5 days, 0 other).

@@ -1,0 +1,22 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 060-01_falling-agitated-high-close-fade_1d
+idea tested: 060-01_falling-agitated-high-close-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3954 USD
+---
+## Findings
+- **F1:** The book loses its edge by holding past the one day the effect lasts. Its 1,072 trades last 5.2 days on average (median 2) and earn -0.78 % each before fees and -0.88 % after. Inside the profile, top-close bars fall -0.78 % over the next day (t -2.99, 428 cases) but only -0.32 % over 2 days and -0.24 % over 3 days (t -0.65 and -0.28). Bars carried from an earlier day earn +0.06 % a bar, against +0.17 % on bars where the short was just opened.
+- **F2:** The book also loses on the bars where the idea says nothing. In the profile it stays short on low-close bars (414 bars, mean size 0.13), which lose -0.11 % a bar, because those coins rebound +1.22 % the next day. Mid-close bars earn only +0.04 %, while top-close bars earn +0.28 % (timing +0.36 %, size 0.53). The mean daily return on days in a position is therefore 1.2e-5, against the 5e-4 required.
+- **F3:** The effect is concentrated in top closes on a wide day. In the profile, a top close on a day whose high-low range is wide against the coin's last 20 days of daily swing falls -1.88 % the next day (t -3.10, 119 cases). A top close on a middling range falls -0.52 % (t -1.28), and on a narrow range it moves +0.09 % (t 0.19). So the strong case is about 10 times the 0.19 % cost of a trade, while the average case is 1.5 times it.
+- **F4:** The wide range is not an effect of its own. In the profile, wide-range days that close low rise +2.13 % the next day (t 4.04, 157 cases) and wide days that close mid rise +1.71 % (t 1.78, 91 cases). Outside the profile, wide top closes move only -0.14 % (t -0.80, 953 cases). The fall exists only where close location, a wide day and the falling agitated profile meet, which fits the brief's theory: covering that is exhausted after a violent intraday lift.
+- **F5:** The strong case is broad, not one period. Top closes on wide days in the profile fall the next day on all 6 coins, from -0.87 % (BTC, 32 cases) to -3.18 % (XRP, 16 cases). They fall in 9 of the 10 windows that have such cases (w14 -1.37 % over 38 cases, w16 -3.01 % over 24, w18 -3.29 % over 20). Today the book's result swings by window, from +0.10 % a day in w14 to -0.06 % in w16, so its leave-one-out Sharpe is -0.15.
+- **F6:** The score that multiplies close location by range is not cleanly graded. Its quintiles in the profile give next-day moves of +1.21 %, +0.68 %, +0.14 %, -0.67 % and +0.02 %, the last with a wider spread (sd 7.9 % against about 5.3 %). The grading lies in close location within wide days, not in the product.
+
+## Ideas
+- `060-01.d1_wide-day-high-close-next-day-fade` (from F1, F2, F3, F4, F5, F6): In a falling, agitated market, on a day whose high-low range is wide against the coin's daily swing of the last 20 days, the nearer the daily close sits to the top of that range, the larger the coin's fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

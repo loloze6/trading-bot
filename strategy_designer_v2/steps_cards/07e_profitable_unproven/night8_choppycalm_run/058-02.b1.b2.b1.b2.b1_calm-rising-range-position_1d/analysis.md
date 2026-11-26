@@ -1,0 +1,23 @@
+---
+line: 7.e profitable but not proven
+backtest: 058-02.b1.b2.b1.b2.b1_calm-rising-range-position_1d
+idea tested: 058-02.b1.b2.b1.b2.b1_calm-rising-range-position
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.5072 USD
+---
+## Findings
+- **F1:** The long side carries the whole book. Long positions summed +9.16 of gain over 2,178 bar-positions, while shorts summed −0.30 over 753. Long trades made +8.15 % net on average (607 trades) and short trades −4.51 % (237 trades).
+- **F2:** The market's own rise accounts for about a third of the long gain (2.85 of 9.16); the remaining 6.31 is timing.
+- **F3:** The gain is concentrated in time. Windows w10 and w17 give +2.86 and +2.98 of the +8.86 total. By year, 2020 has a book Sharpe of 3.04, against −2.06 in 2018 and 0.44 in 2021. Without the 10 best days, the book's Sharpe falls from 1.29 to 0.48.
+- **F4:** Inside the rising calm profile, on the 10-day grid, the range position does grade the coin's unusual move. Closes above 0.9 of the range give +0.68 of a usual move (19 cases) and closes below −0.5 give −0.32 (17 cases). The rank correlation is 0.30 (p 0.0001, 164 cases). Outside the profile it is only 0.07 (p 0.07, 638 cases).
+- **F5:** The grading shows from 5 days on rather than only at the plan's 10. In the profile, the correlation of range position with the unusual move is 0.05 at 3 days (543 cases), 0.21 at 5 days (329 cases, p 0.00009), 0.28 at 10 days (164 cases) and 0.27 at 20 days (74 cases).
+- **F6:** What the book earns is continuation near the high, not reversion near the low.
+- **F7:** The long gain lives in moderate rises.
+
+## Ideas
+- No ideas: The book earns from long continuation near the recent high in rising calm markets, plus a third from the market's rise and a few strong 2020 windows (F1–F7); the profile map already holds this idea in rising calm (034-01.b1 nearness to high, 033-03.b2 range top continuation, 035-01.b1 calm nearness to high), so it is neither a new discovery nor on the brief's choppy-calm reversion theme.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

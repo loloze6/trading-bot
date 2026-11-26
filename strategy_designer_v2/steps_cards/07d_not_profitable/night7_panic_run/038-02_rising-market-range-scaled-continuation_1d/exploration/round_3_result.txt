@@ -1,0 +1,46 @@
+## filtered books
+                              yearly     maxdd    calmar    sharpe
+base                        0.249763 -0.294491  0.848117  1.083761
+out when prev f < q25 held  0.249763 -0.294491  0.848117  1.083761
+out when prev f < q50 held  0.256236 -0.192418  1.331662  1.204260
+out when prev f == 0        0.253459 -0.204010  1.242389  1.173933
+out when hi20 < -0.10       0.280386 -0.210628  1.331189  1.235700
+out when hi20 < -0.05       0.246404 -0.196514  1.253874  1.167731
+
+## prev f quantiles of held
+0.25    0.000000
+0.50    2.979238
+
+## grid ex3: near 20d high x signal
+                 n      mean         t
+near_hi sig                           
+False   False  455 -0.003253 -0.633328
+        True   347 -0.002985 -0.518320
+True    False   83  0.000965  0.087747
+        True   380  0.014788  3.235906
+
+## grid ex3 signal: near_hi x forecast half
+              n      mean         t
+near_hi fq                         
+False   0   226 -0.014560 -2.207928
+        1   121  0.018383  1.707595
+True    0   138  0.004026  0.632105
+        1   242  0.020919  3.393787
+
+## held gain weak vs strong forecast
+          n      mean       std        p5       sum
+weakf                                              
+False  1772  0.003585  0.038251 -0.044427  6.351744
+True   1772  0.000082  0.012018 -0.014966  0.146042
+
+## held gain by year x weak
+              n      mean       sum
+y    weakf                         
+2018 False  142 -0.002085 -0.296115
+     True   338 -0.000994 -0.335873
+2019 False  378  0.004146  1.567220
+     True   282  0.000996  0.280843
+2020 False  609  0.005190  3.160671
+     True   542 -0.000222 -0.120382
+2021 False  643  0.002986  1.919967
+     True   610  0.000527  0.321453

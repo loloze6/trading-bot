@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 034-03.b1_choppy-far-below-high-falls_1d
+idea tested: 034-03.b1_choppy-far-below-high-falls
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4388 USD
+---
+## Findings
+- **F1:** In folds B and C, choppy-market closes below the 20-day high do fall against the coin's normal drift. The 5-day drift-adjusted return is -2.4 % with t -4.04 over 320 grid cases, and the fall is concentrated in the deepest slips. Below 4 swings under the high it is -5.6 % (t -3.39, 76 cases). From 2 to 4 swings it is -1.9 % (t -2.57, 112 cases). From 1 to 2 swings it is -0.8 % (t -0.83, 70 cases), and from 0 to 1 swing it is -0.8 % (t -0.62, 62 cases).
+- **F2:** The fall is mostly an average level, not a reliable slope. With the cases of one day taken together, the slope on the raw depth in swings has t 1.39 (308 cases, 135 days). On the plan's standardised forecast it has t 1.06. Step 5's slope over all four folds had t 0.11 (1446 cases, 415 days), and its unusual move of +0.63 % in the short direction had t 1.80. So the grading is too noisy to clear the bar, and folds A and D add little to it.
+- **F3:** The fall lives where the coin's own 20-day return is negative. In that case the deeper half of the slips gives -3.5 % (t -3.39, 141 cases) and the shallower half -3.0 % (t -2.76, 44 cases). Where the 20-day return is positive, the shallower half gives -0.6 % (t -0.72, 116 cases), and calm cases give +1.6 % (t 0.97, 44 cases). Agitated cases with a negative 20-day return show the largest fall, -6.7 % (t -3.81, 54 cases).
+- **F4:** Standardising the reading over its last 60 values blurs the depth: its correlation with the raw depth is 0.91, and the clustered slope t falls from 1.39 to 1.06. The thirds by forecast are still ordered: deepest -3.9 %, middle -2.2 %, least -0.9 % (about 107 cases each).
+- **F5:** The plan's 5-day horizon is where the below-high fall is surest. The mean drift-adjusted return has t -3.15 at 1 day, -3.67 at 3 days, -4.04 at 5 days, -2.98 at 10 days and -1.56 at 20 days.
+- **F6:** Over all folds the trade's total move per case is -0.18 %, against a cost of 0.22 % per trade. The book therefore lost money: Sharpe -0.10, yearly return -3.2 %. Only a larger move per case, such as the falling-coin subset of F3, can pay.
+
+## Ideas
+- `034-03.b1.b1_choppy-slip-falling-coin` (from F1, F3, F5, F6): In a choppy market, a coin whose daily close has slipped below its 20-day high falls over the next 5 days, more the more of its own daily swings over the last 20 days it stands below that high, only while its own 20-day return is negative.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

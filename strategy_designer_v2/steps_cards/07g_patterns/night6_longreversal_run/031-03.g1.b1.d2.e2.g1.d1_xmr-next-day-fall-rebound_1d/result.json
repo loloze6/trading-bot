@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.34901519999999997,
+  "findings": {
+    "F1": "How near XMR closes to the day's low predicts the next day better than the day's return does. On all 2,897 bars, a regression of the next-day excess return on (0.5 minus the close's place in the day's range) has t 5.10. The lowest fifth of closes (n 577) is followed by +0.85 % (t 4.19), the highest fifth (n 581) by \u22120.60 % (t \u22123.31). Welch's t for lowest minus highest is 5.33, a gap of +1.45 %. On its own the lowest fifth's move is 0.18 of the usual daily move of 4.65 %, against 0.13 for the tested idea.",
+    "F2": "Once the day's return in usual moves (z) is in the regression, what carries the effect is the distance of the close below the day's high, in 30-day daily volatilities. That distance has t 3.31 (slope 0.0051, n 2,417), while z drops to t \u22120.40 and the distance above the low has t \u22121.65. So the tested fall-in-volatility signal mostly stands in for \"closed far below the high.\"",
+    "F3": "The book cannot short, and its flat days hold a pattern it does not use. On up days closing in the top fifth of their range (n 568), the next day is \u22120.58 % (t \u22123.15). On all forecast-\u22640 days in that fifth (n 565), it is \u22120.58 % (t \u22123.17). Up days closing in the bottom fifth (n 115) are followed by +1.10 % (t 1.94). For a short, the \u22120.58 % move minus the +0.11 % normal drift still exceeds the 0.31 % cost of a trade.",
+    "F4": "The close-location effect lasts one day only. On a non-overlapping grid, its t is 5.10 at one day, 1.91 at two days (n 1,202) and \u22120.45 at three days (n 786). It is also uneven over time: with z in the regression, its yearly t falls from 1.22 in 2018 to \u22121.03 in 2025, and by half the early windows give t 0.04 and the late ones t 1.82. So it is mostly shared with z rather than separate from it.",
+    "F5": "On down days, the rebound is concentrated in some conditions. It is +0.85 % (t 2.16) in the top volatility quartile against +0.03 % (t 0.12) in the lowest. It is +0.77 % (t 2.79) in the top volume tercile against +0.18 % in the lowest. It also appears at both ends of the 60-day return: +0.92 % (t 2.15) after the largest falls and +0.76 % (t 2.37) after the largest rises. With this many angles examined, none of these stands out enough to count alone."
+  },
+  "ideas": [
+    {
+      "idea": "The farther XMR's daily close sits below that day's high, measured in its 30-day daily volatility, the more its price rises over the next day.",
+      "consequence": "A trader in XMR would buy days that close well below their high, more the larger the gap in usual moves, and hold for one day, whether the day itself was up or down.",
+      "name": "XMR close-below-high rebound",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The closer an up day in XMR closes to its high, the more its price falls over the next day.",
+      "consequence": "A trader in XMR would short up days that close at their high for one day, which is the side the tested book leaves flat, and would refuse to buy them.",
+      "name": "XMR strong-close next-day fade",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1.d1.g1_xmr-close-below-high-rebound",
+    "031-03.g1.b1.d2.e2.g1.d1.g2_xmr-strong-close-next-day-fade"
+  ],
+  "no_ideas": null
+}

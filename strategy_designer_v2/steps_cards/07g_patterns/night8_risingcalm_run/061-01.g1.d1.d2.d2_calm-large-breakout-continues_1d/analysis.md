@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 061-01.g1.d1.d2.d2_calm-large-breakout-continues_1d
+idea tested: 061-01.g1.d1.d2.d2_calm-large-breakout-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6292 USD
+---
+## Findings
+- **F1:** Across all non-overlapping 5-day grid cells of folds B and C, a coin's one-day move in 30-day-swing units predicts its 5-day excess return in the same direction only in calm markets: the slope of the standardised excess on the move is 0.173 (t 2.86, 479 cases, 134 days, day-clustered) when calm and 0.097 (t 1.02, 333 cases, 102 days) when agitated.
+- **F2:** The calm-market continuation holds in both halves of the data shown: slope 0.150 (t 2.48, 249 cases, 64 days) in w7–w12 and 0.182 (t 1.75, 230 cases, 70 days) in w13–w18.
+- **F3:** In calm markets the 5-day excess rises steadily with the day's size: −2.6 % (t −2.18, 46 cases) after moves below −1 swing, −1.6 % (t −2.24, 206) after moves from −1 to 0, then +1.6 % (t 1.58, 165) for 0 to 1, +3.6 % (t 2.20, 47) for 1 to 2, and +5.1 % (t 3.27, 15) above 2 swings. The same buckets in agitated markets show no order (from −2.6 % to −1.1 %, then +11.9 % on 11 cases).
+- **F4:** Inside calm markets the continuation is strongest in a choppy 60-day trend, slope 0.290 (t 2.91, 83 cases, 46 days); it is 0.141 (t 2.22, 179 cases) when the trend is rising and 0.114 (t 1.05, 217 cases) when it is falling.
+- **F5:** Most of the calm-market slope comes from the gap between up days and down days rather than from size within one sign: up days alone give slope 0.131 (t 1.39, 227 cases), down days alone 0.001 (t 0.01, 252 cases). The continuation is therefore mainly a matter of the day's direction, with only a weak grading by size on the up side.
+- **F6:** The tested book threw this away by trading only 20-day-high closes, long only, in choppy calm: its cases' unusual move is +0.07 % per case (t 0.09, 158 days), 0.4 times the 0.19 % trade cost, and its slope's t is 1.06. Closes at the 20-day high do carry a +4.1 % to +4.5 % 5-day excess (day-clustered t 2.00 and 1.66 in the two halves, 130 cases), but this belongs to closeness to the high and not to the day's size. By distance from the high, the slope is 0.064 (t 0.48) at the high and 0.068 (t 1.09) near it.
+- **F7:** The calm-market 10-day move in swing units (slope 0.165, t 2.58, both halves t 2.16 and 1.64) and the distance from the 20-day high (calm slope 1.74, t 2.41) also predict the 5-day excess. They repeat the calm nearness-to-high strategy already held (035-01.b1), so they are not a discovery.
+- **F8:** The weekday is not a stable pattern. Monday's +1.6 % 5-day excess (t 2.20) splits into t 1.43 and 0.17 across the halves, and Friday's into −0.64 and 1.95.
+
+## Ideas
+- `061-01.g1.d1.d2.d2.g1_calm-day-move-continues-both-ways` (from F1, F2, F3, F5): In a calm market, the larger a coin's one-day move against the standard deviation of its daily returns over the past 30 days, the further the coin keeps moving the same way over the next 5 days, up after up days and down after down days.
+- `061-01.g1.d1.d2.d2.g2_choppy-calm-day-follow-through` (from F1, F4, F6): In a choppy, calm market, the larger a coin's one-day move against the standard deviation of its daily returns over the past 30 days, the further the coin keeps moving the same way over the next 5 days, wherever the close sits against its recent highs.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

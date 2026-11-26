@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move of short cases (return minus coin drift, short-signed)",
+    "value": 0.004064825259701144,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.8310744227484321
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check difference > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half (|forecast| median split) mean unusual move",
+    "value": 0.006224185715831495,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1380,
+    "distinct days": 669
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Profile taken from the recorded regime (mean_reversion only when neither chop veto fired, as the detector's 60-day trend and 365-day volatility percentile cannot be rebuilt from the recorded windows) and close location recomputed from prices; day-clustered t uses per-day summed deviations with a G/(G-1) correction; the upper half is |forecast| strictly above the median, the lower half the rest; a minimum count not reached gives 'not observable'."
+}

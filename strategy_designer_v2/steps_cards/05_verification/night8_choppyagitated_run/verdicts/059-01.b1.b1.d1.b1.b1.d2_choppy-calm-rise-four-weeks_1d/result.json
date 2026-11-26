@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 28-bar excess return (over the coin's normal 28-bar drift)",
+    "value": 0.025659301979307006,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day taken together",
+      "value": 0.4311300585436721
+    },
+    "threshold": "t >= 2 with a positive mean to confirm; t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return at the median forecast (Welch t = 0.363)",
+    "value": 0.022707548934330007,
+    "passed": true
+  },
+  "counts": {
+    "cases with a positive forecast": 97,
+    "distinct days": 36,
+    "upper half cases": 48,
+    "lower half cases": 49
+  },
+  "decided_by": "Neither rule met: the main t is between -2 and 2 (or undefined) and no reject condition holds.",
+  "reading": "The 28-bar grid starts at each window's first row with the forward return inside the window; the drift is the coin's mean grid 28-bar return over all its windows; the day-clustered t of the weighted mean is m / (sqrt(G/(G-1) * sum over days of (sum of w*(e-m))^2) / sum w); the upper half is forecast above the median, the lower half at or below it, compared by unweighted means; the plan's minimum of 30 cases on 30 days, when not reached, gives 'not observable'."
+}

@@ -9,7 +9,8 @@ Is this idea real?
 One test plan whose outcome is `plan`, and its backtest record. One idea has one plan, so this is one input per idea.
 
 ## Output
-One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough cases, no clear result) or **not observable** (fewer cases than the plan's minimum: the data could not show the idea), with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3.
+One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough cases, no clear result; or confirmed on
+every fold but pointing the other way on the check folds) or **not observable** (fewer cases than the plan's minimum: the data could not show the idea), with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3.
 
 ## What a verdict is
 **A verdict is the plan's own criterion, applied unchanged to the backtest record: the numbers measured, and which of the plan's rules (confirm, reject, inconclusive) they meet.**
@@ -23,6 +24,11 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
   - inconclusive: no action yet.
 
   It is not written out again.
+- **A confirmed idea also points its way on the years step 7 does not see** (operator, 2026-11-24;
+  `../common/explore_and_check.md`). The verdict is judged on every fold; a "confirmed" is then checked on the check
+  folds (A and D, 2022 to 2025) alone, with the same measure: if it points the other way there, the status is
+  "inconclusive". Why: step 7 chooses its ideas on what it explored; an effect that exists only in those years is not an
+  effect to trade.
 - **The verdict is about the idea's reality, judged before costs.** Whether the book pays is branch 3's question (`06_profitability`).
 - **Next to the verdict, the idea's size** (operator, 2026-11-20): how large its effect is, not only whether it exists.
   Computed by code from the record's prices and forecast (`../common/measures.md`, "The size of an idea";
@@ -47,7 +53,8 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
    - the supporting check, its value and whether it passed; it counts in the decision: a main measure that confirms with a failed check gives inconclusive (operator, 2026-11-14; code refuses a "confirmed" with a failed check);
    - the counts: every count the plan's minimums refer to, each one named;
    - the rule the numbers meet ("decided by");
-   - the literal reading taken ("reading").
+   - the literal reading taken ("reading");
+   - the direction check, for a confirmed verdict (one line: agrees, disagrees or not judged, and why).
    - For: the status can be checked and challenged.
    - Used by: the operator, and anyone who disputes the status.
    - Without it: a bare word nobody can verify.
@@ -62,8 +69,13 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
    - For: auditing them.
    - Used by: the reading of each exercise, and anyone who disputes a number.
    - Without it: the numbers cannot be checked.
-6. **`result.json`:** what the function returned, as it returned it.
-6b. **`size.json`:** the idea's size (cases, unusual move, normal drift, total move, the coin's usual move, strength),
+6. **`result.json`:** what the function returned, as it returned it; for a confirmed verdict, with `direction_check`
+   added by code (the check folds, agrees: true, false or null for not judged, why, the main measure, its statistic and
+   the counts on the check folds alone).
+   - For: auditing the check, and the status it changed.
+   - Used by: the operator, and the reading of each run (how many confirms the check turned to inconclusive).
+   - Without it: a status changed by code with no trace of why.
+6b. **`size.json`:** the idea's size (cases, unusual move and how sure it is (its t by day, and the days), normal drift, total move, the coin's usual move, strength),
    with one line in `verdict.md` ("Size: ..."). Not for a mismatch.
    - For: telling a real but small idea from a real and large one.
    - Used by: the operator, step 7, and whoever compares an idea's size with what a trade costs.
@@ -100,7 +112,7 @@ Aligned with the other steps.
 - `record_description.md`;
 - the coins, windows, number of bars and columns of this record (names, not values).
 
-**The runner** loads the record into `bars[coin][window]` (pandas DataFrames). It runs the function in a separate process, with the venv's Python, isolated (`-I`), and checks the returned dict.
+**The runner** loads the record into `bars[coin][window]` (pandas DataFrames). It runs the function in a separate process, with the venv's Python, isolated (`-I`), and checks the returned dict. For a confirmed verdict it runs the same function a second time on the check folds' windows only (no model call): the direction check.
 
 **Checks in code** (`make_verdict.py`). It refuses only a major deviation, and sends the error back, up to three attempts:
 - no function `measure(bars)`;
@@ -110,6 +122,13 @@ Aligned with the other steps.
 - a status that is not one of the five;
 - no main measure value; a statistic that is not a dict with a value; no named counts;
 - no "decided by", no "reading".
+
+**The direction check in code** (`direction_check`, `common/lib.py`'s fold windows): it agrees when the check folds'
+main measure has the sign of the main measure on every fold; it disagrees otherwise, and the status becomes
+"inconclusive" with a "decided by" that says so. It is **not judged**, and the verdict stands, when the check folds hold
+under 100 cases or 30 days (read from the measure's own counts: the smallest count named "case", else the smallest
+count; a count named "day"), when the measure cannot run on them alone, when the plan has no check fold, or when the
+record did not run on the plan's folds (an unseen-dates record: no `fold_` folder).
 
 **The same criterion on another record** (`--measure FILE`, 2026-11-18, `runs/UNSEEN_RUN.md`): an earlier verdict's
 `measure.py` is applied as it is to another record of the same plan (other dates, other coins). No model call, one
@@ -138,6 +157,11 @@ The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a b
 - **Exercise 8 and `verdicts/`:** the rewritten plans, run twice. 13 of 13 statuses agree (all inconclusive); every situation check passes.
 - **The planted test:** step 5 confirms (t 5.5) and rejects (t -4.1) a planted gain, in the right direction; a realistic gain on one fold stays inconclusive (`planted_test/reading.md`).
 - **Exercises 9 to 11:** "not observable" split from "inconclusive" by the plan's minimum counts. 13 of 13 statuses agree on the fixed inputs (all inconclusive: every minimum reached); two records cut to one window give "not observable" twice.
+- **The direction check (2026-11-24):** 71 verdicts whose bars are on the designer's machine rerun with their own
+  `measure.py` (no model call): every field of `result.json` identical but the added check; of the 64 confirmed, 60
+  agree, 3 not judged (77 to 90 cases on the check folds), 1 disagrees and becomes inconclusive (019-03, a large
+  breakout in a rising market: +0.43 % a case on every fold, -0.007 % on folds A and D). A first pass read only counts
+  named "cases" or "days" and left 48 not judged: fixed to read the measures' own count names.
 - **The full-data run:** 5 "rejected" verdicts came from the plans' per-window holding reference, a bias fixed in step 3; rerun, 6 of 6 inconclusive (`../runs/FULL_DATA_RUN.md`).
 
 ## Who judges the output

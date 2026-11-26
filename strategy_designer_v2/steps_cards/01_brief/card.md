@@ -80,6 +80,16 @@ smaller and less traded coins take on part of that move only later... (prose, at
 ## The AI
 **What it does.** It writes one brief from its own knowledge, from a theme, or from a source. It knows trading and nothing of the pipeline. One request, one call. Running it is the operator's act.
 
+**A theory may live in one kind of market** (operator, 2026-11-24; topic 49): the brief may say the behaviour holds in
+one market profile only, named by its trend, its agitation or both ("in a falling, agitated market"; the definition,
+`../common/market_profile.md`, is pasted into the call); a request that names a profile gets a theory for it.
+
+**A source may be a discovery** (operator, 2026-11-24; topic 50): a pattern off its brief's theme that line 7.e or 7.g
+found (`../common/theme.md`). The loop calls this step with it as the source: the brief states the pattern's theory in
+its own words, without the numbers, and gets its own number. **When a source's theory is already in the index** and
+the source states no other, the answer is one line, `already-indexed: <brief>`, and no brief is written (2026-11-24,
+topic 50's proof: given a pattern already written as brief 033, the step invented a variant the source never showed).
+
 **Closed book.** One model call: no tools, no files, no web, no repository, an empty working folder, no settings. The index and the source are pasted into the call. One note cannot be removed in this cloud environment: an account note with the operator's email. It says nothing of trading or the pipeline.
 
 **Checks in code** (`make_brief.py`). Code refuses only a major deviation: no `---` header, a header key outside the list, no theory, a theory over 900 words or an index line over 100 (guards against a runaway answer, not length rules). A refused answer is sent back with the reason, up to three attempts. Minor deviations are fixed, not refused: bold and headings are stripped, the short-name is made file-safe (at most eight words), a missing index line falls back to the theory's first words, a missing `other-theories` line is recorded as not given.

@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 060-01.d1_wide-day-high-close-next-day-fade_1d
+idea tested: 060-01.d1_wide-day-high-close-next-day-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3878 USD
+---
+## Findings
+- **F1:** The test's cases were almost every active bar (236 of 237 wide falling-agitated days), whatever the close. On these days the bottom third of closes rose +2.75 % over the next day beyond drift (t 3.84, 110 cases), and the lower half rose +3.18 % (clustered t 3.18, 84 days). That outweighed the top third, which fell −2.05 % (t −2.66, 70 cases). So the main measure was pulled to the wrong side (−0.80 %, t −1.78) by low closes the idea makes no claim about.
+- **F2:** The fade shows where the idea places it. Next-day excess was −1.97 % for closes at 0.6–0.8 of the range (t −1.97, 41 cases) and −1.97 % for closes at 0.8–1.0 (t −1.87, 35 cases). Mid-range closes rose +5.0 % (t 2.30, 33 cases).
+- **F3:** The fade is graded inside the upper half of the range: the slope of next-day excess on close location is −0.114 (t −2.18, 91 cases, 59 days). Over all active days the slope is −0.070 (t −3.94, 237 cases).
+- **F4:** The top-third fade holds across coins: BTC −1.5 %, ETH −2.4 %, LTC −2.0 %, XMR −2.4 %, XRP −4.0 %, ZEC −0.6 %, all negative. By year it falls in 2018 (−2.0 %, 32 cases), 2020 (−3.3 %, 18 cases) and 2021 (−1.8 %, 13 cases); only 2019 is positive (+0.4 %, 7 cases).
+- **F5:** Most high closes come on up days, and the fade lives there: next-day excess was −2.39 % (clustered t −2.18, 63 cases, 38 days). The 7 high closes on down days rose +0.95 %.
+- **F6:** The fade lives at the one-day horizon. The top third gives −1.6 % over two days (t −0.93, 36 cases) and +0.4 % over three days (t 0.07, 21 cases).
+- **F7:** The fade needs the wide, agitated situation. On all falling days, wide or not, closes in the top fifth of the range gave only −0.38 % (t −1.50, 348 cases). On wide days in the profile the top-third fade is larger on the wider half (−2.78 %, t −1.68) than on the narrower half (−1.48 %, t −1.18).
+- **F8:** The top-third move per case, about 2 %, is roughly ten times the 0.19 % cost of a trade.
+
+## Ideas
+- `060-01.d1.b1_wide-day-upper-close-next-day-fade` (from F1, F2, F3, F4, F6, F7, F8): In a falling, agitated market, on a day whose high-low range is wide against the coin's daily swing of the last 20 days and that closes in the upper half of that range, the nearer the daily close sits to the day's high, the larger the coin's fall over the next day.
+- `060-01.d1.b2_wide-up-day-high-close-fade` (from F1, F3, F5, F6, F8): In a falling, agitated market, on a day that rose with a high-low range wide against the coin's daily swing of the last 20 days, the nearer the daily close sits to the day's high, the larger the coin's fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

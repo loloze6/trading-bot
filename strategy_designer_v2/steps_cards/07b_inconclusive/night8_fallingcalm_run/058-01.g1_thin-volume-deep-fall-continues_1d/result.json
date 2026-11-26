@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "058-01.g1_thin-volume-deep-fall-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.20364680000000002,
+  "findings": {
+    "F1": "Step 5's slope is on the side the idea predicts but short of the bar (slope 0.00084, t 1.22, 444 cells). In folds B and C the slope on the 5-day grid is positive for all 6 coins (t from 0.17 to 3.13, 28 to 60 cells per coin), so the effect is the right sign everywhere but too weak per coin for this many cases.",
+    "F2": "The sign of the effect is stable across horizons, and only the 1-day and 3-day slopes come near the bar.",
+    "F3": "Inside the active cells, thinning volume carries the effect and the depth of the fall adds nothing.",
+    "F4": "The effect is mixed over time.",
+    "F5": "The short's gain is concentrated in the strongest forecasts rather than graded smoothly.",
+    "F6": "The book earns little: Sharpe 0.32 against holding's 0.56, and Calmar 0.18. The total move per case (+0.21 %) is only 1.1 times the 0.19 % cost of a trade, while the unusual move (+0.88 %, t 1.49 over 307 days) is 4.6 times the cost. More cases are needed before the size can be told from 0."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "thin-volume fall, more coins",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ],
+      "idea": "In a falling, calm market, the deeper a coin's 30-day fall and the more its volume over those 30 days has shrunk against the 30 days before, the more it keeps falling over the next 5 days.",
+      "consequence": "A deep calm decline made on thinning volume is a reason to stay short, and the same depth on swelling volume is a reason to refuse the short.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "falling calm"
+    }
+  ],
+  "idea_ids": [
+    "058-01.g1.b1_thin-volume-fall-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

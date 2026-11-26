@@ -1,0 +1,58 @@
+{
+  "line": "7.g",
+  "backtest": "031-02.g1.b2_volatile-coins-bounce-after-capitulation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4075504,
+  "findings": {
+    "F1": "Down days of at least one usual daily move (z \u2264 \u22121) are followed by a next-day excess return that grows as the close sits lower in the day's range: +0.75 % (t 2.74, 1217 cases on 484 days) for the lowest quarter, +0.26 % (t 0.69, 285 days) for closes in 0.25\u20130.5, and \u22120.19 % (t \u22120.24, 63 days) above mid-range. The low-close bounce holds well beyond the tested \u22122 threshold.",
+    "F2": "Moderate down days (z between \u22122 and \u22121, any close) are already followed by +0.56 % next-day excess (t 2.42, 1424 cases on 596 days). Flat days (|z| < 1) give \u22120.08 % (t \u22120.93, 2258 days), and up days of every size give between \u22120.54 % and +0.08 % with |t| < 1.2.",
+    "F3": "Among down days (z \u2264 \u22121), the quartile whose prior 10-day return was strongest (10-day z above +0.14) bounces +0.98 % the next day (t 3.15, 459 cases on 254 days), the strongest cell in all my results. The two middle quartiles give \u22120.16 % (t \u22120.43) and +0.09 % (t 0.30), and the most fallen quartile gives +1.34 % (t 2.57, 207 days). The response is U-shaped, not graded.",
+    "F4": "Inside the tested capitulation days, the bounce is concentrated where the prior 5 days fell most. The deepest tercile (5-day return \u221215 % or worse) gives +3.01 % (t 1.91, 45 days) against +0.39 % (t 0.72) and +0.23 % (t 0.40) for the other two. Graded by the prior 10-day z instead, it is flat: +1.61 %, +0.90 %, +1.13 %.",
+    "F5": "The capitulation bounce lasts one day only. Days 2\u20133 after the case give \u22120.62 % excess (t \u22121.15, 127 days).",
+    "F6": "The capitulation bounce is concentrated in 2019\u20132022: 2020 gives +6.3 % (t 1.66, 10 days) and 2021 +2.2 % (t 1.77). 2023\u20132025 give \u22120.31 %, +0.38 % and \u22120.08 %, each with |t| < 0.8, and graded by volatility relative to its 60-day mean the terciles are \u22120.58 %, +0.87 % and +0.27 % (all |t| < 1).",
+    "F7": "The brief's reversal is absent; the opposite shows. After a 5-day run (|5-day z| > 1), flat-bodied days (|body| < 0.2 of range) in the widest-range tercile continue in the run's direction by +1.13 % the next day (t 2.13, 208 days), against \u22120.31 % and \u22120.44 % for the narrower terciles. This rests largely on 2020 (+4.6 %, t 2.28), and on the 3-day grid it is +1.62 % with t 1.45 (69 days).",
+    "F8": "After a strong 5-day rise, the top sextile of 5-day z (above +0.94) gives +0.33 % next-day excess (t 2.15, 992 days); the other five sextiles lie between \u22120.14 % and +0.04 %.",
+    "F9": "The book is carried by a few days. Its 10 best days hold 59 % of its summed daily gain, and its median day in the market is \u22120.04 % against a mean of +0.39 % (646 days with a non-zero return, max +21.7 %, min \u221212.0 %). This fits a Calmar of 0.72 despite a cost covered 7 times."
+  },
+  "ideas": [
+    {
+      "idea": "On a day a coin falls, the lower its close sits in that day's range, the more the coin rises over the next 1 day, and this holds already for falls of about one usual daily move, not only extreme ones.",
+      "consequence": "A trader would buy down days that close near their low, in larger size the closer to the low, giving many more trades than capitulation days alone and so a smoother book.",
+      "name": "low close down-day bounce",
+      "from": "F1, F2, F9",
+      "refs": [
+        "F1",
+        "F2",
+        "F9"
+      ]
+    },
+    {
+      "idea": "On a day a coin falls, the stronger its 10-day return was before that day, the more the coin rises over the next 1 day.",
+      "consequence": "A trader would buy one-day drops inside a coin's recent rise, and refuse to buy drops that come after a flat 10 days.",
+      "name": "dip in uptrend rebounds",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "On a day a coin falls far and closes near its low, the deeper its 5-day fall leading into that day, the more the coin rises over the next 1 day.",
+      "consequence": "A trader would size a capitulation-day purchase by how deep the 5-day selloff was, and take the bounce for one day only.",
+      "name": "deeper selloff larger bounce",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.g1.b2.g1_low-close-down-day-bounce",
+    "031-02.g1.b2.g2_dip-in-uptrend-rebounds",
+    "031-02.g1.b2.g3_deeper-selloff-larger-bounce"
+  ],
+  "no_ideas": null
+}

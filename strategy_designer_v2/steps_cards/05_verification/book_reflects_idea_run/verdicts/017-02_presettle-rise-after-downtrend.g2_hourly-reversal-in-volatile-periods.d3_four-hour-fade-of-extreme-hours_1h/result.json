@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 4-bar return on forecast",
+    "value": 8.142787705556835e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 9.340273474149217
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with supporting check); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x excess 4-bar return over top fifth of |forecast|",
+    "value": 0.0002140515604533026,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping sampled bars with a non-zero forecast": 13683,
+    "sampled bars": 104088,
+    "top-fifth sampled bars": 104088
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-fifth mean of sign(forecast) x excess return is above 0.",
+  "reading": "Active bars for the situation check are those with a non-zero forecast and a recorded raw value; the regression uses all sampled bars (zero forecasts included) with an intercept and the classic OLS standard error; the coin's mean 4-bar return is the mean of its sampled returns over all its windows; the top fifth is the sampled bars with |forecast| at or above the 80th percentile of |forecast| over all sampled bars."
+}

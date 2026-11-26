@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 037-01_falling-market-wide-day-decline_1d
+idea tested: 037-01_falling-market-wide-day-decline
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3726 USD
+---
+## Findings
+- **F1:** In rising markets (60-day return above +10 %) the tested situation points the other way. Days with a range of at least 2 usual swings are followed by an unusual 3-day move of +3.53 % (t 3.45, 152 cases), against +0.02 % on other rising days. The widest range quintile gives +3.49 % (t 2.13, cases of one day together, 62 days), and 7 of 9 windows are positive.
+- **F2:** The rebound in rising markets comes from wide days that close down. Their unusual 3-day move is +6.60 % (t 2.98, 65 cases on 23 days), against +1.24 % for wide days that close up (t 0.75, 56 days). Every year shown is positive: 2019 +2.8 %, 2020 +4.4 %, 2021 +3.5 %, each t under 2.
+- **F3:** In falling markets wide days are followed by no reliable decline. Range of at least 2 swings gives -0.81 % (t -0.99, 163 cases), and the widest range quintile gives -0.83 % (t -0.54, 61 days). This matches the verdict's inconclusive -0.52 % (t -1.12).
+- **F4:** In falling markets the narrowest range quintile (mean range 0.65 swing, mean close-to-close move 0.01 swing) is followed by an unusual 3-day rise of +3.29 % (t 2.51, 138 cases on 60 days), positive in 9 of 11 windows. The other four quintiles are all at or below -0.7 %, and the range-to-move correlation is -0.13.
+- **F5:** In falling markets the fall after wide days sits in those that close up (-3.86 %, t -3.53, 65 cases), not those that close down (+1.21 %, t 1.09). This is the brief's own falsifying pattern reversed, but it weakens once days are counted together. The top 1-day-return quintile gives -2.45 % (t -1.94, 59 days), and only 7 of 11 windows are negative. It is the source brief's rally fade, already tested, and not a new finding.
+- **F6:** Weekday effects in the next day's unusual move vanish once same-day cases are taken together: every weekday has |t| ≤ 1.54 over about 206 days. The 20-day-return quintiles show no monotone pattern over 7 days. Neither is a finding.
+
+## Ideas
+- `037-01.g1_rising-market-wide-day-dip-rebound` (from F1, F2, F3): In a rising market, a day whose high-low range is wide against the coin's 30-day standard deviation of daily returns and that closes down is followed by a rise over the next 3 days. The wider that day's range in units of this swing, the larger the rise.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `037-01.g2_falling-market-quiet-day-bounce` (from F4, F3): In a falling market, the narrower a day's high-low range against the coin's 30-day standard deviation of daily returns, the larger the coin's rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

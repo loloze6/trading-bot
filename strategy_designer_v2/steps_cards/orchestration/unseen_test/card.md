@@ -1,24 +1,34 @@
 # Function card: unseen_test (orchestration, 2026-11-18)
 
 ## Business objective, one question
-Does an idea that is real and pays still hold on dates the research never used?
+Does an idea that is real and pays still hold on dates the research never used, and on coins its plan never tested?
 
 **Establish, for every idea step 5 confirmed and step 6 found profitable enough, whether it holds on each unseen
 period, its plan, config and criterion unchanged, so that no idea reaches live trading on the evidence of the dates it
 was found and judged on alone** (operator, 2026-11-18). Why: in `runs/UNSEEN_RUN.md`, 8 of the first 12 such ideas failed
 step 6 on at least one unseen period, and 2 did not hold at all.
 
+**The unseen coins** (operator, 2026-11-25, `runs/UNSEEN_COINS_RUN.md`): the same test on the coins with data in the
+plan's folds that the plan did not test (`common/unseen_coins.md`), over the plan's own folds. Why: the unseen dates are
+now used by the portfolio's choice (P4, P10b), paper trading is too slow, the sealed holdout is kept for one final
+verdict; the unseen coins are data nobody used for that plan. One more kind of unseen data in the same function, not a
+second function: the same steps, rule, result file and index line; only step 4's data changes (`--coins` in place of
+`--windows`). Called by hand with `--coins` (not by `run_idea`: the operator decides later).
+
 ## Input
 - One idea's plan: `03_test_plan/<run>/plans/<id>.md` (with its config beside it).
 - Its in-sample verdict: `05_verification/<run>/verdicts/<id>/result.json` (the main measure's sign) and `measure.py`
   (the criterion, applied again unchanged).
-- The unseen periods: every `04_backtest/windows/unseen_*.json` (`common/unseen_dates.md`).
+- The unseen periods: every `04_backtest/windows/unseen_*.json` (`common/unseen_dates.md`); with `--coins`, the plan's
+  unseen coins (`common/unseen_coins.md`: the Kraken coins of `trading-bot/local_data/coverage.yaml` not in its
+  `data-instruments`).
 - A run name and a Python environment with `trading-bot/requirements.txt`.
 
 ## Output
 - Per period, the steps' usual files, under the run (see Storage).
 - The idea's result: `orchestration/unseen_test/<run>/<id>.json`, and one line in `orchestration/unseen_test/<run>/INDEX.md`
-  (per period: holds, or does not hold).
+  (per period: holds, or does not hold; with `--coins`, also "unseen_coins: holds (N of M coins ran)", or "none" for a
+  plan that tested every coin of the data).
 - In `run_idea`'s row: the field "unseen dates" (that index line).
 
 ## What an unseen test is
@@ -34,7 +44,9 @@ in-sample sign AND the book's Sharpe after costs is above 0).
 ## The fields of the result (`<id>.json`)
 1. **in_sample:** the main measure and its statistic, from the in-sample verdict.
    - For: the sign the rule compares to. Without it: "holds" cannot be computed.
-2. **periods.<period>:** step 5's status, the main measure and its statistic, step 6's status, the book's Sharpe and
+2. **periods.<period>:** one entry per kind of unseen data run (each unseen period; `unseen_coins` with `--coins`; a
+   call keeps the entries it did not run): the coins that ran a window and the number of (coin, window) pairs run,
+   step 6's years (and, for the coins, the coins asked), step 5's status, the main measure and its statistic, step 6's status, the book's Sharpe and
    holding's Sharpe on the same coins and dates (step 6's numbers), and **holds** (true or false).
    - For: the operator's reading, and the index line. Without it: four folders to read per period.
 
@@ -43,13 +55,14 @@ in-sample sign AND the book's Sharpe after costs is above 0).
 orchestration/unseen_test/
   card.md                 this card
   helper/
-    unseen_test.py        one plan -> steps 4, 5, 6 on each unseen period; the holds rule; the result and the index
+    unseen_test.py        one plan -> steps 4, 5, 6 on each unseen period (or its unseen coins, --coins); the holds
+                          rule; the result and the index
     test_unseen_test.py   tests of its own logic (no backtest, no model call)
   validation/reading.md   the validation
   <name>_run/
     <id>.json             one idea's result
     INDEX.md              one line per idea: per period, holds or does not hold
-The steps' files, per period P (unseen_2016_2017, unseen_2026), in the run's usual folders:
+The steps' files, per period P (unseen_2016_2017, unseen_2026, and unseen_coins with --coins), in the run's usual folders:
   04_backtest/<name>_run/P/backtests/<id>/
   05_verification/<name>_run/P/verdicts/<id>/
   06_profitability/<name>_run/P/checks/<id>/
@@ -63,13 +76,20 @@ The steps' files, per period P (unseen_2016_2017, unseen_2026), in the run's usu
 
 ## How to call it
 ```
-python3 orchestration/unseen_test/helper/unseen_test.py PLAN --run NAME_run --python VENV_PYTHON
+python3 orchestration/unseen_test/helper/unseen_test.py PLAN --run NAME_run --python VENV_PYTHON [--coins]
 ```
+- `--coins`: the plan's unseen coins over its own folds, in place of the unseen periods (step 4 with `--coins`).
 - `PLAN`: the idea's plan file; `--run`: the run that holds its verdict, where the files go; `--python`: the venv.
 - It calls, per period: `04_backtest/helper/run_backtest.py PLAN --out-root ... --windows ...`,
   `05_verification/helper/make_verdict.py PLAN --records-root ... --verdicts-dir ... --measure .../measure.py`,
   `06_profitability/helper/check_profitability.py RECORD --checks-dir ...`.
 - A step whose output exists is not called again: a second call makes no step call (a resumed run costs nothing).
+  Step 4's output is a record where at least one window ran; a record where none ran (the dates not fetched) is
+  removed and step 4 called again, so a period gains its result once its data is fetched (2026-11-23: the record
+  of 028-04 on 2026, written before the hourly 2026 bars were fetched, would otherwise have stayed empty).
+- After step 4, the record's chart files under their committed names (`04_backtest/helper/chart_files.py`): an
+  unseen record is the last evidence before live, read on any machine (2026-11-24: P4 could not read 028-04's
+  2016-17 record, made in another session, whose bars stayed there).
 
 ## When a step fails
 Nothing stops: the other periods go on, and the result says what each step gave.
@@ -99,7 +119,7 @@ Nothing stops: the other periods go on, and the result says what each step gave.
 
 ## The AI
 None: code only. Step 5 is called with `--measure`, so it makes no model call. Cost: 0 USD; about a minute per idea
-(two periods, 6 coins).
+(two periods, 6 coins); with `--coins`, the plan's folds on up to 13 other coins (see `runs/UNSEEN_COINS_RUN.md`).
 
 ## Quality criteria
 - **The same files as the steps called by hand** on the same plan and period.
@@ -121,11 +141,15 @@ Through `run_idea` on the fixed input, the function's files are identical to the
 say what the steps' files say, and a second call makes no step call.
 Status: **met** (`validation/reading.md`): 72 engine files, both verdicts and both checks identical; 3 tests of its
 own logic.
+`--coins` (2026-11-25): 2 more tests (the unseen coins, and their entry beside the periods: kept by a call on the
+dates, a second call makes no step call); step 4 with `--coins` has its own test; step 4 without it gives the same
+files as before (`runs/UNSEEN_COINS_RUN.md`). Its first run: `runs/UNSEEN_COINS_RUN.md`.
 
 ## What it changes elsewhere (each in its own card)
 - `run_idea`: the call after step 7, the row's field "unseen dates" (a column of `table.md`).
 - Step 4 (`--windows`) and step 5 (`--measure`): the two options it calls.
 
 ## What this function does not do
-It does not choose ideas, change a plan, write a new criterion, stop a run, or extend the unseen periods (adding days
+It does not choose ideas, change a plan, write a new criterion, stop a run, choose the coins (every coin of the data the
+plan did not test), or extend the unseen periods (adding days
 is `trading-bot/tools/extend_kraken_daily.py` and a new windows file, by the operator).

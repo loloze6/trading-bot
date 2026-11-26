@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 058-03.e1_calm-rise-stretch-ten-days_1d
+idea tested: 058-03.e1_calm-rise-stretch-ten-days
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.5005 USD
+---
+## Findings
+- **F1:** In a choppy market (60-day return between -10 % and +10 %), the coin's 10-day excess return rises with the close's distance from its 20-day average: the slope is 0.0086 per point of distance (t 3.55 plain, 5.01 with the cases of a day taken together; 62 cases on 30 days). By distance quintile the excess return runs from -14.7 % in the lowest to +8.8 % in the highest.
+- **F2:** The choppy effect is not a 10-day accident. On the 5-day grid the same slope is 0.0057 (t 2.47, 125 cases on 65 days). The coin's 5-day return predicts the next 10 days the same way (slope 0.87, t 3.46, 62 cases). The effect holds on both sides of the average, below (slope 0.0082, t 1.78, 33 cases) and above (slope 0.0070, t 1.78, 29 cases). It shows in choppy calm (t 2.18, 46 cases) and in choppy agitated (t 2.48, 16 cases).
+- **F3:** In the other non-rising-calm groups the distance carries no information. Falling: slope 0.00095, t 0.47, 178 cases. Rising with agitation: slope 0.0004, t 0.25, 68 cases. Bars before the 60-day history: t 0.13, 224 cases. So outside the tested profile, the distance effect lives in the choppy market only.
+- **F4:** Inside the tested rising-calm profile, the effect sits in its calm part. On my agitation split, the calm bars give slope 0.0042 (t 1.77, 119 cases) and the agitated bars give slope -0.0009 (t -0.66, 23 cases). This is consistent with the brief's claim that agitation changes the sign, but the agitated part is too small to tell apart from 0.
+- **F5:** The book's gain comes from long holds and a few days. The days in the top 5 % of book returns carry 238 % of the book's total gain. Trades of about 28 days average +22.1 % before fees, against -3.1 % for trades of about 10 days. Trades entered on the weakest forecasts (mean 6.5) earn +8.6 %, more than those on the strongest (mean 19.8, +4.5 %).
+- **F6:** Thursday and Friday daily returns are higher, +0.55 % and +0.52 % with the coins of a day averaged (t 2.30 and 2.50, about 345 days each), against -0.42 % on Wednesday. Among seven weekdays this does not stand out enough, and the map already holds a late-week rising-market gain (045-01), so it gives no idea.
+
+## Ideas
+- `058-03.e1.g1_choppy-stretch-continues-ten-days` (from F1, F2, F3): In a choppy market, the further a coin's close stands above its 20-day average price, the more the coin rises over the next 10 days; the further it stands below that average, the more it falls.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

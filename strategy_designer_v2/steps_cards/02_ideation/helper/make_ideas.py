@@ -11,7 +11,7 @@ repository, an empty working folder. This script reads no market data.
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
-from lib import common_text, call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+from lib import with_common, call, write_atomic, profile_name  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 MAX_FIELD_WORDS, ATTEMPTS = 300, 3   # 300 words: a guard against a runaway answer, not a length rule
@@ -42,7 +42,7 @@ def parse(text):
     ideas = []
     for raw in re.split(r"^\s*---\s*$", body, flags=re.M):
         fields = dict((k.lower(), " ".join(v.split())) for k, v in
-                      re.findall(r"^(idea|consequence|short-name|index-line|bar):\s*(.*?)(?=^(?:idea|consequence|short-name|index-line|bar):|\Z)",
+                      re.findall(r"^(idea|consequence|short-name|index-line|bar|profile):\s*(.*?)(?=^(?:idea|consequence|short-name|index-line|bar|profile):|\Z)",
                                  raw, re.M | re.S | re.I))
         if not fields:
             continue
@@ -55,7 +55,11 @@ def parse(text):
         # The bar size an idea's observation needs (2026-11-18): only 1h, the finest the data has; anything else, or a
         # text around it, is dropped (a minor deviation), and the brief's own bar size always wins (main()).
         bar = "1h" if (fields.get("bar") or "").split()[:1] == ["1h"] else None
-        ideas.append((idea, consequence, slug(fields.get("short-name") or idea), fields.get("index-line") or idea, bar))
+        # The market profile the idea names (topic 49): one of the six, or none; any other text is refused.
+        profile = profile_name(fields.get("profile"))
+        if fields.get("profile") and fields["profile"].lower() != "none" and not profile:
+            raise ValueError(f"the profile line names a market profile (its trend, its agitation, or both), or is left out: {fields['profile']!r}")
+        ideas.append((idea, consequence, slug(fields.get("short-name") or idea), fields.get("index-line") or idea, bar, profile))
     if not ideas and not m:
         raise ValueError("the answer has no idea block and no already-indexed line")
     return ideas, already
@@ -73,8 +77,7 @@ def main():
     ideas_dir, index_path = args.ideas_dir, args.ideas_dir / "INDEX.md"
     ideas_dir.mkdir(parents=True, exist_ok=True)
     index = index_path.read_text() if index_path.exists() else ""
-    system = (HERE / "system_prompt.md").read_text().replace(
-        "{{IDEA_DEFINITION}}", common_text("idea_definition"))
+    system = with_common((HERE / "system_prompt.md").read_text())
     request = (f"[INDEX OF IDEAS ALREADY WRITTEN]\n{index.strip() or '(empty)'}\n\n"
                f"Write the ideas this research brief gives.\n\n[BRIEF]\n{brief_text}")
 
@@ -99,13 +102,14 @@ def main():
     bracket = "[" + ", ".join(market) + "]" if market else ""
     lines = []
     brief_bar = any(l.split(":", 1)[0].strip() == "bar" for l in header)
-    for idea, consequence, short, line, bar in ideas:
+    for idea, consequence, short, line, bar, profile in ideas:
         kk += 1
         name = f"{nnn}-{kk:02d}_{short}"
         own = bar if bar and not brief_bar else None              # the brief's bar size, when it has one, wins
-        head = file_header if not own else file_header[:-4] + f"bar: {own}\n---\n"
+        extra = (f"bar: {own}\n" if own else "") + (f"profile: {profile}\n" if profile else "")
+        head = file_header[:-4] + extra + "---\n"
         write_atomic(ideas_dir / f"{name}.md", head + f"Idea: {idea}\nConsequence: {consequence}\n")
-        mk = market + ([f"bar: {own}"] if own else [])
+        mk = market + ([f"bar: {own}"] if own else []) + ([f"profile: {profile}"] if profile else [])
         lines.append(f"{name}: {line} {'[' + ', '.join(mk) + ']' if mk else ''}".rstrip())
         print(f"idea: {ideas_dir / (name + '.md')}")
     write_atomic(index_path, index + "".join(l + "\n" for l in lines))

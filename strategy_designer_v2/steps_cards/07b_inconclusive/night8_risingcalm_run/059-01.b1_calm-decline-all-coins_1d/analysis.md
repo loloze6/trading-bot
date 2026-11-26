@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1_calm-decline-all-coins_1d
+idea tested: 059-01.b1_calm-decline-all-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3643 USD
+---
+## Findings
+- **F1:** On folds B and C, step 5's |forecast|-weighted short drift-removed return is most certain at the 3-day horizon (+1.32 %, day-clustered t 2.26, 818 cases on 262 days), compared with the plan's 5 days (+1.91 %, t 1.80, 491 cases on 163 days) and 2 days (+0.75 %, t 1.83). On every fold, the 5-day measure is +0.53 % with t 0.86, so the plan's horizon does not separate the effect from the market's swings.
+- **F2:** The effect is concentrated where the decline is still running. On folds B and C, 5-day cases whose last 3 days were down give a weighted short excess return of +2.74 % (t 2.10, 286 cases, 115 days). Cases whose last 3 days were up give +0.44 % (t 0.25, 186 cases, 79 days).
+- **F3:** The grading is unclear. On folds B and C, the |forecast| quartiles rise from +0.49 % (shallow) to +2.57 % (deep), but the raw swing-scaled 14-day return is not monotonic: deepest quartile +1.05 % (t 0.62), second +4.82 % (t 3.76), shallowest −0.10 %. Across all folds, step 5's deeper-minus-shallower check is +0.09 %, so it failed.
+- **F4:** The effect is uneven across coins and years. On folds B and C, BTC gives +2.25 % (t 2.83) and ETH +2.76 % (t 2.03), while XRP gives +0.09 % (t 0.05) and ZEC +0.22 % (t 0.15). By year it is +2.53 % in 2018 and +1.92 % in 2019, then −0.39 % in 2020 and +0.61 % in 2021.
+- **F5:** No trend profile carries the effect on its own. On folds B and C, the weighted 5-day measure is +3.04 % in choppy (t 1.44), +3.01 % in falling (t 1.72) and +2.29 % in rising (t 0.72).
+- **F6:** The coins' own rise eats most of the move. Per case, the unusual move is +0.99 % (t 2.66, 768 days), but the normal drift in the short direction is −0.68 %. That leaves a total move of +0.31 %, only 1.4 times the 0.22 % cost of a trade. The test already used every coin and fold available, so there is no more data to add.
+
+## Ideas
+- `059-01.b1.b1_calm-decline-still-running` (from F2, F3, F6): In a calm market, the further a coin's 14-day return has fallen below zero, measured in units of its own 30-day daily swing, the larger its fall over the next 5 days, only while its last 3 days have also been falling.
+- `059-01.b1.b2_calm-decline-three-days` (from F1, F6): In a calm market, the further a coin's 14-day return has fallen below zero, measured in units of its own 30-day daily swing, the larger its fall over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

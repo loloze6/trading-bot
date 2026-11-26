@@ -6,10 +6,13 @@
 # Install into the repo-root .venv (it has no pip; use uv):
 #   uv pip install --python .venv/bin/python -r strategy-research/config/requirements-mac.txt
 #
-# claude-agent-sdk: pinned to the version the workflow code was written
-# against — run_phase1_research.py's SDK-RETRY handling and its
-# cumulative-ResultMessage cost accounting are version-sensitive, and the
-# file's own comments name 0.2.82.
+# claude-agent-sdk: was pinned to 0.2.82, the version the workflow code was
+# written against (run_phase1_research.py's SDK-RETRY handling and its
+# cumulative-ResultMessage cost accounting are version-sensitive). 0.2.82 has a
+# critical advisory (GHSA-h4mw-j7qp-8mwm: argument injection via the resume
+# option, fixed in 0.2.121; GitHub's Dependabot alert 1). Raised 2026-11-26 to
+# 0.2.180 (no known advisory; declares mcp>=1.23,<3). This campaign's code no
+# longer runs (last runnable state c534774), so the raise is not run-tested.
 # google-genai: imported at module level (undeclared upstream; no version
 # recorded anywhere in the tree). Pinned at first install, 2026-07-31;
 # realign if Jeremy reports a different version. CORRECTED 2026-09-28
@@ -22,10 +25,10 @@
 # never needs it at all. No key lives in this repo, ever. This file
 # deliberately avoids spelling the variable name: the repo's pre-commit
 # secret scan blocks it in diffs, by design.
-# mcp: claude-agent-sdk 0.2.82 declares mcp>=1.23 with no upper bound, and
+# mcp: claude-agent-sdk 0.2.82 declared mcp>=1.23 with no upper bound, and
 # mcp 2.x removed the Server.list_tools() decorator the SDK's
 # create_sdk_mcp_server() uses (AttributeError on the first tool). The
 # analyst stage (E-075 PR-5) builds such a server, so pin the last 1.x.
-claude-agent-sdk==0.2.82
+claude-agent-sdk==0.2.180
 mcp==1.30.0
 google-genai==2.16.0

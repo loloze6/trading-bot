@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean sign-flipped drift-removed 3-bar return after forecast < 0 (grid 0,3,6,...)",
+    "value": 0.009143128244651577,
+    "statistic": {
+      "name": "t of the mean, day-clustered",
+      "value": 1.933593882616728
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 to confirm; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "OLS slope of drift-removed 3-bar return on forecast (day-clustered t)",
+    "value": 0.0004060045193320678,
+    "passed": false,
+    "t": 0.5773706208711502
+  },
+  "counts": {
+    "cases": 632,
+    "distinct days": 303
+  },
+  "decided_by": "Inconclusive rule: neither the confirm nor the reject rule is met (t between -2 and 2 on a measure, or a failed supporting check).",
+  "reading": "Cases with no close 3 bars later in the same window are left out; the coin's drift is the mean of its non-overlapping 3-bar returns on the 0,3,6,... grid of all its windows; day clustering uses per-day sums of deviations (scores) with a G/(G-1) correction; the slope is fitted on the unflipped drift-removed return with an intercept."
+}

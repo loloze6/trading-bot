@@ -1,0 +1,1 @@
+002-03_price-cross-above-long-sma.b1_distance-above-200-day-more-coins_1d: not run: NEARUSD 8/24 (16 not run: no historical data on the venue); ONDOUSD 3/24 (21 not run: no historical data on the venue); SUIUSD 5/24 (19 not run: no historical data on the venue); TAOUSD 2/24 (22 not run: no historical data on the venue) [1d, folds A, B, C, D]

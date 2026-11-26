@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move per bet (return minus coin's mean 3-bar return)",
+    "value": 0.028603896541303627,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 2.6667695095594652
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on signal-bar forecast (t)",
+    "value": 0.09566257414054538,
+    "passed": false
+  },
+  "counts": {
+    "cases": 276,
+    "distinct days": 187
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 but the supporting slope check fails.",
+  "reading": "Bets are rises of the long forecast of at least 2 points from its lowest level since the last bet (reset at flat), each 3-bar grid cell counted once at its first bet on a 'trending' bar, the move taken from that bar's close over the next 3 bars inside the window; the coin's mean 3-bar return is over its non-overlapping grid of all windows; the main t clusters deviations by UTC day; the slope t is the ordinary OLS t; active bars whose 20-day return cannot be computed inside the window (102) are left out of the situation check; the plan's 'fewer than 30 cases or 30 days' rule is reported as 'not observable' as the workflow requires."
+}

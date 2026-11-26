@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 10-bar forward return minus coin drift on forecast (grid cases)",
+    "value": 0.00036204890089066146,
+    "statistic": {
+      "name": "slope t, SE clustered by day",
+      "value": 0.6545974356974867
+    },
+    "threshold": "slope t >= 2 confirms (with positive timing part), t <= -2 rejects, else inconclusive"
+  },
+  "supporting_check": {
+    "name": "timing part of book's mean daily return before costs",
+    "value": 0.00046510608288273736,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1691,
+    "distinct days": 304
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Every grid bar (positions 0,10,20,... of each window with a 10-bar forward return inside it) is a case, including zero forecasts, regressed with an intercept and day-clustered SEs with the usual G/(G-1)*(N-1)/(N-K) correction; the drift is the coin's mean grid 10-bar return over all windows; the book's return before costs is the held allocation times the next bar's return, averaged over coins per day, minus the allocation times the coin's mean daily return over all windows."
+}

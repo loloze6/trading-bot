@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "032-03.b1.b2_violent-decline-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.41096639999999995,
+  "findings": {
+    "F1": "After a coin's largest one-day falls (bottom fifth of daily returns, -3.4 % or worse), the next day's return beats the coin's mean by +0.96 % (t 3.89, 1988 daily cases). The other four fifths sit between -0.18 % and -0.30 %, and the slope of next-day excess return on the day's return has a t of -4.92 (9940 cases). This rebound is several times the 0.22 % cost of a trade.",
+    "F2": "In calm 28-day declines, the deeper the fall, the weaker the next 5 days. Here \"calm\" means a 28-day mean high-low range below the coin's mean range since the window began, on the non-overlapping 5-day grid. The deepest third (-18 % to -55 %) is followed by an excess return of -2.98 % (t -3.10, 143 cases), the middle third by -1.92 % (t -2.03, 142), and the shallowest third by +0.88 % (t 1.17, 143). The slope of excess return on the 28-day return is positive with a t of 2.44 (428 cases), so larger calm falls lead to larger further falls.",
+    "F3": "In wide-range 28-day declines, the tested idea's situation, the rebound appears only in the deepest third. Those cases (-34 % to -61 %) average +0.64 % (t 0.37, 94 cases), while the middle and shallowest thirds fall further: -3.39 % (t -3.16) and -1.88 % (t -2.08). The bars the backtest marked in-regime average -1.47 % excess over 5 days (t -2.21, 375 grid cases), which goes against the rebound the idea expected.",
+    "F4": "When a coin's 5-day mean volume is low against its 28-day mean, its next 5 days are weak. The lowest fifth of that ratio (0.19 to 0.64) is followed by an excess return of -2.52 % (t -3.79, 295 cases), against +1.17 % (t 0.76) in the highest fifth. The slope of excess return on the ratio has a t of 2.62 (1475 cases).",
+    "F5": "The book mostly tracks the coins rather than adding timing. Its daily returns correlate 0.59 with the coins' mean daily return, and its 15 best and 15 worst days (+3.5 % / -3.6 %) fall on days when the coins moved +12.6 % / -13.8 %. Its per-window mean daily return never exceeds 0.075 % across w7 to w18.",
+    "F6": "In the trades, the highest entry-forecast quarter (mean forecast 15.5) earned +5.44 % net per trade over about 8 days. The other quarters earned +1.0 % to +1.8 % over 13 to 24 days. So the deepest standardised falls were briefly profitable, even though the 5-day grid shows no graded rebound (step 5's slope t 0.73)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall over the past day, the larger its rise over the next day.",
+      "consequence": "A trader should refuse to short a coin the day after a sharp one-day drop, and the sharper the drop the more it favours a short-lived long.",
+      "name": "one-day drop rebounds next day",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "Among coins that have fallen over the past 28 days with daily high-low ranges narrower than their own usual range, the larger the 28-day fall, the larger the further fall over the next 5 days.",
+      "consequence": "A trader should refuse to buy a quiet, deep decline and may short it, more so the deeper it is.",
+      "name": "calm decline keeps falling",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The lower a coin's mean volume over the past 5 days relative to its mean volume over the past 28 days, the lower its return over the next 5 days.",
+      "consequence": "A trader should refuse to go long a coin whose trading is drying up, more firmly the more it has dried up.",
+      "name": "drying volume precedes weakness",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-03.b1.b2.g1_one-day-drop-rebounds-next-day",
+    "032-03.b1.b2.g2_calm-decline-keeps-falling",
+    "032-03.b1.b2.g3_drying-volume-precedes-weakness"
+  ],
+  "no_ideas": null
+}

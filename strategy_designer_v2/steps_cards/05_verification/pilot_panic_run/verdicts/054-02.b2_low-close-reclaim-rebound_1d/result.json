@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move (return minus coin's normal 5-day drift)",
+    "value": 0.02949138049262356,
+    "statistic": {
+      "name": "t of the mean, same-day cases pooled",
+      "value": 1.5501602038684723
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "above-median minus below-median forecast mean unusual move (Welch t)",
+    "value": 0.04751339872645208,
+    "passed": true,
+    "welch_t": 1.5493206745167514
+  },
+  "counts": {
+    "cases": 75,
+    "days": 49,
+    "cases above median": 37,
+    "cases below median": 37
+  },
+  "decided_by": "The mean unusual move's t lies between -2 and 2 (or is not measurable): inconclusive rule.",
+  "reading": "Situation computed as low[t] < min(low[t-30..t-1]) < close[t] inside each window, active bars lacking 30 prior bars in their window left out of the check; a case is the first bet (forecast rise of >= 2 points from its lowest level on its side since the last bet, from 0 after flat) in each 5-bar grid cell of a window, its return taken from that bet's close over 5 bars within the window; the coin's normal drift is the mean of its non-overlapping 5-bar grid returns over all windows; the supporting split uses forecast strictly above vs strictly below the cases' median forecast; the main t clusters cases by UTC day."
+}

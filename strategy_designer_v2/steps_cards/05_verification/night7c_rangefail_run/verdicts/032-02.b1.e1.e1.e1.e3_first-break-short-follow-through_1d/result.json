@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of excess 3-bar return on raw proximity (day-clustered)",
+    "value": -0.037043083857137116,
+    "statistic": {
+      "name": "OLS slope t, day-clustered SE",
+      "value": -1.8488241137074142
+    },
+    "threshold": "confirm: t >= 2 with weighted mean excess > 0; reject: t <= -2; over at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "proximity-weighted mean excess 3-bar return > 0",
+    "value": 0.009708472422768642,
+    "passed": true
+  },
+  "counts": {
+    "cases": 511,
+    "days": 370
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "A case is a 'trending' bar with no kept case 1 to 3 bars before it in its window, dropped if its 3-bar return or raw proximity is missing; the coin's mean 3-bar return uses the non-overlapping grid 0,3,6,... of every window pooled; same-day cases are summed into one deviation by clustering the OLS slope's standard error by UTC day; fewer than 100 cases is reported as not observable."
+}

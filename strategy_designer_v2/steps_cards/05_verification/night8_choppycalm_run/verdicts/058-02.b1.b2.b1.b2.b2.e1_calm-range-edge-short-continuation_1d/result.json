@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 2-bar forward return minus normal drift on range_pos post_pipeline_value (day-clustered)",
+    "value": 2.5832257723431935,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 2.5832257723431935
+    },
+    "threshold": "confirm t >= 2 with timing gain > 0; reject t <= -2; inconclusive otherwise or < 300 grid cases or < 100 distinct days"
+  },
+  "supporting_check": {
+    "name": "timing gain: book mean daily return minus market-rise gain, before costs",
+    "value": 0.0009071889067360629,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 8668,
+    "distinct days": 1248
+  },
+  "decided_by": "The slope's t is 2 or more and the timing gain is above 0.",
+  "reading": "Calm is the regime 'unknown', the expected side is the close above/below the middle of its 20-bar high-low range; the normal drift is the coin's mean 2-bar return on all grid bars of all its windows; the regression has an intercept with CR1 day-clustered errors; the book before costs is the held allocation times the next bar's close-to-close return, averaged over coins per day.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +1.146 on the check folds against +2.583 on every fold",
+    "main": 1.1461024980338055,
+    "statistic": 1.1461024980338055,
+    "counts": {
+      "grid cases": 5975,
+      "distinct days": 651
+    }
+  }
+}

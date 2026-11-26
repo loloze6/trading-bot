@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 2-bar return on forecast, grid bars with forecast > 0",
+    "value": 0.000606650234185531,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 2.7774300167083186
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess > 0; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return on forecast > 0 grid bars",
+    "value": 0.0007297644640759637,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 4217,
+    "distinct days": 1125
+  },
+  "reading": "Situation = bars whose raw component value (or its recomputation from prices when missing) is > 0 on a down close, long side; grid = rows 0,2,4,... of each window; the coin's mean 2-bar return is the mean over all its windows' grid returns; the slope's t uses a day-clustered standard error (per-day sums of the score, factor G/(G-1)); the plan's minimum counts, when not reached, give 'not observable'.",
+  "status": "confirmed",
+  "decided_by": "Confirm: the slope's t is 2 or more and the mean excess 2-bar return on forecast > 0 bars is above 0."
+}

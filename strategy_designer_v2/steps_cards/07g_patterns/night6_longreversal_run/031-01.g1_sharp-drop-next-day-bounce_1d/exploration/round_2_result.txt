@@ -1,0 +1,65 @@
+## reg next ex on clpos-0.5 & z (day-clustered)
+           coef         t      n  days
+const  0.000188  0.234177  14500  2418
+clc   -0.001335 -0.358972  14500  2418
+z     -0.001652 -1.330235  14500  2418
+
+## reg next ex on clpos, rngz, z
+           coef         t      n  days
+const -0.002090 -1.333369  14500  2418
+clc   -0.001717 -0.470138  14500  2418
+rngz   0.001446  1.508128  14500  2418
+z     -0.001397 -1.196804  14500  2418
+
+## reg next ex on clpos x range interaction
+           coef         t      n  days
+const  0.000084  0.104431  14500  2418
+clc    0.013390  2.197158  14500  2418
+clr   -0.013101 -3.129625  14500  2418
+z      0.001042  0.790469  14500  2418
+
+## reg next-3d ex on clpos, z (grid 3)
+           coef         t     n  days
+const  0.000354  0.149896  4715   860
+clc    0.008379  0.834625  4715   860
+z     -0.002877 -0.982292  4715   860
+
+## clpos slope per coin
+     coin  coef_cl%         t     n
+0  BTCUSD -0.002564 -0.005911  2417
+1  ETHUSD  0.374878  0.700517  2417
+2  LTCUSD -0.572329 -1.111452  2417
+3  XMRUSD -0.625634 -1.326524  2417
+4  XRPUSD  0.420302  0.729783  2415
+5  ZECUSD -0.211338 -0.366914  2417
+
+## clpos slope per half
+      half  coef_cl%         t
+0   w1-w12 -0.033333 -0.070977
+1  w13-w24 -0.238521 -0.408682
+
+## clpos slope on down/up days
+   side  coef_cl%         t     n
+0  down -0.682572 -1.409411  7151
+1    up  0.117348  0.277695  7335
+
+## down days: next ex on fall size & clpos
+           coef         t     n  days
+const -0.001352 -0.804468  7151  1835
+fall   0.003922  1.552643  7151  1835
+clc   -0.001720 -0.312280  7151  1835
+
+## 5d z slope per coin
+     coin     coef%         t
+0  BTCUSD  0.098011  1.173955
+1  ETHUSD  0.042254  0.402825
+2  LTCUSD -0.072684 -0.624412
+3  XMRUSD -0.108520 -0.910261
+4  XRPUSD  0.238560  1.446638
+5  ZECUSD  0.152068  1.027402
+
+## 5d z slope pooled
+           coef         t      n  days
+const  0.000077  0.095344  14500  2418
+ret5z  0.001944  2.047722  14500  2418
+z     -0.002800 -3.055108  14500  2418

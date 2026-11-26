@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-day return of long cases over the coin's mean 5-day return",
+    "value": -0.001984155904209253,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": -0.31534758317120626
+    },
+    "threshold": "above 0 with t >= 2 to confirm, below 0 with t <= -2 to reject, over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of excess 5-day return on forecast",
+    "value": 0.012776934513766977,
+    "passed": true
+  },
+  "counts": {
+    "cases": 314,
+    "days": 228
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The situation is checked as the raw volatility-scaled 1-day return (recorded big_day value, recomputed from closes where missing) at least 1.0 with a positive forecast, the choppy-calm profile not being recomputable from the record; a case is the first long bet (forecast rise of at least 2 points from its low on the long side) in each non-overlapping 5-bar grid cell of a window, its forecast is the signal bar's forecast, and the t clusters cases by UTC day with a G/(G-1) correction."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 5-day return on forecast",
+    "value": 0.0008924803314448057,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.7874210127095796
+    },
+    "threshold": "confirm if slope t >= 2 (with supporting check); reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 5-day return > 0",
+    "value": 0.02326843334934745,
+    "passed": true
+  },
+  "counts": {
+    "cases": 327
+  },
+  "decided_by": "The slope t is between -2 and 2 (or undefined), which the plan calls inconclusive.",
+  "reading": "The situation is recomputed as close >= max of the last 28 closes including the bar, checked only on bars with 28 bars of history inside their window, side long; cases are 'trending' bars at grid positions 0,5,10,... of each window with a 5-bar return inside the window, the coin's mean 5-day return is the mean over all its windows' grid samples, the slope t is the OLS slope over its standard error, and the plan's minimum of 100 cases gives 'not observable' when unmet."
+}

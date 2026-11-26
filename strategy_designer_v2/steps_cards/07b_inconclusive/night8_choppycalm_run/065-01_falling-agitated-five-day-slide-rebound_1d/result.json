@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "065-01_falling-agitated-five-day-slide-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3789275,
+  "findings": {
+    "F1": "Inside the falling, agitated profile, the five-day depth adds nothing once the last day's fall is known. On next-day excess returns, the five-day fall's slope has t 0.92 and the last day's fall t 2.89, over 1461 profile bars. The same holds for every slide length tested: the 3-, 10- and 20-day depth have joint t of 1.07, 1.62 and 0.62, while the last day keeps t of 2.56, 3.15 and 2.76.",
+    "F2": "The rebound is the reverse of what the brief claims. A deep five-day slide ending in a small down day falls a further 1.69 % the next day (t -2.74, 278 cases on 125 days). A deep slide ending in a large down day rises 1.48 % (t 1.44, 452 cases on 181 days), and a shallow slide with a large last day rises 0.82 %.",
+    "F3": "The last day's fall is graded inside the profile. Its largest quartile is followed by +2.03 % of excess return the next day (t 2.67, 365 cases on 140 days), against -0.82 % and -1.14 % for its two smallest quartiles.",
+    "F4": "The last-day effect holds in every year shown: its t is 1.97 in 2018, 2.60 in 2019, 6.71 in 2020 and 1.09 in 2021. The tested slide5 forecast's slope is near zero in 2018 (t 0.06) and 2019 (t 0.69) and reaches t 2.13 only in 2021. It is also scattered by window, with weighted means from -0.28 % (w14) to +4.7 % (w17).",
+    "F5": "The effect is confined to the profile. Outside it, the slide5 forecast's next-day slope has t 0.20 (3374 cases) and its 3-day slope t -0.54. A deep slide with a large last day outside the profile earns -0.02 % (t -1.73).",
+    "F6": "The tested forecast's slope in folds B and C is positive but weak: 0.0153 with t 1.44 on 577 non-overlapping cases, against step 5's t 1.86 on 3225 cases over all folds. Its forecast quartiles run 0.02 %, -1.25 %, +1.33 % and +1.24 %, which is not monotone. The test already used every fold and every coin, so no more data is available."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, after a coin's five-day fall, the larger the fall of the last of those days, the larger the coin's rise over the next day.",
+      "consequence": "In an agitated downtrend, a trader buys the rebound after a slide that ends in a sharp down day, and skips slides that end in a quiet day.",
+      "name": "slide ending sharp-day rebound",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "065-01.b1_slide-ending-sharp-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

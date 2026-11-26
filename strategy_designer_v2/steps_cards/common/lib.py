@@ -140,6 +140,15 @@ def header(text):
     return [l.strip() for l in m.group(1).splitlines() if l.strip()], m.group(2)
 
 
+def with_header_field(text, key, value):
+    """The text with one field of its --- header set by code (replaced when present, else added last)."""
+    m = re.match(r"(\s*---\n)(.*?)(---\n)", text, re.S)
+    if not m:
+        sys.exit("the file does not start with a --- header")
+    lines = [l for l in m.group(2).splitlines() if not re.match(rf"{re.escape(key)}\s*:", l)] + [f"{key}: {value}"]
+    return m.group(1) + "\n".join(lines) + "\n" + m.group(3) + text[m.end():]
+
+
 def header_fields(text):
     """The --- header of a Markdown file as a dict (empty when it has none)."""
     m = re.match(r"\s*---\n(.*?)---\n", text, re.S)
@@ -151,10 +160,47 @@ def common_text(name):
     return (COMMON / f"{name}.md").read_text(encoding="utf-8")
 
 
+def with_common(text):
+    """A prompt with each {{NAME}} replaced by the shared file common/name.md (for example {{IDEA_DEFINITION}})."""
+    return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: common_text(m.group(1).lower()), text)
+
+
+# The market profiles (common/market_profile.md; topic 49): the six names, and when a bar is in each. The trend is the
+# coin's 60-day return in percent, the agitation the rank of its 30-day swing over the past 365 days (0 to 1).
+PROFILE_TREND = {"rising": [("gt", 10)], "choppy": [("gte", -10), ("lte", 10)], "falling": [("lt", -10)]}
+PROFILE_AGITATION = {"calm": [("lte", 0.5)], "agitated": [("gt", 0.5)]}
+PROFILES = tuple(f"{t} {a}" for t in PROFILE_TREND for a in PROFILE_AGITATION)
+
+
+def coin_profile(close):
+    """Each day's market profile of one coin from its daily closes (common/market_profile.md), as step 3's components
+    compute it (topic 49's proof: 0 differences with the engine on 17,524 bars): a DataFrame of `trend` (rising,
+    choppy, falling) and `agitation` (calm, agitated), each None until its own history exists (60 days; a year).
+    Why this cannot leak: a day's labels use closes up to that day only."""
+    import pandas as pd
+    tr = (close / close.shift(60) - 1) * 100
+    ret = close.diff() / close                       # one-day returns as the component reads them
+    rank = ret.rolling(30).std().rolling(365 + 1).apply(lambda w: (w <= w[-1]).mean(), raw=True)
+    trend = pd.Series([None if pd.isna(x) else "rising" if x > 10 else "falling" if x < -10 else "choppy" for x in tr], index=close.index)
+    agit = pd.Series([None if pd.isna(x) else "agitated" if x > 0.5 else "calm" for x in rank], index=close.index)
+    return pd.DataFrame({"trend": trend, "agitation": agit})
+
+
+def profile_name(text):
+    """An idea's profile from a line such as "falling, agitated", "Choppy market" or "calm": its trend, its agitation, or
+    both (trend first); None when the line names none ("none", empty) or names two trends or two agitations."""
+    words = re.findall(r"[a-z]+", (text or "").lower())
+    t = [w for w in words if w in PROFILE_TREND]
+    a = [w for w in words if w in PROFILE_AGITATION]
+    if len(t) > 1 or len(a) > 1 or not (t or a):
+        return None
+    return " ".join(t + a)
+
+
 # What step 3 reads of an idea file (operator, 2026-11-14): the same subset whatever step wrote it (step 2 or step 7).
 # Anything else (a step 7 idea's "Why", with numbers measured on the data; a source line) never reaches a model that
 # plans or analyses the idea's test.
-IDEA_HEADER_FIELDS = ("brief", "instruments", "bar", "period")
+IDEA_HEADER_FIELDS = ("brief", "instruments", "bar", "period", "profile")
 IDEA_BODY_FIELDS = ("Idea", "Consequence")
 
 
@@ -169,3 +215,41 @@ def idea_fields(text):
             sys.exit(f"the idea file has no '{f}:' line")
         lines.append(f"{f}: {m.group(1).strip()}")
     return "---\n" + "".join(l + "\n" for l in kept) + "---\n" + "".join(l + "\n" for l in lines)
+
+
+# Exploring and checking on different years (common/explore_and_check.md).
+EXPLORATION_FOLDS = ("B", "C")      # 2018 to 2021: what step 7 explores
+CHECK_FOLDS = ("A", "D")            # 2022 to 2025: step 5's direction check
+FOLDS_FILE = COMMON.parents[2] / "trading-bot" / "config" / "folds.yaml"
+
+
+def plan_folds(plan_text):
+    """The plan's folds in its order ('data-period: folds A, B, C, D'); () when the plan names none."""
+    m = re.search(r"^data-period:\s*folds?\s+([A-Z](?:\s*,\s*[A-Z])*)\s*$", plan_text, re.M)
+    return tuple(f.strip() for f in m.group(1).split(",")) if m else ()
+
+
+def fold_windows(plan_text, folds_file=FOLDS_FILE):
+    """{fold: [window names]}: a record names its windows w1..wN in the plan's fold order (04_backtest/card.md), each
+    fold holding its windows in folds.yaml's count. Reads the count only, never a date."""
+    import yaml
+    counts = {k: len(v) for k, v in yaml.safe_load(folds_file.read_text())["folds"].items()}
+    out, n = {}, 0
+    for f in plan_folds(plan_text):
+        out[f] = [f"w{i}" for i in range(n + 1, n + counts.get(f, 0) + 1)]
+        n += counts.get(f, 0)
+    return out
+
+
+def ran_on_folds(record):
+    """True when the backtest ran on its plan's folds (a coin's `fold_<X>` folder), not on other windows (`--windows`,
+    the unseen dates)."""
+    return any(p.is_dir() for p in Path(record).glob("*/fold_*"))
+
+
+def windows_of(plan_text, folds, record=None):
+    """The window names of these folds in this plan; empty when the record did not run on its folds."""
+    if record is not None and not ran_on_folds(record):
+        return []
+    fw = fold_windows(plan_text)
+    return [w for f in folds for w in fw.get(f, [])]

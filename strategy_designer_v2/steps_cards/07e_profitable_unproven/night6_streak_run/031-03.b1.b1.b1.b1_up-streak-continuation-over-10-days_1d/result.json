@@ -1,0 +1,49 @@
+{
+  "line": "7.e",
+  "backtest": "031-03.b1.b1.b1.b1_up-streak-continuation-over-10-days_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4903589,
+  "findings": {
+    "F1": "The tested streak adds nothing on its own: among 10-day non-overlapping cases with a positive 30-day return, those with no up streak have a larger unusual move (+1.44 %, t 0.97, 533 cases) than those with a streak (+0.78 %, t 0.60, 628 cases), and the same holds at 20 days (+1.30 % against +0.28 %).",
+    "F2": "What the book earns grows with the strength of the coin's 30-day return relative to its own 30-day volatility. Over 10 days the unusual move by quintile of that ratio is \u22120.94 %, \u22121.91 %, \u22121.48 %, +1.25 %, +3.08 % (top quintile t 1.72, 299 cases on 74 days), which is about 0.20 of the coin's usual 10-day move of 15.76 %. The slope of the unusual move on the ratio is +1.29 % per unit (t 1.75, 1495 cases).",
+    "F3": "Inside the book's positions, the gain sits in the highest 30-day returns. On held days split by 30-day return quartile (medians \u22127 %, +5 %, +17 %, +45 %), the timing gain is \u22120.074 %, \u22120.015 %, +0.245 % and +0.278 % a day.",
+    "F4": "On raw 30-day return terciles among positive months, the 10-day unusual move is \u22121.04 %, +1.32 % and +2.97 % (top tercile t 1.74), and over 5 days \u22120.45 %, +1.01 % and +1.50 % (t 1.78).",
+    "F5": "The market's own rise carries most of the book. Of the book's mean daily return of 0.130 % (Sharpe 0.96, 2898 days), 0.080 % (61 %) is the position times the coin's mean daily return, and the timing rest is 0.051 % a day with t 1.05 (timing Sharpe 0.37).",
+    "F6": "The book earns mostly after the streak signal has ended. Days held after a zero forecast contribute 0.073 % a day to the book (0.029 % timing), against 0.059 % (0.023 % timing) for days with a live streak forecast; trades last 28.9 days on average against the plan's 10-day horizon.",
+    "F7": "The gain rests on a few trades and some periods:",
+    "F8": "The momentum grading holds in both halves of the period. The top quintile of the 30-day return over volatility beats the bottom quintile over 10 days in 2018\u201321 (+4.81 % against \u22121.51 %) and in 2022\u201325 (+2.36 % against \u22120.78 %)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day return relative to the volatility of its daily returns over those same 30 days, the more it rises over the next 10 days, above its normal drift.",
+      "consequence": "A trader would size a long by how strong and steady the coin's past month of rise has been, not by whether it has just closed up several days in a row, and would refuse longs in coins whose past month was flat or weak against their swings.",
+      "name": "volatility-scaled monthly momentum continuation",
+      "from": "F1, F2, F3, F5, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 30-day return, the more it rises over the next 5 days, above its normal drift.",
+      "consequence": "A trader would hold a long on a coin with a strong past month for about a week, with a position that grows with that month's rise.",
+      "name": "30-day return short continuation",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1.b1.b1.b1.e1_volatility-scaled-monthly-momentum-continuation",
+    "031-03.b1.b1.b1.b1.e2_30-day-return-short-continuation"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 48-bar move per Sunday-close case",
+    "value": 0.008078654419744313,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9219953280135491
+    },
+    "threshold": "mean > 0 with t >= 2 confirms (with slope > 0); t <= -2 rejects; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "slope of short-side unusual move on |forecast|",
+    "value": -0.0008118073062379094,
+    "passed": false
+  },
+  "counts": {
+    "cases": 46
+  },
+  "decided_by": "Only 46 cases across all coins and windows, fewer than the plan's minimum of 100.",
+  "reading": "A case is every bar with forecast <= -2, at most one per 48-bar grid cell of its window, with its 48-bar return taken in bar positions inside the window; the drift is the coin's mean non-overlapping 48-bar return over all its windows; Sunday's last close is the bar starting Sunday 23:00 UTC; fewer than 100 cases is reported as not observable."
+}

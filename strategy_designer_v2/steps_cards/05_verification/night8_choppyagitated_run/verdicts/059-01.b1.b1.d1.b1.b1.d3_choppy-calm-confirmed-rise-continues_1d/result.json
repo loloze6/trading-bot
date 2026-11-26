@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 7-bar forward return on forecast (grid cases, forecast > 0)",
+    "value": 0.003606677141129481,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.0731492963223848
+    },
+    "threshold": "confirm if t >= 2 (with mean excess > 0), reject if t <= -2, on at least 100 independent grid cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar forward return over the same grid cases > 0",
+    "value": -0.008753006236563656,
+    "passed": false
+  },
+  "counts": {
+    "independent grid cases": 404
+  },
+  "decided_by": "Slope t is 2 or more but the mean excess 7-bar return is at or below 0 (a confirming slope with a failed supporting check).",
+  "reading": "Grid bars are positions 0, 7, 14, ... of each window with a full 7-bar forward return inside the window, the coin's mean 7-bar return is the mean over all such grid bars of all its windows, and the profile part of the situation is read from the detector's 'regime' column since its components are not recorded."
+}

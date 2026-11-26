@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of next-day excess return on forecast, down-day bars",
+    "value": 0.0004341478472054821,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 2.8647217366073305
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 (and top-quintile mean > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top quintile of forecast on down-day bars",
+    "value": 0.00617301963382468,
+    "passed": true
+  },
+  "counts": {
+    "down-day cases": 8514,
+    "distinct days": 2199,
+    "top-quintile cases": 1703
+  },
+  "decided_by": "Confirm rule: the slope is positive with t = 2.86 >= 2 and the top-quintile mean excess return is above 0.",
+  "reading": "Down day from the 1-bar close return inside each window (raw component sign on a window's first bar); excess = next-day return minus the coin's mean 1-bar return over all its windows; slope by pooled OLS with a day-clustered (CR1, G/(G-1)) standard error; top quintile = down-day bars with forecast at or above the pooled 80th percentile; its t is the ordinary t of the mean, as the plan does not name one.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002565 on the check folds against +0.0004341 on every fold",
+    "main": 0.0002564577646636313,
+    "statistic": 1.5193252805369326,
+    "counts": {
+      "down-day cases": 4244,
+      "distinct days": 1149,
+      "top-quintile cases": 849
+    }
+  }
+}

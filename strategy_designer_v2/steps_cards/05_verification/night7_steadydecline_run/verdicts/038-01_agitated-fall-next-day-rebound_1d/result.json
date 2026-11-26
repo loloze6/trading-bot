@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (return per forecast point)",
+    "value": 0.0010705040480321329,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 2.767362533504532
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and weighted mean > 0; reject: slope < 0 with t <= -2; min 100 cases on 60 distinct days"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-day excess return above 0",
+    "value": 0.012068880649277202,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1468,
+    "distinct days": 702
+  },
+  "decided_by": "The slope is positive with t >= 2 and the forecast-weighted mean excess return is above 0.",
+  "reading": "The profile is read from the recorded regime (the detector's components are not recorded and their 60- and 365-bar warm-ups lie outside the windows) and a down day from the raw one-day return < 0; the slope is a pooled OLS with intercept of the next-day excess return (fraction) on the forecast across all coins, with CR1 standard errors clustered by UTC day, and the cases are every bar with forecast > 0 (a 1-bar horizon makes every bar its own grid cell).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0006748 on the check folds against +0.001071 on every fold",
+    "main": 0.000674831166584591,
+    "statistic": 1.7026820591058007,
+    "counts": {
+      "cases": 793,
+      "distinct days": 413
+    }
+  }
+}

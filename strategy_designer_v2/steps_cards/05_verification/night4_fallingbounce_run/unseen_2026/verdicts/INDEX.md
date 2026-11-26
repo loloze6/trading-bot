@@ -1,1 +1,3 @@
+025-02_deeper-fall-bigger-giveback.b1_deeper-fall-bigger-giveback-more-coins.b1_bounce-fades-in-monthly-fall_1d: inconclusive (fit: exact) [main: -0.00316157; t of the mean -1.1587; cases 71]
+025-03_bounce-falling-versus-rising-regime.b1_falling-regime-bounce-all-coins_1d: inconclusive (fit: adapted) [main: 0.00212237; Welch t 0.244455; mean_reversion cases 455, trending cases 312, mean_reversion cases above median rise 235, trending cases above median rise 148]
 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d: inconclusive (fit: exact) [main: 0.744538; OLS slope t 0.744538; cases 60]

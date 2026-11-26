@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, EXPLORATION_FOLDS, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -33,9 +33,12 @@ RUNNER = r'''
 import glob, gzip, json, os, re, sys
 import numpy as np, pandas as pd
 record, script, cap_rows, cap_chars = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+only = set(sys.argv[5].split(",")) if len(sys.argv) > 5 and sys.argv[5] else None   # the exploration folds' windows
 data = {"bars": {}, "trades": {}, "days": {}}
 for coin in sorted(d for d in os.listdir(record) if os.path.isdir(os.path.join(record, d))):
     for f in sorted(glob.glob(os.path.join(record, coin, "w*", "bars.csv.gz")), key=lambda p: int(p.split(os.sep)[-2][1:])):
+        if only is not None and f.split(os.sep)[-2] not in only:
+            continue
         w = f.split(os.sep)[-2]
         b = pd.read_csv(f, low_memory=False)
         b["timestamp"] = pd.to_datetime(b["timestamp"], utc=True)
@@ -79,12 +82,13 @@ def entry_met(entry, s5, s6):
             and (not entry.get("step6_in") or s6 in entry["step6_in"]))
 
 
-def data_summary(record):
-    """Coins, windows and rows of this record, and the bars' columns (names only, no values)."""
+def data_summary(record, only=None):
+    """Coins, windows and rows of this record (only these windows when given), and the bars' columns (names only, no
+    values)."""
     import gzip
     lines, cols = [], None
     for coin in sorted(p for p in record.iterdir() if p.is_dir()):
-        ws = sorted(coin.glob("w*/bars.csv.gz"), key=lambda p: int(p.parent.name[1:]))
+        ws = sorted((w for w in coin.glob("w*/bars.csv.gz") if not only or w.parent.name in only), key=lambda p: int(p.parent.name[1:]))
         if not ws:
             continue
         rows = []
@@ -98,12 +102,19 @@ def data_summary(record):
     return "\n".join(lines) + "\nBars columns: " + ", ".join(keep)
 
 
-def run_explore(python, record, code):
+def exploration_windows(plan_text, record):
+    """The windows step 7 explores (common/explore_and_check.md): the exploration folds' windows; every window when the
+    record did not run on its plan's folds or the plan has no exploration fold."""
+    return windows_of(plan_text, EXPLORATION_FOLDS, record) or None
+
+
+def run_explore(python, record, code, only=None):
     with tempfile.TemporaryDirectory() as tmp:
         script, runner = Path(tmp) / "explore.py", Path(tmp) / "runner.py"
         script.write_text(code)
         runner.write_text(RUNNER)
-        r = subprocess.run([python, "-I", str(runner), str(record), str(script), str(ROW_CAP), str(CHAR_CAP)], cwd=tmp,
+        r = subprocess.run([python, "-I", str(runner), str(record), str(script), str(ROW_CAP), str(CHAR_CAP)]
+                           + ([",".join(only)] if only else []), cwd=tmp,
                            capture_output=True, text=True, timeout=1200)
     out = r.stdout if r.returncode == 0 else "The function failed: " + (r.stderr.strip().splitlines() or ["no output"])[-1][:500]
     out = re.sub(r"(/[\w.\-]+)+/([\w.\-]+)", r"\2", out.replace(str(record), "<record>"))   # no folder names reach the model
@@ -165,7 +176,9 @@ def size_and_cost(size_file, record):
     if not s.get("cases"):
         return "The idea's size: no case to measure.\n" + cost_line
     p = lambda v: f"{100 * v:+.2f} %"
-    lines = [f"The idea's size: per case, over its horizon of {s['horizon_bars']} bars, the unusual move is {p(s['unusual_move'])} "
+    sure = (f" (how sure: t {s['unusual_move_t']:.2f}, the cases of one day taken together, {s['case_days']} days)"
+            if s.get("unusual_move_t") is not None else "")
+    lines = [f"The idea's size: per case, over its horizon of {s['horizon_bars']} bars, the unusual move is {p(s['unusual_move'])}{sure} "
              f"({s['strength']:.3f} of the coin's usual move over that horizon, {100 * s['usual_move']:.2f} %); the coin's normal "
              f"drift in the case's direction is {p(s['normal_drift'])}; the total move is {p(s['total_move'])}; {s['cases']} cases.",
              cost_line]
@@ -175,9 +188,6 @@ def size_and_cost(size_file, record):
     return "\n".join(lines)
 
 
-def with_common(text):
-    """A prompt with each {{NAME}} replaced by the shared file common/name.md (for example {{DATA_AVAILABLE}})."""
-    return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: (COMMON / f"{m.group(1).lower()}.md").read_text(), text)
 MEASURES = (COMMON / "measures.md").read_text()
 
 
@@ -203,7 +213,7 @@ def parse_ideas(text, findings):
     blocks = re.split(r"(?m)^(?=idea:|same-idea-on:)", text[start.start():]) if start else []
     ideas = []
     for b in blocks:
-        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data):\s*(.+)$", b, re.M)}
+        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data|profile|theme):\s*(.+)$", b, re.M)}
         if not g:
             continue
         if "same-idea-on" in g:   # the tested idea unchanged, on other data: code copies its text
@@ -218,6 +228,8 @@ def parse_ideas(text, findings):
                 raise ValueError("a same-idea-on block rests on findings that exist, in 'from: F1, F3'")
             ideas.append(g)
             continue
+        if g.get("profile") and g["profile"].lower() != "none" and not profile_name(g["profile"]):
+            raise ValueError(f"the profile line names a market profile (its trend, its agitation, or both), or is left out: {g['profile']!r}")
         for k in ("idea", "consequence", "from"):
             if not g.get(k):
                 raise ValueError(f"an idea block has no '{k}' line")
@@ -234,6 +246,29 @@ def parse_ideas(text, findings):
     if not ideas and not m:
         raise ValueError("give the ideas, or one line 'no-ideas: <why>'")
     return ideas, (m.group(1).strip() if m and not ideas else None)
+
+
+def is_discovery(g):
+    """An idea its line marked off the brief's theme (`theme: discovery`, lines 7.e and 7.g; common/theme.md)."""
+    return (g.get("theme") or "").strip().lower().startswith("discovery")
+
+
+def discovery_source(g, mk, line, rid, h, why):
+    """A discovery written as a source for step 1 (topic 50): the pattern, where it was seen, what it rests on. Step 1
+    writes the brief (its theory, in its own words, without the numbers); step 2 its first ideas."""
+    seen = f"{mk.get('bar', '1d')} bars of {mk.get('instruments', 'the core coins')}" + (f", in a {mk['profile']} market" if mk.get("profile") else "")
+    return ("A pattern found in a backtest, off the theme of the brief that backtest tested: a theory of its own, to be "
+            "researched from its first ideas.\n\n"
+            f"The pattern: {g['idea']}\nWhat it would mean for a trader: {g['consequence']}\nSeen on: {seen}.\n"
+            f"Found by: line {line['id']} {line['name']}, in backtest {rid} (idea {h.get('idea', '')}, brief {h.get('brief', '')}).\n"
+            f"What it rests on:{why}\n")
+
+
+def profile_map():
+    """The profile map as the research keeps it (common/market_profile.md; written with the similarity register), for a
+    line prompt's {{PROFILE_MAP}} (lines 7.e and 7.g: next steps 1q, the operator 2026-11-25)."""
+    f = HERE.parents[1] / "orchestration" / "ideas_similarities_check" / "register" / "PROFILE_MAP.md"
+    return f.read_text() if f.exists() else "(no profile map yet: no proven and profitable strategy is in the register)"
 
 
 def slug(s, n=8):
@@ -283,12 +318,17 @@ def main():
     no_paths = lambda f: "".join(l for l in f.read_text().splitlines(True) if not re.match(r"(Plan|Record|Measure|Rule):", l))
     idea_file = args.idea or next(iter(sorted(HERE.parents[1].glob(f"**/{h.get('idea', '')}.md"))), None)
     idea_text = idea_fields(idea_file.read_text()) if idea_file and idea_file.exists() else "(not found)"
+    only = exploration_windows(plan_text, record)
+    explore_note = (f"Your explorations see folds {', '.join(EXPLORATION_FOLDS)} of this backtest only (windows {only[0]} to {only[-1]}); "
+                    f"folds {', '.join(CHECK_FOLDS)} are kept to check the ideas you propose (common/explore_and_check.md): "
+                    "step 5 judges an idea on every fold and requires it to point the same way on those it does not show you."
+                    if only else "Your explorations see every window of this backtest.")
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record)}\n"
-               f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
-    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
+               f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n{explore_note}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record, only)}\n")
+    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text().replace("{{PROFILE_MAP}}", profile_map()))
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
               + (HERE / "output_one_call.md").read_text()
               ).replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION)
@@ -306,7 +346,7 @@ def main():
         code = code_of(text)
         if code and not last:
             rounds_used += 1
-            result = run_explore(args.python, record, code)
+            result = run_explore(args.python, record, code, only)
             write_atomic(d / "exploration" / f"round_{rounds_used}.py", code)
             write_atomic(d / "exploration" / f"round_{rounds_used}_result.txt", result + "\n")
             transcript += f"\n[EXPLORATION, ROUND {rounds_used}]\n```python\n{code}```\n[ITS RESULT]\n{result}\n"
@@ -322,42 +362,56 @@ def main():
     else:
         sys.exit(f"no valid answer; cost {cost:.4f} USD")
 
-    # Save: the analysis, one file per idea, the index line.
+    # Save: the analysis, one file per idea (a discovery: one source file for step 1, topic 50), the index line.
     market = {k: h[f"data-{k}"] for k in ("instruments", "bar", "period") if h.get(f"data-{k}")}
     letter = line["id"].split(".")[1]
     (d / "ideas").mkdir(exist_ok=True)
-    names = []
+    names, found = [], []
     tested = {f: (re.search(rf"^{f}:\s*(.+)$", idea_text, re.M) or [None, ""])[1].strip() for f in ("Idea", "Consequence")}
+    tested_profile = profile_name(header(idea_text).get("profile"))
     # the run's other analyses by this line: numbering goes on after their ideas of the same parent (topic 46)
-    others = [f.stem for f in out_dir.glob("*/ideas/*.md") if f.parent.parent != d and f.name != "INDEX.md"]
+    others = [f.stem for f in out_dir.glob("*/*/*.md") if f.parent.name in ("ideas", "discoveries")
+              and f.parent.parent != d and f.name != "INDEX.md"]
     start = first_child_number(h.get('idea', rid), letter, others)
     for i, g in enumerate(ideas or [], start):
         if "same-idea-on" in g:
             g["idea"], g["consequence"], g["data"] = tested["Idea"], tested["Consequence"], g["same-idea-on"]
             g.setdefault("name", "same idea on other data")
+            g["profile"] = tested_profile             # the tested idea's profile, unchanged
         mk = dict(market)
         for k, v in re.findall(r"(instruments|bar|period)\s*:\s*([^;]+)", g.get("data", "")):
             mk[k] = v.strip()
+        if profile_name(g.get("profile")):
+            mk["profile"] = profile_name(g["profile"])
         iid = child_id(h.get('idea', rid), letter, i, slug(g.get('name') or g['idea']))   # topic 46
         why = "".join(f"\n- {r}: {findings[r]}" for r in g["refs"])
+        if is_discovery(g):          # off the brief's theme: a theory of its own, for step 1 (common/theme.md)
+            (d / "discoveries").mkdir(exist_ok=True)
+            write_atomic(d / "discoveries" / f"{iid}.md", DATE.sub("<date>", discovery_source(g, mk, line, rid, h, why)))
+            found.append((iid, g))
+            continue
         body = ("---\n" + f"brief: {h.get('brief', '')}\nsource-idea: {h.get('idea', '')}\nline: {line['id']} {line['name']}\n"
                 f"backtest: {rid}\n" + "".join(f"{k}: {v}\n" for k, v in mk.items()) + "---\n"
                 f"Idea: {g['idea']}\nConsequence: {g['consequence']}\nWhy:{why}\n")
         write_atomic(d / "ideas" / f"{iid}.md", DATE.sub("<date>", body))
-        names.append(iid)
+        names.append((iid, g))
     fl = "\n".join(f"- **{k}:** {v}" for k, v in findings.items())
-    il = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in zip(names, ideas or [])) or f"- No ideas: {none_why}"
+    il = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in names) or f"- No ideas: {none_why or 'every idea is a discovery'}"
+    dl = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in found)
     md = (f"---\nline: {line['id']} {line['name']}\nbacktest: {rid}\nidea tested: {h.get('idea', '')}\n"
           f"step 5: {s5}\nstep 6: {s6}\nmode: one call\n"
           f"explorations: {rounds_used}\ncost: {cost:.4f} USD\n---\n## Findings\n{fl}\n\n## Ideas\n{il}\n\n"
-          f"Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.\n")
+          + (f"## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)\n{dl}\n\n" if found else "")
+          + f"Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.\n")
     write_atomic(d / "analysis.md", DATE.sub("<date>", md))
     write_atomic(d / "result.json", DATE.sub("<date>", json.dumps({"line": line["id"], "backtest": rid, "step5": s5, "step6": s6,
                                                 "explorations": rounds_used, "cost": cost,
                                                 "findings": findings, "ideas": [{k: v for k, v in g.items()} for g in ideas or []],
-                                                "idea_ids": names, "no_ideas": none_why}, indent=2)) + "\n")
-    index_line(f"{rid}: {len(names)} ideas ({rounds_used} explorations)" if names else f"{rid}: no ideas: {none_why}")
-    print(f"{line['id']} {rid}: {len(findings)} findings, {len(names)} ideas, {rounds_used} explorations; cost {cost:.4f} USD")
+                                                "idea_ids": [n for n, _ in names], "discovery_ids": [n for n, _ in found],
+                                                "no_ideas": none_why}, indent=2)) + "\n")
+    more = f", {len(found)} discoveries" if found else ""
+    index_line(f"{rid}: {len(names)} ideas{more} ({rounds_used} explorations)" if names or found else f"{rid}: no ideas: {none_why}")
+    print(f"{line['id']} {rid}: {len(findings)} findings, {len(names)} ideas{more}, {rounds_used} explorations; cost {cost:.4f} USD")
 
 
 if __name__ == "__main__":

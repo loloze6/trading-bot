@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "3-day forward return minus the coin's normal 3-day drift, top-fifth forecast in-rise grid bars",
+    "value": 0.03622848784318173,
+    "statistic": {
+      "name": "t of the mean, same-day cases taken together",
+      "value": 1.8418433562168282
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 (and top-minus-bottom > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess top fifth minus bottom fifth in-rise (Welch t 2.800)",
+    "value": 0.056488031622682705,
+    "passed": true
+  },
+  "counts": {
+    "top-fifth cases on separate days": 73,
+    "top-fifth cases": 115,
+    "bottom-fifth in-rise cases": 115,
+    "in-rise grid bars": 573
+  },
+  "decided_by": "The main-measure t lies between -2 and 2 (or the mean's sign disagrees with it), meeting neither rule.",
+  "reading": "The top and bottom fifths are the in-rise (5-day return > 0) bars of the 3-bar grid, pooled over all coins and windows, with forecast at or above the 80th (at or below the 20th) percentile of those bars' forecasts; the day-clustered t sums each day's deviations with a G/(G-1) correction, and the minimum count missed makes the status not observable."
+}

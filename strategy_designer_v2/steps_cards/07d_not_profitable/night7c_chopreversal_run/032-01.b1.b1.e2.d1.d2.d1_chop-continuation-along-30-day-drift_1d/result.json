@@ -1,0 +1,59 @@
+{
+  "line": "7.d",
+  "backtest": "032-01.b1.b1.e2.d1.d2.d1_chop-continuation-along-30-day-drift_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3977633,
+  "findings": {
+    "F1": "Calmar is what failed (0.59 against 0.75). In folds B and C the book's deepest fall is \u221226.7 %. It ran 332 days, from w11 to w14, while the coins themselves fell \u221252.9 %. Windows w12, w13 and w14 hold three of the four deepest window falls (\u221221.7 %, \u221221.7 %, \u221226.7 %), and the book's summed daily returns there are \u221210.1 %, +3.1 % and \u22120.9 %.",
+    "F2": "Long positions caused the fall. In w12 to w14, held long bars lost \u22120.19 % per day (683 bars, sum \u22121.31), while short bars gained +0.10 % per day (1026 bars, sum +1.01). Outside those windows, longs earned +0.35 % per day (2684 bars).",
+    "F3": "Much of the loss comes from positions held after the chop situation has ended, which the 7-bar minimum holding forces. Held bars outside the chop regime earn about half as much as bars inside it: long +0.17 % against +0.29 % per day, short \u22120.07 % against +0.13 % per day, the shorts outside chop summing \u22121.03 over 1451 bars. In the falling windows, bars outside chop lost (\u22120.07 % per day, 756 bars) while bars inside chop still earned a little (+0.02 % per day, 953 bars).",
+    "F4": "The effect grows with the strength of the coin's 30-day net move, counted in 30-day daily swings. On the 7-day grid, signal cases have a mean signed unusual move of +2.6 %, +4.3 % and +5.7 % by tercile of |scaled 30-day return| (151, 152 and 41 cases). The same terciles without the signal give +1.0 %, \u22121.1 % and \u22121.5 % (136, 133 and 246 cases), and trading the 30-day sign alone gives \u22121.0 %, \u22121.1 % and +0.9 %. So the stronger drift is not an effect of its own; it strengthens the tested signal.",
+    "F5": "The book's daily gain follows the same 30-day grade. Longs earn +0.20 %, +0.32 % and +0.42 % per held day by tercile of |scaled 30-day return|. Shorts in the weakest tercile lose \u22120.07 % per day (818 bars).",
+    "F6": "The signal is graded in its own size, but the book spreads its holding onto weak cases. Signal cases on the grid give +1.6 %, +3.6 % and +5.9 % by tercile of |scaled 7-day move| (104, 128 and 112 cases). The weakest |forecast| quartile of held bars earns only +0.05 % per day over 3327 bars, against +0.31 % per day in the strongest.",
+    "F7": "The signal works best when the coin's recent swings are calm compared with its longer past. By tercile of the ratio of 30-day to 90-day daily standard deviation, signal cases give +6.9 %, +3.8 % and +3.9 % (80, 83 and 54 cases). Without the signal the same terciles give +0.6 %, +2.9 % and \u22122.3 %, so a low ratio alone does not earn. Held bars by quartile of the ratio fall from +0.35 % to +0.18 % per day.",
+    "F8": "The trade is not too small for its cost. The total move per case is +1.03 % against a trade cost of 0.19 %, 5.3 times the cost."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while that 7-day move points the same way as the coin's 30-day net move and the past 30 days are still going back and forth at each day's close, held only as long as all three still hold at each day's close rather than for a fixed 7 days. The larger that scaled 7-day move, the larger the following move.",
+      "consequence": "A trader should close a chop-continuation position on the first close where the back-and-forth or the agreement of the 7-day and 30-day moves is gone, instead of carrying it through the following days.",
+      "name": "chop continuation exit on loss",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while that 7-day move points the same way as the coin's 30-day net move. The larger that 30-day net move counted in 30-day daily swings, the larger the following move.",
+      "consequence": "A trader following scaled weekly moves in chop should weight each one by how strong the 30-day drift it pushes along is, and give little to those along a faint drift, which lost in the falls.",
+      "name": "chop continuation graded drift",
+      "from": "F1, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while that 7-day move points the same way as the coin's 30-day net move. The calmer the coin's last 30 days of daily swings compared with its last 90 days, the larger the following move.",
+      "consequence": "A trader should hold chop-continuation positions largest when the coin's recent swings are subdued against its longer past, and smallest when they have just flared up.",
+      "name": "calm chop drift continuation",
+      "from": "F2, F7",
+      "refs": [
+        "F2",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1.b1.e2.d1.d2.d1.d1_chop-continuation-exit-on-loss",
+    "032-01.b1.b1.e2.d1.d2.d1.d2_chop-continuation-graded-drift",
+    "032-01.b1.b1.e2.d1.d2.d1.d3_calm-chop-drift-continuation"
+  ],
+  "no_ideas": null
+}

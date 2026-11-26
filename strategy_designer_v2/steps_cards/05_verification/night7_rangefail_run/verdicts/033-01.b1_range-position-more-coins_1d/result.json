@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-bar excess return on forecast",
+    "value": 0.00042438601863466246,
+    "statistic": {
+      "name": "t, same-day cases summed (day-clustered)",
+      "value": 1.3860999952646245
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2; else inconclusive; minimum 500 grid cases on 100 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean excess return, forecast > +10 minus forecast < -10",
+    "value": 0.010857175025828591,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 7270,
+    "distinct days": 617
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Every grid bar (positions 0, 5, 10, ... of each window that have a close 5 bars later) with a forecast is a case. The slope is OLS with an intercept, and its t uses residual scores summed per UTC day with a G/(G-1) correction. The drift is each coin's mean grid 5-bar return over all its windows. A supporting check with an empty group fails."
+}

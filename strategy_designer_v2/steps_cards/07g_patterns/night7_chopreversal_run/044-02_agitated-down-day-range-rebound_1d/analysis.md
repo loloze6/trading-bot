@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 044-02_agitated-down-day-range-rebound_1d
+idea tested: 044-02_agitated-down-day-range-rebound
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4751 USD
+---
+## Findings
+- **F1:** In agitated bars, an up close is followed by a next-day fall of -0.54 % beyond drift (t -2.23, 1858 cases, 682 days), against -0.04 % in calm bars (t -0.25, 2327 cases); the first up close after a down day carries most of it, at -0.89 % (t -2.70, 1029 cases, 416 days).
+- **F2:** Across all agitated days, the next-day excess return falls the higher the close sits in the day's range (coefficient -0.0249 per unit of close location, t -3.58, 3372 cases), and this grows on wider days (close location x log range multiple: -0.0293, t -2.30); a low close on a wide day gives +1.41 % (t 2.24, 302 cases) and a high close on a wide day gives -0.77 % (t -1.59, 297 cases).
+- **F3:** Among agitated down days, a fall that is the third close lower in a row is followed by +2.40 % beyond drift (t 2.99, 198 cases, 120 days), against +0.33 % after a first down close (t 1.00, 1024 cases); in calm bars no run length shows anything (t between -0.6 and 0.8).
+- **F4:** In agitated markets the range grading is stronger when the fall extends a run: the widest third of down days that follow another down day gives +1.76 % (t 2.40, 266 cases, 134 days), against +0.96 % (t 1.55, 291 cases) for the widest third of first down days, and +0.53 % and +0.19 % for the narrow and middle thirds after a down day.
+- **F5:** The tested pattern is concentrated in large, wide agitated falls: the largest-fall third on wide days gives +1.62 % next day (t 2.41, 384 cases), narrow days give -2.84 % (22 cases), and the second day after gives -0.20 % (t -0.31), so the rebound is spent in one day; the same cell in calm bars gives +0.57 % (t 1.52), weaker but not absent (calm down days: log range multiple coefficient 0.0087, t 2.25).
+- **F6:** The book earns only on one-day holds: trades held up to 1.5 days average +2.97 % net (927 trades), trades held 1.5 to 2.5 days -2.30 % (365), 2.5 to 4.5 days -5.61 % (186), and over 4.5 days -18.2 % (30). Its gain is skewed: the top 5 % of book days sum to 2.22 times the total and the bottom 5 % to -1.68 times.
+- **F7:** In calm bars, a large rise is followed on the second day, not the first, by more rise: the largest-rise third on wide days gives +0.03 % next day (t 0.09) and then +0.75 % the day after (t 2.60, 553 cases); over all calm days, the second-day excess return grows with the day's move in units of usual swing (coefficient 0.0029, t 2.53, 4266 cases).
+- **F8:** The angles that showed nothing beyond chance: weekday (the largest of 14 groups has t 2.08, not counted given the number of looks), year (wide agitated falls positive in 2018 to 2021, each t under 1.6), coin (all six positive, t from 1.23 to 2.35), and the 5-day return quintiles (no t above 2.13). The tested idea's per-case move, 0.47 % total and 0.34 % unusual, is 2.4 and 1.7 times the 0.19 % cost of a trade.
+
+## Ideas
+- `044-02.g1_agitated-wide-fall-run-rebound` (from F3, F4, F5): In an agitated market, after a coin has closed lower several days in a row, the wider the last day's high-to-low range against its average daily range over the past 30 days, the larger the coin's rise over the next day.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `044-02.g2_agitated-close-location-next-day-reversal` (from F1, F2): In an agitated market, the higher a coin closes within its day's high-to-low range, the lower its return over the next day, and the more so the wider that day's range against its average daily range over the past 30 days.
+- `044-02.g3_calm-large-rise-delayed-continuation` (from F7): In a calm market, the larger a coin's one-day rise against its usual daily swing over the past 30 days, the more the coin rises over the following two days, with the rise showing on the second day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

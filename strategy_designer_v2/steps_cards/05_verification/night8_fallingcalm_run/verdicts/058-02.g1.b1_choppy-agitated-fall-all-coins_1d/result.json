@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short-direction 5-bar excess return",
+    "value": 0.018665303975914205,
+    "statistic": {
+      "name": "day-pooled t of the weighted mean",
+      "value": 1.55139275722034
+    },
+    "threshold": "above 0 with day-pooled t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean short-direction excess return, top third minus bottom third of |forecast|",
+    "value": 0.010723906475751822,
+    "passed": true
+  },
+  "counts": {
+    "cases": 266,
+    "distinct days": 141
+  },
+  "decided_by": "Inconclusive: the day-pooled t lies between -2 and 2.",
+  "reading": "Situation: raw fall_depth < 0 on a non-'chop' regime bar, short side; cases are grid bars 0,5,10,... of each window with a full 5-bar return inside it; the coin's mean 5-bar return is the mean over the same grid of all its windows; the day-pooled t uses the weighted mean's deviations (weight x (value - mean)) summed per UTC day with a D/(D-1) correction; thirds are the floor(n/3) cases with the smallest and the largest |forecast|, compared by their unweighted means."
+}

@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d
+idea tested: 058-01.g2.b1.d1_raw-sized-one-day-rise-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4231 USD
+---
+## Findings
+- **F1:** Inside the falling agitated profile, the tested fade of up days is weak and rests on one year. On the 3-day grid, the slope of the next 3 days' unusual move on the positive part of the day's return in 30-day swings is -0.028 (t -1.78, 427 cases, 143 days). By year it is -0.075 (t -3.69) in 2020, against -0.045 (t -1.12) in 2018, +0.003 (t 0.36) in 2019 and +0.027 (t 0.68) in 2021.
+- **F2:** Inside the same profile, the down side of the day carries as much of the slope as the up side. The slope on the negative part of the day's swing-scaled return is -0.036 (t -2.02), and days of -2 swings or worse are followed by +6.2 % unusual next-day moves (t 1.73, 29 cases, 11 days). After a 10-day fall of 1 to 2 swings, the next 5 days rise +8.4 % (t 2.58, 41 cases, 18 days). This is the falling agitated long rebound the map already holds 12 times, so it is not a discovery.
+- **F3:** The tested book cannot pay at this size. Per case the unusual move is +0.43 % (t 0.97, 430 days), but the coin's drift in the short direction is -0.43 %, so the total move is 0.00 % against a trade cost of 0.22 %. The book's Sharpe is -0.03 and its yearly return -0.9 %.
+- **F4:** Outside the profile, the 10-day return in 30-day swings continues over the next 5 days, the opposite of the reversal inside the profile (slope -0.031, t -2.06, 263 cases).
+- **F5:** This out-of-profile 10-day continuation is graded and broad, though it is only marginally past chance given the many angles looked at.
+- **F6:** Volatility level and weekday show nothing that stands out. Across the four quartiles of the 30-day swing, the 3-day unusual moves have |t| at most 0.64. On every weekday, in or out of the profile, next-day unusual moves have |t| at most 1.67.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-01.g2.b1.d1.g1_falling-calm-swing-momentum` (from F4, F5): In a falling, calm market, the larger a coin's 10-day return measured in standard deviations of its daily returns over the past 30 days, the further its price moves the same way over the next 5 days, upward after strong 10-day rises and downward after strong 10-day falls.
+- `058-01.g2.b1.d1.g2_choppy-market-swing-momentum` (from F4, F5): In a choppy market, the larger a coin's 10-day return measured in standard deviations of its daily returns over the past 30 days, the further its price moves the same way over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

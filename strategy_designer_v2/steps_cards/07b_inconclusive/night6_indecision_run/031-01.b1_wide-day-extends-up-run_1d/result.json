@@ -1,0 +1,44 @@
+{
+  "line": "7.b",
+  "backtest": "031-01.b1_wide-day-extends-up-run_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3308756,
+  "findings": {
+    "F1": "The test's slope is on the side the idea predicts but short of the bar. Step 5 found t 1.43 over 2907 cases, and my rebuild on the 3-day grid gives slope +0.0086, t 1.63 over 2373 up-run cases. The size is small and uncertain: unusual move +0.15 % per case (t 0.74), strength 0.016 of a usual move.",
+    "F2": "The effect is not graded across the range ratio. Mean excess 3-day returns by ratio quintile in up-runs are +0.44 %, +0.26 %, \u22120.07 %, \u22120.46 %, +1.16 %. Only the widest quintile stands out (t 1.87, 475 cases on 247 days), and the slope on the log ratio is weaker (t 1.12).",
+    "F3": "The widest days carry the effect only after the strongest 5-day rises. There the widest quintile is followed by +2.14 % excess over 3 days (t 2.28, 258 cases on 156 days). After weak rises it is \u22120.26 % (t \u22120.31) and after middling rises +0.18 % (t 0.32).",
+    "F4": "The effect changes sign from year to year. The up-run slope t is \u22122.49 in 2018, \u22121.55 in 2023 and +2.27 in 2024. In the widest quintile the mean excess is \u22124.30 % in 2018 against +2.73 % in 2024. Across coins the slope t runs from \u22120.90 (XMR) to +2.07 (ETH).",
+    "F5": "The 5-day-rise condition adds little. The 3-day slope is also positive after 5-day falls (t 1.22, 2342 cases) and reaches t 2.01 over all days (4715 cases). Other horizons are no clearer: up-run t 1.39 at 1 day, 0.69 at 5 days, 1.46 at 10 days."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "wide day extends run, more coins",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ],
+      "idea": "After a coin has risen over the past 5 days, the wider that day's high-low range compared with its average daily range over the past 20 days, the more the coin rises over the next 3 days.",
+      "consequence": "A wide-range day inside an up-run is a reason to hold or join the run for a few days rather than fade it, and a narrow day is a reason to expect it to stall.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "After a coin has risen over the past 5 days, the larger that 5-day rise and the wider that day's high-low range compared with its average daily range over the past 20 days, the more the coin rises over the next 3 days.",
+      "consequence": "A very wide day at the end of a strong 5-day rise is a reason to join or hold the run for 3 days, while a wide day after a weak rise gives no such reason.",
+      "name": "wide day extends strong run",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.b1.b1_wide-day-extends-run-more-coins",
+    "031-01.b1.b2_wide-day-extends-strong-run"
+  ],
+  "no_ideas": null
+}

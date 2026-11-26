@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move on mean_reversion days with forecast > 0",
+    "value": 0.022863880578629744,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 3.700756251856449
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean minus unweighted mean of unusual move",
+    "value": 8.377917319345868e-06,
+    "passed": true
+  },
+  "counts": {
+    "cases": 292,
+    "distinct case days": 180
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 and the forecast-weighted mean above the unweighted mean.",
+  "reading": "Situation recomputed per window from prices (range = high-low, 20-bar mean range including the day over the day's range <= 0.6667, close location (close-low)/(high-low) <= 0.25, 20-bar log-return std over its 60-bar mean >= 1), active bars lacking that history left out of the agreement; t clusters cases by UTC day (deviations summed per day, small-sample factor G/(G-1)); the plan's 30 distinct case days is treated as a minimum count, giving 'not observable' if unmet."
+}

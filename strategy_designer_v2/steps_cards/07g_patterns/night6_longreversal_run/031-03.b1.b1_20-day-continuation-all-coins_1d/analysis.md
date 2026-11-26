@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 031-03.b1.b1_20-day-continuation-all-coins_1d
+idea tested: 031-03.b1.b1_20-day-continuation-all-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4463 USD
+---
+## Findings
+- **F1:** The 20-day move is followed by a same-direction excess 10-day return that grows with the coin's 20-day volatility relative to its own median. By volatility quintile (non-overlapping 10-day grid, cases of one day together) it rises from +0.26 % (t 0.25, 598 cases, 116 days) through +0.20 %, +0.87 % and +1.87 % (t 2.02) to +3.42 % (t 2.17, 597 cases, 172 days). The top quintile's excess is about 15 times the 0.22 % cost of a trade.
+- **F2:** The same volatility gradient holds over 20 days, with excess returns from +0.15 % in the lowest volatility quintile to +7.14 % in the highest (t 1.32, 291 cases). It also holds across coins: in the high-volatility tercile the 10-day directional excess is positive for 15 of 19 coins (e.g. AVAX +7.6 %, t 2.60; SOL +4.7 %, t 2.08). By period it is +3.98 % (t 2.12) up to 2021 and +1.60 % (t 1.31) from 2022.
+- **F3:** In the lowest volatility tercile the 20-day move predicts nothing over the next 10 days: directional excess −0.14 % (t −0.16, 995 cases). The whole tested effect (+1.06 %, t 1.52 overall) comes from the mid tercile (+1.35 %, t 1.84) and the high tercile (+2.76 %, t 2.48).
+- **F4:** Inside the high-volatility tercile, the size of the 20-day move does not grade the continuation; the smallest moves carry the most. The 10-day directional excess is +3.98 % (t 3.00) for the smallest |z20| tercile, +2.87 % (t 1.76) for the middle one and +1.44 % (t 0.91) for the largest. So it is the direction of the recent move under high volatility that carries information, not its extremity.
+- **F5:** The book's gain comes from its long side. Daily position gains summed to +33.2 on long days (mean +0.18 % a day, 18,092 coin-days) against −7.5 on short days (−0.04 % a day). Long trades averaged +10.6 % net against −2.5 % for short trades. Yet the excess continuation is the same for both sides (+1.06 %, t 1.03 after rises; +1.00 %, t 1.14 after falls), so the shorts' loss is the coins' upward drift, not a failed signal.
+- **F6:** Other angles showed nothing that stands out once the number of tables (about 20) is counted:
+
+## Ideas
+- `031-03.b1.b1.g1_volatility-scaled-monthly-continuation` (from F1, F2, F3): The higher a coin's volatility over the past 20 days relative to its own usual level, the further its price keeps moving in the direction of its 20-day return over the next 10 days.
+- `031-03.b1.b1.g2_direction-not-size-turbulent-coins` (from F4, F1): When a coin's 20-day volatility is high relative to its usual level, the sign of its 20-day return predicts the next 10 days' move, and the more that volatility exceeds its usual level, the larger the same-direction move, whatever the size of the 20-day return.
+- `031-03.b1.b1.g3_long-side-volatile-continuation` (from F5, F1, F2): The larger a coin's 20-day return on the upside, combined with high 20-day volatility relative to its usual level, the more its price rises over the next 10 days. Gains after falls are mostly erased by the coin's upward drift.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

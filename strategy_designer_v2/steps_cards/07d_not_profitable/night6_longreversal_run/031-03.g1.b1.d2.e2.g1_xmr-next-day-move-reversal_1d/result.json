@@ -1,0 +1,36 @@
+{
+  "line": "7.d",
+  "backtest": "031-03.g1.b1.d2.e2.g1_xmr-next-day-move-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3667021,
+  "findings": {
+    "F1": "The short side is what fails the Calmar: rebuilt with the backtest's costs, the book's short positions lose 0.016 % a day (Sharpe \u22120.32, deepest fall \u221252 %), and its long positions earn 0.097 % a day (Sharpe 1.05, deepest fall \u221233 %); the long side alone has a Calmar of 1.05, against 0.49 for the full book.",
+    "F2": "The book's deepest fall (\u221251 %, 255 days, window w22 to w24, year 2025) came while XMR rose 121 %. The short positions lost 28 % of the book in that fall and the long positions lost 16 %. Over all of 2025, the short positions summed to \u221225 % against +6.9 % for the long positions, while the coin gained 129 %.",
+    "F3": "The reversal is there only after falls. After z \u2264 \u22122, the next day averages +1.54 % (70 days); after \u22122 < z \u2264 \u22121, +1.11 % (237 days); both against the coin's mean of +0.107 %. After rises, it is weak or absent: \u22120.19 % after 1 < z \u2264 2 (269 days) and \u22120.51 % after z > 2 (66 days). Fading the rises earns a gross gain per bar of \u22120.013 % (t \u22120.13) for 1 < z \u2264 2 and +0.13 % (t 0.30) for z > 2.",
+    "F4": "After falls of z < \u22121, the rebound holds in every 60-day trend state, so no market state is the cause. The next day averages +1.77 % (t 2.35, 54 days) when the 60-day return is below \u221220 %, +0.66 % (t 1.38, 62 days) between \u221220 % and 0, +1.78 % (t 3.45, 38 days) between 0 and +20 %, and +1.35 % (t 1.59, 36 days) above +20 %. The long side's gain is positive in all four states, with t between 0.86 and 2.44.",
+    "F5": "About half the gross gain goes to fees: the position turns over 0.53 of the book per bar, about 0.082 % a bar in costs, against a gross gain of 0.165 % a bar. On small falls (\u22120.5 < z \u2264 0, 514 days), the long position earns only 0.008 % a bar gross (t 0.23), less than its trading cost.",
+    "F6": "Keeping only the long side and only the larger falls (z < \u22120.5) brings the deepest fall to \u221232 % and the Calmar to 0.81, with a Sharpe of 0.92. Holding the long side three days instead of one makes it worse (Calmar 0.48, deepest fall \u221254 %), so the effect lives in the next day."
+  },
+  "ideas": [
+    {
+      "idea": "The larger XMR's one-day fall against its own 30-day daily volatility, the more its price rises back over the next day.",
+      "consequence": "A trader in XMR would buy its sharp daily drops for one day, more the deeper the drop, and would not short its sharp rises, because fading rises loses whenever the coin trends up.",
+      "name": "XMR next-day fall rebound",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound"
+  ],
+  "no_ideas": null
+}

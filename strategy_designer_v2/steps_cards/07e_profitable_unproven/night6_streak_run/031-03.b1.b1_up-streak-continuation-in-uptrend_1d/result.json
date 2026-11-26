@@ -1,0 +1,50 @@
+{
+  "line": "7.e",
+  "backtest": "031-03.b1.b1_up-streak-continuation-in-uptrend_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.709298,
+  "findings": {
+    "F1": "Before costs the book earns 0.118 % a day, and 0.058 % of that (49 %) is the market's own rise (position held \u00d7 the coin's mean daily return); after costs the book averages 0.111 % a day, below holding the coins at 0.128 % a day, so its Sharpe edge comes from being out of the market 42 % of the coins' days, not from earning more.",
+    "F2": "The book's daily gain tracks a plain \"long whenever the 30-day return is positive\" unit with a correlation of 0.81 (that unit earns 0.088 % a day against the book's 0.118 %), so the 30-day trend regime, not the streak, carries most of the book.",
+    "F3": "Of the book's summed pre-cost gain, 17.9 comes from held bars that did not close up (streak 0) and only 2.0 from bars at streak 1, while the per-bar gain at streaks 2, 3, 4 and 5+ is 0.32 %, 0.32 %, 0.49 % and 0.71 %; the streak does not carry the gain by itself.",
+    "F4": "Inside 30-day-up stretches, the streak's own 5-day unusual move is not monotone (streak 0: +0.04 %, 1: +0.50 %, 2: +1.87 % t 1.62, 3: +2.25 % t 1.70, 4+: +0.23 % t 0.22), and with the volatility-scaled 30-day return in the same regression the streak's 5-day coefficient has t 1.27 against 1.53 for the 30-day return, so the streak adds little beyond trend.",
+    "F5": "Across all bars, the 30-day return grades the next move: the 5-day unusual move by 30-day-return quintile runs \u22120.50 %, \u22121.19 % (t \u22121.97), \u22120.75 %, +0.60 % and +1.23 % (t 1.64; 921 cases), and over 10 days the top quintile gives +2.47 % (t 1.66).",
+    "F6": "Scaled by the coin's 60-day volatility, the 30-day return predicts the volatility-scaled unusual move with a slope of 0.064 (t 1.99, 4603 cases) at 5 days, and the 90-day return does so with a slope of 0.095 (t 2.45, 718 cases) at 10 days.",
+    "F7": "Among bars with a positive volatility-scaled 30-day return, the top quartile (mean 2.42 usual moves) is followed by a 10-day unusual move of +3.76 % (t 1.94, 290 cases on 91 days, strength 0.28, total move +5.27 %), against \u22121.21 % for the bottom quartile; this total move is about 24 times the 0.22 % cost of a trade.",
+    "F8": "Among bars with a positive volatility-scaled 10-day return, the slope of the 5-day scaled unusual move on that return is 0.145 (t 2.89, 2352 cases on 365 days) and the 10-day slope is 0.219 (t 2.40); the top quartile gives +1.46 % over 5 days (t 1.74, strength 0.17) and +2.52 % over 10 days (strength 0.23).",
+    "F9": "The book's gain is spread across coins (ETH 12.6 %, BTC 11.6 %, ADA 10.8 %, the top five 55 %) but concentrated in time: 2023 and 2024 give 31 % and 36 % of it, while 2018 (\u22124.7 %) and 2022 (\u22127.2 %) lose; the 10-day trend slope is negative only in those two years (\u22120.53 and \u22120.27)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day return relative to its own daily volatility over the past 60 days, the more it rises over the next 10 days beyond its normal drift.",
+      "consequence": "A trader would size a long by how strong the coin's volatility-adjusted month-long rise is, and would hold it for about ten days rather than react to single up closes.",
+      "name": "volatility-scaled monthly trend continuation",
+      "from": "F2, F5, F6, F7, F9",
+      "refs": [
+        "F2",
+        "F5",
+        "F6",
+        "F7",
+        "F9"
+      ]
+    },
+    {
+      "idea": "The larger a coin's positive 10-day return relative to its own daily volatility over the past 60 days, the more it keeps rising over the next 5 days beyond its normal drift.",
+      "consequence": "A trader would lean long harder into a coin whose recent two-week rise is large for its volatility, and would stay small when the rise is modest.",
+      "name": "short trend strength continuation",
+      "from": "F3, F4, F8",
+      "refs": [
+        "F3",
+        "F4",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1.b1.e1_volatility-scaled-monthly-trend-continuation",
+    "031-03.b1.b1.e2_short-trend-strength-continuation"
+  ],
+  "no_ideas": null
+}

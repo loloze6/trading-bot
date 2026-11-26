@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on -forecast (short bars)",
+    "value": -0.0003629523259344176,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": -0.6486014455692841
+    },
+    "threshold": "confirm: slope < 0 with day-clustered t <= -2 and check passes; reject: slope > 0 with t >= 2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, short-signed, > 0",
+    "value": 0.005220894343367779,
+    "passed": true
+  },
+  "counts": {
+    "active bars": 1598,
+    "distinct days": 535
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "Situation taken as the raw 5-day lag-1 scaled return < 0 and today's raw 1-day scaled return > 0 (recomputed from prices if not recorded) with a negative forecast, the profile not rechecked since its components are not recorded and need more history than a window; the excess return removes the coin's mean 1-bar return over all its windows; t is an OLS slope t with standard errors clustered by UTC day; active bars are bars with forecast < 0 and a next-day return in the same window; the plan's minimum counts, when not reached, give 'not observable'."
+}

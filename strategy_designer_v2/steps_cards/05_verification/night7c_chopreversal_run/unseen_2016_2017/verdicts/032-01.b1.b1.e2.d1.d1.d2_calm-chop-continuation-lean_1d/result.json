@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-removed next 7-bar return on scaled_move post_pipeline_value",
+    "value": 0.001454084394967704,
+    "statistic": {
+      "name": "t of the OLS slope",
+      "value": 1.2023678846487287
+    },
+    "threshold": "confirm if t >= 2 (with supporting check passing); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 7-bar return in forecast direction, before costs",
+    "value": -0.001284873385677444,
+    "passed": false
+  },
+  "counts": {
+    "active grid bars across all coins and windows": 154
+  },
+  "decided_by": "The slope's t is strictly between -2 and 2.",
+  "reading": "Situation checked on active bars with at least 30 earlier bars in their window (ER and r30 recomputed from closes, side = sign of the recorded raw scaled_move, i.e. of r7, continuation expected); drift is the coin's mean 7-bar return on the 7-bar grid of all its windows; the slope t is the OLS t of drift-removed return on post_pipeline_value; the plan's minimum of 40 active grid bars is treated as a minimum count (not observable if unmet)."
+}

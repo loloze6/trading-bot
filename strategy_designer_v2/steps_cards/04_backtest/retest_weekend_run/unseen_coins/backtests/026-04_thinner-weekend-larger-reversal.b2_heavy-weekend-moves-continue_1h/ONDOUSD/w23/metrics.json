@@ -1,0 +1,158 @@
+{
+  "core": {
+    "net_return_pct": -11.278,
+    "sharpe": -2.437,
+    "max_drawdown_pct": -12.47,
+    "trade_count": 5,
+    "win_rate": 20.0,
+    "avg_trade_net_pnl": -22.673877,
+    "fees_paid": 1.323378,
+    "gross_pnl": -112.046004,
+    "net_pnl": -113.369383,
+    "cost_drag_pct": 1.1811,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": 0.014176,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.877102,
+    "forecast_return_corr_all_bars_n_eff": 122,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.0339,
+    "avg_trade_duration_bars": 24.6,
+    "sigma_bar_bps": 94.6612,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -567.6524,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "trending": {
+      "bar_count": 3,
+      "avg_forecast": -10.252554,
+      "trade_count": 5,
+      "total_net_pnl": -113.369383
+    },
+    "unknown": {
+      "bar_count": 2948,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 3,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -126.8805,
+      "avg_pnl_per_trade_usd": -42.2935
+    },
+    "minus_15_to_minus_10": {
+      "total_forecasts": 2,
+      "profitable_trades": 1,
+      "success_rate_pct": 50.0,
+      "total_net_pnl_usd": 13.5111,
+      "avg_pnl_per_trade_usd": 6.7556
+    }
+  },
+  "dynamic": {
+    "debug_info.components.wkend.last_history_value": {
+      "trending": {
+        "mean": -1.433213,
+        "std": 1.550263
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.wkend.post_pipeline_value": {
+      "trending": {
+        "mean": -10.252554,
+        "std": 10.898786
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.wkend.weight_normalized": {
+      "trending": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.wkend.weighted_contribution": {
+      "trending": {
+        "mean": -10.252554,
+        "std": 10.898786
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "trending": {
+      "forward_return_mean": -0.00379675,
+      "forward_return_std": 0.00945228,
+      "n_bars": 3,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 4.104e-05,
+      "forward_return_std": 0.00946545,
+      "n_bars": 2947,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -15.2355,
+    "sharpe": -1.7015,
+    "sortino": -1.84,
+    "exposure_pct": 3.2531,
+    "turnover": 2.901538,
+    "n_bars_total": 2951,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 122,
+    "n_downside_days": 5,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 2,
+    "events": [
+      {
+        "symbol": "ONDOUSD",
+        "timestamp": "2025-01-25 18:00:00",
+        "previous_timestamp": "2025-01-25 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ONDOUSD",
+        "timestamp": "2025-08-28 10:00:00",
+        "previous_timestamp": "2025-08-28 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

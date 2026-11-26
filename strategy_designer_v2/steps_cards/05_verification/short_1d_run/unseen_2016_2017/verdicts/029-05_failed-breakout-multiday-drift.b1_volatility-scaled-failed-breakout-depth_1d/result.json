@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean 8-bar short-side excess fall",
+    "value": -0.03159468131591373,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": -0.856538461501728
+    },
+    "threshold": "confirm: positive with t >= 2 over at least 30 cases; reject: t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean excess fall (split at median |forecast|)",
+    "value": -0.00046216141136239813,
+    "passed": false
+  },
+  "counts": {
+    "cases": 56,
+    "deeper half": 28,
+    "shallower half": 28
+  },
+  "decided_by": "The t of the weighted mean short-side excess fall lies between -2 and 2.",
+  "reading": "Situation = non-zero raw fail_depth value (lag inside the component) with a short forecast; a case is the first short-side bet (forecast falling >= 2 points from its least-short level since the last bet, reset at flat) in each 8-bar grid cell from each window's first row, dropped if its 8-bar return leaves the window; drift is the coin's mean non-overlapping 8-bar return over all windows; the weighted mean's t uses the weighted (sandwich) standard error sqrt(sum w^2 (x-m)^2)/sum w; the halves are |forecast| above the median versus at or below it, compared by unweighted means."
+}

@@ -18,7 +18,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "common"))
-from lib import common_text, call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+from lib import common_text, call, write_atomic, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
 from idea_size import size as idea_size  # noqa: E402  (the size of an idea, common/measures.md)
 
 ATTEMPTS = 3
@@ -28,9 +28,12 @@ RUNNER = r'''
 import glob, json, os, sys
 import pandas as pd
 record, script = sys.argv[1], sys.argv[2]
+only = set(sys.argv[3].split(",")) if len(sys.argv) > 3 and sys.argv[3] else None   # these windows only (the check folds)
 bars = {}
 for coin in sorted(d for d in os.listdir(record) if os.path.isdir(os.path.join(record, d))):
     for w in sorted(glob.glob(os.path.join(record, coin, "w*", "bars.csv.gz")), key=lambda p: int(p.split(os.sep)[-2][1:])):
+        if only is not None and w.split(os.sep)[-2] not in only:
+            continue
         df = pd.read_csv(w, low_memory=False)
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         bars.setdefault(coin, {})[w.split(os.sep)[-2]] = df
@@ -102,6 +105,49 @@ def check_result(out):
             raise ValueError(f"{k} must be a sentence")
 
 
+MIN_CASES, MIN_DAYS = 100, 30       # the verdict's own minimum (system_prompt.md), for the direction check too
+
+
+def run_measure(python, record, code, only=None):
+    """The measure's result on the record (only these windows when given), or raises ValueError."""
+    with tempfile.TemporaryDirectory() as tmp:
+        script = Path(tmp) / "measure.py"
+        script.write_text(code)
+        runner = Path(tmp) / "runner.py"
+        runner.write_text(RUNNER)
+        r = subprocess.run([python, "-I", str(runner), str(record), str(script)] + ([",".join(only)] if only else []),
+                           cwd=tmp, capture_output=True, text=True, timeout=1800)
+    m = re.search(r"^RESULT_JSON=(.*)$", r.stdout, re.M)
+    if r.returncode or not m:
+        raise ValueError("the function failed when run on the record: " + (r.stderr.strip().splitlines() or ["no output"])[-1][:400])
+    return json.loads(m.group(1))
+
+
+def count_of(counts, word):
+    """The measure's own count of `word` (cases, days): the smallest count whose name holds the word; for cases, the
+    smallest count when no name holds it (measures name their counts freely: "grid cases", "independent cases")."""
+    nums = {k: v for k, v in counts.items() if isinstance(v, (int, float))}
+    named = [v for k, v in nums.items() if word in k.lower()]
+    if named:
+        return min(named)
+    return min(nums.values()) if word == "case" and nums else None
+
+
+def direction_check(out, sub):
+    """common/explore_and_check.md: the check folds' result `sub` (None: could not run) against the verdict `out`.
+    Returns (agrees: True, False or None for not judged, why)."""
+    if sub is None:
+        return None, "the measure could not run on the check folds alone"
+    mm, sm = out.get("main_measure") or {}, (sub.get("main_measure") or {})
+    cases, days = count_of(sub.get("counts") or {}, "case"), count_of(sub.get("counts") or {}, "day")
+    if cases is None or cases < MIN_CASES or (days is not None and days < MIN_DAYS):
+        return None, f"too few cases on the check folds ({cases} cases, {days} days)"
+    v, w = mm.get("value"), sm.get("value")
+    if v is None or w is None or v == 0:
+        return None, "no main measure to compare"
+    return (w > 0) == (v > 0), f"main measure {w:+.4g} on the check folds against {v:+.4g} on every fold"
+
+
 def pct(v):
     return f"{100 * v:.0f} %" if isinstance(v, (int, float)) else str(v)
 
@@ -115,7 +161,9 @@ def size_line(s):
     if not s or not s.get("cases"):
         return "- Size: no case to measure"
     p = lambda v: f"{100 * v:+.2f} %"
-    return (f"- Size: unusual move {p(s['unusual_move'])} per case over {s['horizon_bars']} bars, "
+    sure = (f" (t {s['unusual_move_t']:.2f}, the cases of one day together: {s['case_days']} days)"
+            if s.get("unusual_move_t") is not None else "")
+    return (f"- Size: unusual move {p(s['unusual_move'])}{sure} per case over {s['horizon_bars']} bars, "
             f"{s['strength']:.3f} of the coin's usual move ({100 * s['usual_move']:.2f} %); normal drift in its direction "
             f"{p(s['normal_drift'])}, total {p(s['total_move'])}; {s['cases']} cases")
 
@@ -141,11 +189,18 @@ def render(d, plan_id, h, out, plan_path, record, size=None):
              "- Counts: " + ", ".join(f"{k}: {fmt(v)}" for k, v in out["counts"].items()),
              f"- Decided by: {out['decided_by']}",
              f"- Reading: {out['reading']}",
-             size_line(size),
+             size_line(size)] + ([check_line(out["direction_check"])] if out.get("direction_check") else []) + [
+
              f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`",
              f"Record: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`",
              "Measure: `measure.py`"]
     write_atomic(d / "verdict.md", "\n".join(lines) + "\n")
+
+
+def check_line(c):
+    """The direction check in one line (common/explore_and_check.md)."""
+    said = {True: "agrees", False: "disagrees", None: "not judged"}[c.get("agrees")]
+    return f"- Direction check on folds {c.get('folds')} (the years step 7 does not explore): {said}: {c.get('why')}"
 
 
 def main():
@@ -193,17 +248,7 @@ def main():
         cost += c
         try:
             code = extract_code(text)
-            with tempfile.TemporaryDirectory() as tmp:
-                script = Path(tmp) / "measure.py"
-                script.write_text(code)
-                runner = Path(tmp) / "runner.py"
-                runner.write_text(RUNNER)
-                r = subprocess.run([args.python, "-I", str(runner), str(record), str(script)], cwd=tmp,
-                                   capture_output=True, text=True, timeout=1800)
-            m = re.search(r"^RESULT_JSON=(.*)$", r.stdout, re.M)
-            if r.returncode or not m:
-                raise ValueError("the function failed when run on the record: " + (r.stderr.strip().splitlines() or ["no output"])[-1][:400])
-            out = json.loads(m.group(1))
+            out = run_measure(args.python, record, code)
             check_result(out)
             break
         except ValueError as e:
@@ -211,6 +256,27 @@ def main():
             retry = f"\n\nYour previous function was refused: {e}. Write measure(bars) again."
     else:
         sys.exit(f"no valid function after {ATTEMPTS} attempts; cost {cost:.4f} USD")
+
+    # The direction check (common/explore_and_check.md): a confirm must point the same way on the check folds alone.
+    if out["status"] == "confirmed":
+        only = windows_of(plan_text, CHECK_FOLDS, record)
+        if only:
+            try:
+                sub = run_measure(args.python, record, code, only)
+            except ValueError:
+                sub = None
+            agrees, why = direction_check(out, sub)
+        else:
+            sub, agrees, why = None, None, "no check fold (the plan has none, or the backtest did not run on its folds)"
+        smm = (sub or {}).get("main_measure") or {}
+        st = smm.get("statistic")
+        out["direction_check"] = {"folds": ", ".join(CHECK_FOLDS), "agrees": agrees, "why": why,
+                                  "main": smm.get("value"), "statistic": st.get("value") if isinstance(st, dict) else None,
+                                  "counts": (sub or {}).get("counts")}
+        if agrees is False:
+            out["status"] = "inconclusive"
+            out["decided_by"] = ("Confirmed on every fold, but the main measure points the other way on the check folds "
+                                 f"({', '.join(CHECK_FOLDS)}), the years step 7 does not explore: {why}.")
 
     d = args.verdicts_dir / plan_id
     d.mkdir(parents=True, exist_ok=True)

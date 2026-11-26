@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (forecast > 0)",
+    "value": 0.0003976770908157613,
+    "statistic": {
+      "name": "slope t, residuals summed per day (day-clustered)",
+      "value": 2.6261677736952396
+    },
+    "threshold": "confirm if t >= 2 (with top-fifth mean > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, top fifth of forecast by coin",
+    "value": 0.005740960968190257,
+    "passed": true
+  },
+  "counts": {
+    "down-day cases": 8514,
+    "distinct days": 2199,
+    "top-fifth cases": 1706
+  },
+  "decided_by": "Confirm: the slope's t is 2 or more and the top-fifth mean excess return is above 0.",
+  "reading": "Excess = next-day close-to-close return minus the coin's mean 1-day return over all its windows; the slope's t uses day-clustered standard errors (each day's score summed across coins); the top fifth is the coin's cases with forecast at or above its 80th percentile, pooled across coins; a 'down-day case' is a bar with forecast > 0 and a next-day return in the same window.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002362 on the check folds against +0.0003977 on every fold",
+    "main": 0.00023619524954766858,
+    "statistic": 1.4188075408179495,
+    "counts": {
+      "down-day cases": 4244,
+      "distinct days": 1149,
+      "top-fifth cases": 851
+    }
+  }
+}

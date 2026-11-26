@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess weekend return on forecast (post_pipeline_value)",
+    "value": 0.00045121333994149006,
+    "statistic": {
+      "name": "slope t, deviations summed per day (day-clustered)",
+      "value": 0.9872915513694418
+    },
+    "threshold": "confirm at t >= 2 (with weighted mean excess > 0), reject at t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess weekend return > 0",
+    "value": 0.009773086000192506,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1192,
+    "distinct Fridays": 317
+  },
+  "decided_by": "Inconclusive: the slope t lies between -2 and 2.",
+  "reading": "Friday = timestamp (bar start, UTC) weekday 4 and the 14-bar return is close[t]/close[t-14]-1 inside the window; active bars in a window's first 14 rows, where it cannot be computed, are left out of the agreement; a case is a Friday bar with regime 'trending', a recorded post_pipeline_value and close[t+2] in the same window; 'deviations summed per day' is read as a day-clustered standard error of the slope (slope-score terms (x-mean x)*residual summed per day, factor G/(G-1)); a missing minimum count gives 'not observable' as the workflow requires."
+}

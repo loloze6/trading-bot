@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move per case, short direction (fall positive)",
+    "value": -0.017196979730325294,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": -0.9141755112945488
+    },
+    "threshold": "t >= 2 on a fall to confirm (with supporting check); t <= -2 on a rise to reject"
+  },
+  "supporting_check": {
+    "name": "abs(post_pipeline_value)-weighted mean unusual move >= equal-weighted mean",
+    "value": -0.01773123824971981,
+    "passed": false
+  },
+  "counts": {
+    "cases": 66,
+    "days": 42
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Situation checked on the pierce-and-reclaim rule only (recorded pierce raw value > 0, else recomputed from prices; the profile is added by code), side short; a case is a short bet (forecast rising by at least 2 points on the short side from its lowest level since the last bet), the first per 5-bar grid cell of each window, with the 5-bar return inside the window; normal drift is the coin's mean 5-bar return on the non-overlapping grid of all its windows; t uses deviations summed per day (clustered by day, G/(G-1) correction); the weight falls back to abs(forecast) if post_pipeline_value is missing."
+}

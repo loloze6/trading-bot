@@ -7,8 +7,8 @@ master produced for run_099's and run_084's real configs (no strategies.sizing b
 seeded synthetic daily series next to them (README.md there: master sha, seed, command). This
 test replays the same series through THIS checkout's code with the same real entry point
 (core.launcher.run_backtest; only the data fetch is replaced by a CSV read) and compares the
-whole file -- header and every row string -- after normalising CRLF (recorded on Windows).
-No column is excluded. No stub strategy; nothing here imports from a master checkout.
+whole file -- header and every row string -- after normalising CRLF (recorded on Windows), but for
+the named difference of topic 51 (below). No stub strategy; nothing here imports from a master checkout.
 """
 import importlib.util
 import sys
@@ -38,16 +38,47 @@ def _lines(path):
     return Path(path).read_bytes().replace(b"\r\n", b"\n").decode("utf-8").split("\n")
 
 
+# Topic 51 (2026-11-25): a move to flat is never refused by the band. The master recordings keep a remainder under the
+# band open (forecast 0, a position under 0.2, the order refused); this code closes it. The named difference: every row
+# is byte-identical up to the first such close; from it on, every row where the approval differs is either such a close
+# (entering the bar with the same position, the recording refused a move to flat under the band, this code closed it)
+# or a consequence of one (the two books entered the bar with different positions). The two USDT.free columns are left out of the comparison:
+# the recorder writes the end-of-run cash on every row (one value in the whole recording), so it differs from the first
+# row as soon as the end differs.
+CASH = ("balances.USDT.free", "postRebalance_balances.USDT.free")
+
+
 @pytest.mark.parametrize("name", sorted(CONFIGS))
-def test_branch_replay_equals_the_master_recording_byte_for_byte(name, tmp_path):
+def test_branch_replay_equals_the_master_recording_but_for_closed_remainders(name, tmp_path):
+    import io
+    import pandas as pd
+
     config, recorded = CONFIGS[name]
     assert "sizing" not in config.read_text()
     bars = _harness().replay(PROJECT_ROOT, config, FX / "synthetic_daily_ohlcv.csv", tmp_path)
     got, want = _lines(bars), _lines(recorded)
     assert got[0] == want[0]                                     # same header, same column order
     assert len(got) == len(want) > 600
-    for i, (g, w) in enumerate(zip(got, want)):
-        assert g == w, f"row {i} differs"
+    g = pd.read_csv(io.StringIO("\n".join(got)), dtype=str, keep_default_na=False)
+    w = pd.read_csv(io.StringIO("\n".join(want)), dtype=str, keep_default_na=False)
+    assert w[CASH[0]].nunique() == 1                             # the recorder's end-of-run cash, on every row
+    rest = [c for c in w.columns if c not in CASH]
+    same = (g[rest] == w[rest]).all(axis=1)
+    first = int((~same).idxmax()) if not same.all() else len(w)
+    assert same.iloc[:first].all()                               # byte-identical up to the first close
+    approval = g["approved_rebalance"] != w["approved_rebalance"]
+    held = w["postRebalance_current_allocation"].astype(float).shift().fillna(0.0)
+    held_now = g["postRebalance_current_allocation"].astype(float).shift().fillna(0.0)
+    closes = 0
+    for i in w.index[approval]:
+        if held_now[i] != held[i]:
+            continue                                             # a consequence: the book entered the bar differently
+        assert float(w.loc[i, "forecast"]) == 0.0 and 0 < abs(held[i]) < 0.2 and w.loc[i, "approved_rebalance"] == "False"
+        assert float(g.loc[i, "postRebalance_current_allocation"]) == 0.0
+        closes += 1
+    assert closes >= 1 or first == len(w)
+    if first < len(w):
+        assert approval.iloc[first]                              # the first difference is such a close
     # the recording is not a flat book: the comparison covers real orders
     assert _harness().assert_traded(recorded) >= 5               # never passes on an all-flat recording
     assert _harness().assert_traded(bars) >= 5

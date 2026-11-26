@@ -1,0 +1,8 @@
+031-01_wide-flat-day-ends-up-run: After a 5-day rise, the wider a flat-close day's range against its 30-day average, the more the coin falls over 5 days. [bar: 1d]
+031-02_wide-flat-day-ends-down-run: After a 5-day fall, the wider a flat-close day's range against its 30-day average, the more the coin rises over 5 days. [bar: 1d]
+031-03_failed-push-high-traps-buyers: After a 5-day rise, the farther a flat-close day's high pushed past the run's high, the more the coin falls over 5 days. [bar: 1d]
+031-04_failed-push-low-traps-sellers: After a 5-day fall, the farther a flat-close day's low pushed past the run's low, the more the coin rises over 5 days. [bar: 1d]
+023-01_flat-month-top-falls-back: In a choppy market, the farther the close sits above its 30-day range middle, the more the coin falls over 5 days. [bar: 1d, profile: choppy]
+023-02_flat-month-bottom-rises-back: In a choppy market, the farther the close sits below its 30-day range middle, the more the coin rises over 5 days. [bar: 1d, profile: choppy]
+025-01_falling-market-day-jump-fades: In a falling market, the larger a one-day rise in 30-day daily-move units, the more the coin falls over 5 days. [bar: 1d, side: long and short, profile: falling]
+025-02_falling-market-bounce-fades: In a falling market, the larger a 3-day rise in 30-day daily-move units, the more the coin falls over 5 days. [bar: 1d, side: long and short, profile: falling]

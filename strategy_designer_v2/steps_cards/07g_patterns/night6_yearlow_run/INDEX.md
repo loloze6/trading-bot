@@ -1,0 +1,32 @@
+031-01.b1_near-yearly-low-falls-all-coins_1d: no ideas: The one pattern that stands out against the many angles looked at is the Saturday rise (F3), and it is an on/off calendar condition with no graded situation. Every graded situation examined (nearness to the yearly low, large down days, past returns, volatility, distance from recent lows) was non-monotone or could not be told from chance (F1, F2, F4, F5).
+031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: 1 ideas (2 explorations)
+031-01.g1.g1.d2_midweek-fall-near-yearly-low_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g1.d2_weekend-carry-near-yearly-high_1d: 1 ideas (3 explorations)
+031-01.g1.g1.g1.g1_two-week-run-carries-saturday_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g1.g2_thursday-run-carries-two-days_1d: 3 ideas (2 explorations)
+031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g1_two-week-run-carries-weekend_1d: 3 ideas (3 explorations)
+031-01.g1.g1.g2.d1_volatile-rising-weekends-continue_1d: 2 ideas (3 explorations)
+031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g2.g1_thursday-close-trend-into-weekend_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g2.g2_calm-volatility-short-term-trend_1d: 2 ideas (2 explorations)
+031-01.g1.g1.g2_volatile-weekends-follow-trend_1d: 2 ideas (2 explorations)
+031-01.g1.g1_midweek-run-carries-into-saturday_1d: 2 ideas (3 explorations)
+031-01.g1.g2.d1_monthly-gain-lifts-saturday_1d: 1 ideas (2 explorations)
+031-01.g1.g2.d2_outsized-monthly-gain-into-saturday_1d: 2 ideas (2 explorations)
+031-01.g1.g2_monthly-trend-carries-into-saturday_1d: 2 ideas (3 explorations)
+031-01.g1_weekly-gains-carry-into-saturday_1d: 2 ideas (2 explorations)
+031-01_near-yearly-low-keeps-falling_1d: 1 ideas (3 explorations)
+031-02.b1.b1_strong-failed-rally-near-low_1d: no ideas: Across the forecast, the regime, the rally gradient, past returns, volatility, weekdays and years, nothing stood out from chance once the cross-coin clustering and the number of angles are accounted for. The only strong year pattern (F6) is the coins' own drift, and the strongest weekday pattern (F5) is neither robust to clustering nor graded.
+031-02.b1.b2.b1_failed-rally-longer-horizon_1d: no ideas: Across nearness to the yearly low, past returns over 5 to 40 days, volatility and range over 10 to 40 days, volatility ratio, weekday, year and coin group, at horizons from 5 to 60 days, nothing stood out beyond t 2.4. That is below what about fifty tests require, and the best pattern (F1) vanishes at the neighbouring horizons and reverses in three of eight years.
+031-02.b1.b2.b2_sharp-rebound-near-low-fails_1d: no ideas: Across the regime, past returns at 1 to 60 days, volatility, time in the regime, time since the low, weekday, year and the trades, nothing passed day-clustered t-statistics given how many angles were examined (F1–F5), so no finding supports an idea.
+031-02.b1.b2_failed-rally-more-coins_1d: no ideas: Across the forecast, positions, trades, regimes, volatility, past-return quintiles, the distance to the yearly low, large one-day moves, close location and weekday, no group's excess return reached |t| 2 against roughly 40 comparisons. The only clear pattern is that the book's gains come from a few large long trades and its losses from broad market falls (F2, F3), which is a property of this book rather than a graded pattern in one coin's bars.
+031-02.b1_failed-rally-near-yearly-low_1d: 1 ideas (3 explorations)
+031-02_near-yearly-low-bounces_1d: 1 ideas (3 explorations)
+031-03.b1.a1_yearly-low-break-all-coins_1d: no ideas: Across about 40 cells (past returns, 30-day lows and drawdowns, volatility, weekday, year, one-day shocks over 1, 3 and 5 days, and the yearly-low regime itself), only one result beats t 2 once the cases of a day are taken together: the 3-day rebound after a 3-sigma fall at t 2.30. That result is contradicted by its own 1-day and 5-day readings and by the missing grade. Given how many angles were tried, nothing stands out enough to support a new idea, and the tested idea itself needs more cases than these coins and folds contain.
+031-03.b1_deep-yearly-low-break-rebounds_1d: no ideas: I looked at about 15 angles: eight 10-day grid features, two lookbacks of distance to the recent high, weekday by year and by coin, next-day reversal, and the book's concentration. Given that many, nothing stands out beyond chance: the strongest graded pattern (F2) reaches a Welch t of 2.43 and a clustered t of 1.89 and fails in 2 of 8 years, and the only pattern with a clustered t above 2 (F4, Saturday) is a calendar effect with no graded situation.
+031-03_yearly-low-break-extends_1d: no ideas: The data gives no stable pattern to build on. The breaks are few (24 grid cases on 13 days), the hints of a post-break bounce (F1, F2, F6) and of a falling break day continuing (F4) all have t below 2, and none of the bar-wide angles I examined (F5) stands out from chance after that many looks.
+031-04.a1_yearly-low-break-all-coins_1d: 1 ideas (2 explorations)
+031-04_yearly-low-break-reverses_1d: no ideas: Across momentum over 5 to 30 days, range position, volatility, weekday, year and the regime's cases, no pattern stood out beyond chance: the best graded slope had a day-clustered t of 1.43 and flipped sign across years, and the two notable weekdays are the expected extremes of many comparisons.

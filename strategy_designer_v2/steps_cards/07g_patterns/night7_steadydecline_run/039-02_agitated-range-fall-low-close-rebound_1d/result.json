@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "039-02_agitated-range-fall-low-close-rebound_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.41006280000000006,
+  "findings": {
+    "F1": "In agitated bars (folds B, C), down days in the largest quarter of falls measured against the prior 30-day mean daily range are followed by a next-day excess return that rises with how near the close sits to the low: closes mid/high +-1.40 % (28 cases, t -0.78), near the low +0.70 % (154 cases, t 0.85), at the low +2.10 % (180 cases, 92 days, t 2.64); the same at-low cell in calm bars gives only +0.53 % (248 cases, t 0.99).",
+    "F2": "The book's signal pays on the next day only: on forecast > 0 bars the next-day excess return is +0.56 % (1804 cases, 660 days, t 1.93), the day after is -0.11 % (t -0.38) and three days is +0.35 % (t 0.76), so the rebound does not continue after the first day.",
+    "F3": "The signal's gain sits in its upper half: forecast quartiles give +0.21 % (t 0.53), -0.04 % (t -0.09), +1.00 % (t 2.40) and +1.08 % (t 2.03) next-day excess, so weak signals earn nothing.",
+    "F4": "In calm bars the coin's 5-day return is followed in the same direction over the next 3 days, graded across quintiles: lowest -1.44 % (652 cases, t -2.63), then -0.57 %, +0.19 %, +0.22 %, highest +1.32 % (772 cases, t 2.70); in agitated bars there is no such order (lowest -0.70 %, t -0.91; highest +0.22 %, t 0.40). These 3-day returns were taken from every bar and so overlap, which makes the t's larger than they would be on separate cases.",
+    "F5": "The book's profit comes from a few large days: its best 5 % of days add 2.45 times the book's total and its worst 5 % take away 1.99 times it. On those days the coins move +7.66 % and -7.70 %, and 3 of the 12 windows (w12, w13, w7) lose.",
+    "F6": "Other angles showed nothing beyond chance across the many cells looked at: weekday (largest cell calm Thursday +0.68 %, t 2.01, of 14), up days by size and close location (most extreme -0.93 %, t -2.71, of 24 cells), the 20-day return tercile of the signal (+0.64 %, +0.32 %, +0.72 %, no order), the day's relative range (agitated widest quarter +0.59 %, t 1.37) and signal by coin (all positive, t 0.80 to 1.79)."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, after a down day, the nearer the close sits to the day's very low, the larger the rise over the next day, and the more so the larger that day's fall against the coin's 30-day average daily range.",
+      "consequence": "A trader buying forced-selling days in agitated markets would favour the days that close right at their low after a large fall, and pass on large falls that closed off their low.",
+      "name": "agitated at-low close rebound",
+      "from": "F1, F3, F2",
+      "profile": "agitated",
+      "refs": [
+        "F1",
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a calm market, the larger a coin's 5-day rise, the larger its rise over the next 3 days.",
+      "consequence": "In calm markets a trader would follow the last week's direction for a few days instead of fading it.",
+      "name": "calm market short momentum",
+      "from": "F4",
+      "profile": "calm",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "039-02.g1_agitated-at-low-close-rebound",
+    "039-02.g2_calm-market-short-momentum"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of short bets, in the short direction",
+    "value": 0.007423917668446722,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.1568673663642783
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-|forecast| half minus smaller half",
+    "value": 0.015328039162502942,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 410,
+    "cases": 1052
+  },
+  "decided_by": "The t lies between -2 and 2 (or sign and t disagree): inconclusive.",
+  "reading": "Profile read from the recorded regime ('unknown' = falling agitated, the config's only active regime); a case is the first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet) in each 5-bar grid cell of a window, measured from that bet's close over 5 bars within the window; the larger half is |forecast| strictly above the median; the day-clustered t uses deviations from the mean summed per UTC day with a D/(D-1) correction; the plan's 'fewer than 30 distinct case days' minimum is reported as 'not observable'."
+}

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 031-02.b1.b1_wide-flat-uprun-more-coins_1d
+idea tested: 031-02.b1.b1_wide-flat-uprun-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5868 USD
+---
+## Findings
+- **F1:** The unusual move after the signal is clear over the first days and fades by the plan's 10 days: over 1 day it is +1.65 % (t 3.01, 197 cases, 145 days), over 2 days +1.92 % (t 2.56), and over 3 days +2.70 % (t 2.70, 195 cases on 144 days, strength 0.29 of a usual 3-day move); over 5 days it falls to +1.64 % (t 1.61) and over 10 days to +2.24 % (t 1.27, strength 0.13).
+- **F2:** At 10 days the mean rests on a few large winners: the median unusual move is −0.69 %, only 46 % of the 181 cases are positive, and without the 5 largest cases the mean drops from +2.24 % to +0.03 %; at 3 days, without the 5 largest cases, it is still +1.74 %.
+- **F3:** At 10 days the result changes sign from year to year: 2022 gives −15.3 % (t −4.36, 11 cases, all negative), 2021 −4.3 % and 2019 −3.9 %, against 2023 +7.9 % (t 2.56) and 2024 +15.1 % (t 2.31); at 3 days only 2018 (−4.4 %, 6 cases) and 2019 and 2022 (−0.8 % each) are below 0, and 2024 is +8.1 % (t 2.34).
+- **F4:** The 3-day effect is present in both groups of coins: +2.14 % (t 1.77, 81 cases) on the six default coins and +3.10 % (t 2.30, 114 cases) on the others.
+- **F5:** The grading by the prior 5-day rise is weak: at 3 days the forecast terciles give low +1.94 % (t 1.27), mid +3.46 % (t 2.07) and high +2.71 % (t 1.95), with a Spearman of 0.057; at 10 days the low tercile is −2.68 % and the high tercile +4.54 % (Spearman 0.126).
+- **F6:** No more data is available to extend the test: it already used all 19 coins on daily bars over all four folds A to D, and the 10-day result is short of the bar (t 1.29 on 134 days) because its median is negative and its years disagree (F2, F3), not because it has too few cases.
+- **F7:** At 3 days the total move per case is +3.20 %, about 14 times the 0.22 % cost of a trade, so the effect at the shorter horizon is large enough to pay for trading it.
+
+## Ideas
+- `031-02.b1.b1.b1_wide-flat-uprun-three-day` (from F1, F2, F3, F4, F5, F6, F7): After a coin has risen over the past 5 days, a day whose range is wide compared with its average daily range over the past 20 days, but whose close lands near its open, is followed by a further rise over the next 3 days. The larger the coin's 5-day rise before that day, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

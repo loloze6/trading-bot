@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 20-bar move of cases (return minus coin's normal 20-bar drift, signal direction)",
+    "value": 0.06772360328310022,
+    "statistic": {
+      "name": "t of the mean, cases of one day combined",
+      "value": 1.570613192431365
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with forecast above median minus below median",
+    "value": 0.006787742213921734,
+    "passed": true
+  },
+  "counts": {
+    "cases": 113,
+    "days": 101
+  },
+  "decided_by": "Inconclusive: t between -2 and 2.",
+  "reading": "Chop is read from the recorded regime and the break from the raw distance > 0 (prices where unrecorded); each 20-bar grid cell keeps its first bet, cases whose 20-bar return leaves the window are dropped, the drift is the coin's mean non-overlapping 20-bar return over all windows, and cases at the median forecast are left out of the supporting check."
+}

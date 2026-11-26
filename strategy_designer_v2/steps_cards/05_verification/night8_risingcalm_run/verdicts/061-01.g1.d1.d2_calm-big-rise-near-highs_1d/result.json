@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of coin-excess 5-bar forward return on forecast, grid bars with forecast > 0",
+    "value": 0.0025853931416135777,
+    "statistic": {
+      "name": "slope t, errors clustered by date",
+      "value": 2.4872222504758157
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with mean excess > 0); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on the same grid bars > 0",
+    "value": 0.00281912097879307,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 285,
+    "distinct dates": 168
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean excess 5-bar return is above 0 (confirm rule).",
+  "reading": "The situation is a rise day (raw rise_vol_units > 0, or the 1-day close return when not recorded) on a bar of the choppy-calm profile (regime 'unknown', the only non-vetoed regime), long side; the coin's mean 5-bar return is the mean of its non-overlapping grid 5-bar returns over all windows; the regression has an intercept and cluster-robust (by UTC date) errors with the usual small-sample correction; the plan's minimum of 40 grid bars over 20 dates, if not reached, gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001239 on the check folds against +0.002585 on every fold",
+    "main": 0.0012394019738890373,
+    "statistic": 1.1777515347878456,
+    "counts": {
+      "grid bars with forecast > 0": 188,
+      "distinct dates": 108
+    }
+  }
+}

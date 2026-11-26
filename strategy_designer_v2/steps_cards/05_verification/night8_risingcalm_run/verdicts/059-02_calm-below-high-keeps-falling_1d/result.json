@@ -1,0 +1,40 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast, in-profile grid bars",
+    "value": 0.0009379560191565879,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.8556083152405023
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check positive); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move of short-side cases, short direction",
+    "value": 0.00040564124805655006,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in profile with a non-zero forecast": 1550,
+    "grid cases in profile": 1829,
+    "supporting cases (short-side forecast rises of at least 2 points)": 1530
+  },
+  "decided_by": "Confirmed on every fold, but the main measure points the other way on the check folds (A, D), the years step 7 does not explore: main measure -0.0003639 on the check folds against +0.000938 on every fold.",
+  "reading": "In-profile means regime 'unknown' (the calm regime with the strategy), the regression uses all in-profile grid bars including forecast 0, the coin's drift is its mean non-overlapping 5-bar grid return over all windows, and supporting cases are short-side bets (forecast.md 7) taken once per grid cell at their first bar; a short count below the minimum is reported as not observable per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": false,
+    "why": "main measure -0.0003639 on the check folds against +0.000938 on every fold",
+    "main": -0.00036385743137291355,
+    "statistic": -0.8864353943360456,
+    "counts": {
+      "grid cases in profile with a non-zero forecast": 776,
+      "grid cases in profile": 923,
+      "supporting cases (short-side forecast rises of at least 2 points)": 754
+    }
+  }
+}

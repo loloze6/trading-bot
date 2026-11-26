@@ -6,8 +6,8 @@ Is a book that pays a new source of profit, or one we already have? And is a rea
 **Establish, for every paying book (step 5 confirmed, step 6 profitable enough), how much of its gains and losses the
 books we already have account for, which of them is its nearest relative, who of the two acts first, and what it earns
 that they do not, so that a profit already found is not counted again as a discovery** (operator, 2026-11-21; topic 41).
-**And the same for every confirmed book whose book does not pay, against the paying books, so that the real ideas that
-differ from what we earn stay visible; for a repair (line 7.d), also against the idea it repairs, so that a repair that
+**And the same for every confirmed book whose book does not pay, against the held books (the paying books and the
+portfolio's, below), so that the real ideas that differ from what we hold stay visible; for a repair (line 7.d), also against the idea it repairs, so that a repair that
 drifted to another effect shows** (operator, 2026-11-22; topic 45: the idea's verdict had been forgotten, and 7.d's
 ideas drifted to momentum).
 Why: on night 3, 19 ideas paid from five different briefs; checked against their own trend condition alone, the 7
@@ -18,13 +18,19 @@ books that make money on the same bars are one bet taken twice.
 - One paying or confirmed book: its backtest record (`04_backtest/<run>/backtests/<id>/`, with each window's `bars.csv.gz`, or
   its committed `chart_bars.csv.gz` when the bars are not on this machine) and its
   step 5 and step 6 results (`05_verification/<run>/verdicts/<id>/result.json`, `06_profitability/<run>/checks/<id>/result.json`).
-- The register (below): the paying and confirmed books already there.
+- The register (below): the paying and confirmed books already there, and the list of the portfolio's books
+  (`register/held.json`, written from topic 44's fixed portfolio).
 
 ## Output
-- The book added to the register: its bar returns (one small file; committed for a paying book, local for a confirmed one) and its line, with its kind.
-- Its comparison with every paying book of the register (and, for a repair, with its parent) and with holding its coins:
+- The book added to the register: its bar returns (one small file; committed for a held book, local for any other
+  confirmed one) and its line, with its kind.
+- Its comparison with every held book of the register (and, for a repair, with its parent) and with holding its coins:
   `<id>.json` and `<id>.md`, one line in the register's `COMPARISONS.md` (its paying books, then its confirmed books from
   the least explained).
+- **The profile map** (the operator, 2026-11-25; next steps 1q; `../../common/market_profile.md`), rewritten with every
+  summary: `register/PROFILE_MAP.md`, per market profile the paying books whose idea names a profile holding it (read
+  from the plan's `Profile:` line, written by step 3's code), each with its idea, and the number of paying books acting
+  in every profile. Read by lines 7.e and 7.g, where they look for discoveries.
 - **The similarity matrix of the paying books** (operator, 2026-11-22; `../../common/measures.md`), rewritten with every
   summary: `register/MATRIX.md` (the numbered books, then one row and one column per book, the share explained in
   hundredths, "-" under one year in common; similar books together, so families show as blocks) and
@@ -33,12 +39,17 @@ books that make money on the same bars are one bet taken twice.
   books in one bot (topic 44).
 
 ## What a comparison is
-**The new book's returns set against another paying book's, period by period, on the comparison timeframe and the window
+**The new book's returns set against a held book's (a paying book, or one of the portfolio's), period by period, on the comparison timeframe and the window
 in common, read on the same period, the period before and the period after; the definitions are in `common/measures.md`
 ("A paying book, and what it shares with the books we have").**
 - **It records; it decides nothing.** No threshold, no gate: the numbers are reported; the operator reads them (who else reads them is open: topic 41).
-- **It compares paying books with paying books only:** the question is whether we already have this profit, and only
-  paying books are something we have.
+- **It compares a book with the held books** (`../../common/measures.md`, "The held books"): the paying books and,
+  since 2026-11-24 (operator, P9), the portfolio's books. The question is whether we already hold this profit: night 6
+  re-found the portfolio's own effects in 8 of its 10 families, most of them confirmed books that do not pay alone, which
+  a comparison with the paying books only did not see.
+  Proof (2026-11-24): the register rebuilt (`--all`, 336 books); in all 342 comparisons the nearest relative (paying)
+  is identical to before, and in 81 the nearest held book is a portfolio book; the 19 portfolio books not paying
+  have their returns committed.
 - **One rule for every pair**, whatever the bar sizes, coins or configs: the larger bar size, the periods in common.
 
 ## The fields of a comparison (`<id>.json`, one entry per other book, and one for holding)
@@ -62,8 +73,14 @@ in common, read on the same period, the period before and the period after; the 
 8. **readings:** the three shares (same period, period before, period after), for checking.
    - For: auditing who leads. Used by: the operator. Without it: who leads cannot be checked.
 
-And for the book: **nearest_relative** (the other paying book with the largest share explained, among those comparable)
-and **against_holding** (fields 2 to 8 against holding its own coins).
+And for the book:
+- **nearest_relative:** the other paying book with the largest share explained, among those comparable.
+  - For: whether this profit is one we already earn. Used by: the operator, the register's summaries. Without it: a
+    copy of a paying book reads as new.
+- **nearest_held:** the held book (paying, or in the portfolio) with the largest share explained, among those comparable.
+  - For: whether this effect is one we already hold. Used by: `select_next` (the parent's difference). Without it: the
+    search keeps writing ideas from books the portfolio already holds.
+- **against_holding:** fields 2 to 8 against holding its own coins.
 
 ## Storage and naming
 ```
@@ -76,12 +93,15 @@ orchestration/ideas_similarities_check/
   register/
     INDEX.md                   one line per paying book: run, id, bar size, coins, engine (git sha), made on
     books.json                 the same, for code
+    held.json                  the portfolio's books (keys), with where they come from: with the paying books, the held books
     returns/<run>__<id>.csv.gz one book's bar returns: window, period start (UTC), return; and holding's return
     comparisons/<run>__<id>.json and .md   its comparison with every other book and with holding
     COMPARISONS.md             one line per book: its nearest relative, share explained, who leads, what is left (t)
+    PROFILE_MAP.md             the profile map (common/market_profile.md): per market profile, the paying books specialised in it
 ```
-The bar returns are committed (about 1.3 MB per hourly book, 7 significant digits): the records' bars are kept local only, and a
-new session must find the register whole.
+The bar returns of the held books are committed (about 1.3 MB per hourly book, 7 significant digits): the records' bars
+are kept local only, and a new session must find what it compares with; any other confirmed book's are kept local
+(`returns/confirmed/`) and rebuilt from its record when missing.
 
 ## Who calls it, and when
 - **`run_idea`** (operator, 2026-11-22; topic 41), after step 6 and the chart files, for every idea step 5 confirmed, its

@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 058-03.e2.b1_choppy-distance-continuation-more-coins_1d
+idea tested: 058-03.e2.b1_choppy-distance-continuation-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3740 USD
+---
+## Findings
+- **F1:** The test's own result points the way the idea predicts but is far from the bar: the main measure is +0.0119 with t 0.97 on 817 cases over 212 dates, and the unusual move is +0.67 % per case (t 1.08, strength 0.014). The test already used all 19 coins on all four folds, so no more data is available to bring it to the bar.
+- **F2:** In the folds shown, the continuation lives where the coin's recent swing is larger than its own usual one. Splitting the 10-day grid cases at the median of the 10-day over 30-day volatility ratio gives:
+- **F3:** Split instead on the 5-day over 30-day swing ratio, the contrast is sharper. The agitated half has a strength of +0.56 (t 5.05, 78 cases, 34 days) and a main-measure product of +0.180 (t 2.19). The calm half has −0.008 (t −0.07, 79 cases) and a product of +0.003 (t 0.17).
+- **F4:** The agitated-swing effect holds in every year shown and on both sides:
+- **F5:** Within the agitated half the effect is graded. Cases with the larger half of |forecast| carry a main-measure product of 0.269 against 0.036 for the smaller half, with strength 0.54 against 0.43.
+- **F6:** The test's 10-day horizon is where the effect shows. Over 5 days the product is +0.036 (t 1.55); over 20 days it turns to −0.013 (t −0.32). The size is not the limit either: the total move of +0.66 % per case is 3.0 times the 0.22 % cost of a trade.
+
+## Ideas
+- `058-03.e2.b1.b1_choppy-distance-continuation-recent-swings` (from F1, F2, F3, F4, F5, F6): In a choppy market, the further a coin's close stands below its 20-day average price, the more it falls over the next 10 days, and the further it stands above, the more it rises. This holds only while the coin's daily swings over the last 5 days are larger than over its last 30 days, and more so the larger that recent swing.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

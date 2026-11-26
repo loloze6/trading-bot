@@ -1,4 +1,5 @@
-"""ideas_similarities_check: add a paying book to the register and compare it with every other paying book and with holding
+"""ideas_similarities_check: add a book to the register and compare it with the held books (the paying books and the
+portfolio's, register/held.json) and with holding
 (card: orchestration/ideas_similarities_check/card.md; definitions: common/measures.md, "A paying book, and what it shares with the
 books we have"). Code only, no model call. It records; it decides nothing.
 
@@ -18,9 +19,10 @@ STEPS = FUNC.parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(STEPS / "common"))
 from book_returns import bar_of, book_returns, timeframes_from, HOURS  # noqa: E402
-from lib import idea_code, write_atomic, utc_now  # noqa: E402
+from lib import idea_code, write_atomic, utc_now, profile_name, PROFILE_TREND, PROFILE_AGITATION  # noqa: E402
 
 REGISTER = FUNC / "register"
+BAR_RE = re.compile(r"_(1d|1h|4h)$")                 # a record's bar suffix
 MIN_DAYS = 365                     # the window in common: under one year, "not comparable" (operator, 2026-11-21)
 READINGS = (("same period", 0), ("new one period ahead", 1), ("new one period behind", -1))   # new[t] with other[t+k]
 
@@ -109,8 +111,9 @@ def compare(new, other, hours):
 
 
 def returns_file(k, root=REGISTER):
-    """A paying book's returns are committed (`returns/`); a confirmed book's are kept local (`returns/confirmed/`, ignored by
-    git: 89 hourly confirmed books would weigh about 90 MB) and rebuilt from its record when missing."""
+    """A held book's returns (paying, or in the portfolio) are committed (`returns/`), so any session compares with it; a
+    confirmed book's are kept local (`returns/confirmed/`, ignored by git: 89 hourly confirmed books would weigh about
+    90 MB) and rebuilt from its record when missing."""
     f = root / "returns" / f"{k}.csv.gz"
     return f if f.exists() else root / "returns" / "confirmed" / f"{k}.csv.gz"
 
@@ -122,6 +125,17 @@ def series(k, timeframe, root=REGISTER, column="book"):
     d = pd.read_csv(returns_file(k, root))
     d = d[d["timeframe"] == timeframe]
     return pd.Series(d[column].to_numpy(float), index=pd.to_datetime(d["period"], unit="s", utc=True)).sort_index().dropna()
+
+
+def held_keys(root=REGISTER):
+    """The portfolio's books (register/held.json; common/measures.md, "The held books"): with the paying books, the books we
+    hold. Empty when the file is absent."""
+    f = root / "held.json"
+    return set(json.loads(f.read_text()).get("keys", [])) if f.exists() else set()
+
+
+def is_held(r, held):
+    return r["kind"] == "paying" or r["key"] in held
 
 
 def books(root=REGISTER):
@@ -164,6 +178,46 @@ def write_books(rows, root=REGISTER):
     write_atomic(root / "INDEX.md", "\n".join(lines) + "\n")
 
 
+SIDE_SHARE = 0.9                   # common/market_profile.md, a strategy's side
+
+
+def book_side(record):
+    """A strategy's side (common/market_profile.md): "long" when at least 90 % of its coin-days in a position are long,
+    "short" when at least 90 % are short, else "both"; None when the record has no positions on this machine. Read from
+    the committed chart file, else the bars."""
+    record = Path(record)
+    chart = record / "chart_bars.csv.gz"
+    if chart.exists():
+        pos = pd.read_csv(chart, usecols=["position"])["position"]
+    else:
+        files = sorted(record.glob("*/w*/bars.csv.gz"))
+        if not files:
+            return None
+        col = "postRebalance_current_allocation"
+        frames = [pd.read_csv(f, usecols=lambda c: c == col) for f in files]
+        if any(col not in d.columns for d in frames):
+            return None
+        pos = pd.concat(d[col] for d in frames)
+    pos = pos.fillna(0.0); held = pos[pos.abs() > 1e-9]
+    if held.empty:
+        return None
+    long = (held > 0).mean()
+    return "long" if long >= SIDE_SHARE else "short" if long <= 1 - SIDE_SHARE else "both"
+
+
+def fill_sides(root=REGISTER, steps=STEPS):
+    """Each book without a side gets it from its record, when the record is on this machine (books added before 1t)."""
+    rows = books(root); n = 0
+    for r in rows:
+        if not r.get("side"):
+            side = book_side(steps / "04_backtest" / r["run"] / "backtests" / r["id"])
+            if side:
+                r["side"] = side; n += 1
+    if n:
+        write_books(rows, root)
+    return n
+
+
 def add(record, run, root=REGISTER, steps=STEPS):
     """Add a book of the register: a paying book, or a confirmed book whose book does not pay (operator, 2026-11-22): its
     period returns on every timeframe it can be compared on, and its line. An idea already in the register (the same
@@ -175,7 +229,7 @@ def add(record, run, root=REGISTER, steps=STEPS):
     bar = bar_of(record)
     m = json.loads(next(record.glob("*/w*/manifest.json")).read_text())
     row = {"key": key(run, rid), "run": run, "id": rid, "bar": bar, "kind": kind,
-           "coins": sorted(p.name for p in record.iterdir() if p.is_dir()),
+           "coins": sorted(p.name for p in record.iterdir() if p.is_dir()), "side": book_side(record),
            "git_sha": m.get("git_sha", ""), "made_utc": m.get("created_utc", "")[:19], "added_utc": utc_now()}
     rows = [r for r in books(root) if r["id"] != rid or r["made_utc"] > row["made_utc"]]
     if any(r["id"] == rid for r in rows):
@@ -190,12 +244,13 @@ def add(record, run, root=REGISTER, steps=STEPS):
 def comparison(k, root=REGISTER):
     """The book's comparison with every other book of the register and with holding its own coins."""
     rows = {r["key"]: r for r in books(root)}
+    held = held_keys(root)
     me = rows[k]
     out = {"book": me, "made_utc": utc_now(), "others": []}
     parent = parent_of(me["id"])
     for o in sorted(rows.values(), key=lambda r: r["key"]):
-        if o["key"] == k or (o["kind"] != "paying" and not is_parent(o, me)):
-            continue        # every book is compared with the paying books; a repair also with its parent
+        if o["key"] == k or (not is_held(o, held) and not is_parent(o, me)):
+            continue        # every book is compared with the held books (paying, and the portfolio's); a repair also with its parent
         tf = larger(me["bar"], o["bar"])
         c = compare(series(k, tf, root), series(o["key"], tf, root), HOURS[tf])
         out["others"].append({"other": {"key": o["key"], "id": o["id"], "run": o["run"], "bar": o["bar"], "kind": o["kind"], "coins": len(o["coins"])},
@@ -204,6 +259,8 @@ def comparison(k, root=REGISTER):
     out["against_holding"] = {"comparison_timeframe": tf, **compare(series(k, tf, root), series(k, tf, root, "hold"), HOURS[tf])}
     comp = [o for o in out["others"] if o.get("comparable") and rows[o["other"]["key"]]["kind"] == "paying"]
     out["nearest_relative"] = max(comp, key=lambda o: o["share_explained"]) if comp else None
+    hc = [o for o in out["others"] if o.get("comparable") and is_held(rows[o["other"]["key"]], held)]
+    out["nearest_held"] = max(hc, key=lambda o: o["share_explained"]) if hc else None
     par = [o for o in out["others"] if is_parent(rows[o["other"]["key"]], me)]
     out["parent"] = par[0] if par and parent else None
     return out
@@ -225,9 +282,10 @@ def write_comparison(k, root=REGISTER):
     n = c["nearest_relative"]
     lines = [f"# {c['book']['id']} ({c['book']['run']}, {c['book']['bar']}, {c['book']['kind']}): what it shares with the paying books", "",
              f"- Nearest relative: " + (f"{n['other']['id']} ({n['other']['run']}, {n['other']['bar']}): {fmt(n)}" if n else "none comparable"),
+             f"- Nearest held book (paying, or in the portfolio): " + (f"{c['nearest_held']['other']['id']} ({c['nearest_held']['other']['run']}, {c['nearest_held']['other']['bar']}): {fmt(c['nearest_held'])}" if c.get("nearest_held") else "none comparable"),
              f"- Against holding its coins: {fmt(c['against_holding'])}",
              *([f"- Against its parent (the idea it repairs), {c['parent']['other']['id']}: {fmt(c['parent'])}"] if c.get("parent") else []), "",
-             "| Other paying book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |",
+             "| Other held book | Run | Bar | Timeframe | Days in common | Share explained | Who leads | Direction | What is left per period (t) |",
              "|---|---|---|---|---|---|---|---|---|"]
     for o in sorted(c["others"], key=lambda o: -(o.get("share_explained") or -1)):
         if o.get("comparable"):
@@ -262,6 +320,47 @@ def write_summary(root=REGISTER):
               "(real ideas that are not yet a profit; the least explained are the variations the research has found)", ""] + head + [l for _, l in con]
     write_atomic(root / "COMPARISONS.md", "\n".join(lines) + "\n")
     write_matrix(root)
+    write_profile_map(root)
+
+
+PROFILES = [f"{t} {a}" for t in PROFILE_TREND for a in PROFILE_AGITATION]
+
+
+def book_profile(r, steps=STEPS):
+    """The market profile a book's idea names (its plan's `Profile:` line, written by step 3's code), or None."""
+    plan = steps / "03_test_plan" / r["run"] / "plans" / f"{r['id']}.md"
+    m = re.search(r"^Profile:\s*([a-z ]+?)\s*\(", plan.read_text(), re.M) if plan.exists() else None
+    return profile_name(m.group(1)) if m else None
+
+
+def write_profile_map(root=REGISTER, steps=STEPS):
+    """`PROFILE_MAP.md` (common/market_profile.md, "The profile map", as the research keeps it): per market profile and
+    side, the paying books specialised in it, each with its idea; and the paying books acting in every profile, by side.
+    Read by lines 7.e and 7.g (next steps 1q and 1t, the operator 2026-11-25)."""
+    sides = ("long", "short")
+    cells = {(p, s): [] for p in PROFILES for s in sides}
+    every = {"long": 0, "short": 0, "both": 0, "unknown": 0}
+    for r in sorted((r for r in books(root) if r["kind"] == "paying"), key=lambda r: r["key"]):
+        named, side = book_profile(r, steps), r.get("side")
+        on = [side] if side in sides else list(sides) if side == "both" else []
+        if not named:
+            every[side if side in every else "unknown"] += 1
+            continue
+        what = f"{idea_code(BAR_RE.sub('', r['id']))} ({named}, {side or 'side unknown'}): {BAR_RE.sub('', r['id']).split('_', 1)[-1].replace('-', ' ')}"
+        for p in PROFILES:
+            if all(w in p.split() for w in named.split()):
+                for s_ in on:
+                    cells[(p, s_)].append(what)
+    lines = ["# The profile map: the proven and profitable strategies, by market profile and side",
+             "(written by code with the similarity register; definitions: common/market_profile.md. A strategy counts in",
+             "a profile when step 5 confirmed its idea, step 6 found its book profitable enough, and its idea names a",
+             "profile holding that one; on a side when it holds that side: long, short, or both.)", "",
+             "| Market profile | Side | Strategies specialised in it | Their ideas |", "|---|---|---|---|"]
+    lines += [f"| {p} | {s_} | {len(v)} | {'; '.join(v) if v else '-'} |" for (p, s_), v in cells.items()]
+    lines += ["", "Proven and profitable strategies acting in every profile (their idea names none): "
+              f"{every['long']} long, {every['short']} short, {every['both']} on both sides"
+              + (f", {every['unknown']} of unknown side" if every["unknown"] else "") + "."]
+    write_atomic(root / "PROFILE_MAP.md", "\n".join(lines) + "\n")
 
 
 def matrix(root=REGISTER):
@@ -325,6 +424,7 @@ def main():
     a.add_argument("--no-compare", action="store_true", help="add the book only (to fill the register first)")
     args = a.parse_args()
     if args.all:
+        fill_sides()
         for r in books():
             write_comparison(r["key"])
         write_summary()

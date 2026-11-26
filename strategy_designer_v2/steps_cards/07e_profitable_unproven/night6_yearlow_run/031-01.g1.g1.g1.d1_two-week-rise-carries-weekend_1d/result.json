@@ -1,0 +1,58 @@
+{
+  "line": "7.e",
+  "backtest": "031-01.g1.g1.g1.d1_two-week-rise-carries-weekend_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3869288,
+  "findings": {
+    "F1": "The book earns almost all of its gain on one bar, the Friday-close bar held into Saturday, and most of that gain is timing rather than the market's rise. The mean per-bar position gain is 0.2671 % on Friday bars, 0.0836 % on Saturday bars and between \u22120.009 % and +0.006 % on every other weekday. The market's own rise accounts for only 0.0098 % of the 0.0483 % mean gain per bar.",
+    "F2": "The idea is present in the data, but as a jump at the top rather than a straight line. Fridays sorted into quintiles by the 14-day rise in usual moves give 2-day returns of \u22120.14 %, \u22120.26 %, +0.55 %, +0.66 % and +1.81 % (top quintile t 6.2, about 409 cases each). That shape fits the plan's linear slope test on the self-standardised forecast poorly, which gave slope t 1.29. The forecast terciles still rise in order: +0.78 %, +1.12 %, +1.44 %.",
+    "F3": "The weekend effect sits almost entirely in the Saturday leg. After a 14-day rise, Saturday returns +0.90 % and Sunday +0.27 %; after a 14-day fall, Saturday returns \u22120.11 % and Sunday +0.04 %. The next-day return after a rise minus after a fall has Welch t 5.85 on Friday closes and at most 1.70 on any other weekday's close.",
+    "F4": "The same rise measured at Thursday's close also shows up on Saturday. After a rise, the Saturday leg is +0.69 % against +0.13 % after a fall, and the Friday leg is +0.39 % against +0.16 %.",
+    "F5": "The 14-day lookback is the strongest of those tried for the Friday-to-Sunday move. Top-tercile minus bottom-tercile Welch t is 1.91 for 3 days, 2.02 for 7, 5.34 for 14, 4.15 for 28 and 1.43 for 56 days.",
+    "F6": "Measured as an excess over each coin's 2-day mean, the effect is sure. Friday cases with a 14-day rise beat that mean by +0.91 % per case, with t 3.35 when the cases of each day are summed (265 days).",
+    "F7": "The gain is not one coin or a few trades, but it is uneven across years."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 14-day rise, measured in its usual daily moves at Friday's close (UTC), the more it rises over the following Saturday, the next 24 hours.",
+      "consequence": "A trader would hold a coin long for the Saturday after a two-week rise, holding it more firmly the larger the rise, and would leave the Sunday out because it adds little.",
+      "name": "two-week rise lifts Saturday",
+      "from": "F1, F2, F3, F6, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 14-day rise, measured in its usual daily moves at Thursday's close (UTC), the more it rises over the following Saturday.",
+      "consequence": "A trader would read a two-week rise already on Thursday as a reason to expect a stronger Saturday, and could position ahead of the Friday close.",
+      "name": "Thursday rise foreshadows Saturday",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 28-day rise, measured in its usual daily moves at Friday's close (UTC), the more it rises over the following Saturday and Sunday together.",
+      "consequence": "A trader would treat a four-week rise as a second, slower reason to hold a coin long into the weekend.",
+      "name": "four-week rise carries weekend",
+      "from": "F5, F1",
+      "refs": [
+        "F5",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1.g1.g1.d1.e1_two-week-rise-lifts-saturday",
+    "031-01.g1.g1.g1.d1.e2_thursday-rise-foreshadows-saturday",
+    "031-01.g1.g1.g1.d1.e3_four-week-rise-carries-weekend"
+  ],
+  "no_ideas": null
+}

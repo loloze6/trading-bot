@@ -1,0 +1,25 @@
+---
+line: 7.e profitable but not proven
+backtest: 032-02.g1.e2_wide-range-breakout-continuation_1d
+idea tested: 032-02.g1.e2_wide-range-breakout-continuation
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4072 USD
+---
+## Findings
+- **F1:** The book's gain is mostly timing, not the market's own rise. Its mean daily return is 0.126 % (t 2.82, 1449 days), of which the position times the coins' mean daily return is only 0.036 %. That leaves 0.090 % a day of timing (t 2.01).
+- **F2:** The gain is spread over the coins but not over the years. Every coin's book sum is positive (XRP 3.31, ETH 3.25, BTC 2.05, LTC 0.95, ZEC 0.93, XMR 0.47). But 2020 carries 6.72 of the 10.54 summed bar gains, and 2018 loses 0.73.
+- **F3:** The gain is not carried by a few trades. The 10 best of 1080 trades sum to 1425 of 7137 percent points, and 58.5 % of trades win.
+- **F4:** The plan's own regime does not carry the 5-day effect. On the 5-day grid, regime days (28-day rise > 0 and wide range) give +0.24 % excess (t 0.33, n 276) and the book's active bars +0.47 % (t 0.73, n 447). Uptrend days that are wide but not at the high give −1.28 % over 5 days (t −1.75, n 203) and −2.72 % over 10 days (t −2.05, n 102).
+- **F5:** The effect sits on closes that are the 28-day highest close itself, whatever the range. Such days give +4.84 % excess over 5 days (t 3.12, n 113) and +9.18 % over 10 days (t 2.89, n 62). Within uptrends, narrow-range days at the high give +4.66 % over 5 days and wide-range days +4.49 % over 5 days (t 2.43, n 73).
+- **F6:** Below the high, nearness is roughly graded down to a point. Over 5 days the excess goes from +4.84 % at the high to +0.59 %, +1.30 %, −1.34 % and −3.21 % (t −4.56, n 231) across the distance quintiles 0 to 3. The farthest quintile is back at +0.36 %.
+- **F7:** Bars held on 28-day-high days carry the largest share of the book's gain. They sum to 3.86 of 10.54, with a mean position of 0.87 and a market part of 0.85. Bars within 5 % of the high add 3.48.
+- **F8:** On at-high days, the largest 28-day rises reverse while moderate ones continue.
+
+## Ideas
+- `032-02.g1.e2.e1_new-closing-high-continuation` (from F1, F4, F5, F6, F7): In a coin that closes above its close of 28 days ago, the nearer the day's close is to its 28-day highest close, the larger the rise over the next 10 days, with the largest rise when the close is a new 28-day highest close, whatever the day's range.
+- `032-02.g1.e2.e2_overextended-high-reverses` (from F8, F2): In a coin that closes at its 28-day highest close, the larger its 28-day rise against its own usual 28-day move, the larger its fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

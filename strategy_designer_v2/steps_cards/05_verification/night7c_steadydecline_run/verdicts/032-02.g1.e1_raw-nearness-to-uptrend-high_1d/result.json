@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the OLS slope of excess 5-bar return on forecast (grid bars, forecast > 0)",
+    "value": 0.0006758065223982736,
+    "statistic": {
+      "name": "t of OLS slope",
+      "value": 1.6527053276226846
+    },
+    "threshold": "confirm: t >= 2 with forecast-weighted mean excess > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 5-bar return > 0",
+    "value": 0.0055909826268799555,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 1700
+  },
+  "decided_by": "The slope's t is 1.65, between -2 and 2.",
+  "reading": "The situation is close above the close 28 bars before, recomputed from the window's prices, using the recorded regime on the first 28 bars of a window where that close is not recorded, with a recorded proximity in (0, 1] and a long forecast. The coin's mean 5-bar return is taken over the non-overlapping grid (positions 0, 5, 10, ...) of all its windows. Grid bars without a full 5-bar forward return inside their window are left out. The plan's fewer-than-100-cases rule is applied as the minimum count, giving 'not observable'."
+}

@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold_1d
+idea tested: 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5276 USD
+---
+## Findings
+- **F1:** The tested result points the wrong way and is unstable over time. In folds B and C, the first long case of each 10-bar cell had a mean unusual 10-day move of -0.84 % (t -0.65, 188 cases on 136 days), close to step 5's -0.87 % (t -1.27, 346 days). By year it went from -9.3 % (t -3.84, 35 days) in 2018 and -2.0 % (t -0.96) in 2019 to +4.0 % (t 1.97) in 2020 and +4.7 % (t 1.97) in 2021. By window it ranged from -12.3 % (w14, t -3.33) to +16.5 % (w18, t 9.5). So the market's own swings drown the mean.
+- **F2:** Nearness of the close to its 20-day high grades the move; the size of the rise in swing units barely does. On non-overlapping cell cases (152 cases), the correlation with the unusual 10-day move was 0.22 for nearness and 0.07 for the rise in 30-day standard deviations. On all 499 choppy-calm rise days, the rise-size correlation was 0.065.
+- **F3:** The cases far from the 20-day high are the ones that pull the mean negative.
+- **F4:** Among large rises (rise size above its median), the nearness split decides the sign. Large rises in the nearer half of the 20-day high gained +3.6 % unusual over 10 days (t 1.10, 36 days, nearness correlation 0.29). Large rises in the farther half lost -5.2 % (t -2.16, 24 days).
+- **F5:** The test's forecast is an equal-weight mean of rise size and nearness. It therefore counts large rises far from the high as strong signals, which is why its forecast quartiles are not ordered: -3.8 %, -2.4 %, +4.4 % and -1.3 %. The far-from-high reversals cancel the near-high follow-through.
+- **F6:** No single coin carries the effect. In the nearer half, five of six coins were between -2.3 % and +5.0 % with every |t| under 1.1. In the farther half, XMR (-8.2 %, t -2.50) and XRP (-7.0 %, t -2.85) were negative.
+
+## Ideas
+- `061-01.g1.d1.d2.d3.b1_calm-big-rise-nearness-graded` (from F2, F3, F4, F5): In a choppy, calm market, after a coin's one-day rise that is large against the standard deviation of its daily returns over the past 30 days, the closer that rise takes its close to its highest close of the past 20 days, the further the coin keeps rising over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

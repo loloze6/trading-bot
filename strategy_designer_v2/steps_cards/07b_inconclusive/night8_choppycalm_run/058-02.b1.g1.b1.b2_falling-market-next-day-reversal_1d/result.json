@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "058-02.b1.g1.b1.b2_falling-market-next-day-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3808821,
+  "findings": {
+    "F1": "Inside the falling profile, the fade is strong when the coin is agitated and absent when it is calm. On folds B and C, agitation was read as the 30-day swing above the coin's median. The fade score \u2212z \u00d7 next-day unusual move averages +0.0082 with t 5.27 over 2059 agitated cases, against +0.0013 with t 0.78 over 1991 calm cases.",
+    "F2": "In agitated falling markets both sides pay, and the move per case is about three times a trade's cost. The move in the fade's direction is +0.68 % after down days (t 3.88, 1060 cases) and +0.73 % after up days (t 4.01, 999 cases). In calm falling markets it is \u22120.12 % (t \u22120.73) and +0.23 % (t 1.43). One trade costs 0.22 %.",
+    "F3": "Only the down side is graded by the size of the move. After down days, the next-day move in the fade's direction rises with |z| across the five quintiles: \u22120.63 % (t \u22122.35), +0.08 %, +0.39 %, +0.35 % and +1.01 % (t 3.17, mean |z| 1.91). After up days it is flat or even falls with size: +0.68 % in the smallest quintile (t 2.72) and +0.38 % in the largest (t 1.07). The up side mostly carries the falling market's own drift, not a graded reversal.",
+    "F4": "The effect lives at the one-day horizon only. The day-summed fade score in the falling profile has t 2.14 at 1 day, 1.06 at 2 days, \u22120.10 at 3 days and 0.38 at 5 days.",
+    "F5": "The tested result is on the predicted side but short of the bar. Overall t is 1.72; on the visible folds B and C the main measure has t 2.34 over 911 days. All coins, folds and 1d bars were already used, so no more data is available. The blend of an agitated half that works and a calm half with t 0.78 explains why the result is unclear."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day rise is against its usual daily swing over the last 20 days, the larger its fall over the next day, and the larger its one-day fall against that swing, the larger its rise over the next day.",
+      "consequence": "In a coin that has fallen for two months while swinging more than usual, a trader has a reason to fade each day's move for one day, sized by how large it was against the recent swing, and to stand aside when the fall is calm.",
+      "name": "falling agitated next-day fade",
+      "from": "F1, F2, F4, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall is against its usual daily swing over the last 20 days, the larger its rise over the next day.",
+      "consequence": "In an agitated downtrend, a trader has a reason to buy a sharp down day for one day, sized by how many usual swings the fall measured.",
+      "name": "agitated downtrend sharp-fall rebound",
+      "from": "F1, F2, F3, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-02.b1.g1.b1.b2.b1_falling-agitated-next-day-fade",
+    "058-02.b1.g1.b1.b2.b2_agitated-downtrend-sharp-fall-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 031-02.b1_wide-flat-day-continues-uprun_1d
+idea tested: 031-02.b1_wide-flat-day-continues-uprun
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3423 USD
+---
+## Findings
+- **F1:** Recomputed from prices, the tested setup (6-day rise above 0, range at least 1.5 times its 20-day mean, flatness at least 0.9) gives a 10-day excess return of +3.87 % over 62 cases on 55 days, hit rate 52 %, t 1.78. This is on the predicted side, like step 5's +1.91 % (t 0.92, 77 cases, 68 days), but the cases are too few to clear t 2.
+- **F2:** Loosening the setup to a range of at least 1.0 times its 20-day mean and flatness at least 0.8 keeps the same sign and the same size, with t passing 2. The excess return is +3.70 % over 322 cases on 258 days, t 3.14. With width at least 1.2 it is +3.59 % (t 2.34, 218 cases); with width at least 1.5 it is +5.91 % (t 2.40, 121 cases). The tested setup's strict filter is what starves the test.
+- **F3:** The grading the idea predicts shows clearly in the looser sample. By terciles of the 6-day rise, the 10-day excess return is +0.11 % (t 0.08, 121 cases), +3.49 % (t 1.74, 129 cases) and +8.54 % (t 3.09, 108 cases, hit 61 %). In the strict sample it is +1.6 %, +3.8 % and +6.1 %.
+- **F4:** The range's width does not grade the effect. In the looser sample the width terciles give +4.33 %, +2.39 % and +5.76 %. In the strict sample the widest tercile is −1.23 % (22 cases). The prior rise carries the effect, not the width.
+- **F5:** The flat close matters on the up side:
+- **F6:** The effect is mixed across periods. In the looser sample it is positive in 2020, 2021, 2024 and 2025 (+6.3 %, +6.5 %, +6.4 %, +8.1 %) and negative in 2022 and 2023 (−3.1 %, −0.8 %). In the strict sample, 2024 and 2025 alone carry most of the mean (+14.1 % and +9.5 % against near zero or below in 2019–2023).
+- **F7:** The effect is positive on all six coins in the looser sample, from +1.0 % (XMR) to +7.4 % (XRP), with ETH's t at 2.75. Each coin has only 43–67 cases. More coins would add cases where the test is short of them.
+- **F8:** On horizon, the strict setup's excess return is +3.31 % over 3 days (t 2.57), +2.75 % over 5 days (t 1.85) and +3.87 % over 10 days (t 1.78). It turns to −0.87 % over 20 days (t −0.31). The move shows within the plan's 10 days and does not last beyond them.
+
+## Ideas
+- `031-02.b1.b1_wide-flat-uprun-more-coins` (from F1, F2, F7): After a coin has risen over the past 5 days, a day whose range is wide compared with its average daily range over the past 20 days, but whose close lands near its open, is followed by a further rise over the next 10 days. The larger the coin's 5-day rise before that day, the larger the further rise.
+- `031-02.b1.b2_flat-day-after-strong-rise` (from F2, F3, F4, F5): After a coin has risen over the past 5 days, a day whose close lands near its open and whose range is at least as wide as its average daily range over the past 20 days is followed by a further rise over the next 10 days, and the larger the coin's 5-day rise before that day, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

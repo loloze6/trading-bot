@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 032-01_calm-fall-depth-continues_1d
+idea tested: 032-01_calm-fall-depth-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2325 USD
+---
+## Findings
+- **F1:** The tested measure points the predicted way but stays short of the bar: on folds B and C the graded short's gain over drift averages 0.0102 per day with t 1.49 over 530 days (1464 cases), close to step 5's 0.0059 with t 1.43 over 1028 days on all folds; its size is small, an unusual move of +0.13 % per case, t 0.51, strength 0.030.
+- **F2:** Inside the profile the depth of the 30-day fall does not grade the next day. The deepest and middle thirds of forecasts are followed by the same excess return, -0.395 % and -0.392 %, against +0.066 % for the shallowest third. By quintile of the 30-day return, the deepest fifth rebounds +0.37 % (183 cases), the middle three fall -0.61 %, -0.64 % and -0.45 %, and the shallowest fifth rises +0.77 % (156 cases). The rank correlation of fall depth with the next-day excess is +0.025 (p 0.39), on the wrong side.
+- **F3:** The gain is not steady across periods: 2018 gives a mean of 0.0184 (t 1.47, 668 cases), 2019 gives 0.0085 (t 0.85), 2020 gives -0.0200 (t -2.00, 81 cases) and 2021 gives 0.0040 (t 0.33). Windows range from w14 at +0.030 (t 1.70) to w16 at -0.045 (t -1.23).
+- **F4:** Every coin is on the predicted side, but only weakly: ETH reaches t 2.30 (228 days), while BTC, LTC, XMR, XRP and ZEC lie between t 0.15 and t 1.38 on 181 to 323 days each.
+- **F5:** The continuation is not specific to the calm falling profile. Coins below their close of 30 days ago return -0.15 % in excess the next day outside the profile (1858 cases) and -0.26 % inside it (1197 cases). The quintiles outside the profile show the same shape: the deepest fifth rises +0.43 % and the middle fifths fall -0.33 % to -0.41 %.
+- **F6:** Longer horizons do not make it clearer: on non-overlapping grids the gain's t is 1.45 at 2 days (271 days), 1.48 at 3 days (184), 0.78 at 5 days (105) and 0.73 at 10 days (53).
+- **F7:** The book cannot pay at this size: the total move per case is -0.00 % and the unusual move 0.7 times the 0.19 % cost of a trade. The book's Sharpe is 0.20 against holding's 0.57, with a yearly return of +1.9 % over 7.94 years.
+
+## Ideas
+- `032-01.b1_calm-fall-continuation-all-coins` (from F1, F4): In a falling, calm market, the more a coin has fallen over the past 30 days, the more it falls over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

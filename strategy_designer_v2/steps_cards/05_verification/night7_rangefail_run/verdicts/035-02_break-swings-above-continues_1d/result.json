@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-day excess return over the coin's mean 5-day return, cases with forecast > 0",
+    "value": 0.023033243443002963,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 2.0670889244981945
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation forecast vs 5-day excess return > 0",
+    "value": 0.1224383635869443,
+    "passed": true
+  },
+  "counts": {
+    "cases": 349,
+    "distinct days": 159,
+    "active bars": 1806
+  },
+  "decided_by": "Mean excess return above 0 with t >= 2 and Spearman correlation above 0 (confirm rule).",
+  "reading": "Situation recomputed from prices as close above the max high of the 20 prior bars in the window (falling back to the recorded raw component > 0 on the first 20 bars), expected side long; cases are grid bars 0,5,10,... of each window with forecast > 0 and a 5-bar return inside the window; the coin's mean 5-day return is taken on the same non-overlapping grids of all its windows; the day-clustered t sums deviations per calendar day (UTC) with a D/(D-1) correction; the plan's minimum of 100 cases on 60 days, when not reached, gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01539 on the check folds against +0.02303 on every fold",
+    "main": 0.01538522232629495,
+    "statistic": 1.191679531285107,
+    "counts": {
+      "cases": 233,
+      "distinct days": 99,
+      "active bars": 1114
+    }
+  }
+}

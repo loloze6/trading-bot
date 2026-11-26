@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the excess 5-day return on the forecast, profile grid bars",
+    "value": 1.5779572494041898,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.5779572494041898
+    },
+    "threshold": "confirm if t >= +2 and check mean > 0; reject if t <= -2; inconclusive otherwise"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-day return on grid bars with forecast > 0",
+    "value": 0.012902661611648124,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with forecast > 0": 211,
+    "profile grid bars in total": 718
+  },
+  "decided_by": "The slope's t is between -2 and +2.",
+  "reading": "The profile is the detector's 'unknown' regime on the grid bar, the grid is positions 0,5,10,... of each window, all coins are pooled in one regression, and the coin's mean 5-day return is taken over the non-overlapping grid returns of all its windows."
+}

@@ -54,8 +54,11 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
         name = Path(str(cmd[0])).name
         if name == "run_backtest.py":
             root = Path(str(cmd[cmd.index("--out-root") + 1]))
-            (root / rid).mkdir(parents=True)
+            (root / rid / "BTCUSD" / "w1").mkdir(parents=True)
             (root / rid / "run.md").write_text("x")
+            (root / rid / "BTCUSD" / "w1" / "metrics.json").write_text("{}")
+        elif name == "chart_files.py":
+            (Path(str(cmd[1])) / "chart_bars.csv.gz").write_text("x")
         elif name == "make_verdict.py":
             d = Path(str(cmd[cmd.index("--verdicts-dir") + 1])) / rid
             d.mkdir(parents=True)
@@ -72,7 +75,7 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
     monkeypatch.setattr(U, "call", fake)
     monkeypatch.setattr(sys, "argv", ["unseen_test.py", str(plan), "--run", run, "--python", "py"])
     U.main()
-    assert calls == ["run_backtest.py", "make_verdict.py", "check_profitability.py"] * 2
+    assert calls == ["run_backtest.py", "chart_files.py", "make_verdict.py", "check_profitability.py"] * 2
     assert (steps / "04_backtest" / run / "unseen_b" / "backtests" / rid / "run.md").exists()
     res = json.loads((steps / "orchestration" / "unseen_test" / run / f"{rid}.json").read_text())
     assert res["periods"]["unseen_a"]["holds"] and res["in_sample"]["statistic"] == 3.1
@@ -81,3 +84,94 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
     calls.clear()
     U.main()                                         # a second call: every output exists, no step is called
     assert calls == []
+
+
+def test_a_record_where_no_window_ran_is_run_again(tmp_path):
+    rec = tmp_path / "rec"
+    (rec / "BTCUSD").mkdir(parents=True)
+    (rec / "run.md").write_text("- w1 not run: the dates were not fetched")
+    assert not U.backtest_ran(rec)
+    (rec / "BTCUSD" / "w1").mkdir()
+    (rec / "BTCUSD" / "w1" / "metrics.json").write_text("{}")
+    assert U.backtest_ran(rec)
+    assert not U.backtest_ran(tmp_path / "none")
+
+
+def test_the_unseen_coins_are_the_data_coins_the_plan_did_not_test(tmp_path, monkeypatch):
+    (tmp_path / "coverage.yaml").write_text("files:\n  kraken_BTCUSD_1d.csv:\n    - {end: x}\n  kraken_ETHUSD_1h.csv:\n"
+                                            "    - {end: x}\n  kraken_ADAUSD_1d.csv:\n    - {end: x}\n"
+                                            "  SOLUSDT_1h.csv:\n    - {end: x}\n")
+    monkeypatch.setattr(U, "DATA", tmp_path)
+    assert U.data_coins() == ["ADA", "BTC", "ETH"]                       # Kraken files only, by name
+    assert U.plan_coins("---\ndata-instruments: BTC/USDT, eth, BNB\n---") == ["BTC", "ETH", "BNB"]
+    assert U.unseen_coins("---\ndata-instruments: BTC, ETH, BNB\n---") == ["ADA"]
+    assert U.unseen_coins("---\ndata-instruments: ADA, BTC, ETH\n---") == []
+
+
+def test_unseen_coins_beside_the_periods(tmp_path, monkeypatch):
+    steps = tmp_path
+    rid, run = "001-01_x_1d", "a_run"
+    vd = steps / "05_verification" / run / "verdicts" / rid
+    vd.mkdir(parents=True)
+    (vd / "result.json").write_text(json.dumps(IN_SAMPLE))
+    (vd / "measure.py").write_text("def measure(bars): pass\n")
+    plan = steps / "03_test_plan" / run / "plans" / f"{rid}.md"
+    plan.parent.mkdir(parents=True)
+    plan.write_text("---\ndata-instruments: BTC, ETH\n---\n")
+    (steps / "w").mkdir()
+    (steps / "w" / "unseen_a.json").write_text("[]")
+    (steps / "data").mkdir()
+    (steps / "data" / "coverage.yaml").write_text("files:\n" + "".join(f"  kraken_{c}USD_1d.csv:\n    - {{end: x}}\n"
+                                                                     for c in ("BTC", "ETH", "ADA", "SOL", "SUI")))
+    calls = []
+
+    def fake(cmd, period):
+        name = Path(str(cmd[0])).name
+        calls.append((name, period, [str(c) for c in cmd]))
+        if name == "run_backtest.py":
+            root = Path(str(cmd[cmd.index("--out-root") + 1]))
+            (root / rid).mkdir(parents=True)
+            (root / rid / "run.md").write_text("x")
+            for coin, n in (("ADAUSD", 2), ("SOLUSD", 1), ("SUIUSD", 0)):    # SUI: no data in the folds
+                (root / rid / coin).mkdir()
+                for k in range(1, n + 1):
+                    (root / rid / coin / f"w{k}").mkdir()
+                    (root / rid / coin / f"w{k}" / "metrics.json").write_text("{}")
+        elif name == "chart_files.py":
+            (Path(str(cmd[1])) / "chart_bars.csv.gz").write_text("x")
+        elif name == "make_verdict.py":
+            d = Path(str(cmd[cmd.index("--verdicts-dir") + 1])) / rid
+            d.mkdir(parents=True)
+            (d / "result.json").write_text(json.dumps(verdict(0.01, 1.2)))
+        else:
+            d = Path(str(cmd[cmd.index("--checks-dir") + 1])) / rid
+            d.mkdir(parents=True)
+            (d / "result.json").write_text(json.dumps({**check(1.1, 1.0), "informative": {"years": 7.9}}))
+        return 0
+
+    monkeypatch.setattr(U, "STEPS", steps)
+    monkeypatch.setattr(U, "WINDOWS", steps / "w")
+    monkeypatch.setattr(U, "DATA", steps / "data")
+    monkeypatch.setattr(U, "HERE", steps / "orchestration" / "unseen_test" / "helper")
+    monkeypatch.setattr(U, "call", fake)
+    monkeypatch.setattr(sys, "argv", ["unseen_test.py", str(plan), "--run", run, "--python", "py"])
+    U.main()                                         # the dates first, as run_idea does
+    calls.clear()
+    monkeypatch.setattr(sys, "argv", ["unseen_test.py", str(plan), "--run", run, "--python", "py", "--coins"])
+    U.main()
+    step4 = calls[0][2]
+    assert calls[0][1] == "unseen_coins" and step4[step4.index("--coins") + 1] == "ADA, SOL, SUI"
+    assert "--windows" not in step4
+    assert (steps / "04_backtest" / run / "unseen_coins" / "backtests" / rid / "run.md").exists()
+    res = json.loads((steps / "orchestration" / "unseen_test" / run / f"{rid}.json").read_text())
+    c = res["periods"]["unseen_coins"]
+    assert c["holds"] and c["coins"] == ["ADAUSD", "SOLUSD"] and c["coin_windows"] == 3 and c["years"] == 7.9
+    assert res["periods"]["unseen_a"]["holds"]       # the dates' entry is kept
+    assert (steps / "orchestration" / "unseen_test" / run / "INDEX.md").read_text() == \
+        f"{rid}: unseen_a: holds; unseen_coins: holds (2 of 3 coins ran)\n"
+    calls.clear()
+    U.main()                                         # a second call: no step call
+    assert calls == []
+    monkeypatch.setattr(sys, "argv", ["unseen_test.py", str(plan), "--run", run, "--python", "py"])
+    U.main()                                         # the dates again (run_idea): the coins' entry is kept
+    assert "unseen_coins: holds" in (steps / "orchestration" / "unseen_test" / run / "INDEX.md").read_text()

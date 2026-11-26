@@ -1,0 +1,61 @@
+{
+  "line": "7.g",
+  "backtest": "031-03_fading-volume-after-rise-reverses_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4632018,
+  "findings": {
+    "F1": "The larger a coin's one-day fall against its 30-day swing, the more it rises the next day: the slope of next-day excess return on the fall's size is 0.0080 (t 6.97, 3,506 down days). It is 0.0058 over the next 2 days (t 2.46, 1,743 non-overlapping cases), and it fades by 3 days (t 1.57) and 5 days (t 0.13). Up days show no such slope next day (t 1.12).",
+    "F2": "After a fall of at least 2 swings, the next day's return is +2.44 % on average (t 4.67, 194 cases). The t counts each coin's fall as a separate case, but the falls land on only 79 distinct days, so the evidence is thinner than the t suggests. The effect is broad: it is positive on every coin (+1.87 % to +3.32 %), in every year from 2018 to 2021 (+0.79 % to +4.95 %), and in 9 of 12 windows. Falls that close in the bottom fifth of the day's range rebound more (+2.69 %, 113 cases) than those closing above the middle (+1.38 %, 8 cases).",
+    "F3": "The rebound after a fall of at least 2 swings is concentrated in a falling, agitated market, at +7.94 % next day (t 4.11, 19 cases). In a falling calm market it is -0.71 % (t -0.77, 47 cases), and in a rising calm market +2.38 % (t 2.21, 20 cases). The counts are small, and agitation here is the 30-day swing over the 120-day swing, not the profile's one-year percentile.",
+    "F4": "Against the brief's reversal, a coin's volatility-scaled 20-day move goes on in its own direction over the next 5 to 10 days. The slope is 0.0106 at 5 days (t 3.56, 1,345 cases) and 0.0185 at 10 days (t 3.08, 665 cases). The top fifth leads the bottom fifth by 3.3 % (5 days) and 5.7 % (10 days). At the brief's own scale (a 60-day move) the same lean is weaker (t 1.84 to 1.92), and at a 30-day horizon nothing holds (|t| \u2264 1.58 for 20 to 60-day moves).",
+    "F5": "The tested volume drop predicts nothing at any horizon or lookback: the 14-day over 20-, 30- or 60-day volume ratio has |t| \u2264 1.90 at every horizon from 3 to 30 days.",
+    "F6": "The book lost through its shorts on the coins that rose most. Mean net results per short were -26.4 % on ETH (21 trades), -26.3 % on LTC (22), -38.1 % on XRP (15) and -19.6 % on ZEC (19), against +9.5 % on BTC (18) and +1.6 % on XMR (11). On these folds the coins drifted up 11 to 25 bps a day, while the book made -4.7 to +1.5 bps a day.",
+    "F7": "The raw 20-day return's lean on the next 5 days changes sign across windows. It is negative in w7 to w9 (t -1.93 to -3.07) and mostly positive later (w15, w16, w18: t 0.88 to 1.21). So the trend in F4 holds only when the move is scaled by volatility, and not stably across time.",
+    "F8": "Weekday means differ: Thursday's excess daily return is -0.52 % (t -2.90), Friday's +0.37 % (t 2.51) and Saturday's +0.40 % (t 2.89). With the many angles examined, this does not stand out enough to build an idea on."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall against its usual daily swing over the past 30 days, the more the coin rises over the next one to two days.",
+      "consequence": "A trader can buy a coin's sharp one-day fall for a short rebound, sized by how extreme the fall was. The rebound is per case many times larger than a trade's cost, where the long-horizon idea had no usable size.",
+      "name": "sharp daily fall rebounds",
+      "from": "F1, F2",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's one-day fall against its usual daily swing over the past 30 days, the more the coin rises over the next day.",
+      "consequence": "A trader can concentrate rebound buying in a falling, agitated market, where capitulation days unwind most, and refuse it in a falling calm one.",
+      "name": "capitulation rebound in turmoil",
+      "from": "F3, F2",
+      "profile": "falling agitated",
+      "theme": "discovery",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 20-day return against its usual daily swing over those 20 days, the more the coin keeps moving the same way over the next 5 to 10 days.",
+      "consequence": "A trader should follow a coin's volatility-scaled 20-day move for the following week or so rather than fade it.",
+      "name": "scaled short-term momentum continues",
+      "from": "F4, F7",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "031-03.g1_sharp-daily-fall-rebounds",
+    "031-03.g2_capitulation-rebound-in-turmoil",
+    "031-03.g3_scaled-short-term-momentum-continues"
+  ],
+  "no_ideas": null
+}

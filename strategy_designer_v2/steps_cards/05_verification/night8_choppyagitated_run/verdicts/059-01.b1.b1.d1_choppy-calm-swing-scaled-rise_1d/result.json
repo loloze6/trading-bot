@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 14-bar unusual move of the long cases (return minus the coin's normal 14-bar drift)",
+    "value": 0.01045274992228846,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.8197011266450931
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of the 14-bar unusual move on the forecast at the signal bar",
+    "value": -0.0006335116839292976,
+    "passed": false
+  },
+  "counts": {
+    "cases": 398,
+    "cases on distinct days": 259
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "The choppy calm profile is read from the recorded regime ('trending' only when the detector's trend and swing vetoes did not fire, since its components are not recorded and its 365-bar lookback is not in the record) and the rise from scaled_rise's last_history_value >= 1 (recomputed from prices where missing); a case is the first long bet of each 14-bar grid cell counted from each window's first row, with a 14-bar return inside the window; the day-clustered standard error is sqrt(sum of squared per-day sums of deviations)/n without small-sample correction."
+}

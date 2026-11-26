@@ -1,0 +1,88 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 60,
+          "smooth_period": 5
+        }
+      },
+      {
+        "id": "brk",
+        "class": "strategies.strategy_components.DistanceFromHighComponent",
+        "params": {
+          "period": 60,
+          "source": "close",
+          "exclude_current": 1,
+          "form": "percent",
+          "extreme": "high"
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "lt",
+              "value": 0.3
+            },
+            {
+              "id": "brk",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "quiet_gain",
+            "class": "strategies.strategy_components.DistanceFromHighComponent",
+            "params": {
+              "period": 2,
+              "source": "close",
+              "exclude_current": 0,
+              "form": "proximity",
+              "power": 1.0,
+              "extreme": "low"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 10
+  }
+}

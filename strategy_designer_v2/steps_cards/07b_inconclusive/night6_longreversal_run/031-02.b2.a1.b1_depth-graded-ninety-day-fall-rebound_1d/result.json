@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "031-02.b2.a1.b1_depth-graded-ninety-day-fall-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3935411,
+  "findings": {
+    "F1": "The main measure sits at zero. Its mean excess 30-day return is -0.71 % (day-clustered t -0.20, 85 cases on 35 days). On the same grid the measure stays at zero at every horizon: +0.28 % at 10 days (t 0.40, 291 cases), +1.03 % at 20 days (t 0.66), -1.84 % at 60 days (t -0.46). So the test did not miss an effect sitting at another horizon.",
+    "F2": "What happened over the last 20 days before a case splits the result in two. At 30 days, the Spearman correlation between the case's 20-day return and its excess return is -0.40 (-0.25 at 20 days, -0.17 at 10 days). In the top tercile of 20-day returns (a bounce already under way, mean +14.4 %), the excess 30-day return is -12.0 % (t -4.13, 19 cases, 10 days). In the bottom tercile (still falling, mean -20.9 %), it is +6.9 % (t 0.97).",
+    "F3": "Split by the sign of the 20-day return, the same pattern holds. Deep-fall cases whose 20-day return was positive returned -10.3 % excess over the next 30 days (t -2.78, 22 cases, 11 days). Cases whose 20-day return was negative returned +1.6 % (t 0.26, 34 cases). The rebound and the failed rebound cancel inside the tested regime.",
+    "F4": "The 10-day return shows the same pattern, more weakly. At 30 days, the lowest 10-day-return tercile returned +2.4 %, against -6.2 % and -5.5 % for the two higher terciles. At 20 days the three terciles returned +3.1 %, 0.0 % and -4.6 %.",
+    "F5": "The raw depth of the 90-day fall leans the way the idea says, but the forecast loses that order. The deepest depth tercile (mean -1.84 usual moves) returned +7.0 % excess over 30 days (t 1.20), against -5.7 % (t -1.32) for the shallowest (-1.07). The Spearman correlation of depth with excess return is -0.25. Yet forecast terciles show no order (+2.0 %, -6.9 %, +2.7 %), and the supporting check passed by only +0.18 %. Standardising against the coin's own past, as the forecast does, scrambles the depth ranking.",
+    "F6": "The result is mixed across coins and periods, with a few groups pulling it each way:",
+    "F7": "The idea's size is small and uncertain: an unusual move of +3.84 % per case over 30 days (t 1.10, 99 days), 0.10 of a usual move. Most of the +8.44 % total move is the coins' normal drift."
+  },
+  "ideas": [
+    {
+      "idea": "The further a coin's 90-day return stands below its own usual 90-day move, the more its price rises over the next 30 days than its usual drift, only while it is still falling over the past 20 days, the deeper its 20-day fall the larger the rebound.",
+      "consequence": "A trader buying a coin after a long fall buys only falls that are still going, and expects most from those falling hardest in the last 20 days.",
+      "name": "still-falling deep-fall rebound",
+      "from": "F2, F3, F4, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's 90-day return stands below its own usual 90-day move, the more its price has risen over the past 20 days, the more it falls over the next 30 days below its usual drift.",
+      "consequence": "A trader refuses to buy, and may sell, a coin whose deep fall has already started to bounce, because the bounce tends to fail.",
+      "name": "failed bounce after deep fall",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-02.b2.a1.b1.b1_still-falling-deep-fall-rebound",
+    "031-02.b2.a1.b1.b2_failed-bounce-after-deep-fall"
+  ],
+  "no_ideas": null
+}

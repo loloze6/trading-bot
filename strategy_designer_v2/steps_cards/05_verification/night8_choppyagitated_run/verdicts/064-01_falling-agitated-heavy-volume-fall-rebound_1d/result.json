@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess next-day return on forecast, within windows",
+    "value": 0.0014480159754327716,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 3.202651662853278
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess > 0; reject: slope t <= -2 or mean excess t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return > 0 (t day-clustered: 2.877)",
+    "value": 0.01118747098738481,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 412,
+    "cases": 1027
+  },
+  "decided_by": "Confirm rule met: slope t 3.20 >= 2 and mean excess 0.01119 > 0.",
+  "reading": "Situation profile taken from the recorded regime 'mean_reversion' (the detector's profile components are not recorded) with ret1 from closes and volume ratio from heavy_volume raw value + 1 (prices when missing); bars whose situation cannot be computed are left out; the slope uses forecast and excess return demeaned within each coin-window, and both t's use day-clustered standard errors (deviations summed per UTC day, factor G/(G-1)); the plan's 100 distinct case days is treated as the minimum count.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001279 on the check folds against +0.001448 on every fold",
+    "main": 0.0012785357588873123,
+    "statistic": 2.5754405621844985,
+    "counts": {
+      "distinct case days": 273,
+      "cases": 753
+    }
+  }
+}

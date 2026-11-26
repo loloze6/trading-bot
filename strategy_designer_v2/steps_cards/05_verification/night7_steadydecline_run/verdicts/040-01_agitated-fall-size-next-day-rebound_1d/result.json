@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (forecast > 0 bars)",
+    "value": 0.0005295404128455498,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.7589851239329417
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and timing gain > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book timing gain before costs (mean daily)",
+    "value": 0.0004546264647648463,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 3753
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing gain is above 0 (confirm rule).",
+  "reading": "Agitated profile read as regime 'unknown' (the volatility-percentile veto sends the rest to 'chop'), the day's fall as a negative recorded raw value (price return where not recorded); the timing gain is computed before costs as position after the bar's trade x next-bar return minus position x the coin's all-window mean daily return, averaged over coins per day then over days; the slope's t is the OLS t.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003694 on the check folds against +0.0005295 on every fold",
+    "main": 0.0003693996836645867,
+    "statistic": 2.3525316505582645,
+    "counts": {
+      "bars with forecast > 0": 1949
+    }
+  }
+}

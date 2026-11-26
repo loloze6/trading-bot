@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "031-03.b1_up-streak-continuation-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3783341,
+  "findings": {
+    "F1": "The tested slope is essentially zero (0.000184, day-clustered t 0.54, 6157 grid bars on 617 days), and the bets' mean unusual 5-day move is the wrong sign (\u22120.27 %, t \u22120.87 over 1362 days), so the pooled effect is too small and too mixed to show either way.",
+    "F2": "The effect splits by the coin's own 30-day return. While the 30-day return is positive, the mean 5-day excess return rises steadily with the forecast: +0.04 % at forecast 0 (1069 bars), +0.34 % at 5\u201310 (302), +0.85 % at 10\u201315 (314) and +1.41 % at 15\u201320 (661). The slope there is 0.000658 (t 1.42, 2346 bars, 365 days), and bets with forecast > 0 average +1.02 % (t 1.46, 1277 bars, 273 days).",
+    "F3": "While the 30-day return is zero or negative, the same streak forecast points the other way: slope \u22120.000434 (t \u22120.80, 2257 bars, 368 days), and bets with forecast > 0 average \u22121.09 % (t \u22121.24, 1022 bars, 241 days). The two halves cancel in the pooled test.",
+    "F4": "Letting the 30-day trend's sign set the sign of the streak's effect (up-streak length \u00d7 sign of the 30-day return) gives a slope of 0.0044 with day-clustered t 2.64 (4603 bars, 466 days). This is the first reading with t above 2.",
+    "F5": "Inside the positive 30-day trend, the streak slope is positive in 7 of 8 years (t 2.53 in 2019), but only 2025 is slightly negative (slope \u22120.000368, t \u22120.23). The mean of the bets by year still swings: +5.99 % (t 3.33) in 2021 against \u22127.21 % (t \u22123.30) in 2018. The grading is steadier than the level.",
+    "F6": "No coin shows the tested effect on its own: the mean 5-day excess return after up streaks lies between t \u22121.20 (LINK) and t +1.41 (ZEC) for all 19 coins. No more data is available either, since the test already used all 19 coins over folds A\u2013D on daily bars.",
+    "F7": "At other horizons, raw up-streak length gives no steady ordering at 5 days (streak 3: +1.10 %, t 1.71; streak 4: \u22120.91 %, t \u22121.07). The plan's horizon did not miss a cleaner effect elsewhere, apart from a short one-day giveback after a single higher close (\u22120.21 %, t \u22123.84)."
+  },
+  "ideas": [
+    {
+      "idea": "The more days in a row a coin has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it keeps rising over the next 5 days, only while its 30-day return is positive.",
+      "consequence": "A trader would lean long into an unusually long up streak only when the coin is already up over the past 30 days, and would refuse the same streak when it is down over that month.",
+      "name": "up streak continuation in uptrend",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.b1.b1_up-streak-continuation-in-uptrend"
+  ],
+  "no_ideas": null
+}

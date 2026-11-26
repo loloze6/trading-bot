@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-bar move (Fri close to Sun close) minus normal 2-day drift, per case",
+    "value": 0.014123378469924577,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 3.7492524537348473
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move at/above median forecast minus below median",
+    "value": -0.0004741625041265133,
+    "passed": false
+  },
+  "counts": {
+    "days with cases": 207,
+    "cases": 508
+  },
+  "decided_by": "t >= 2 but the supporting check failed: inconclusive per the plan.",
+  "reading": "Friday close = a bar whose UTC start time is a Friday (next bar Saturday); the volatility ratio is recomputed in each window as the 20-day over the 60-day std (ddof 1) of daily close returns and the agreement is taken over the active bars where it is computable (Friday, rise and side only if none is); the 14-day rise sign is read from rise_vol's raw value (positive ratio) or the 14-day price return; cases are long forecast rises of at least 2 points, once per 2-bar grid cell, with the 2-bar return inside the window, the drift is the mean non-overlapping 2-bar return over all the coin's windows, the t clusters cases by UTC day, the median split uses the forecast at the case bar, and the plan's 'at least 30 days with cases' minimum gives 'not observable' when not reached."
+}

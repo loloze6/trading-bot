@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast (bars with forecast < 0)",
+    "value": -0.00013476444700801827,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": -0.5248604674653584
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 (and supporting check); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day unusual move in the short direction > 0",
+    "value": 0.005589897617253487,
+    "passed": true
+  },
+  "counts": {
+    "independent days with a negative forecast": 633,
+    "cases (bars with a negative forecast)": 1326
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The profile is read from the recorded regime and an up-day from the raw value > 0; the slope's t is an OLS slope with standard error clustered by calendar day (correction G/(G-1)), the supporting check is the plain mean over all cases of -(next-day return - drift), and the plan's '30 independent days' minimum is the number of distinct days with a negative forecast, whose shortfall gives 'not observable'."
+}

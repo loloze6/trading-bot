@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per short case, short direction, before costs",
+    "value": 0.003214176098198293,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.0837935023628837
+    },
+    "threshold": "day-clustered t >= 2 to confirm, <= -2 to reject, on at least 100 cases over at least 30 days"
+  },
+  "supporting_check": {
+    "name": "mean unusual short move of top third of |forecast| minus bottom third",
+    "value": -0.0017351840979550957,
+    "passed": false
+  },
+  "counts": {
+    "cases": 3132,
+    "days": 1206
+  },
+  "decided_by": "The main measure's t is strictly between -2 and 2.",
+  "reading": "Situation = close above the previous close inside the window (raw rank > 0 on a window's first bar), side short; a case is the first short bet in each 5-bar grid cell of its window (bet = |forecast| rising >= 2 from its lowest level on the short side since the last bet, reset after flat or side change), its return taken from that bar's close 5 bars ahead inside the window; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the thirds are the n//3 cases with the largest and smallest |forecast|."
+}

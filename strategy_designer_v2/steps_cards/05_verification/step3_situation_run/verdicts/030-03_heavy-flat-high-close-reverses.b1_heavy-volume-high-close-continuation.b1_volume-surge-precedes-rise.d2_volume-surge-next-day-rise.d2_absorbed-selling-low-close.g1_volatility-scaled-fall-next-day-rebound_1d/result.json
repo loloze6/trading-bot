@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return on case bars (close[t+1]/close[t]-1 minus coin mean daily return)",
+    "value": 0.006879239861387029,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.2952899309353865
+    },
+    "threshold": "mean above 0 with t >= 2 (and supporting check) confirms; below 0 with t <= -2 rejects; at least 30 case days"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return, split at median forecast",
+    "value": -0.00012155182438787493,
+    "passed": false
+  },
+  "counts": {
+    "cases (case days)": 200,
+    "case bars": 492
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Cases are bars in regime mean_reversion with forecast > 0 and a next bar in the same window; the t uses per-day sums of the excess returns over the case days; the median split puts forecasts above the median in the upper half and at or below it in the lower half (>= vs < if the upper half would be empty)."
+}

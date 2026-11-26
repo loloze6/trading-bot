@@ -1,0 +1,31 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess gain of position x (next-day return - XMR mean daily return)",
+    "value": 0.0015469739756530047,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.137118801032432
+    },
+    "threshold": "t >= 2 (with the supporting check) confirms, t <= -2 rejects, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "fall-side slope larger in size than rise-side slope, both negative (|fall| - |rise|)",
+    "value": 0.0058964535114582745,
+    "passed": true,
+    "fall_slope": -0.008126539182003968,
+    "rise_slope": -0.002230085670545693
+  },
+  "counts": {
+    "bars with a non-zero position": 2887,
+    "bars in the main measure": 2897,
+    "bars with z < 0": 1355,
+    "bars with z > 0": 1539
+  },
+  "decided_by": "The mean excess gain has t >= 2 (4.14) and the fall-side reversal slope exceeds the rise-side one, both negative.",
+  "reading": "Every bar with a non-zero volatility-scaled return z (fade_move's raw value) is a bar of the situation, on the side opposite to z's sign; the excess gain is taken on every bar with a next-day return in its window, the coin's mean daily return is the mean of all next-day returns over all windows, the minimum count is of bars with a non-zero postRebalance_current_allocation, and the slopes are ordinary least-squares slopes of next-day return on raw z."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean of sign(forecast) x (5-bar return minus coin's mean 5-bar return)",
+    "value": 0.007446392982529557,
+    "statistic": {
+      "name": "t of weighted mean, cases of one day pooled",
+      "value": 1.7078792241545069
+    },
+    "threshold": "confirm: > 0 with t >= 2 and convexity check passes; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-minus-lower half mean signed excess return per unit |raw position|",
+    "value": 0.0005020579105677946,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 3435,
+    "distinct days": 506
+  },
+  "decided_by": "The t is between -2 and 2 (or sign and t disagree), which the plan calls inconclusive.",
+  "reading": "Grid at positions 0,5,10,... of each window with cases where forecast != 0; coin mean 5-bar return taken over that same grid on all its windows; t is cluster-robust by calendar day; halves split at the median |raw| (ties to the lower half) and 'per unit' is the half's mean signed excess return (unweighted) divided by its mean |raw|; calm is regime not 'chop'."
+}

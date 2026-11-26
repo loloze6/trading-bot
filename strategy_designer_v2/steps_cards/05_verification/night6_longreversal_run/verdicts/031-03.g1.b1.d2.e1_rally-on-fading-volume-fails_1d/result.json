@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 14-bar unusual move (return minus drift, sign flipped)",
+    "value": 0.0009927246001574534,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 0.09413902073231997
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "correlation of signal-bar forecast with 14-bar excess return",
+    "value": 0.010761840487664766,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1225,
+    "distinct days": 645
+  },
+  "decided_by": "t lies between -2 and 2, so the idea is neither confirmed nor rejected.",
+  "reading": "Situation recomputed as close[t]/close[t-14]-1 > 0 and the recorded 'dry' raw volume ratio (recomputed 14/30 mean volume - 1 where not recorded) < 0, expected side short, with active bars whose 14-bar return cannot be computed inside the window left out of the agreement; a case is the first short bet (short forecast deepening by >= 2 points from its lowest short level since the last bet, reset at flat or side change) in each 14-bar grid cell of a window, counted only if its 14-bar forward return lies inside the window, drift is the coin's mean non-overlapping 14-bar return over all its windows, the day-clustered t uses a G/(G-1) correction, and fewer than 30 distinct days is reported as not observable."
+}

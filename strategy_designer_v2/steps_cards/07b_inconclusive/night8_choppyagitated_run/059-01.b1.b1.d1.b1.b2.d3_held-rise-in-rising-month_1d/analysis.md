@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month_1d
+idea tested: 059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5295 USD
+---
+## Findings
+- **F1:** The test's own measure finds no grading. In folds B and C, the 30 tested grid cases (forecast > 0) have a 7-day slope t of -0.01, against step 5's 0.15 over 108 cases. The top forecast quartile earns the least: +2.9 % excess over 7 days, against +9.5 % in the bottom quartile.
+- **F2:** The positive mean of the tested cases comes from one window. The 30 cases earn +7.0 % excess over 7 days (t 2.53). w18 alone gives 11 cases at +17.2 % (t 3.16). Without w18, the 16 remaining cases earn +0.4 % (t 0.16), with a slope t of 0.29.
+- **F3:** By year, the same split shows. 2021 has 15 cases at +14.3 % excess (t 3.22). 2018 is at -7.0 % over 3 cases and 2019 at -0.4 % over 7 cases. The continuation is a feature of one rising year, not of the choppy calm situation.
+- **F4:** Longer horizons give the same picture. The tested cases earn +10.8 % excess over 21 days (t 2.28, 25 cases), but the slope t is only 1.09. Without w18, the 14 cases earn +2.2 % (t 0.36).
+- **F5:** All weekly rises in the choppy calm profile, without the close-at-the-top and rising-month conditions, still do not grade clearly.
+- **F6:** The rising-month condition carries nothing outside w18. Among the profile's rises, the 30-day return grades the 7-day excess with a t of 2.06. Without w18, that t falls to 0.44, and the top 30-day-return tercile earns -1.8 %.
+- **F7:** The full-sample size is small and uncertain. Over all folds, the unusual move is +1.30 % per case over 7 days (t 1.41, 231 days, 344 cases), 0.096 of a usual move. The slope that should carry the idea is at zero, so it is not a result on the idea's side that falls short of the bar.
+
+## Ideas
+- No ideas: the theme's effect is not in the data. The test's main measure (the grading slope) is at zero (F1, F7), and no condition, horizon or side shows it clearly (F4, F5, F6). The only continuation seen is confined to one window and year, w18 in 2021 (F2, F3), which is a period and not a situation in a coin's bars.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

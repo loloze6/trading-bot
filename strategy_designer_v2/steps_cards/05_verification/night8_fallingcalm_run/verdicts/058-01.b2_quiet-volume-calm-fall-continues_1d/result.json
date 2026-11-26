@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (-forecast/10) x 5-bar excess return on grid bars with forecast < 0",
+    "value": -0.00589598915071215,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.6781470635348122
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "trending grid cases: excess return of quieter half minus heavy-volume (forecast 0) cases < 0",
+    "value": 0.003388579081923815,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast < 0": 385,
+    "days of those cases": 178,
+    "heavy-volume cases for the check": 59
+  },
+  "decided_by": "The main measure's t is between -2 and 2.",
+  "reading": "The 30-day fall is taken from closes when 30 prior bars exist in the window and from regime 'trending' otherwise; the coin's mean 5-bar return is the mean of its grid returns over all windows; the check's excess return is unweighted and the median is over negative forecasts of trending grid cases; the day-clustered t uses a n_days/(n_days-1) correction."
+}

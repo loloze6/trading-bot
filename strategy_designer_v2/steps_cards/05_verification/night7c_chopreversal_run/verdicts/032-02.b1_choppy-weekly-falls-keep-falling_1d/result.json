@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move of short cases (short direction)",
+    "value": 0.010642707852869518,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 1.4113810041788541
+    },
+    "threshold": "mean > 0 with t >= 2 (and supporting check) confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "stronger minus weaker (above vs at/below median forecast size) mean unusual move",
+    "value": -0.005596883958371986,
+    "passed": false
+  },
+  "counts": {
+    "cases": 441,
+    "distinct days": 350
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation = 7-bar close return < 0 (from prices) and chop.last_history_value < 0.3 (prices if missing) and the volatility-percentile condition read from regime == mean_reversion (it cannot be rebuilt from a window's prices), short side expected; cases = first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet) per 7-bar grid cell of each window, drift = coin's mean non-overlapping 7-bar grid return over all its windows, day-clustered t with G/(G-1) correction, forecast size = |forecast| at the signal bar."
+}

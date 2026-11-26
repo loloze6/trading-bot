@@ -1,41 +1,43 @@
-# BreakoutInMeanRangesComponent: brief_absorption_run | 030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d2_absorption-in-volatile-markets.g1_wide-range-low-close-rebound_1d | CloseDepthBelowDayHighInPriorRangesComponent
+# BreakoutInMeanRangesComponent: night7_steadydecline_run | 036-02_fall-vs-range-next-day-rebound_1d | FallInMeanBarRanges
 
 ## attempt 1
 
 answer: built
 class: BreakoutInMeanRangesComponent
-settings: {"period": 1, "base_period": 20, "side": "below", "high_current": 1, "base_exclude_current": 1}
-reason: No component gives a high-to-close distance in mean bar ranges with the high taken on bar t and a base of the 20 bars before t. `BreakoutInMeanRangesComponent` "below" computes this measure, the close's depth under a high counted in mean bar ranges, but its high always excludes bar t and its base always includes bar t. The class is written again with two settings, `high_current` and `base_exclude_current`, whose defaults (0) keep today's output unchanged.
+settings: {"period": 1, "base_period": 30, "side": "below", "high_current": 0, "base_exclude_current": 1, "source": "close"}
+reason: `BreakoutInMeanRangesComponent` already measures how far the close sits below a prior reference level, counted in mean bar ranges, and it already offers the 30-day base that excludes bar t. Its level can only be a high, though, so it cannot give the close-to-close fall. A `source` setting ("high" by default, which keeps today's output) lets the level be the prior closes, and with `period` 1 that level is close[t-1].
 
 table: Directional components
-row: | `BreakoutInMeanRangesComponent` | `period` (12), `base_period` (180), `side` ("above"), `high_current` (0), `base_exclude_current` (0) | `side` "above": max(0, close[t] − H) / B. `side` "below": max(0, H − close[t]) / B. H = max(high[t-`period`..t-1]) (`high_current` 0) or max(high[t-`period`+1..t]) (`high_current` 1). B = mean(high[i] − low[i]) over bars t-`base_period`+1 .. t (`base_exclude_current` 0, bar t included) or t-`base_period` .. t-1 (`base_exclude_current` 1, bar t excluded). 0.0 when B = 0. With `period` 1, `base_period` 20, `side` "below", `high_current` 1 and `base_exclude_current` 1: (high[t] − close[t]) / mean(high[i] − low[i], i = t-20 .. t-1) | 0 and up, unbounded above, never negative; no direction. "above": 0 when the close is at or below H, growing linearly with the size of the break (always 0 with `high_current` 1, since close[t] ≤ high[t]). "below": 0 when the close is at or above H, growing linearly as the close sits deeper below it. With `base_exclude_current` 0 the "below" value with `period` 1 and `high_current` 1 is at most `base_period`; with 1 it is unbounded | graded | mean bar ranges | max(`base_period` + `base_exclude_current`, `period` + 1 − `high_current`) (180) | close, high, low. A NaN high in the stretch, a NaN high or low in the base rows, or a NaN close[t] gives NaN. These settings raise when the component is built: `period` < 1, `base_period` < 1, `side` other than "above" or "below", `high_current` not 0 or 1, `base_exclude_current` not 0 or 1 | stateless. `side` "above" with `high_current` 0 and `base_exclude_current` 0 (the defaults) is the original output, unchanged. With `high_current` 0 the stretch excludes bar t, so bar t's own move cannot change H. `high_current` 1 lets H include bar t; with `period` 1 it is the bar's own high. `base_exclude_current` 1 sets the distance against the prior `base_period` bars' mean range, so bar t's own range cannot raise its base. On 1d bars, `period` 1, `base_period` 20, "below", 1, 1 give the close's distance under the day's high in prior 20-day mean ranges: the range ratio × (high − close) / (high − low). B = 0 needs `base_period` zero-range bars in a row and reads 0.0. Continuous in the close. Not `NarrowRangeBreakoutComponent`. No `scaling_factor`: scale it with transforms |
+row: | `BreakoutInMeanRangesComponent` | `period` (12), `base_period` (180), `side` ("above"), `high_current` (0), `base_exclude_current` (0), `source` ("high") | `side` "above": max(0, close[t] − H) / B. `side` "below": max(0, H − close[t]) / B. H = max(X[t-`period`..t-1]) (`high_current` 0) or max(X[t-`period`+1..t]) (`high_current` 1), where X is the high (`source` "high") or the close (`source` "close"). B = mean(high[i] − low[i]) over bars t-`base_period`+1 .. t (`base_exclude_current` 0, bar t included) or t-`base_period` .. t-1 (`base_exclude_current` 1, bar t excluded). 0.0 when B = 0. With `period` 1, `base_period` 20, `side` "below", `high_current` 1 and `base_exclude_current` 1: (high[t] − close[t]) / mean(high[i] − low[i], i = t-20 .. t-1). With `period` 1, `base_period` 30, `side` "below", `high_current` 0, `base_exclude_current` 1 and `source` "close": max(0, close[t-1] − close[t]) / mean(high[i] − low[i], i = t-30 .. t-1) | 0 and up, unbounded above, never negative; no direction. "above": 0 when the close is at or below H, growing linearly with the size of the break (always 0 with `high_current` 1, since close[t] ≤ H). "below": 0 when the close is at or above H, growing linearly as the close sits deeper below it. With `base_exclude_current` 0, the "below" value with `period` 1 and `high_current` 1 is at most `base_period`; with 1 it is unbounded | graded | mean bar ranges | max(`base_period` + `base_exclude_current`, `period` + 1 − `high_current`) (180; 31 at the wished settings) | close, high, low. A NaN value of the `source` column in the stretch, a NaN high or low in the base rows, or a NaN close[t] gives NaN. These settings raise when the component is built: `period` < 1, `base_period` < 1, `side` other than "above" or "below", `high_current` not 0 or 1, `base_exclude_current` not 0 or 1, `source` other than "high" or "close" | stateless. `side` "above" with `high_current` 0, `base_exclude_current` 0 and `source` "high" (the defaults) is the original output, unchanged. `source` "high" is the original level. `source` "close" takes the level from the prior closes, and no config step gives it, hence the setting. With `period` 1 and `high_current` 0, that level is close[t-1], so "below" is the day's close-to-close fall in prior mean daily ranges (0 on up days, above 1 when the fall exceeds the usual range). With `high_current` 0 the stretch excludes bar t, so bar t's own move cannot change H. `high_current` 1 lets H include bar t. `base_exclude_current` 1 sets the distance against the prior `base_period` bars' mean range, so bar t's own range cannot raise its base. B = 0 needs `base_period` zero-range bars in a row and reads 0.0. Continuous in the close. Not `NarrowRangeBreakoutComponent`. No `scaling_factor`: scale it with transforms |
 
 ```python class
 class BreakoutInMeanRangesComponent(SubStrategyComponent):
     """
-    The close's distance beyond or under a high, counted in mean bar ranges, on every bar:
+    Distance of the close from a reference level, counted in mean bar ranges:
 
-        stretch:  high_current = 0 (default): H = max(high[t - period .. t - 1])    (bar t excluded)
-                  high_current = 1:           H = max(high[t - period + 1 .. t])    (bar t included)
-        base:     base_exclude_current = 0 (default): B = mean(high[i] - low[i]), i = t - base_period + 1 .. t
-                  base_exclude_current = 1:           B = mean(high[i] - low[i]), i = t - base_period .. t - 1
-        side = "above" (default): raw_value = max(0, close[t] - H) / B
-        side = "below":           raw_value = max(0, H - close[t]) / B
-        raw_value = 0.0 when B = 0
+        X = high   (source "high", default)  or  close  (source "close")
+        H = max(X[t-period .. t-1])        (high_current 0, default: bar t excluded)
+            max(X[t-period+1 .. t])        (high_current 1: bar t included)
+        B = mean(high[i] - low[i]) over i = t-base_period+1 .. t   (base_exclude_current 0, default)
+                                     over i = t-base_period .. t-1 (base_exclude_current 1)
+        side "above" (default): raw_value = max(0, close[t] - H) / B
+        side "below":           raw_value = max(0, H - close[t]) / B
+        raw_value = 0.0 when B = 0.
 
-    The defaults (side "above", high_current 0, base_exclude_current 0) are the original output, unchanged.
-    With period 1, base_period 20, side "below", high_current 1 and base_exclude_current 1 the output is
-    (high[t] - close[t]) / mean(high[i] - low[i], i = t-20 .. t-1): 0 with the close at the bar's high, growing
-    as the close sits lower in a bar whose range is wide against the prior 20 bars' mean range.
-    Range: 0 and up, unbounded above, never negative; no direction; graded (linear in the close).
+    The defaults (side "above", high_current 0, base_exclude_current 0, source "high") are the
+    original output, unchanged. With period 1, base_period 30, side "below", high_current 0,
+    base_exclude_current 1 and source "close" the output is
+    max(0, close[t-1] - close[t]) / mean(high[i] - low[i], i = t-30 .. t-1): the day's close-to-close
+    fall in prior 30-day mean daily ranges, which is 0 on up days.
+    Range: 0 and up, unbounded above, never negative; no direction. Graded, linear in the close.
     Warm-up: max(base_period + base_exclude_current, period + 1 - high_current) rows, bar t included.
-    NaN: a NaN high in the stretch, a NaN high or low in the base rows, or a NaN close[t] gives NaN.
-    B = 0 (base_period zero-range bars in a row, never on real bars) reads 0.0.
-    Building the component raises for period < 1, base_period < 1, a side other than "above" or "below",
-    a high_current or base_exclude_current other than 0 or 1.
+    NaN: a NaN source value in the stretch, a NaN high or low in the base rows, or a NaN close[t]
+    gives NaN. Building raises for period < 1, base_period < 1, side not "above"/"below",
+    high_current or base_exclude_current not 0/1, source not "high"/"close".
 
-    WHY THIS CANNOT LEAK: it reads only the high, low and close of the rows up to and including bar t (the last
-    row of data): highs of bars t-period .. t, lows and highs of bars t-base_period-1 .. t at most, and close[t].
+    WHY THIS CANNOT LEAK: it reads only the rows up to and including bar t (the last row of data).
+    These are the stretch rows t-period .. t (at most), the base rows t-base_period .. t, and close[t].
+    All of them are known at bar t's close.
     """
 
     def __init__(self, name="BreakoutInMeanRanges", weight=1.0, parameters=None):
@@ -49,18 +51,20 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
         self.side = self.parameters.get("side", "above")
         if self.side not in ("above", "below"):
             raise ValueError(f"BreakoutInMeanRangesComponent: side must be 'above' or 'below', got {self.side!r}")
-        hc = self.parameters.get("high_current", 0)
-        if isinstance(hc, bool):
-            hc = int(hc)
-        if hc not in (0, 1):
-            raise ValueError(f"BreakoutInMeanRangesComponent: high_current must be 0 or 1, got {hc!r}")
-        self.high_current = int(hc)
-        bx = self.parameters.get("base_exclude_current", 0)
-        if isinstance(bx, bool):
-            bx = int(bx)
-        if bx not in (0, 1):
-            raise ValueError(f"BreakoutInMeanRangesComponent: base_exclude_current must be 0 or 1, got {bx!r}")
-        self.base_exclude_current = int(bx)
+
+        def _flag(key):
+            v = self.parameters.get(key, 0)
+            if isinstance(v, bool):
+                v = int(v)
+            if v not in (0, 1):
+                raise ValueError(f"BreakoutInMeanRangesComponent: {key} must be 0 or 1, got {v!r}")
+            return int(v)
+
+        self.high_current = _flag("high_current")
+        self.base_exclude_current = _flag("base_exclude_current")
+        self.source = self.parameters.get("source", "high")
+        if self.source not in ("high", "close"):
+            raise ValueError(f"BreakoutInMeanRangesComponent: source must be 'high' or 'close', got {self.source!r}")
         self._raw_value = 0.0
 
     def update(self, data):
@@ -69,35 +73,38 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        high = data['high'].astype(float).to_numpy()
-        low = data['low'].astype(float).to_numpy()
-        close = data['close'].astype(float).to_numpy()
-        n = len(close)
+        n = len(data)
+        close = data["close"].astype(float)
+        high = data["high"].astype(float)
+        low = data["low"].astype(float)
+        src = close if self.source == "close" else high
+
         if self.high_current == 1:
-            stretch = high[n - self.period:n]
+            stretch = src.iloc[n - self.period:n]
         else:
-            stretch = high[n - 1 - self.period:n - 1]
-        b_stop = n - self.base_exclude_current
-        b_start = b_stop - self.base_period
-        bh = high[b_start:b_stop]
-        bl = low[b_start:b_stop]
-        c = close[-1]
-        if np.isnan(stretch).any() or np.isnan(bh).any() or np.isnan(bl).any() or np.isnan(c):
+            stretch = src.iloc[n - 1 - self.period:n - 1]
+        if self.base_exclude_current == 1:
+            b_hi = high.iloc[n - 1 - self.base_period:n - 1]
+            b_lo = low.iloc[n - 1 - self.base_period:n - 1]
+        else:
+            b_hi = high.iloc[n - self.base_period:n]
+            b_lo = low.iloc[n - self.base_period:n]
+        c = float(close.iloc[-1])
+
+        if stretch.isna().any() or b_hi.isna().any() or b_lo.isna().any() or np.isnan(c):
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
-        H = float(np.max(stretch))
-        B = float(np.mean(bh - bl))
+        H = float(stretch.max())
+        B = float((b_hi.to_numpy() - b_lo.to_numpy()).mean())
         if B == 0:
-            value = 0.0
+            self._raw_value = 0.0
         elif self.side == "above":
-            value = max(0.0, c - H) / B
+            self._raw_value = float(max(0.0, c - H) / B)
         else:
-            value = max(0.0, H - c) / B
-        self._raw_value = float(value)
+            self._raw_value = float(max(0.0, H - c) / B)
         self.confidence = 1.0
-        self.debug_info = {'H': H, 'B': B, 'close': float(c), 'side': self.side,
-                           'high_current': self.high_current, 'base_exclude_current': self.base_exclude_current}
+        self.debug_info = {"level": H, "mean_bar_range": B, "source": self.source, "side": self.side}
 
     def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -108,38 +115,32 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
 
 ```python hand
 def hand(df, params):
-    period = int(params.get("period", 12))
-    base_period = int(params.get("base_period", 180))
+    p = int(params.get("period", 12))
+    bp = int(params.get("base_period", 180))
     side = params.get("side", "above")
     hc = int(params.get("high_current", 0))
-    bx = int(params.get("base_exclude_current", 0))
-    h = [float(x) for x in list(df["high"])]
-    l = [float(x) for x in list(df["low"])]
-    c = [float(x) for x in list(df["close"])]
-    t = len(c) - 1
-    # the high's stretch
-    if hc == 1:
-        idx = [t - k for k in range(period)]            # t-period+1 .. t
-    else:
-        idx = [t - 1 - k for k in range(period)]        # t-period .. t-1
-    highs = [h[i] for i in idx]
-    # the base of mean bar ranges
-    end = t - bx
-    bidx = [end - k for k in range(base_period)]
-    ranges = []
-    for i in bidx:
-        if h[i] != h[i] or l[i] != l[i]:
+    bex = int(params.get("base_exclude_current", 0))
+    source = params.get("source", "high")
+    closes = [float(x) for x in list(df["close"])]
+    highs = [float(x) for x in list(df["high"])]
+    lows = [float(x) for x in list(df["low"])]
+    t = len(closes) - 1
+    xs = closes if source == "close" else highs
+
+    # reference level: stretch ends at t-1 (hc 0) or at t (hc 1), p bars long
+    end = t if hc == 1 else t - 1
+    level_vals = [xs[i] for i in range(end - p + 1, end + 1)]
+    # base: bp bar ranges ending at t (bex 0) or t-1 (bex 1)
+    bend = t - bex
+    ranges = [highs[i] - lows[i] for i in range(bend - bp + 1, bend + 1)]
+    c = closes[t]
+    for v in level_vals + ranges + [c]:
+        if v != v:
             return float("nan")
-        ranges.append(h[i] - l[i])
-    for x in highs:
-        if x != x:
-            return float("nan")
-    if c[t] != c[t]:
-        return float("nan")
-    H = highs[0]
-    for x in highs:
-        if x > H:
-            H = x
+    H = level_vals[0]
+    for v in level_vals:
+        if v > H:
+            H = v
     total = 0.0
     for r in ranges:
         total += r
@@ -147,9 +148,9 @@ def hand(df, params):
     if B == 0:
         return 0.0
     if side == "above":
-        d = c[t] - H
+        d = c - H
     else:
-        d = H - c[t]
+        d = H - c
     if d < 0:
         d = 0.0
     return d / B
@@ -157,4 +158,4 @@ def hand(df, params):
 
 checks:
 BreakoutInMeanRangesComponent: every check passed
-the bot's suite: == 1640 passed, 16 skipped, 75 deselected, 2244 warnings in 73.12s (0:01:13) ===
+the bot's suite: == 1657 passed, 16 skipped, 75 deselected, 2244 warnings in 118.55s (0:01:58) ==

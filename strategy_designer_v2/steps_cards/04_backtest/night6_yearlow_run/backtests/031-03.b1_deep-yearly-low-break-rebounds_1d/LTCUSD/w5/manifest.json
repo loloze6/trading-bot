@@ -1,0 +1,144 @@
+{
+  "run_id": "20261124T003102Z_bc044dcc",
+  "created_utc": "2026-11-24T00:31:03.306186+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "low",
+          "class": "strategies.strategy_components.DistanceFromHighComponent",
+          "params": {
+            "period": 365,
+            "source": "close",
+            "exclude_current": 1,
+            "form": "percent",
+            "extreme": "low"
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "low",
+                "op": "lt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "depth",
+              "class": "strategies.strategy_components.DistanceFromHighComponent",
+              "params": {
+                "period": 365,
+                "source": "close",
+                "exclude_current": 1,
+                "form": "percent",
+                "extreme": "low"
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 365,
+                    "min_periods": 91
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 10
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "bc044dcc7f87c8b849dd5ad302c03340acb39561d1cf5d5800646049ef8e182b",
+  "data": {
+    "symbols": [
+      "LTCUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2020-10-29 00:00:00",
+    "end": "2023-08-31 00:00:00",
+    "bar_count": 1037,
+    "data_sha256": "196e3eb5deb427aaee8522fe2a563ec6212115d56feb35e2d4d8869d426caf3b"
+  },
+  "git_sha": "337ee40c75484e53b3312f88e3382c72bb4798a9-dirty",
+  "engine": {
+    "lookback": 366,
+    "warmup": 366
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

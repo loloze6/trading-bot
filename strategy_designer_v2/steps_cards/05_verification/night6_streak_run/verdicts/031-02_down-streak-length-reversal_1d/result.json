@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast (grid, pooled)",
+    "value": -0.0004320034626874159,
+    "statistic": {
+      "name": "slope t, day-clustered (same-day cases summed)",
+      "value": -1.2652867317323817
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move over long cases (forecast rises >= 2)",
+    "value": 0.0006420650038728621,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with a forecast above 0": 1759,
+    "distinct days of those grid bars": 485,
+    "grid bars in regression": 3419,
+    "supporting cases": 3232
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The regression is OLS with intercept of every grid bar's (positions 0,5,10,... per window) excess 5-bar return (minus the coin's mean grid 5-bar return over all windows) on its forecast, with standard errors from scores summed per UTC day (G/(G-1) correction); cases are the first long-side forecast rise of >= 2 from its lowest level since the last bet in each grid cell, measured from that bar's close; the minimum counts use grid bars with forecast > 0 and a valid forward return, and a shortfall is reported as 'not observable'."
+}

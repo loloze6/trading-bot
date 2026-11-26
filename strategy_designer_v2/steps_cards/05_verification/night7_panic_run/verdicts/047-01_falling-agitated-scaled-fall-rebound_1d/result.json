@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move after forecast > 0 (long), minus the coin's normal 3-day drift",
+    "value": 0.007109018774817119,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed per day",
+      "value": 0.9468733514358902
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 case-days and slope > 0; reject: mean < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of unusual move on forecast, > 0",
+    "value": 0.0009977593678247153,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 223,
+    "cases": 454,
+    "active bars": 1482
+  },
+  "decided_by": "t lies between -2 and 2: inconclusive.",
+  "reading": "Situation bars are taken as regime 'unknown' (the profile left by the vetoes) with a negative scaled_fall raw value (or a negative close-to-close return where unrecorded), side long; cases are grid bars 0,3,6,... of each window with forecast > 0 and a close 3 bars later in the same window, drift is the coin's mean 3-bar return on that grid over all its windows, and t uses the standard error from per-day summed deviations with the number of distinct case days as n."
+}

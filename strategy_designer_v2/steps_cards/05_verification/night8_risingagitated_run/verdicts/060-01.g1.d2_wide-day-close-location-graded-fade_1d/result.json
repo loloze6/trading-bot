@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess fall (short-signed return minus coin mean daily return) on case bars",
+    "value": 0.00903956283654824,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.231381631259457
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess fall on abs(forecast)",
+    "value": 0.0010637090807728022,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 236,
+    "case bars": 378
+  },
+  "decided_by": "Mean excess fall above 0 with t >= 2 and a positive slope on abs(forecast): the confirm rule.",
+  "reading": "Cases are every bar with forecast < 0 (1-bar horizon, so every bar is on the grid), the drift is the coin's mean 1-bar return over all its windows, the day-grouped t sums the deviations per UTC day, the slope is an ordinary least-squares slope required only to be > 0, and the 30-day minimum maps to 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.005429 on the check folds against +0.00904 on every fold",
+    "main": 0.005428568127036828,
+    "statistic": 1.0498263878573173,
+    "counts": {
+      "distinct case days": 141,
+      "case bars": 218
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed 7-bar unusual move (return minus coin's normal 7-bar drift)",
+    "value": -0.010966431767398003,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.9941428733253603
+    },
+    "threshold": "confirm t >= 2 with rank correlation > 0; reject t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of |forecast| with short-signed unusual move",
+    "value": -0.05178438170200782,
+    "passed": false
+  },
+  "counts": {
+    "cases": 400,
+    "distinct days": 175
+  },
+  "decided_by": "The t of the mean short-signed unusual move lies between -2 and 2.",
+  "reading": "The situation is read as bars the detector labels mean_reversion (its rules are er <= 0.3 and vp >= 0.5, the Fidelity's thresholds; the detector's components are not recorded and the 365-day percentile cannot be rebuilt from 120-bar windows) with a positive scaled 7-day rise (raw value, or the 7-day price return where missing), expected side short; cases are grid bars 0,7,14,... per window with forecast < 0 and a full 7-bar return inside the window; drift is the coin's mean 7-bar return on the same grid over all its windows; the t uses a day-clustered standard error with a G/(G-1) correction; the plan's 'fewer than 30 cases or days' rule is treated as a minimum count (not observable)."
+}

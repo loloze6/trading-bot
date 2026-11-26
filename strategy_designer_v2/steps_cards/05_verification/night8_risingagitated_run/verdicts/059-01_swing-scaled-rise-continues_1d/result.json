@@ -1,0 +1,32 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess return on forecast",
+    "value": 0.0003417153847680705,
+    "statistic": {
+      "name": "slope t",
+      "value": 2.0759034241099634
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 3419
+  },
+  "decided_by": "Confirmed on every fold, but the main measure points the other way on the check folds (A, D), the years step 7 does not explore: main measure -0.0001029 on the check folds against +0.0003417 on every fold.",
+  "reading": "All grid bars count as cases, flat forecasts included. Positions 0, 5, 10, ... of each window are used where a 5-bar-ahead close exists. The drift is each coin's mean grid return over all its windows. The t is the ordinary OLS slope t, and fewer than 300 cases is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": false,
+    "why": "main measure -0.0001029 on the check folds against +0.0003417 on every fold",
+    "main": -0.00010293242278393374,
+    "statistic": -0.5267042919579024,
+    "counts": {
+      "grid cases": 1709
+    }
+  }
+}

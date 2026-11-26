@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "031-01.g1_wide-day-low-close-rebounds_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43761340000000004,
+  "findings": {
+    "F1": "The book fails on Calmar (0.694 against 0.75): its deepest fall is \u221216.4 % against a yearly return of +11.4 %, and this fall builds across w20 to w22 (window falls of \u221214.0 %, \u221216.1 % and \u221216.4 %). In those windows the 85 cases had a mean next-day return of \u22120.16 %, were held at a larger mean allocation (1.19 against 1.02 over all cases) and sat in calmer coins (mean coin-volatility quartile 1.14 against 1.45).",
+    "F2": "The idea's move depends on how volatile the coin has been. Split by each coin's own 20-day volatility quartile, the cases' excess next-day return rises from \u22120.21 % (t \u22120.53, 129 cases) to +0.52 % (t 1.44, 141), then +1.39 % (t 3.70, 130), then +3.78 % (t 4.52, 115).",
+    "F3": "The volatility condition alone does not earn. On days with no signal, the same quartiles give excess next-day returns of \u22120.08 %, \u22120.06 %, \u22120.08 % and +0.07 % (t 0.69 in the top quartile, about 3,500 days each). The rise belongs to the wide low-close day in a volatile coin, which fits the brief: a failed push only exhausts sellers when the push is large.",
+    "F4": "The volatility-target sizing puts most money where the effect is absent. The lowest-volatility cases carry the largest mean allocation (1.38) and the highest-volatility cases the smallest (0.72). By allocation quartile, the excess return falls from +3.16 % (t 4.66) in the smallest quarter to +0.15 % (t 0.42) in the largest. The 15 worst cases by P&L were held at 1.33 against 1.02 on average, and in calmer coins (volatility quartile 0.92 against 1.45).",
+    "F5": "A proxy of the same book with fees of 0.19 % per trade reproduces the record: Calmar 0.69, deepest fall \u221216.5 %, Sharpe 0.97.",
+    "F6": "Holding longer does not help. The second day after a case adds \u22120.26 % (t \u22121.04), so the rebound is spent in one day.",
+    "F7": "How far the drop is normalised changes the picture. Measured against the coin's own volatility, the drop does not grade the move (quartile means +1.56 %, +1.06 %, +0.56 %, +1.93 %), and large normalised drops without the signal earn \u22120.02 % (t \u22120.09, 566 days). Measured in raw percent, the largest drops give +2.96 % (t 4.16) against about +0.7 % to +1.2 % for the rest. The raw size of the move carries the effect, not its size relative to volatility."
+  },
+  "ideas": [
+    {
+      "idea": "After a day whose high-low range is wide compared with its average daily range over the past 20 days and whose close lands near the day's low, the coin rises over the next 1 day, and this rise in percent is larger the higher the coin's daily volatility over the past 20 days is against its own usual level. The rise grows faster than that volatility, so the most volatile coins give the largest rebound per unit of risk.",
+      "consequence": "A trader buying the wide low-close day should take a larger position, not a smaller one, when the coin has been volatile, and refuse the trade or keep it small when the coin has been calm.",
+      "name": "rebound grows with volatility",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "After a day whose high-low range is wide compared with its average daily range over the past 20 days and whose close lands near the day's low, only while the coin's 20-day daily volatility is high against its own usual level, the coin rises over the next 1 day. The wider that day's range against its 20-day average and the closer its close to the low, the larger the rise.",
+      "consequence": "A trader buys the wide low-close day for one day only in a coin that has recently been volatile, which avoids the calm-market cases that made up the book's deepest fall.",
+      "name": "wide low-close in volatile coins",
+      "from": "F1, F2, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "After a day whose high-low range is wide compared with its average daily range over the past 20 days and whose close lands near the day's low, the coin rises over the next 1 day, more the larger that day's fall in percent.",
+      "consequence": "A trader buys the wide low-close days that fell the most in percent for a one-day rebound, and gives less weight to those that fell little.",
+      "name": "deeper wide-day fall rebounds more",
+      "from": "F2, F7",
+      "refs": [
+        "F2",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1.d1_rebound-grows-with-volatility",
+    "031-01.g1.d2_wide-low-close-in-volatile-coins",
+    "031-01.g1.d3_deeper-wide-day-fall-rebounds-more"
+  ],
+  "no_ideas": null
+}

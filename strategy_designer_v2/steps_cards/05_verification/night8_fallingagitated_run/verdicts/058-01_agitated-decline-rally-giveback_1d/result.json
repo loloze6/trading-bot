@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move in the short direction per short-bet case",
+    "value": 0.0033249698648167426,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.4852582525425398
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "share given back, top minus bottom half of |forecast|, Welch t",
+    "value": -1.8681676663351732,
+    "passed": false
+  },
+  "counts": {
+    "cases": 422,
+    "distinct days": 244,
+    "top half cases": 203,
+    "bottom half cases": 202
+  },
+  "decided_by": "Inconclusive: enough cases, but the numbers meet neither the confirm rule (both t >= 2) nor the reject rule (either t <= -2).",
+  "reading": "A case is the first short bet (|forecast| rising >= 2 from its lowest size since the last bet, reset at flat or side change) in each 5-bar grid cell of a window, the share given back is the short-direction unusual move over the 3-day price rise to that bar, and the halves are split by sorting cases on |forecast| (ties by time) with the lower floor(n/2) as the bottom half."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 30-day excess return on forecast, regime grid bars",
+    "value": -0.007597067834671049,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.46389765237203767
+    },
+    "threshold": "confirm: slope > 0 with t >= 2.0; reject: slope < 0 with t <= -2.0; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 30-day return on forecast <= -2 cases below 0",
+    "value": 0.060731667956476595,
+    "passed": false
+  },
+  "counts": {
+    "regime grid cases": 57,
+    "short-bet cases (forecast <= -2)": 16
+  },
+  "decided_by": "The slope's |t| is below 2.0.",
+  "reading": "The rise regime is read from the recorded `regime` column (the detector's 90-day/365-day component is not recorded and its 455-bar history cannot be rebuilt inside a window), the volume drop from vol_drop's raw value below 0, the expected side short; regime grid cases include bars with forecast 0; the coin's mean 30-day return is taken over the 30-bar grid of all its windows; the plan's 'fewer than 30 regime grid cases' is applied as a minimum count (not observable)."
+}

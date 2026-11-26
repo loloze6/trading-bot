@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "040-02_falling-calm-range-scaled-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45212260000000004,
+  "findings": {
+    "F1": "Inside the falling calm profile, the 3-day grid points where the coin had fallen over the last 3 days were followed by a 3-day unusual move of -2.02 % (day-clustered t -2.82, 139 days); the falls held in both halves of the shown windows (w7\u2013w12 -1.60 %, t -3.36, 200 cases; w13\u2013w18 -2.72 %, t -3.27, 119 cases) and on all six coins (-0.74 % for BTC to -3.17 % for ETH).",
+    "F2": "Grading the size of the fall does not add to this: among in-profile falls, the slope of the unusual 3-day move on the range-scaled 3-day return is 0.0030 (clustered t 0.31, 319 cases); the three lowest in-profile quintiles give a similar -1.84 %, -2.41 % and -1.62 % (t -2.28, -3.46, -2.19), against +0.16 % and +1.15 % for the two highest.",
+    "F3": "Across all in-profile grid points, the unusual 3-day move rises with the range-scaled 3-day return (slope 0.0092, clustered t 1.68, 537 cases, 194 days; t 2.30 in w13\u2013w18 but 0.17 in w7\u2013w12); so the tested idea's main measure, read on its standardised forecast, came out only +0.64 % (t 1.59).",
+    "F4": "Out of profile there is no such continuation: the bottom quintile of the scaled 3-day return gives +0.61 % (t 1.10), the top quintile +1.03 % (t 2.03), and the slope is 0.0044 (clustered t 1.03, 1,724 cases).",
+    "F5": "After the largest one-day falls (bottom seventh of the day's return over the 30-day daily standard deviation), the next day's unusual return is +0.82 % (day-clustered t 2.34, 319 days, 993 cases).",
+    "F6": "This rebound held in both halves of the shown windows (+0.83 %, t 3.87; +0.82 %, t 2.69), in falling, rising and choppy 60-day trends alike (+0.83 %, +0.95 %, +0.76 %, t 2.4 to 2.7) and on all six coins (+0.23 % for BTC to +1.21 % for XMR).",
+    "F7": "The rebound is graded: on down days, the slope of the next day's unusual return on the scaled one-day move is -0.0071 (clustered t -2.00, 3,417 cases, 874 days), larger falls being followed by larger rebounds, while up days show no slope (0.0014, t 0.75). It fades over 3 days (+0.94 %, t 1.67 on the 3-day grid).",
+    "F8": "The book's best fifth of active days came when the coin fell 5.17 % on the day after a 3-day fall of 8.05 %, and its worst fifth when the coin rose 4.77 %. The yearly return was +2.2 %: per coin, LTC and ETH gained (+0.44 and +0.46 summed) while BTC lost (-0.40), so the shorts paid in falls but the forecast picked too few of them."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a coin whose 3-day return is negative keeps falling over the next 3 days, by more the larger its 3-day fall in percent.",
+      "consequence": "In calm downtrends a trader should short the coin after any 3-day decline and hold for three days, rather than wait for an unusually large fall.",
+      "name": "calm downtrend falls persist",
+      "from": "F1, F2, F3, F4, F8",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F8"
+      ]
+    },
+    {
+      "idea": "A coin whose one-day return is a large fall in units of its 30-day daily return standard deviation rises over the next day, by more the larger that scaled fall.",
+      "consequence": "A trader can buy a coin at the close of a day of unusually sharp decline for a one-day rebound, whatever its trend, and should refuse to short into such a close.",
+      "name": "sharp daily drop rebounds",
+      "from": "F5, F6, F7",
+      "theme": "discovery",
+      "refs": [
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "040-02.g1_calm-downtrend-falls-persist"
+  ],
+  "discovery_ids": [
+    "040-02.g2_sharp-daily-drop-rebounds"
+  ],
+  "no_ideas": null
+}

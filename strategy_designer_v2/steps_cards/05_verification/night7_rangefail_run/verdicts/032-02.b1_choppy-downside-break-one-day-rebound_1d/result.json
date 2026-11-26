@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move (return minus coin's mean daily return) over bars with forecast > 0",
+    "value": 0.011889783210147834,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.9794215652781346
+    },
+    "threshold": "confirm: mean > 0 with t >= 2.0 and slope > 0; reject: mean < 0 with t <= -2.0; else inconclusive; fewer than 30 distinct days: inconclusive"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day unusual move on forecast",
+    "value": 0.0039913907708510705,
+    "passed": true
+  },
+  "counts": {
+    "cases": 124,
+    "distinct days": 94
+  },
+  "decided_by": "The t lies between -2.0 and 2.0 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "The situation is checked as close < min(low of prior 20 bars) (raw depth value < 0, recomputed from prices where not recorded) on the long side, without re-testing the choppy profile the code adds; the next-day return of a window's last bar is left out; the day-clustered t sums the cases' deviations per UTC day with a D/(D-1) correction; the plan's own 'fewer than 30 distinct days' rule is treated as the minimum count and reported as not observable."
+}

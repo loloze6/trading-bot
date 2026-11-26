@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 14-bar return",
+    "value": 0.044868789906862105,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day pooled",
+      "value": 1.2566026284948404
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 14-bar return on forecast",
+    "value": 0.006229150777634462,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 180,
+    "distinct days": 79
+  },
+  "decided_by": "t between -2 and 2: neither the confirm nor the reject rule is met",
+  "reading": "grid at positions 0,14,28,... of each window with the 14-bar return inside the window; drift = coin's mean 14-bar return on that grid over all its windows; t = weighted mean over a standard error from the forecast-weighted deviations summed per UTC day (with G/(G-1) correction); the plan's 'fewer than 30 grid bars or 20 days' is treated as a minimum count, giving 'not observable'; profile read from the regime column 'unknown'."
+}

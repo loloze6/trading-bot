@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar return of long bets over the coin's mean 10-bar return",
+    "value": -0.015554982984366776,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": -0.5519157402926007
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 over >= 30 cases; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of recovered share (excess / depth) on depth (t)",
+    "value": 0.7307168518758711,
+    "passed": false
+  },
+  "counts": {
+    "cases": 61,
+    "days": 39,
+    "cases with depth": 61
+  },
+  "decided_by": "Inconclusive rule: the main t is between -2 and 2 and no reject rule is met.",
+  "reading": "A case is the first long bet (forecast rise >= 2 points from its lowest long level since the last bet, reset to 0 when flat) in each non-overlapping 10-bar grid cell from each window's first row, kept only when 10 bars remain in the window; the coin's mean 10-bar return is taken on the same grid over all its windows; the day-clustered t sums deviations per UTC day with a G/(G-1) correction; the slope t is OLS; situation bars use the 60-bar ER recomputed from closes (SMA-5 smoothing), falling back on the recorded regime where the window is too short, and the recorded depth (else recomputed from prior 60-bar lows); fewer than 30 cases is reported 'not observable' per the workflow's minimum-count rule."
+}

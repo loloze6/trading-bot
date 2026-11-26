@@ -1,0 +1,38 @@
+{
+  "line": "7.g",
+  "backtest": "069-02.d2_agitated-below-high-up-day-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3741365,
+  "findings": {
+    "F1": "In the agitated bars (regime not \"chop\") of folds B and C, up days were followed by a next-day excess return of -0.62 % (t -2.38, day-clustered, 1589 cases), while calm up days were followed by only -0.12 % (t -0.71, 2095 cases), so the giveback lives in agitated markets.",
+    "F2": "Inside agitated up days, the giveback sits almost entirely in falling markets: up days after a 30-day fall (below -7 %) were followed by -1.16 % (t -2.50, 510 cases), up days in a choppy 30-day trend by -0.70 % (t -1.54, 158 cases), and up days after a 30-day rise by +0.00 % (t 0.01, 630 cases). This is a proxy; the profile's own 60-day \u00b110 % trend was not measured.",
+    "F3": "The agitated up-day giveback points the same way in every year (2018 -1.28 %, 2019 -0.44 %, 2020 -0.45 %, 2021 -0.60 %), in 9 of the 12 windows, and on all six coins (BTC -0.32 % to ZEC -1.11 %; ETH, XMR and ZEC each with t below -2).",
+    "F4": "The grading the tested idea claims is weak on the bars: across agitated up days, the slope of the next-day excess on the close's place in its 20-day range is +1.23 % per unit of range (t 1.21), in the idea's direction but not clear of chance. The slope on the day's own scaled rise runs the other way (+0.49 % per unit, t 1.40), and the largest sixth of rises was followed by +0.04 % (t 0.07), against -0.65 % to -1.06 % for the middle sixths.",
+    "F5": "The book's short positions held after agitated up days earned their side of the move: on those 1494 cases the next day's excess was -0.70 % (t -2.60). The 95 up days the book did not hold short were followed by +0.58 % (t 0.67), so the book is not losing its edge by missing cases.",
+    "F6": "The mirror effect was the stronger one, but it is already held. Agitated down days were followed by +0.60 % (t 1.86, 1546 cases), and the larger the scaled fall, the larger the rebound (slope -1.41 % per unit, t -2.15). The map already lists 12 long strategies in falling agitated markets, so this is not a discovery.",
+    "F7": "The other angles did not stand out once the number of angles looked at is counted. Weekday means ranged from -0.44 % to +0.37 % with every |t| at most 1.10. The day's range size and the close's place inside the day's range showed no monotonic grading; the one notable cell, agitated up days closing at the bottom of the day's range, held only 40 cases at -1.43 % (t -1.18)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, when a coin closes up on the day, the further that close sits below its 20-day high, measured in units of its 20-day daily swing, the larger its fall over the next day.",
+      "consequence": "A trader keeps the short fade of deep up-day closes for coins that have fallen over the past two months and swing more than usual, and refuses it after a rise, where the giveback did not appear.",
+      "name": "falling agitated up-day fade",
+      "from": "F1, F2, F3, F5",
+      "profile": "falling agitated",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "069-02.d2.g1_falling-agitated-up-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

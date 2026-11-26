@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.g1.g3_calm-big-fall-rebounds_1d
+idea tested: 061-01.g1.g3_calm-big-fall-rebounds
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3293 USD
+---
+## Findings
+- **F1:** The tested idea's own side shows no rebound graded by the fall. On calm down days over 10 days, the day-summed slope of excess return on the day's move in 30-day swing units has t 0.19 (61 days), with a mean excess of -1.20 %. Over 5 days it is t 0.19 (135 days), mean excess -1.19 %. By coin, the correlation runs from -0.14 to +0.03, and the mean excess is negative on 5 of 6 coins. This matches step 5's slope t of 0.74 and mean excess of -1.07 %.
+- **F2:** The brief's own effect, follow-through after a large day in a calm market, shows on the up side. On calm up days, the day-summed slope of excess return on the rise in swing units is 0.0315 with t 3.44 over 5 days (123 days, mean excess +1.50 %). Over 10 days it is 0.0504 with t 2.40 (55 days, mean excess +1.15 %).
+- **F3:** The up-side follow-through lives in calm markets only. On agitated up days the same slope is t -0.38 over 5 days (92 days) and t -1.11 over 10 days (42 days). This is the restriction the brief states.
+- **F4:** The up-side effect is graded but carried by the largest days. Calm up days above 2 swings have a mean 10-day excess of +14.96 % (14 cases). Days of 1 to 2 swings have +1.08 % (33 cases), and days under 1 swing are near 0 (+0.12 % and -0.94 %).
+- **F5:** The up-side effect is spread but uneven. Over 10 days the slope is positive on 5 of 6 coins, with t from 0.47 to 4.37 (XRP 4.37, ETH 1.90) and ZEC at -0.20. Over 5 days it is positive on 5 of 6 coins, with ZEC at -1.46. By year it is positive in 2018 (t 2.63), 2020 (t 1.97) and 2021 (t 0.85), and flat in 2019 (t -0.15).
+
+## Ideas
+- `061-01.g1.g3.b1_calm-big-rise-continues` (from F1, F2, F3, F4, F5): In a calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the more it keeps rising over the next 5 days.
+- `061-01.g1.g3.b2_calm-big-rise-ten-days` (from F2, F3, F4): In a calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the more it keeps rising over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,320 @@
+{
+  "core": {
+    "net_return_pct": -8.188,
+    "sharpe": -4.033,
+    "max_drawdown_pct": -8.15,
+    "trade_count": 8,
+    "win_rate": 12.5,
+    "avg_trade_net_pnl": -10.319372,
+    "fees_paid": 1.725702,
+    "gross_pnl": -80.82927,
+    "net_pnl": -82.554972,
+    "cost_drag_pct": 2.135,
+    "forecast_return_corr": -0.290042,
+    "forecast_return_corr_pvalue": 0.179436,
+    "forecast_return_corr_pvalue_block_adjusted": 0.183802,
+    "forecast_return_corr_n_eff": 24,
+    "forecast_return_corr_all_bars": -0.131544,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.154775,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.8333,
+    "avg_trade_duration_bars": 3.5,
+    "sigma_bar_bps": 309.7584,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 168.0807,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 9.0854,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=-0.2900, p=0.1838 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -420.5565,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -420.5565,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 42.0556,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=-0.2900, p=0.1838 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 121,
+      "avg_forecast": 1.127356,
+      "trade_count": 8,
+      "total_net_pnl": -82.554973
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 2,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -22.2036,
+      "avg_pnl_per_trade_usd": -11.1018
+    },
+    "10_to_15": {
+      "total_forecasts": 1,
+      "profitable_trades": 1,
+      "success_rate_pct": 100.0,
+      "total_net_pnl_usd": 0.7111,
+      "avg_pnl_per_trade_usd": 0.7111
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 5,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -61.0624,
+      "avg_pnl_per_trade_usd": -12.2125
+    }
+  },
+  "dynamic": {
+    "debug_info.components.dist200.last_history_value": {
+      "unknown": {
+        "mean": -2.361461,
+        "std": 5.088595
+      }
+    },
+    "debug_info.components.dist200.post_pipeline_value": {
+      "unknown": {
+        "mean": 1.127356,
+        "std": 3.406145
+      }
+    },
+    "debug_info.components.dist200.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.dist200.weighted_contribution": {
+      "unknown": {
+        "mean": 1.127356,
+        "std": 3.406145
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00148386,
+      "forward_return_std": 0.03085032,
+      "n_bars": 120,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -8.7959,
+    "sharpe": -2.3929,
+    "sortino": -2.6944,
+    "exposure_pct": 13.2231,
+    "turnover": 3.611717,
+    "n_bars_total": 121,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 14,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 20,
+    "events": [
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-05-07 00:00:00",
+        "previous_timestamp": "2015-05-05 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-05-14 00:00:00",
+        "previous_timestamp": "2015-05-11 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 259200.0,
+        "bars_missing": 2,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-05-17 00:00:00",
+        "previous_timestamp": "2015-05-14 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 259200.0,
+        "bars_missing": 2,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-05-22 00:00:00",
+        "previous_timestamp": "2015-05-20 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-05-29 00:00:00",
+        "previous_timestamp": "2015-05-27 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-06-04 00:00:00",
+        "previous_timestamp": "2015-06-02 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-06-11 00:00:00",
+        "previous_timestamp": "2015-06-04 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 604800.0,
+        "bars_missing": 6,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-06-14 00:00:00",
+        "previous_timestamp": "2015-06-11 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 259200.0,
+        "bars_missing": 2,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-06-16 00:00:00",
+        "previous_timestamp": "2015-06-14 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-06-24 00:00:00",
+        "previous_timestamp": "2015-06-22 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-06-27 00:00:00",
+        "previous_timestamp": "2015-06-25 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-07-21 00:00:00",
+        "previous_timestamp": "2015-07-19 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-07-28 00:00:00",
+        "previous_timestamp": "2015-07-26 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-07-31 00:00:00",
+        "previous_timestamp": "2015-07-29 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-08-06 00:00:00",
+        "previous_timestamp": "2015-08-02 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 345600.0,
+        "bars_missing": 3,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-09-09 00:00:00",
+        "previous_timestamp": "2015-09-06 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 259200.0,
+        "bars_missing": 2,
+        "tier": "middle",
+        "active_tier": "middle"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-09-27 00:00:00",
+        "previous_timestamp": "2015-09-25 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-10-25 00:00:00",
+        "previous_timestamp": "2015-10-23 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2015-12-20 00:00:00",
+        "previous_timestamp": "2015-12-18 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2016-09-11 00:00:00",
+        "previous_timestamp": "2016-09-09 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

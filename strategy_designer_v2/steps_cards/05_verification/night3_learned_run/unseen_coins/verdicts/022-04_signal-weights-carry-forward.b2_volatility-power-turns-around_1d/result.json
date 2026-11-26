@@ -1,0 +1,38 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9999232952366341,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean timing gain per case, 5-bar non-overlapping grid, before costs",
+    "value": 0.000806811926480081,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.6347699145549526
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean timing gain positive in at least 4 of the 6 coins",
+    "value": 6,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases across all coins and windows": 2477,
+    "cases AAVEUSD": 228,
+    "cases ADAUSD": 396,
+    "cases AVAXUSD": 161,
+    "cases DOGEUSD": 297,
+    "cases INJUSD": 190,
+    "cases LINKUSD": 330,
+    "cases NEARUSD": 107,
+    "cases SOLUSD": 184,
+    "cases SUIUSD": 71,
+    "cases TRXUSD": 284,
+    "cases UNIUSD": 229,
+    "coins with positive mean timing gain": 6
+  },
+  "decided_by": "t between -2 and 2.",
+  "reading": "A case is a grid bar (positions 0,5,10,... of each window) with non-zero post-trade position and a full 5-bar forward return inside the window; the coin's mean 5-bar return is the mean over the same grid in all its windows; a coin with no cases counts as not positive; the plan's 'fewer than 300 cases' is reported as not observable, per the workflow's rule on minimum counts; the situation check counts active bars with non-zero raw value whose forecast sign is opposite to it."
+}

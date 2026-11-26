@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 20-day unusual move on the case's forecast",
+    "value": -0.003388438692543543,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": -0.5673621319697097
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with mean unusual move > 0); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual 20-day move over all cases > 0",
+    "value": 0.04828855228809126,
+    "passed": true
+  },
+  "counts": {
+    "cases": 255,
+    "distinct days": 196
+  },
+  "decided_by": "The slope t lies between -2 and 2: inconclusive.",
+  "reading": "The breakout is recomputed from the window's own closes where 60 prior closes exist in the window and read from the recorded regime ('trending') on earlier bars; a case is the first bet (a rise of the long forecast of at least the default 2-point band from its low since the last bet) in each 20-bar grid cell of a window, on a break bar, with a full 20-bar return inside the window; the normal drift is the coin's mean 20-bar return on the grid of all its windows; the slope t uses OLS with standard errors clustered by UTC day; the plan's 'fewer than 30 cases or days' rule is reported as 'not observable'."
+}

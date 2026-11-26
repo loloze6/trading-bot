@@ -1,0 +1,25 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation_1d
+idea tested: 032-01.b1.b1.e2.d1_raw-scaled-weekly-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5961 USD
+---
+## Findings
+- **F1:** The continuation lives only where the 7-day move points the same way as the coin's 30-day return. On in-regime grid cases those agreeing cases gave an unusual move of +3.77 % over 7 days (t 4.92, 344 cases), against +0.32 % (t 0.48, 556 cases) when the two disagreed. The disagreeing cases are 62 % of the signals, so they fill the book with trades worth less than the 0.19 % cost.
+- **F2:** Inside the agreeing cases the effect is graded. By tercile of the absolute scaled move it rose from +1.42 % (t 1.03, 97) to +3.74 % (t 2.67, 112) to +5.47 % (t 4.54, 135). With disagreement the terciles read +0.91 %, −1.58 %, +1.42 %, all |t| < 1.
+- **F3:** The 30-day sign is not an effect of its own. Following it in the regime when the 7-day move disagrees earned −0.18 % (t −0.21, 268 cases), so it belongs to the idea as a stronger case of the same trendless swing. The theory expects a choppy-range move that carries the month's lean to be the one that follows through.
+- **F4:** The book's losses sit in shorts against the 30-day return. They held −0.066 % per bar over 2087 bars, while shorts with the 30-day return made +0.061 % (1839) and longs with it +0.315 % (1832). Over the whole book, shorts earned −0.0066 % per bar (3926 bars) and longs +0.195 % (3703). Short trades averaged −2.54 % net (1743 trades) and long trades +3.23 % (1343).
+- **F5:** Outside the choppy regime, following the scaled 7-day move went the wrong way in the three lower size quartiles: −3.20 %, −3.62 % and −5.66 % (t −1.83, −1.91, −2.65; 56, 44 and 53 cases). Yet the book held 1174 position-bars with the regime off, because of the 7-bar minimum hold and the sizing. Its shorts there lost −0.127 % per bar (571 bars).
+- **F6:** The effect strengthened in later years, and holding beat the book in the worst window. Agreeing cases gave +1.75 % (t 1.03) in 2018, +0.95 % (t 0.91) in 2019, +5.36 % (t 3.47) in 2020 and +6.51 % (t 3.99) in 2021. The book's deepest fall of −27.7 % came in w17, where it averaged −0.038 % a day against holding's +0.419 %.
+- **F7:** A longer horizon does not help. At 14 days the agreeing cases gave +2.95 % (t 1.78, 154 cases), less sure than the 7-day reading.
+
+## Ideas
+- `032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean` (from F1, F2, F3, F4): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way as that 7-day move. The larger that scaled 7-day move, the larger the following move.
+- `032-01.b1.b1.e2.d1.d2_continuation-held-only-in-chop` (from F5, F4): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while the past 30 days are still going back and forth at each day's close. The larger that scaled 7-day move, the larger the following move.
+- `032-01.b1.b1.e2.d1.d3_aligned-continuation-inside-chop` (from F1, F2, F3, F4, F5, F6): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way and the past 30 days are still going back and forth at each day's close. The larger that scaled 7-day move, the larger the following move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

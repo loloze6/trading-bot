@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 2-bar excess return on forecast, forecast>0 grid cells",
+    "value": 0.0003428574232546687,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.205794304614817
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and weighted mean excess > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 2-bar return",
+    "value": 0.002833952831923284,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with a positive forecast": 1879
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Grid cells start at positions 0, 2, 4, ... of each window and need t+2 inside it; the coin's mean 2-bar return is the mean over all its grid cells in all windows; the regression pools all coins; agitated is the recorded regime not being 'chop'."
+}

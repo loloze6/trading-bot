@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 041-01_agitated-fall-rise-vs-swing-giveback_1d
+idea tested: 041-01_agitated-fall-rise-vs-swing-giveback
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5576 USD
+---
+## Findings
+- **F1:** In the falling agitated profile, down days are followed by a graded bounce: the slope of the next-day excess return on the day's return over its 30-day swing is -0.0204 (t -2.40, clustered by day, 560 cases), and the mean next-day excess is +1.37 % (t 3.06), about 7 times the 0.19 % cost of a trade.
+- **F2:** The tested side, the up-day giveback, is not graded: on up days in the same profile the slope is +0.0048 (t 0.79, 542 cases). The next day is lower on average (mean excess -0.86 %, t -2.03), but it does not grow with the rise, which is why the tested idea came out inconclusive (t 0.27).
+- **F3:** The bounce rises with the size of the fall: by quartile of the scaled fall, the next-day excess is +0.08 %, +1.45 %, +1.41 % and +2.56 % (136 to 142 cases each).
+- **F4:** On those down days, the day's high-low range over the 30-day swing grades the bounce more firmly than the close-to-close fall:
+- **F5:** The scaled-fall slope leans on one period: in 2020 it is +0.0349 (t 8.09), and in w16 it is t 7.82 with 116 cases. Without 2020 it falls to t 1.49, and without w16 to t 1.78. The other years and windows are positive but small (t -0.72 to 1.41).
+- **F6:** The bounce points the same way on every coin: the slope on the scaled fall is positive on all six coins (t 0.98 to 2.77), and the mean next-day excess runs from +0.78 % (BTC) to +2.23 % (LTC).
+- **F7:** The bounce lives in the falling agitated profile. Outside it, down days show no bounce:
+- **F8:** The bounce is spent after one day: on falling agitated down days, the day-2 slope is +0.0047 (t 0.61) and the day-2 mean excess is -0.25 % (t -0.60).
+- **F9:** The short-only book earns little from this profile: Sharpe 0.27 against holding's 0.57, and +1.5 % a year. 88 % of its worst-quintile bars and 96 % of its best-quintile bars fall in the profile, so its swings are this profile's up-day noise, with no graded edge.
+
+## Ideas
+- `041-01.g1_wide-down-day-range-bounce` (from F4, F1, F7, F8): In a falling, agitated market, the wider a down day's high-to-low range against the coin's 30-day standard deviation of daily returns, the larger the coin's rise over the next day.
+- `041-01.g2_agitated-fall-scaled-bounce` (from F1, F3, F5, F6, F7, F8): In a falling, agitated market, the larger a one-day fall against the coin's 30-day standard deviation of daily returns, the larger the coin's rise over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered t of the slope of next-day unusual return on forecast (forecast > 0 bars)",
+    "value": 0.0004204975774414454,
+    "statistic": {
+      "name": "day-clustered t of the slope",
+      "value": 3.299920023220412
+    },
+    "threshold": "slope t >= 2 with mean unusual move > 0 confirms; slope t <= -2 or mean unusual move t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move > 0 (t 1.516, day-clustered)",
+    "value": 0.001575584365399906,
+    "passed": true
+  },
+  "counts": {
+    "case bars": 8489,
+    "distinct days": 2196
+  },
+  "decided_by": "Confirm: the slope t is 2 or more and the mean unusual move of the cases is above 0.",
+  "reading": "Cases are all bars with forecast > 0 and a next bar in the same window (horizon 1 bar, so every bar is its own grid cell); the regression is OLS with an intercept and Stata-style day-clustered standard errors; the mean unusual move's t sums the cases' deviations per UTC day.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003456 on the check folds against +0.0004205 on every fold",
+    "main": 0.0003455848452049234,
+    "statistic": 2.5791394854215572,
+    "counts": {
+      "case bars": 4236,
+      "distinct days": 1147
+    }
+  }
+}

@@ -1,0 +1,151 @@
+M4  per profile named: verdicts, cases, t (positive = the idea's way)
+                          tested  confirmed  inconclusive  rejected  not observable  median cases  median t  t 1 to 2
+arm     profile                                                                                                      
+control -                   82.0       19.0          57.0       0.0             1.0         298.0      1.32      22.0
+new     -                   36.0       22.0          12.0       0.0             0.0        2879.5      2.50       8.0
+        agitated            20.0       13.0           6.0       0.0             0.0        2808.5      2.61       4.0
+        calm                 7.0        1.0           6.0       0.0             0.0        1093.0      1.48       5.0
+        choppy              10.0        0.0          10.0       0.0             0.0         746.5      1.15       4.0
+        choppy agitated      2.0        0.0           2.0       0.0             0.0           NaN     -0.92       0.0
+        falling              5.0        0.0           4.0       0.0             0.0        1572.0     -0.18       1.0
+        falling agitated    18.0        8.0           7.0       0.0             0.0        1467.0      2.62       2.0
+        falling calm         5.0        0.0           5.0       0.0             0.0         677.0      1.59       5.0
+        rising              14.0        7.0           7.0       0.0             0.0         989.0      2.17       3.0
+
+M5  distinct effects among confirmed books, per profile (one effect = daily returns correlated at 0.7 or more)
+                          confirmed  effects  profitable_effects
+arm     profile                                                 
+control -                        19        6                   3
+new     -                        22        4                   2
+        agitated                 13        3                   1
+        calm                      1        1                   1
+        falling agitated          8        1                   1
+        rising                    7        2                   2
+   control -                 032-01.b1.b1.e2_choppy-market-weekly-move-continues (10); 032-02.b1.e2_tight-range-breakouts-continue (3); 032-02.b2.g1_close-location-next-day-reversal (3); 032-02.g1.e2.e1_new-closing-high-continuation (1); 032-02.b2_volatile-low-next-day-rebound (1); 032-02.b2.g2_volatile-close-near-low-rebound (1)
+   new     -                 035-01_falling-agitated-scaled-fall-rebound (14); 038-01_rising-market-scaled-rally-continuation (4); 039-01_agitated-low-close-next-day-rebound (3); 033-02_close-near-high-gives-back (1)
+   new     agitated          035-01_falling-agitated-scaled-fall-rebound (9); 039-01_agitated-low-close-next-day-rebound (3); 037-01_agitated-ordinary-rise-next-day-giveback (1)
+   new     calm              038-01_rising-market-scaled-rally-continuation (1)
+   new     falling agitated  035-01_falling-agitated-scaled-fall-rebound (8)
+   new     rising            038-01_rising-market-scaled-rally-continuation (6); 045-01_rising-market-late-week-gain (1)
+
+M6  profiles combined (cannot hold on the same coin-day): ['falling agitated', 'rising']; books and weights: 041-03_agitated-fall-drop-vs-range-rebound 0.50, 034-02_rising-break-swings-continues 0.25, 045-01_rising-market-late-week-gain 0.25
+          period                                         what  sharpe  yearly  worst_fall
+       backtests         profile 'agitated' alone (1 effects)    1.12   0.171       0.145
+       backtests             profile 'calm' alone (1 effects)    1.19   0.126       0.166
+       backtests profile 'falling agitated' alone (1 effects)    1.13   0.136       0.168
+       backtests           profile 'rising' alone (2 effects)    1.44   0.162       0.126
+       backtests                     S: the profiles combined    1.77   0.153       0.101
+       backtests   old code: its 3 profitable confirmed books    1.16   0.253       0.194
+       backtests                   P4: the 20 portfolio books    1.64   0.103       0.059
+       backtests             P4 and S, equal capital per book    1.71   0.105       0.058
+       backtests                     correlation of S with P4    0.45     NaN         NaN
+unseen_2016_2017         profile 'agitated' alone (1 effects)    0.77   0.149       0.183
+unseen_2016_2017             profile 'calm' alone (1 effects)    1.86   0.271       0.113
+unseen_2016_2017 profile 'falling agitated' alone (1 effects)    1.10   0.012       0.008
+unseen_2016_2017           profile 'rising' alone (2 effects)    2.43   0.495       0.133
+unseen_2016_2017                     S: the profiles combined    2.49   0.234       0.068
+unseen_2016_2017   old code: its 3 profitable confirmed books    3.67   1.841       0.147
+unseen_2016_2017                   P4: the 20 portfolio books    1.08   0.068       0.110
+unseen_2016_2017             P4 and S, equal capital per book    1.21   0.075       0.104
+unseen_2016_2017                     correlation of S with P4    0.48     NaN         NaN
+     unseen_2026         profile 'agitated' alone (1 effects)    0.28   0.037       0.155
+     unseen_2026             profile 'calm' alone (1 effects)    2.21   0.242       0.037
+     unseen_2026 profile 'falling agitated' alone (1 effects)   -0.33  -0.080       0.151
+     unseen_2026           profile 'rising' alone (2 effects)    1.33   0.132       0.044
+     unseen_2026                     S: the profiles combined    0.29   0.026       0.080
+     unseen_2026   old code: its 3 profitable confirmed books    1.11   0.175       0.071
+     unseen_2026                   P4: the 20 portfolio books   -0.73  -0.031       0.048
+     unseen_2026             P4 and S, equal capital per book   -0.66  -0.028       0.047
+     unseen_2026                     correlation of S with P4    0.35     NaN         NaN
+
+M7  profitable specialists: their profile's share of coin-days and their result, per period
+                                                  idea          profile           period  coin-days  share in profile  days in a position  sharpe  yearly  worst_fall
+        033-03.b2_rising-market-range-top-continuation           rising        backtests      17524              0.39                9035    0.92   0.204       0.235
+        033-03.b2_rising-market-range-top-continuation           rising unseen_2016_2017       2924              0.62                2165    3.42   1.697       0.157
+        033-03.b2_rising-market-range-top-continuation           rising      unseen_2026       1926              0.35                 846    1.73   0.407       0.071
+                  034-02_rising-break-swings-continues           rising        backtests      37254              0.39                9039    1.35   0.158       0.111
+                  034-02_rising-break-swings-continues           rising unseen_2016_2017       2924              0.62                1028    2.81   0.804       0.157
+                  034-02_rising-break-swings-continues           rising      unseen_2026       6099              0.32                 883    1.51   0.121       0.024
+034-01.e1_rising-market-breakout-distance-continuation           rising        backtests      37254              0.39                7388    1.30   0.118       0.072
+034-01.e1_rising-market-breakout-distance-continuation           rising unseen_2016_2017       2924              0.62                 837    2.77   0.588       0.090
+034-01.e1_rising-market-breakout-distance-continuation           rising      unseen_2026       6099              0.32                 841    1.82   0.125       0.016
+                    034-01.b1_nearness-to-high-10-days           rising        backtests      37254              0.39               21195    1.25   0.177       0.149
+                    034-01.b1_nearness-to-high-10-days           rising unseen_2016_2017       2924              0.62                2280    3.06   1.057       0.189
+                    034-01.b1_nearness-to-high-10-days           rising      unseen_2026       6099              0.32                2488    0.92   0.077       0.037
+                035-01.b1_calm-market-nearness-to-high             calm        backtests      32269              0.55               20891    1.19   0.126       0.166
+                035-01.b1_calm-market-nearness-to-high             calm unseen_2016_2017       1826              0.47                 832    1.86   0.271       0.113
+                035-01.b1_calm-market-nearness-to-high             calm      unseen_2026       6099              0.64                4417    2.21   0.242       0.037
+           035-01_falling-agitated-scaled-fall-rebound falling agitated        backtests      17163              0.16                1706    1.05   0.107       0.138
+           035-01_falling-agitated-scaled-fall-rebound falling agitated unseen_2016_2017       1826              0.02                  13    0.87   0.005       0.005
+           035-01_falling-agitated-scaled-fall-rebound falling agitated      unseen_2026       1926              0.19                 276   -0.06  -0.027       0.132
+         043-01_falling-agitated-intraday-drop-rebound falling agitated        backtests      17163              0.16                1629    1.11   0.141       0.176
+         043-01_falling-agitated-intraday-drop-rebound falling agitated unseen_2016_2017       1826              0.02                  20    1.18   0.010       0.005
+         043-01_falling-agitated-intraday-drop-rebound falling agitated      unseen_2026       1926              0.19                 211   -0.26  -0.069       0.149
+       039-02.d1_wide-range-low-close-next-day-rebound         agitated        backtests      17163              0.45                9226    0.99   0.221       0.197
+       039-02.d1_wide-range-low-close-next-day-rebound         agitated unseen_2016_2017       1826              0.53                 922    1.26   0.393       0.225
+       039-02.d1_wide-range-low-close-next-day-rebound         agitated      unseen_2026       1926              0.39                 983   -0.23  -0.080       0.204
+               044-01_agitated-wide-range-fall-rebound         agitated        backtests      17163              0.45                4017    0.93   0.170       0.219
+               044-01_agitated-wide-range-fall-rebound         agitated unseen_2016_2017       1826              0.53                 503    0.83   0.186       0.173
+               044-01_agitated-wide-range-fall-rebound         agitated      unseen_2026       1926              0.39                 470    0.16   0.011       0.175
+                044-02_agitated-down-day-range-rebound         agitated        backtests      17163              0.45                3753    1.12   0.171       0.145
+                044-02_agitated-down-day-range-rebound         agitated unseen_2016_2017       1826              0.53                 433    0.77   0.149       0.183
+                044-02_agitated-down-day-range-rebound         agitated      unseen_2026       1926              0.39                 406    0.28   0.037       0.155
+                045-01_agitated-wide-low-close-rebound         agitated        backtests      17163              0.45                8183    0.93   0.196       0.213
+                045-01_agitated-wide-low-close-rebound         agitated unseen_2016_2017       1826              0.53                 920    1.46   0.448       0.196
+                045-01_agitated-wide-low-close-rebound         agitated      unseen_2026       1926              0.39                 793   -0.10  -0.050       0.204
+            047-01_falling-agitated-daily-fall-rebound falling agitated        backtests      17163              0.16                1745    1.08   0.118       0.147
+            047-01_falling-agitated-daily-fall-rebound falling agitated unseen_2016_2017       1826              0.02                  11    0.93   0.004       0.004
+            047-01_falling-agitated-daily-fall-rebound falling agitated      unseen_2026       1926              0.19                 279   -0.07  -0.031       0.130
+                 038-01_agitated-fall-next-day-rebound falling agitated        backtests      17163              0.16                1745    1.08   0.118       0.147
+                 038-01_agitated-fall-next-day-rebound falling agitated unseen_2016_2017       1826              0.02                  11    0.93   0.004       0.004
+                 038-01_agitated-fall-next-day-rebound falling agitated      unseen_2026       1926              0.19                 279   -0.07  -0.031       0.130
+                 038-02_agitated-fall-vs-swing-rebound falling agitated        backtests      17163              0.16                1706    1.05   0.107       0.138
+                 038-02_agitated-fall-vs-swing-rebound falling agitated unseen_2016_2017       1826              0.02                  13    0.87   0.005       0.005
+                 038-02_agitated-fall-vs-swing-rebound falling agitated      unseen_2026       1926              0.19                 276   -0.06  -0.027       0.132
+          039-02_agitated-range-fall-low-close-rebound         agitated        backtests      17163              0.45                3980    0.93   0.186       0.231
+          039-02_agitated-range-fall-low-close-rebound         agitated unseen_2016_2017       1826              0.53                 439    0.86   0.198       0.171
+          039-02_agitated-range-fall-low-close-rebound         agitated      unseen_2026       1926              0.39                 470   -0.01  -0.025       0.171
+            041-03_agitated-fall-drop-vs-range-rebound falling agitated        backtests      17163              0.16                1700    1.13   0.136       0.168
+            041-03_agitated-fall-drop-vs-range-rebound falling agitated unseen_2016_2017       1826              0.02                  17    1.10   0.012       0.008
+            041-03_agitated-fall-drop-vs-range-rebound falling agitated      unseen_2026       1926              0.19                 278   -0.33  -0.080       0.151
+                   045-01_rising-market-late-week-gain           rising        backtests      17524              0.39                1894    1.09   0.161       0.233
+                   045-01_rising-market-late-week-gain           rising unseen_2016_2017       2804              0.63                 522    1.10   0.221       0.138
+                   045-01_rising-market-late-week-gain           rising      unseen_2026       1926              0.35                 181    1.01   0.139       0.084
+  051-01_falling-agitated-scaled-fall-next-day-rebound falling agitated        backtests      17163              0.16                1706    1.05   0.107       0.138
+  051-01_falling-agitated-scaled-fall-next-day-rebound falling agitated unseen_2016_2017       1826              0.02                  13    0.87   0.005       0.005
+  051-01_falling-agitated-scaled-fall-next-day-rebound falling agitated      unseen_2026       1926              0.19                 276   -0.06  -0.027       0.132
+
+M8  confirmed specialists: days in a position inside the profile, in the holding period after it, beyond it
+                                                  idea          profile  days in a position  inside  outside, holding period  outside, beyond it  median size inside  median size beyond
+        033-03.b2_rising-market-range-top-continuation           rising                9035    0.75                     0.10                0.15               0.490               0.105
+                  034-02_rising-break-swings-continues           rising                9039    0.73                     0.08                0.19               0.204               0.084
+034-01.e1_rising-market-breakout-distance-continuation           rising                7388    0.74                     0.05                0.21               0.168               0.090
+                    034-01.b1_nearness-to-high-10-days           rising               21195    0.67                     0.16                0.17               0.220               0.081
+                035-01.b1_calm-market-nearness-to-high             calm               20891    0.80                     0.06                0.14               0.174               0.111
+           035-01_falling-agitated-scaled-fall-rebound falling agitated                1706    0.82                     0.01                0.17               0.273               0.038
+       037-01_agitated-ordinary-rise-next-day-giveback         agitated                3209    0.91                     0.01                0.08               0.175               0.037
+            039-01_agitated-low-close-next-day-rebound         agitated                9898    0.75                     0.01                0.23               0.099               0.045
+           040-01_agitated-daily-fall-next-day-rebound         agitated                4009    0.91                     0.01                0.08               0.300               0.052
+          039-02_agitated-high-close-next-day-giveback         agitated                9898    0.75                     0.01                0.23               0.099               0.045
+             042-01_falling-agitated-low-close-rebound falling agitated                2954    0.92                     0.01                0.08               0.388               0.088
+         043-01_falling-agitated-intraday-drop-rebound falling agitated                1629    0.88                     0.01                0.12               0.502               0.065
+       039-02.d1_wide-range-low-close-next-day-rebound         agitated                9226    0.80                     0.01                0.19               0.175               0.024
+               044-01_agitated-wide-range-fall-rebound         agitated                4017    0.88                     0.01                0.11               0.314               0.039
+                044-02_agitated-down-day-range-rebound         agitated                3753    0.98                     0.00                0.02               0.319               0.031
+                045-01_agitated-wide-low-close-rebound         agitated                8183    0.91                     0.00                0.08               0.264               0.064
+            047-01_falling-agitated-daily-fall-rebound falling agitated                1745    0.81                     0.01                0.18               0.301               0.041
+                    034-01_agitated-low-close-rebounds         agitated                9898    0.75                     0.01                0.23               0.099               0.045
+                 038-01_agitated-fall-next-day-rebound falling agitated                1745    0.81                     0.01                0.18               0.301               0.041
+          039-01_agitated-swing-fall-low-close-rebound         agitated                3962    0.92                     0.01                0.07               0.479               0.033
+                 038-02_agitated-fall-vs-swing-rebound falling agitated                1706    0.82                     0.01                0.17               0.273               0.038
+          039-02_agitated-range-fall-low-close-rebound         agitated                3980    0.92                     0.01                0.07               0.461               0.035
+            040-01_agitated-fall-size-next-day-rebound         agitated                4009    0.91                     0.01                0.08               0.300               0.052
+                 040-02_agitated-fall-vs-swing-rebound         agitated                3996    0.91                     0.01                0.08               0.264               0.044
+            041-03_agitated-fall-drop-vs-range-rebound falling agitated                1700    0.84                     0.01                0.15               0.431               0.069
+        038-01_rising-market-scaled-rally-continuation           rising                6160    0.78                     0.05                0.17               0.417               0.082
+                   045-01_rising-market-late-week-gain           rising                1894    1.00                     0.00                0.00               0.564                 NaN
+  051-01_falling-agitated-scaled-fall-next-day-rebound falling agitated                1706    0.82                     0.01                0.17               0.273               0.038
+        038-02_rising-market-range-scaled-continuation           rising                6105    0.79                     0.05                0.16               0.405               0.079
+inside                     0.82
+outside, holding period    0.01
+outside, beyond it         0.15

@@ -1,0 +1,63 @@
+{
+  "line": "7.b",
+  "backtest": "031-01_up-streak-length-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4371577,
+  "findings": {
+    "F1": "The graded part of the idea runs the wrong way, so the inconclusive result is mixed, not just small. In folds B and C at 5 days, up-close days whose streak ranks above 0.8 against the coin's past-year streaks were followed by rises beyond the drift: +2.6 % unusual (strength +0.19, t 1.99, 166 cases) for ranks 0.8\u20130.95 and +2.4 % (strength +0.22, t 2.07, 64 cases) above 0.95. Ranks at or below 0.5 were followed by falls of 1.3 % (strength \u22120.14, t \u22121.10, 80 cases). This matches step 5's failed supporting check (top third minus bottom third \u22120.17 % in the short direction).",
+    "F2": "The same continuation shows by forecast size. The top third of |forecast| had a long-direction strength of +0.18 (unusual +3.1 % raw mean return, t 2.56, 234 cases). The low and mid thirds were about zero (\u22120.01 and \u22120.02, t \u22120.18 and \u22120.39). So the strongest short signals are the ones most often wrong.",
+    "F3": "At 10 days the gradient is steeper and still continuation. Ranks above 0.95 gave strength +0.33 (unusual +5.0 %, t 2.50, 35 cases); ranks at or below 0.5 gave \u22120.46 (unusual \u22126.7 %, t \u22122.39, 40 cases). Another horizon does not rescue the reversal reading.",
+    "F4": "The continuation after long up streaks lives in rising markets (60-day return above +10 %). There, ranks above 0.8 gave strength +0.42 (unusual +5.6 %, t 2.23, 64 cases) against +0.07 (t 0.79, 96 cases) for shorter streaks. In choppy markets both groups were near zero (\u22120.02 and \u22120.05). In falling markets the effect was weaker (+0.19, t 1.67, 44 cases, against +0.00).",
+    "F5": "Calm markets carry the up-day continuation: strength +0.20 (unusual +2.3 %, t 2.89, 208 cases). Agitated markets were flat: \u22120.00 (t \u22120.02, 95 cases).",
+    "F6": "The effect splits by period and coin, which blurs the pooled measure.",
+    "F7": "The test's main measure is on the idea's side but small and far from the bar. The unusual short move was +0.32 % per case, t 1.08 over 1,206 days, strength 0.035 against a usual 5-day move of 10.6 %. Twelve more coins exist in folds A and D and partly in B and C that the test did not use. F1 to F4 suggest more data would mainly sharpen the continuation gradient."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "up-streak reversal, all coins",
+      "from": "F7",
+      "refs": [
+        "F7"
+      ],
+      "idea": "The more days in a row a coin has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it falls over the next 5 days.",
+      "consequence": "Reversal from crowding: a longer up streak means more one-sided buying and stretched long positioning, so the price gives back more once that flow runs out.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": null
+    },
+    {
+      "idea": "In a rising market, the more days in a row a coin has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it rises over the next 5 days.",
+      "consequence": "Continuation from herding. In a coin already up over the past two months, an unusually long run of higher closes is a reason to stay with the move rather than fade it, and the longer the run the larger the follow-on rise.",
+      "name": "rising-market up-streak continuation",
+      "from": "F1, F2, F3, F4",
+      "profile": "rising",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a calm market, the more days in a row a coin has closed higher, measured against the lengths of its own up-close streaks over the past 365 days, the more it rises over the next 5 days.",
+      "consequence": "When a coin is swinging less than usual for it, an unusually long run of higher closes points to more rise still to come, so it is a reason not to short it.",
+      "name": "calm-market up-streak continuation",
+      "from": "F1, F2, F5",
+      "profile": "calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.b3_up-streak-reversal-all-coins",
+    "031-01.b4_rising-market-up-streak-continuation",
+    "031-01.b5_calm-market-up-streak-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

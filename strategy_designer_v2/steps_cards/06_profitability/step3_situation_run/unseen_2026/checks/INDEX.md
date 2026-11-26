@@ -1,0 +1,1 @@
+030-03_heavy-flat-high-close-reverses.b1_heavy-volume-high-close-continuation.b1_volume-surge-precedes-rise.d2_volume-surge-next-day-rise.d2_absorbed-selling-low-close.d1_extreme-surge-low-close-rise_1d: not profitable enough [Sharpe 0.51; Sharpe minus holding's Sharpe 0.4119; Calmar 0.8483]

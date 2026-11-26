@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean next-day unusual move, short direction",
+    "value": 0.002791897249002729,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day summed",
+      "value": 1.5118629773845838
+    },
+    "threshold": "confirm: > 0 with t >= 2 and positive slope; reject: < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on forecast over the cases",
+    "value": -2.3730453956691307e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 2951,
+    "case days": 1126
+  },
+  "decided_by": "The main t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The falling profile is read from the recorded regime (the detector's decision: 'unknown' = 60-bar price change below -10, the only regime with a strategy) since the detector's component is not recorded, the up day is a positive raw scaled_rise value (the bar's own in-window return where it is missing), the 100-case minimum counts coin-bar cases with forecast < 0 and a next-day return, and the day-clustered t sums each day's weighted deviations w*(u - mean) over sum(w)."
+}

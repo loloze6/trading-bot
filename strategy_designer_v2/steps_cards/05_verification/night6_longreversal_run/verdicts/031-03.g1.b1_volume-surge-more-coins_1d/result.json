@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (14-bar forward return - coin's mean 14-bar return), grid cases",
+    "value": 0.02318106785750188,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.341688529717144
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean directional excess 14-bar return, |forecast| above median minus below",
+    "value": 0.019990518452720075,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2448,
+    "distinct days": 207
+  },
+  "decided_by": "the main mean is positive with t >= 2 and the supporting check passes",
+  "reading": "Every grid bar (positions 0,14,28,... per coin and window) with a 14-bar forward return inside its window is a case, forecast 0 included; the coin's mean 14-bar return is the mean over its grid cases of all windows; the t clusters case deviations summed per UTC day (with D/(D-1) correction); the median split uses |forecast| strictly above vs strictly below the median, directional excess = sign(forecast) x excess return."
+}

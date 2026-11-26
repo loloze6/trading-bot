@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 7-bar move per case (return minus coin's normal 7-bar drift)",
+    "value": -0.021603725625911757,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.098432471317946
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and deeper half beats shallower half; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean unusual move (split at median |forecast|)",
+    "value": 0.0561979761889352,
+    "passed": true
+  },
+  "counts": {
+    "cases": 123,
+    "days": 68
+  },
+  "decided_by": "The t lies between -2 and 2 (or could not be computed) over at least 30 cases.",
+  "reading": "Raw vsr taken from the recorded fall.last_history_value (recomputed from closes with ddof=1 where missing); a case is the first short bet (rise of |forecast| on the short side of at least 2 points from its lowest level since the last bet, reset at 0 after flat or side change) in each 7-bar grid cell from each window's first row, cases without 7 bars ahead in the window are dropped, drift is the coin's mean non-overlapping 7-bar return over all its windows, the day-clustered t uses per-day summed deviations with a G/(G-1) correction, the median split puts |forecast| above the median in the deeper half and at or below it in the shallower half, and fewer than 30 cases gives 'not observable'."
+}

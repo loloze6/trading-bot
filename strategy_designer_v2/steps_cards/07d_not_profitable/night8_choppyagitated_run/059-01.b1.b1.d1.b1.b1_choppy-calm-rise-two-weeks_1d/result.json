@@ -1,0 +1,63 @@
+{
+  "line": "7.d",
+  "backtest": "059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.7464942,
+  "findings": {
+    "F1": "The book fails Calmar (0.18 against 0.75) because one fall of 40.9 % runs from w14 into w15. In w14 the book lost 0.31 % a day while holding 0.84 of its value on average. Every coin held lost: BTC \u221212.6 %, ETH \u22126.4 %, XMR \u22126.3 %, LTC \u22126.1 %, ZEC \u22125.6 % of the book. Its 35 trades averaged \u221217.7 % net, and its three grid signals were all weak scaled rises (raw 7-day rise \u2264 0.5 of a usual swing), which moved \u221229.6 % unusual over 14 days.",
+    "F2": "The weak cases of the signal lose and the strong ones carry the effect. On the 14-day grid in the profile, raw scaled rises \u2264 0.5 moved \u221214.5 % unusual (13 cases, t \u22122.20), and rises > 0.5 moved +18.3 % (25 cases, t 1.50). Trades entered on a raw scaled rise \u2264 0.5 averaged \u22123.84 % net (36 trades). Rises of 0.5\u20131.0, 1.0\u20131.5 and > 1.5 averaged +7.0 %, +10.1 % and +7.3 % (56, 56 and 107 trades). The standardised forecast gives these small rises a positive size: the lowest forecast tercile averaged \u221213.0 % unusual (14 cases, t \u22122.05).",
+    "F3": "The strong scaled rise is not an effect of its own. Outside the profile, the same raw scaled rises > 0.5 moved \u22120.14 % unusual over 14 days (119 cases, t \u22120.04). In the profile without a signal, coins moved \u22123.2 % (38 cases, t \u22120.79). The continuation lives only where the theory puts it: in quiet, trendless coins.",
+    "F4": "The move keeps building past 14 days. Strong in-profile signals moved +30.2 % unusual over 28 days (t 1.88), against +18.3 % over 14. Trades held 20\u201330 days averaged +14.4 % net (66) and those held over 30 days +18.7 % (40). Trades held 10\u201315 days averaged \u22124.6 % (104).",
+    "F5": "The first week after the signal tells which trades lose. Trades whose first 7 days fell more than 10 % averaged \u221217.9 % net (35 trades); those that rose more than 10 % averaged +20.1 % (56). On the grid, signals whose first week rose more than 5 % moved +11.1 % unusual in the second week (15 cases, t 1.07). The same first-week rise without the signal gave +1.4 % (225 cases, t 0.61), so the first-week path alone carries no effect.",
+    "F6": "The book does not beat holding (Sharpe 0.47 against holding's 0.55) because, over all folds, the idea's unusual move per case is \u22120.14 % (t \u22120.14, 581 cases). Its total move is +2.06 % per case, 9.2 times the 0.22 % cost, but that gain is mostly the coin's own drift. The weak cases dilute the effect: in the explored folds the signal grid moved +6.4 % unusual over 14 days (42 cases), and the strong cases alone moved +18.3 %.",
+    "F7": "The gain is concentrated in a few coins: XRP made +898 % summed net over 41 trades and ADA +459 % over 19, while XMR lost \u2212343 % over 60. By year, signals averaged \u221229.4 % unusual in 2018 and \u221211.1 % in 2019, against +18.8 % in 2020 and +12.8 % in 2021. The effect is uneven over time but not one window's."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 14 days. The further rise comes from rises that are large against the coin's own swing, while a rise small against that swing gives back over the same 14 days.",
+      "consequence": "A trader should size by the week's rise against the coin's own swing and refuse small rises that only look large against the past two months, which removes the trades behind the w14 fall.",
+      "name": "choppy calm large-rise continuation",
+      "from": "F1, F2, F3, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 28 days.",
+      "consequence": "A trader buying a quiet coin after a large scaled weekly rise should hold about four weeks, since the continuation is still building after two.",
+      "name": "choppy calm rise four weeks",
+      "from": "F3, F4, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days in multiples of its usual 7-day swing over the past 30 days, the larger its rise in the second week after it. The rise is larger the more the coin kept rising in the first week after the signal.",
+      "consequence": "A trader should keep a scaled-rise position whose first week extends the rise and close one whose first week falls back, which cuts the trades that make the deepest falls.",
+      "name": "choppy calm confirmed rise continues",
+      "from": "F1, F5, F3",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F5",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-01.b1.b1.d1.b1.b1.d1_choppy-calm-large-rise-continuation",
+    "059-01.b1.b1.d1.b1.b1.d2_choppy-calm-rise-four-weeks",
+    "059-01.b1.b1.d1.b1.b1.d3_choppy-calm-confirmed-rise-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

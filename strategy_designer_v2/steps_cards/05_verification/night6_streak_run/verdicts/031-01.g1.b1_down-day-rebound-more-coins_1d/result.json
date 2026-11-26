@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 3-day return minus drift on forecast (grid bars, forecast > 0, pooled)",
+    "value": 0.00017923507697244006,
+    "statistic": {
+      "name": "slope t clustered by day",
+      "value": 0.4001153148422614
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean unusual move > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of the bets, before costs",
+    "value": 0.00021988996062344867,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 5730,
+    "distinct days": 814,
+    "bet cases": 9265
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The situation is a raw scaled return below 0 with a positive forecast; the drift is each coin's mean non-overlapping 3-bar return over all its windows; the slope is OLS with intercept and its t uses day-clustered errors with a G/(G-1) factor; the supporting check uses the first bet (forecast rise >= 2 points) per 3-bar grid cell; the plan's 'fewer cases' rule is reported as not observable."
+}

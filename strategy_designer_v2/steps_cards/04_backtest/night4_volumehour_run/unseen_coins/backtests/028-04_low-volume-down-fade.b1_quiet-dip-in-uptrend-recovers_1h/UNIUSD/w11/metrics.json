@@ -1,0 +1,455 @@
+{
+  "core": {
+    "net_return_pct": 1.237,
+    "sharpe": 0.27,
+    "max_drawdown_pct": -15.358,
+    "trade_count": 256,
+    "win_rate": 68.36,
+    "avg_trade_net_pnl": 0.045673,
+    "fees_paid": 36.933148,
+    "gross_pnl": 48.625379,
+    "net_pnl": 11.692231,
+    "cost_drag_pct": 75.9545,
+    "forecast_return_corr": 0.063533,
+    "forecast_return_corr_pvalue": 0.267888,
+    "forecast_return_corr_pvalue_block_adjusted": 0.84884,
+    "forecast_return_corr_n_eff": 12,
+    "forecast_return_corr_all_bars": 0.011746,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.899327,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.0348,
+    "avg_trade_duration_bars": 6.82,
+    "sigma_bar_bps": 191.3087,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 31.7414,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 1.7158,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0635, p=0.8488 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 81.7479,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 81.7479,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 8.1748,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0635, p=0.8488 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 760,
+      "avg_forecast": 4.66531,
+      "trade_count": 256,
+      "total_net_pnl": 11.692238
+    },
+    "unknown": {
+      "bar_count": 2118,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 21,
+      "profitable_trades": 14,
+      "success_rate_pct": 66.67,
+      "total_net_pnl_usd": 5.6322,
+      "avg_pnl_per_trade_usd": 0.2682
+    },
+    "5_to_10": {
+      "total_forecasts": 19,
+      "profitable_trades": 9,
+      "success_rate_pct": 47.37,
+      "total_net_pnl_usd": 0.4009,
+      "avg_pnl_per_trade_usd": 0.0211
+    },
+    "10_to_15": {
+      "total_forecasts": 11,
+      "profitable_trades": 9,
+      "success_rate_pct": 81.82,
+      "total_net_pnl_usd": 49.0897,
+      "avg_pnl_per_trade_usd": 4.4627
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 205,
+      "profitable_trades": 143,
+      "success_rate_pct": 69.76,
+      "total_net_pnl_usd": -43.4306,
+      "avg_pnl_per_trade_usd": -0.2119
+    }
+  },
+  "dynamic": {
+    "debug_info.components.dip_in_rise.last_history_value": {
+      "mean_reversion": {
+        "mean": 10.57691,
+        "std": 22.248737
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.dip_in_rise.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 4.66531,
+        "std": 8.159736
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.dip_in_rise.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.dip_in_rise.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 4.66531,
+        "std": 8.159736
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": 0.00089358,
+      "forward_return_std": 0.02066257,
+      "n_bars": 759,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00089582,
+      "forward_return_std": 0.01857123,
+      "n_bars": 2118,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -16.4886,
+    "sharpe": 0.3325,
+    "sortino": 0.4751,
+    "exposure_pct": 30.8895,
+    "turnover": 69.955498,
+    "n_bars_total": 2878,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 35,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 32,
+    "events": [
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-19 07:00:00",
+        "previous_timestamp": "2020-10-19 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-22 05:00:00",
+        "previous_timestamp": "2020-10-22 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-23 20:00:00",
+        "previous_timestamp": "2020-10-23 18:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-24 00:00:00",
+        "previous_timestamp": "2020-10-23 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-24 05:00:00",
+        "previous_timestamp": "2020-10-24 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-24 08:00:00",
+        "previous_timestamp": "2020-10-24 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-24 19:00:00",
+        "previous_timestamp": "2020-10-24 15:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-25 00:00:00",
+        "previous_timestamp": "2020-10-24 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-25 10:00:00",
+        "previous_timestamp": "2020-10-25 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-25 14:00:00",
+        "previous_timestamp": "2020-10-25 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-28 06:00:00",
+        "previous_timestamp": "2020-10-28 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-28 14:00:00",
+        "previous_timestamp": "2020-10-28 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-29 02:00:00",
+        "previous_timestamp": "2020-10-29 00:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-29 18:00:00",
+        "previous_timestamp": "2020-10-29 16:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-31 09:00:00",
+        "previous_timestamp": "2020-10-31 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-31 13:00:00",
+        "previous_timestamp": "2020-10-31 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-10-31 23:00:00",
+        "previous_timestamp": "2020-10-31 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-11-01 11:00:00",
+        "previous_timestamp": "2020-11-01 09:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-11-01 13:00:00",
+        "previous_timestamp": "2020-11-01 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-11-02 07:00:00",
+        "previous_timestamp": "2020-11-02 03:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-11-02 10:00:00",
+        "previous_timestamp": "2020-11-02 08:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-11-03 01:00:00",
+        "previous_timestamp": "2020-11-02 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-05 19:00:00",
+        "previous_timestamp": "2020-12-05 17:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-06 22:00:00",
+        "previous_timestamp": "2020-12-06 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-07 06:00:00",
+        "previous_timestamp": "2020-12-07 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-07 08:00:00",
+        "previous_timestamp": "2020-12-07 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-20 03:00:00",
+        "previous_timestamp": "2020-12-20 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-26 01:00:00",
+        "previous_timestamp": "2020-12-25 23:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-26 13:00:00",
+        "previous_timestamp": "2020-12-26 11:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-27 06:00:00",
+        "previous_timestamp": "2020-12-27 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2020-12-28 07:00:00",
+        "previous_timestamp": "2020-12-28 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "UNIUSD",
+        "timestamp": "2021-01-29 17:00:00",
+        "previous_timestamp": "2021-01-29 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

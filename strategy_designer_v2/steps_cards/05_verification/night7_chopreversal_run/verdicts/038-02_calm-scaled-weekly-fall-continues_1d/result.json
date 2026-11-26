@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move in the short direction, before costs",
+    "value": 0.005545011255883703,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed together",
+      "value": 1.5336933475632957
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-direction unusual 5-bar return on abs(forecast), grid bars with forecast < 0",
+    "value": 0.0003949836525917978,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1093,
+    "distinct days": 616,
+    "supporting grid bars": 888
+  },
+  "decided_by": "t between -2 and 2: inconclusive rule.",
+  "reading": "A case is the first short bet (rise of abs(forecast) of at least 2 points from its lowest short level since the last bet) in each 5-bar grid cell of a window, measured from that bar's close over 5 bars, with drift the coin's mean non-overlapping 5-bar grid return over all windows; the situation is a negative raw scaled 7-bar return (price 7-bar return where the raw value is missing) on a short forecast, the calm profile being the code's regime gate."
+}

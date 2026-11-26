@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 10-bar forward return minus coin's normal 10-bar drift on the forecast",
+    "value": 0.0013275602597879572,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.455004570363617
+    },
+    "threshold": "confirm if t >= 2 (with timing gain > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus gain from the market's own rise (timing)",
+    "value": 0.0002728806214496625,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with a forecast above 0": 820,
+    "grid bars": 1691
+  },
+  "decided_by": "The slope has t >= 2 and the timing gain is above 0.",
+  "reading": "The slope is an ordinary least-squares regression over all pooled non-overlapping grid bars (positions 0, 10, 20, ... with a full 10-bar forward return in the window), flat bars with forecast 0 included, with each coin's drift being its mean 10-bar return on that grid over all its windows; the plan's 'else inconclusive' minimum of 100 grid bars with forecast above 0 is applied as 'not observable', as the workflow requires."
+}

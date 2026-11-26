@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 058-02.b1_calm-range-bottom-keeps-falling_1d
+idea tested: 058-02.b1_calm-range-bottom-keeps-falling
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3848 USD
+---
+## Findings
+- **F1:** In a falling market (60-day return below -10 %), a day that rises more than 1.5 times the coin's usual 20-day daily swing is followed by a next-day return 1.33 % below the coin's normal daily drift (t -2.58, 98 cases). Over all trends, such rises are followed by -0.32 % in unclassified trends and +0.74 % (t 1.36) in rising markets. So the fade appears only where the coin has been falling, and no profitable strategy in the profile map trades the falling short side.
+- **F2:** The fade in falling markets holds across rise sizes. Rises of 1 to 2 usual swings are followed by -1.01 % the next day (t -2.36, 146 cases), and rises above 2 swings by -1.06 % (t -1.69, 49 cases). Ordinary days in falling markets are followed by -0.27 %, so the effect is barely graded beyond the first swing.
+- **F3:** Across all bars, large one-day drops rebound the next day. Drops beyond 2 usual swings are followed by +1.44 % (t 3.36, 210 cases) and drops of 1 to 2 swings by +0.67 % (t 2.94, 637 cases). The rebound is strongest in falling markets: drops beyond 1.5 swings are followed by +1.11 % (t 2.32, 168 cases), and inside the tested profile by -0.92 % (t -1.13, 38 cases). This rebound repeats the many falling-agitated and agitated long rebound books the map already holds, so it is not a discovery.
+- **F4:** Closes in the top fifth of the 20-day range are followed by 5-day excess returns of +3.34 % outside the profile (t 3.45, 206 cases). The rise is strongest when the coin's volatility is in its lowest tercile (+5.26 %, t 3.70, 95 cases). This is the calm nearness-to-high continuation the map already holds (035-01.b1), so it is not new.
+- **F5:** Inside the choppy calm profile, the 5-day excess return rises with the close's position in its 20-day range rather than reverting. By bin from the bottom of the range to the top it is -3.07 % (t -1.98, n 18), -1.38 %, -2.66 % (t -2.63, n 52), +1.67 % and +2.38 % (t 0.94, n 30). The bottom-only short book lost on its trades: mean net -0.12 % per trade, 34 % winners, 379 trades.
+- **F6:** The Wednesday next-day return of -0.50 % (t -2.67) does not hold up. It comes almost entirely from 2019 (-1.60 %, t -7.16), and the other years range from -0.43 % to +0.21 % with t under 1.1, so it is not a pattern.
+
+## Ideas
+- `058-02.b1.g1_falling-market-rally-fades` (from F1, F2): In a falling market, the larger a coin's one-day rise is against its usual daily swing over the last 20 days, the larger its fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

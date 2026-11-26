@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction next-day excess return over cases (forecast < 0)",
+    "value": 0.007796315318020234,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.0157628178535907
+    },
+    "threshold": "confirm: >= 100 cases, mean > 0 with t >= 2 and slope > 0; reject: >= 100 cases, mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of short excess next-day return on |forecast| (post_pipeline_value)",
+    "value": 0.0017648437482767412,
+    "passed": true
+  },
+  "counts": {
+    "cases": 475,
+    "days with cases": 274,
+    "cases in slope": 475
+  },
+  "decided_by": "Confirm rule: at least 100 cases, mean short-direction excess return above 0 with t >= 2, and supporting slope above 0.",
+  "reading": "The situation is checked as the regime rule rebuilt from closes inside each window (1-day return > 0 and 3-day return < 0, short side), on active bars whose 3 prior closes are in the window, without recomputing the falling-agitated profile whose 365-day volatility percentile needs history the record does not hold; the coin's mean daily return is the mean of all its 1-day returns pooled over its windows; the day-clustered t sums the cases' deviations per UTC day, with a D/(D-1) correction; the slope uses cases with a recorded post_pipeline_value.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.005459 on the check folds against +0.007796 on every fold",
+    "main": 0.005459072107513147,
+    "statistic": 1.2587978129280888,
+    "counts": {
+      "cases": 244,
+      "days with cases": 149,
+      "cases in slope": 244
+    }
+  }
+}

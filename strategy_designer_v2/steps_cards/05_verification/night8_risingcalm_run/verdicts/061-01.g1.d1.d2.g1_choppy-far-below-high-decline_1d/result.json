@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean excess 5-bar short return over grid cases with forecast < 0",
+    "value": 0.010185287667203913,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.6770050506867378
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (day-clustered) and larger-gap half beats smaller-gap half; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-gap half minus smaller-gap half mean excess short return",
+    "value": -0.0006890835431902047,
+    "passed": false
+  },
+  "counts": {
+    "grid cases": 721,
+    "distinct days with a case": 352
+  },
+  "decided_by": "t is between -2 and 2.",
+  "reading": "Choppy bars are read from the recorded regime 'unknown' (the detector's default when the 60-bar evolution is within +/-10), the gap from last_history_value (recomputed from closes where missing); the coin's mean 5-bar return is over all its windows' non-overlapping grid returns; the t uses per-day summed deviations of the weighted values (with D/(D-1) correction); the larger-gap half is |forecast| strictly above the median and the halves compare unweighted mean excess short returns; too few cases gives 'not observable' as the workflow requires."
+}

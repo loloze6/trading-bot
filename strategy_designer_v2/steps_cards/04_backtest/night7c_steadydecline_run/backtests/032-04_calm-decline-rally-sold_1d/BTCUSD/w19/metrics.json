@@ -1,0 +1,142 @@
+{
+  "core": {
+    "net_return_pct": -2.168,
+    "sharpe": -8.76,
+    "max_drawdown_pct": -2.179,
+    "trade_count": 2,
+    "win_rate": 0.0,
+    "avg_trade_net_pnl": -10.899549,
+    "fees_paid": 0.237951,
+    "gross_pnl": -21.561146,
+    "net_pnl": -21.799097,
+    "cost_drag_pct": 1.1036,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": -0.109082,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.240056,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 1,
+    "gap_skipped_pct": 0.8403,
+    "avg_trade_duration_bars": 3.0,
+    "sigma_bar_bps": 310.6279,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -686.6526,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "trending": {
+      "bar_count": 1,
+      "avg_forecast": -2.848588,
+      "trade_count": 2,
+      "total_net_pnl": -21.799098
+    },
+    "unknown": {
+      "bar_count": 119,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "minus_5_to_0": {
+      "total_forecasts": 2,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -21.7991,
+      "avg_pnl_per_trade_usd": -10.8995
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall_depth.last_history_value": {
+      "trending": {
+        "mean": -4.404708,
+        "std": null
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall_depth.post_pipeline_value": {
+      "trending": {
+        "mean": -2.848588,
+        "std": null
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall_depth.weight_normalized": {
+      "trending": {
+        "mean": 1.0,
+        "std": null
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall_depth.weighted_contribution": {
+      "trending": {
+        "mean": -2.848588,
+        "std": null
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "trending": {
+      "forward_return_mean": 0.03965179,
+      "forward_return_std": null,
+      "n_bars": 1,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00282399,
+      "forward_return_std": 0.03087824,
+      "n_bars": 118,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -2.2577,
+    "sharpe": -3.0494,
+    "sortino": -3.0296,
+    "exposure_pct": 4.1667,
+    "turnover": 0.481169,
+    "n_bars_total": 120,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 5,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "BTCUSD",
+        "timestamp": "2024-04-01 00:00:00",
+        "previous_timestamp": "2024-03-30 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

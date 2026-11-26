@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-bar forward return on forecast, in-profile grid bars, coins pooled",
+    "value": 0.0005094556632148385,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.8713592548295983
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting difference > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, forecast > 0 minus forecast = 0 (Welch)",
+    "value": 0.00919246685801619,
+    "passed": true,
+    "welch_t": 1.3216308578746025
+  },
+  "counts": {
+    "in-profile grid cases": 1345,
+    "forecast > 0": 572,
+    "forecast = 0": 773
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "In-profile grid bars are those where the vol_dryup component is recorded; the normal drift is the coin's mean 5-bar return over the non-overlapping grid of all its windows; the slope's t is the OLS slope over its standard error; the supporting check passes when the difference is above 0, its Welch t being reported."
+}

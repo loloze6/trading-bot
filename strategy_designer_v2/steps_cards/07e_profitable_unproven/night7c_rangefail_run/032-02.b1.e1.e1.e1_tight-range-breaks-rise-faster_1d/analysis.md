@@ -1,0 +1,25 @@
+---
+line: 7.e profitable but not proven
+backtest: 032-02.b1.e1.e1.e1_tight-range-breaks-rise-faster_1d
+idea tested: 032-02.b1.e1.e1.e1_tight-range-breaks-rise-faster
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4033 USD
+---
+## Findings
+- **F1:** The book's gain is mostly timing, not the market's own rise: its mean daily return is 0.0456 % and the market's part is only 0.0109 %, while the coins themselves fell in w7, w9, w12, w13 and w14.
+- **F2:** Closes above the prior 60-day closing high are followed by unusual rises that grow with the horizon. On the non-overlapping grid the rise is +4.0 % over 5 days (t 3.13, 120 cases), +10.6 % over 10 days (t 3.23, 84 cases) and +14.4 % over 20 days (t 3.79, 47 cases). Without XRP it stays clear at 10 days (+6.1 %, t 3.54, 73 cases) and 20 days (+10.4 %, t 3.50, 40 cases).
+- **F3:** The tested grading by tightness does not appear on the grid. Breaks out of the narrower half of 60-day ranges (in average daily moves) beat the wider half by 1.8 % over 5 days (wider minus narrower −0.018, Welch t −0.72) and by 7.4 % over 10 days (t −1.15). Neither difference can be told from 0, matching the step-5 Welch t of −0.92.
+- **F4:** The smaller the close's margin above the prior 60-day high, the larger the rise that follows. On overlapping cases the 20-day unusual move falls from +18.0 % in the smallest-margin quartile (margin 0.7 %) to −1.7 % in the largest (11.2 %). On the grid the 20-day difference, large-margin half minus small-margin half, is −13.2 % (Welch t −1.80, 47 cases) and −11.2 % without XRP (t −1.95, 40 cases).
+- **F5:** The smaller the coin's rise over the prior 60 days, the larger the rise after the break. On overlapping cases the 20-day unusual move goes from +21.8 % in the smallest 60-day-rise quartile (+19 %) to −6.7 % in the largest (+106 %). On the grid without XRP the 20-day difference, high half minus low half, is −11.3 % (Welch t −1.98, 40 cases).
+- **F6:** The first close beyond the high carries the short-term move, not repeat closes. Over 1 day a first close is followed by +1.8 % (t 2.99, 134 cases) against +0.35 % for a repeat close (t 0.65, 136 cases). Over 3 days the figures are +3.2 % (t 3.56) against +0.9 % (t 0.82).
+- **F7:** The gain is concentrated in one coin and a few days. XRP's 10-day unusual move is +40.3 % against +0.9 % to +9.7 % for the other coins. The 10 best of 1449 book days sum to 0.466 of the 0.660 total of daily returns. Still, the book's Sharpe stays 1.01 without XRP, 0.91 without ETH and 0.94 without w17 (1.18 with all).
+
+## Ideas
+- `032-02.b1.e1.e1.e1.e1_marginal-breakouts-keep-rising` (from F2, F4, F1): When a coin closes above its highest close of the prior 60 days, the smaller the margin by which that close exceeds the prior high, the larger the coin's rise over the next 20 days.
+- `032-02.b1.e1.e1.e1.e2_quiet-climbs-break-out-further` (from F2, F5, F1): When a coin closes above its highest close of the prior 60 days, the smaller its 60-day return before that close, the larger its rise over the next 20 days.
+- `032-02.b1.e1.e1.e1.e3_first-break-short-follow-through` (from F6, F4, F2): When a coin's close first moves above its highest close of the prior 60 days, the smaller the margin above that high, the larger its rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

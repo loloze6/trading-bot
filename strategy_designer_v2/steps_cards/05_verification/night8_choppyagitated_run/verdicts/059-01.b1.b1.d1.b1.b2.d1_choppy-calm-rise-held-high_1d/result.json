@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move per long case (day-pooled)",
+    "value": 0.0030543574089612747,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 0.41696143182219736
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "unusual move upper half minus lower half of forecast (Welch t >= 1)",
+    "value": 0.011293580841016131,
+    "passed": true,
+    "welch_t": 1.0421200307322243
+  },
+  "counts": {
+    "cases": 536,
+    "distinct case days": 343
+  },
+  "decided_by": "The main t lies between -2 and 2.",
+  "reading": "A case is the first long bet (forecast rise of >= 2 points from its lowest level since the last bet, from 0 after a flat) in each 7-bar grid cell of a window with a full 7-bar forward return; the halves split at the median case forecast (above vs at-or-below); the plan's minimum of 30 distinct case days is applied as 'not observable'; active bars without a computable 7-bar high or rise are left out of the agreement share."
+}

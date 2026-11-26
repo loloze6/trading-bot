@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 040-02_falling-calm-range-scaled-continuation_1d
+idea tested: 040-02_falling-calm-range-scaled-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2144 USD
+---
+## Findings
+- **F1:** The result is on the side the idea predicts but short of the bar: step 5's unusual 3-day move is +0.64 % per case (t 1.59, 434 case days, 715 cases), and in the shown folds B and C every falling-calm grid cell after a 3-day fall gives +1.62 % (t 3.93, 361 cases; not day-clustered), with a total move of +1.21 % (t 2.95), so the effect is there but too thin across all folds for this data.
+- **F2:** The effect points the same way on every coin, from +0.39 % on BTC (t 0.45, 41 cases) to +2.79 % on ETH (t 2.11, 52 cases), and four of the six coins have a t of 1.85 or more, so more coins would add cases with the same sign rather than noise.
+- **F3:** It is uneven over time: +2.56 % in 2018 (t 3.47, 162 cases) and +1.91 % in 2019 (t 3.64, 135 cases), against −3.28 % in 2020 (t −3.02, 28 cases) and +0.09 % in 2021 (36 cases), so a few windows (w16 −6.57 %, t −3.32, 8 cases) pull the mean down.
+- **F4:** The grading is weak: the Spearman correlation between the scaled fall and the unusual 3-day move is −0.019, and by quartile of the fall the means are +1.41 % (largest falls), +1.69 %, +2.76 % and +0.61 % (smallest falls), so only the smallest falls stand apart, which matches the thin supporting difference of +0.45 %.
+- **F5:** The continuation does not reverse at longer horizons: the unusual move grows from +0.82 % at 1 day (t 3.51) to +1.62 % at 3 days and +2.63 % at 10 days (t 3.41, 339 cases), so the plan's 3-day horizon is not the wrong place to measure it.
+
+## Ideas
+- `040-02.b1_calm-downtrend-falls-continue-all-coins` (from F1, F2, F5): In a falling, calm market, a coin that has fallen over the last 3 days keeps declining over the next 3 days, more so the larger that 3-day fall in units of its 30-day average daily range.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

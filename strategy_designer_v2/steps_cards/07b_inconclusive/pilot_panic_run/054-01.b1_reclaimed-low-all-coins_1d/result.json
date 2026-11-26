@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "054-01.b1_reclaimed-low-all-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4256687,
+  "findings": {
+    "F1": "Inside the falling, agitated profile, folds B and C hold only 34 reclaimed-pierce cases on 15 days. They lean the way the idea predicts: +5.0 % unusual 5-day move, t 1.51, hit rate 65 %. The same cases give +7.6 % over 10 days (t 1.77) and +7.3 % over 15 days (t 1.29), against \u22120.2 % over 1 day. The plan's 5-day horizon catches the move before it has fully shown, and too few independent days (step 5: 67 days over all folds, t 1.29) carry it.",
+    "F2": "The test already ran on all 19 coins, all four folds and the full daily history, and the hourly bars end earlier than the daily ones. So no more data exists to lift the t of an effect that is +2.43 % per case (strength 0.21) over 148 cases.",
+    "F3": "The idea's grading by pierce depth does not hold where I can see it. Inside the profile, depth correlates \u22120.39 with the 5-day excess return: the shallow third gives +13.4 % (t 2.41), the deep third \u22122.8 % (t \u22121.45). Over 10 days the shallow half gives +11.3 % (t 2.07) and the deep half +3.8 % (t 0.80). Step 5's all-fold deeper-minus-shallower gap of +3.1 % (Welch t 1.53) therefore rests on folds A and D only, so the deeper-is-larger claim is mixed.",
+    "F4": "What does grade the rebound inside the profile is how low the day closes within its own range. That position correlates \u22120.43 with the 5-day and \u22120.38 with the 10-day excess return. The lowest-close third gives +13.6 % over 5 days (t 3.01, hit 82 %) and the highest-close third \u22121.0 % (t \u22120.37). Days that close below their open give +10.9 % (t 2.31), against +0.8 % (t 0.25) for days closing above it.",
+    "F5": "Outside the falling, agitated profile, the same reclaimed pierce is followed by a fall, not a rebound. Over the 135 cases the 5-day excess return is \u22124.1 % (t \u22122.07, 82 days) and the 10-day one \u22126.1 % (t \u22123.22, hit 32 %). The fall grows with the coin's 60-day trend over 10 days: falling-calm cases \u22126.8 % (t \u22122.52), choppy \u221211.5 % (t \u22122.67), rising \u221212.7 % (t \u22123.62, 14 cases, hit 7 %)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, when a coin's day trades below its lowest price of the past 30 days but closes back above that low, it rises over the next 10 days. The rise is larger the closer the day's close sits to the day's low.",
+      "consequence": "After a reclaimed monthly-low pierce in a falling, agitated market, a trader leans long for about ten days, most firmly when the day only just held the low and closed near its bottom.",
+      "name": "weak-close reclaim rebounds",
+      "from": "F1, F3, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a rising market, when a coin's day trades below its lowest price of the past 30 days but closes back above that low, it falls over the next 10 days. The fall is larger the higher the coin's 60-day return.",
+      "consequence": "In a rising market, a trader should not buy a reclaimed monthly-low pierce as a bounce, and the stronger the prior rally, the more such a day warns of a further fall.",
+      "name": "reclaimed low fails rising",
+      "from": "F5",
+      "profile": "rising",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "054-01.b1.b1_weak-close-reclaim-rebounds",
+    "054-01.b1.b2_reclaimed-low-fails-rising"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

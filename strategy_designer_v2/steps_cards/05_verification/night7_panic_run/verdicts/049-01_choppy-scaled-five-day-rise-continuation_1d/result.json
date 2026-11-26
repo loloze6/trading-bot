@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar forward return on cases (forecast > 0, non-overlapping 3-bar grid)",
+    "value": -0.0008515885825183112,
+    "statistic": {
+      "name": "t of the mean, cases of a day pooled",
+      "value": -0.2889672588714699
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and top-minus-bottom > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess of top-half forecast cases minus bottom half",
+    "value": -0.00215056741429943,
+    "passed": false
+  },
+  "counts": {
+    "cases": 717,
+    "distinct days": 392
+  },
+  "decided_by": "Main t between -2 and 2 (inconclusive rule).",
+  "reading": "Choppy profile taken as the bars whose regime is 'unknown' (neither 60-bar trend veto fired), the 5-day rise as raw scaled_rise > 0 (price 5-day return where missing); top half = cases with forecast above the cases' median, bottom half = at or below it; the day-pooled t sums the cases' deviations from the mean per UTC day; the plan's 'fewer than 100 cases or 60 days' is applied as 'not observable'."
+}

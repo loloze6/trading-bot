@@ -1,0 +1,51 @@
+{
+  "line": "7.b",
+  "backtest": "058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3625416,
+  "findings": {
+    "F1": "Step 5's main measure is on the predicted side but just short of the bar: the short-side unusual next-day move is +0.56 % with a day-clustered t of 1.92, over 1,250 cases on 455 days. The test already used all four folds and all 19 coins on 1d bars, so there is no more data to add on this bar size.",
+    "F2": "The give-back lives in the deeper slides only. In the shown folds, by quartile of the four-day fall against the 30-day swing, the next-day short-side unusual move is:",
+    "F3": "The forecast's grading agrees. The two upper quartiles of |forecast| give +1.97 % (t 2.84) and +3.49 % (t 3.36). The two lower quartiles give +0.41 % (t 0.67) and -0.81 % (t -0.79). Half the cases add nothing, and they dilute the overall t.",
+    "F4": "The effect is a one-day effect that fades with time. Over all shown cases the short-side unusual move is:",
+    "F5": "The effect is broad, not one coin's or one period's:",
+    "F6": "The effect is stronger on days when many coins are in the situation together: +1.73 % (t 2.03, 218 cases on 48 days), against +0.50 % (t 0.78, 136 cases on 112 days) for days with fewer than three such coins. The market's common moves carry a large share of the result, which widens its uncertainty.",
+    "F7": "Within the allowed rise of up to one usual swing, larger up-days fade more: +2.52 % (t 2.84) in the largest quartile of the day's rise against +0.34 % (t 0.43) in the smallest."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, a one-day rise of up to about one usual swing that follows a steep fall over the previous four days is given back over the next day, only after the steepest four-day falls, and more the deeper that four-day fall against the coin's 30-day swing.",
+      "consequence": "A trader would short a modest up day only when it interrupts a sharp several-day slide, for one day, sizing up with the slide's depth, and would leave alone the bounces after shallow slides.",
+      "name": "bounce after steep slide fades",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, a one-day rise of up to about one usual swing that follows a fall over the previous four days is given back over the next day, more the larger that day's rise against the coin's 30-day swing and the deeper the four-day fall before it.",
+      "consequence": "A trader would short the larger of the modest up days inside a slide for one day, sizing with both the rise and the depth of the slide before it.",
+      "name": "larger bounce in slide fades",
+      "from": "F2, F4, F7",
+      "profile": "falling agitated",
+      "refs": [
+        "F2",
+        "F4",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.g2.b1.d2.b1.d2.d2.b1_bounce-after-steep-slide-fades",
+    "058-01.g2.b1.d2.b1.d2.d2.b2_larger-bounce-in-slide-fades"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

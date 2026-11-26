@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day fall on short cases (short direction, vs coin drift)",
+    "value": 0.004064825259701144,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.8310744227484321
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: t <= -2; else inconclusive; >= 100 cases on >= 50 days"
+  },
+  "supporting_check": {
+    "name": "above-median |forecast| mean excess fall minus below-median",
+    "value": 0.006224185715831495,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1380,
+    "distinct days": 669
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The profile part of the situation (falling agitated) cannot be rebuilt from prices inside ~120-bar windows (365-bar lookback), so it is read from the recorded regime not being the veto result 'chop', while the upper-half close is recomputed from prices as (close-low)/(high-low) > 0.5; cases on the same UTC day are summed and the t uses a day-clustered standard error of the case mean; the supporting check splits cases strictly above and strictly below the median of |forecast| (ties at the median left out); the last bar of each window has no next-day return and is left out."
+}

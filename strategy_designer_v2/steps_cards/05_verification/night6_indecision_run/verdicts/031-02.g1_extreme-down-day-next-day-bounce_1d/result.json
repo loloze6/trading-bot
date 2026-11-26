@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return on bars with forecast > 0 (vs coin's all-window mean daily return)",
+    "value": 0.006879239861387029,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.3022824240787156
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; at least 100 independent case-days"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess >= unweighted mean",
+    "value": 0.007819775164647743,
+    "passed": true
+  },
+  "counts": {
+    "independent case-days": 200,
+    "cases": 492
+  },
+  "decided_by": "t between -2 and 2.",
+  "reading": "situation recomputed from the closes (20-day std with or without the current bar accepted, regime fallback at window starts); the coin's mean daily return is over all its windows' next-day returns; the t uses day-clustered deviations from the mean (deviations summed per UTC day, D/(D-1) correction) and the 100 minimum is read on distinct UTC days with a case"
+}

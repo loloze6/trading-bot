@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d
+idea tested: 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4029 USD
+---
+## Findings
+- **F1:** The tested result points the way the idea predicts but is too weak to show: step 5 found a mean 14-day unusual move of +1.05 % (t 0.82, 398 cases on 259 days, strength 0.037), and its slope on the forecast was -0.00063, so the test failed its bar. All 19 coins in all four folds were already used, so no more daily data can be added.
+- **F2:** In folds B and C, the move behind the cases keeps growing beyond the plan's 14 days. The mean unusual move is -0.10 % at 3 days (t -0.13), +0.78 % at 7 days (t 0.52), +3.9 % at 14 days (t 1.18) and +4.7 % at 21 days (t 1.34), on 96 to 105 cases.
+- **F3:** Inside the choppy calm profile, the grading the idea claims shows clearly at 21 days and only weakly at 14 days. On a non-overlapping 14-bar grid, the slope of the forward unusual move on the scaled 7-day rise has a t of 3.02 at 21 days (correlation 0.35, 66 cases), against 1.87 at 14 days and 0.46 at 7 days. With the coin-year mean removed, the 21-day t is still 2.61, so the market's own move in those years does not carry it.
+- **F4:** At 21 days, the profile's grid points with a scaled rise of 1 to 2 swings move +29 % against the coin-year mean (t 2.84, 13 cases on 7 days), and those above 2 swings move +15.9 % (t 3.70, 5 cases). Scaled rises of 0 to 1 swings move -5.2 % (t -1.05) and falls move -1.7 % (t -0.26). Outside the profile, scaled rises of 1 to 2 swings move -3.8 % over 14 days (t -0.88) and those above 2 move -5.1 % (t -1.34). The effect lives in the profile only.
+- **F5:** The step-5 slope failed partly because of how the forecast is built, not because the effect is missing. The forecast standardises the scaled rise over its own past 60 values, which ranks rises against recent ones. The cases' forecast terciles give +7.4 % (t 0.96) for the lower one and +4.2 % (t 1.38) for the upper one. The raw scaled rise is graded positively in the profile (F3).
+- **F6:** The effect is mixed across periods. The cases' 14-day unusual move is -18.2 % in 2018 (t -4.34) and -5.4 % in 2019 (t -1.60), against +15.3 % in 2020 (t 2.16) and +7.3 % in 2021 (t 1.66). By window it is negative in w7, w9, w12 and w14, and positive in w10 and w16 to w18. This spread is what drowns the 14-day mean.
+
+## Ideas
+- `059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks` (from F2, F3, F4, F5, F1): In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 21 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean Saturday excess return over the coin's mean daily return",
+    "value": 0.008352422514119886,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day summed",
+      "value": 2.889566841880187
+    },
+    "threshold": "confirm: weighted mean excess > 0 with t >= 2 and slope > 0; reject: weighted mean excess < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of Saturday excess on post_pipeline_value > 0",
+    "value": 0.00048215932992513215,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1180,
+    "days": 316
+  },
+  "decided_by": "The weighted mean excess is positive with t >= 2 and the slope on the forecast is positive (confirm rule).",
+  "reading": "A Friday-close bar is a bar opening on a Friday UTC (its next bar is Saturday); the situation's gain is the recorded gain20 last_history_value (recomputed from closes if missing) > 0; Saturday's return is the next row's close over this close inside the window; the coin's mean daily return is the mean of all 1-bar returns over all its windows; the t of the forecast-weighted mean uses a day-clustered standard error (per day, the sum of forecast x (excess - weighted mean)); the 100-case minimum counts all cases with a positive forecast and a valid Saturday return across all coins."
+}

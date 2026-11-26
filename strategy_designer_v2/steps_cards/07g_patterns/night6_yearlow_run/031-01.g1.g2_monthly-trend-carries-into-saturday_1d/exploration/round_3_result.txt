@@ -1,0 +1,44 @@
+## Fri: z5 vs earlier 15d (z15) vs z20, product t
+     mean_bp  t_day   days   cases
+z5     75.06   3.44  345.0  2070.0
+z15    16.00   1.02  345.0  2070.0
+z20    54.66   2.56  345.0  2070.0
+
+## Fri joint OLS ex ~ z5 + z15 (bp per z, cluster t)
+       coef_bp     t
+const    24.50  1.59
+z5       69.06  3.68
+z15       9.99  0.61
+
+## Fri z5*ex by vol tercile
+    mean_bp  t_day  cases
+vt                       
+0     26.64   1.06  690.0
+1     58.47   2.01  690.0
+2    140.06   2.95  690.0
+
+## Fri z5 * 2-day excess (Sat+Sun)
+               v
+mean_bp    46.46
+t_day       1.93
+days      341.00
+cases    2046.00
+
+## Thu z5*ex
+               v
+mean_bp   -19.30
+t_day      -0.95
+days      345.00
+cases    2070.00
+
+## book daily return by year (bp, sharpe)
+         bp  sharpe
+year               
+2018   2.91    0.83
+2019  -1.37   -0.80
+2020  10.46    1.68
+2021   3.12    0.92
+2022   1.33    0.54
+2023  -1.60   -0.77
+2024   0.15    0.04
+2025   0.66    0.30

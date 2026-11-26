@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move in the short's direction (return minus coin's normal 3-day drift, x -1)",
+    "value": 0.009807485363056076,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.7103871920221139
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 cases on distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half",
+    "value": 0.008958089312816754,
+    "passed": true
+  },
+  "counts": {
+    "cases": 779,
+    "cases on distinct days": 256
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Profile read from the recorded regime 'unknown' (no chop veto) and the rise from the raw component > 0; cases are grid bars 0,3,6,... of each window with forecast < 0 and a 3-bar return inside the window; drift is the coin's mean non-overlapping 3-day return over all windows; the t uses deviations summed per UTC day with a D/(D-1) correction; the larger half is |forecast| strictly above the median and the smaller half at or below it; the minimum of 30 is applied to the number of distinct days of the cases."
+}

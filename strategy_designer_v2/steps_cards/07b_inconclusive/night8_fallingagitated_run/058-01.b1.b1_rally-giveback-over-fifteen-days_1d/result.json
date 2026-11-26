@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "058-01.b1.b1_rally-giveback-over-fifteen-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.340957,
+  "findings": {
+    "F1": "In folds B and C, the plan's own 15-day grading is flat. The OLS slope of the 15-day unusual move on the forecast is 0.0009 with t 0.29 on 58 grid cases, matching step 5's t 1.21 on 177 cases. Yet the mean unusual move after a rise is strongly on the short side: 11.2 % over 15 days, t 6.9. So at 15 days the profile carries a give-back after every rise, but its size does not grow with the rise.",
+    "F2": "Across forecast quartiles at 15 days, the unusual fall is 13.0 % for the largest quarter, 12.2 %, 11.0 % and 9.1 % for the smallest (12 to 16 cases each). On the scaled rise itself the four quarters give 9.3 %, 12.1 %, 16.0 % and 12.7 %, with a slope t of 0.41 on 42 cases. The small rises give back nearly as much as the large ones, which is why the 15-day slope is unclear.",
+    "F3": "The grading shows at 20 days instead. The slope there is 0.0098 with t 2.42 on 58 cases, or t 2.36 with drift included. The 20-day unusual fall drops in step with the forecast quartile: 16.7 %, 14.2 %, 7.8 % and -0.3 %.",
+    "F4": "The grading also shows at 5 days: slope 0.0043, t 2.19, 58 cases. The 5-day unusual fall is 6.7 % and 5.7 % in the two largest forecast quarters, against 0.5 % and 0.4 % in the two smallest. So the large rises start giving back at once and the small ones do not.",
+    "F5": "At 15 days the effect is mixed across periods. The slope is negative in 2018 (t -1.50, 13 cases) and 2019 (t -1.64, 16 cases), while 2020 has a mean move against the short (-1.0 %, 10 cases). No coin's slope reaches |t| 1.4. The test already used every fold and coin available on daily bars, so more data cannot be added.",
+    "F6": "The tested horizon hides a large ungraded effect. Step 5's size is an unusual move of +3.72 % per case (t 2.49, 217 days, strength 0.167) against a cost of 0.22 % a trade. The book still lost 1.5 % a year (Sharpe -0.03), because its 15-day short is held after small rises that give back without the grading the sizing assumes."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 20 days, taking back a larger share of that rise.",
+      "consequence": "A trader would size a short after a rally in a falling, agitated market by how large the scaled rally was, and hold it for about three weeks rather than two.",
+      "name": "rally giveback over twenty days",
+      "from": "F1, F2, F3, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 5 days.",
+      "consequence": "A trader would short a large scaled rally in a falling, agitated market at once and expect it to start giving back within the week, while small rallies give no edge over that span.",
+      "name": "large rallies fail within week",
+      "from": "F4, F2",
+      "profile": "falling agitated",
+      "refs": [
+        "F4",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.b1.b1.b1_rally-giveback-over-twenty-days",
+    "058-01.b1.b1.b2_large-rallies-fail-within-week"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

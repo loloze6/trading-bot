@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of signal-direction next-day excess return on |forecast|",
+    "value": 0.00013419696438422807,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 0.3997054489368189
+    },
+    "threshold": "confirm: slope t >= 2 (with mean excess > 0, t >= 2); reject: slope t <= -2 or mean t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean signal-direction next-day excess return (t clustered by day = 2.349)",
+    "value": 0.005179082375722874,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2538,
+    "distinct days": 758
+  },
+  "decided_by": "Neither rule met: the slope's t and the mean's t lie between the confirm and reject thresholds (or the slope passes without the mean).",
+  "reading": "Profile bars are those with regime 'unknown' (not vetoed to chop), the situation is a positive raw scaled return (price return when unrecorded); next-day return is close[t+1]/close[t]-1 inside the window on every case bar, the coin's mean is over all its 1-day returns in all windows, t's use CR1 cluster-robust errors by UTC day, and the plan's 'fewer than 100 cases or 50 days' is reported as 'not observable'."
+}

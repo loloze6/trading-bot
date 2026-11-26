@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move per case (return from signal close minus coin's normal 3-bar drift)",
+    "value": 0.016663028679119736,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 3.156653498935344
+    },
+    "threshold": "confirm: mean > 0 with day-grouped t >= 2 and check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-forecast half minus smaller half, above 0",
+    "value": 0.005703608686573153,
+    "passed": true
+  },
+  "counts": {
+    "cases": 490,
+    "days": 352
+  },
+  "reading": "Cases are the first bet in each 3-bar grid cell of a window (grid from the window's first row) with 3 bars ahead; the t uses deviations summed per UTC day; the halves are the n//2 largest and n//2 smallest forecasts at the signal bar (the middle case dropped when n is odd); situation bars not computable in-window are left out of the agreement share; the plan's 'fewer than 30 cases or 30 days' rule is reported as not observable.",
+  "status": "confirmed",
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the larger-forecast half beats the smaller half."
+}

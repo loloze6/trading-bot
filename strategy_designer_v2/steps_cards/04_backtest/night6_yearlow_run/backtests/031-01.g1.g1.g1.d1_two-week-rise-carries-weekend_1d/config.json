@@ -1,0 +1,72 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "wd",
+        "class": "strategies.strategy_components.WeekdayComponent",
+        "params": {}
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "wd",
+              "op": "between",
+              "low": 4.5,
+              "high": 5.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "rise14",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 14,
+              "vol_period": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 2
+  }
+}

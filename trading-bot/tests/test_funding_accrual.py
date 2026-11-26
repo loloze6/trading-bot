@@ -194,7 +194,7 @@ class _AlwaysRebalanceForecastManager:
 
 
 class _ApproveAllRisk:
-    def approve_allocation_change(self, symbol, allocation_change, data):
+    def approve_allocation_change(self, symbol, allocation_change, data, **kwargs):
         return True, {}
 
 

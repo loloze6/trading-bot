@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move per case (long), before costs",
+    "value": 0.029918739648186587,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 3.0278757770736284
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and positive slope; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on entry forecast",
+    "value": 0.0008265738047035375,
+    "passed": true
+  },
+  "counts": {
+    "cases": 201,
+    "distinct days": 147
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 and a positive slope on the entry forecast (confirm rule).",
+  "reading": "active bars whose 20-day mean range cannot be rebuilt from the window's own prices (the first 19 bars of a window) are left out of the agreement share; a case is the first bet (forecast rise of >= 2 points from its low since the last bet, from 0 after flat) in each 3-bar grid cell of its window, its return taken from the signal bar's close, the t clusters cases by calendar day (deviations summed per day, D/(D-1) correction), and the plan's 'fewer than 30 cases or days' rule is applied as the minimum count giving 'not observable'."
+}

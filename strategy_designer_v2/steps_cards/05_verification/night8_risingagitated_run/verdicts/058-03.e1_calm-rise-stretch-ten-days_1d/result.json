@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 10-bar forward excess return on raw dist20, in-profile grid bars, pooled",
+    "value": 0.002390777090277091,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.3218986880798607
+    },
+    "threshold": "slope t >= 2 confirms (with positive supporting excess), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean 10-bar excess return on grid bars with forecast > 0",
+    "value": 0.017412737061103307,
+    "passed": true
+  },
+  "counts": {
+    "in-profile grid cases": 301,
+    "grid bars with forecast > 0": 216
+  },
+  "decided_by": "The slope's t is 2 or more and the supporting check's mean excess return is above 0.",
+  "reading": "In-profile means regime 'unknown' with a recorded raw dist20; the coin's mean 10-bar return is the mean over all its windows' non-overlapping grid returns (positions 0, 10, 20, ... from each window's first row); the plan's 'fewer than 30 in-profile grid cases' minimum is reported as 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.002098 on the check folds against +0.002391 on every fold",
+    "main": 0.0020984057914349764,
+    "statistic": 1.1447391099767257,
+    "counts": {
+      "in-profile grid cases": 135,
+      "grid bars with forecast > 0": 92
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS t of the slope of excess forward 3-bar return on forecast",
+    "value": 0.00042162739332512,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.170479781629745
+    },
+    "threshold": "confirm: t >= 2 with supporting check > 0; reject: t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x excess 3-bar return over the top 20% |forecast| cases",
+    "value": 0.008585851957812682,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 4743,
+    "cases in top-20% group": 949
+  },
+  "decided_by": "The slope's t is 2 or more and the top-20% mean of sign(forecast) x excess return is above 0.",
+  "reading": "Cases are grid bars (positions 0,3,6,... per window) with regime 'mean_reversion', non-zero forecast and a full 3-bar forward return in the window; the coin's mean 3-bar return is the mean over all grid bars of all its windows; the regression is pooled across coins; the top-20% group is the ceil(20% of cases) largest |forecast|.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003655 on the check folds against +0.0004216 on every fold",
+    "main": 0.00036550840272788686,
+    "statistic": 2.7799774654337255,
+    "counts": {
+      "independent cases": 3332,
+      "cases in top-20% group": 667
+    }
+  }
+}

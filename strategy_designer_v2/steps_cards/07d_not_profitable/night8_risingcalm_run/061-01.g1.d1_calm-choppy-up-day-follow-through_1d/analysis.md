@@ -1,0 +1,23 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 061-01.g1.d1_calm-choppy-up-day-follow-through_1d
+idea tested: 061-01.g1.d1_calm-choppy-up-day-follow-through
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3821 USD
+---
+## Findings
+- **F1:** The book cannot pay as traded. Per case over 5 days its total move is +0.02 %, against a cost of 0.19 % per trade. Its unusual move is -0.60 % (t -1.63, 465 days, 675 cases). The book's yearly return is -0.5 % with a Calmar of -0.012. Its lowest Sharpe with one window left out is -0.15, and its two worst windows are w9 (fall -14.6 %, total -12.8 %) and w14 (fall -11.2 %, total -10.9 %).
+- **F2:** The loss comes from the small up days. Inside the choppy calm profile, 5-day grid bars with a rise of 0 to 1 day-swing lose -1.52 % against the coin's drift (t -1.44, 67 cases). Rises above 1 day-swing gain +6.22 % (t 2.27, 23 cases). The book still trades the small days because the forecast is standardised over its past 60 values. With that forecast, cases at 0 to 1 standardised units lose -1.8 % (56 cases), while those above 1 unit gain +9.9 % (9 cases) and +4.2 % (t 2.27, 14 cases).
+- **F3:** The direction of the follow-through depends on where the up day closes against the coin's 20-day high. Inside the profile, up days closing within 4 % of the highest close of the past 20 days gain +3.84 % in excess over 5 days (t 2.16, 42 cases). Up days closing more than 10 % below it lose -5.16 % (t -2.42, 21 cases).
+- **F4:** Closeness to the high is not an effect of its own. All inside grid bars near the high earn +1.58 % (t 1.22, 70 cases), and the near-high bars without an up day lose -1.81 % (t -1.09, 28 cases). Only with the rise does it reach +3.84 %. It fits the brief's theory: a day that stands out against the quiet and pushes the coin to new highs is new information starting a move. A rise far below the high is a bounce inside a decline, which is repaid.
+- **F5:** Combining both cases gives the strongest result. Rises above 1 day-swing that close near the 20-day high gain +8.91 % inside the profile (t 2.59, 17 cases), against -1.41 % for the same rises far from the high (6 cases). The losing year 2018 (-7.33 %, t -3.01, 16 cases) was the one where up days came below falling highs.
+- **F6:** The trades point the same way as F2. Trades entered at a forecast of 15 to 20 earn +1.14 % net per trade (217 trades), against +0.51 % to +0.68 % for those entered below 15 (218 trades). Over 10 days, rises above 1 day-swing gain +7.0 % (t 1.60, 11 cases), so a longer hold keeps the effect but is thin.
+
+## Ideas
+- `061-01.g1.d1.d1_calm-big-rise-convex-follow-through` (from F1, F2, F6): In a choppy, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the further it keeps rising over the next 5 days, with the follow-through growing faster than the rise, so that days rising by less than a usual day's swing carry none of it.
+- `061-01.g1.d1.d2_calm-big-rise-near-highs` (from F3, F4, F5, F1): In a choppy, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, and the closer that rise takes its close to its highest close of the past 20 days, the further it keeps rising over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

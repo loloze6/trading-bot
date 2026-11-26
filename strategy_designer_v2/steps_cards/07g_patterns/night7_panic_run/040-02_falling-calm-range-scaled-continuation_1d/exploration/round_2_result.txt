@@ -1,0 +1,86 @@
+## slope of unusual fwd3 on scaled 3d return
+                                    slope  t_cluster       n   days
+profile, sc                        0.0092     1.6786   537.0  194.0
+profile, falls only sc             0.0030     0.3103   319.0  139.0
+profile, rises only sc            -0.0064    -0.6386   218.0  106.0
+profile, standardised forecast pp  0.0014     1.6576   537.0  194.0
+profile, raw lh                    0.0091     1.6721   537.0  194.0
+profile early, sc                  0.0013     0.1677   315.0   99.0
+profile late, sc                   0.0173     2.3029   222.0   95.0
+out of profile, sc                 0.0044     1.0336  1724.0  385.0
+out, falling (tr60<-10%) sc       -0.0048    -0.4361   242.0   75.0
+out, rising sc                     0.0080     1.0931   531.0  137.0
+out, choppy sc                     0.0118     1.1668   212.0  113.0
+
+## profile clustered mean by sign
+        mean     t   days
+fall -0.0202 -2.82  139.0
+rise  0.0071  1.02  106.0
+
+## profile by coin x sign mean
+          mean         count     
+sgn       fall    rise  fall rise
+coin                             
+BTCUSD -0.0074  0.0009    36   25
+ETHUSD -0.0317 -0.0047    48   27
+LTCUSD -0.0262  0.0118    71   48
+XMRUSD -0.0090  0.0016    50   33
+XRPUSD -0.0179  0.0125    53   35
+ZECUSD -0.0227  0.0121    61   50
+
+## profile by grp x sign
+              mean     std  count       t
+grp   sgn                                
+early fall -0.0160  0.0672    200 -3.3626
+      rise -0.0004  0.0607    115 -0.0691
+late  fall -0.0272  0.0907    119 -3.2703
+      rise  0.0156  0.0756    103  2.0905
+
+## next-day after biggest z-drops: by grp
+         mean     std  count       t
+grp                                 
+early  0.0083  0.0473    486  3.8738
+late   0.0082  0.0682    507  2.6929
+
+## next-day after biggest z-drops: by coin
+          mean     std  count       t
+coin                                 
+BTCUSD  0.0023  0.0443    165  0.6685
+ETHUSD  0.0096  0.0562    167  2.2136
+LTCUSD  0.0057  0.0678    165  1.0847
+XMRUSD  0.0121  0.0491    166  3.1646
+XRPUSD  0.0078  0.0723    141  1.2892
+ZECUSD  0.0113  0.0611    189  2.5418
+
+## next-day after biggest z-drops: by trend
+             mean     std  count       t
+tb                                      
+choppy/na  0.0076  0.0621    437  2.5441
+falling    0.0083  0.0548    332  2.7443
+rising     0.0095  0.0585    224  2.4328
+
+## next-day biggest z-drops clustered
+(np.float64(0.0082), np.float64(2.34), 319)
+
+## next-day slope on z, down days
+slope          -0.0071
+t_cluster      -1.9971
+n            3417.0000
+days          874.0000
+
+## next-day slope on z, up days
+slope           0.0014
+t_cluster       0.7507
+n            3527.0000
+days          889.0000
+
+## fwd3 unusual by today's z septile (grid)
+      mean     std  count       t
+zq                               
+0   0.0094  0.1006    323  1.6706
+1   0.0036  0.0954    323  0.6862
+2  -0.0039  0.0931    323 -0.7563
+3   0.0053  0.0733    323  1.3113
+4  -0.0035  0.0761    323 -0.8261
+5  -0.0025  0.0896    323 -0.4960
+6  -0.0048  0.0857    323 -1.0127

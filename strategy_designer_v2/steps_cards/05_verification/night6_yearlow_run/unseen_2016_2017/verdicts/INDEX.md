@@ -1,0 +1,5 @@
+031-01.g1.g1.d1_midweek-gain-lifts-saturday_1d: not observable (fit: exact) [main: -0.000289712; slope t, residuals summed per Saturday -0.448543; Friday cases with forecast > 0 241, distinct Saturdays 95]
+031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d: inconclusive (fit: adapted) [main: 0.00129846; OLS slope t, residuals summed per day 1.15535; bars with forecast > 0 236, days 156, top third bars 79]
+031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d: inconclusive (fit: exact) [main: -0.00108804; OLS slope t -1.1434; cases 260]
+031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d: inconclusive (fit: adapted) [main: -0.000198094; slope t, clustered by day -0.200973; uptrend Thursday cases with forecast above 0 225, distinct Thursdays of those cases 94, uptrend Thursday cases (all, incl. forecast 0) 318, distinct days (clusters) 100]
+031-01.g1_weekly-gains-carry-into-saturday_1d: not observable (fit: adapted) [main: 0.00335543; t of the mean, cases of one day summed 0.541782; distinct days with a positive forecast 98, main measure cases 256, days of main measure cases 98, top-third Friday bars 85, zero-forecast Friday bars 164]

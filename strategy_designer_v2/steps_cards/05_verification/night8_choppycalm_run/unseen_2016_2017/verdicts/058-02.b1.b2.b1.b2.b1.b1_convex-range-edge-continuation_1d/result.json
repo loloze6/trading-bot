@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 10-bar forward return minus coin mean 10-bar return on forecast (non-overlapping grid, non-zero forecast, pooled)",
+    "value": -0.0016492945297679404,
+    "statistic": {
+      "name": "t of slope (day-clustered)",
+      "value": -0.5153745038281012
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passed; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean directional excess return, top third of |forecast| minus bottom third",
+    "value": -0.1267188094248116,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping grid cases with a non-zero forecast": 36,
+    "days": 30
+  },
+  "decided_by": "Only 36 non-overlapping grid cases with a non-zero forecast, below the plan's minimum of 100.",
+  "reading": "The situation is the regime column equal to the profile regime 'unknown' (rising calm, not vetoed) with the forecast's sign equal to the sign of the raw range position; the slope is an OLS fit with intercept and a day-clustered standard error (G/(G-1) correction); the coin's mean 10-bar return is taken on the non-overlapping grid of all its windows; thirds of |forecast| are equal-count splits of the cases sorted by |forecast|; the plan's minimum of 100 cases, if not reached, gives 'not observable'."
+}

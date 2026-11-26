@@ -1,0 +1,140 @@
+# Next steps: the one list (the operator, 2026-11-24: "the next step table list is our line")
+
+The plan, grouped by business objective, and every topic card (`NN_*.md` in this folder; `README.md`: what a topic
+is). One line per step: the business objective it serves, what to do, the evidence that asks for it, its status and
+the next action. A step found by a run or an analysis is added with its source. Cleaned with the operator on 2026-11-26
+(after night 8): lines merged into the objective they serve, finished lines moved to "Done", lines not needed deleted
+(git keeps them).
+
+**The aim:** strategies that earn on years the research never used, combined so that together they earn more for
+their risk than any one alone.
+
+**Status words (one per line)**
+| Status | Meaning |
+|---|---|
+| **DECIDE** | waits for the operator's choice (options to weigh) |
+| **GO?** | ready; built on the operator's go |
+| **REVIEW** | to discuss with the operator in the review of the report named |
+| **RUNNING** | in progress |
+| **AFTER x** | starts when line x is done |
+| **PARKED** | kept, not now; the line says when to reopen |
+| **DONE** | finished; listed once under "Done", then dropped |
+
+## A. The portfolio: one portfolio, chosen by fixed rules, judged on data nobody used
+| # | Business objective | What to do | Evidence | Status | Next action |
+|---|---|---|---|---|---|
+| A1 (P6b) | The portfolio is built by one method, never by hand | A new version after each night by `orchestration/combine/card.md`; every version listed (`portfolios/INDEX.md`) and judged on the unseen coins | v1: in-sample Sharpe 1.97, unseen coins 0.99; v2 (+1 short specialist): 2.06, 1.01 (`runs/NIGHT8_RUN.md`) | **AFTER** the night 8 report review | the designer: the next version on the latest run |
+| A2 (1z) | A real effect that fails alone can still earn inside the portfolio | Whether the card admits confirmed specialists that failed step 6, judged by their effect on the portfolio | Night 8: 16 of 48 confirmed strategies failed step 6 on Calmar alone (A 7, B 4). The operator (2026-11-26): failing Calmar means low profit or deep falls, but combined the idea can be leveraged: keep them for the combination | **AFTER** the night 8 report review (direction agreed) | the designer: the card's rule 2 and how leverage is set, for review |
+| A4 (P12) | Every result is judged on the right data, and moves to the next stage by a written rule, never by a person | One protocol card: the data each research step reads (folds, dates, coins), and the automatic move from stage to stage: confirmed and profitable on the folds → unseen dates and coins tests → combination candidate → portfolio version judged → the sealed holdout by rule; C1 is one of its rules; A7 is the process that runs it | The unseen dates and coins are now used for development; the combination and its judge were run by hand after night 8; the operator (2026-11-26): "standardize this so that we close this topic and it is processed following guideline, not my decision" | **RUNNING** | the designer: the draft, [55_data-use-and-stage-moves.md](55_data-use-and-stage-moves.md), for the operator's review |
+| A6 (new) | Among related strategies in a box, the one kept is chosen by a rule, not by order | The card's rule 4 keeps the strategy already in the box: a rule on which one stays (the best by a fixed measure), or both in parallel at a split weight | The operator (2026-11-26): "being first in the box does not mean it is the best of the newly found ones". A3 (E's family) was not a fault of rule 3: E's line left its brief's profile (choppy calm → choppy → calm; → falling → falling agitated) because E ran without the `theme.md` rule of the night; with that rule each branch is its own discovery brief, its own family | **PARKED** (the operator, 2026-11-26) | reopen with A2 |
+| A7 (new) | A batch research run (the "night") is one standard process, not a set of instructions | A card with its business rules (purpose and expected outcomes written first, sessions, budget, pilot, reading) and one command running every step in order: launch, loop, merge, register, combination, its judge on the unseen coins, the reading; it follows A4's protocol and replaces `runs/NIGHT_RULES.md`; it takes in E5 and the combination's run after the merge | Night 8: the combination and its judge run by hand; the merge cut by a time limit; the resume command without a budget | **PARKED** (the operator, 2026-11-26) | reopen with A4 |
+| A5 (1s, topic 53) | The portfolio's risk stays stable whatever the market | Coins grouped by character; weights by risk; money moved by regime | P4's worst fall: 11.1 % on 2016-17, 4.8 % on 2026 | **PARKED** | reopen when the portfolio has specialists in most boxes |
+
+Merged into A1 (the combination card replaces them; each candidate checked 2026-11-26): P10, P10a, P10b, P6 (method);
+P11 (night 6: 031-01.g1 in v2, 031-03.g1.b1.g2 left out by rule 4); P13 (night 7: 035-01 in v2; 038-01, 051-01 and
+both 045-01 left out by rule 4); night 7's controls, never merged until 2026-11-26: rangefail, chopreversal and
+steadydecline merged (1 paying book each, now read by the card: v2b, all 3 left out by rule 4 as related to 001-01, the portfolio unchanged); panic not merged (its extension of
+`BreakoutInMeanRangesComponent` and the working branch's are two different extensions of one class, which
+`night_merge` rightly refuses to choose between; it has 0 paying books, its 5 confirmed books, P13's 032-02.b2 among
+them, are kept out by rule 2 anyway; its records stay on branch `night7c-panic`); P1-P4's books (each one read by the
+card; one now only confirmed, 006-04.g1, is out by rule 2).
+
+## B. The search: find proven strategies in the boxes the portfolio lacks
+| # | Business objective | What to do | Evidence | Status | Next action |
+|---|---|---|---|---|---|
+| B2 (1o; B6 merged in) | Each run finds strategies where the portfolio lacks them, starting from the data | Option a (the operator, 2026-11-26): a session starts from a target box (a profile and a side, e.g. "choppy agitated, short"), not from a theme written closed-book; its first step explores the data in that box the way line 7.g does, with the profile map, and writes the first ideas; follow-ups then dive as usual. A new entry of `run_brief`: a box in place of a theme | Night 8: the 4 themes aimed at empty or thin boxes were not real (C, D, E, F); the one new specialist came from a discovery the map pointed to ("the short side, which no proven strategy holds in this profile"); brief first ideas are confirmed 9 % of the time, follow-ups 56 % (1g) | **GO?** (option a agreed) | the designer: card, build, pilot, before the next run |
+| B3 (3k, topic 02) | No money spent finding the same effect twice | Duplicates judged on the plan's config, across a night's sessions | Night 8: one fade confirmed 12 times by 4 sessions; 18 of 48 books repeat a held effect (20 USD) | **REVIEW** (night 8 report, parts 4 and 5) | discuss, then design |
+| B8 (1r, topic 52) | Decide-next as a helper agent, not mechanical: the next idea chosen by why it exists | An agent step reads each idea's reason | The operator's idea (2026-11-25) | **PARKED** | reopen after the first run started from a box (B2) |
+| B9 (1x, topic 54) | The market-profile rule checked coin by coin, as step 5 checks a forecast | A verdict on each coin's profile against what its price did next; a per-coin rule or the regime detector only if the verdict shows misreadings | One fixed rule (+10 % in 60 days) for every coin | **PARKED** | reopen on the operator's choice |
+
+## C. Trust: a result we keep is real and holds on new data
+| # | Business objective | What to do | Evidence | Status | Next action |
+|---|---|---|---|---|---|
+| C1 (from 1u) | The portfolio, the final product, earns more on new data than simply holding its coins | The portfolio's judge (combination card, rule 6; A4's protocol) compares its Sharpe with holding the same coins over the same days; each strategy alone keeps today's rule (sign kept and Sharpe above 0), so specialists and short strategies stay available to the portfolio | Unseen coins: holding earned a Sharpe of about 1.0; 27 of 35 strategies hold, 9 beat holding; the night 8 short specialist beats holding on 2026 only (1.22 against 0.10) | **PARKED** (the operator, 2026-11-26: portfolio only) | reopen with A4's protocol |
+| C2 (2c, 2d) | Strategies found after many tries are not luck | A stricter bar for deep strategies; luck by kind of idea | 2b: deep strategies keep 0.80-0.93 of their effect | **PARKED** | recheck after 2 more nights |
+
+## E. Machinery: nights run as planned, nothing lost, master up to date
+| # | Business objective | What to do | Evidence | Status | Next action |
+|---|---|---|---|---|---|
+| E1 (3h, 1l) | Master holds what is proven | Merge into master: 1l (engine), the component builds of nights 6 to 8 and their build records, the merge helper's fix, topic 15's pin | 1l's impact: 0 of 98 step 6 answers change (`runs/TOPIC51_IMPACT_RUN.md`); both test suites pass | **RUNNING** (the operator's go, 2026-11-26) | the designer: pull request and merge |
+| E2 (3j) | A plan the engine refuses never reaches step 4 | Step 3 runs `trading-bot/tools/validate_config.py` on its plan | Night 8, C's 068-01: an invalid regime name, 0 of 24 windows run, 0.34 USD | **REVIEW** (night 8 report, part 5) | discuss, then build |
+| E3 (3e) | Parallel sessions never share a brief number | A number range per session, given by `run_brief` | Night 6; night 8: 058 to 068 used by up to 6 briefs each | **REVIEW** (night 8 report, part 5) | discuss, then build |
+| E4 (3l) | Running the tests never changes a record | Rename `topics/47_review/fold_rules_test.py` (pytest collects `*_test.py`) | Night 8's morning merge: it rewrote its csv | **REVIEW** (night 8 report, part 8) | discuss, then fix |
+| E8 (9) | A clean repository | Delete the merged branches | The designer's delete is refused | **DECIDE** | the operator: GitHub's branches page (the designer gives the list) |
+| E9 (6, 7, 3i, T37) | Simpler and faster runs | One Python environment for every step; a faster step 5; a smaller register (the rebuild took 38 min); jobs past the 2-hour limit | — | **PARKED** | reopen when one blocks a run |
+
+## F. Toward live
+| # | Business objective | Topic | Status | Next action |
+|---|---|---|---|---|
+| F1 | Several strategies run in one bot | P5, topic 10 | **AFTER A4** | when a portfolio holds on the holdout |
+| F2 | The short side and costs checked on real futures candles | topic 09 | **AFTER A4** | same |
+| F3 | Hosting, operations, a viewer of the live bot | topics 11, 12, 14 | **AFTER A4** | same |
+
+## Done (read with the operator; dropped at the next clean-up)
+| # | Result |
+|---|---|
+| 1l, 1w | A move to flat is never refused: built, proven, its impact on 46 books checked; merge: E1 |
+| 1n, 1q, 1t | Discoveries ranked as follow-ups; the profile map by side given to lines 7.e and 7.g (night 8's new short specialist came from it) |
+| 1u | Unseen coins as the development judge: 27 of 35 hold (the rule question: C1) |
+| 1v | A watched pilot before a night: 6 of 6 passed |
+| 1m, 1p | Night 7 and its measures |
+| P10b, P6b v1, v2 | Combination built and judged (continues as A1) |
+| 3f, 3g | Night rules; `night_merge` (the same change on both sides kept once, 2026-11-26) |
+| E6 | `common/data_available.md`: NEAR has data in fold A's last window (2026-11-26) |
+| E7 (topic 15) | The GitHub alert: `claude-agent-sdk` raised from 0.2.82 to 0.2.180 (2026-11-26); the alert closes when E1 reaches master |
+
+Deleted 2026-11-26 (the operator; git keeps them): 1y (the theme's lineage first: withdrawn in the review, no evidence:
+no session left a theme idea untested; D's theme was answered after 2 ideas), 1f (rebuild 18 old books: the combination reads where each really
+trades), 2a and 2e (not needed by night 8), section C of trades inside a strategy (13, 16 to 19; topic 48 stays a card),
+3b (hourly 2026 data: hourly books do not carry to other coins), 4 (days both in a position: the combination shows the
+overlap), 10 (backfilling informative measures), topic 45 and topic 08 closed below.
+
+## Open topic cards, no step yet (PARKED)
+| # | Topic | Where |
+|---|---|---|
+| T01 | [Step 3: the noise from writing a test freely](01_step3-noise-from-writing-a-test-freely.md) | step 3 |
+| T03 | [Ideas tested on data step 7 did not see](03_ideas-tested-on-data-step-7-did-not-see.md) | orchestration (in part done) |
+| T04 | [Record the regime detector's values in the backtest](04_backtest-record-regime-values.md) | engine |
+| T05 | [Coins without data on the reachable venue](05_coins-without-data-on-the-venue.md) | data |
+| T06 | [Brief management](06_brief-management.md) | briefs |
+| T07 | [Two loops calling the components step at the same time](07_two-loops-on-the-components-step.md) | components |
+| T13 | [Research viewer, round 2](13_research-viewer-round-2.md) | visualizer session |
+| T29 | [A model call ran away again](29_a-model-call-ran-away-again.md) | step 7, `common/lib.py` |
+| T30 | [Why hourly ideas rarely pay](30_why-hourly-ideas-rarely-pay.md) | the whole workflow ([30_review/STORYLINE.md](30_review/STORYLINE.md)) |
+| T31 | [Choosing and judging an idea on different data (folds)](31_choosing-and-judging-on-different-data.md) | step 7, step 5, folds (A4 reads it) |
+| T32 | [How select_next weighs a step 7 line](32_how-select-next-weighs-a-line.md) | select_next |
+| T35 | [A horizon in price, not only in time](35_price-horizon.md) | common, steps 2, 3; engine |
+| T36 | [Settings counted in bars, carried from daily to finer timeframes](36_fixed-bar-counts-across-timeframes.md) | step 3 guide; engine defaults |
+| T39 | [The idea's size against the cost, coin by coin](39_size-against-cost-per-coin.md) | steps 5, 7 |
+| T48 | the trade analysis (topic 48) | trades inside a strategy |
+
+## Closed topics (decided, built, solved or dropped; the card keeps the reasons)
+| # | Topic | Status |
+|---|---|---|
+| 16 | [Data gathering separate from the backtest](16_data-gathering-separate-from-the-backtest.md) | closed (2026-11-18) |
+| 17 | [The data's bar deduced from the trading bar](17_data-bar-from-the-trading-bar.md) | closed (2026-11-18) |
+| 18 | [Holes of up to one day ignored](18_holes-up-to-one-day-ignored.md) | closed (2026-11-19) |
+| 19 | [The 0.2 rule kept](19_the-0-2-rule-kept.md) | closed (2026-11-18) |
+| 20 | [The unseen-dates test made standard](20_unseen-dates-test-made-standard.md) | closed (2026-11-18) |
+| 21 | [Speed fixes of the engine](21_engine-speed-fixes.md) | closed (2026-11-18) |
+| 22 | [Run briefs in one folder](22_run-briefs-in-one-folder.md) | closed (2026-11-19) |
+| 23 | [Built components not merged afterwards](23_built-components-not-merged-afterwards.md) | closed (2026-11-19) |
+| 24 | [Components step: a cut build undone; the proof backtest removed](24_components-step-cut-build-and-proof.md) | closed (2026-11-19) |
+| 25 | [Loop: when an idea is finished](25_loop-when-an-idea-is-finished.md) | closed (2026-11-19) |
+| 26 | [Ideas stay free: no forced long and short](26_ideas-stay-free-long-and-short.md) | closed (2026-11-19) |
+| 27 | [Dropped or solved in the review of 2026-11-19](27_dropped-or-solved-in-the-review.md) | closed (2026-11-19) |
+| 28 | [Topics kept as cards](28_topics-as-cards.md) | closed (2026-11-19) |
+| 33 | [A second round of engine speed work](33_engine-speed-second-round.md) | built 2026-11-20 (A to D); in master since 2026-11-22 (PR 577) |
+| 34 | [Why a real idea does not pay, and an idea that pays for its trip](34_an-idea-must-move-more-than-a-trip.md) | built into the steps (size in step 5, size against cost in step 7); the diagnosis kept as a tool in `34_review/` |
+| 38 | [The backtest's cost of a trade against real Kraken futures](38_cost-of-a-trade-against-kraken-futures.md) | built 2026-11-20 (an estimate at a 10k USD order); refinement and maker parked |
+| 40 | [Repository clean-up, night 3](40_repository-clean-up-night-3.md) | closed 2026-11-21 (all done) |
+| 41 | [Is a paying book a new source of profit, or one we already have?](41_does-the-idea-add-beyond-its-filter.md) | built and proven (`ideas_similarities_check`); its reader and its call by run_idea to decide |
+| 42 | [Two more measures for step 6: standard deviation and total profit](42_two-more-measures-for-step-6.md) | built 2026-11-22 (two informative measures) |
+| 43 | [The findings register](43_the-findings-register.md) | closed 2026-11-21: switched off and deleted |
+| 46 | [An idea's id grows past the file name limit](46_idea-ids-grow-past-the-file-name-limit.md) | built 2026-11-23 (option A) |
+| 49 | [Ideas name the market profile they act in](49_ideas-name-their-market-profile.md) | built 2026-11-24 (option A) |
+| 50 | [Follow-ups stay on their brief's theme](50_follow-ups-stay-on-the-theme.md) | built 2026-11-24 (option A) |
+| 51 | [A position smaller than the rebalance band is never closed](51_small-positions-are-never-closed.md) | built on the working branch 2026-11-25 (option A, proven); merge into master: the operator's go |
+| 08 | [An idea proven and profitable: what next](08_proven-and-profitable-what-next.md) | closed 2026-11-26 (redundant: A1, A4, F1 to F3) |
+| 15 | [The GitHub security warning](15_github-security-warning.md) | closed 2026-11-26 (`claude-agent-sdk` raised to 0.2.180) |
+| 45 | [Why the research finds almost only long momentum](45_why-the-research-finds-only-long-momentum.md) | closed 2026-11-26 (its decisions built; the long lean carried by 1t, A2, B2) |

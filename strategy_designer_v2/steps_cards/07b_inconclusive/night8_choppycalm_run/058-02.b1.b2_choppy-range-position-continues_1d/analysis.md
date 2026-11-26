@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 058-02.b1.b2_choppy-range-position-continues_1d
+idea tested: 058-02.b1.b2_choppy-range-position-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3239 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but well short of the bar: slope +0.000231 with t 0.87 on 819 grid cases inside the choppy profile. The size agrees: the unusual move is +0.27 % per case over 5 days (t 0.90 over 829 days), a strength of 0.021 of the coin's usual 10.60 % move, and 1.4 times the 0.19 % cost of a trade.
+- **F2:** In the folds shown (B and C), the same pooled 5-day slope on the forecast is +0.00118 with t 2.15 on 287 grid cases. The raw range position gives +0.00129 with t 2.24. Since the full test gives only t 0.87 on 819 cases, folds A and D must carry little or none of the effect. The sign holds, but the evidence is thin and uneven.
+- **F3:** The plan's 5-day horizon is where the effect shows best, not a mis-chosen one: on the same grid, the slope's t is 0.49 at 1 day, 0.59 at 3 days, 2.15 at 5 days, 1.08 at 10 days and −0.87 at 20 days.
+- **F4:** The effect is mixed across coins. XRP carries most of it (slope +0.00427, t 2.88, 60 cases), BTC is weakly positive (t 1.16, 64 cases), and ETH, LTC, XMR and ZEC sit between t −0.29 and t 0.81.
+- **F5:** The effect is mixed across periods. Two windows carry it: w16 (t 4.38, 16 cases) and w18 (t 2.20, 21 cases). w7 points the other way (t −2.47, 30 cases), and the other windows sit between t −0.73 and t 0.49.
+- **F6:** The effect is not graded across the range. By quintile of the forecast, the mean excess 5-day returns are −3.48 %, −1.19 %, −3.49 %, +1.69 % and −0.73 % (58, 57, 57, 57 and 58 cases). The top fifth does no better than the middle, and only the fourth fifth is positive.
+- **F7:** In the shown folds, the effect is stronger when the coin's 30-day swing is above its own median: slope +0.00230 with t 2.14 on 106 cases, against +0.00035 with t 0.58 on 181 cases otherwise. This split uses the coin's median over the record, not the profile's past-year rule. The choppy agitated profile also holds only about 3 % of days, so narrowing to it would leave too few cases.
+
+## Ideas
+- `058-02.b1.b2.b1_choppy-range-position-more-coins` (from F1, F2, F3, F4): In a choppy market, the higher a coin's close sits within its 20-day high-low range, the larger its rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

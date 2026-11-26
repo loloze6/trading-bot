@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "033-01_rising-market-sharp-drop-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5602642999999999,
+  "findings": {
+    "F1": "In rising markets, the bars where the coin's 30-day swing is in its lowest third were followed by a 3-day return +1.97 % above the coin's normal drift (day-clustered t 2.83; 282 cases on 132 days; strength 0.21, four times the usual 0.05). The middle and top thirds earned only +0.13 % and +0.15 % (t 0.21 and 0.17), and outside rising markets the lowest third earned \u22120.66 % (t \u22121.23).",
+    "F2": "Inside rising markets the move is graded by how calm the last 30 days were compared with the last 90 days (the ratio of the 30-day to the 90-day swing). Going from the calmest quartile to the most agitated, the unusual 3-day move falls from +2.47 % (t 2.29, 133 cases) to +1.52 % (t 1.45), then +0.42 % (t 0.40), then \u22120.34 % (t \u22120.25).",
+    "F3": "The calm-and-rising excess holds across most of the sample:",
+    "F4": "Per case the calm-rising unusual move (+1.97 %) is about 10 times the cost of a trade (0.19 %). The tested idea's unusual move (+0.24 %) is only 1.2 times that cost.",
+    "F5": "The tested idea's grading is absent. In rising markets the slope of the 3-day unusual return on the day's scaled return is \u22120.0008 (day-clustered t \u22120.14, 981 cases, 270 days), and the falls of 2 or more usual swings earn +0.46 % (t 0.41, 14 cases).",
+    "F6": "The down days do better only in calm rising markets:",
+    "F7": "Two other angles did not stand out once checked properly, given the many angles I looked at:"
+  },
+  "ideas": [
+    {
+      "idea": "In a rising, calm market, a down day is followed by a rise over the next 3 days, and the rise is larger the more that day's fall exceeds the coin's usual daily swing (the standard deviation of its daily returns over the past 30 days).",
+      "consequence": "A trader buys sharp dips only when the uptrend is quiet, and leaves them alone when the uptrend is already swinging hard.",
+      "name": "calm uptrend dip rebound",
+      "from": "F1, F6, F5, F4",
+      "profile": "rising calm",
+      "refs": [
+        "F1",
+        "F6",
+        "F5",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a rising market, the lower the coin's swing over the last 30 days compared with its swing over the last 90 days, the more it rises over the next 3 days.",
+      "consequence": "In an uptrend, a trader holds the coin more heavily when its recent swings have been quieting relative to the previous months, and less when they have been widening.",
+      "name": "quieting uptrend keeps climbing",
+      "from": "F1, F2, F3, F4",
+      "profile": "rising",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-01.g1_calm-uptrend-dip-rebound"
+  ],
+  "discovery_ids": [
+    "033-01.g2_quieting-uptrend-keeps-climbing"
+  ],
+  "no_ideas": null
+}

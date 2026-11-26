@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 5-bar forward return on forecast (grid bars, forecast < 0)",
+    "value": -0.0005883681434267903,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": -0.676139129504395
+    },
+    "threshold": "confirm if slope t >= 2 and supporting check passes; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 5-bar forward return < 0",
+    "value": -0.009611587436223246,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 281,
+    "distinct days": 162
+  },
+  "decided_by": "slope t between -2 and 2",
+  "reading": "Same-day clustering is a day-clustered (cluster-robust, G/(G-1) corrected) OLS standard error of the slope; the coin's mean 5-bar return is taken over the non-overlapping 5-bar grid of all its windows; the supporting check is the plain mean of the drift-adjusted returns of the same grid cases."
+}

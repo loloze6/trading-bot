@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move over 5 bars of short cases (day-clustered t)",
+    "value": 0.006835119681255019,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 1.9886857038436345
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move deeper half minus shallower half (median depth split)",
+    "value": 0.0009424631689295034,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 1149,
+    "cases": 3666,
+    "active bars": 20969
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2, meeting neither confirm nor reject (inconclusive rule).",
+  "reading": "A case is the first short bet (forecast magnitude rising by at least 2 points from its lowest level since the last bet, from 0 after a flat or side change) in each 5-bar grid cell of a window, its return taken from that bar's close over 5 bars inside the window; the normal drift is the coin's mean 5-bar return on the grid over all its windows; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the deeper half is depth at or below the median, the shallower half above it; fewer than 30 case days is reported as not observable."
+}

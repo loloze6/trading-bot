@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "058-01.g2.g1.d1_bounce-in-decline-wick-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4469805,
+  "findings": {
+    "F1": "In the falling agitated profile (15.5 % of coin-days in folds B, C), an up day is followed by a fall the next day: the mean excess next-day return is \u22120.98 % (t \u22122.54, 613 cases on 258 days). Outside the profile up days are flat (\u22120.14 %, t \u22120.89, 3,572 cases), so the effect belongs to this profile, as the brief says.",
+    "F2": "The tested condition \"3-day return still negative\" adds nothing in folds B, C. Up days with a negative 3-day return fall \u22120.99 % the next day (t \u22121.52, 236 cases). Up days with a positive 3-day return fall \u22120.95 % (t \u22122.24, 370 cases on 167 days). The idea's restriction drops about 60 % of the cases.",
+    "F3": "Among up days in the profile, the next-day fall grows with how far the close sits below the day's high, in 30-day daily standard deviations. By quartile of that depth (0.07, 0.21, 0.39, 0.81), the next-day excess returns are \u22120.47 %, \u22120.55 %, \u22120.73 % and \u22121.67 % (t of the top quartile \u22121.80, 136 cases).",
+    "F4": "Among the tested book's cases (up days inside a falling 3-day move), the deeper the 3-day fall was in usual swings, the larger the next-day fall. By third of the 3-day z-score (\u22121.09, \u22120.39, \u22120.10), the next-day excess returns are \u22122.16 % (t \u22122.12, 68 cases, 38 days), \u22120.70 % and +0.78 %.",
+    "F5": "The brief's own grading does not show. Among profile days with a positive 3-day return, the next-day excess return by quartile of the 3-day rise in usual swings is +0.21 %, +0.07 %, \u22121.49 % and +0.11 %. Over 2 days it is +1.38 %, +1.26 %, \u22122.09 % and +0.32 %, so the largest rises are not the ones given back most.",
+    "F6": "The up-day fall holds across coins and years. It is negative on all six coins, with t \u2264 \u22122 on BTC (\u22121.08 %), LTC, XMR and ZEC, and negative in all four years (2018 \u22121.45 %, 2019 \u22121.39 %, 2020 \u22120.32 %, 2021 \u22120.85 %).",
+    "F7": "Down days in the profile rebound the next day: +1.26 %, t 3.15, 675 cases on 289 days. The rebound is graded by the day's fall in usual swings: the lowest fifth (z \u22121.33) gains +2.18 % (t 2.92). This is already held: the map lists 12 long falling agitated rebound strategies, so it is no discovery.",
+    "F8": "The book's gain rests on a few days. Its 10 best days sum to +12.8 % of daily return, more than its total of +10.9 % over 1,449 days, and its 10 worst days sum to \u22126.3 %. This fits a book in a position on only 4 % of coin-days."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, a coin's up day is followed by a fall over the next day. The further the day closed below its high, measured against the standard deviation of its daily returns over the past 30 days, the larger that next-day fall.",
+      "consequence": "In an agitated decline, a trader would short every up day that closes well off its high for one day, without waiting for the 3-day move to still be falling, which about doubles the trades.",
+      "name": "agitated decline up day fade",
+      "from": "F1, F2, F3, F6",
+      "profile": "falling agitated",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, an up day that comes after a fall over the past 3 days is followed by a fall over the next day. The deeper that 3-day fall, measured against the standard deviation of the coin's daily returns over the past 30 days, the larger the next-day fall.",
+      "consequence": "A trader would short a one-day bounce for one day, sized by how deep the decline it interrupts was, and treat a bounce after a mild dip as no signal.",
+      "name": "bounce after deep fall fails",
+      "from": "F4, F1",
+      "profile": "falling agitated",
+      "theme": "on",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.g2.g1.d1.g1_agitated-decline-up-day-fade",
+    "058-01.g2.g1.d1.g2_bounce-after-deep-fall-fails"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

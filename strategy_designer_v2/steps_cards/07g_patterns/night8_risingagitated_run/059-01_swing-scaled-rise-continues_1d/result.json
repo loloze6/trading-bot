@@ -1,0 +1,63 @@
+{
+  "line": "7.g",
+  "backtest": "059-01_swing-scaled-rise-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3839404,
+  "findings": {
+    "F1": "The tested continuation lives only in calm markets: on the 5-day grid of folds B and C, signed excess returns after the forecast average +2.36 % per case in calm coin-days (642 cases, t 4.03 with the cases of one day taken together, 159 days), against \u22120.07 % in agitated ones (1068 cases, t \u22120.10, 263 days). Here calm means a 30-day swing at or below the coin's median.",
+    "F2": "Inside calm markets the effect is graded and holds under every trend: the slope of excess return on the forecast is 0.0024 in falling calm (t 3.43, n 152), 0.0038 in choppy calm (t 3.94, n 98) and 0.0035 in rising calm (t 3.69, n 179). In agitated markets it is 0.0003 when falling (t 0.42) and 0.0008 when rising (t 0.53). The calm forecast quintiles climb from \u22123.57 % (t \u22124.07) to +2.99 % (t 2.74).",
+    "F3": "The calm-market slope is positive in every year: 2018 t 1.75, 2019 t 1.27, 2020 t 3.17, 2021 t 1.80. It is positive on every coin, with t from 1.55 (XMR) to 3.86 (ETH). The agitated-market slope is negative or zero in every year (t \u22121.15, \u22120.70, +0.10, \u22120.38).",
+    "F4": "The continuation weakens steadily as the coin's swing rises. By the coin's own volatility tercile, the slope is 0.0022 in the lowest (t 5.53, n 426), 0.0016 in the middle (t 3.65) and \u22120.0007 in the highest (t \u22121.18). Dividing the forecast by the coin's swing relative to its usual swing raises the pooled slope t from 3.05 to 5.37.",
+    "F5": "The book earns where the idea works. On calm coin-days its mean daily return is +0.215 % (t 4.51, 3301 coin-days) against +0.124 % for holding. On agitated coin-days it is +0.043 % (t 1.13, 5388 coin-days) against +0.142 % for holding. In 2021 the book's Sharpe was 0.39 against holding's 1.48.",
+    "F6": "A single day's move measured against the coin's 20-day swing also continues over the next 5 days.",
+    "F7": "The next-day return after Thursdays and Fridays is positive: +0.61 % (t 4.10) and +0.52 % (t 3.87). This repeats the late-week gain the profile map already holds (045-01), so it is left out."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the larger a coin's 20-day move measured in units of its own daily swing over those 20 days, the further it moves the same way over the next 5 days, up after a rise and down after a fall.",
+      "consequence": "A trader follows a swing-scaled few-week move only while the coin is swinging less than usual for it, and refuses it when the coin is agitated.",
+      "name": "calm swing-scaled move continues",
+      "from": "F1, F2, F3, F5",
+      "profile": "calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 20-day move in units of its own 20-day daily swing, and the calmer its last 30 days against its own past year, the further it moves the same way over the next 5 days.",
+      "consequence": "A trader sizes a trend-following bet up as the coin's recent swing falls below its usual level, and down as the coin becomes agitated.",
+      "name": "calmer scaled move carries further",
+      "from": "F2, F4",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a calm market, the larger a coin's one-day move measured in units of its daily swing over the previous 20 days, the further it moves the same way over the next 5 days.",
+      "consequence": "A trader takes a sharp single day that stands out against a quiet coin's own noise as the start of a move to follow for about a week.",
+      "name": "calm one-day shock continues",
+      "from": "F6",
+      "profile": "calm",
+      "theme": "discovery",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-01.g1_calm-swing-scaled-move-continues",
+    "059-01.g2_calmer-scaled-move-carries-further"
+  ],
+  "discovery_ids": [
+    "059-01.g3_calm-one-day-shock-continues"
+  ],
+  "no_ideas": null
+}

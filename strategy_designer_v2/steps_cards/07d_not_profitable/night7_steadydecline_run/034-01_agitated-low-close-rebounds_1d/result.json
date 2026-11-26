@@ -1,0 +1,53 @@
+{
+  "line": "7.d",
+  "backtest": "034-01_agitated-low-close-rebounds_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3757357,
+  "findings": {
+    "F1": "The book failed on its mean daily return on days in a position (0.014 % against at least 0.05 %) and on its Calmar (0.30), because its gain is spread thin. It holds a mean absolute position of only 0.079 of the book, its summed gross gain was 176 % against 45 % of fees, and it earns 0.090 % per agitated bar on days whose range is large for the coin against only 0.014 % on small-range days.",
+    "F2": "In agitated bars the reversal lives almost entirely on days whose high-low range is wide against the coin's own past 60-day median range. The signed next-day excess return (long when the close is in the lower half, short when it is in the upper half) is +1.12 % (t 3.03, n 330) in w7-12 and +1.07 % (t 3.45, n 652) in w13-18 for the widest third. For the narrowest third it is -0.04 % (t -0.16) and +0.16 % (t 0.80).",
+    "F3": "A wide range alone is not the effect. On wide-range agitated days, whatever the close, the next-day excess return is +0.17 % (t 0.70, n 982), against +1.03 % when signed by the close's place. A wide range belongs to the idea's own theory: forced late-day flow overshoots more when the day's swing is large.",
+    "F4": "Grading by the close's distance from mid-range times the relative range orders the next-day excess return monotonically across its quintiles. The quintiles from highest close and widest range to lowest close and widest range give -0.55 % (t -2.12), -0.37 %, -0.15 %, +0.60 % and +0.94 % (t 3.57), about 589 cases each. Both sides pay on wide days: low-close long +1.23 % (t 3.52), high-close short +0.93 % (t 2.85).",
+    "F5": "By the coin's 60-day trend, the signed next-day excess return in agitated bars is strongest in falling markets: +1.17 % (n 745), with low-close long +1.33 % (t 4.50) and high-close short +1.00 % (t 3.74).",
+    "F6": "In rising markets the same reading gives only +0.09 % (n 769), and the book lost there, with a gross of -0.017 % per bar and -0.050 % on its shorts.",
+    "F7": "A falling trend alone is not the effect: in falling agitated bars the next-day excess return whatever the close is +0.20 % (t 0.99, n 738). This fits the theory that stop-outs and margin unwinds are concentrated in falling, agitated stretches.",
+    "F8": "The effect is spent after one day: the signed excess return on extreme closes (top or bottom fifth of the range) is +0.71 % over 1 day but +0.20 % over 2 days (n about 1360), so a longer hold would not raise the gain per day.",
+    "F9": "The book's deepest falls came in w11-w14 (deepest -3.4 % to -5.0 %, three of those four windows also losing or flat), while it made only +3.0 % a year."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, the nearer a coin's daily close sits to the day's low within its high-low range, and the wider that range is against the coin's usual daily range over the past 60 days, the larger its rise over the next day.",
+      "consequence": "A trader should size the low-close rebound by how wide the day's range was for the coin, betting most after wide-range days and little after narrow ones.",
+      "name": "wide-range low-close rebound",
+      "from": "F1, F2, F3, F4, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, the nearer a coin's daily close sits to the day's low within its high-low range, the larger its rise over the next day.",
+      "consequence": "A trader should take the close-location rebound only while the coin is in a falling, agitated stretch, and avoid it in rising markets where it loses.",
+      "name": "falling-agitated low-close rebound",
+      "from": "F5, F6, F7, F9",
+      "profile": "falling agitated",
+      "refs": [
+        "F5",
+        "F6",
+        "F7",
+        "F9"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "034-01.d1_wide-range-low-close-rebound",
+    "034-01.d2_falling-agitated-low-close-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

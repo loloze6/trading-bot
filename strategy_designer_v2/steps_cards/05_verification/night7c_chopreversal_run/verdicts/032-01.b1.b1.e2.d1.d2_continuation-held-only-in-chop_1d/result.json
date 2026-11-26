@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of demeaned 7-bar forward return on forecast, pooled",
+    "value": 0.0009705464987605948,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.5592165055662046
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "timing part of mean daily book return before costs",
+    "value": 0.0005241289389390529,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 1889
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing part is above 0.",
+  "reading": "Active bars whose 30-day efficiency ratio cannot be computed inside their window (first 30 bars) are left out of the agreement share; the expected side is the sign of the raw scaled 7-day move (continuation); the coin's mean 7-bar return is the mean over all its windows' grid returns; the timing part is the mean daily (per-day mean over coins) of position x (coin's daily return minus its mean daily return over all windows), before costs; fewer than 100 grid cases gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002274 on the check folds against +0.0009705 on every fold",
+    "main": 0.0002274374784918332,
+    "statistic": 0.781437249917091,
+    "counts": {
+      "grid cases with a non-zero forecast": 989
+    }
+  }
+}

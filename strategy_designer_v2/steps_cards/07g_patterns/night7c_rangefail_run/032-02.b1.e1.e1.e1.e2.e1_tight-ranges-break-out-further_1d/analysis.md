@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further_1d
+idea tested: 032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3567 USD
+---
+## Findings
+- **F1:** Where a coin's close sits inside its prior 20-day closing range sorts its next 5 days. On 1422 non-overlapping 5-day cases, excess return over the coin's normal drift rises from −2.11 % in the lowest quintile to +2.45 % in the highest (Welch t 4.13, Spearman 0.129). The same order holds at 3 days (q1 −1.51 %, q5 +0.42 %, t 3.09, 2358 cases) and at 10 days (q1 −2.23 %, q5 +4.10 %, t 2.97, 702 cases).
+- **F2:** The effect is not confined to breakouts. On the 744 five-day cases whose close lies inside the prior 60-day range, the upper half earns +1.61 % excess and the lower half −1.81 % (t 3.97, Spearman 0.146). This contradicts the brief's view that prices fade back from the edge: closes near the top run on and closes near the bottom keep falling.
+- **F3:** The 5-day position effect is positive in all six coins, with Spearman from 0.109 (LTC) to 0.231 (ETH) and the upper half minus the lower half from +2.17 % (ZEC) to +4.43 % (XRP), on 141 cases each.
+- **F4:** The effect is much stronger when the coin is calm. With 60-day volatility below the coin's median, Spearman is 0.234 and the upper half minus the lower half is +5.15 % (426 cases). Above the median the figures fall to 0.076 and +1.13 % (420 cases). After a 60-day rise the figures are 0.170 and +3.83 % (374 cases), against 0.089 and +1.31 % after a 60-day fall (472 cases).
+- **F5:** The effect is not steady across years. The 5-day Spearman is −0.013 in 2018, 0.139 in 2019, 0.029 in 2020 and 0.097 in 2021, on about 210 cases each, so one of the four years shows nothing.
+- **F6:** The width of the 60-day range, which drives the tested idea, does not grade 20-day returns on ordinary grid bars: Spearman −0.079, top minus bottom quintile t −0.63, on 198 cases. New 60-day highs are followed by +6.26 % excess over 5 days (t 2.43, 44 cases), so the tested effect is specific to breakout bars.
+- **F7:** A few days carry the book. It has 944 days with a non-zero return, and its 10 best days make 72 % of their summed return, while its 10 worst sum to −33.7 %. Its daily return correlates 0.64 with the coins' own daily return, so much of its gain is the market's rise while it is in a position.
+
+## Ideas
+- `032-02.b1.e1.e1.e1.e2.e1.g1_range-position-predicts-continuation` (from F1, F2, F3, F5): The higher a coin's daily close sits within the range of its closes over the prior 20 days, the larger its rise over the next 5 days.
+- `032-02.b1.e1.e1.e1.e2.e1.g2_calm-market-range-continuation` (from F4, F1, F3): When a coin's daily volatility over the past 60 days is low, the higher its close sits within its prior 20-day closing range, the larger its rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

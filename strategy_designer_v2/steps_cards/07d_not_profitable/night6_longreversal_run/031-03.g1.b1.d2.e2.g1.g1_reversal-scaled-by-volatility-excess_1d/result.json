@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "031-03.g1.b1.d2.e2.g1.g1_reversal-scaled-by-volatility-excess_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38912280000000005,
+  "findings": {
+    "F1": "The Calmar failed because of one deep fall. The book's deepest fall was \u221269.8 %, spread over 497 bars and 5 windows (w23 and w24 fell \u221264.5 % and \u221269.8 %). During it, XMR's summed daily returns were +1.38. The short positions lost 0.596 before fees and the long positions gained 0.233, while fees took 0.608.",
+    "F2": "The gain is on the long side only. After strong down days (forecast \u2265 +8), XMR's next-day return averaged +1.03 % (t 5.06, 611 bars), against its normal drift of +0.107 % a day. Those bars made a gross 4.03 for 0.95 of fees. After strong up days (forecast \u2264 \u22128), the next day averaged \u22120.18 % (t \u22121.04, 691 bars), so the shorts made a gross 0.77 and paid 1.02 in fees.",
+    "F3": "Weak forecasts (|forecast| < 8, 1595 bars) cost more than they earned. Their next-day return was \u22120.12 % (t \u22121.07); they made a gross 0.45, paid 1.20 in fees, and carried the largest fee share. The bottom three forecast quintiles each lost about \u22120.05 % a day after fees.",
+    "F4": "I re-ran the book in a simple simulation at the measured cost of 0.159 % per unit of turnover.",
+    "F5": "Being long is not the effect on its own. Any day long earns only the drift of +0.107 % against +1.03 % after strong down days. Weak bars in the top volatility-ratio tercile returned \u22120.002 % the next day, against +1.17 % for strong down days in the same tercile. Within the long side the move grows with volatility excess: +0.75 % in the low tercile, +1.17 % in the middle and +1.17 % in the high tercile. The condition therefore belongs to the idea's own grading.",
+    "F6": "On a non-overlapping 3-day grid, strong down days were followed by +1.48 % over 3 days (t 2.27, 186 cases), against +1.03 % over one day. Holding three days captures about 1.4 times the move for about a third of the turnover. After strong up days the 3-day return was \u22120.33 % (t \u22120.70, 229 cases).",
+    "F7": "A volatility filter alone does not repair the book. Trading only when the volatility ratio is above 1 reaches a Calmar of 0.43 with a deepest fall of \u221230 %, and adding |forecast| \u2265 8 gives 0.44."
+  },
+  "ideas": [
+    {
+      "idea": "The larger XMR's one-day fall against its 30-day daily volatility, the more its price rises back over the next day, and this rebound grows with how far its 30-day volatility stands above its usual level over the past six months.",
+      "consequence": "A trader would buy XMR's large down days, buying more when volatility is elevated against its six-month norm, and would not short its large up days, whose fade does not cover fees.",
+      "name": "XMR rebound after volatility-scaled falls",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The larger XMR's one-day fall against its 30-day daily volatility, the more its price rises back over the next three days, and this rebound grows with how far its 30-day volatility stands above its usual level over the past six months.",
+      "consequence": "A trader buying XMR's large scaled down days could hold the position for three days, capturing more of the rebound for fewer trades and less fee drag.",
+      "name": "three-day rebound after falls",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls",
+    "031-03.g1.b1.d2.e2.g1.g1.d2_three-day-rebound-after-falls"
+  ],
+  "no_ideas": null
+}

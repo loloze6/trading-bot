@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "031-01.g1.b1_down-day-rebound-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6212578,
+  "findings": {
+    "F1": "On down days, the day's high-low range measured against the coin's 60-day average range predicts the 3-day move above drift. The slope of the 3-day strength on the log scaled range is +0.196 (t 3.23, day-clustered, 4746 non-overlapping cases on 680 days). On up days it is \u22120.052 (t \u22120.96, 5147 cases on 697 days), so the effect sits on the down side only.",
+    "F2": "The effect is graded across down-day range quintiles. The mean unusual 3-day move runs \u22120.55 %, \u22120.45 %, \u22120.19 %, +0.46 % and +1.97 %. The top quintile has a strength of 0.22 and t 2.42 on 228 days, so its unusual move is about 9 times the 0.22 % cost of a trade.",
+    "F3": "The range carries the rebound, not the size of the fall. With both in one regression on down days, the log scaled range has a coefficient of +0.315 (t 4.15) and the scaled fall \u22120.129 (t \u22121.94). The tested scaled fall on its own has a slope of \u22120.022 (t \u22120.82), and its verdict size is +0.02 % (t 0.10).",
+    "F4": "What matters inside the range is how far the close sits above the day's low. Measured in the coin's 60-day average range, this lower-wick distance has a coefficient of +0.242 (t 3.17) on down days. Alongside it, the range falls to +0.089 (t 1.37).",
+    "F5": "Volume shows the same thing but adds nothing beyond the range. The log scaled volume slope on down days is +0.139 (t 3.21), and with range and fall included it drops to +0.031 (t 0.68).",
+    "F6": "The down-day range effect is broad and lasting:",
+    "F7": "Several other angles showed nothing that survives the number of angles looked at:"
+  },
+  "ideas": [
+    {
+      "idea": "On a day a coin closes down, the further its close has recovered above the day's low, measured in the coin's average daily high-low range over the past 60 days, the more the coin rises above its normal drift over the next 3 days.",
+      "consequence": "A down close with a long lower wick is a reason to buy the coin for a few days, and a down close at its low is a reason to refuse that buy, more firmly the more extreme the wick.",
+      "name": "down-day lower-wick rebound",
+      "from": "F4, F1, F3, F6",
+      "refs": [
+        "F4",
+        "F1",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "On a day a coin closes down, the wider that day's high-low range against the coin's average daily range over the past 60 days, the more the coin rises above its normal drift over the next 3 days.",
+      "consequence": "A wide-ranging down day is a reason to buy the coin for a few days, and a narrow, quiet down day is a reason to refuse a long, more firmly the further the range sits from usual.",
+      "name": "wide-range down-day rebound",
+      "from": "F1, F2, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-01.g1.b1.g1_down-day-lower-wick-rebound",
+    "031-01.g1.b1.g2_wide-range-down-day-rebound"
+  ],
+  "no_ideas": null
+}

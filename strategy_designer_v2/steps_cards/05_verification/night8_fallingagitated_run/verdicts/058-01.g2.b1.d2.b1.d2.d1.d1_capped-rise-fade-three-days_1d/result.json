@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of short bets, in the short direction",
+    "value": 0.0035076855684183375,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 0.8157451832507715
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-forecast half minus smaller half",
+    "value": 0.006994662979529653,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1115,
+    "distinct case days": 467
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The falling-agitated profile cannot be rebuilt from the record (its detector components are not recorded and windows are shorter than its 365-bar lookback), so the situation check tests the 0-to-1.0 scaled-rise band (recorded raw value, else recomputed with a 30-bar std including the day) and the short side; a case is the first short bet (forecast magnitude up >= 2 points from its lowest level since the last bet) in each 3-bar grid cell of a window; the drift is the mean of each coin's non-overlapping 3-bar grid returns over all its windows; the clustered standard error uses day sums of deviations with a G/(G-1) correction; the larger half is forecast size above the median; fewer than 30 case days is reported as not observable."
+}

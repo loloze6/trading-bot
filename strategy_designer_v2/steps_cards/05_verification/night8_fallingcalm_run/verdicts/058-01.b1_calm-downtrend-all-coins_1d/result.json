@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on short size (-forecast), day-clustered t",
+    "value": -0.0004358841898061572,
+    "statistic": {
+      "name": "slope t, cases of one day summed (day-clustered)",
+      "value": -0.605119540089509
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and mean excess < 0; reject: slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean excess return of the short cases below 0",
+    "value": -0.0018731462005684213,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 981,
+    "distinct days": 271
+  },
+  "decided_by": "Inconclusive rule: the slope t lies between -2 and +2.",
+  "reading": "Grid bars at positions 0,5,10,... per window with a full 5-bar return; the coin's drift is the mean of all its grid 5-bar returns over all windows; the slope t uses day-clustered OLS standard errors (score sums per UTC day, G/(G-1) correction); the profile is the recorded regime 'unknown'; and short counts follow the instructions' 'not observable' for the plan's minimums."
+}

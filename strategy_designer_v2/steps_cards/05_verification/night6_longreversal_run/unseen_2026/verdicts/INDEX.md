@@ -1,0 +1,3 @@
+031-03.g1.b1.d2.e2.g1.d1_xmr-next-day-fall-rebound_1d: inconclusive (fit: exact) [main: 0.000899883; OLS slope t 1.37476; cases 163]
+031-03.g1.b1.d2.e2.g1.g1.d1_xmr-rebound-after-volatility-scaled-falls_1d: inconclusive (fit: exact) [main: 0.00308597; t of the forecast-weighted mean 0.637165; bars with forecast > 0 163, bars with forecast > 0 (incl. without next-day return) 163]
+031-03.g1.b1.g2_swelling-volume-after-rises_1d: not observable (fit: adapted) [main: -0.00233738; slope t, clustered by day -1.39719; grid cases in the regime 197, grid cases with forecast above 0 107, days of the regime grid cases 19]

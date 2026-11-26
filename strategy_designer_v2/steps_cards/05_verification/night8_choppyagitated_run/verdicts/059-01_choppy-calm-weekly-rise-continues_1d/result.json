@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 7-bar excess return on forecast",
+    "value": 0.002147471234234069,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.954774808955312
+    },
+    "threshold": "slope t >= 2 confirms (with mean excess > 0); slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return above 0 (day-clustered t, reject if t <= -2)",
+    "value": 0.004175880144032038,
+    "passed": true,
+    "t": 0.4224982446376489
+  },
+  "counts": {
+    "cases with forecast > 0 on the grid": 220,
+    "days": 127
+  },
+  "decided_by": "Inconclusive: at least 40 cases, but neither the confirm nor the reject rule is met.",
+  "reading": "The choppy calm profile is read from the recorded regime ('unknown' = no veto, since the 365-bar volatility percentile cannot be rebuilt from the windows) and the rise from the raw component value (or the 7-bar close return where it is missing); the normal drift is each coin's mean 7-bar return on the non-overlapping grid of all its windows; the slope's t is the ordinary OLS t over all cases pooled; the mean's day-clustered t uses a G/(G-1) correction; fewer than 40 cases is reported as not observable as the workflow requires."
+}

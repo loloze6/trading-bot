@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day fall on case bars, summed per day",
+    "value": 0.018501818185377633,
+    "statistic": {
+      "name": "t of the mean across days",
+      "value": 3.1989471399938614
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; at least 100 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual fall, |forecast| above median minus below median",
+    "value": 0.006600794416156125,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 387,
+    "cases": 759,
+    "active bars": 742
+  },
+  "decided_by": "Mean unusual fall above 0 with t >= 2 and the high-|forecast| minus low-|forecast| difference above 0.",
+  "reading": "The falling-agitated profile is taken from the recorded regime (its detector components are not recorded and their 365-bar lookback cannot be rebuilt inside a window) while the streak of exactly 1 is recomputed from closes (first two bars of each window left out); the supporting check splits individual cases strictly above and below the cases' median |forecast|, cases equal to it left out.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.008573 on the check folds against +0.0185 on every fold",
+    "main": 0.008573409112401955,
+    "statistic": 1.4105026911770433,
+    "counts": {
+      "case-days": 219,
+      "cases": 385,
+      "active bars": 377
+    }
+  }
+}

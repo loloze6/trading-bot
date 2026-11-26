@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move over the next bar, short direction",
+    "value": 0.007962907437561841,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 2.781212733631749
+    },
+    "threshold": "confirm t >= 2 with supporting check > 0; reject t <= -2; at least 100 distinct case days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, top half |forecast| minus bottom half",
+    "value": 0.003473465865246158,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 412,
+    "cases": 726
+  },
+  "decided_by": "The main measure has t >= 2 and the supporting check is positive.",
+  "reading": "Cases are the short bets of the workflow's case definition (a rise of the short forecast of at least 2 points, every bar on the 1-bar grid); the profile part of the situation is read from the recorded regime 'trending' since its 365-bar components are not recorded, the up day from closes; the supporting check splits cases at the median |forecast| (top: above, bottom: at or below); the day-clustered t uses a G/(G-1) correction; fewer than 100 case days gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.00574 on the check folds against +0.007963 on every fold",
+    "main": 0.00573967683083224,
+    "statistic": 1.8007886314716801,
+    "counts": {
+      "distinct case days": 233,
+      "cases": 365
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on slide5 forecast (day-clustered)",
+    "value": 0.0006282789728261184,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 1.8621011319978438
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and weighted mean > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-day excess return",
+    "value": 0.0044406503249633305,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3225,
+    "distinct days": 896
+  },
+  "decided_by": "The slope t lies between -2 and 2.",
+  "reading": "The profile is the bars whose recorded regime is 'unknown' (the detector's non-vetoed regime); the 5-day return is the recorded slide5 raw value, recomputed from closes where missing; cases are profile bars with forecast > 0 and a next bar in the window, regressed on post_pipeline_value with cluster-robust (by UTC day) standard errors; the plan's minimum counts (200 cases, 50 days) are applied as 'not observable'."
+}

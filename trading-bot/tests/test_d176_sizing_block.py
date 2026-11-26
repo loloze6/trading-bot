@@ -975,3 +975,26 @@ def test_the_risk_gate_kill_flattens_a_sized_book_through_the_bypass():
     assert len(rm.calls) == 1                                     # the flatten bypassed the band
     assert tracker.rows[-1]["succcess_execute_portfolio_rebalance"] is True
     assert bot._held_signal_allocation[SYMBOL] == 0.0             # a forced flat forgets the signal
+
+
+@pytest.mark.parametrize("change, signal, target, passed, on", [
+    (-0.05, None, 0.0, True, "flat"),                             # a remainder under the band is closed
+    (0.09, 0.0, 0.0, True, "flat"),                               # with a sizing block too
+    (-0.05, None, 0.1, False, None),                              # between two non-zero positions: the band holds
+    (0.05, 0.05, 0.3, False, None),
+    (-0.9, None, 0.0, True, "flat"),
+])
+def test_a_move_to_flat_is_never_refused_by_the_band(change, signal, target, passed, on):
+    """Topic 51 (2026-11-25): the strategy asks for no position, so a position under the band is closed."""
+    rm = RiskManager({"min_allocation_change": {"threshold": 0.2}})
+    ok, dbg = rm.approve_allocation_change(SYMBOL, change, _DATA, signal_change=signal, target=target)
+    assert ok is passed
+    if on == "flat":
+        assert dbg["controls"]["min_allocation_change"] == (
+            {"passed": True, "passed_on": "flat"} if signal is not None else {"passed": True})
+
+
+def test_without_a_target_the_band_is_as_before():
+    rm = RiskManager({"min_allocation_change": {"threshold": 0.2}})
+    assert rm.approve_allocation_change(SYMBOL, -0.05, _DATA)[0] is False
+    assert rm.approve_allocation_change(SYMBOL, -0.05, _DATA, target=None)[0] is False

@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of 24-bar excess forward return on forecast (grid bars, pooled)",
+    "value": -0.5236075653056481,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.5236075653056481
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive; min 500 grid cases with non-zero forecast"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 1908,
+    "grid cases with a non-zero forecast": 1896
+  },
+  "decided_by": "The slope's t = -0.52 lies strictly between -2 and 2 (inconclusive rule).",
+  "reading": "The situation is taken as every bar with a non-zero volatility-scaled hourly return (the plan sets no size cut-off, the forecast being graded), the expected side as opposite to that return; the regression is OLS with intercept on all grid bars with valid values, the drift is each coin's mean grid 24-bar return over all its windows, and the plan's minimum of 500 non-zero-forecast grid cases is treated as a minimum count (not observable if unmet)."
+}

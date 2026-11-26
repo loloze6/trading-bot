@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of position x (next-day return - coin mean daily return) over forecast>0 bars, same-day cases summed",
+    "value": 0.01922171695324436,
+    "statistic": {
+      "name": "t of the mean of per-day summed cases",
+      "value": 2.9313315054810727
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 on >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, next-day excess return) > 0",
+    "value": 0.013030134167128017,
+    "passed": true
+  },
+  "counts": {
+    "cases with a forecast above 0": 593,
+    "days": 289
+  },
+  "decided_by": "Mean above 0 with t >= 2 on at least 30 cases and Spearman correlation above 0: the confirm rule.",
+  "reading": "Range multiple uses the 20 recorded bars up to and including t within a window, so active bars without 20 prior bars are left out of the agreement share; the measure is position x (next-day return minus the coin's all-window mean daily return), the 30-case minimum counts (coin, bar) cases with forecast > 0, and the mean and t are taken over per-day sums of those cases."
+}

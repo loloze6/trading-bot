@@ -1,0 +1,6 @@
+023-01_flat-month-top-falls-back_1d: missing-components: The listed `DonchianBreakoutComponent` takes only `period` and `scaling_factor`, so its range uses closes only. `FlatnessWeightedRangePositionComponent` ("high_low") multiplies the position by [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+025-01_falling-market-day-jump-fades_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+025-02_falling-market-bounce-fades_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-01_wide-flat-day-ends-up-run_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-02_wide-flat-day-ends-down-run_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+031-03_failed-push-high-traps-buyers_1d: missing-components: Every input the idea needs is in the coin's own daily bars. The run's rise, the close near the open, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

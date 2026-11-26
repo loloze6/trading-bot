@@ -1,0 +1,64 @@
+## regressions
+                                 n   days       b_c       t_c  b_lratio  t_lratio    b_r20z   b_inter    t_r20z   t_inter    b_r20     t_r20     b_clv     t_clv     b_r3p     t_r3p   b_vol20   t_vol20
+all: ex~lratio             10024.0  860.0  0.001166  0.436917  0.007263  1.671444       NaN       NaN       NaN       NaN      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+r20>0: ex~lratio            4936.0  688.0  0.003368  1.089487  0.015319  2.702498       NaN       NaN       NaN       NaN      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+r20<=0: ex~lratio           5088.0  702.0 -0.002640 -0.694891 -0.001036 -0.165631       NaN       NaN       NaN       NaN      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+all: ex~lratio+r20z+inter  10024.0  860.0  0.000005  0.001623  0.005925  1.290340  0.001139  0.006724  0.536117  1.857405      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+wide: ex~r20z               1492.0  407.0  0.007640  1.153201       NaN       NaN  0.006526       NaN  1.505835       NaN      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+wide: ex~r20                1492.0  407.0  0.009069  1.437759       NaN       NaN       NaN       NaN       NaN       NaN  0.01517  0.895168       NaN       NaN       NaN       NaN       NaN       NaN
+wide r20>0: ex~clv           926.0  328.0  0.010890  0.829828       NaN       NaN       NaN       NaN       NaN       NaN      NaN       NaN  0.013012  0.613752       NaN       NaN       NaN       NaN
+wide r20>0: ex~r3p           926.0  328.0  0.015489  2.472999       NaN       NaN       NaN       NaN       NaN       NaN      NaN       NaN       NaN       NaN  0.034653  0.892604       NaN       NaN
+wide: ex~vol20              1492.0  407.0  0.003437  0.326574       NaN       NaN       NaN       NaN       NaN       NaN      NaN       NaN       NaN       NaN       NaN       NaN  0.172012  0.677882
+notwide: ex~r20z            8532.0  837.0 -0.001751 -0.689918       NaN       NaN  0.000243       NaN  0.113023       NaN      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+wide: ex~r20z, no <date>   1183.0  306.0  0.002919  0.418562       NaN       NaN  0.004845       NaN  1.135443       NaN      NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+
+## wide_r20zq_x_close_location
+                             g    n  days  mean_ex_%     t_day
+0    (np.int64(0), 'lowclose')  163    57  -0.391343 -0.290066
+1         (np.int64(0), 'mid')  103    36   4.182048  1.439132
+2   (np.int64(0), 'highclose')  107    38  -2.285555 -1.088408
+3    (np.int64(1), 'lowclose')  146    62  -1.484356 -1.325595
+4         (np.int64(1), 'mid')   66    43  -1.084872 -0.761597
+5   (np.int64(1), 'highclose')  161    76   0.574126  0.474473
+6    (np.int64(2), 'lowclose')  108    66   0.664144  0.631373
+7         (np.int64(2), 'mid')   93    65   1.754246  1.319645
+8   (np.int64(2), 'highclose')  172   106   0.572147  0.566145
+9    (np.int64(3), 'lowclose')   52    34   7.229931  2.682055
+10        (np.int64(3), 'mid')  119    71   3.037319  1.895419
+11  (np.int64(3), 'highclose')  202   113   3.395164  1.921473
+
+## wide_r20pos_by_coin
+       coin   n  mean_ex_%
+0   AAVEUSD  41  -0.463205
+1    ADAUSD  71   1.920132
+2   AVAXUSD  28   3.729206
+3    BTCUSD  70   1.024704
+4   DOGEUSD  62   5.871516
+5    ETHUSD  80   1.128857
+6    INJUSD  34   0.779040
+7   LINKUSD  60   0.832870
+8    LTCUSD  62   1.979263
+9   NEARUSD  26   2.713352
+10  ONDOUSD   8   5.587793
+11   SOLUSD  35   0.456486
+12   SUIUSD  22   3.513651
+13   TAOUSD  12  -1.447992
+14   TRXUSD  49   0.816999
+15   UNIUSD  46   0.477742
+16   XMRUSD  55   0.416472
+17   XRPUSD  68   2.133330
+18   ZECUSD  97   3.731980
+
+## book_concentration
+days                  2898.000000
+sum_%                  177.455764
+top10_days_sum_%        75.781108
+top30_days_sum_%       163.517436
+worst10_days_sum_%     -56.286405
+
+## trades_by_entry_forecast
+                                n  mean_net       win       dur
+fq                                                             
+(1.5490000000000002, 8.265]   833  1.988348  0.602641  7.350540
+(8.265, 14.465]               834  2.564575  0.589928  4.014388
+(14.465, 20.0]               1664  2.534784  0.534856  3.583534

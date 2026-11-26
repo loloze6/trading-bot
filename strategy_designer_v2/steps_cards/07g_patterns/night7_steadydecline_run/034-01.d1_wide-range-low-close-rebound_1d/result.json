@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "034-01.d1_wide-range-low-close-rebound_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4015776,
+  "findings": {
+    "F1": "In agitated bars (folds B, C), a day of middling size against the coin's 30-day swing that closes in the top third of its range is followed by a next-day excess return of -1.05 % (t -2.34, 247 cases on 161 days). The same cell in calm bars gives -0.49 % (t -2.52, 330 cases on 218 days). In both regimes the high-close weakness shows on ordinary up days, not on the largest ones: the top z tercile with a high close gives -0.51 % (t -1.08) agitated and -0.04 % (t -0.61) calm.",
+    "F2": "Sorted by the day's own return, agitated bars in the fourth quintile (a moderate rise) are followed by -0.75 % next day (t -3.11, 653 cases on 393 days). The top quintile gives -0.36 % (t -0.07) and the bottom quintile +0.91 % (t 1.88). The weakness sits after ordinary rises, not after the largest ones.",
+    "F3": "In agitated bars, the low-close rebound grows with the day's range against its 60-day usual range. A close in the lower half of the range gives -0.17 % (t -0.89) in the narrowest quartile, +0.44 %, +0.76 % (t 2.34) and +1.46 % (t 1.19) in the widest. In a joint day-clustered regression, the range width keeps t 1.78 while the close's place drops to t -1.09.",
+    "F4": "In agitated bars, a large down day against the coin's 30-day swing (lowest tercile) that also closes in the bottom third of its range is followed by +0.95 % next day (t 2.27, 775 cases on 321 days). The same cell in calm bars gives +0.31 % (t 1.11).",
+    "F5": "The agitated low-close rebound is positive in every year (2018 to 2021: +0.39 %, +0.72 %, +0.97 %, +0.77 %) and on every coin (+0.41 % ZEC to +1.23 % XMR, t 2.45). It is spent after one day: on the 2-day grid the lowest-close quintile gives -0.00 % (t -0.21).",
+    "F6": "The book's best 5 % and worst 5 % next days both come from wide-range days, with a range of 2.13 and 1.74 times usual against 1.03 for all held bars. Both carry about 0.62\u20130.65 allocation against 0.28 on average, so the book's gain and its risk sit on the same wide-range days.",
+    "F7": "Weekday effects do not stand out given the number of cells looked at. The one cell above t 2 is Thursday for agitated low closes (+1.60 %, t 2.46, 79 days), and no weekday mean has |t| above 1.7."
+  },
+  "ideas": [
+    {
+      "idea": "On a day when a coin rises by an ordinary amount for its recent swing, the nearer the close sits to the day's high, the weaker the coin is over the next day.",
+      "consequence": "A trader should lean against ordinary up days that close at their high, by more the closer the close is to the high, and expect the effect to be spent after one day.",
+      "name": "ordinary-rise high-close fade",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In an agitated market, the larger a coin's one-day fall against its 30-day swing and the nearer the close sits to the day's low, the larger its rise over the next day.",
+      "consequence": "A trader should size the agitated low-close rebound by how large the day's fall was for the coin, not only by where it closed, and hold it one day.",
+      "name": "agitated sharp-fall low-close rebound",
+      "from": "F4, F5, F3",
+      "profile": "agitated",
+      "refs": [
+        "F4",
+        "F5",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "034-01.d1.g1_ordinary-rise-high-close-fade",
+    "034-01.d1.g2_agitated-sharp-fall-low-close-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per long bet (return minus coin's normal 5-bar drift)",
+    "value": 0.017468020726468508,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 2.0494902122978207
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and graded-size check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "graded size: mean unusual move of cases with forecast above the cases' median minus that at or below",
+    "value": 0.03902071544703529,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 284,
+    "cases": 387
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the graded-size check passes.",
+  "reading": "Bets are rises of the positive forecast of at least 2 points from its lowest level since the last bet (reset to 0 when flat), the first bet in each 5-bar cell counted from each window's first row; the normal drift is the mean of each coin's non-overlapping 5-bar returns on that grid over all windows; the t sums deviations per signal day (UTC date) with a D/(D-1) correction; the plan's 'fewer than 30 distinct case days' is applied as a minimum count, giving 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01427 on the check folds against +0.01747 on every fold",
+    "main": 0.014267252866695198,
+    "statistic": 1.171851644536959,
+    "counts": {
+      "distinct case days": 130,
+      "cases": 170
+    }
+  }
+}

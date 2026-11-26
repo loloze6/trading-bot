@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar return, new-high (prox=1) minus other in-regime grid cases",
+    "value": 0.04375841396944773,
+    "statistic": {
+      "name": "Welch t",
+      "value": 2.4039315428286683
+    },
+    "threshold": "Welch t >= 2 (with correlation > 0) confirms; Welch t <= -2 rejects; at least 30 grid cases per group"
+  },
+  "supporting_check": {
+    "name": "correlation of prox with excess 10-bar return across in-regime grid cases",
+    "value": 0.1088386057417767,
+    "passed": true
+  },
+  "counts": {
+    "new-high grid cases": 178,
+    "other in-regime grid cases": 659,
+    "all in-regime grid cases": 837
+  },
+  "decided_by": "Welch t >= 2 and the correlation of prox with the excess return is above 0 (confirm rule).",
+  "reading": "In-regime grid cases are grid bars (positions 0,10,20,... of each window) with a recorded prox value; new-high means prox equal to 1 within 1e-9; the coin's mean 10-bar return is taken over the same non-overlapping grid of all its windows; for bars with fewer than 28 in-window bars of history the situation check uses the recorded regime ('trending').",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01127 on the check folds against +0.04376 on every fold",
+    "main": 0.011274331856422824,
+    "statistic": 0.49520623634030925,
+    "counts": {
+      "new-high grid cases": 100,
+      "other in-regime grid cases": 304,
+      "all in-regime grid cases": 404
+    }
+  }
+}

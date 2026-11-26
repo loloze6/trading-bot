@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of Saturday's excess return on the Friday run14 forecast",
+    "value": 0.0004668409964463149,
+    "statistic": {
+      "name": "slope t (clustered by Saturday)",
+      "value": 3.520089366387068
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 Friday cases and 100 distinct Saturdays"
+  },
+  "supporting_check": null,
+  "counts": {
+    "Friday cases": 2478,
+    "distinct Saturdays": 414
+  },
+  "decided_by": "Confirm rule met: the slope is positive with t >= 2 over at least 300 Friday cases.",
+  "reading": "Friday-close bars are bars stamped Friday (dayofweek 4) whose regime is 'trending'; the regression has an intercept and the slope's t uses standard errors clustered by Saturday (score contributions summed per day across coins, with a G/(G-1) correction); the coin's mean daily return is over all its windows' within-window daily returns."
+}

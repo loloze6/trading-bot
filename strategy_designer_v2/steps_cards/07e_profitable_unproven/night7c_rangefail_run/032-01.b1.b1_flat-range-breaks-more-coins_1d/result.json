@@ -1,0 +1,44 @@
+{
+  "line": "7.e",
+  "backtest": "032-01.b1.b1_flat-range-breaks-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.41568359999999993,
+  "findings": {
+    "F1": "The book's gain is mostly timing, but heavily concentrated. Its mean daily return is 0.0516 %, of which 0.0214 % (41 %) is the market's own rise and 0.0302 % is timing. 2020 alone contributes 0.627 of the 0.748 summed daily contributions (84 %), 2018 is negative (\u22120.086), and window w12 loses \u22120.125.",
+    "F2": "A few trades and one coin carry the profit. Of 197 trades (win rate 73 %, median +5.5 %), the top 5 sum to 1094 of 2668 summed trade percent (41 %). ADA's 14 trades sum to 873 (33 %), while BTC's 20 trades average only +1.6 % and add nothing to the book (contribution 0.000002).",
+    "F3": "Recomputed on folds B and C, upside breaks out of flat 60-day ranges peak at 10 days, not the plan's 20. The mean unusual move is +9.2 % at 10 days (t 2.00, 58 cases), +5.7 % at 20 days (t 1.32, 39 cases) and \u22121.7 % at 40 days (19 cases).",
+    "F4": "The idea's comparison holds. Breaks above the 60-day high in flat coins (ER \u2264 0.3) beat the same breaks in trending coins: at 10 days +9.2 % (t 2.00, 58 cases) against +2.7 % (t 0.58, 31 cases); at 20 days +5.7 % against +2.0 % (t 0.32, 22 cases).",
+    "F5": "The width of the prior 60-day high-low range as a share of price grades the rise; this width is not the tested compression against 180 days. The 20-day unusual move is +19.4 % in the narrowest tercile, \u22120.6 % in the middle and \u22121.6 % in the widest (Spearman \u22120.36, 39 cases). The book's forecast grades it only weakly (Spearman 0.12, terciles +3.3 %, +5.3 %, +8.6 %), consistent with step 5's failed supporting check (\u22120.034).",
+    "F6": "Small breaks follow through more than large ones. By distance of the close above the prior 60-day high, the 20-day unusual move is +13.9 % in the smallest tercile, +5.1 % in the middle and \u22121.9 % in the largest (Spearman \u22120.19, 39 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose price has gone nowhere over the past 60 days, a daily close above its prior 60-day high is followed by a further rise over the next 10 days. The narrower the prior 60-day high-low range is as a share of the price, the larger that rise.",
+      "consequence": "A trader should join upside breaks out of a quiet two-month range over about ten days, and more so the tighter that range is against the price.",
+      "name": "tight-range breakout ten days",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a coin whose price has gone nowhere over the past 60 days, a daily close above its prior 60-day high is followed by a further rise over the next 20 days. The smaller the distance of that close above the prior high, the larger the rise.",
+      "consequence": "A trader should prefer a modest close just past a quiet range's top over a large jump past it, which tends to give its gain back.",
+      "name": "small breaks follow through",
+      "from": "F4, F6",
+      "refs": [
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-01.b1.b1.e1_tight-range-breakout-ten-days",
+    "032-01.b1.b1.e2_small-breaks-follow-through"
+  ],
+  "no_ideas": null
+}

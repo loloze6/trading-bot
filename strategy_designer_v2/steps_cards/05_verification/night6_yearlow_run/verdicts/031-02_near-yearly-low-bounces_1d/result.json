@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope t of excess 20-bar return on forecast, pooled non-overlapping cases",
+    "value": -0.002359430604387424,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.702901477750912
+    },
+    "threshold": "confirm: slope > 0 with t >= 2.0 and top-minus-bottom fifth > 0; reject: slope < 0 with t <= -2.0; otherwise inconclusive; at least 200 cases and 40 in the top fifth"
+  },
+  "supporting_check": {
+    "name": "mean excess 20-bar return, top fifth minus bottom fifth of forecast",
+    "value": -0.04912556449090402,
+    "passed": false
+  },
+  "counts": {
+    "independent 20-bar cases": 806,
+    "cases in the top fifth": 162,
+    "cases in the bottom fifth": 162
+  },
+  "decided_by": "Inconclusive rule: the slope t is between -2.0 and 2.0.",
+  "reading": "Fifths are cut at the pooled 20th and 80th percentiles of the cases' forecasts (top: forecast >= 80th percentile, bottom: <= 20th, ties included), cases are the bars at positions 0, 20, 40, ... of each window with the 20-bar return inside the window, and the coin's mean 20-bar return is taken over these grid cases of all its windows."
+}

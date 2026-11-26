@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar excess forward return on forecast (thin-volume short cases)",
+    "value": 0.0009793896551943061,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 0.6759514390594621
+    },
+    "threshold": "confirm if cluster-by-day t >= 2 with supporting mean > 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return in the short's direction",
+    "value": 0.007368790478082127,
+    "passed": true
+  },
+  "counts": {
+    "cases": 532,
+    "distinct days": 201
+  },
+  "decided_by": "The slope's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Thin-volume situation taken from the recorded regime (trending = vr<1) since vr cannot be rebuilt in-window; coin mean 10-bar return taken on the non-overlapping grid of all its windows; slope t from OLS with intercept and CR1 standard errors clustered by UTC day; supporting check read as the mean of minus (return minus coin mean); the plan's 'fewer than 30 cases or 20 days' treated as minimum counts giving 'not observable'."
+}

@@ -1,0 +1,24 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 14-bar excess forward return on forecast, trending grid bars",
+    "value": 0.0033796137757230718,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 2.0745981729436047
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases in the regime": 1207,
+    "grid cases with forecast above 0": 655,
+    "days of the regime grid cases": 167
+  },
+  "decided_by": "Confirm rule: the slope is positive with t >= 2.",
+  "reading": "Situation taken as 14-bar close change > 0 with the 14/30 volume ratio above 1 (recorded vol_swell raw value, recomputed from volume where missing), expected side long, active bars whose 14-bar change cannot be computed inside the window are left out of the agreement; the grid is positions 0,14,28,... of each window, kept when regime is 'trending' and the 14-bar forward return lies inside the window, the coin's mean 14-bar return is taken over all its windows' grid bars, and the slope's t uses standard errors clustered by calendar day (UTC)."
+}

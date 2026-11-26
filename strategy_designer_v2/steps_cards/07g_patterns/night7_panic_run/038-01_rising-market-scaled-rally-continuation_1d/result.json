@@ -1,0 +1,73 @@
+{
+  "line": "7.g",
+  "backtest": "038-01_rising-market-scaled-rally-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4444593,
+  "findings": {
+    "F1": "Inside the rising profile the continuation sits in the largest scaled rises only. The top sextile of the 3-day return in units of the 30-day swing (z3 from 0.86 to 4.30) is followed by a 3-day strength of +0.236, an excess return of +2.33 %, with t 3.44 on 223 grid cases. The next sextile (0.30 to 0.86) gives +0.138 (t 2.16, 196 cases). The near-flat sextile (-0.03 to 0.30) gives -0.144 (t -2.04, 147 cases). Outside rising markets the top sextile gives -0.086 (t -1.52, 170 cases). This agrees with the confirmed slope of 0.00109 (t 3.88), but the size measured per case is weak: +0.30 % unusual move with t 0.90 over 766 days.",
+    "F2": "One trade's net profit does not grow with the forecast at entry. By entry-forecast quartile (mean forecast 5.1, 9.9, 15.1, 19.9) the mean net trade is +2.80 %, +3.28 %, +3.34 % and +3.09 %, on about 396 trades each. Trades entered at high forecasts are shorter, 3.6 days against 7.6. The book's grading does not reach its trades.",
+    "F3": "A one-day fall that is large against the coin's 30-day swing is followed by a rise the next day, larger the deeper the fall, in every profile. Outside rising markets the lowest two deciles of the scaled one-day return are followed by +1.26 % (t 4.30, 454 cases) and +0.60 % (t 2.85, 456 cases), against -0.15 % to -0.47 % in the middle deciles. Inside rising markets the lowest decile is followed by +0.93 % (t 2.41, 271 cases).",
+    "F4": "Outside rising markets, in the coin's lower two thirds of 30-day swing, a 3-day fall is followed by a further fall below the coin's drift. The 3-day strength is -0.159 (t -3.55, 279 cases) in the lowest volatility tercile and -0.203 (t -3.61, 258 cases) in the middle one. After a 3-day rise in the same terciles it is +0.038 and +0.053. Among falls outside rising markets, the strength rises with z3 (slope +0.115, t 2.01, 788 cases), so deeper falls continue more.",
+    "F5": "Inside rising markets the continuation after a 3-day rise is strongest when the coin's swing is low. In the lowest 30-day-volatility tercile the strength is +0.190 (t 3.12, 180 cases), against +0.067 (t 1.00) in the middle tercile and +0.099 (t 1.21) in the highest.",
+    "F6": "A longer scaled run carries the same lift in rising markets. The top quintile of the 10-day return over the 30-day swing is followed by a 3-day strength of +0.178, an excess return of +1.66 %, with t 3.02 on 318 cases. The other quintiles give -0.02 to +0.08. Outside rising markets the top quintile gives +0.018 (t 0.24).",
+    "F7": "Next-day returns depend on the weekday, though these are pooled coin-days that are not clustered by day, and this was one of many angles. A close on Thursday is followed by +0.61 % (t 4.10, 1242 cases) and a close on Friday by +0.52 % (t 3.87, 1231 cases). A close on Wednesday is followed by -0.35 % (t -1.94)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that falls sharply in one day, measured in units of the standard deviation of its daily returns over the last 30 days, rises over the next day, more so the larger that scaled one-day fall.",
+      "consequence": "A trader buys a coin's unusually large one-day drop for a one-day rebound and avoids selling into it.",
+      "name": "scaled one-day fall rebounds",
+      "from": "F3",
+      "theme": "discovery",
+      "refs": [
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a rising, calm market, a coin keeps rising over the next 3 days, more so the larger its 3-day return measured in units of the standard deviation of its daily returns over the last 30 days.",
+      "consequence": "A trader chases scaled rallies in uptrends mainly when the coin's swings are quieter than usual for it.",
+      "name": "scaled rally continues calm uptrend",
+      "from": "F1, F5",
+      "profile": "rising calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a rising market, a coin keeps rising over the next 3 days, more so the larger its 10-day return measured in units of the standard deviation of its daily returns over the last 30 days.",
+      "consequence": "A trader holds or adds to coins whose rise over the last ten days is large for their usual swing while the uptrend lasts.",
+      "name": "ten-day scaled rally continues",
+      "from": "F6, F1",
+      "profile": "rising",
+      "theme": "on",
+      "refs": [
+        "F6",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, a coin keeps falling over the next 3 days, more so the larger its 3-day fall measured in units of the standard deviation of its daily returns over the last 30 days.",
+      "consequence": "A trader refuses to buy a scaled 3-day drop in a calm downtrend and treats it as a reason to stay out or go short.",
+      "name": "calm downtrend scaled falls continue",
+      "from": "F4",
+      "profile": "falling calm",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "038-01.g2_scaled-rally-continues-calm-uptrend",
+    "038-01.g3_ten-day-scaled-rally-continues"
+  ],
+  "discovery_ids": [
+    "038-01.g1_scaled-one-day-fall-rebounds",
+    "038-01.g4_calm-downtrend-scaled-falls-continue"
+  ],
+  "no_ideas": null
+}

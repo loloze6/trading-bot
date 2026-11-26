@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-day demeaned return on forecast (post_pipeline_value)",
+    "value": 0.0006699063911695607,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 3.8346439995864148
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 cases over at least 150 distinct days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 7650,
+    "distinct days": 2211
+  },
+  "decided_by": "Confirm rule: slope positive with t >= 2 on at least 300 cases over at least 150 distinct days.",
+  "reading": "Situation bars are non-chop regime bars with a positive raw close-below-high value and a positive forecast; the regression has an intercept, and its t uses a day-clustered standard error (residual x centred forecast summed per UTC day) with the G/(G-1) correction, on every bar since the 1-bar grid is every bar.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0003445 on the check folds against +0.0006699 on every fold",
+    "main": 0.00034452118415610636,
+    "statistic": 1.8161921830449126,
+    "counts": {
+      "cases": 3996,
+      "distinct days": 1161
+    }
+  }
+}

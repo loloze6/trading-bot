@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of 3-bar excess return on forecast, cases of a day clustered",
+    "value": 0.00046464086991174284,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 0.7182337249811684
+    },
+    "threshold": "confirm: t >= 2 with >= 100 cases and supporting check passing; reject: t <= -2 with >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess return close[t+1] to close[t+3]",
+    "value": 0.0004438950906498861,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1192,
+    "days": 479
+  },
+  "decided_by": "Slope t lies between -2 and 2.",
+  "reading": "Agitated profile read from the recorded regime (not 'chop'); the regression has an intercept and a day-clustered (CR1) standard error; the supporting check's excess removes the coin's mean close[t+1]-to-close[t+3] return on the same 3-bar grid over all its windows; fewer than 100 cases is reported as 'not observable' per the minimum-count rule."
+}

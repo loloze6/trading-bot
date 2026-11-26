@@ -27,11 +27,19 @@ Fidelity first. Before anything else, split the idea into its parts:
 State each part in the idea's own words, without dropping any of its conditions.
 For each part, say how a config built from the catalogue would handle it:
 - kept: measured as the idea states it;
-- adapted: the same thing, in the only form the config's logic allows. There are three allowed
-  adaptations, forced by the guide's design principle and its list of what the config cannot
-  express: a threshold or an on/off condition made graded; "after X" made "while X". A holding
-  period is kept: the book holds for the idea's horizon (below). Any other change of what is measured is a replacement. Settings taken from the
-  brief or from convention are not adaptations;
+- adapted: the same thing, in the only form the config's logic allows. The allowed adaptations,
+  forced by the guide's design principle and its list of what the config cannot express: a
+  threshold on the idea's strength made graded (the more, the larger the position); "after X" made
+  "while X". A holding period is kept: the book holds for the idea's horizon (below). Any other
+  change of what is measured is a replacement. Settings taken from the brief or from convention
+  are not adaptations.
+  The idea's situation is never graded away. When the idea says when a position exists (only in a
+  situation, after an event, beyond a level: "only", "when", "after", "heavy", "unusually large",
+  "the deepest", "several times usual"), the book holds nothing outside that situation: the
+  situation is a condition, a regime of the regime detector (the guide's "a condition that is the
+  idea itself"), and inside it the forecast is graded by the idea's strength. A graded score that
+  is above zero on ordinary bars does not keep such a situation. A level the idea does not put a
+  number on takes the brief's value, else the single most common convention;
 - replaced: measured by a different quantity.
 Then ask: if this test confirms, is the idea confirmed; if it rejects, is the idea rejected? This
 is the verdict transfer. It is "yes" only if both answers are yes.
@@ -54,8 +62,12 @@ guide and using only components from the catalogue. Two rules have no exception:
 - every forecast is graded: the position follows the strength of the idea's situation, never
   jumps between fixed levels;
 - standardise is the first transform of every component.
-Use a regime only when the idea itself is a condition ("when volume is low, ..."); otherwise use
-graded tools only, so the position never jumps from none to some. A constant (buy-and-hold) inside
+When the idea's header names a market profile (`profile:`), step 3's code adds it to your config (the market-profile
+definition): the book holds nothing outside the profile. Do not build the profile yourself; write the forecast for the
+idea inside it, as for an idea with no profile.
+Use a regime only when the idea itself is a condition ("when volume is low, ..."; an idea that says
+when its position exists, above, is one); otherwise use graded tools only, so the position never
+jumps from none to some. A constant (buy-and-hold) inside
 a regime also makes the position jump: do not use one there. If the idea's situation is a rare extreme,
 the position away from the extreme should be close to zero: use the strongest graded dead zone the guide allows. If the brief's header says long
 only, the forecast never goes below zero. The idea's own durations (its horizon, the past periods of its

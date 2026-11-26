@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean position-weighted unusual weekend move (forecast/10 x (2-day return - coin mean 2-day return))",
+    "value": 0.006094482463339528,
+    "statistic": {
+      "name": "t of the mean, cases of one Friday summed across coins",
+      "value": 2.9701050433833456
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 distinct Fridays and size check > 0; reject: mean < 0 with t <= -2 over >= 100 distinct Fridays"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in forecast direction, upper minus lower half of |forecast|",
+    "value": 0.0009573509055171292,
+    "passed": true
+  },
+  "counts": {
+    "distinct Fridays": 410,
+    "Friday cases (coin x Friday)": 2454
+  },
+  "decided_by": "the mean weighted unusual move is above 0 with t >= 2 over at least 100 distinct Fridays, and the size check's difference is above 0.",
+  "reading": "All regime-'trending' bars with a close two bars later in the same window are cases (forecast 0 included, weighing 0), the coin's mean 2-day return is taken on the non-overlapping 0,2,4,... grid of all its windows pooled, and the median split puts |forecast| above the median in the upper half and the rest in the lower half."
+}

@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on the high_prox forecast (pooled OLS)",
+    "value": 0.0007762799830068095,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 1.5655747296584137
+    },
+    "threshold": "slope t >= 2 confirms (with top-minus-bottom third > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, top third of forecasts minus bottom third",
+    "value": 0.012033454894529838,
+    "passed": true
+  },
+  "counts": {
+    "grid cases across coins and windows": 3419,
+    "days": 617
+  },
+  "reading": "The slope's t uses a day-clustered standard error (cases summed per calendar day, with a G/(G-1) correction), the coin's mean 5-bar return is the mean of its grid returns over all windows, and the thirds are the n//3 lowest and highest cases by post_pipeline_value (stable sort).",
+  "status": "inconclusive",
+  "decided_by": "The slope's t lies between -2 and 2."
+}

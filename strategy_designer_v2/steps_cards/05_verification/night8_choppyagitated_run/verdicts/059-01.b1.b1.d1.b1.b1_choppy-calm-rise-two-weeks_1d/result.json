@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-removed 14-bar forward return on forecast, grid bars with forecast > 0",
+    "value": 0.007938748293592117,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 2.5342060037110237
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean unusual move > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of the cases (long side)",
+    "value": 0.00989170037890545,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 180,
+    "days": 79
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean unusual move is above 0.",
+  "reading": "The profile is the recorded regime 'unknown'; the cases are each window's 0,14,28,... bars with forecast > 0 and a full 14-bar forward return in the window; the coin's mean 14-bar return (its normal drift) is taken over all its windows' grid bars; 'cases of one day taken together' is read as a day-clustered (CR1) standard error of the slope; the plan's 'fewer than 30 cases' rule is applied as the minimum count giving 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004922 on the check folds against +0.007939 on every fold",
+    "main": 0.004921533720303175,
+    "statistic": 1.4772939888910908,
+    "counts": {
+      "grid cases with forecast > 0": 138,
+      "days": 58
+    }
+  }
+}

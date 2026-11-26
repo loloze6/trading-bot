@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (10-bar return - coin drift)",
+    "value": 0.011898196688690243,
+    "statistic": {
+      "name": "t of the mean, cases summed per date",
+      "value": 0.9730100118986804
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Welch t of signed excess return, |forecast| above minus below median",
+    "value": 1.4490409913279931,
+    "passed": true
+  },
+  "counts": {
+    "cases": 817,
+    "distinct dates": 212
+  },
+  "decided_by": "The main measure's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are grid bars (positions 0,10,20,... of each window) with forecast != 0 and a full 10-bar forward return in the window, drift is the coin's mean 10-bar return on that grid over all its windows, the t uses per-date summed deviations from the mean (clustered SE with J/(J-1) correction), and the median split puts |forecast| > median above and <= median below."
+}

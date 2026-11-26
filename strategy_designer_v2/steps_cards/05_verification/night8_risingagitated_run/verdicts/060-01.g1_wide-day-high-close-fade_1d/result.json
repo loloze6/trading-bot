@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual next-bar move on forecast<0 bars",
+    "value": 0.020371210056542154,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 2.503695522240417
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and slope >= 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-direction unusual move on abs(forecast)",
+    "value": 0.0010773885633956074,
+    "passed": true
+  },
+  "counts": {
+    "cases": 89,
+    "days": 56
+  },
+  "decided_by": "Mean short-direction unusual move above 0 with t >= 2 over at least 30 cases, and the slope on abs(forecast) is >= 0.",
+  "reading": "Every bar with forecast < 0 and a next bar in the same window is a case (1-bar grid = every bar), the drift is the coin's mean 1-bar return over all its windows, the day-clustered t sums the deviations per UTC day, and the slope is an ordinary least-squares fit.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (49 cases, 33 days)",
+    "main": 0.01680744671499431,
+    "statistic": 1.4079145472690184,
+    "counts": {
+      "cases": 49,
+      "days": 33
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "mbr",
+        "class": "strategies.strategy_components.MeanBarRangeRatioComponent",
+        "params": {
+          "long_period": 20,
+          "short_period": 1
+        }
+      },
+      {
+        "id": "cl",
+        "class": "strategies.strategy_components.CloseLocationInRangeComponent",
+        "params": {
+          "reference": "low"
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VolatilityRatioToAverageComponent",
+        "params": {
+          "vol_period": 20,
+          "vol_lookback": 60
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "mbr",
+              "op": "lte",
+              "value": 0.6667
+            },
+            {
+              "id": "cl",
+              "op": "lte",
+              "value": 0.25
+            },
+            {
+              "id": "vr",
+              "op": "gte",
+              "value": 1.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "wide_low_close",
+            "class": "strategies.strategy_components.BreakoutInMeanRangesComponent",
+            "params": {
+              "period": 1,
+              "base_period": 20,
+              "side": "below",
+              "high_current": 1,
+              "base_exclude_current": 1
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 1
+  }
+}

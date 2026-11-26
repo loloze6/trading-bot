@@ -1,0 +1,53 @@
+{
+  "line": "7.d",
+  "backtest": "063-01_calm-big-up-day-continues_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3670967,
+  "findings": {
+    "F1": "The check failed on Calmar, 0.309 against 0.75: a yearly return of +16.2 % against a deepest fall of about 47 % (\u221246.9 % on folds B and C, reached in w14 and w15). The long-only book gives back its gains in windows where the coins fall: w14 book \u221233 % (coins \u221252 %), w7 \u221222 % (coins \u221254 %), w9 \u221211 % (coins \u221231 %).",
+    "F2": "The losses sit on bars held while the coin's 20-day return was below \u221210 %. Those 1,027 held bars lost a mean \u22120.21 % per bar, against +0.41 % and +0.42 % on the 862 and 1,249 held bars with a 20-day return of 0 to +10 % and above +10 %. In the worst windows w13 to w15, the 322 held bars in a 20-day fall lost \u22120.52 % per bar, and those losses came from LTC (\u221258 % summed) and ZEC (\u221243 %).",
+    "F3": "The continuation lives only when the coin's recent path already points up. In calm grid cases with a rise above 1 usual swing, the 5-day excess return was +4.7 % (t 2.34, 37 cases) and +9.0 % (t 1.99, 20 cases) when the 20-day return was above +10 %. It was +0.1 % (14 cases) and \u22124.3 % (11 cases) when the 20-day return was below 0.",
+    "F4": "The 10-day return shows the same split for any calm up day. Calm up days with a 10-day return above +5 % were followed by a 5-day excess return of +3.6 % (t 3.80, 151 cases), and those with 0 to +5 % by +1.9 % (t 1.44, 72 cases). Up days with a negative 10-day return were followed by \u22120.7 % (t \u22120.64, 84 cases) and \u22121.1 % (t \u22120.95, 57 cases).",
+    "F5": "The recent rise is not an effect of its own. Calm days without a rise (one-day move \u2264 0) but with a 20-day return of 0 to +10 % or above +10 % were followed by a 5-day excess return of \u22121.0 % (96 cases) and \u22120.6 % (104 cases). With an up day above 1 swing it was +3.9 % to +9.0 %, so the condition adds nothing without the idea's signal.",
+    "F6": "Keeping the book's per-bar gains only on bars with a positive 20-day return changes the failing measure on folds B and C. The deepest fall goes from \u221247.0 % to \u221220.5 %, the yearly return from +30.5 % to +39.7 %, Calmar from 0.65 to 1.93 and Sharpe from 0.90 to 1.38 (a rebuild from bar values, not the engine's book).",
+    "F7": "The effect is graded inside the calm market, so its information lies in the large days. Calm 5-day excess returns rise with the swing-scaled day: \u22123.6 % below \u22122 swings, +0.7 % at 0 to 0.5, +2.4 % (t 1.98, 76 cases) at 1 to 2, and +6.8 % (t 2.08, 28 cases) above 2. Trades entered at forecasts of 16.7 to 20 netted +5.2 % against +1.0 % at 10 to 16.7. The size measure's +0.01 % per case is diluted by the many small up days.",
+    "F8": "On a 60-day trend, the calm big-day continuation is absent in falling markets. The excess return was +0.4 % (20 cases) when the 60-day return was below \u221210 %, against +5.1 % (t 1.87, 36 cases) in rising and +8.2 % (t 2.47, 18 cases) in choppy markets. The 60-day return was available on 64 % of calm cases."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the larger a coin's one-day rise against its usual daily swing (the standard deviation of its daily returns over the past 30 days), the larger its rise over the next 5 days, only while its 10-day return is positive, and the more so the larger that 10-day return.",
+      "consequence": "A trader buys large calm up days that extend a recent advance and stays out of those that come inside a recent decline, where the long book took its deepest falls.",
+      "name": "calm big up day, uptrend",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a rising, calm market, the larger a coin's one-day rise against its usual daily swing (the standard deviation of its daily returns over the past 30 days), the larger its rise over the next 5 days.",
+      "consequence": "A trader keeps the calm-day continuation trade to coins whose 60-day trend is up, where large up days keep running, and avoids it in falling markets, where they do not.",
+      "name": "rising calm big day",
+      "from": "F1, F2, F7, F8",
+      "profile": "rising calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "063-01.d1_calm-big-up-day-uptrend",
+    "063-01.d2_rising-calm-big-day"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

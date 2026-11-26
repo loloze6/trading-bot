@@ -1,0 +1,50 @@
+{
+  "line": "7.g",
+  "backtest": "058-01.b1.b1_rally-giveback-over-fifteen-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4064991,
+  "findings": {
+    "F1": "Inside the falling-agitated profile, a scaled 3-day rise is given back mostly over the next 3 days. On the 3-day grid, the excess return falls as the rise grows: slope -0.0318, t -2.2, 180 rise cases, mean excess -1.02 %. The top quintile of the scaled 3-day move (mean 1.32 usual moves) is followed by -3.00 % excess, t -3.01, 58 cases. The slope on all cases is negative on every one of the 3 grid offsets, with t from -1.59 to -0.86.",
+    "F2": "At the tested 15-day horizon, rises in the profile are followed by lower prices, but the size of the rise does not grade the outcome. Rise cases show a mean excess of -12.69 %, yet the slope among rises only is +0.0141, t 0.4, 42 cases. Across grid offsets the 15-day slope ranges from t -2.71 to +2.11, and only 67 % of offsets are negative. This is why the tested slope only reached t 1.21.",
+    "F3": "Inside the profile, large scaled 3-day falls rebound. The bottom quintile (mean -1.26 usual moves) is followed by +3.02 % excess over 3 days, t 2.38, 91 cases, and by +12.37 % over 15 days, t 3.06, 26 cases. The map already holds this effect (035-01, 038-01, 047-01, 051-01, falling agitated, long), so it is not a discovery.",
+    "F4": "Outside the profile, scaled 3-day moves continue rather than reverse. Over 3 days the slope is +0.0090, t 4.79, 2261 cases, and the top quintile earns +1.36 % excess, t 3.15, 480 cases. Over 15 days the slope is +0.0576, t 4.03, 388 cases.",
+    "F5": "The continuation outside the profile is strongest in falling, calm markets (60-day trend below -10 %, swing not above its yearly median). There the 15-day slope of excess return on the scaled 3-day move is +0.1114, t 3.31, 82 cases. After rises the excess is +27.2 % (8 cases) and after falls -6.98 % (18 cases). The 3-day slope there is +0.0122, t 1.69, 458 cases. The map lists only one strategy in falling calm (035-01.b1).",
+    "F6": "The book stays short long after the signal has faded, which is why it gives back the 3-day give-back of F1. In the profile the forecast is below 0 on only 39.3 % of bars, but the position is short on 83.9 %. Its 245 short trades lost 5.09 % on average after fees, with a median of -1.46 %, and in 2020 and 2021 the book lost 0.078 % and 0.006 % a day."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 3 days.",
+      "consequence": "A trader would treat a large scaled few-day rally in a falling, agitated market as a reason to short or refuse longs for the next few days only, not for two weeks.",
+      "name": "rally giveback over three days",
+      "from": "F1, F2, F6",
+      "profile": "falling agitated",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, the larger a coin's 3-day move is against the standard deviation of its daily returns over the past 30 days, the further its price continues in that same direction over the next 15 days.",
+      "consequence": "A trader would follow a large scaled few-day move in a falling, calm market for two weeks rather than fade it.",
+      "name": "falling calm move continuation",
+      "from": "F4, F5",
+      "profile": "falling calm",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.b1.b1.g1_rally-giveback-over-three-days"
+  ],
+  "discovery_ids": [
+    "058-01.b1.b1.g2_falling-calm-move-continuation"
+  ],
+  "no_ideas": null
+}

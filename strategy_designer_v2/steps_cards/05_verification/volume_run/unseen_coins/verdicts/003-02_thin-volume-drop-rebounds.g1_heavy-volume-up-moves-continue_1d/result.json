@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return of cases with forecast >= 2 (vs coin mean on the same grid)",
+    "value": 0.019048296223783127,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.2290794517747
+    },
+    "threshold": "confirm if t >= 2 and supporting difference > 0; reject if t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess of cases above median forecast minus below median",
+    "value": 0.026992632338601844,
+    "passed": true
+  },
+  "counts": {
+    "cases": 642,
+    "cases above median forecast": 321,
+    "cases below median forecast": 321,
+    "active bars": 9704
+  },
+  "decided_by": "The mean excess 5-bar return has t >= 2 and the above-median minus below-median difference is above 0.",
+  "reading": "The coin's mean is taken over every grid bar with a full 5-bar return in all its windows, cases are grid bars with forecast >= 2 and a full return inside the window, cases equal to the median forecast are left out of the supporting split, and fewer than 30 cases gives 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01255 on the check folds against +0.01905 on every fold",
+    "main": 0.01254785944531491,
+    "statistic": 1.9360511904207103,
+    "counts": {
+      "cases": 527,
+      "cases above median forecast": 263,
+      "cases below median forecast": 263,
+      "active bars": 7816
+    }
+  }
+}

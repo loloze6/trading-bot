@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40599620000000003,
+  "findings": {
+    "F1": "In a falling, calm market (60-day return below -10 %, 30-day swing at or below the coin's median), the coin's next-7-day excess return grows with its past 7-day return scaled by its usual 7-day swing: slope +3.88 % per unit of scaled move, day-clustered t 2.04, on 117 grid cases over 40 days. In a falling, agitated market the same slope is -0.62 % (t -0.47, 168 cases, 50 days).",
+    "F2": "In the falling, calm market the past week's move carries on in its own direction. After a 7-day fall, the next 7 days averaged -6.38 % against the coin's drift (72 cases). After a 7-day rise they averaged +4.61 % (45 cases). Taken in the direction of the week's move, the excess is +5.70 % per case, t 2.61 with the cases of one day summed (40 days).",
+    "F3": "This continuation in falling calm markets is not steady across years. The slope is +6.49 % (t 2.66) in 2018 and +5.32 % (t 4.13) in 2021, but -1.38 % (t -0.95) in 2019. Across coins the slope is positive on all six with enough cases (ADA t 2.34, LTC 1.99, XRP 1.72, ZEC 1.15, XMR 0.64, ETH 0.65).",
+    "F4": "The tested choppy, calm continuation is present but small. In choppy calm grid cases the slope of excess return on the scaled weekly move is +3.20 % (OLS t 2.51, 79 cases). Its top two quintiles average +6.6 % and +7.5 %, against -4.7 % in the bottom one. Yet the book's in-profile cases give a slope t of only 1.38 (132 cases), while the bars outside the profile give t 2.56 (767 cases). The effect is not confined to the brief's profile.",
+    "F5": "The book lives on a few coins. Net mean trade return is +7.6 % on LINK (11 trades), +7.6 % on XRP (58) and +7.2 % on ZEC (51), but -2.8 % on XMR (74 trades). Trades with the highest entry forecast (14.7 to 20, 209 trades) have a median net return of only +0.04 % against a mean of +3.0 %, so a few large wins carry them.",
+    "F6": "Friday and Saturday daily returns, averaged over the coins each day, are +0.56 % (t 1.81, 207 days) and +0.63 % (t 2.43, 206 days). They are positive in each of 2018 to 2021, but against seven weekdays tested this does not stand out from chance, and a weekday cannot be graded. No idea is drawn from it."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a coin's move over the past 7 days, measured in multiples of its usual 7-day swing over the past 30 days, continues in the same direction over the next 7 days, and the larger that scaled move, the larger the further move.",
+      "consequence": "A trader in a quiet coin that has been sliding for two months should expect a week's sharp fall to keep falling and a week's sharp rise to keep rising, rather than reverting, and should size by how large the week was against the coin's usual swing.",
+      "name": "falling calm weekly continuation",
+      "from": "F1, F2, F3",
+      "profile": "falling calm",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "059-01.b1.b1.d1.b1.b2.g1_falling-calm-weekly-continuation"
+  ],
+  "no_ideas": null
+}

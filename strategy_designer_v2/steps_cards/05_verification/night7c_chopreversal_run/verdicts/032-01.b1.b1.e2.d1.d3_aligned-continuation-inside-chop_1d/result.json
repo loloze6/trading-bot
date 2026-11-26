@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 7-bar forward return on the forecast",
+    "value": 0.0012345278499144648,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.895050462238173
+    },
+    "threshold": "slope positive with t >= 2 to confirm (with the supporting check); negative with t <= -2 to reject; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 7-bar return signed by forecast, day-clustered t >= 2",
+    "value": 0.013548750928525309,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1114,
+    "days": 366,
+    "active bars": 8133
+  },
+  "decided_by": "Confirm: the slope is positive with t >= 2 and the signed drift-adjusted mean is positive with day-clustered t >= 2, over at least 30 cases.",
+  "reading": "ER(30), the 7-day and 30-day returns are recomputed from each window's closes (ER = |close change over 30 bars| / sum of the 30 absolute daily changes); on bars without enough in-window history the detector's 'chop' regime and the sign of the raw scaled_week value stand in; the drift is the coin's mean 7-bar return on all grid bars of all its windows, the slope is a pooled OLS of drift-adjusted return on the forecast with its ordinary t, and the supporting t is a day-clustered t (deviations summed per day, G/(G-1) correction).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002943 on the check folds against +0.001235 on every fold",
+    "main": 0.00029429949151025376,
+    "statistic": 0.8332537461292756,
+    "counts": {
+      "cases": 602,
+      "days": 194,
+      "active bars": 4296
+    }
+  }
+}

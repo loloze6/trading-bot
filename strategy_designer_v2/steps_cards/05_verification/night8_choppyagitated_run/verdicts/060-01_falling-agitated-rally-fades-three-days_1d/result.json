@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed unusual 3-bar move of the cases (vs coin's normal 3-bar drift)",
+    "value": 0.004344104610891467,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 1.0091555166389927
+    },
+    "threshold": "day-clustered t >= 2 to confirm (with slope t >= 2); t <= -2 or slope t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-signed unusual move on |forecast|",
+    "value": 0.0007660456445832498,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 488,
+    "cases": 1357
+  },
+  "decided_by": "Neither rule met: the main t is between -2 and 2, or it is >= 2 with a slope t below 2 (or a statistic could not be computed).",
+  "reading": "A case is the first short bet (rise of |forecast| >= 2 from its lowest level since the last bet) in each 3-bar cell counted from each window's first row; the day-clustered t sums deviations per UTC day with no small-sample correction; the slope t is the ordinary OLS t; the plan's 30-day minimum is applied as 'not observable'; the situation is read from the regime 'unknown' and raw value > 0."
+}

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar forward excess return on forecast (non-overlapping grid)",
+    "value": 0.0004889534380318532,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": 1.4267357633170845
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, top third of positive forecasts minus forecast 0",
+    "value": 0.011209288940250209,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with a positive forecast": 1612,
+    "distinct days of grid bars with a positive forecast": 456,
+    "grid bars in the sample": 3326,
+    "distinct days in the sample": 617
+  },
+  "decided_by": "|t| < 2, which the plan rules inconclusive",
+  "reading": "excess return = 5-bar return minus the coin's mean 5-bar return on the non-overlapping grid of all its windows; slope from OLS with intercept and CR1 standard error clustered by UTC day; top third = positive-forecast grid bars at or above their 2/3 quantile; the plan's minimum counts, when not reached, give 'not observable'."
+}

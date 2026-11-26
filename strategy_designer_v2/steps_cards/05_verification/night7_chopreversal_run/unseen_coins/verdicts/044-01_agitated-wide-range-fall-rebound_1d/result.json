@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (forecast > 0 bars)",
+    "value": 0.0007029859321928313,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 2.849502958561741
+    },
+    "threshold": "confirm: slope > 0 with day-clustered t >= 2 (and weighted mean > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean next-day excess return > 0",
+    "value": 0.0061959482113114585,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 3444,
+    "distinct days": 1096
+  },
+  "decided_by": "Confirm: the slope is positive with t >= 2 and the forecast-weighted mean excess return is above 0.",
+  "reading": "Agitated profile read as regime == 'unknown' (not vetoed to chop), a down day as the recorded raw component > 0 (close below previous close where not recorded); cases are forecast > 0 bars with a next close in the same window; the clustered t uses the standard CR1 small-sample correction G/(G-1)*(N-1)/(N-K); the plan's 'fewer is inconclusive' minimum is reported as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0004281 on the check folds against +0.000703 on every fold",
+    "main": 0.00042814898187956463,
+    "statistic": 1.6437568624345327,
+    "counts": {
+      "cases with forecast > 0": 3042,
+      "distinct days": 833
+    }
+  }
+}

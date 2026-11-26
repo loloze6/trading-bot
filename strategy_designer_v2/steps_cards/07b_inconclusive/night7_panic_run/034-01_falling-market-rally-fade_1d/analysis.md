@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 034-01_falling-market-rally-fade_1d
+idea tested: 034-01_falling-market-rally-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5603 USD
+---
+## Findings
+- **F1:** In the folds shown (B, C), a short after a falling-market up day earns no clear unusual move over the plan's 3 days, +0.45 % per case (t 0.65; 461 cases on 155 days), so the effect is not clearly there. Step 5 measured +0.01 % (t 0.05; 1572 cases on 726 days) over all folds; the total move to a short is +0.10 % (t 0.15), and the normal drift in the short direction is -0.36 %.
+- **F2:** The 3-day effect is mixed by the size of the rise and cancels out. The quarter with the smallest rises (mean 0.09 of the 30-day swing) rises further, -1.23 % to the short (t -1.39). The quarter with the largest rises (mean 1.55 swings) falls back, +2.43 % (t 1.86). The slope of the short-side unusual move on the scaled rise is +0.016 per swing unit (t 2.77, 461 cases): the grading the idea predicts, and averaging over all up days drowns it.
+- **F3:** The fade lives in agitated stretches. Agitation was read as the coin's 30-day swing above its own median of the window so far. In those stretches the 3-day short unusual move is +2.33 % (t 1.74; 135 cases, 52 days; strength 0.27 of a usual move), with a slope on the scaled rise of t 3.55. In calm stretches it is -0.18 % (t -0.19; 215 cases), with a slope t of 0.55.
+- **F4:** The strongest cases are in the agitated, larger-rise half: +4.29 % over 3 days (t 2.79; 81 cases, 32 days), about 22 times the 0.19 % cost of a trade. The agitated smaller-rise half is -0.60 % (t -0.36).
+- **F5:** Read against each coin's median swing over all its windows instead, the split is weaker. The level is +0.46 % agitated against +0.45 % calm, and only the slope stays stronger in agitated stretches (t 2.40 against 1.45), so the agitation result depends on how the swing's median is taken.
+- **F6:** Over 1 day the falling-market fade is clearer: +0.58 % (t 2.14; 1309 cases, 419 days). It is concentrated in agitated stretches at +1.28 % (t 2.71; 419 cases; calm 0.00 %, t 0.00), and in their larger-rise half at +1.72 % (t 3.16; 220 cases, 96 days). Its slope on the scaled rise is flat (t 0.57).
+- **F7:** The effect is falling-specific in sign. In rising markets, up days are followed by further rises over 3 days (-0.44 % to a short, t -0.53), and the largest rises there carry on (-2.01 %, t -1.18).
+- **F8:** The 3-day fade of larger rises is uneven across periods. It is strong in w14, w15 and w16 (+7.9 %, +5.2 % and +5.6 %; t 2.06, 1.74 and 2.46) and negative in w12, w13 and w18 (-5.0 %, -1.0 % and -2.1 %). Any amended idea must show it on folds A and D.
+
+## Ideas
+- `034-01.b1_agitated-downtrend-rally-fade` (from F2, F3, F4, F5, F7, F8): In a falling, agitated market, a coin's up day is followed by a decline over the next 3 days, and the decline is larger the larger that day's rise is in units of the coin's 30-day daily swing.
+- `034-01.b2_next-day-agitated-rally-fade` (from F6, F3, F7): In a falling, agitated market, a coin's up day is followed by a decline over the next day, and the decline is larger the larger that day's rise is in units of the coin's 30-day daily swing.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

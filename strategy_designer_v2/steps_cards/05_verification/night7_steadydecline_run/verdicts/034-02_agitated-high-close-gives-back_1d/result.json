@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of position x (next-day return minus coin mean daily return)",
+    "value": 0.00048282653551697555,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.022501342414194
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on forecast > 0",
+    "value": 0.0005575181411161166,
+    "passed": true
+  },
+  "counts": {
+    "agitated bars in a position": 7510,
+    "coins": 6,
+    "measure bars": 7670,
+    "days": 2212
+  },
+  "decided_by": "The main measure's t lies strictly between -2 and 2 (or its sign disagrees with the rule).",
+  "reading": "Agitation is read from the recorded regime (not 'chop', the volatility-percentile veto, whose component is not recorded and cannot be rebuilt within windows shorter than its 365-bar lookback) and the expected side is short; the main measure uses every bar with a nonzero forecast and a next bar in the same window, drift is each coin's mean daily return pooled over all its windows, the day-clustered t sums deviations per UTC day with a K/(K-1) factor, and the minimum count is the agitated measure bars with a nonzero position, with coins counted among them."
+}

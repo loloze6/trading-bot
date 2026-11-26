@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 032-02.g1.e2.e2_overextended-high-reverses_1d
+idea tested: 032-02.g1.e2.e2_overextended-high-reverses
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3769 USD
+---
+## Findings
+- **F1:** On the non-overlapping 5-day grid of folds B and C (1569 cases), bars that close at their 28-day highest close are followed by a 5-day return +4.96 % above the coin's normal drift (111 cases, sd 16.4 %), against −0.38 % for all other bars (1458 cases). That is the opposite of the tested idea's fall.
+- **F2:** Step 5 measured the same thing on every fold. At 28-day closing highs the move is a rise, not a fall: the unusual move in the short direction is −1.67 % per case (t −3.05 over 491 days, 710 cases), and the total move is −2.34 %, which is 12.1 times the 0.19 % cost of a trade.
+- **F3:** Distance from the 28-day closing high is graded at its top end. Next-5-day excess return by quintile, per coin, nearest to the high last: −0.27 %, −3.36 % (t −5.0), +0.10 %, +0.33 %, +3.19 % (t 3.66, median distance −0.3 %, 236 cases). The rank correlation with the excess in usual moves has t_day = 2.02 over 230 days, so the grading is only marginal given how many angles were looked at.
+- **F4:** The rise after highs holds across periods. It is positive in 7 of 10 windows that had at-high cases (w11 +11.3 %, w17 +5.5 %, w18 +7.2 %) and in 2019 (+0.4 %), 2020 (+5.2 %) and 2021 (+8.0 %).
+- **F5:** The book lost on every coin, with mean net trade results from −3.45 % (LTC) to −31.8 % (XRP) and 35.5 % of trades winning. Its Sharpe on daily returns was −1.10 over 1449 days.
+- **F6:** The brief's own claim finds no support here. Among 28-day declines, the scaled size of the fall does not grade the next 5 days (t_day −0.02, 171 cases), and calm declines are not followed by more falling than wild ones (−0.52 % vs −1.35 %, Welch t 0.79).
+- **F7:** Within at-high cases, the size of the scaled 28-day run-up does not grade what follows (t_day −0.73, 45 cases). Neither does recent range (t_day −0.65) nor recent volume (t_day −0.89), so no refinement of the at-high effect stands out.
+
+## Ideas
+- `032-02.g1.e2.e2.g1_fresh-highs-keep-rising` (from F1, F2, F3, F4): In a coin, the nearer its close is to its highest close of the past 28 days, the larger its rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

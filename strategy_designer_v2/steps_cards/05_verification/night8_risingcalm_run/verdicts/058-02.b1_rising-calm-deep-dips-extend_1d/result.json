@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar forward excess return on forecast (forecast < 0, non-overlapping grid)",
+    "value": 0.0005729812733902873,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 0.6071111988525582
+    },
+    "threshold": "confirm: slope t >= 2 with supporting check passing; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "deepest third: mean short-side 5-bar excess return > 0",
+    "value": 0.00844455221948843,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 396,
+    "distinct days": 194
+  },
+  "decided_by": "Slope t lies between -2 and 2.",
+  "reading": "Rising calm is the detector's own decision (regime 'unknown', i.e. neither veto fired, since the detector's components are not recorded and warm-up bars are absent), the pullback is last_history_value < 0 (price recompute where missing); the slope's t uses a day-clustered sandwich standard error with a G/(G-1) correction; the deepest third is the floor(n/3) cases with the most negative forecast; drift is the coin's mean 5-bar grid return over all its windows; the plan's minimum counts, when not reached, give 'not observable'."
+}

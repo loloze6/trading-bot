@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of next 7-day return minus drift on forecast, regime grid bars",
+    "value": 3.895050462238173,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.895050462238173
+    },
+    "threshold": "confirm if t >= 2 with positive supporting mean; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean of sign(forecast) x (next 7-day return minus drift)",
+    "value": 0.013548750928525309,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in the regime across coins and windows": 1114
+  },
+  "decided_by": "The slope t is 2 or more and the supporting mean is positive (confirm rule).",
+  "reading": "The situation is recomputed inside each window from closes (ER = |close[t]-close[t-30]| / sum of the last 30 absolute daily changes, 7- and 30-bar returns as close[t]/close[t-h]-1) and checked only on active bars where all three can be computed from the window's own bars; regime bars are those whose recorded regime is 'mean_reversion', the drift is the coin's mean 7-bar return over the non-overlapping grid of all its windows, the slope is a pooled OLS over coins and windows, and the plan's 'fewer than 50 grid cases' is applied as the minimum count giving 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.8333 on the check folds against +3.895 on every fold",
+    "main": 0.8332537461292755,
+    "statistic": 0.8332537461292755,
+    "counts": {
+      "grid cases in the regime across coins and windows": 602
+    }
+  }
+}

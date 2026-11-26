@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation_1d
+idea tested: 058-02.b1.b2.b1.b2.b2_calm-range-edge-continuation
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4190 USD
+---
+## Findings
+- **F1:** The edge effect is continuation, and it shows only in calm markets. In calm coins, a 5-day grid case closing in the top fifth of its 20-day range beats the coin's mean 5-day return by +4.40 % (t 4.40, 177 cases), and one in the bottom fifth trails it by -2.41 % (t -3.14, 163 cases). In agitated coins the same buckets give +1.78 % (t 1.16) and +0.28 % (t 0.18). (Ordinary t; these are folds B and C only.)
+- **F2:** Calm edge continuation works on both sides and in every year. In calm, short side at the edge: +2.93 % (t 4.39, 213 cases); long side: +3.60 % (t 4.37, 229 cases). By year, 2018 to 2021: +2.84 %, +3.02 %, +4.04 %, +3.29 %, with day-pooled t of 1.65, 2.05, 2.46 and 2.02. By coin it is positive on all 10 coins (t from 0.58 to 2.83). The step-5 test was held back by its |forecast| weighting (t 1.71) more than by the effect.
+- **F3:** In a calm coin at the top of its range, a strong up day adds to the move. Top of range after a day rising more than one 30-day daily swing: +7.02 % over 5 days (t_day 2.75, 66 cases on 26 days). Top of range after a flat day: +2.71 % (t_day 2.47, 141 cases on 61 days). At the bottom, a down day adds nothing: -2.94 % after a down day against -3.18 % after a flat day.
+- **F4:** In calm coins, a single large up day is followed by further rise. After a day above 2 swings: +7.20 % over 5 days (t 2.39, 32 cases). After 1 to 2 swings: +2.97 % (t 2.14, 72 cases). Large down days are not followed by a reliable fall: -2.57 % (t -1.20) and -1.38 % (t -1.44). In agitated coins the same up days give -1.35 % and +6.22 % (t -0.53 and 0.93).
+- **F5:** In calm coins, the past 5-day return scaled by the coin's swing grades the next 5 days monotonically, though no band reaches t 2:
+- **F6:** The book earns mostly on its long side. Long bar gains sum to 11.82 against 2.36 for shorts. Long trades average +5.43 % net (1244 trades), short trades -0.26 % (1462 trades).
+- **F7:** Nothing stands out in agitated markets. A 5-day reversal there has signed means of +1.36 %, +1.96 %, -1.00 % and +0.47 % by year (t 0.42, 1.80, -0.29, 0.17). A weekday pattern (Wednesday -0.44 %, t -2.60; Friday +0.37 %, t 2.85) is one of many angles looked at and overlaps the held 045-01 "late week gain".
+
+## Ideas
+- `058-02.b1.b2.b1.b2.b2.g1_calm-range-top-surge-continuation` (from F1, F2, F3): In a calm market, a coin closing near the top of its 20-day high-low range after a day that rose more than its usual daily swing rises over the next 5 days. The larger that day's rise against the coin's 30-day swing, and the nearer the close to the top, the larger the rise.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-02.b1.b2.b1.b2.b2.g2_calm-one-day-surge-continuation` (from F4, F5): In a calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the larger its rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day t of the slope of drift-adjusted next 5-bar return on forecast, trending grid bars",
+    "value": 0.001951963641481451,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 2.4613930099497505
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting mean > 0; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean short-side unusual move on grid cases with forecast < 0",
+    "value": 0.008442148530981703,
+    "passed": true
+  },
+  "counts": {
+    "in-regime grid cases": 906,
+    "grid cases with forecast < 0": 520,
+    "days": 304
+  },
+  "decided_by": "Confirm rule: the slope is positive with t >= 2 and the supporting short-side mean is above 0.",
+  "reading": "Grid = rows 0,5,10,... of each window; normal drift = the coin's mean non-overlapping 5-bar return over all its windows; in-regime = regime 'trending'; slope t uses day-clustered (CR1) standard errors; the situation check takes profile = regime 'trending', 20-day fall from prices (regime where not computable) and shrinkage = raw dryup < 0; fewer than the plan's minimum cases is reported as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0006133 on the check folds against +0.001952 on every fold",
+    "main": 0.0006133026815115828,
+    "statistic": 0.6986526926911382,
+    "counts": {
+      "in-regime grid cases": 428,
+      "grid cases with forecast < 0": 244,
+      "days": 168
+    }
+  }
+}

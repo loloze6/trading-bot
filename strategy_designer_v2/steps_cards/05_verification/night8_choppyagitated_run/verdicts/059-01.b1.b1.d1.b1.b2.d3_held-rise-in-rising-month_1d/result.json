@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess forward 7-bar return on forecast (grid bars, forecast > 0)",
+    "value": 0.0003067809134677785,
+    "statistic": {
+      "name": "slope t",
+      "value": 0.1523495729698307
+    },
+    "threshold": "confirm: slope t >= 2 (with weighted mean > 0, t >= 2); reject: slope t <= -2 or weighted mean t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess forward 7-bar return (t)",
+    "value": 0.01940349993310751,
+    "t": 1.4882884390667455,
+    "passed": false
+  },
+  "counts": {
+    "cases": 108
+  },
+  "decided_by": "Inconclusive rule: neither the confirm nor the reject rule is met by the slope's t and the weighted mean's t, over at least 30 cases.",
+  "reading": "Situation rebuilt as: recorded scaled_rise raw value > 0, close in the top 20 % of the 7-bar high-low range (current bar included) and close/close[-30]-1 > 0, long side, using the recorded regime 'trending' where a window's first bars cannot rebuild those inputs; the coin's mean 7-bar return is taken over its 0,7,14,... grid of all windows; the slope's t is the OLS slope over its standard error; the weighted mean's t uses the standard error sqrt(sum w^2 (x-m)^2)/sum w."
+}

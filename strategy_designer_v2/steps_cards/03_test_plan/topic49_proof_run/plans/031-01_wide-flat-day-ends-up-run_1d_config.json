@@ -1,0 +1,100 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "rise5",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 5,
+          "scaling_factor": 1.0
+        }
+      },
+      {
+        "id": "body",
+        "class": "strategies.strategy_components.BarBodySizeComponent",
+        "params": {
+          "relative_to": "range",
+          "form": "body"
+        }
+      },
+      {
+        "id": "width",
+        "class": "strategies.strategy_components.RangeCompressionRatioComponent",
+        "params": {
+          "short_period": 1,
+          "long_period": 30,
+          "exclude_current": 0,
+          "form": "width",
+          "base": "mean_bar_range"
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "rise5",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "body",
+              "op": "lte",
+              "value": 0.1
+            },
+            {
+              "id": "width",
+              "op": "gte",
+              "value": 1.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "wide_flat_after_run",
+            "class": "strategies.strategy_components.RiseTimesRangeMultipleComponent",
+            "params": {
+              "rise_period": 5,
+              "range_period": 30
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 5
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.g1.e1_raw-nearness-to-uptrend-high_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.37811459999999997,
+  "findings": {
+    "F1": "Within uptrending coins (28-day return above 0), the raw distance below the 28-day closing high orders the next 5-day excess return clearly. The nearest quintile gained +3.97 % (t 2.91) and the farthest lost -2.96 % (t -2.54), with a slope t of -3.94 over 638 non-overlapping cases. Over 10 days the slope t is -2.59 (313 cases). The slope is negative on all 6 coins and in 2019, 2020 and 2021. The tested forecast, which standardises the proximity over its 60 previous values, reached only t 1.65 on this same effect.",
+    "F2": "Within uptrending coins, a lower 28-day mean volume relative to the 90-day mean is followed by a larger 5-day excess return. The quietest quintile gained +3.82 % (t 2.73), and the slope t is -3.32 over 580 cases. Over 10 days the slope t is -2.45 (288 cases). The slope is negative on all 6 coins, from t -0.46 to t -2.23. With the distance to the high in the same regression it falls to t -1.50.",
+    "F3": "Within uptrending coins, calmer recent daily returns are followed by larger 5-day excess returns. The slope t is -2.98 on 20-day volatility (n 638) and -2.54 on 20-day volatility over 90-day volatility (n 580), negative on all 6 coins. The volatility ratio vanishes once the distance to the high is in the regression (t -0.46), so it mostly restates F1.",
+    "F4": "The brief's own claim does not show in these folds. In calm declines (28-day range and volume below their 90-day levels), a deeper 28-day fall is not followed by a deeper 5-day fall: the slope t on the 28-day return is +1.45 over 332 cases. In all declining cases the slope t is -0.88 over 640 cases.",
+    "F5": "In declining coins, a close further above the 28-day closing low is followed by a larger 5-day excess return. The slope t is +2.12 over 640 cases, which does not stand out among the roughly twenty angles examined.",
+    "F6": "The book gains on most windows and weekdays, with mean daily returns between -0.18 % and +0.48 % by window. No weekday or window pattern stands apart from chance. Trades last a median of 6 days, close to the tested 5-day horizon."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose close is above its close of 28 days ago, the lower its mean daily volume over the last 28 days relative to its mean daily volume over the last 90 days, the larger its rise over the next 5 to 10 days: quiet uptrends keep rising more than uptrends that come with heavy trading.",
+      "consequence": "A trader would weight longs in uptrending coins toward those advancing on thinning volume, and would trim longs in uptrends carried by a surge of volume.",
+      "name": "quiet-volume uptrend keeps rising",
+      "from": "F2, F3, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1.e1.g1_quiet-volume-uptrend-keeps-rising"
+  ],
+  "no_ideas": null
+}

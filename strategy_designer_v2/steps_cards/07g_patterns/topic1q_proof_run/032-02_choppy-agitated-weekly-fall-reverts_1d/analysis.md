@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 032-02_choppy-agitated-weekly-fall-reverts_1d
+idea tested: 032-02_choppy-agitated-weekly-fall-reverts
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4020 USD
+---
+## Findings
+- **F1:** The tested reversal is not in the bars I can see. Only 5.4 % of the 7-day grid cells fall in the choppy agitated profile (60 cases), and there the past-7-day move does not predict the next 7 days. The slope of the next week's unusual move on the scaled past week is -0.021 (t -0.18, n 60). The most negative quintile of past-week moves (mean -27 %) is followed by an unusual move of -4.7 % (t -1.29), the wrong side for a rebound.
+- **F2:** Outside the profile the past week also predicts nothing: slope 0.001, t 0.03, n 1041. All cases together give slope 0.003, t 0.12, n 1101. The theme's weekly giving-back does not show in any profile on folds B and C.
+- **F3:** Across all coins and profiles, a wide up day is followed by a fall the next day. On up days the wide-range quintile gives a next-day return of -0.113 daily standard deviations (t -2.57, 830 days). The narrower quintiles give -0.002 to +0.019. The graded slope of next-day return on range size among up days is -0.054 (t -3.43, n 4148). With the cases of one day summed, the top quintile reads -0.229 (t -1.75, 410 days), so it is weaker once same-day cases are pooled.
+- **F4:** The fade of wide up days is concentrated in falling markets: -0.259 standard deviations the next day (t -3.61, 182 cases). In rising markets it is +0.069 (t 0.68, 163) and in choppy markets -0.106 (t -0.57, 36). It is also stronger when the 30-day swing is above the coin's median: -0.156 (t -2.82, 591) against -0.007 (t -0.11, 239) when calm.
+- **F5:** The wide-up-day fade holds most of the time. It is negative in 10 of 12 windows, in 5 of 6 coins (XRP +0.098 the exception) and in 3 of 4 years: 2018 -0.266 (t -3.66), 2019 -0.189 (t -2.08), 2020 -0.143 (t -1.78), 2021 +0.048 (t 0.54).
+- **F6:** Two other patterns repeat what is already held, so they are not discoveries.
+- **F7:** The book earned +0.005 % a day (t 0.29, 1449 days) on folds B and C, with w16 alone at -0.11 % a day. That matches an idea whose unusual move per case is -0.39 % (t -0.40) and whose small gain is only the coins' drift.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `032-02.g1_falling-market-wide-up-fade` (from F3, F4, F5): In a falling market, the wider a coin's up day (its high-low range against its usual daily range), the more of that rise it gives back over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

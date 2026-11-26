@@ -192,3 +192,44 @@ retest_weekend_run | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-co
 retest_weekend_run | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d1_sunday-reversal-grows-with-volatility_1h | MeanAbsScaledReturnTimesVolatilityComponent | built: MeanAbsScaledReturnTimesVolatilityComponent {"period": 24, "vol_period": 720, "window": 720}
 retest_weekend_run | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d2_sunday-falls-rebound-early-week_1h | FallInUsualMovesTimesHourlyVolatilityComponent | exists: MeanAbsScaledReturnTimesVolatilityComponent {"period": 24, "vol_period": 720, "window": 720}
 retest_weekend_run | 026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d2_large-saturday-moves-continue.b1_sunday-moves-reverse-early-week.d2_sunday-move-reverses-on-monday.d3_moderate-sunday-moves-reverse-most_1h | CappedScaledReturnTimesVolatilityComponent | built: MeanAbsScaledReturnTimesVolatilityComponent {"cap": 2.0, "period": 24, "vol_period": 720, "window": 720}
+night6_streak_run | 031-01_up-streak-length-reversal_1d | UpCloseStreakLength | built: UpCloseStreakLengthComponent {"max_bars": 30}
+night6_streak_run | 031-01_up-streak-length-reversal_1d | UpCloseStreakLengthRank | built: UpCloseStreakLengthComponent {"base": "mean_streak", "base_window": 365}
+night6_streak_run | 031-03_up-streak-length-continuation_1d | UpStreakLengthRankComponent | built: UpCloseStreakLengthComponent {"base": "rank", "base_window": 365}
+night6_streak_run | 031-04_down-streak-length-continuation_1d | DownStreakLengthComponent | built: UpCloseStreakLengthComponent {"side": "down"}
+night6_streak_run | 031-04_down-streak-length-continuation_1d | DownStreakLengthRelativeComponent | exists: UpCloseStreakLengthComponent {"base": "mean_streak", "base_window": 365, "max_bars": 365, "side": "down"}
+night6_streak_run | 031-02.b1.d2_rebound-graded-by-turbulence_1d | VolatilityRatioWeightedScaledFall | built: VolatilityRatioWeightedScaledFallComponent {"base_vol_period": 60, "vol_period": 10}
+night6_streak_run | 031-02.b1.g1_long-up-streaks-keep-rising_1d | UpCloseStreakLength | exists: UpCloseStreakLengthComponent {"base": "none", "max_bars": 30, "side": "up"}
+night6_longreversal_run | 031-03.g1.b1.d2.e2.g1.g2_fade-during-volatility-bursts_1d | VolatilityRatioWeightedScaledReturn | built: RecentToPriorVolatilityWeightedReturnComponent {"base_lag": 0, "base_period": 30, "period": 1, "return_scale": "base_std", "vol_period": 5}
+night6_indecision_run | 031-01.b1.b2_wide-day-extends-strong-run_1d | RiseTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"range_period": 20, "rise_period": 5}
+night7_panic_run | 037-01_falling-market-wide-day-decline_1d | RangeInReturnStdComponent | built: RangeInReturnStdComponent {"vol_period": 30}
+night7_panic_run | 041-01_wide-up-day-next-day-fade_1d | RangeInUsualMovesComponent | exists: RangeInReturnStdComponent {"vol_period": 30}
+night7_panic_run | 036-02_range-scaled-rally-continuation_1d | RangeScaledReturnComponent | built: MeanAbsScaledReturnComponent {"base": "mean_relative_range", "period": 3, "window": 30}
+night7_steadydecline_run | 037-01_wide-day-fall-next-day-rebound_1d | FallTimesRangeMultiple | built: RiseTimesRangeMultipleComponent {"exclude_current": 1, "range_period": 14, "rise_period": 1, "side": "down"}
+night7_steadydecline_run | 035-02_swing-wide-low-close-rebounds_1d | LowCloseRangeInUsualMovesComponent | built: VolatilityScaledDistanceFromHighComponent {"base": "close", "exclude_current": 0, "period": 1, "source": "high", "vol_period": 20}
+night7_steadydecline_run | 036-02_fall-vs-range-next-day-rebound_1d | FallInMeanBarRanges | built: BreakoutInMeanRangesComponent {"base_exclude_current": 1, "base_period": 30, "high_current": 0, "period": 1, "side": "below", "source": "close"}
+night7_steadydecline_run | 037-02_fall-range-beyond-loss-rebound_1d | FallTimesRangeExcessComponent | built: FallTimesRangeExcessComponent {}
+night7_steadydecline_run | 039-02_agitated-range-fall-low-close-rebound_1d | FallInMeanRangesCloseLocationComponent | built: FallCloseLocationComponent {"base": "mean_bar_range", "exclude_current": 1, "vol_period": 30}
+night7_chopreversal_run | 043-01_falling-agitated-intraday-drop-rebound_1d | OpenToCloseDropComponent | built: BarBodySizeComponent {"form": "drop", "relative_to": "open"}
+night7_chopreversal_run | 044-01_agitated-wide-range-fall-rebound_1d | FallStdScaledRangeMultipleComponent | built: ScaledFallRangeMultipleComponent {"lag": 0, "period": 1, "scale": "std", "window": 30}
+night7_rangefail_run | 033-01.b2_beyond-range-close-drift_1d | PriorRangePositionComponent | built: DonchianBreakoutComponent {"exclude_current": 1, "form": "position", "period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night7_rangefail_run | 033-02.d2_fresh-upside-break-rises_1d | PriorBreakoutCloseCountComponent | built: PriorBreakoutCloseCountComponent {"period": 20, "window": 20}
+pilot_panic_run | 054-01_deep-reclaimed-low-pierce-rebound_1d | PriorLowPierceDepth | built: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | PriorLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-02_strong-close-reclaim-rebound_1d | ReclaimAboveLowInRange | built: PriorLowReclaimInRangeComponent {"period": 30}
+pilot_panic_run | 054-03_deep-pierce-reclaim-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimedLowPierceDepth | exists: ReclaimedPriorLowPierceDepthComponent {"period": 30}
+pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimNearnessInRange | built: PriorLowReclaimInRangeComponent {"form": "nearness", "period": 30}
+night8_risingagitated_run | 058-02_agitated-rise-swing-scaled-giveback_1d | MovingAverageDistanceInUsualMovesComponent | built: MovingAverageDistanceComponent {"average": "sma", "base": "usual_moves", "period": 20, "vol_period": 20}
+night8_risingagitated_run | 068-02_falling-agitated-run-break-fade_1d | PriorDownRunOnUpCloseComponent | built: PriorDownRunOnUpCloseComponent {"max_bars": 30}
+night8_fallingcalm_run | 060-01.d2_dry-up-in-moderate-declines_1d | VolumeDryUpTimesFallModerationComponent | built: VolumeDryUpTimesFallModerationComponent {"fall_period": 20, "volume_period": 30}
+night8_fallingcalm_run | 060-02.d1.d2.d1_volume-signal-in-deeper-falls_1d | VolumeChangeTimesFallDepth | built: VolumeChangeTimesFallDepthComponent {"fall_period": 20, "volume_period": 30}
+night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night8_choppycalm_run | 058-02_calm-range-bottom-drifts-up_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
+night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePositionComponent | cannot build: no answer passed the checks after 3 attempts
+night8_choppyagitated_run | 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks_1d | centred mean-abs-scaled return | built: MeanAbsScaledReturnComponent {"base": "mean_abs_return", "form": "centred", "period": 7, "window": 30}
+night8_fallingagitated_run | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d | CappedScaledRiseTimesDepthBelowHigh | built: CappedScaledRiseTimesDepthBelowHighComponent {"cap": 1.0, "period": 20, "vol_period": 30}
+night7c_rangefail_run | 032-02.b1.e1.e1_tight-range-breakouts-continue_1d | ClosingRangeInUsualMovesComponent | built: ClosingRangeInUsualMovesComponent {"form": "width", "period": 60, "window": 60}
+night7c_rangefail_run | 032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d | BreakoutRunUpDiscount | built: BreakoutRunUpDiscountComponent {"period": 60, "rise_lag": 1, "rise_period": 20, "window": 120}
+night7c_rangefail_run | 032-01.b1.b1.e2_small-breaks-follow-through_1d | BreakProximityAboveHigh | cannot build: no answer passed the checks after 3 attempts
+night7c_rangefail_run | 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d | BreakoutMarginProximityComponent | built: BreakoutMarginProximityComponent {"period": 60}
+night7c_chopreversal_run | 032-03_reversal-grows-with-choppiness_1d | ChopWeightedScaledReversal | built: ChoppinessWeightedScaledReversalComponent {"er_period": 30, "period": 7, "vol_period": 30}

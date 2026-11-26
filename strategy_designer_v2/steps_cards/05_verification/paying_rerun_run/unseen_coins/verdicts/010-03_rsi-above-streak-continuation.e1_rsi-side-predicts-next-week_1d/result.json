@@ -1,0 +1,75 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (coin 7-bar return - coin mean 7-bar return), non-overlapping cases",
+    "value": 0.014820274856680356,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.789837535690978
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting difference positive; reject: negative with t <= -2 and supporting difference negative"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return forecast>0 minus forecast<0 (Welch t), same sign as main",
+    "value": 0.02752652767827539,
+    "passed": true,
+    "welch_t": 5.029437106153222
+  },
+  "counts": {
+    "independent cases": 4382,
+    "cases AAVEUSD": 238,
+    "cases ADAUSD": 357,
+    "cases AVAXUSD": 187,
+    "cases DOGEUSD": 289,
+    "cases INJUSD": 204,
+    "cases LINKUSD": 306,
+    "cases LTCUSD": 407,
+    "cases NEARUSD": 170,
+    "cases ONDOUSD": 68,
+    "cases SOLUSD": 221,
+    "cases SUIUSD": 119,
+    "cases TAOUSD": 68,
+    "cases TRXUSD": 272,
+    "cases UNIUSD": 255,
+    "cases XMRUSD": 407,
+    "cases XRPUSD": 407,
+    "cases ZECUSD": 407,
+    "cases forecast > 0": 2019,
+    "cases forecast < 0": 2363
+  },
+  "decided_by": "The main measure is positive with t >= 2 and the supporting difference is positive.",
+  "reading": "Non-overlapping cases are positions 0,7,14,... of each window with close[t+7] inside the window; each coin's mean 7-bar return is taken over these same cases in all its windows; cases with forecast 0 stay in the main measure (product 0) and are left out of both groups of the supporting check; the 300-case minimum counts all cases across coins.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (68 cases, None days)",
+    "main": 0.010937689792949904,
+    "statistic": 3.6117898519108107,
+    "counts": {
+      "independent cases": 3060,
+      "cases AAVEUSD": 204,
+      "cases ADAUSD": 204,
+      "cases AVAXUSD": 187,
+      "cases DOGEUSD": 204,
+      "cases INJUSD": 204,
+      "cases LINKUSD": 204,
+      "cases LTCUSD": 204,
+      "cases NEARUSD": 170,
+      "cases ONDOUSD": 68,
+      "cases SOLUSD": 204,
+      "cases SUIUSD": 119,
+      "cases TAOUSD": 68,
+      "cases TRXUSD": 204,
+      "cases UNIUSD": 204,
+      "cases XMRUSD": 204,
+      "cases XRPUSD": 204,
+      "cases ZECUSD": 204,
+      "cases forecast > 0": 1384,
+      "cases forecast < 0": 1676
+    }
+  }
+}

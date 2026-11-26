@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 10-bar move of short bets (vs coin's normal 10-bar drift)",
+    "value": 0.0001612990094469238,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.006810908657329742
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper half (|forecast| above median) mean unusual move >= shallower half mean (deeper minus shallower)",
+    "value": -0.0322196870865179,
+    "passed": false
+  },
+  "counts": {
+    "cases": 77,
+    "distinct days": 57
+  },
+  "decided_by": "Inconclusive rule: the t of the mean short-side unusual move lies between -2 and 2.",
+  "reading": "A case is the first short bet (forecast rising in size on the short side by at least 0.05 forecast points, the config's min_allocation_change, from its lowest size since the last bet) in each 10-bar grid cell counted from each window's first row, dropped if its 10-bar return leaves the window; the deeper half is |forecast| strictly above the median and the shallower half the rest; the plan's minimum of 30 cases on 20 days, when unmet, gives 'not observable'."
+}

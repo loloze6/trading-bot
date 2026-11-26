@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9863325740318907,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move per case (long, minus coin's normal 10-bar drift)",
+    "value": 0.025560499938271298,
+    "statistic": {
+      "name": "t of the mean, cases of the same day pooled",
+      "value": 1.9969539537380083
+    },
+    "threshold": "mean > 0 with day-pooled t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-forecast half minus smaller-forecast half (Welch t)",
+    "value": -0.013875431196279715,
+    "passed": false
+  },
+  "counts": {
+    "cases": 261,
+    "distinct days": 217
+  },
+  "decided_by": "Inconclusive: the main measure meets neither the confirm nor the reject rule.",
+  "reading": "Situation recomputed as the 60-bar Kaufman efficiency ratio smoothed by a 5-bar simple mean below 0.3 and the close above the highest of the prior 60 closes, long side, on active bars where the record holds enough bars to compute it (earlier active bars left out of the agreement); cases are the first 2-point forecast rise (holding-period bet) in each 10-bar grid cell from each window's first row, the day-pooled t uses cluster sums of deviations with a G/(G-1) correction, the larger half is entry forecast above the median and the smaller half at or below it, the reject rule is applied before the confirm rule, and the plan's minimum of 30 cases on 30 days gives 'not observable' when not reached."
+}

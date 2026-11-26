@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "060-02.d2.d2_volume-growth-capitulation-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4028007,
+  "findings": {
+    "F1": "The failing measure is Calmar (0.33 against 0.75). Most of the book's deepest fall, -19.9 % over 56 days, sits inside window w14, where the book lost 6.4 % in sum while every coin lost: BTC -24.8 %, ETH -21.8 %, XMR -28.9 % and ZEC -23.8 % of book return summed over that fall. No other window's deepest fall exceeds -6.7 %.",
+    "F2": "The losses come from positions held long after the signal. Trades of up to 5.5 days earn +7.03 % net (275 trades) and trades of 5.5 to 10.5 days earn +3.07 % (135). Trades of 10.5 to 20.5 days lose -6.90 % (69, worst -30.2 %) and trades over 20.5 days lose -18.58 % (18). The trades average 6.7 days although the plan's horizon is 5.",
+    "F3": "The rebound is spent in the first 5 days of a position. On the 5-day grid, in-position cells aged up to 5 days gain +3.19 % over the next 5 days (122 cells). Cells aged 5 to 10 days gain +1.02 % (69), and cells aged 10 to 20 days lose -1.25 % with 60 % negative (40). The over-20-day group (+10.5 %, 14 cells) rests on one +100.8 % case in w14.",
+    "F4": "The forecast keeps the book long for weeks in deep falls. In w14 the in-position cells had a 60-day return of -46 % and a volume log-ratio of 0.96, against -26 % and 0.27 in the other windows. Their median 5-day return was -4.3 % against +2.3 %, and 39 of w14's 62 in-position cells were older than 5 days.",
+    "F5": "The effect is graded by fall depth. Fresh positions (age up to 5 days) in the deepest 60-day-fall tertile (-62 % to -37 %) gain +4.22 % over 5 days, against 0.00 % and -0.26 % in the other two tertiles (22 cells each). Across all in-position cells, the deepest 10-day-fall tertile gains +4.68 %, against +1.72 % and +0.64 %.",
+    "F6": "A deep 60-day fall is not an effect of its own. In the falling profile, cells with a 60-day fall below -30 % but without the signal (volume grown and 10-day return negative) earn -0.60 % over 5 days (145 cells). With the signal they earn +3.97 % (67 cells). The depth belongs to the idea's capitulation theory: a deeper fall clears more sellers."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, the more the coin's trading volume over the past 30 days has grown against the 30 days before, and the deeper its 10-day fall, the larger its rise over the next 5 days. That rise comes in the first 5 days after volume growth meets the fall and is spent by then, held for 5 days from the signal only.",
+      "consequence": "A trader buys the capitulation rebound for 5 days and closes it, instead of staying long while volume stays high in a fall that goes on.",
+      "name": "capitulation rebound five days",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a falling market, the more the coin's trading volume over the past 30 days has grown against the 30 days before, the larger its rise over the next 5 days. The deeper its 60-day fall has been, the larger that rise, held for 5 days from the signal.",
+      "consequence": "A trader sizes the capitulation rebound by how deep the 60-day fall has gone, and takes only small bets when the fall is shallow.",
+      "name": "deep-fall capitulation volume rebound",
+      "from": "F3, F5, F6",
+      "profile": "falling",
+      "refs": [
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-02.d2.d2.d1_capitulation-rebound-five-days",
+    "060-02.d2.d2.d2_deep-fall-capitulation-volume-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

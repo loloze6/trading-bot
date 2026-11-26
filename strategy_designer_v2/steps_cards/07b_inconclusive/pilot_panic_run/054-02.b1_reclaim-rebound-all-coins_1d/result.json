@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "054-02.b1_reclaim-rebound-all-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4042604000000001,
+  "findings": {
+    "F1": "The test's result is on the side the idea predicts but short of the bar: case days beat the other falling-agitated days by +1.53 % over 5 days, Welch t 0.81 (153 cases, 72 days). More data cannot help, because the test already used all 19 coins on all four folds. The grade the idea named runs the wrong way: the Spearman of reclaim strength against the drift-adjusted 5-day return is -0.108. In folds B and C it is -0.17, with the weakest-reclaim tercile at +6.9 % and the strongest at +3.5 % (12 and 13 cases).",
+    "F2": "In folds B and C the rebound after a reclaim is graded by how deep the coin's 60-day fall is, not by where the close sits. The Spearman of the 60-day return against the 5-day excess return is -0.47 (p 0.009, 29 non-overlapping cases on 29 days). Overlapping cases by depth of fall:",
+    "F3": "The depth grade belongs to the reclaim, not to the falling market itself. On the other falling-agitated days the same Spearman is +0.05 (p 0.16, 1,417 days). Their 5-day excess return is flat in every depth bin (-0.5 %, +0.9 %, -1.1 %, each |t| < 1.4). On reclaim days, by 60-day return:",
+    "F4": "The profile carries the effect. In folds B and C, reclaim days inside the falling-agitated profile gain +4.8 % over 5 days above the coin's drift (38 days). Reclaim days in other profiles lose -3.8 % (158 days). Over all non-overlapping reclaims, the 1- to 10-day excess return is -1 % to -4 %, with every |t| below 1.31.",
+    "F5": "Cost does not limit this idea. The 5-day excess on case days holds at longer horizons: +5.3 % at 5 days (t 1.73) and +7.4 % at 10 days (t 1.85), against +0.0 % for the other days. The idea's own total move, +2.49 % per case, is 11 times the 0.22 % cost of a trade. What is missing is a graded measure that lines up with the move, which F2 provides."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, when a coin's day trades below its lowest price of the past 30 days but closes back above that low, it rises over the next 5 days, and the rise is larger the deeper the coin's fall over the past 60 days.",
+      "consequence": "A trader buys a reclaimed monthly low only after a deep 60-day fall, sizes up the deeper the fall, and refuses the same signal after a shallow decline.",
+      "name": "reclaim rebound after deep fall",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "054-02.b1.b1_reclaim-rebound-after-deep-fall"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

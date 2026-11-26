@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 040-02_agitated-daily-rise-next-day-giveback_1d
+idea tested: 040-02_agitated-daily-rise-next-day-giveback
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3777 USD
+---
+## Findings
+- **F1:** In agitated markets, the next day's excess return grows with the size of a down day. Down days measured at least 2 usual moves below zero were followed by +1.77 % (t 3.14, 180 cases). Down days of 1 to 2 usual moves were followed by +0.83 % (t 2.36, 376 cases). Down days of 0.3 to 1 usual moves were followed by +0.31 % (t 1.11, 548 cases). The day-clustered slope of the next-day excess return on the standardised fall is -0.0093 (t -2.63, 1439 cases on 537 days).
+- **F2:** In agitated markets, rises are not given back, and the tested idea's side does not hold. The clustered slope of the next-day excess return on the standardised rise is +0.0026 (t 1.24, 1505 cases on 562 days), the wrong sign for a fade. Rises of at least 2 usual moves were followed by -0.09 % (t -0.19, 206 cases). This matches step 5's failed slope of -9.3e-05.
+- **F3:** The fall-rebound lives in falling, agitated markets. There the down-day slope is -0.0134 (t -3.75, 377 cases on 147 days). In choppy agitated markets it is -0.0065 (t -1.31), and in rising agitated markets -0.0006 (t -0.12).
+- **F4:** The rebound is weaker in calm markets and is spent after one day. In calm markets the clustered down-day slope is -0.0022 (t -0.80, 665 days). In agitated markets the slope on the second day after the fall is +0.0021 (t 0.67, 533 days).
+- **F5:** The agitated fall-rebound points the same way in every year and every coin seen.
+- **F6:** The day's range carries much of the same information as the fall's size. On agitated down days, adding the range moves the fall's slope to -0.0038 (t -0.69), and the range's own coefficient is +0.0037 (t 1.06). Where the close sits in the range adds nothing beyond the fall's size: its coefficient is -0.0004 (t -0.02).
+- **F7:** The largest agitated falls move far more than a trade costs, so the size clears the cost on the long side. After falls of at least 2 usual moves, the next-day excess move is +1.77 %, about 9 times the 0.19 % cost of a trade. The short book on rises earned a Sharpe of -0.14 at a 0.25 % total move per case.
+- **F8:** The other angles did not stand out once the number of angles looked at is counted. The weekday of the signal day gave Wednesday -0.50 % (t -2.67) and Thursday +0.41 % (t 2.61) among 7 weekdays. The range on agitated up days had a coefficient of -0.0083 (t -3.01) among about 30 regressions.
+
+## Ideas
+- `040-02.g1_falling-agitated-fall-rebound` (from F1, F3, F4, F5, F7): In a falling, agitated market, the larger a coin's one-day fall, measured as its percent change from the previous close, the larger its rise over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

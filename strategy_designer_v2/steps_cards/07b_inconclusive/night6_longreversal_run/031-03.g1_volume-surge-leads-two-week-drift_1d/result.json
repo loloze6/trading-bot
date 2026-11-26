@@ -1,0 +1,44 @@
+{
+  "line": "7.b",
+  "backtest": "031-03.g1_volume-surge-leads-two-week-drift_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.322932,
+  "findings": {
+    "F1": "At the plan's 14-day horizon the slope sits on the predicted side but is carried by the top fifth of forecasts alone. That fifth has a demeaned move of +2.13 % (231 cases, t 1.23). The other four fifths average \u22120.53 % (921 cases) and run \u22121.01 %, \u22120.18 %, \u22120.74 %, \u22120.20 % from the bottom up, so the move in the signal's direction is near zero: +0.53 % per case, day-grouped t 0.57 over 207 days, against the verdict's +0.03 % with t 0.04.",
+    "F2": "The effect changes sign across years. The 14-day slope t is \u22121.28 in 2019 and \u22121.06 in 2021, but +1.97 in 2023 and +2.80 in 2024. The top fifth's 14-day move ranges from \u22127.1 % in 2018 to +8.6 % in 2024 and +9.1 % in 2020.",
+    "F3": "No coin carries the effect and none is clear on its own: five of six coins have a positive 14-day slope (t 0.49 to 1.19, 192 cases each), while XMR's is \u22120.36. The pooled t of 1.53 is a small common lean that 192 cases per coin cannot show.",
+    "F4": "The lean is short-lived. The slope t is 2.55 over 7 days (2443 cases), 1.62 over 10 days (1691), 1.53 over 14 days (1152), \u22120.54 over 21 days (720) and \u22120.97 over 28 days (576).",
+    "F5": "Over 7 days the grading lives on the falling-volume side. Among negative forecasts the slope t is 2.12 (1300 cases), and the bottom fifth's demeaned move is \u22121.04 % (489 cases, t \u22121.90). Among positive forecasts the slope t is \u22120.04 (1143 cases), and the top fifth is only +0.18 % (t 0.25)."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "volume surge, more coins",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ],
+      "idea": "The more a coin's mean daily volume over the last 14 days has risen above its mean daily volume over the last 30 days, the more its price rises over the next 14 days; the more that volume has fallen below its 30-day mean, the more its price falls over the next 14 days.",
+      "consequence": "A trader would lean with the coin when its recent volume swells against its past month and against it when the volume dries up, holding about two weeks.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The more a coin's mean daily volume over the last 14 days has fallen below its mean daily volume over the last 30 days, the more its price falls over the next 7 days.",
+      "consequence": "A trader would lean against a coin whose recent volume is drying up against its past month, holding about a week, and would refuse a long in it while it lasts.",
+      "name": "volume drought, one-week fall",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-03.g1.b1_volume-surge-more-coins",
+    "031-03.g1.b2_volume-drought-one-week-fall"
+  ],
+  "no_ideas": null
+}

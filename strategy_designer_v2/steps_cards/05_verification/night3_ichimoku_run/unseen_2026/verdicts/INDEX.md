@@ -1,0 +1,1 @@
+021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins_1d: inconclusive (fit: exact) [main: 0.0166897; t of the mean 1.46724; independent grid cases in the regime 84, slow-fall half 42, fast-fall half 42]

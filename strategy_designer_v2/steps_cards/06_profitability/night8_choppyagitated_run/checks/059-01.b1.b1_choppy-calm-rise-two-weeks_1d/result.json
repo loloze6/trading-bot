@@ -1,0 +1,60 @@
+{
+  "status": "not profitable enough",
+  "measures": [
+    {
+      "measure": "sharpe_min",
+      "label": "Sharpe",
+      "value": 0.48298950302941773,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": true
+    },
+    {
+      "measure": "sharpe_vs_hold_min",
+      "label": "Sharpe minus holding's Sharpe",
+      "value": -0.06979570149238173,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": false
+    },
+    {
+      "measure": "avg_daily_return_min",
+      "label": "Mean daily return, on days in a position",
+      "value": 0.0010858738002192823,
+      "threshold": 0.0005,
+      "comparison": "at least",
+      "passed": true
+    },
+    {
+      "measure": "leave_one_window_out_sharpe_min",
+      "label": "Lowest Sharpe, one window left out",
+      "value": 0.2644198302284293,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": true
+    },
+    {
+      "measure": "calmar_min",
+      "label": "Calmar",
+      "value": 0.19876599953940932,
+      "threshold": 0.75,
+      "comparison": "above",
+      "passed": false
+    },
+    {
+      "measure": "trade_frequency_min",
+      "label": "Trades per day",
+      "value": 0.042207691592550126,
+      "threshold": 0.01,
+      "comparison": "at least",
+      "passed": true
+    }
+  ],
+  "decided_by": "failed: Sharpe minus holding's Sharpe; Calmar",
+  "informative": {
+    "daily_standard_deviation": 0.011778684329080897,
+    "yearly_return": 0.08657263863622933,
+    "years": 7.94,
+    "share_of_days_in_a_position": 0.27422603737333046
+  }
+}

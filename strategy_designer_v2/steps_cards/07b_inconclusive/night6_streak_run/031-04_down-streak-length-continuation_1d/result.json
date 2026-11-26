@@ -1,0 +1,20 @@
+{
+  "line": "7.b",
+  "backtest": "031-04_down-streak-length-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.1919164,
+  "findings": {
+    "F1": "The tested measure is zero, not a weak short-side effect. The mean short-direction unusual 5-day move is -0.06 % (t -0.18 over 1187 case days, 3143 cases). That is -0.005 of the coin's usual 10.60 % 5-day move, and the larger-forecast half beats the smaller half by only 0.15 %.",
+    "F2": "The move does not grow with streak length. On non-overlapping 5-day grids, the short-direction unusual move after a down streak of 1, 2, 3, 4 and 5+ days is +0.40 % (t 0.73), +0.57 % (t 0.73), -1.44 % (t -1.30), +3.69 % (t 1.91, 48 days) and +1.38 % (t 0.59, 39 days). The sign flips from one length to the next.",
+    "F3": "The other horizons show the same lack of grading. At 1 day the means run -0.12 %, -0.05 %, -0.56 % (t -2.21), +0.13 % and -0.11 % for lengths 1 to 5+. At 10 days they run +0.44 %, +0.42 %, -1.57 %, +4.41 % and -2.99 %, with no |t| above 1.1.",
+    "F4": "No coin carries the effect. The 5-day short-direction unusual move after any down close ranges from -0.08 % for ETH to +1.10 % for ZEC, with every |t| under 1.5 (about 255 to 292 days per coin).",
+    "F5": "The sign changes from year to year. It is positive in 2018 (+2.26 %, t 1.29), 2019 (+2.51 %, t 2.15) and 2022 (+1.28 %). It is negative in 2020 (-1.84 %, t -1.35), 2024 (-1.10 %) and 2025 (-0.90 %), so no stable period or regime holds it.",
+    "F6": "The coin's 30-day trend does not bring out the effect. Split by the sign of the 30-day return and by streak length, every cell lies between -0.03 % and +0.62 %, with |t| under 0.8.",
+    "F7": "Up streaks do not show a clean mirror either. The long-direction unusual move after up streaks reaches t 2.23 in only one of 20 horizon \u00d7 length cells (5+ up days, 3-day horizon, +1.71 %, 92 days). That is no more than chance across that many cells."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The test's result is zero (t -0.18) rather than short of the bar, and no coin, year, trend regime, horizon or streak length shows a graded down-streak continuation (F1\u2013F6). So the clear answer is that, in these coins' daily bars, down streaks are not followed by further falls, and the one stray up-streak cell (F7) is too isolated to support an idea."
+}

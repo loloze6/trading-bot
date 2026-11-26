@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "031-04.g2_sharp-daily-fall-reverses_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3968404,
+  "findings": {
+    "F1": "The failing measure, Calmar 0.50, comes from long losing stretches in quiet markets. The book's deepest fall, -30.2 % over 119 days in windows 8-9, was held 56 % of its bars on a signal. On those bars the coin's 20-day volatility stood at 0.90 of its 120-day mean, against 1.04 over all bars. The coin's 20-day return was -6.0 % against +2.6 % over all bars, and the coin was below its 50-day mean 65 % of the time against 50 %. The book's position gains summed to -1.18 on those bars.",
+    "F2": "The effect lives only when the coin's volatility is raised. On signal bars where 20-day volatility was above 1.25 times its 120-day mean, the next day's return beyond the coin's mean was +0.93 % (t 3.26, day-clustered, 1011 cases on 488 days). In the three lower volatility buckets it was -0.22 %, +0.15 % and -0.13 %, with t between -1.07 and 0.86. High-volatility signals were positive in 79 % of the windows (mean +0.62 %); low-volatility signals in 46 % (mean -0.03 %).",
+    "F3": "Raised volatility is not an effect on its own. On bars without the signal, the next day's return beyond the coin's mean in the same high-volatility bucket was -0.41 % (1101 bars), against +0.93 % with the signal. The theory explains why it belongs to the idea: a fall only marks failed pressure and trapped late sellers when price was really pushed into new ground, that is, on a wide, active market rather than a quiet one.",
+    "F4": "Inside raised volatility the effect stays graded. With 20-day volatility above 1.25 times its usual level, the return beyond the mean rose across the forecast's thirds: +0.40 %, +0.93 % and +1.47 %. Over all bars, only the top two forecast quintiles carry the gain (+0.36 % and +0.46 % beyond the mean; total +0.48 % and +0.58 %, against a trade cost of 0.19 %). The lower three quintiles give -0.08 % to +0.07 %.",
+    "F5": "Using volatility fixes the failing measure, after an estimated cost of 0.095 % per side. Holding only while volatility is above 0.8 times its usual level raises Calmar from 0.51 to 0.89, with the deepest fall going from -30.2 % to -24.2 %, the yearly return from +15.5 % to +21.6 % and Sharpe from 0.66 to 0.92. Scaling the position by (volatility ratio - 0.6) / 0.6, capped between 0 and 2, gives Calmar 0.94 and Sharpe 0.97.",
+    "F6": "The effect is also stronger after a run, as the brief says. On signal bars where the coin's 20-day return was below -15 %, the next day's return beyond the mean was +0.38 % (1627 cases); where it was above +15 %, +0.51 % (1264 cases). Where the 20-day return was between -5 % and +5 % it was -0.03 % (1832 cases). Without the signal the same buckets give -0.83 %, +0.06 % and -0.23 %, so the run alone does not carry the rise."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall measured in its 20-day daily volatility, the larger its rise over the next day, only while its 20-day volatility stands above its usual level of the past 120 days, and the more so the higher it stands above that level.",
+      "consequence": "A trader would lean long the day after an unusual fall in proportion to both the fall's size and how raised the coin's volatility is, and stay out after falls in quiet markets.",
+      "name": "sharp fall reverses when volatile",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day fall measured in its 20-day daily volatility, the larger its rise over the next day, and the more so the larger the coin's 20-day move in either direction before the fall.",
+      "consequence": "A trader would size the next-day long after a sharp fall up when the coin has just run far over the past 20 days, and keep it small when the coin was going sideways.",
+      "name": "sharp fall after run reverses",
+      "from": "F1, F6",
+      "refs": [
+        "F1",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-04.g2.d1_sharp-fall-reverses-when-volatile",
+    "031-04.g2.d2_sharp-fall-after-run-reverses"
+  ],
+  "no_ideas": null
+}

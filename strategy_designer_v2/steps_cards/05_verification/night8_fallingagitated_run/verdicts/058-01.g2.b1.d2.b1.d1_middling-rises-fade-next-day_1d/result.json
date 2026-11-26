@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual next-day move of cases (forecast falls >= 2 points)",
+    "value": 0.006022225142548886,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 2.4333976254634546
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 (and supporting diff > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of middling cases (forecast <= -5) minus that of largest rises (rise_lin post <= -18)",
+    "value": -0.0011983582280407617,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1577,
+    "distinct case days": 563,
+    "largest-rise days": 145,
+    "middling cases": 1251
+  },
+  "decided_by": "Positive main measure with t >= 2 but the supporting difference is at or below 0 (or missing).",
+  "reading": "Cases are short-side bets per the holding-period rule (forecast size rising >= 2 points from its lowest short size since the last bet, from 0 at a window's start or after a flat), on every bar since the grid is 1 bar; largest rises are up-day bars with rise_lin post_pipeline_value <= -18 whether or not they are cases, counted as distinct days; day-pooled t uses per-day summed deviations with a G/(G-1) factor."
+}

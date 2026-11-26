@@ -1,0 +1,37 @@
+{
+  "line": "7.g",
+  "backtest": "061-01.g1.d1.g1_day-move-follow-through-both-sides_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.440542,
+  "findings": {
+    "F1": "Over the next day the day's move reverses rather than continues: the slope of the coin's excess 1-day return on the day's move in 30-day swing units is \u22120.0034 (t \u22122.47, 7249 cases). The bottom decile of the move (z \u22121.74) is followed by +1.00 % and the top decile (z +1.87) by \u22120.17 %.",
+    "F2": "The next-day reversal comes from heavy volume. Down days beyond 1 swing on volume in the top third of its 30-day average are followed by +1.23 % the next day (t 2.59, 585 cases on 208 days). The same days on low volume give +0.51 % (t 0.77, 59 cases) and on mid volume +0.34 % (t 0.59, 223 cases).",
+    "F3": "That high-volume reversal lives in agitated markets: 0.85 % (t 3.18, 1399 cases, 596 days) there against 0.03 % in calm ones (t 0.13, 1017 cases). It holds on all six coins (0.13 % to 0.74 % per case) and in both halves of the windows (w13\u201318 t 2.29, w7\u201312 t 1.25).",
+    "F4": "Where the day closes in its range predicts the next day in agitated markets only: slope \u22120.0178 (t \u22123.45, 5538 cases) against \u22120.0015 in calm ones (t \u22120.28, 3150 cases). Pooled, a close in the bottom fifth is followed by +0.60 % (t 1.91) and a close in the top fifth by \u22120.34 % (t \u22121.56). The map already holds this as an agitated long rebound (039-02.d1, 045-01).",
+    "F5": "The tested 5-day continuation is weak, and it comes only from up days. The slope on up days is t 1.66 (641 cases) and on down days t 0.07 (779 cases). Up days beyond 2 swings gain +6.5 % over 5 days (t 2.29), but on only 38 cases. In calm markets the up-day slope has t 1.64 (284 cases), no stronger than in agitated ones (t 0.98). Among the many angles looked at, none of this stands out from chance.",
+    "F6": "The book earned less than holding on 5 of 6 coins and in 10 of 12 windows (BTC 0.13 % a day against 0.16 %; LTC \u22120.03 % against +0.11 %). Its one-day sign is against the reversal of F1, and its 5-day hold sits through it.",
+    "F7": "Weekday showed no pattern (largest |t| 1.32). Neither did the past 5-day return as a 5-day predictor (quintile |t| \u2264 1.15)."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, the larger a coin's one-day fall in 30-day swing units, and the heavier that day's volume against its 30-day average, the more the coin rises the next day.",
+      "consequence": "A trader buys heavy-volume down days in agitated markets for a one-day rebound, sized by fall times volume. Light-volume falls are left alone.",
+      "name": "agitated heavy volume fall rebound",
+      "from": "F2, F3, F1",
+      "profile": "agitated",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "061-01.g1.d1.g1.g1_agitated-heavy-volume-fall-rebound"
+  ],
+  "no_ideas": null
+}

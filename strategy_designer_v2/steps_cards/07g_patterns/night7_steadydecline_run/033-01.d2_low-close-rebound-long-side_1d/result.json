@@ -1,0 +1,76 @@
+{
+  "line": "7.g",
+  "backtest": "033-01.d2_low-close-rebound-long-side_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4111251,
+  "findings": {
+    "F1": "On low-half closes, the next-day excess return is predicted by how far the close sits below the day's high as a share of price, (high\u2212close)/close: slope 0.170, t 3.79 (day-clustered), 3949 bars on 1025 days. The relative position in the range (nearness to the low, 0 to 1) is not significant on the same bars: slope 0.0126, t 1.21. On all bars, the distance measure still has t 3.67 (8688 bars, 1448 days). After the day's own return is removed, it keeps t 2.00, while nearness to the low drops to t \u22120.02.",
+    "F2": "The rebound after a low close depends on how agitated the coin is. Closes in the bottom fifth of the range are followed by an excess next-day return of \u22120.37 % (t \u22121.44, 392 bars) in the calmest volatility tercile, +0.58 % (t 2.06) in the middle tercile and +1.56 % (t 4.92, 396 bars) in the most agitated. The slope on nearness to the low is 0.0259 (t 3.55, 713 days) in the agitated tercile and \u22120.0043 (t \u22120.77) in the calm one.",
+    "F3": "The book earns only in agitated markets. Its gain per bar in a position is \u22120.002 % (t \u22120.12, 1029 bars) in the calm tercile, +0.062 % (t 2.90) in the middle one and +0.135 % (t 5.58, 945 bars) in the agitated one. Its overall total move per case is 0.37 %, against a trade cost of 0.19 %.",
+    "F4": "Wide days drive the low-close rebound. Bottom-fifth closes on a range wide relative to the coin's last 20 days are followed by +1.28 % (t 4.92, 508 bars). On narrow-range days the same closes are followed by \u22120.61 % (t \u22121.85, 312 bars). The product of nearness to the low and relative range predicts with t 3.19 (1340 days).",
+    "F5": "Bottom-fifth closes rebound mostly in a falling 60-day trend: +1.21 % (t 4.06, 398 bars) against +0.17 % (t 0.47, 199 bars) in a rising one. The graded slope is weaker: t 1.94 in falling markets and \u22120.08 in rising ones.",
+    "F6": "The day's own return carries much of the effect. The lowest quintile of daily returns is followed by +0.71 % (t 4.56, 1722 bars), and the slope of the next day on the day's return is \u22120.087 (t \u22122.94, 1437 days). Low-half closes on down days are followed by +0.42 %, against \u22120.03 % on the 633 low-half up days.",
+    "F7": "The effect does not last past a day. On the 2-day non-overlapping grid, the lowest close-location decile is followed by \u22120.02 % (t \u22120.05, 263 cases). On the 3-day grid the deciles alternate in sign with no order.",
+    "F8": "High closes are followed by a fall only in agitated markets. Top-fifth closes are followed by \u22120.87 % (t \u22123.93, 564 bars) in the agitated tercile and +0.18 % (t 0.77) in the calm one. However, within the high half, the slope on close location is not significant in any tercile (agitated t 1.12), so this side is not graded.",
+    "F9": "The Thursday excess of +0.47 % (t 3.19) and the Friday excess of +0.39 % (t 2.87) are not used here. They come from one of many angles looked at, with no reason behind them, so they are not taken as findings for ideas."
+  },
+  "ideas": [
+    {
+      "idea": "The further below its day's high a coin closes, measured as a share of its price, the larger its rise over the next day.",
+      "consequence": "A trader buys the rebound in proportion to how much of the day's gains were given back in price terms, not to where the close sits in the range, so narrow days near the low carry little weight.",
+      "name": "give-back below high rebounds",
+      "from": "F1, F4, F7",
+      "refs": [
+        "F1",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In an agitated market, the nearer a coin's close sits to its day's low, the larger its rise over the next day.",
+      "consequence": "A trader takes the low-close rebound only when the coin has been swinging more than usual for it, where the next-day move is several times the cost of a trade, and refuses it in calm markets.",
+      "name": "agitated low-close rebound",
+      "from": "F2, F3, F7",
+      "profile": "agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a falling market, the nearer a coin's close sits to its day's low, the larger its rise over the next day.",
+      "consequence": "A trader keeps the low-close rebound for coins in a 60-day decline, where late selling is most often forced, and stands aside in rising markets where it barely shows.",
+      "name": "falling-market low-close rebound",
+      "from": "F5, F2",
+      "profile": "falling",
+      "refs": [
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In an agitated market, the larger a coin's one-day fall, the larger its rise over the next day.",
+      "consequence": "A trader buys a coin after a sharp down day in proportion to the fall's size when its swings are above its usual level, a reversal of the day's return rather than of the close's place in the range.",
+      "name": "agitated one-day fall reverses",
+      "from": "F6, F2",
+      "profile": "agitated",
+      "theme": "discovery",
+      "refs": [
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "033-01.d2.g1_give-back-below-high-rebounds",
+    "033-01.d2.g2_agitated-low-close-rebound",
+    "033-01.d2.g3_falling-market-low-close-rebound"
+  ],
+  "discovery_ids": [
+    "033-01.d2.g4_agitated-one-day-fall-reverses"
+  ],
+  "no_ideas": null
+}

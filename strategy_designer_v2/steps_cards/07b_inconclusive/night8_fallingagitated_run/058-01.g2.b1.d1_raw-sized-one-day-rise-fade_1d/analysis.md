@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d
+idea tested: 058-01.g2.b1.d1_raw-sized-one-day-rise-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3689 USD
+---
+## Findings
+- **F1:** The test's result is on the side the idea predicts but far short of the bar. The mean unusual 3-day move after short cases is +0.43 %, with t 0.97 over 1137 cases on 430 days. That is a strength of 0.049 of a usual move. The normal drift in the short direction is -0.43 %, so the total move per case is -0.00 %, against a trade cost of 0.22 %. The test already used every coin and every fold, so no further daily data is available.
+- **F2:** In folds B and C, the plan's own forecast does not grade the move. The forecast buckets (-21,-15], (-15,-10], (-10,-5] and (-5,-2] give unusual 3-day moves of +1.4 %, +2.8 %, +1.4 % and +1.7 %, on 49, 15, 33 and 33 cases. Together the 130 cases give +1.6 % with t 1.6. The largest forecasts carry no more than the smallest. The plan standardises the rise over its past 60 values, which is not the raw rise in 30-day swings that the idea names.
+- **F3:** The raw rise in 30-day swings does grade the 3-day move on up days in the profile, but not surely. The z buckets (0,0.5], (0.5,1], (1,1.5], (1.5,2] and >2 give -0.8 %, +1.6 %, +2.2 %, +2.9 % and +5.2 %, on 118, 60, 26, 12 and 9 cases. The slope of the move on z is +1.8 % per swing (t 1.92, 225 cases). Rises above one swing average +3.0 % (t 1.51 with the cases of one day together, 47 cases on 24 days).
+- **F4:** The give-back is not specific to the 3-day horizon, and at 1 day the grading reverses. At 1 day, all up days give +0.85 % (t 1.98, 637 cases), but rises above one swing give +0.13 % (t 0.16, 64 days), and the slope on z is negative (-0.58 %, t -1.72). At 2 days, all up days give +0.14 % (t 0.16), and rises above one swing give -0.52 %.
+- **F5:** The effect is mixed across coins and windows, so no part of the data holds it clearly. On up days, the unusual 3-day move is negative for XRP (-3.1 %, 22 cases) and ADA (-0.6 %, 12 cases). It is +0.4 % to +1.7 % with t under 1.1 for BTC, ETH, LTC, XMR and ZEC. By window it ranges from -20 % (w11, 5 cases) to +2.7 % (w13, w15), and by year from -0.2 % (2021) to +1.3 % (2020).
+
+## Ideas
+- No ideas: The result is on the predicted side but small (F1), and no more data is available. The grading the idea claims shows only weakly on raw swings at the 3-day horizon (slope t 1.92, rises above one swing t 1.51 on 24 days; F3). It reverses at 1 and 2 days (F4) and is not concentrated in any coin, window or year (F5). No part of the data shows the effect clearly enough for an amended idea to give a clear answer.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

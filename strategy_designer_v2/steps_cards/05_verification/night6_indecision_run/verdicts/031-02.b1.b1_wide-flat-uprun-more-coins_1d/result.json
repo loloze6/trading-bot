@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move of the cases (before costs)",
+    "value": 0.022377719591164424,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed together",
+      "value": 1.2921412985737648
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation of case forecast vs unusual move > 0",
+    "value": 0.12599544316031736,
+    "passed": true
+  },
+  "counts": {
+    "cases": 181,
+    "distinct case days": 134
+  },
+  "decided_by": "t between -2 and 2: inconclusive by the plan.",
+  "reading": "A case is the first bet (forecast rise >= 2 from its low on its side since the last bet) in each 10-bar grid cell from each window's first row, kept only if 10 bars follow in its window; the drift is the coin's mean 10-bar return on that grid over all its windows; a day is the UTC date of the case bar; situation bars without 20 bars of history use the recorded regime 'trending'."
+}

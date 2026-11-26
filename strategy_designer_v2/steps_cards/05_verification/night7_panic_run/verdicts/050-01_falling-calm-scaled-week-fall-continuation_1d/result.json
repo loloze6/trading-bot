@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 3-bar excess return over the coin's normal drift",
+    "value": 0.0071878114294024785,
+    "statistic": {
+      "name": "t, cases of one day summed together",
+      "value": 1.590965142308287
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short excess return on |forecast|, t = 0.659",
+    "value": 0.00026713158011870604,
+    "passed": false
+  },
+  "counts": {
+    "cases": 677,
+    "distinct days": 316
+  },
+  "decided_by": "The main t lies between -2 and 2 and no reject rule is met: inconclusive.",
+  "reading": "Cases are grid bars 0,3,6,... of each window with forecast < 0 and a full 3-bar return inside the window; the drift is the coin's mean non-overlapping 3-bar return over all its windows; the main t is clustered by UTC day with a G/(G-1) correction; the slope t is the ordinary OLS t; the plan's 30 distinct days is applied as a minimum count."
+}

@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 035-01_nearness-to-high-rises_1d
+idea tested: 035-01_nearness-to-high-rises
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3998 USD
+---
+## Findings
+- **F1:** The tested slope is on the predicted side at every 5-day grid offset but straddles the bar, so the verdict's t of 1.58 reflects a weak effect rather than an absent one. On folds B and C the five offsets give slopes of 0.0021 to 0.0039 with clustered t of 1.46, 1.79, 1.77, 1.93 and 2.57, on about 2,340 to 2,424 cases each, and 1%-winsorised t values are much the same (1.63 to 2.50).
+- **F2:** The effect lives in calm markets and fades in agitated ones. With the 30-day swing split at each coin's median, the 5-day slope is 0.0050 (t 1.97, 1,523 cases) when calm against 0.0017 (t 0.66, 901 cases) when agitated. With the swing ranked against its own past, calm gives 0.0138 (t 1.98, 380 cases) against 0.0030 (t 0.82, 208 cases) agitated.
+- **F3:** The trend split does not separate the effect: the 5-day slope is positive in rising (0.0055, t 2.13, 484 cases), choppy (0.0256, t 1.71, 189 cases) and falling markets (0.0036, t 1.10, 527 cases). The brief's "every trend" claim is therefore not contradicted, only under-powered.
+- **F4:** The gain is held at the extremes and in the right tail rather than spread evenly along the forecast. The top forecast quintile's mean excess is +2.34 % (t 2.24) and the second-lowest's is −1.46 % (t −2.38), while the middle three quintiles sit between −1.5 % and +0.3 %. Every quintile has a negative median excess (−0.4 % to −2.6 %), and closes at or above the high have a mean of +5.8 % against a median of +1.3 % (193 cases).
+- **F5:** Another horizon does not clarify the result. At 3 days the slope's t is 2.22, 2.39 and 0.90 across the three offsets; at 10 days it is 1.98 (1,200 cases), and at 20 days it turns negative (−0.0044, t −0.80).
+- **F6:** The test already used all 19 coins over folds A to D at 1d, so no more daily data is available. The size is on the idea's side and fairly sure: the unusual move is +1.03 % per case (t 3.27, 1,600 days), a strength of 0.083 and 4.6 times the 0.22 % cost of a trade.
+
+## Ideas
+- `035-01.b1_calm-market-nearness-to-high` (from F2, F1, F3, F6): In a calm market, the fewer daily swings a coin's daily close sits below its 20-day high, the more the coin rises over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

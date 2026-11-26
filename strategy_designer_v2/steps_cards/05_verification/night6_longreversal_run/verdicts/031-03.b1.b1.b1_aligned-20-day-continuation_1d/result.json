@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x drift-removed 10-bar forward return",
+    "value": 0.016928388775494414,
+    "statistic": {
+      "name": "day-clustered t of the mean",
+      "value": 1.8519644757266915
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "drift-removed directional return, |forecast| above minus below median (Welch difference)",
+    "value": 0.000296240038027586,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 2406,
+    "distinct days": 289
+  },
+  "decided_by": "The main t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation check uses bars where both the 20-bar and 60-bar returns can be computed inside the window (the regime column only if none can); the coin's mean 10-bar return is the mean of all its non-overlapping grid returns over all windows; the day-clustered t sums deviations per UTC date; the supporting check splits cases strictly above/below the median |forecast| and passes when the high-minus-low mean difference is above 0."
+}

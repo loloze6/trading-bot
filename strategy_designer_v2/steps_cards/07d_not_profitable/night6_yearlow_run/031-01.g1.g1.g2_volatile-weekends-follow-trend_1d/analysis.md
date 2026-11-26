@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d
+idea tested: 031-01.g1.g1.g2_volatile-weekends-follow-trend
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5695 USD
+---
+## Findings
+- **F1:** The Calmar failure comes from the short side. Rebuilt from allocation × next-bar return with fees, the full book makes +10.6 % a year against a deepest fall of −18.3 % (Calmar 0.58). The same book with its short cases set to 0 makes +10.2 % a year with a deepest fall of −7.7 % (Calmar 1.32, Sharpe 1.05 against 0.87). The short cases alone lose −0.8 % a year with a −17.5 % fall (Calmar −0.05).
+- **F2:** The long-only book's Calmar does not rest on one period. With any one of the 24 windows left out it stays between 1.01 (window w21 out) and 1.52.
+- **F3:** The book's falls are short losses. Summed short gains were −0.58 in w2, −0.32 in w11, −0.32 in w12 and −0.65 in w24, while the long side in those windows made +0.01, −0.05, +0.08 and +0.48. Short cases lost in 2021, 2022, 2023 and 2025 (−0.17 of book gain summed in 2025). The single worst case was a short losing −34.9 % of allocated value.
+- **F4:** Per case, long signals carry the effect and short signals barely do. Over 571 long cases the gain in the signal's direction is +1.56 % (t 6.04). Over 532 short cases it is +0.42 % (t 1.60), and the short cases' worst position loss is −34.9 % against −10.7 % for longs.
+- **F5:** Being in a volatile week is not the effect on its own. On high-volatility Fridays (volatility ratio > 1), a 14-day rise is followed by an excess weekend move of +0.88 % (t 2.24, 230 cases), against −0.29 % (t −0.66, 186 cases) after a 14-day fall. A 14-day rise on calm Fridays gives only +0.22 % (t 0.72, 186 cases). So the rise and the high volatility are needed together.
+- **F6:** Inside the volatile regime the gain grows with how far volatility sits above its usual level. Gain per case by volatility-ratio quartile is −0.01 % (ratio 1.00–1.11), +0.27 %, +1.06 % and +1.40 % (t 2.12, ratio > 1.52). On plain Fridays with no signal, the top bucket earns −0.43 % excess (t −0.63), so high volatility alone does not earn. The 1.28–1.52 bucket alone earns +1.55 % (t 2.23, 106 cases).
+- **F7:** Grading by the size of the 14-day rise on volatile Fridays is uneven. By tercile of the rise the excess weekend move is +0.72 % (t 1.57), −0.12 % and +2.04 % (t 2.22), so the largest rises carry the strongest follow-through. Across all cases, gain by forecast-size quartile rises from 0.86 % to 1.38 %.
+- **F8:** Size is not the problem. The total move per case is +1.14 %, 5.9 times the 0.19 % cost of a trade. Long cases alone move +1.56 %, about 8 times the cost.
+
+## Ideas
+- `031-01.g1.g1.g2.d1_volatile-rising-weekends-continue` (from F1, F2, F3, F4, F5, F6, F7, F8): When a coin's 20-day volatility is high relative to its usual level, a 14-day rise at Friday's close (UTC) is followed by a further rise over Saturday and Sunday, and the larger that 14-day rise and the further volatility sits above its usual level, the larger the weekend gain.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

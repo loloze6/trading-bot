@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of excess 10-bar forward return on forecast (pooled, non-overlapping)",
+    "value": 0.0030298711316719433,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.064986410527442
+    },
+    "threshold": "confirm if t >= 2 with positive top-minus-bottom quintile difference; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom forecast quintile mean excess 10-bar return",
+    "value": 0.026733770344229166,
+    "passed": true
+  },
+  "counts": {
+    "independent 10-bar cases": 1907
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom quintile difference is positive.",
+  "reading": "Samples at positions 0,10,20,... of each window with a full 10-bar return inside it, the coin's mean 10-bar return taken over those pooled samples, OLS with intercept on the recorded forecast, quintiles by pooled forecast rank, and fewer than 300 cases reported as 'not observable' per the workflow's minimum-count rule.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.00245 on the check folds against +0.00303 on every fold",
+    "main": 0.002450157444314496,
+    "statistic": 1.876460634812848,
+    "counts": {
+      "independent 10-bar cases": 1553
+    }
+  }
+}

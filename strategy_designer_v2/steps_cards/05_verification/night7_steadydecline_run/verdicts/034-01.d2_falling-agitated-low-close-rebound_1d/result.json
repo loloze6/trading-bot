@@ -1,0 +1,19 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.5163468372423596,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean over days of the daily sum of (forecast/10) x (next-day return minus coin mean daily return), in-profile nonzero-forecast bars",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 100 days; reject: mean < 0 with t <= -2 over at least 100 days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 2814
+  },
+  "decided_by": "Fewer than 90% of nonzero-forecast bars are in-profile bars with the close nearer the low than usual and a long forecast",
+  "reading": "The profile is read from the recorded regime (the only regime with a strategy, 'unknown', is the falling-agitated profile, the detector's components being unrecorded); the situation is close location (high-close)/(high-low) standardised above 10 recomputed in-window when 60 past bars exist (else the recorded post_pipeline value), on the long side; days are UTC calendar days of the bar timestamps, the coin mean is over all its bars' next-day returns across windows, and the plan's 100-day minimum is applied as 'not observable'."
+}

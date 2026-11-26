@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.d2_rising-calm-up-day-continuation_1d
+idea tested: 061-01.d2_rising-calm-up-day-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3231 USD
+---
+## Findings
+- **F1:** Step 5's slope is on the side the idea predicts but short of the bar (0.00156 per forecast unit, day-clustered t 1.55, 337 grid cases on 176 days), and the idea's size is positive but not sure (unusual move +0.96 % per 5 days, t 1.84 over 444 days, strength 0.087), so the effect points the predicted way and this data is too small to show it.
+- **F2:** On folds B and C, the cases with a positive forecast earn clearly more than holding the coin, but the grading inside them is flat. Their mean excess 5-day return is +2.88 % (t 3.10, n 181), while the slope on the forecast is only 0.00133 (t 1.00), and on the raw day move in swing units it is 0.0193 (t 1.46, n 136).
+- **F3:** The grading is noisy rather than absent. By forecast quartile the excess 5-day return runs +4.7 %, -1.2 %, +2.2 %, +5.8 %; 19 % of the cases sit at the +20 cap; and the spread of excess returns among these cases (12.5 % standard deviation) is large against the slope, so a few hundred cases cannot pin the slope down.
+- **F4:** The effect is spread across coins and periods rather than held by one part. By coin, the mean excess is positive for 5 of 6 coins (XMR +3.4 % t 2.65, ZEC +5.7 % t 2.24, ETH +2.7 % t 1.79; BTC -0.3 % t -0.25). By year it is positive in 2019, 2020 and 2021 (+6.2 % t 3.47, +3.1 % t 1.86, +2.0 % t 1.39), with only 2018 negative (-7.0 %, n 14). The slope by year stays near zero in every year (largest t 1.60 in 2020), so no part of the data shows the graded effect clearly.
+- **F5:** Inside the rising calm profile, the largest up days, above 1.5 usual daily moves, are followed by the strongest excess returns: +6.9 % over 5 days (t 1.83, n 25) and +13.4 % over 10 days (t 1.81, n 13). These are on the predicted side but rest on too few cases.
+- **F6:** The same idea can be run on more data than the test used. Its six coins cover all four folds, while 13 more coins have daily data in folds A and D and in part of B and C (ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO). Rising calm days are about 20 % of grid days (share 0.203), so more coins is the direct way to add cases.
+
+## Ideas
+- `061-01.d2.b1_rising-calm-continuation-more-coins` (from F1, F3, F4, F5, F6): In a rising, calm market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the larger its rise over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 5-bar forward return on forecast (forecast < 0 grid cases)",
+    "value": 0.000964489247341583,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 1.0609627995003832
+    },
+    "threshold": "slope t >= 2 (with mean short unusual move > 0) confirms; t <= -2 rejects; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction",
+    "value": 0.0025340997895326443,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast below 0": 608,
+    "distinct days": 246
+  },
+  "decided_by": "The slope's t is between -2 and 2: inconclusive.",
+  "reading": "The falling-calm profile is read from the recorded regime 'unknown' (the detector's components are not recorded and the 365-day percentile cannot be rebuilt inside a window), the situation as profile plus a negative 14-day depth, the slope t as an OLS t with standard errors clustered by calendar day, and the minimum counts as 'not observable' when not reached."
+}

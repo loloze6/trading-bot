@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 14-bar excess return on positive-forecast grid bars",
+    "value": 0.026092203565527185,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day summed",
+      "value": 1.4286476414287308
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 14-bar return on forecast",
+    "value": 0.0018014028971688565,
+    "passed": true
+  },
+  "counts": {
+    "positive-forecast grid cases": 1145,
+    "distinct days": 182
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The normal drift is each coin's mean 14-bar return on the non-overlapping grid of all its windows, and the day-clustered t sums the weighted deviations f*(x-mean) per UTC day with a D/(D-1) correction, the standard error being divided by the sum of forecasts."
+}

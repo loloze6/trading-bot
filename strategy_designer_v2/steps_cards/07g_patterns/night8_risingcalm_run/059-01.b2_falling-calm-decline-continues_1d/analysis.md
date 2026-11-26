@@ -1,0 +1,28 @@
+---
+line: 7.g patterns
+backtest: 059-01.b2_falling-calm-decline-continues_1d
+idea tested: 059-01.b2_falling-calm-decline-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4443 USD
+---
+## Findings
+- **F1:** In calm markets the coin keeps going the way its swing-scaled 14-day return points, and in agitated markets it does not. This uses the coin's 30-day swing at or below its own median as calm, on the non-overlapping 5-day grid. In calm markets the slope of the 5-day excess return on the 14-day return in units of the 30-day swing is +0.0297, day-clustered t 3.75, over 409 cases on 104 days. In agitated markets it is +0.0053, t 0.45, over 403 cases on 123 days.
+- **F2:** Inside the calm market the effect is graded from end to end. By quintile of the scaled 14-day return, the 5-day excess return runs −5.45 % (t −4.33, 82 cases), −1.64 %, +2.66 %, +1.32 % and +4.59 % (t 3.31, 82 cases).
+- **F3:** The calm-market effect does not depend on the 60-day trend. The slope is +0.0336 in choppy markets (t 2.42, 96 cases), +0.0335 in falling markets (t 2.49, 141 cases) and +0.0231 in rising markets (t 1.87, 172 cases). Requiring a falling trend, as the tested idea does, keeps only a third of the calm cases.
+- **F4:** The calm-market effect holds on every coin and in every year. Its slope is positive on all six coins, from +0.0235 for BTC to +0.0451 for XRP, with t from 1.58 to 3.36. It is positive in every year from 2018 to 2021 (+0.0236, +0.0214, +0.0295, +0.0053), though no single year reaches t 2.
+- **F5:** Each side alone is weaker than the whole. On the falling side alone, calm bars with a negative scaled 14-day return average −3.07 % of 5-day excess (185 cases), but the grading within that side is weak: slope +0.0286, t 1.44. On the rising side alone, calm bars with a positive scaled return average +3.07 %, with slope +0.0181, t 1.58.
+- **F6:** In agitated markets the decline is not graded; it bends back at the bottom. The deepest-decline octile rebounds by +4.56 % (t 2.67, 81 cases), while the next two octiles fall by 3.02 % (t −2.08) and 4.01 % (t −3.16). The slope on the falling side is −0.0507 (t −1.54). This deep-fall rebound is already held by the falling-agitated rebound books on the map.
+- **F7:** The tested book's grading broke down. In the profile, the 60-day-standardised forecast, capped at −20, has a slope of only +0.0028 (t 1.37, 158 cases). The deepest entry-forecast quartile of trades (mean −19.2) earned −0.01 % net, against +1.17 % and +0.98 % for the two shallowest quartiles (mean −10.9 and −5.2).
+- **F8:** Most of the book's gain is the market's own fall. It earns in the windows where the coins fell: w7 +0.119 % a day with the coins at −0.442 %, w14 +0.135 % with the coins at −0.431 %, w13 +0.084 % with the coins at −0.099 %. It loses in most rising windows (w9 −0.077 %, w16 −0.020 %), which is why its Sharpe of 0.156 trails holding's.
+- **F9:** Other angles showed no pattern that stands out once the number of looks is counted. These were the 1-day move in swing units, the day's range in swing units, the volatility quintile alone, the 60-day return alone and the weekday. Wednesday's −2.06 % has t −2.39, but it is one of seven weekdays and fits no theory.
+
+## Ideas
+- `059-01.b2.g1_calm-market-decline-continues` (from F1, F2, F3, F5, F7): In a calm market, the further a coin's 14-day return has fallen below zero, measured in units of its own 30-day daily swing, the larger its fall over the next 5 days, whatever the coin's 60-day trend.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `059-01.b2.g2_calm-market-scaled-momentum` (from F1, F2, F3, F4, F6): In a calm market, a coin keeps moving the way its 14-day return points, and the larger that 14-day return in units of its own 30-day daily swing, up or down, the larger the move the same way over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

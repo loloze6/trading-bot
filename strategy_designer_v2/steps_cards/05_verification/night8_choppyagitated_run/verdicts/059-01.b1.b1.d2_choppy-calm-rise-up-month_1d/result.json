@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 14-bar move of the cases (forecast rise >= 2, one per 14-bar grid cell)",
+    "value": 0.009738156088672012,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 0.8622617395832661
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and slope > 0; reject: t <= -2 or slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of drift-adjusted 14-bar return on forecast (grid cells, forecast > 0)",
+    "value": 0.00817537183745175,
+    "passed": true,
+    "t": 3.2054190636396442
+  },
+  "counts": {
+    "cases": 431,
+    "distinct days": 297,
+    "slope grid cells": 129,
+    "active bars": 1908
+  },
+  "decided_by": "Neither the confirm nor the reject rule is met (t between -2 and 2, or slope not above 0 without significance).",
+  "reading": "Situation = regime 'trending' (choppy-calm profile plus 30-day return > 0, recomputed from prices where 30 prior bars exist) with week_rise raw value > 0, side long; a case is the first long-side bet (forecast rise >= 2 from its lowest level since the last bet, reset at flat) in each 14-bar grid cell of its window, its 14-bar return read inside the window; the drift is the coin's mean 14-bar return on the grid over all its windows; the t clusters cases by UTC signal day with a G/(G-1) correction; the slope is OLS on grid bars with forecast > 0; the plan's 'fewer than 30 cases/days' is reported as not observable as the workflow requires."
+}

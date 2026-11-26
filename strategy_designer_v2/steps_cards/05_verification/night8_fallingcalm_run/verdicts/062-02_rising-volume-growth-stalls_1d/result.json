@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-day forward return minus coin drift on forecast (non-overlapping grid, non-zero forecast)",
+    "value": 7.055471070168952e-05,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 0.181386945451395
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive; at least 200 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping in-profile cases": 1345,
+    "days": 409
+  },
+  "decided_by": "The slope's t lies between -2 and +2, with at least 200 cases.",
+  "reading": "The rising profile is the recorded regime 'unknown' (the config's only strategy regime); cases are the grid bars at positions 0,5,10,... of each window with a full 5-bar forward return in the window and a non-zero forecast; the coin's drift is the mean of all its grid 5-day returns over all windows; the slope comes from OLS with an intercept and its t uses standard errors clustered by UTC day."
+}

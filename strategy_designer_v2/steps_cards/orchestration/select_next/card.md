@@ -39,16 +39,33 @@ In the words of `../../common/idea_created_from.md`.
 first, ranked by the score among themselves; then every other candidate, by the score. Every idea of a theory is tested
 once before the workflow goes deep on one of them. Why: with the score alone, a brief's idea scored 0.09 (step 2's
 record) against 0.15 to 0.33 for the lines' children, so one lineage took 26 of 30 turns in night_run and 28 of 33 in
-night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled).
+night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled). **A brief written from a discovery is not in this group (the operator, 2026-11-25; next steps 1n).** Its ideas rank as
+the discovery would: a follow-up of the idea it was found in, with the discovery's line, parent and generation, and
+their own follow-ups count their generation from it. The link is the brief's `discovery:` field, written by code
+(`run_brief`'s `write_brief`). Why: on night 7 the discovery briefs' first ideas came first, as any brief's, and took
+107 of 117 ideas tested; their themes' own follow-ups were written and never run. Proof (`../../runs/NIGHT7_RUN.md`):
+night 7's committed states replayed early in the night: panic after 2 turns, as it ran 033-01 and 034-01 (discovery
+briefs) first and the theme's 032-02 third; with the rule 032-02, then 032-01.b1 (on the theme), then the discovery
+ideas; rangefail after 7 turns, the theme's 032-02.b1.b1 moves from sixth to first.
 
-**Real ideas unlike what we earn next (operator, 2026-11-22; topic 45).** After a brief's own ideas, the order has two
+**Real ideas unlike what we hold next (operator, 2026-11-22; topic 45; the held books, 2026-11-24, P9).** After a brief's own ideas, the order has two
 more groups, each ranked by **priority = score x w**:
-- **w, the parent's difference** = 1 - the share of the parent's book explained by its nearest paying book (the
-  similarity register, `../ideas_similarities_check/`; `../../common/measures.md`), when the idea was written from a
-  confirmed idea (step 5) that is in the register; **0.5, no evidence, otherwise** (as a line with no record has 0.5).
-- **Group 2:** ideas written from a confirmed idea more different from the paying books than no evidence (w > 0.5): real
-  ideas unlike what we earn.
-- **Group 3:** the others; an idea written from a confirmed idea we already earn (w < 0.5) comes after the unproven ones.
+- **w, the parent's difference** = 1 - the share of the parent's book explained by its nearest held book (a paying book
+  or one of the portfolio's: `../../common/measures.md`, "The held books"; the similarity register,
+  `../ideas_similarities_check/`), when the idea was written from a confirmed idea (step 5) that is in the register;
+  **0.5, no evidence, otherwise** (as a line with no record has 0.5). A comparison made before 2026-11-24 holds its
+  nearest paying book only, and that is read.
+- **Group 2:** ideas written from a confirmed idea more different from the held books than no evidence (w > 0.5): real
+  ideas unlike what we hold.
+- **Group 3:** the others; an idea written from a confirmed idea we already hold (w < 0.5) comes after the unproven ones.
+
+Why the held books, not only the paying ones (operator, 2026-11-24, P9): on night 6, 8 of the 10 families re-found
+effects the portfolio already holds (the next-day rebound after a fall, trend continuation), through confirmed books
+that do not pay alone: against the paying books only, they looked new.
+Proof (2026-11-24): the order of the 38 named runs computed before and after, on the register rebuilt with the held
+books: 302 of 3,492 ranked ideas get a new difference, 66 of them move from group 2 to group 3 (for example an idea
+of 002-03's line, its parent 76 % explained by a portfolio book: w 0.51 to 0.24); every other move follows from
+those. Tests: the parent's difference reads the nearest held book, and an older comparison its nearest paying book.
 
 Why: the research rediscovered momentum (topic 45: 33 of 35 paying books in one family; real ideas unrelated to every
 paying book left untested). Three orders compared on every named run, the first 10 candidates after a brief's ideas

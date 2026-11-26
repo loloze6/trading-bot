@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 30-bar forward return minus the coin's normal 30-bar drift, over grid bars with forecast > 0",
+    "value": -0.007134301178270328,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.1978608506230225
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and the check's difference > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual return of the larger-forecast half minus the smaller-forecast half",
+    "value": 0.02339152737742786,
+    "passed": true
+  },
+  "counts": {
+    "cases": 85,
+    "distinct case days": 35
+  },
+  "decided_by": "The main mean's t is between -2 and 2 (or undefined), meeting neither the confirm nor the reject rule.",
+  "reading": "Cases are grid bars (positions 0, 30, 60, ... of each window) with forecast > 0 and a close 30 bars later in the same window; the normal drift is the mean of the coin's 30-bar grid returns over all its windows; the day-clustered t sums deviations per calendar day with a D/(D-1) correction; the halves are the top and bottom n//2 cases by forecast (the middle case left out when n is odd); fewer than 30 case days is reported as 'not observable' as the plan's minimum count."
+}

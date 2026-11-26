@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return over bet bars (vs coin's mean daily return)",
+    "value": 0.003021742293585562,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.3177102506903586
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 cases; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "top fifth by forecast minus other four fifths, mean excess return (Welch t > 0)",
+    "value": -1.4730899716212345,
+    "passed": false,
+    "difference": -0.003953513926498795
+  },
+  "counts": {
+    "cases": 1717,
+    "top fifth cases": 343,
+    "other cases": 1374
+  },
+  "decided_by": "The mean excess next-day return is above 0 with t >= 2, but the supporting check (top fifth vs other four fifths, Welch t > 0) fails.",
+  "reading": "Situation taken as the raw surge-times-low-close product being above 0 on a long (positive) forecast bar; cases are long bets (forecast rise >= 2 points from its lowest level since the last bet, from 0 after flat) with a next-day return inside the window; the top fifth is the floor(n/5) cases with the largest forecast (stable sort), the rest are the other four fifths."
+}

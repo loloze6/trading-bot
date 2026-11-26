@@ -201,3 +201,25 @@ def test_each_call_has_its_own_interim_trades_file(monkeypatch, tmp_path):
                         type("R", (), {"returncode": 0, "stdout": "", "stderr": ""})())
     rb.call_protocol("py", tmp_path / "c.json", {"symbols": ["BTCUSD"]}, WINDOWS, tmp_path)
     assert "--trades-file-in-out-dir" in seen[0]
+
+
+def test_coins_in_place_of_the_plans(monkeypatch, plan, tmp_path):
+    """--coins: the same plan, config and folds on other coins; the record names them, and its rerun check reads them."""
+    seen = []
+    monkeypatch.setattr(rb, "protocol", lambda python, symbol, bar, folds, windows=None: seen.append((symbol, folds)) or {
+        "symbols": [symbol], "windows": WINDOWS, "venue": {"label": "Kraken spot"}})
+    monkeypatch.setattr(rb, "call_protocol", lambda python, config_path, proto, windows, tmp: fake_call(tmp / "out", windows))
+    out_root = tmp_path / "backtests"
+    monkeypatch.setattr(sys, "argv", ["run_backtest.py", str(plan), "--python", "py", "--out-root", str(out_root),
+                                      "--coins", "ADA, SOL"])
+    rb.main()
+    assert sorted(seen) == [("ADAUSD", ["A"]), ("SOLUSD", ["A"])]
+    rec = out_root / "001-01_some-idea_1d"
+    assert "- Data: ADA, SOL as ADAUSD, SOLUSD; 1d bars; fold A\n" in (rec / "run.md").read_text()
+    assert sorted(p.name for p in rec.iterdir() if p.is_dir()) == ["ADAUSD", "SOLUSD"]
+    seen.clear()
+    rb.main()                                        # the same coins again: the record is kept
+    assert seen == []
+    monkeypatch.setattr(sys, "argv", ["run_backtest.py", str(plan), "--python", "py", "--out-root", str(out_root)])
+    rb.main()                                        # the plan's own coins: another record, so it runs
+    assert sorted(seen) == [("BTCUSD", ["A"]), ("ETHUSD", ["A"])]

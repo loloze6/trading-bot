@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-bar move of short cases (short direction)",
+    "value": 0.0014662675591686966,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.3918410163776451
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and check > 0; reject: t <= -2 or upper-minus-lower Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper minus lower half of |forecast|",
+    "value": 0.0049416841087844025,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 501,
+    "cases": 1223
+  },
+  "reading": "A case is the first short bet (forecast rising >= 2 points on the short side from its lowest level since the last bet, reset at flat or side change) in each 2-bar grid cell of a window, measured from its own bar's close; the profile is read from the recorded regime; halves split as |forecast| > median vs <= median; the plan's 'fewer than 30 distinct days' minimum is treated as not observable.",
+  "status": "inconclusive",
+  "decided_by": "Inconclusive: the main measure's t is between -2 and 2 and no reject rule is met."
+}

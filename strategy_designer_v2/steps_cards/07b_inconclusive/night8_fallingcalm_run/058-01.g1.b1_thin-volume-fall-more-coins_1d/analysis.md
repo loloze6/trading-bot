@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 058-01.g1.b1_thin-volume-fall-more-coins_1d
+idea tested: 058-01.g1.b1_thin-volume-fall-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3711 USD
+---
+## Findings
+- **F1:** The tested idea's result points the way it predicts but is weak. The |forecast|-weighted short excess over 5 days is +0.55 % with t 0.90 (907 cases on 263 days), and its size is +0.80 % (t 1.71). The test already used all 19 coins and all four folds, so no more data is available for the same idea.
+- **F2:** Depth gives no gradient inside falling calm markets. On folds B and C, the correlation between the 30-day fall and the 5-day short excess is 0.009 (201 cases). Depth terciles give +0.6 % for the deepest, +2.2 % for the middle and +1.2 % for the shallowest, all with t under 1.8.
+- **F3:** Volume thinning points the predicted way at 5 days but cannot be told from noise. In falling calm markets, the short excess is +0.03 % for swelling volume (t 0.02), +1.6 % for the middle tercile (t 1.46) and +2.2 % for thinning volume (t 1.35). At 10 days the thinning tercile turns to -0.4 % (t -0.13), so the volume effect does not hold over a longer horizon.
+- **F4:** In falling calm markets the effect depends on the period, not on a condition. The 10-day short excess is +3.8 % in 2018 (t 2.48) and +3.1 % in 2019 (t 3.16), then -9.2 % in 2020 (t -5.24) and -5.6 % in 2021 (t -2.22). The next day the coin rebounds against the short (-0.50 %, t -2.16).
+- **F5:** Continuation after a 30-day fall is much stronger outside falling markets. When the coin's 60-day return is above -10 %, a negative 30-day return is followed by a 5-day short excess of +4.6 % (t 4.64, 134 cases) and a 10-day one of +6.5 % (t 4.42, 127 cases). In falling calm markets the same figures are +1.0 % (t 1.57) and +0.3 % (t 0.28), and in falling agitated markets +0.0 % (t 0.01).
+- **F6:** Outside falling markets the effect is graded by depth, and volume adds nothing there. The correlation of the depth of the 30-day fall with the 5-day short excess is 0.42 (139 cases), and the correlation of volume thinning with it is -0.06. In falling agitated markets, deeper falls rebound instead: the depth correlation is -0.29.
+
+## Ideas
+- `058-01.g1.b1.b1_choppy-market-fall-continues` (from F5, F6, F2): In a choppy market, the deeper a coin's 30-day fall, the more it keeps falling over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

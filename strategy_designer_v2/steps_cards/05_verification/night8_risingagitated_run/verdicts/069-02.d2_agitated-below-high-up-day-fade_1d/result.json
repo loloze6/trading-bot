@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on abs(forecast), cases forecast < 0",
+    "value": -0.00040906855427312393,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": -1.6986945010000585
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and supporting check passes; reject: slope > 0 with t >= +2; otherwise inconclusive; at least 100 distinct case days"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return in short direction > 0",
+    "value": 0.0027881288963699717,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 1517,
+    "cases": 3951
+  },
+  "decided_by": "The slope's t lies between -2 and +2.",
+  "reading": "Profile and the up-day rule on a window's first bar are taken from the recorded regime (the detector's components are not recorded), the up day elsewhere from the 1-bar close return, the depth from the raw component being below 0; the slope t uses a day-clustered (by UTC date) OLS standard error with the usual small-sample correction, the coin's mean is over all 1-bar returns of all its windows, and the 100-case-day minimum is treated as a minimum count (not observable when missed)."
+}

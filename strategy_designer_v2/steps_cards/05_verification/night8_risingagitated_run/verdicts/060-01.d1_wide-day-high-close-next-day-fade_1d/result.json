@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day move in the short's direction",
+    "value": -0.008000854462663624,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": -1.780988351109019
+    },
+    "threshold": "above 0 with t >= 2 (and supporting check) to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of close_loc, mean next-day excess return",
+    "value": -0.028127049084180435,
+    "passed": true
+  },
+  "counts": {
+    "days with cases": 329,
+    "cases": 572
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Wide is recomputed as (high-low)/close over the std of 20 daily returns (accepting inclusive or exclusive-of-today windows), falling as the 60-bar % change below -10, the agitated percentile (365-day lookback, not rebuildable in the windows) and any part not computable on a window's first bars are taken from the recorded regime not being 'chop'; the per-day t uses deviations summed per day (clustered standard error); thirds are equal splits of the cases sorted by close_loc raw value and the excess return there is unsigned (next-day return minus the coin's mean)."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 30-bar return (minus coin's normal 30-bar drift) on grid bars with forecast > 0",
+    "value": 0.00022231625589506628,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed together",
+      "value": 0.0055551615192711516
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope on forecast > 0; reject: mean < 0 with t <= -2; else inconclusive; fewer than 30 cases on distinct days: not enough"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 30-bar return on forecast across cases",
+    "value": 0.015388544132956452,
+    "passed": true
+  },
+  "counts": {
+    "cases": 52,
+    "cases on distinct days": 29
+  },
+  "decided_by": "Fewer than 30 cases on distinct days (29), the plan's minimum count.",
+  "reading": "Grid bars at positions 0, 30, 60, ... of each window with a full 30-bar forward return inside the window; normal drift is each coin's mean 30-bar return over all its windows' grid bars; t uses day-clustered deviations (summed per UTC day) with a D/(D-1) correction; the plan's 'fewer than 30 cases on distinct days' is applied as the minimum count giving 'not observable'."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 5-bar return on abs forecast (trending grid bars)",
+    "value": -0.0003344683601101763,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.7299809193079637
+    },
+    "threshold": "confirm: slope negative with t <= -2 (and supporting check passes); reject: slope positive with t >= +2"
+  },
+  "supporting_check": {
+    "name": "abs-forecast-weighted mean drift-adjusted 5-bar return below 0",
+    "value": -0.0035312782574508815,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in the regime": 1648,
+    "active bars checked": 6316
+  },
+  "decided_by": "The slope's t lies between -2 and +2, the plan's inconclusive rule.",
+  "reading": "Situation check counts only active bars whose 28-day return can be computed from the window's own closes (the first 28 bars of each window are left out), side short when forecast < 0; grid cases are bars at positions 0,5,10,... of each window with regime 'trending', a finite 5-bar forward return inside the window and a recorded calm post_pipeline_value, the coin's drift being the mean 5-bar return over all its windows' grid bars, the slope's t from ordinary least squares, and fewer than 200 cases gives 'not observable'."
+}

@@ -1,0 +1,1 @@
+031-01.g1_weekly-gains-carry-into-saturday_1d: not observable (fit: adapted) [main: 0.0100603; t of the mean, cases of one day summed 2.81757; distinct days with a positive forecast 279, main measure cases 1362, days of main measure cases 278, top-third Friday bars 454, zero-forecast Friday bars 1441]

@@ -43,6 +43,10 @@ the book the same way). A plan's own words come first; these apply wherever it s
   - the **total move**: the same without removing the drift (what a trade on the signal earns before costs);
   - the **strength**: the unusual move divided by the coin's usual move, per case, then averaged: a pure number (0.05
     means the idea predicts 5 % of a usual move).
+  - **how sure** the unusual move is (operator, 2026-11-23; topic 47, N2): its t, the mean over its standard error, the
+    cases of one day taken together (their deviations summed per day: cases on several coins the same day are one
+    piece of evidence, not several); with the number of days the cases fall on. A t under 2 means the size cannot be
+    told from 0 (night 5: 50 of the 81 real books had a positive size with a t under 2).
   Example: over 3 days a coin usually moves about 10 % up or down; an idea whose cases end 0.5 % higher than the coin's
   normal drift has a strength of 0.05. Real ideas measured so far have a strength of about 0.05 whatever their horizon
   (`runs/RETRO_DIAGNOSIS_RUN.md`, fourth question).
@@ -80,6 +84,10 @@ the book the same way). A plan's own words come first; these apply wherever it s
   - **What is left**: in that reading, the new book's mean return per period that the other book does not explain (the
     intercept), and its t.
   - The **nearest relative**: the paying book with the largest share explained (for a confirmed book too).
+  - The **held books** (operator, 2026-11-24): the paying books and the books of the current portfolio
+    (`orchestration/ideas_similarities_check/register/held.json`, topic 44). The **nearest held book**: the held book with
+    the largest share explained. It is what `select_next` weighs: an idea written from a book the portfolio already holds
+    comes later.
   - The **similarity matrix of the paying books** (operator, 2026-11-22; topic 44): for every pair of paying books, the
     share explained, its direction and who leads, as above (the share is the same read from either book). The books
     are ordered so that similar books sit together (from the first book, always next the book most explained by the

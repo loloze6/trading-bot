@@ -1,0 +1,57 @@
+{
+  "line": "7.g",
+  "backtest": "034-03.b1_choppy-far-below-high-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.42126899999999995,
+  "findings": {
+    "F1": "A sharp one-day fall, counted in the coin's own 20-day daily swings, is followed by a graded rebound the next day. After a fall of 2 or more swings the next day's drift-adjusted return is +1.48 % (t 2.04 by day, 305 cases on 95 days). After a fall of 1 to 2 swings it is +1.06 % (t 1.68, 924 cases), against \u22120.27 % after a flat day (t \u22121.47). On down days the slope of the next day's return on the fall's size is negative in all three trend groups: chop t \u22122.26, fall t \u22121.24, rise t \u22120.75. It is negative in 10 of the 12 windows w7\u2013w18.",
+    "F2": "In a rising market (60-day return above +10 %), the next 5 days' drift-adjusted return grows steadily with the close's nearness to its prior 20-day high in swings. Slope t 2.05 (484 grid cases, 84 days, Spearman 0.15). By quintile of depth the means rise monotonically: \u22122.64 % at a median depth of \u22123.6 swings, \u22122.03 %, +1.34 %, +1.58 %, and +4.28 % at +0.6 swings above the high. In round 1, closes at or above the high in rising markets gained +6.36 % (t 2.92, 74 cases).",
+    "F3": "In the choppy profile, the tested depth-below-high reading points the idea's way but is not sure. Its slope t is 1.93 (189 cases, 76 days), and its sign moves between windows (w10 \u22120.40, w15 \u22120.01, w17 +0.05, w8 +1.65). This matches step 5's inconclusive t 0.11. The book's own position gain was positive in 2018\u20132019 (+1.45, +0.79 summed) and negative in 2020\u20132021 (\u22121.35, \u22121.83).",
+    "F4": "In a choppy market the 5-day prior return, scaled by swings, continues over the next 5 days. Slope t 2.30 (189 cases, Spearman 0.26). The weakest prior-5-day quintile is followed by \u22129.35 % (t \u22122.77, 23 cases) and the next by \u22125.28 % (t \u22123.18, 41 cases). The slope is weaker in rising (t 1.31) and falling (t 1.02) markets.",
+    "F5": "Weekday and volatility level show no stable pattern. Drift-adjusted next-day means by weekday all have day-clustered |t| < 1.5 and change sign from year to year. The volatility-rank quartiles show no monotone ordering: \u22120.41 %, +0.72 %, \u22121.82 %, \u22120.31 %."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, a coin rises over the next 5 days more the nearer its daily close stands to its prior 20-day closing high, counted in its own daily swings over the last 20 days, and more still the further it closes above that high.",
+      "consequence": "In a rising market, a long held in coins at or above their recent high is backed by the drift, while coins many swings below it are left alone.",
+      "name": "rising nearness to high drift",
+      "from": "F2",
+      "profile": "rising",
+      "refs": [
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin that falls sharply in one day, measured in its own daily swings over the last 20 days, rises over the next day, more the more swings the day's fall spans.",
+      "consequence": "A sharp one-day drop in swing units is a reason to buy for a one-day rebound, sized by how many swings the drop covered.",
+      "name": "one-day shock rebound",
+      "from": "F1",
+      "theme": "discovery",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a choppy market, a coin whose 5-day return is negative falls further over the next 5 days, more the more of its own daily swings (20-day) the 5-day fall spans.",
+      "consequence": "In a sideways market, a coin that has just fallen several swings in a week is a short candidate rather than a rebound buy.",
+      "name": "choppy weekly fall continues",
+      "from": "F4, F3",
+      "profile": "choppy",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "034-03.b1.g1_rising-nearness-to-high-drift"
+  ],
+  "discovery_ids": [
+    "034-03.b1.g2_one-day-shock-rebound",
+    "034-03.b1.g3_choppy-weekly-fall-continues"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 058-02.g1_choppy-agitated-dip-continues_1d
+idea tested: 058-02.g1_choppy-agitated-dip-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3651 USD
+---
+## Findings
+- **F1:** The test's own profile is too thin and too unstable to give an answer. Step 5's slope has t 0.32 on 174 non-zero grid cases. In folds B and C only 65 five-day grid cases fall inside the choppy agitated profile, and their slope on the depth (0.033, t 2.41) flips sign by year: 2019 t −0.68, 2020 t +4.14, 2021 t −1.61. It also flips by coin: ETH t −0.51, ZEC t −0.19, XRP t +2.35.
+- **F2:** On all bars of folds B and C, deeper dips are followed by lower 5-day returns. The slope of the drift-adjusted 5-day return on the depth below the 5-day closing high, scaled by the 30-day swing, is 0.0164 (t 5.45 on 1,364 non-overlapping cases; t 2.61 with the cases of one day taken together, 256 days). It is positive on all six coins (t 1.67 to 3.52), in all four years (t 1.26 to 4.75) and in 9 of 12 windows.
+- **F3:** The continuation is strongest in rising markets, the trend the brief expected a recovery in. Outside the tested profile, the 5-day slope is 0.039 (t 4.05, 318 cases) when the 60-day return is above +10 %. It is 0.018 (t 3.82, 369 cases) in falling markets and 0.030 (t 2.69, 101 cases) in choppy ones.
+- **F4:** The effect is graded along the whole depth scale. Closes at their 5-day high are followed by +1.95 % drift-adjusted over 5 days (308 cases), against −0.57 % after a dip (1,056 cases). Among dips alone the slope stays 0.015 (t 4.53), and the deepest fifth of depths averages −2.8 % against +2.2 % for the shallowest fifth.
+- **F5:** Five days is the horizon where the effect shows. At 3 days the slope over all bars has t 1.81 (2,261 cases). In profile, t is 1.35 at 1 day, 3.34 at 3 days, 2.41 at 5 days and 0.83 at 10 days. Outside the profile, 10 days gives t 2.72 against 5.12 at 5 days.
+- **F6:** The effect's size is above the cost of a trade. A slope of 0.016 per unit of depth means a dip of 2 usual daily moves is followed by about 3 % less than the drift over 5 days, well above the 0.19 % cost of a buy and a sell.
+
+## Ideas
+- `058-02.g1.b1_rising-market-dip-continues` (from F2, F3, F4, F6): In a rising market, the further a coin's close sits below its highest close of the past 5 days, measured against its usual daily swing over the past 30 days, the larger its fall over the next 5 days.
+- `058-02.g1.b2_dip-below-high-continues` (from F1, F2, F4, F5, F6): The further a coin's close sits below its highest close of the past 5 days, measured against its usual daily swing over the past 30 days, the larger its fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

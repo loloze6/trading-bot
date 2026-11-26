@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 031-01.b2_wide-doji-continues-strong-run_1d
+idea tested: 031-01.b2_wide-doji-continues-strong-run
+step 5: mismatch
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3809 USD
+---
+## Findings
+- **F1:** On the 3-day grid (each window cut into 3-day cells, so no move is counted twice), a day that closed down with a range at least 1.5× its 20-day mean range was followed by an unusual 3-day rise of +2.12 % (strength 0.24, 60 % of cases up, t 2.54 on 321 cases over 126 days); a wide day that closed up was followed by only +0.24 % (t 0.35, 367 cases).
+- **F2:** That rebound after wide down days was positive in every coin: BTC +0.54 %, ETH +0.80 %, LTC +2.53 % (t 2.13), XMR +2.41 % (t 2.32), XRP +2.73 %, ZEC +3.83 %, with 55–68 % of cases up in each.
+- **F3:** It was also positive in every year from 2018 to 2025, from +0.36 % in 2024 to +6.87 % in 2021. No single year reached t 2, because each year holds only 9–27 case-days.
+- **F4:** Among wide down days, the rebound grows with how high the close sits in the day's range: close in the lower third +1.40 % (t 1.48, n 202), middle third +3.02 % (t 1.80, n 94), upper third +4.52 % (t 2.47, n 25, 80 % up).
+- **F5:** Among wide down days, the rebound also shrinks as the day's fall deepens against its 20-day volatility: the shallowest third +4.45 % (t 2.75, strength 0.50, 68 % up), the middle third +1.33 %, the deepest third +0.57 % (t 0.51). Combining fall size and width into one product predicts nothing (correlation −0.004), so it is a rejected push down that pays, not a large fall.
+- **F6:** Among wide down days, the rebound grows with the day's width relative to its 20-day mean: lowest third +1.11 % (t 1.19), middle third +2.48 % (t 2.09), highest third +2.75 % (t 1.72, 66 % up).
+- **F7:** The tested situation (an up 5-day run, a wide day, a flat close) occurred in only 43 grid cases, rising +1.74 % unusual (t 1.36). The book made 131 trades (0.007 a day), was in a position on 5 % of coin-days, and earned +3.2 % a year (Sharpe 0.83). These are too few cases to judge the idea and too few trades to pay. Across the roughly 90 groups I examined (5-day, 1-day and 20-day return quintiles, width, volatility, weekday, coin, year), only F1 holds the same sign in every coin and every year.
+
+## Ideas
+- `031-01.b2.g1_wide-down-day-rejected-rebound` (from F1, F2, F3, F4, F5, F6): After a day whose range is wide compared with its average daily range over the past 20 days and whose close is below the previous close, the coin rises over the next 3 days. The higher that day's close sits within its high-low range, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

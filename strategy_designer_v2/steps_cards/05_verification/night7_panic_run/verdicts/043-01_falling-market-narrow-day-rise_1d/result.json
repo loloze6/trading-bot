@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.6430687665679089,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-day forward return minus coin's normal drift on forecast",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm if slope t >= 2 and supporting check passes; reject if t <= -2; else inconclusive; at least 100 non-overlapping cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 6413,
+    "active bars in situation on long side": 4124
+  },
+  "decided_by": "Fewer than 90% of the bars with a nonzero forecast are falling-profile days narrower than usual with a long forecast: the config also takes positions (e.g. shorts on wider-than-usual days) outside the plan's situation.",
+  "reading": "The falling profile is read from the recorded regime ('unknown' = not vetoed), a narrow day as the narrow component's standardised value (post_pipeline_value, rebuilt from last_history_value where missing) plus the offset being above 0, and the expected side is long."
+}

@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess return (vs coin's mean 5-bar return) on forecast, grid bars with forecast > 0",
+    "value": 0.0017468162736707204,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 2.063371520137349
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with forecast above 0": 750,
+    "distinct days": 234
+  },
+  "decided_by": "Confirm rule met: the slope is positive with t >= 2.",
+  "reading": "The coin's mean 5-bar return is the mean over the same non-overlapping 5-bar grid of all its windows; the slope's t uses an OLS with intercept and standard errors clustered by UTC day of the signal bar (CR1 small-sample correction); the plan's 'fewer than 100 cases or 30 days' rule is applied as the minimum counts (status 'not observable').",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.002415 on the check folds against +0.001747 on every fold",
+    "main": 0.002415045617619155,
+    "statistic": 2.2938301084421937,
+    "counts": {
+      "grid cases with forecast above 0": 464,
+      "distinct days": 130
+    }
+  }
+}

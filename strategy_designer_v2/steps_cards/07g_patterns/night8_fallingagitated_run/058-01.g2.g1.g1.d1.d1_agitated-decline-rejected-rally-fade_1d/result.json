@@ -1,0 +1,37 @@
+{
+  "line": "7.g",
+  "backtest": "058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4490815,
+  "findings": {
+    "F1": "In the falling agitated profile, an up day is followed by a next-day move 0.98 % below the coin's normal drift (t \u22124.24, 613 days) and a down day by one 1.25 % above it (t 5.37, 675 days); outside the profile both are near zero (\u22120.14 %, t \u22121.55, 3,572; +0.07 %, t 0.73, 3,395), so the one-day reversal lives in this profile only.",
+    "F2": "Within the profile, the next-day fade after an up day grows with the length of the down run just before it: after no down day \u22120.20 % (t \u22120.35, 126 days), after one \u22121.02 % (t \u22121.76, 101 days), after two \u22122.93 % (t \u22123.24, 50 days), after three or more \u22121.06 % (t \u22121.21, 49 days).",
+    "F3": "The fade belongs to the first up day of a move: in the profile an up streak of 1 is followed by \u22121.55 % (t \u22125.84, 370), a streak of 2 by +0.39 % (t 0.62, 131) and a streak of 3 by +0.01 % (59), so a second up day is not faded.",
+    "F4": "The fade does not grow with the up day's own size against the 30-day swing: up-day quartiles by return/s30 give \u22121.15 %, \u22120.59 %, \u22121.59 % and \u22120.15 % (day-clustered t \u22121.93, \u22120.89, \u22123.06, \u22120.18). Where the day closed in its range grades it only slightly (low, middle and high close terciles \u22121.22 %, \u22121.05 %, \u22120.67 %).",
+    "F5": "The brief's multi-day give-back is weak. In the profile, after a 2-day rise the next 2 days are flat in every tercile of the rise against the swing (+0.07 %, \u22120.09 %, +0.45 %, all |t| < 0.3). After a 3-day rise only the top tercile gives back over the next 3 days (\u22123.10 %, t \u22121.93, 28 days), which cannot be told from chance.",
+    "F6": "The book's gain is concentrated in w14 and w16: their cases fall \u22122.39 % (t \u22123.81, 87) and \u22121.46 % (t \u22122.87, 85) and their book sums are 0.086 and 0.036, against at most 0.012 in any other window. Cases are weaker in the early half of the explored windows (\u22120.80 %, t \u22121.04, 72 days) than in the late half (\u22121.02 %, t \u22122.32, 186 days), which fits the failed Calmar.",
+    "F7": "The long-side mirror is graded in the profile but already held. The next-day move after down days rises with the down streak (+0.92 %, +1.21 %, +2.01 %, +3.31 % for streaks of 1, 2, 3 and 4 or more, t 3.04 to 2.96), but the falling agitated long cell already holds 12 strategies."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the first up day after a run of down days is followed by a fall over the next day, and the more consecutive down days came before it, the larger that next-day fall.",
+      "consequence": "A trader would short the first bounce of an agitated decline for one day, more after a longer losing run, where the bounce is mostly forced covering into waiting supply.",
+      "name": "agitated decline first bounce fade",
+      "from": "F2, F3, F1, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F1",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.g2.g1.g1.d1.d1.g1_agitated-decline-first-bounce-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

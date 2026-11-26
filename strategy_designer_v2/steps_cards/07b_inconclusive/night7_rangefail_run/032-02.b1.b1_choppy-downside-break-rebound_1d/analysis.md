@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 032-02.b1.b1_choppy-downside-break-rebound_1d
+idea tested: 032-02.b1.b1_choppy-downside-break-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3550 USD
+---
+## Findings
+- **F1:** The test's result points the way the idea predicts but falls just short of the bar: the mean next-day excess return is +1.75 % with a t of 1.90 over 150 days (285 cases), and the size is +1.34 % per case (0.231 of a usual move, t 1.79 over 57 days); the test already used all 19 coins and all four folds on daily bars, so no more daily data is available.
+- **F2:** The move belongs to the plan's one-day horizon and fades after it: in folds B and C the mean excess return is +3.65 % at 1 day (t 2.99, 43 days, 71 % positive) and +3.13 % at 2 days (t 2.21), then +1.27 % at 3 days (t 0.69), -0.67 % at 5 days (t -0.31) and -2.61 % at 10 days (t -0.92).
+- **F3:** In folds B and C the effect sits in agitated markets: when the coin's 30-day swing is in the upper half, the mean is +4.21 % (t 2.02, 17 days); in the lower half it is +0.14 % (t 0.19, 16 days), with a similar share of positive cases (70 % against 68 %).
+- **F4:** The effect is graded by depth and carried by the deepest breaks: the deepest third of breaks gains +8.73 % (t 3.09, 19 days), against +1.19 % (t 1.35) for the shallowest third and +1.14 % (t 1.02) for the middle third; the depth slope has a t of 5.97 (Spearman 0.32, p 0.007, 70 cases), but it has no t at 3 days (0.63).
+- **F5:** Breaks made by the sharpest one-day fall rebound most: the lowest third of the break day's own return gains +7.21 % (t 2.56, 18 days), against +2.02 % (t 1.46) and +1.79 % (t 1.61) for the other two thirds.
+- **F6:** The effect is uneven across periods, which explains why the full-data t falls below 2 while folds B and C alone give 2.99: 2019 averages -0.08 % (t -0.04), windows w8 and w10 are negative (-1.51 %, -0.90 %), and w17 and w18 average +14 % to +15 %; 10 of 13 coins are positive, and dropping the top 5 % of cases still leaves +2.15 % (t 2.43).
+
+## Ideas
+- `032-02.b1.b1.b1_agitated-choppy-break-rebound` (from F1, F3, F4, F2): In a choppy, agitated market, when a coin's daily close is below the lowest low of its prior 20 days, its price rises over the next day, and the further the close sits below that low, the larger the rise.
+- `032-02.b1.b1.b2_sharp-fall-break-one-day-rebound` (from F5, F4, F2): In a choppy market, when a coin's daily close is below the lowest low of its prior 20 days, its price rises over the next day, and the larger that day's own fall, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

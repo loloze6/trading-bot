@@ -1,0 +1,144 @@
+# Night 6 (2026-11-23): four new daily briefs for portfolio candidates, under today's rules (written before the runs)
+
+**The operator (2026-11-24, about 00:50 Paris):** "What is the best use of this night's working capacity that could be
+launched in autonomy? New research workflow could be launched, learning from what we learnt today. See previous night
+rules and work so that we apply the same." Same setup and rules as nights 4 and 5 (`runs/NIGHT4_RUN.md`,
+`runs/RETEST_RUN.md`).
+
+## What today changed, and how tonight uses it
+| Learnt today | Tonight |
+|---|---|
+| A real book rarely pays alone (market timing on correlated coins, topic 47); unrelated books that each earn a little combine well: in sample Calmar 1.37 for 20 books against 0.24 for the median book; on the unseen dates the 13 daily ones are nearly uncorrelated (mean correlation 0.03 and 0.00) (topic 44, P2-P4) | The aim shifts from "one book that pays" to **more portfolio candidates**: real books that earn on their own (step 6's Sharpe above 0), from families the portfolio lacks, unrelated to its 20 books |
+| Books built before N3 graded the idea's situation away; step 3 now builds the situation as stated (N3) | Every plan tonight is built under N3: the first run of whole briefs under it |
+| Hourly books lose to turnover (topic 48); hourly 2026 bars exist only for 6 coins | Daily bars only |
+| The strongest in-sample results hold least (1d-11) | Nothing is ranked or kept by in-sample strength; counts only |
+| The current families (portfolio P1): 30 briefs, mostly one coin's price patterns (RSI, averages, ranges, volume, weekends, breakouts) | Four themes no brief has covered, within the rule "one coin's own bars" (`common/idea_definition.md`) |
+
+## Sessions
+| Session | Run | Theme (step 1 writes the brief) | Bar | Budget (model calls) |
+|---|---|---|---|---|
+| 1 | `night6_streak_run` | After a coin closes up, or down, several days in a row, does it give back part of the run over the next days, or carry on? The longer the streak against the coin's usual, the larger the move that follows. | 1d | 35 USD |
+| 2 | `night6_longreversal_run` | A coin that has fallen, or risen, far more than its usual over the past two to three months moves the other way over the following weeks, as the overreaction fades. | 1d | 35 USD |
+| 3 | `night6_indecision_run` | After a run of several days, a day with a wide range but a close near its open marks the end of the run: the coin moves back over the next days. | 1d | 35 USD |
+| 4 | `night6_yearlow_run` | Near its lowest price of the past year, does a coin keep falling as holders give up, or bounce as sellers run out; and does a close below that low continue or reverse? | 1d | 35 USD |
+| designer | P4 finished (the 7 hourly books once the 2026 hourly bars are fetched, about 07:30 Paris), the morning reading | - | - | 0 USD |
+
+Each session: `run_brief --theme` with its theme and budget, on its own branch (`night6-<name>`) from the working
+branch. Night 4 and 5's rules: the loop runs detached (`setsid nohup`) so the 2-hour limit of a background task does
+not cut it; if it stops all the same, it is resumed with `loop.py --run` without asking; a stop on "the model service
+refused a call" (the usage limit) is resumed after the limit's reset (the session schedules its own wake-up); commits
+and pushes along the way; no new idea after 07:00 UTC (09:00 at most if the limit cost time); budgets set in the first
+message and not changed; the similarity register is written by `run_idea` on the session's branch (merged in the
+morning: the union of `books.json`, then `--all`). A stop by hand stops the loop's whole process group.
+
+## Measures, per brief
+Ideas, plans, confirmed, profitable enough, holding on the unseen dates (as before); and, new tonight, **portfolio
+candidates**: books confirmed, size above 0, step 6's Sharpe above 0, whose daily returns correlate under 0.5 with
+every book of the fixed portfolio (`topics/44_review/p1_candidates_earning.csv`), computed by the designer in the
+morning (no model cost).
+
+## Expected outcomes
+| Outcome | What the counts would show | Meaning |
+|---|---|---|
+| N1. New candidates | at least one portfolio candidate per brief | the research adds families to combine |
+| N2. A second family | a paying book holding on both unseen periods, its nearest paying book under 0.25 | topic 44's long-awaited second family |
+| N3. Real, losing | confirmed ideas whose books lose after costs (Sharpe below 0) | the effect exists; its book does not keep it |
+| N4. Not real | few confirmed | the theme is not in the daily bars |
+The designer's guess, for the record: N1 on two or three briefs (streaks and long-horizon reversal are the most studied
+effects of the four); N2 on none.
+
+## During the night
+- 00:50 Paris: the four sessions launched (session 1 `session_012maTgWeD1GH4TXz9VJSiU1`, 2 `session_012maTgTihYXqVbsfcvKL5za`,
+  3 `session_012maTgU5GYo9zM36Fb7Euy4`, 4 `session_012maTgWBE2Ln9BPLKqXM7jV`), from the working branch at 072b469688.
+  The designer checks them at 04:30 Paris (usage limit) and runs P4's hourly part from about 06:45 Paris.
+- **04:58 Paris, session 4 (yearly low) ended on budget** (35.48 USD, 3.1 h; branch night6-yearlow, f5a28f805d): 65 ideas
+  (4 from the brief, 61 from step 7), 32 plans and backtests; step 5: 14 confirmed, 14 inconclusive, 4 not observable;
+  step 6: 9 profitable enough (5 of them confirmed); unseen, the 5 confirmed and profitable: 2016-17 holds 2 of 5,
+  2026 holds 3 of 5, both 1 (volatile down day, next-day rebound: t 1.16 and 0.08; its nearest paying book explains
+  0.39). The theme itself: 0 of 8 yearly-low ideas confirmed (falling near the low t +1.70, the bounce t -1.70, a break
+  below the low too rare: 12 to 18 cases). All 14 confirmed come from step 7's pattern line on 031-01: one family, a
+  week's or month's trend carrying into Thursday to Saturday; all 14 have step 6's Sharpe above 0 (0.57 to 1.31), 9
+  fail step 6 on Calmar only. One container restart (about 01:43 Paris) killed the loop mid-idea; resumed at once,
+  the idea finished from its outputs. The session's reading: N4 for the theme, N1 likely (to check against the
+  portfolio: one family, so about one candidate), N2 not.
+- **Brief numbers collide across branches:** sessions 1 and 4 both wrote brief 031 (each branch numbers from the
+  briefs it has). At the morning merge, the briefs and their ideas' family codes must be renumbered (031, 032, ...),
+  or P7 would take two briefs for one family. A rule for parallel sessions (a brief number range per session, or
+  numbers given at the merge) is a next step.
+- **About 04:00 Paris, the designer's container restarted:** the hourly download (P4) had stopped logging after 1,000
+  BTC calls (about 00:48 Paris) and its progress, held in memory, was lost; the hourly files were untouched (checked
+  against their checksums). The tool now saves its progress every 200 calls and resumes after a stop, logs the time,
+  and never appends an hour a file already has (tests; ce60e63798, d3a7855cd8). Relaunched at 04:07 Paris, smallest
+  coins first; watchdog check-ins at 05:30 and 07:30 Paris relaunch it if another restart stops it. P4's hourly part
+  moves later (about 09:00 to 10:00 Paris).
+- **04:31 Paris check-in:** sessions 1 to 3 working (updated within the last 5 minutes); session 4 done. The designer's
+  container restarted again (up 0 min at 04:31): the cause is the cloud reclaiming an idle session's container; a
+  process launched detached (setsid nohup) dies with it (03:12 UTC, 20 minutes after the designer's turn ended). The
+  saved progress survived (XMR, 200 calls). The download now runs as a background task the session tracks, with a
+  monitor, and resumes from its saved progress.
+- **04:37 Paris, session 1 (streaks) ended on budget** (36.72 USD: ideas 32.57, components 4.15; 3.7 h; branch
+  night6-streak, 36c851b40d): 29 ideas (4 from the brief, 25 from step 7), 28 plans (1 waiting for a component built
+  later, not picked again); step 5: 10 confirmed, 18 inconclusive; step 6: 7 profitable enough; confirmed and
+  profitable: 4, of which 2 hold on both unseen periods (volatility-scaled monthly trend continuation: its nearest
+  paying book correlates 0.93; raw-scaled rise continuation: 0.62) and 2 on 2016-17 only. The 6 confirmed not paying
+  fail on Calmar only. The theme itself: the 4 streak ideas all inconclusive; what was confirmed (step 7's offspring)
+  is trend continuation and the next-day rebound after a fall, not streaks. Components built (standing go): 2
+  (UpCloseStreakLength, VolatilityRatioWeightedScaledFall), proof 588 files identical but run ids, times, paths; bot
+  suite passed. No failure, no restart. The session's reading: N1 pending the designer's check against the
+  portfolio (nearest paying correlations 0.50 to 0.93: momentum mostly), not N2, the streak theme not confirmed.
+- **04:55 Paris, session 2 (long-horizon reversal) ended on budget** (about 36.7 USD; 4.1 h; branch
+  night6-longreversal, 642551c28a): 32 ideas (4 from the brief, 28 from step 7), 32 plans; step 5: 9 confirmed, 20
+  inconclusive, 2 mismatch, 1 not observable; step 6: 5 profitable enough, 3 of them confirmed; unseen: 1 holds on
+  both periods (an XMR next-day fall rebound, step 5 +3.71; its nearest paying book not yet computed). The theme
+  itself: 0 of the direct 2-to-3-month reversal ideas confirmed; what pays is a volume swell after rises and two XMR
+  next-day rebounds. 5 of the 6 confirmed that do not pay fail on Calmar only. One component setting built (standing
+  go; default output unchanged; bot suite passed). No failure, no restart. The session's reading: N1 likely, N4 for
+  the theme.
+- **Seen in three sessions so far:** the brief's own theme is not confirmed (streaks 0 of 4, yearly low 0 of 8,
+  long-horizon reversal 0 direct); what is confirmed comes from step 7's lines and returns to trend continuation and
+  next-day rebounds after a fall. To read in the morning against topic 45 (why the research finds momentum).
+- **04:59 Paris, session 3 (indecision after a run) ended on budget** (35.01 USD; 4.1 h; branch night6-indecision,
+  6a79c55b99): 92 ideas (4 from the brief, 88 from step 7), 36 run; step 5: 23 confirmed, 11 inconclusive, 2 mismatch;
+  step 6: 19 profitable enough (17 confirmed); unseen, the 17 confirmed and profitable: 15 hold on both periods. Two
+  directions, both from step 7: continuation (a wide day inside an up run extends it; 12 of the 15; nearest paying
+  books 0.53 to 1.00, mostly tonight's own siblings and older momentum books) and a rebound (a wide day closing near
+  its low rebounds; 3 of the 15; nearest 0.55). The theme itself: 0 of 4 reversal ideas confirmed (scores -0.52 to
+  -1.00). One container restart (about 01:55 Paris) cut a component build, undone and rebuilt; resumed with its
+  budget. One component built (RiseTimesRangeMultiple). The session's reading: N1 pending the portfolio check, not N2
+  (lowest nearest paying book 0.53), N4 for the theme.
+- **The four sessions together:** 140.9 USD, 218 ideas written, 128 run; the four themes unconfirmed as stated (0 of 20
+  of the brief ideas confirmed); 56 confirmed books, all from step 7's lines. Brief number 031 used by all four.
+
+## Reading (2026-11-24, about 06:00 Paris; the designer)
+**Merged** into the working branch (the four branches, then a repair: the line-by-line union first used broke
+`trading-bot/strategies/strategy_components.py`; rebuilt by class, each of tonight's 4 components identical to its
+branch, every other class unchanged; the shared indexes with every line once; bot suite 1665 passed, cards 141;
+65a76ddf42), the similarity register rebuilt over its 336 books (9aac1cb3e5).
+
+**Counts:** 140.9 USD, 218 ideas written, 128 run, 56 confirmed (step 5), 40 profitable enough (step 6), 29 confirmed
+and profitable; unseen, of those 29: 18 hold on both periods.
+
+**Portfolio candidates (P7, `topics/44_review/p7_night6_candidates.py`, P1's rule against the 20 fixed books):** 55 of
+the 56 confirmed books earn on their own with a size above 0; they form 10 families; **2 enter**:
+| Family | Book | Step 5 / 6 | In-sample Sharpe | Size (t) | Largest correlation with the portfolio |
+|---|---|---|---|---|---|
+| yearly low 031-01 | a week's gain carries into Saturday | confirmed / pays | 1.01 | +0.87 % (4.0) | 0.32 (003-02) |
+| long reversal 031-03 | volume swells after rises | confirmed / not paying | 0.57 | +0.66 % (1.0) | 0.21 (006-04) |
+The other 8 families repeat books the portfolio holds: next-day rebounds after a fall (011-01, up to 0.94) and trend
+continuation (002-03, 003-02, 0.54 to 0.73).
+
+**Outcome: N1, on two briefs** (the designer's guess: two or three), **not N2** (no book holding on both periods has its
+nearest paying book under 0.25). **For the four themes as written: N4** (none of the briefs' own ideas confirmed:
+streaks 0 of 4, yearly low 0 of 8, long-horizon reversal 0 of the direct ideas, indecision 0 of 4).
+
+**What it shows:** the confirmed books did not come from the themes; they came from step 7's lines, which returned to
+the two effects the research keeps finding (trend continuation; the next-day rebound after a fall) and, twice, to
+something new (a weekday carry, a volume swell). With the aim now "families the portfolio lacks", the search still
+rewards a line for being real and paying, not for being different from what the portfolio holds: 8 of 10 families
+were spent re-finding the portfolio's own effects.
+
+**The one change a practitioner would make:** let the search's order (`select_next`'s similarity term, topic 36's
+formula) measure an idea's line against the portfolio's books rather than against the paying books only, so that a
+line re-finding 011-01 or 002-03 falls back and a line like the weekday carry moves up. A rule on the order, not a gate;
+for the operator (next steps P9). Second: the night sessions' prompt must not launch detached (3f), and brief numbers
+need a rule for parallel sessions (3e).

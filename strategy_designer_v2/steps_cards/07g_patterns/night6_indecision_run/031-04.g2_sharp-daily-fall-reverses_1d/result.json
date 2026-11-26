@@ -1,0 +1,59 @@
+{
+  "line": "7.g",
+  "backtest": "031-04.g2_sharp-daily-fall-reverses_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4033976,
+  "findings": {
+    "F1": "Falls of more than one 20-day standard deviation rebound the next day mainly when volatility is high against its recent past. Ranked by the 20-day volatility over its own 60-day mean, the high third is followed by +1.18 % above drift (t 2.49, 504 cases, 234 days), the middle third by +0.47 % (t 1.82) and the low third by -0.30 % (t -0.95). The high-third rebound is about 6 times the 0.19 % cost of a trade, against the idea's average unusual move of +0.19 %, which only equals that cost.",
+    "F2": "How low the day closes in its own range predicts the next day's return, and more so when volatility is high against its 60-day mean. Over 11764 coin-days, regressing next-day return minus drift on the centred close location gives a close-location slope of 0.0070 (t 2.38) and an interaction with log volatility ratio of 0.0266 (t 2.93, 1962 days).",
+    "F3": "Over all days, closes in the lowest fifth of the day's range are followed by +0.38 % above drift the next day (t 2.19, 2655 cases). Closes in the top fifth are followed by -0.21 % (t -1.71), with the middle steps falling in order.",
+    "F4": "Among falls of more than one standard deviation, those closing in the lowest third of the day's range are followed by +0.66 % (t 2.64, 1476 cases, 546 days). Those closing mid-range are followed by +0.37 % (t 0.79).",
+    "F5": "The close-near-low effect also grows with the day's range in volatility units: the interaction slope is 0.244 (t 2.13, 14500 coin-days) on volatility-scaled next-day returns. On its own and without conditioning, close location is weak (t 0.91) and is significant in only one coin (XMR, t 3.31) and one year (2020, t 2.68).",
+    "F6": "The brief's own pattern runs the other way. Flat-bodied days after a 5-day run are followed by a next-day move with the run, not against it, in every range quartile: -0.23 %, -0.56 %, -0.88 % and -0.59 % against the run (t -0.57, -1.93, -2.05, -1.28). The move does not grow with range.",
+    "F7": "The high-volatility fall rebound is not steady over time. Its yearly slope is strong in 2019 (t 3.11) and 2023 (t 3.13) and near zero or negative in 2018, 2024 and 2025. The book's mean daily return is likewise about zero or below in 2018, 2019, 2022 and 2025.",
+    "F8": "The book's worst 1 % of coin-days are falls of -11.0 % that come after a -6.3 % day: a second fall continues the first. Its best 1 % are rises of +11.9 % after a -9.0 % day. The book's falls come from catching a fall that keeps going.",
+    "F9": "A Friday next-day excess return of +0.30 % (t 2.09) is the only weekday pattern. With seven weekdays tested it does not stand out from chance."
+  },
+  "ideas": [
+    {
+      "idea": "The deeper a coin's one-day fall in units of its 20-day daily volatility, the larger its rise over the next day. This rebound grows as the coin's 20-day volatility rises above its own average over the past 60 days.",
+      "consequence": "A trader would lean long after sharp falls mostly when the coin is in an elevated-volatility stretch, and would refuse the trade after falls in calm stretches.",
+      "name": "fall rebound in high volatility",
+      "from": "F1, F2, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The nearer a coin's daily close sits to the day's low, the larger its rise over the next day. This rebound is larger the higher the coin's 20-day volatility stands against its own average over the past 60 days, and the wider the day's range in units of that volatility.",
+      "consequence": "A trader would lean long the day after a day that closed near its low in a volatile stretch, and would lean less or not at all after closes near the high.",
+      "name": "low close rebounds when volatile",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "After a coin's 5-day run, the flatter-bodied the day's close is against its open, the further the coin continues in the run's direction over the next day.",
+      "consequence": "A trader would read a flat day inside a run as a pause to keep riding, not as the run's end.",
+      "name": "flat day continues the run",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "031-04.g2.g1_fall-rebound-in-high-volatility",
+    "031-04.g2.g2_low-close-rebounds-when-volatile",
+    "031-04.g2.g3_flat-day-continues-the-run"
+  ],
+  "no_ideas": null
+}

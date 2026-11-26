@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 5-bar move of short bets (vs coin's normal 5-bar drift)",
+    "value": -0.0005822450004089062,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": -0.18469471112136818
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 distinct days and supporting check passes; reject: mean < 0 with t <= -2 over >= 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, |forecast| above median minus at/below median",
+    "value": 0.0014747692048084622,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3143,
+    "distinct case days": 1187
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "A case is the first short bet (|forecast| rising >= 2 points from its lowest short level since the last bet, from 0 after flat/side change) in each 5-bar grid cell from each window's first row, needing 5 bars ahead in its window; the drift is the coin's mean 5-bar return on that grid over all windows; the t uses a day-clustered standard error (deviations summed per UTC day); the median split puts |forecast| above the median in the larger half and at or below in the smaller."
+}

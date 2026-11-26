@@ -137,3 +137,51 @@ def test_the_register_s_longer_names_count_too():
     but not the register is not offered either."""
     iid = "x" * 228                                   # 228 + "_4h_config.json" = 243: fits step 3
     assert not s.too_long(iid) and s.too_long(iid, "brief_absorption_run")    # 20 + 2 + 228 + 10 = 260: does not
+
+
+def test_the_parents_difference_reads_its_nearest_held_book(tmp_path):
+    import json
+    import select_next as SN
+    reg = tmp_path / "orchestration" / "ideas_similarities_check" / "register"
+    (reg / "comparisons").mkdir(parents=True)
+    (reg / "books.json").write_text(json.dumps([
+        {"key": "r__001-01.b1_x_1d", "run": "r", "id": "001-01.b1_x_1d", "kind": "confirmed"},
+        {"key": "r__002-01_y_1d", "run": "r", "id": "002-01_y_1d", "kind": "confirmed"}]))
+    (reg / "comparisons" / "r__001-01.b1_x_1d.json").write_text(json.dumps(
+        {"nearest_relative": {"share_explained": 0.1}, "nearest_held": {"share_explained": 0.8}}))
+    (reg / "comparisons" / "r__002-01_y_1d.json").write_text(json.dumps({"nearest_relative": {"share_explained": 0.3}}))
+    ev = SN.parent_evidence(tmp_path)
+    assert abs(ev[("r", "001-01.b1_x")][1] - 0.2) < 1e-9      # close to a portfolio book: little difference
+    assert abs(ev[("r", "002-01_y")][1] - 0.7) < 1e-9         # an older comparison: its nearest paying book
+
+
+def test_a_discovery_s_brief_ideas_rank_as_follow_ups(tmp_path):
+    """Next steps 1n (the operator, 2026-11-25): a brief written from a discovery does not put its ideas first; they rank
+    as the discovery would, a follow-up of the idea it was found in, after the theme's own ideas."""
+    run = "d_run"; ideas = tmp_path / "02_ideation" / run / "ideas"
+    idea(ideas, "003-01_x", "one"); idea(ideas, "003-02_y", "two")
+    mark_tested(tmp_path, run, "003-01_x", "inconclusive", "not profitable enough")
+    idea(tmp_path / "07b_inconclusive" / run / "003-01_x_1d" / "ideas", "003-01_x.b1_on-theme", "three")
+    briefs = tmp_path / "01_brief" / run / "briefs"; briefs.mkdir(parents=True)
+    (briefs / "004_found.md").write_text("---\nbar: 1d\ndiscovery: 003-01.g1_a-pattern\n---\nA theory.\n")
+    (ideas / "004-01_from-discovery.md").write_text("---\nbrief: 004_found\ninstruments: BTC\nbar: 1d\nperiod: folds A, B, C, D\n---\n"
+                                                   "Idea: four\nConsequence: c.\n")
+    mark_tested(tmp_path, run, "004-02_tested", "inconclusive", "not profitable enough")
+    (tmp_path / "07b_inconclusive" / run / "004-02_tested_1d" / "ideas").mkdir(parents=True)
+    (tmp_path / "07b_inconclusive" / run / "004-02_tested_1d" / "ideas" / "004-02.b1_child.md").write_text(
+        "---\nbrief: 004_found\ninstruments: BTC\nbar: 1d\nperiod: folds A, B, C, D\n---\nIdea: five\nConsequence: c.\n")
+    rows = {r["idea"]: r for r in s.rank(run, tmp_path)}
+    order = [r["idea"] for r in s.rank(run, tmp_path) if r["status"] == "candidate"]
+    assert order[0] == "003-02_y"
+    assert rows["004-02.b1_child"]["generation"] == 2                # its follow-ups count from the discovery's level                                   # the theme's own idea first
+    d = rows["004-01_from-discovery"]
+    assert (d["line"], d["generation"], d["group"], d["discovery"]) == ("7.g", 1, 3, "003-01.g1_a-pattern")
+    assert rows["003-02_y"]["group"] == 1
+
+
+def test_with_header_field():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "common"))
+    from lib import with_header_field, header_fields
+    t = with_header_field("---\nbar: 1d\nsource: x\n---\nBody.\n", "discovery", "003-01.g1_p")
+    assert header_fields(t) == {"bar": "1d", "source": "x", "discovery": "003-01.g1_p"} and t.endswith("---\nBody.\n")
+    assert header_fields(with_header_field(t, "discovery", "z"))["discovery"] == "z"

@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 054-04_weak-reclaim-low-continuation_1d
+idea tested: 054-04_weak-reclaim-low-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4140 USD
+---
+## Findings
+- **F1:** Outside the falling agitated profile, a day that trades below the prior 30-day low and closes back above it is followed by an unusual 5-day move of -4.12 % (113 cases on 75 days, day-clustered t -1.98) and an unusual 10-day move of -5.84 % (93 cases on 62 days, day-clustered t -2.89). The fall is negative in 9 of 12 windows at 5 days and on all 6 coins.
+- **F2:** The fall is graded by how high the close sits in the day's range, the reverse of the tested idea. Across all 138 pierce-and-reclaim cases the short-direction 5-day unusual move regresses on nearness to the low with slope -0.12 (t -2.39). Outside the profile, the strongest-reclaim tercile (close far above the low) moves -7.35 % (t -3.65, n 38), the middle tercile -6.01 % (t -2.09, n 37), and the weakest reclaim (close near the low) +0.96 % (t 0.67, n 38).
+- **F3:** Inside the falling agitated profile itself, the same days are followed by a rebound, not a fall: +3.89 % over 5 days (30 cases on 15 days, day-clustered t 1.29) and +6.55 % over 10 days (27 cases on 12 days, t 1.35). This cannot be told from chance, and it matches step 5's -2.16 % short-direction move (t -1.21).
+- **F4:** Outside the profile, the fall is largest when the 60-day trend is not falling: choppy -10.1 % (n 17, t -2.65) and rising -14.5 % (n 13, t -2.69), against falling-calm -1.97 % (n 51, t -1.11). These samples are too small to name a profile.
+- **F5:** Over all bars, the day after a coin's bottom-quintile daily return carries an unusual +0.71 % (n 1655, t 4.67). This is the one-day rebound after a down day that the profile map already holds in many forms, so it is not a discovery.
+
+## Ideas
+- `054-04.g1_strong-reclaim-monthly-low-fails` (from F1, F2, F4): When a coin's day trades below its lowest price of the past 30 days but closes back above that low, the coin falls over the next 10 days, and the fall is larger the higher the close sits in the day's range.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

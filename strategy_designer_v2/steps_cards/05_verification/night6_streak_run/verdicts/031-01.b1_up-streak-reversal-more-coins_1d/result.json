@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move after short cases, in the short direction",
+    "value": 0.0026917679538807785,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.8659257940966011
+    },
+    "threshold": "confirm if day-pooled t >= 2 with supporting check > 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper half minus lower half of |forecast| at case",
+    "value": 0.0005432824238161267,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 1362,
+    "cases": 5838
+  },
+  "decided_by": "Main-measure t lies between -2 and 2.",
+  "reading": "A case is the first short bet (forecast rising toward short by >= 2 points from its lowest short level since the last bet, from 0 after flat) in each 5-bar grid cell of its window; the day-pooled t uses per-day summed deviations with a G/(G-1) factor; the median split puts |forecast| above the median in the upper half and at or below it in the lower half; fewer than 100 case days gives 'not observable'."
+}

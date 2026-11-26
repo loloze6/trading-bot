@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 7-bar unusual move (return minus coin's normal 7-bar drift) per long bet, day-clustered t",
+    "value": -0.003047695806545945,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": -0.6719980804773358
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast at signal bar",
+    "value": 0.0008802199179981601,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 854,
+    "cases": 1757
+  },
+  "decided_by": "t between -2 and 2: neither confirm nor reject rule met (inconclusive rule).",
+  "reading": "Cases are long bets (forecast rise >= 2 points from its lowest long level since the last bet, from 0 after flat), the first per 7-bar grid cell of each window, needing close[t+7] in the window; the normal drift is the coin's mean non-overlapping 7-bar return over all its windows; the day-clustered t uses a G/(G-1) correction; the plan's 30-case-day minimum is treated as the minimum count giving 'not observable'."
+}

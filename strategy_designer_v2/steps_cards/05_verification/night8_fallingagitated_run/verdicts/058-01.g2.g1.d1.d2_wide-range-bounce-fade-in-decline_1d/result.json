@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move per case in the short direction, 1 bar",
+    "value": 0.0074306146911503,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 1.9340821866081748
+    },
+    "threshold": "t >= 2 with supporting check passing confirms; t <= -2 rejects; at least 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above-median |forecast| minus below-median",
+    "value": 0.013588002077021032,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 279,
+    "cases": 486
+  },
+  "decided_by": "The main t is between -2 and 2.",
+  "reading": "Situation recomputed from closes inside each window (1-bar and 3-bar close returns), active bars whose 3-bar return cannot be computed in the window are left out of the agreement share; the coin's mean daily return is over all its windows' 1-bar returns; the day-pooled t uses per-day sums of case deviations from the mean with a G/(G-1) small-sample factor; the supporting check compares cases strictly above and strictly below the median |forecast|, ties at the median left out."
+}

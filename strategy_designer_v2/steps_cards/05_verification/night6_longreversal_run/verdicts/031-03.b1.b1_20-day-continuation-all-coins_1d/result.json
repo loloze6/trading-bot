@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x coin's excess 10-bar return, non-overlapping grid",
+    "value": 0.010609791424812581,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed as one piece of evidence",
+      "value": 1.5229478411727482
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Welch difference of directional excess return, top third minus bottom third by |forecast| (Welch t 0.583)",
+    "value": 0.0041929161988952714,
+    "passed": true
+  },
+  "counts": {
+    "cases with a nonzero forecast": 3598,
+    "distinct days": 304
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are the grid bars (positions 0, 10, 20, ... of each window, with t+10 inside the window) with a nonzero forecast, the coin's mean 10-bar return is taken over all grid bars of all its windows, the thirds are the n//3 cases with the smallest and largest |forecast| by stable rank, and the day-clustered t sums the cases' deviations per UTC day."
+}

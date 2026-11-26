@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move of long cases (return from signal close minus coin's normal 10-bar drift)",
+    "value": 0.06841441870582031,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.7792986706175589
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2; min 30 cases on 20 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of above-median-forecast cases minus below-median-forecast cases > 0",
+    "value": -0.027396790125741505,
+    "passed": false
+  },
+  "counts": {
+    "cases": 18,
+    "distinct days": 16
+  },
+  "decided_by": "The plan's minimum of 30 cases on at least 20 distinct days is not reached (18 cases on 16 days).",
+  "reading": "A case is the first long bet (forecast rise of at least 2 points from its lowest long level since the last bet, from 0 after a flat) in each 10-bar grid cell of a window, cases whose 10-bar return leaves the window are dropped, the t uses a day-clustered standard error with a G/(G-1) correction, and cases with a forecast equal to the median are left out of the supporting check."
+}

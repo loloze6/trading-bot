@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 060-02.d1.d2.d2_volume-dry-up-longer-hold_1d
+idea tested: 060-02.d1.d2.d2_volume-dry-up-longer-hold
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5910 USD
+---
+## Findings
+- **F1:** In the falling 60-day trend, the tested lean (log 30-day volume growth × the coin's 20-day excess return) does not hold up once its grid is moved: it is +0.040 (t 1.38, 99 cases, 24 days) on the grid from each window's first bar and +0.001 (t 0.04, 56 cases, 13 days) on the grid shifted 10 days. The rank correlation of 0.374 on the first grid therefore comes from a few days.
+- **F2:** Inside the tested situation (20-day return below -10 % in a falling 60-day trend), the signed 20-day lean is +0.013 (t 0.23, 60 cases, 17 days). Its apparent strength sits where the 20-day return is not deep: +0.117 (t 2.17, 39 cases, 15 days). That part reverses to -0.029 (t -0.88, 16 cases) on the shifted grid, so neither is a stable effect.
+- **F3:** In falling markets the 20-day excess return is not graded by volume growth across quartiles: -0.046, -0.114 (t -3.37), -0.057, +0.093 (t 1.25), from lowest to highest growth. Only the second quartile is significant, so it is not a monotone dry-up effect.
+- **F4:** The book's profit comes from its long (volume-growth) trades: mean net +12.5 %, median +4.5 % over 182 trades, against shorts at mean +1.7 % and median -1.1 % over 287 trades. On the grid, long cases earn +0.067 excess (t 1.59, 41 cases) and short cases +0.011 (t 0.33, 48 cases). The dry-up short that the brief is about adds almost nothing.
+- **F5:** The book's gain is concentrated. Its top 2 % of days sum to +1.20 against a total of +0.85, and windows w13–w16 carry +0.82 of it while w18 loses -0.19.
+- **F6:** In rising 60-day trends, the same volume-growth lean is negative on every grid and horizon tried (-0.020 to -0.052, t -0.73 to -1.55, 60 to 158 cases), but never with a t beyond 2.
+- **F7:** By weekday, next-day excess returns look strong for Thursday and Friday (+0.47 % and +0.39 %, t 3.19 and 2.87 bar by bar), but only t 1.50 and 1.54 with the cases of one day pooled (about 207 days). A late-week gain in rising markets is already held (045-01).
+- **F8:** A graded next-day rebound after a fall scaled by 30-day volatility reaches t 1.84 in falling trends (2063 cases, 433 days), against 0.96 in choppy and -0.46 in rising trends. It is below 2, and the falling-agitated long box already holds 12 such rebound strategies.
+
+## Ideas
+- No ideas: Across the forecast, the sides, the horizons, the grid offsets, the trend and agitation regimes, the weekdays, the post-move bars and the book's extreme days, no pattern stands out from chance once one day's cases are pooled and the grid is shifted (F1–F3, F6–F8). The only clear asymmetry, the book earning on its volume-growth longs (F4), is not significant on the grid and is concentrated in a few windows (F5).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

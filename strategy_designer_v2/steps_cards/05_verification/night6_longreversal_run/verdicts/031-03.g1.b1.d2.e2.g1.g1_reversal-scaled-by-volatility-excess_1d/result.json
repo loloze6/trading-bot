@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-bar excess return on forecast (before costs)",
+    "value": 0.0004055323072815311,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 5.132837626847787
+    },
+    "threshold": "slope > 0 with OLS t >= 2 (and timing > 0) confirms; slope < 0 with t <= -2 rejects; |t| < 2 inconclusive"
+  },
+  "supporting_check": {
+    "name": "timing part of the book's mean daily return (mean minus market-rise gain)",
+    "value": 0.000752334394586597,
+    "passed": true
+  },
+  "counts": {
+    "bars with a non-zero forecast": 2918,
+    "bars in the slope": 2897
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing part of the book's mean daily return is above 0.",
+  "reading": "The slope is an OLS of next-bar excess return on forecast with an intercept over every recorded bar with a next close in its window (forecast-0 bars included), XMR's mean daily return is the pooled close-to-close mean of all windows, the book's daily return is postRebalance_total_value bar to bar inside each window with the market part being the prior bar's allocation times that mean, and the minimum of 500 non-zero-forecast bars is counted over all recorded bars and, if missed, gives 'not observable'."
+}

@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9934375713307464,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean over days of the summed (forecast/10) x next-day excess return",
+    "value": 0.0030988588083373458,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 2.6410113571756453
+    },
+    "threshold": "confirm if t >= 2 (with check passing); reject if t <= -2; at least 500 distinct days of cases"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, forecast >= +2.5 minus forecast <= -2.5",
+    "value": 0.004748124820699877,
+    "passed": true
+  },
+  "counts": {
+    "distinct days of cases": 2898,
+    "days in main measure": 2898,
+    "bars with forecast >= +2.5": 4308,
+    "bars with forecast <= -2.5": 4490
+  },
+  "decided_by": "The main-measure t is >= 2 and the supporting check's difference is above 0.",
+  "reading": "The situation is rebuilt as the standardised close-from-high share (raw over the mean of its past 60 in-window raw values, recorded post-pipeline value where the window lacks history) above 10 for long and below 10 for short; the main measure's days are all calendar days with a bar that has a next-day return (zero-forecast bars add 0); 'days of cases' are distinct days holding a bar with non-zero forecast and a next-day return; excess return is the next-day return minus the coin's mean next-day return over all its windows; a minimum count not reached gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0005244 on the check folds against +0.003099 on every fold",
+    "main": 0.0005244350601637161,
+    "statistic": 0.4054362292059494,
+    "counts": {
+      "distinct days of cases": 1449,
+      "days in main measure": 1449,
+      "bars with forecast >= +2.5": 2181,
+      "bars with forecast <= -2.5": 2261
+    }
+  }
+}

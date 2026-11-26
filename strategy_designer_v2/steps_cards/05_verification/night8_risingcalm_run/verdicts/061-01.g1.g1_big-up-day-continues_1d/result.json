@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move after a case",
+    "value": -0.0025830685360611456,
+    "statistic": {
+      "name": "t of the mean, same-day cases pooled",
+      "value": -0.8380255958533626
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; fewer than 100 cases: not decided"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (median forecast split)",
+    "value": 0.012392662928442585,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2954,
+    "days": 1179
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive.",
+  "reading": "A case is the first long-side bet (forecast rise of >= 2 points from its lowest level since the last bet, reset at 0) in each 5-bar grid cell of a window, its return taken from that bar's close; the median split puts forecasts above the median in the upper half and the rest in the lower half; the day-pooled t uses the clustered standard error with a D/(D-1) correction; fewer than 100 cases is reported as not observable."
+}

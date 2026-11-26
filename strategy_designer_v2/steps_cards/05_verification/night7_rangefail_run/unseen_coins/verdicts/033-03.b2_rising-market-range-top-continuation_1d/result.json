@@ -1,0 +1,22 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the 5-bar forward return minus normal drift on the forecast",
+    "value": 0.19858497510092132,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 0.19858497510092132
+    },
+    "threshold": "confirm: slope positive with t >= 2; reject: slope negative with t <= -2; otherwise inconclusive; at least 100 non-overlapping in-profile cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping in-profile cases": 1496
+  },
+  "decided_by": "A t between -2 and 2 is inconclusive (t = 0.20, 1496 cases).",
+  "reading": "The rising profile is taken as the bars whose regime is 'unknown' (the only regime with a strategy, the chop veto not applied), the expected side is the sign of the range position (raw value, or recomputed from 20 closes when not recorded); the slope's t is the ordinary least-squares t of the pooled regression with intercept, the drift is each coin's mean 5-bar return on the non-overlapping grid of all its windows, and the plan's minimum of 100 cases is treated as the minimum count giving 'not observable'."
+}

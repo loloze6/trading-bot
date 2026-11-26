@@ -1,0 +1,40 @@
+{
+  "line": "7.g",
+  "backtest": "060-01.g1.d2.g1_up-day-high-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5673304,
+  "findings": {
+    "F1": "In the falling agitated profile, an up day is followed by a next day below the coin's drift whatever its close location: up days fall by a mean unusual -0.98 % (t_day -2.54, 613 cases on 258 days). Up days closing in the 0.2\u20130.4 part of the range fall as much as those closing at the top: -1.89 % (t -2.62, n 49) against -0.72 % for 0.8\u20131.0 (t -1.96, n 213).",
+    "F2": "Close location does not grade the next-day fall after in-profile up days: the slope on location has t 0.23 (Spearman +0.05, 613 cases, 258 days). That matches the tested idea's failed supporting check, where the upper half minus the lower half was -0.51 %. The idea's positive main result comes from the up day itself, not from where the close sits.",
+    "F3": "The in-profile up-day fall grows with the day's range against its prior 20-day average: by quartile, +0.06 % (t 0.10), -0.36 % (t -0.71), -1.53 % (t -2.39) and -1.60 % (t -1.77), 135\u2013136 cases each. The slope on the clipped range ratio is t -1.35 (Spearman -0.13, 542 cases, 225 days).",
+    "F4": "Outside the profile the same up days show neither the fall nor the grading: range quartiles give -0.08 %, -0.28 %, -0.00 % and -0.27 % (all |t| \u2264 1.4, 745 cases each), with a slope of t -0.96. The effect lives in falling agitated markets.",
+    "F5": "The in-profile up-day fall holds across coins and years. Five of six coins show about -0.85 % to -1.10 % (BTC t -2.68, LTC -2.00, XMR -2.04, ZEC -2.03, ETH -1.74), and XRP shows -0.54 % (t -0.51). Every year is negative: 2018 -1.45 %, 2019 -1.39 %, 2020 -0.32 %, 2021 -0.85 %.",
+    "F6": "The size of the effect is not the obstacle. Per case the total move is +0.50 % against a cost of 0.19 % per trade, and in-profile up days in the top two range quartiles move about -1.5 % (8 times that cost). The book failed on grading and Calmar (0.18), not on cost.",
+    "F7": "In-profile down days rebound strongly and in a graded way. The bottom r1 quintile gives +2.18 % (t 6.7, n 358) against +0.36 % out of profile, and the widest-range down days give +3.22 % (t_day 3.39, 140 cases, 66 days). This repeats the 12 falling agitated long rebound strategies the map already holds, so it is not proposed."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, a day that closes higher than the day before is followed by a fall over the next day. The wider that day's high-low range against the coin's average range of the past 20 days, the larger the next-day fall.",
+      "consequence": "A trader in a falling, agitated coin fades a wide up day for one day, and sizes the fade by how wide the day was relative to recent days rather than by where it closed.",
+      "name": "falling agitated wide up-day fade",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "profile": "falling agitated",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "060-01.g1.d2.g1.g1_falling-agitated-wide-up-day-fade"
+  ],
+  "no_ideas": null
+}

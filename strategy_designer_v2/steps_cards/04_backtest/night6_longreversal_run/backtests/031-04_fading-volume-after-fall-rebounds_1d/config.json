@@ -1,0 +1,79 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "fall",
+        "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+        "params": {
+          "period": 90,
+          "vol_period": 365
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "fall",
+              "op": "lte",
+              "value": -2.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "vol_dry",
+            "class": "strategies.strategy_components.VolumeRatioComponent",
+            "params": {
+              "period": 90,
+              "short_period": 14,
+              "exclude_current": 0,
+              "form": "log"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 90,
+                  "min_periods": 22
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 30
+  }
+}

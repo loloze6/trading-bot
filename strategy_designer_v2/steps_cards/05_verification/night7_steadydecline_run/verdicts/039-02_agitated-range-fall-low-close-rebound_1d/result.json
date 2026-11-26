@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return on forecast > 0 bars",
+    "value": 0.005434449278271226,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases summed (day-clustered)",
+      "value": 2.759578121694163
+    },
+    "threshold": "above 0 with t >= 2 (confirm, with supporting check); below 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half mean excess return by forecast",
+    "value": 0.006409051981948143,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with forecast > 0": 1449,
+    "cases (coin-bars with forecast > 0)": 3753
+  },
+  "decided_by": "Weighted mean excess return above 0 with t >= 2 and the top-minus-bottom-half check above 0.",
+  "reading": "Every bar is on the 1-bar grid; the coin's mean daily return is over all its windows; the t sums each day's weighted deviations into one piece (day-clustered standard error); halves are the n//2 lowest and n//2 highest forecasts (middle case dropped if odd), unweighted means; the 100-day minimum counts distinct UTC days with a forecast > 0 case that has a next-day return.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003035 on the check folds against +0.005434 on every fold",
+    "main": 0.0030351547499036045,
+    "statistic": 1.4754504367209855,
+    "counts": {
+      "distinct days with forecast > 0": 789,
+      "cases (coin-bars with forecast > 0)": 1949
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day t of the slope of next-bar excess return on abs(forecast), forecast < 0",
+    "value": 8.50511513050319e-05,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 0.26876422634505187
+    },
+    "threshold": "confirm: slope <= 0 with t <= -2 (and mean excess < 0, >= 100 cases); reject: t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean next-bar return minus coin drift on forecast < 0 bars, before costs, below 0",
+    "value": -0.005589897617253487,
+    "passed": true
+  },
+  "counts": {
+    "cases (bars with forecast < 0)": 1326,
+    "days": 633
+  },
+  "decided_by": "The slope t lies between -2 and +2.",
+  "reading": "The profile is read from the recorded regime (default 'unknown' = falling agitated, vetoes give 'chop') since its 365-bar detector cannot be rebuilt inside 120-bar windows, the rise from the raw scaled return > 0; the coin's drift is the mean of all its in-window 1-bar returns over all windows, every bar is a case at a 1-bar horizon, the slope's t uses day-clustered standard errors, and the plan's 'fewer than 100 cases' is treated as the minimum count (not observable)."
+}

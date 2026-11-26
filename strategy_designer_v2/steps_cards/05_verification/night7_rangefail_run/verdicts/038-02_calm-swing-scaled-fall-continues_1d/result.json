@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar forward excess return on forecast (grid bars with forecast < 0)",
+    "value": 0.0008437707863112794,
+    "statistic": {
+      "name": "slope t, same-day cases summed (day-clustered)",
+      "value": 1.4761635613437412
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with supporting check > 0); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean short-side excess return on grid bars with forecast <= -2",
+    "value": 2.2979911840405155e-05,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 1654,
+    "grid cases with forecast <= -2": 1433,
+    "days of the forecast < 0 cases": 359
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Grid cases are bars at positions 0,5,10,... of each window with a 5-bar forward return inside the window; the coin's mean 5-bar return is the mean over all its grid returns in all windows; the slope's t sums the regression scores per calendar day (day-clustered SE); the situation is regime not 'chop' with raw value < 0, short."
+}

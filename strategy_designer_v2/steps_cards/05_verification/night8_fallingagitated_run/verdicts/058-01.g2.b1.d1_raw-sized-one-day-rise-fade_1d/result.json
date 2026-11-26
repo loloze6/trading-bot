@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of short cases (short direction)",
+    "value": 0.004310774375810269,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.9709765952463799
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and supporting check passes); reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, forecast <= -10 minus forecast in [-10, -2]",
+    "value": 0.0021415076406530796,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1137,
+    "distinct days": 430,
+    "cases with forecast <= -10": 595,
+    "cases with forecast between -2 and -10": 542
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first short bet (forecast short size rising >= 2 from its lowest since the last bet) in each 3-bar grid cell of a window, its return taken from that bar's close 3 bars ahead within the window, groups split on the case bar's forecast (<= -10 vs > -10 and <= -2), and the day-clustered standard error is sqrt(sum of squared per-day summed deviations) / number of cases; the profile is the recorded regime 'unknown'."
+}

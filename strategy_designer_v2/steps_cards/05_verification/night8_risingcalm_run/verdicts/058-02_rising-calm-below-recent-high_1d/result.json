@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered OLS slope t of 5-bar excess return on forecast (in-profile grid bars)",
+    "value": -0.0010588306829429248,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": -1.6683284850026125
+    },
+    "threshold": "confirm if t >= 2 (with forecast-weighted mean excess > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 5-bar return > 0",
+    "value": -0.002757185140813512,
+    "passed": false
+  },
+  "counts": {
+    "in-profile grid cases": 607,
+    "cases with forecast above 0": 396
+  },
+  "decided_by": "slope t between -2 and 2",
+  "reading": "profile = recorded regime 'unknown'; grid = rows 0,5,10,... of each window with a 5-bar return inside it; normal drift = coin's mean 5-bar return on that grid over all its windows; slope t uses a day-clustered (CR1) OLS standard error, timestamps grouped by UTC date."
+}

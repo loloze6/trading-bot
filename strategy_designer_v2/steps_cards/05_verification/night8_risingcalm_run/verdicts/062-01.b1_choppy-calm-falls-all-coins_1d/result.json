@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of next 5-bar excess return on forecast (forecast < 0, 5-bar grid, days pooled)",
+    "value": 0.0006449459891849494,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 0.8678426495643269
+    },
+    "threshold": "confirm if t >= 2 and mean short unusual move > 0; reject if t <= -2; minimum 30 cases on 20 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction",
+    "value": 0.0026967736655221786,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast below 0": 500,
+    "distinct days": 208
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Profile read from the recorded regime ('unknown' = choppy calm); grid = positions 0,5,10,... of each window with a full 5-bar forward return inside the window; normal drift = coin's mean 5-bar return on that grid over all its windows; 'cases of one day pooled' = OLS slope with standard errors clustered by UTC day (CR1); supporting mean = plain mean over cases; the plan's minimum counts are applied as 'not observable'."
+}

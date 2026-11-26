@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "unusual move after short bets, next day, before costs (fall positive)",
+    "value": 0.006297130638354065,
+    "statistic": {
+      "name": "t of the mean over case days (cases summed per day)",
+      "value": 2.378444089136413
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "unusual move of cases above median |forecast| minus below median (Welch t 1.282)",
+    "value": 0.003269241566030737,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 566,
+    "cases": 1716,
+    "larger cases": 858,
+    "smaller cases": 858
+  },
+  "decided_by": "the main mean is positive with t >= 2 and the larger-minus-smaller difference is above 0",
+  "reading": "The plan's situation is taken as an up day (raw scaled_rise > 0, or a positive in-window close-to-close return where it is not recorded) on a bar whose regime is 'unknown' (inside the falling-agitated profile), with the depth graded so any close at or below its 20-day high qualifies; the expected side is short; cases are the holding-period bets (forecast rising in size on the short side by >= 2 points from its smallest size since the last bet, from 0 after flat or side change); the main value is the mean unusual move over cases with t over daily sums; the supporting split excludes cases exactly at the median; fewer than 30 case days is reported as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004799 on the check folds against +0.006297 on every fold",
+    "main": 0.004799098049126489,
+    "statistic": 1.49756908872859,
+    "counts": {
+      "distinct case days": 363,
+      "cases": 1245,
+      "larger cases": 622,
+      "smaller cases": 622
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 5-bar return",
+    "value": 0.03652194722616222,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day together",
+      "value": 2.1802270905486156
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation of forecast with 5-bar excess return",
+    "value": -0.005257488038362706,
+    "passed": false
+  },
+  "counts": {
+    "cases": 122,
+    "distinct days": 64
+  },
+  "decided_by": "t >= 2 but the Spearman correlation is at or below 0, which the plan calls inconclusive.",
+  "reading": "A case is a holding-period bet of the forecast (a rise of at least 2 points from its lowest level on its side since the last bet), the first one in each 5-bar grid cell of a window; the t of the weighted mean sums the weighted deviations per day; the plan's 'fewer than 30 cases/days' is reported as not observable."
+}

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 031-04_downrun-size-scales-wide-flat-reversal_1d
+idea tested: 031-04_downrun-size-scales-wide-flat-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3980 USD
+---
+## Findings
+- **F1:** The test's own result is zero or slightly the wrong way, not a weak positive. The slope of the 5-day excess return on the fall-graded forecast was -0.00114 (t -0.55, 130 independent cases, 108 days). The 41 cases with forecast ≥ 2 had a mean 5-day excess return of -1.0 %. The size per case was -1.28 % unusual move (-0.171 of a usual 10.60 % move, t -0.55 over 33 days) against a 0.19 % trade cost.
+- **F2:** After a 5-day fall, a wide flat day shows no clear rise at any horizon. Measured in usual moves, non-overlapping and day-clustered over 34 cases on 27 days, the mean move back is +0.051 at 1 day (t 0.27), +0.136 at 3 days (t 1.21), +0.072 at 5 days (t 0.34) and -0.065 at 10 days (t -0.30). The slope on the size of the fall is 0.0131 (t 0.45). So no horizon or grading of the tested side shows the effect.
+- **F3:** The fall side is also spread thin and inconsistent across coins and years. Over 5 days, ETH (4 cases) moved -5.9 % against the reversal and BTC (8 cases) -0.9 %, while LTC, XMR and ZEC moved +3 % to +5 % on 4 to 6 cases each. The yearly mean move back swings between -6.0 % and +3.9 %. No coin or period holds a clear effect.
+- **F4:** The wide range adds nothing to the move back after falls. Narrow flat days after a 5-day fall have a mean 5-day excess of +0.069 usual moves (t 1.48, 386 cases), about the same as wide flat days (+0.072, t 0.34).
+- **F5:** After a fall, wide days in general continue the fall. Across 547 non-overlapping cases with any body, the 5-day excess falls with the size of the prior fall (slope -0.166 usual moves per usual move, t -2.51). The same holds for wide days with a large body, body above half the range (396 cases, t -2.51). A larger absorbed fall does not bring a larger rebound.
+- **F6:** The one clear effect around wide flat days is on the other side: after a 5-day rise, the coin keeps rising rather than reversing. The move against the run is -0.258 usual moves at 1 day (t -1.98, 62 days), -0.369 at 3 days (t -2.69, 69 cases, 60 days) and -0.216 at 5 days (t -1.71).
+- **F7:** The continuation after rises is only loosely graded by the size of the rise.
+
+## Ideas
+- No ideas: The tested long-after-falls effect is zero or reversed at every horizon (F1, F2), on every coin and in every year (F3), and the wide range adds nothing to narrow flat days (F4), so no amended version of the tested idea has support. The only clear effect is continuation after rises (F6). Its grading by the size of the rise holds only on the looser definition (F7), so it is too uneven to state as a graded idea yet.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

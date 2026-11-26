@@ -1,0 +1,37 @@
+{
+  "line": "7.e",
+  "backtest": "034-01_rising-nearness-to-high-rises_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 3,
+  "cost": 0.6785665,
+  "findings": {
+    "F1": "Almost all of the book's gain comes from its long side, and the shorts lose money. Long bars sum to +8.19 in summed daily gains (108 % of the total, mean +0.19 % a bar over 4296 bars). Short bars sum to \u22120.60 (\u22128 %). Long trades net +14,564 % in total with a median of +1.6 %. Short trades net \u22122,942 % with a median of \u22125.9 %.",
+    "F2": "Inside the long side, the gain sits mostly on bars where the close stands above its 20-day high. Measured in units of the 20-day daily swing, those bars carry 46 % of the total gain (mean +0.42 % a bar over 818 bars). Bars more than 2 swings below the high carry 9 % (mean +0.10 % a bar over 711 bars). Shorts more than 2 swings below the high lose \u221212 % of the total gain.",
+    "F3": "In the rising profile, the drift-removed return is not graded below the high. Over the next 5 days it is \u22120.43 % (t \u22120.29, 328 cases) beyond 2 swings below, then +1.45 %, +1.24 % and +1.33 % in the bands nearer the high, all with t under 1.4. Above the high it jumps to +4.58 % (t 2.41, 127 cases, 56 days), and to +8.8 % over 10 days (t 2.13, 63 cases).",
+    "F4": "The plan measured one straight slope over the whole forecast range at 5 days, and that blurs the effect. Its slope t was 1.64. Inside the rising profile, the slope of the 3-day drift-removed return on the distance above the high is 0.037 per swing (t 2.45, 244 cases). Below the high, the slope at 3 days is flat (t 0.45, 1236 cases).",
+    "F5": "The market's own rise explains little of the gain, so most of it is timing. The position times the coin's mean daily return is 0.0108 % a bar, against a mean gain of 0.0616 % a bar; that leaves 0.0508 % (82 %) as timing.",
+    "F6": "The gain is concentrated in time. Windows w10 and w11 carry 51 % of it, and 2020 alone sums +3.93 of the +7.58 total. The 20 best of 1894 trades hold 32 % of the summed trade profit, and the win rate is 46.7 %."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, the further a coin's daily close stands above its 20-day high, measured in units of its daily swing over the last 20 days, the more it rises over the next 3 days.",
+      "consequence": "In a rising market, a trader buys strength on closes above the recent high, sizes up the further above it they are, and does not expect much from coins sitting below their high.",
+      "name": "rising-market breakout-distance continuation",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "rising",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "034-01.e1_rising-market-breakout-distance-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

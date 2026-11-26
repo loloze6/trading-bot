@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "calm-regime slope of demeaned 2-day forward return on the forecast",
+    "value": 0.0003251185609989378,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.5250716850299906
+    },
+    "threshold": "confirm if t >= 2 (with the check passing and >= 300 calm cases); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "calm minus non-calm slope difference (t >= 2, positive)",
+    "value": 0.0001781516325517017,
+    "passed": false
+  },
+  "counts": {
+    "calm grid cases": 4872,
+    "non-calm grid cases": 3323
+  },
+  "decided_by": "Inconclusive rule: neither the confirm nor the reject rule is met (calm slope |t| < 2, or a positive calm slope whose difference from the non-calm slope has t between -2 and 2).",
+  "reading": "Calm bars are those whose recorded regime is 'trending' (the detector's vr<1 decision, its component not being recorded) and the expected side is the sign of the raw 14-day return; the grid is positions 0,2,4,... of each window, the coin's mean 2-day return is the mean over all its windows' grid returns, slopes are pooled OLS with intercept over all coins, the non-calm standardised 14-day return is rebuilt from in-window closes (missing early bars dropped), the slope-difference t is (b1-b2)/sqrt(se1^2+se2^2), and the plan's 'fewer than 300 cases' minimums are reported as not observable."
+}

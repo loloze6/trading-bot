@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 058-03.e2_choppy-market-distance-continuation_1d
+idea tested: 058-03.e2_choppy-market-distance-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.1949 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but short of the bar: the slope of the 10-day excess return on the forecast is +0.00062 with a day-clustered t of 0.72 over 408 grid cases on 187 days, so more cases are needed, not a different idea.
+- **F2:** In folds B and C alone the same slope is again positive (+0.0018, t 1.48, 143 cases), and it also holds across every trend on the raw 20-day distance (+0.0014, t 2.93, 702 cases), so the continuation is consistent in sign but small per case (correlation 0.11 to 0.12).
+- **F3:** The effect is mixed over time, which drowns it on 143 to 408 cases: by year the 10-day slope is -0.0076 (t -2.98, 31 cases) in 2018, +0.00008 (t 0.04) in 2019, +0.0050 (t 2.41) in 2020 and +0.0003 (t 0.12) in 2021.
+- **F4:** The effect is mixed across coins as well: four of six coins have a positive slope (XRP +0.0043 t 1.58, ZEC +0.0036 t 0.84, BTC +0.0017 t 0.79, LTC +0.0016 t 0.39) and two are slightly negative (ETH -0.0004, XMR -0.0008), each with only 16 to 30 cases, so the six default coins alone cannot settle it.
+- **F5:** Most of the effect comes from the side below the average: there the mean 10-day excess return is -3.3 % (t -1.85, 77 cases), against +0.7 % (t 0.36, 66 cases) above it, and the second forecast quintile is -5.5 % (t -2.00).
+- **F6:** The test's horizon may not be where the effect shows best: on the plan's choppy active bars the slope is +0.0016 with t 2.89 (287 cases) at 5 days, +0.0018 with t 1.48 at 10 days and -0.0023 with t -1.13 at 20 days.
+- **F7:** The idea's size per case is near zero: the unusual move is -0.03 % (t -0.06, 528 days, 713 cases), or -0.014 of a usual 14.49 % move, against a trade cost of 0.19 %, so even a confirmed slope may not make a paying book unless the move per case is larger.
+
+## Ideas
+- `058-03.e2.b1_choppy-distance-continuation-more-coins` (from F1, F2, F3, F4): In a choppy market, the further a coin's close stands below its 20-day average price, the more it falls over the next 10 days; the further it stands above, the more it rises.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

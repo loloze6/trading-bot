@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned_1d
+idea tested: 032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3968 USD
+---
+## Findings
+- **F1:** A coin's next-day excess return runs against its last daily move counted in 30-day daily swings: the slope is -0.0034 per swing (t -2.37, 6529 bars on 1089 days). The sign is negative for every one of the six coins (XMR -0.0062, t -3.92; BTC t -2.01; ETH t -2.11), in each of the four years (t -0.41 to -1.65) and in each 30-day efficiency tercile (t -1.70 to -1.80).
+- **F2:** This one-day giving back grows with the coin's own 30-day volatility. The slope is -0.0005 per swing (t -0.30) in the coin's calmest third, -0.0020 (t -1.22) in the middle third and -0.0084 (t -2.70, 2180 bars, 716 days) in its most volatile third.
+- **F3:** In the most volatile third, the move is lopsided. After the largest falls (the bottom seventh of the scaled daily move), the next day is +1.26 % above the coin's drift (t 1.56, 295 bars). After the largest rises (the top seventh) it is -0.28 % (t -0.51). Both are larger than the 0.19 % cost of a trade, unlike the tested idea's +0.14 % per case.
+- **F4:** The tested 7-day continuation is weak. The slope of the 7-day excess return on the scaled 7-day move is +0.0135 (t 1.41, 859 cases on 155 days). It is near zero in 2019 and 2021 (t 0.12 and 0.00) and turns negative in the coin's most volatile third (-0.0087, t -0.62). So the book's gain does not come from a steady weekly drift.
+- **F5:** The book's gain per position-day sits in the least choppy part of its regime. It is +0.36 % (t 2.62, 943 position-days) when the 30-day efficiency is in the top third among held days (0.20 to 0.59), against +0.11 % (t 1.19) and +0.13 % (t 1.35) in the two choppier thirds. Long days earn +0.22 % (t 2.30) and short days +0.09 % (t 0.80).
+- **F6:** Other angles showed nothing that stands out from chance, given how many were examined. The next-day excess by weekday ranges over t -1.23 to +1.54. The 3-day and 2-day returns after a scaled daily move give a 2-day slope with t -1.36. The 7-day excess by scaled 30-day return has every quintile within |t| < 1.5.
+
+## Ideas
+- `032-01.b1.b1.e2.d1.d1.d1.g1_agitated-one-day-move-reversal` (from F1, F2, F3): When a coin's 30-day volatility is high, a day's move counted in its 30-day daily swings tends to be partly given back over the next day. The more volatile the coin is at the time and the larger that scaled daily move, the larger the reversal, and it is strongest after large falls.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

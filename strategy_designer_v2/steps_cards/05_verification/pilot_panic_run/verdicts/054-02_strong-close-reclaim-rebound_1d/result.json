@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return of cases over the coin's falling-agitated 5-bar mean",
+    "value": 0.010569858622647246,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.6201485399960847
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and upper half beats lower half); reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return (median forecast split)",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 76,
+    "days": 49
+  },
+  "decided_by": "The t of the mean excess return lies between -2 and 2.",
+  "reading": "Falling agitated bars are taken as bars whose regime is not 'chop' (the profile vetoes set chop), the pierce is rebuilt from the reclaim raw value (low30 = close - value x range, low < low30 <= close) or from prices when not recorded, a case is the first long bet (forecast rise >= 2 from its lowest level since the last bet, from 0 after a flat) in each 5-bar grid cell of a window, the day-clustered t uses deviations summed per day with a D/(D-1) correction, and the median split puts forecasts above the median in the upper half and the rest in the lower half."
+}

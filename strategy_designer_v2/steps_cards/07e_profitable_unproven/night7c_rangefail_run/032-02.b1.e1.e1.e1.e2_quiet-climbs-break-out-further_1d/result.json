@@ -1,0 +1,44 @@
+{
+  "line": "7.e",
+  "backtest": "032-02.b1.e1.e1.e1.e2_quiet-climbs-break-out-further_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4221091,
+  "findings": {
+    "F1": "Breakouts in general carry the book, not the run-up discount. In folds B and C, the first close above the prior 60-day high in each 20-day grid cell is followed by a mean 20-day excess return of +14.4 % (47 cases, 34 days, t 3.63), and +10.6 % over 10 days (84 cases, t 2.73). Grid cells without a breakout are followed by \u22129.2 % over 20 days (141 cases, t \u22122.42).",
+    "F2": "The tested grading is absent. On breakout cases, the 20-day excess return has no slope on the prior 60-day return (t \u22120.22, Spearman 0.02, 46 cases). Its run-up terciles show no order: low 13.4 %, mid 19.0 %, high 9.8 %.",
+    "F3": "The narrowness of the prior range does grade the follow-through. Breakouts out of the tightest third of 60-day high-to-low close ranges gain +23.5 % excess over 20 days (16 cases, t 3.37), against +11.8 % for the middle third (t 1.63) and +7.6 % for the widest third (t 1.23). The slope on range width is negative over 20 days (t \u22122.07) and over 10 days (t \u22122.15, 84 cases).",
+    "F4": "A smaller overshoot is followed by a larger continuation, not a larger giveback. Breakouts closing least past the prior 60-day high gain +21.1 % excess over 20 days (16 cases, t 2.49), against +7.3 % for the largest overshoots (t 1.26). Over 40 days the slope on overshoot is \u22124.17 (t \u22123.85, 23 cases), with small overshoots at +29.3 % and big ones at +7.1 %.",
+    "F5": "The book's gain is timing more than drift but leans on one year. Its mean daily return of 0.076 % splits into 0.017 % from the market's rise and 0.059 % from timing (Sharpe 1.36 against 0.53 for holding, 1449 days). Of its trades' 1325 summed net percent, 1194 came from trades entered in 2020, and the top 10 of 112 trades made 762. Breakouts in 2020 gain +23.7 % excess over 20 days (t 3.76), against +5.3 % in 2021 (t 0.85).",
+    "F6": "The breakout follow-through is uneven across coins. Over 20 days it is +22.4 % for XMR (t 5.28) and +37.0 % for XRP (t 2.10), but only +2.1 % for BTC (t 0.39). LTC added only 0.012 to the book's summed return."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its highest close of the prior 60 days, the narrower its 60-day range between highest and lowest close, the larger its rise over the next 20 days.",
+      "consequence": "A trader would favour new 60-day highs that break out of a tight two-month range over those that come out of a wide, swinging one, holding them about three weeks.",
+      "name": "tight ranges break out further",
+      "from": "F1, F3, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin closes above its highest close of the prior 60 days, the smaller the distance by which that close exceeds the prior high, the larger its rise over the next 40 days.",
+      "consequence": "A trader would favour new 60-day highs that only just clear the old high over large one-day overshoots, holding them about six weeks.",
+      "name": "small overshoots keep climbing",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1.e1.e1.e1.e2.e1_tight-ranges-break-out-further",
+    "032-02.b1.e1.e1.e1.e2.e2_small-overshoots-keep-climbing"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,25 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d
+idea tested: 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4684 USD
+---
+## Findings
+- **F1:** The book fails on Calmar (0.31 against 0.75) and on Sharpe against holding (-0.028), and costs are not the reason: its trades earn +2.78 % gross and +2.67 % net on average (418 trades), and the idea's total move per case (+1.33 %) is 6 times the 0.22 % cost of a trade.
+- **F2:** The losses come from signals whose week's rise had already been given back by the signal's close: on the 7-day grid, signals closing more than 2 % below their 7-day high are followed by -5.1 % excess over 7 days (t -2.83, 31 cases), while signals within 2 % of the high earn +3.8 % (t 2.13, 58 cases), +6.4 % over 14 days. Held bars near the high carry 1.61 of the 2.03 summed bar gain (680 of 1,423 held bars).
+- **F3:** Being near the 7-day high is partly an effect of its own, but a smaller one: without the signal, bars within 2 % of their 7-day high earn +2.1 % excess over 7 days in all profiles (t 2.58, 489 cases), and +1.4 % inside the choppy calm profile (t 0.37, only 16 cases). That is about half of the +3.8 % with the signal, while signals away from the high lose -5.1 % against -1.3 % without the signal. The condition fits the brief's theory: a rise that has left the range and was not faded is the one that traps range sellers.
+- **F4:** The graded part of the idea works only among rises held at their high. Among at-high signals, the middle and top forecast terciles earn +9.6 % (t 2.36) and +4.5 % (t 2.13) over 7 days, and the bottom tercile -2.8 % (19 cases each). Among all signals, the bottom tercile loses -6.2 % (t -3.44, 30 cases).
+- **F5:** The deepest fall (-19.6 %) runs from w7 to w10 over 434 days. Signals lose in 2018 (-8.3 % excess, t -3.28, 15 cases) and 2019 (-2.8 %, t -1.77). The book lost -9.1 %, -13.3 % and -8.4 % in w7, w9 and w14, where holding lost -54 %, -31 % and -52 %. These are choppy-calm spells inside a broader decline.
+- **F6:** The coin's 30-day return separates those spells:
+- **F7:** Part of the drag is one coin: XMR loses -2.84 % net per trade over 74 trades, and its held bars sum to -0.57, the worst of all coins.
+
+## Ideas
+- `059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high` (from F2, F3, F4, F1): In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 7 days, only while the coin still closes at the top of that week's range, the rise not yet given back.
+- `059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up` (from F5, F6, F1): In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 7 days, only while the coin's 30-day return is a rise.
+- `059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month` (from F2, F4, F6, F3): In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 7 days, only while the coin closes at the top of that week's range and its 30-day return is a rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

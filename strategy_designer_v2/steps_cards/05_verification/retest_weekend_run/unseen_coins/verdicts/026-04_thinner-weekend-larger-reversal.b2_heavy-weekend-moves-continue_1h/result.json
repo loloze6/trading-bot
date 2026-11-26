@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9495327102803738,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 48-bar directional excess return over the coin's normal drift",
+    "value": 0.0014873193686020544,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.38859455979865404
+    },
+    "threshold": "confirm: t of the mean >= +2 with top-minus-bottom half above 0; reject: t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "top half minus bottom half (median |forecast|) mean directional excess return",
+    "value": 0.002037886110453268,
+    "passed": true
+  },
+  "counts": {
+    "cases": 532,
+    "top_half": 266,
+    "bottom_half": 266
+  },
+  "decided_by": "The main mean's t lies between -2 and +2.",
+  "reading": "Cases are all trending bars with nonzero forecast and a full 48-bar forward return in the same window, the drift is each coin's mean non-overlapping 48-bar return over all its windows, and the median split puts |forecast| > median in the top half and <= median in the bottom half."
+}

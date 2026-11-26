@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d
+idea tested: 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3753 USD
+---
+## Findings
+- **F1:** The tested cases change sign with the period, so their average is close to zero. On the 62 active grid cases of folds B and C, the mean excess 7-day return was -10.4 % in 2018 (7 cases, t -3.43) and -3.7 % in 2019 (15 cases, t -2.29). It was +2.7 % in 2020 (19 cases, t 0.94) and +10.1 % in 2021 (21 cases, t 2.75). By window it ran from -13.3 % (w14, t -2.82) and -11.7 % (w7, t -3.39) up to +16.8 % (w18, t 3.37).
+- **F2:** Half the cases lose and a few large ones carry the mean. The active cases' mean excess 7-day return is +2.2 % (62 cases, t 1.20), but only 47 % of cases are above the coin's drift and the median is -0.8 %. This matches step 5's weak main measure: +0.92 %, t 0.70 on 130 days, and a size of +0.82 % with t 1.21.
+- **F3:** The grading is not monotonic in the idea's own scaled measure. By tercile of the scaled 7-day rise, the excess 7-day return is -3.9 % (lo, t -1.52), +11.8 % (mid, t 2.50) and +3.5 % (hi, t 1.39). By forecast tercile it is -4.1 %, +7.0 % and +3.9 %. The correlation of the scaled rise with the excess return is only 0.13.
+- **F4:** Other horizons do no better than the plan's 7 days. Over 3 days the active cases' excess return is -1.3 % (62 cases, t -1.52), and over 14 days it is +1.3 % (60 cases, t 0.55).
+- **F5:** No condition separates the cases cleanly, and the split that looks best does not hold up by year.
+
+## Ideas
+- No ideas: The tested idea's effect points the predicted way only on average. It is negative in 2018 and 2019, positive in 2020 and 2021, and not graded cleanly by the scaled weekly rise. No coin, horizon or condition shows it clearly (F1, F3, F4, F5). The test already used every coin and fold available, so neither more data nor a narrower version would give a clear answer.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

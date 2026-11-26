@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 059-01.b1_calm-swing-scaled-move-continues_1d
+idea tested: 059-01.b1_calm-swing-scaled-move-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4457 USD
+---
+## Findings
+- **F1:** In a choppy, calm market (60-day return between -10 % and +10 %, calm swing), the coin's 20-day move in units of its 20-day daily swing is followed by more of the same move. Over the next 5 days the slope is +0.037 (t 3.09, standard errors clustered by day, 101 grid cases on 55 days), the unusual move is +3.38 % in the move's direction (t 3.00), with a strength of 0.26, and the quartiles from the largest fall to the largest rise run -3.05 %, -3.14 %, +2.98 %, +5.10 %. Over the next 10 days the slope is +0.050 (t 3.44, 49 cases on 26 days), with a strength of 0.39 and a size of +7.13 % (t 3.16). That is far above the 0.19 % a trade costs and about ten times the calm-wide strength. It rests on few cases, though: no single year or coin has enough cases to be read alone, and 2019, the one year with enough, shows a slope t of only 0.29.
+- **F2:** In the agitated profiles the same 20-day scaled move carries nothing. The slopes are -0.0001 (t -0.00) when falling, +0.015 (t 0.74) when rising and -0.005 (t -0.34) when the trend is unknown. Over 5 days the quintile means of the agitated bars are -0.62, -1.05, +1.92, +0.99 and +0.42 %, with no order. In calm bars the quintiles are ordered: -2.21 % (t -2.92), -2.26 %, -0.20 %, +1.38 %, +2.47 % (t 2.55). The rising calm slope over 10 days is +0.046 (t 2.01, 90 cases).
+- **F3:** In calm bars the shorter 5-day move, scaled by the 20-day swing, also continues over the next 5 days, and on both sides. Its extreme quintiles are -3.05 % and +2.66 %, with the middle three near 0 (-0.02, -0.13, +0.12 %). The raw 5-day return gives -3.86 % (t -4.23) for the largest falls and +2.70 % (t 2.41) for the largest rises. The slope is positive in all 6 coins (t 0.87 to 2.48) and in all 4 years (t 0.13 to 1.39). The slope t is 2.03 in falling calm and 2.82 in choppy calm.
+- **F4:** In agitated bars the next day falls more the higher the day closes in its range. By close-location quintile, the next-day unusual return runs +0.95 % (t 3.79), +0.45 %, -0.09 %, -0.23 %, then -0.56 % (t -2.39) for the highest closes. Calm bars show only a weak version of this, from +0.21 % to -0.23 % (t at most 1.5). The long side of this pattern (low close rebounds) is already held by 039-02 and 045-01, but the short side is empty in the map for choppy agitated and falling agitated.
+- **F5:** Over all bars, a single day's return scaled by the 20-day swing is followed by a next-day reversal on both sides. After the largest falls the next day gains +0.86 % (t 3.74, decile 0) and +0.46 % (t 2.35, decile 1). After rises in deciles 6 and 7 the next day loses -0.38 % (t -1.95) and -0.48 % (t -2.82). The very largest rises (decile 9) are flat at -0.03 %.
+- **F6:** The book's gain comes from its longs. Long trades average +2.52 % net (1147 trades) and short trades -0.61 % (1098 trades). The shorts on the smallest half of entry forecasts lose -0.79 % and -1.48 %, while the longs on the two largest forecast quartiles earn +4.15 % and +3.15 %. Across 12 windows the book's mean daily return is above the coins' in only 5.
+
+## Ideas
+- `059-01.b1.g1_choppy-calm-scaled-continuation` (from F1, F2): In a choppy, calm market, the larger a coin's 20-day move measured in units of the standard deviation of its daily returns over those 20 days, the further the coin moves the same way over the next 10 days, up after a rise and down after a fall.
+- `059-01.b1.g2_calm-week-move-continues` (from F3, F2): In a calm market, the larger a coin's 5-day move measured in units of the standard deviation of its daily returns over the last 20 days, the further the coin moves the same way over the next 5 days.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `059-01.b1.g3_agitated-high-close-falls` (from F4, F5): In an agitated market, the nearer a coin's daily close sits to the day's high within its range, the larger the coin's fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

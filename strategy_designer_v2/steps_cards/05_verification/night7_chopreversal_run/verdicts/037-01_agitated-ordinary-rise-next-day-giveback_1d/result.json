@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return over drift, short direction",
+    "value": 0.0038487503134337075,
+    "statistic": {
+      "name": "t, cases of one day taken together",
+      "value": 2.19879056465448
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope < 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on raw scaled rise",
+    "value": -0.0022610707594628767,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1865,
+    "distinct days": 1014
+  },
+  "decided_by": "The main mean is positive with t >= 2 and the supporting slope is below 0 (confirm rule).",
+  "reading": "Agitation is read from the recorded regime (not 'chop', the profile veto) since the 365-day volatility percentile cannot be rebuilt inside a window, the scaled rise from last_history_value or else from window prices; cases are the short-side bets of the forecast (rise of at least 2 points from its lowest level since the last bet) on every bar with a next-day close in the same window; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the slope is the OLS of the unflipped excess return on the raw rise; the plan's 'fewer is inconclusive' minimum is reported as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0004633 on the check folds against +0.003849 on every fold",
+    "main": 0.0004632957168135087,
+    "statistic": 0.25156520006756417,
+    "counts": {
+      "cases": 987,
+      "distinct days": 575
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "line": "7.g",
+  "backtest": "037-02_falling-market-range-jump-decline_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4054246,
+  "findings": {
+    "F1": "The wider the day's range against its 30-day average, the lower the next 3 days in a falling market (60-day return below -10 %) and the higher in a rising one (above +10 %). On the 3-day grid the slope of the 3-day excess return, in units of the coin's usual 3-day move, on the range multiple is -0.189 (t -3.09, 968 cases) when falling and +0.176 (t 3.50, 531 cases) when rising. These t are ordinary OLS t, not clustered by day.",
+    "F2": "In a rising market, wide days (range at least 1.5 times the 30-day mean) are followed by a 3-day excess return of +3.0 %, strength +0.31, t 1.86 with one day's cases taken together, 135 cases on 63 days. In a falling market the same days are followed by -1.69 %, strength -0.17, t -1.25, 92 cases on 44 days, so the idea's short side is the weaker of the two.",
+    "F3": "In a falling market, wide days that close mid-range or near the high are followed by the decline: -4.9 % (t -1.78, 14 cases) and -2.2 % (t -1.36, 45 cases). Wide days that close near the low are followed by +0.4 % (t 0.19, 33 cases). This runs against the brief's fear that the decline is only continuation of a down close, but no group reaches t 2.",
+    "F4": "A coin's 5-day return in units of its 30-day daily swing continues over the next 3 days, a pattern the tested idea does not explain. The slope of the 3-day excess on it is positive in all 4 years (2018 t 2.31, 2019 t 0.11, 2020 t 1.51, 2021 t 0.52) and all 6 coins (t from 0.43 for ZEC to 2.06 for XRP). It is strongest in a choppy market, slope 0.269 with t 3.92 on 218 cases (OLS, not day-clustered), where the bottom quintile is followed by -6.8 % with t -2.41 on 27 days.",
+    "F5": "Across windows the 5-day continuation is unstable: slopes are positive in 7 of 12 windows, and only w14 (t 1.96) and w16 (t 1.95) come near t 2.",
+    "F6": "The 3-day excess return shows no weekday pattern that stands out (Monday -0.83 % t -1.75, Sunday -0.91 % t -1.69, every other day under |t| 1.7). It shows no pattern by 30-day volatility rank either (every tercile under |t| 1.5).",
+    "F7": "The book lost: Sharpe -0.28, -0.11 % a day on days in a position, positions on 12 % of coin-days. The plan's 500 cases had an unusual move of -0.22 % per 3 days (t -0.40) against a trade cost of 0.19 %. The cases taken by the threshold regime do not capture the graded slope of F1."
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, a day whose high-low range is wide against the coin's 30-day average daily range is followed by a further rise over the next 3 days. The wider that day's range relative to this average, the larger the rise.",
+      "consequence": "A trader in a rising coin reads a wide day as a reason to be long for the next 3 days, not as a sign of a top.",
+      "name": "rising-market wide-day continuation",
+      "from": "F1, F2",
+      "profile": "rising",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's 5-day return, measured in units of its 30-day daily swing, is followed over the next 3 days by a move the same way. The larger that scaled 5-day move, the larger the move that follows.",
+      "consequence": "A trader sides with a coin's recent volatility-scaled 5-day move for the next 3 days, rather than fading it.",
+      "name": "scaled five-day move continues",
+      "from": "F4, F5",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy market, a coin's 5-day return, measured in units of its 30-day daily swing, is followed over the next 3 days by a move the same way. The larger that scaled 5-day move, the larger the move that follows.",
+      "consequence": "In a sideways coin, a trader treats a sharp 5-day move against the usual swing as the start of a move to follow for 3 days, not a range edge to fade.",
+      "name": "choppy-market scaled move continuation",
+      "from": "F4",
+      "profile": "choppy",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "037-02.g1_rising-market-wide-day-continuation"
+  ],
+  "discovery_ids": [
+    "037-02.g2_scaled-five-day-move-continues",
+    "037-02.g3_choppy-market-scaled-move-continuation"
+  ],
+  "no_ideas": null
+}

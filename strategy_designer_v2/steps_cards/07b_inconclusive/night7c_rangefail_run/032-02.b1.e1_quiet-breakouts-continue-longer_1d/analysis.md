@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 032-02.b1.e1_quiet-breakouts-continue-longer_1d
+idea tested: 032-02.b1.e1_quiet-breakouts-continue-longer
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3546 USD
+---
+## Findings
+- **F1:** The main measure is on the predicted side but just short of the bar: +2.56 % unusual 10-day move per case (t 2.00, 261 cases on 217 days), 0.165 of a usual move. On the folds shown (B, C) it is +3.96 % (t 2.01 day-pooled, 119 cases on 91 days) and +5.47 % over 20 days (t 1.97, 108 cases on 84 days), so the rise is there, but this data holds too few cases to show it clearly.
+- **F2:** The idea's grading by the breaking day's own gain is absent. The Spearman correlation of the 1-day gain with the 10-day unusual move is -0.009 (p 0.92), and -0.026 over 20 days (p 0.79). The gain terciles give +1.8 % (t 0.87), +5.7 % (t 1.41) and +3.4 % (t 1.24), in no order. Step 5's supporting check (larger-forecast half minus smaller) was -1.39 %, which also failed.
+- **F3:** The rise varies widely across coins and years, so it is easily drowned. ETH alone gives +11.5 % (t 3.24, 21 cases), while BTC gives +0.1 % and ZEC -0.3 %. Leaving ETH out drops the pooled t to 1.10. By year, 2020 gives +9.8 % (t 3.21) and 2021 gives -1.3 % (t -0.47). Window w12 gives -9.2 % (t -2.91) and window w10 gives +8.7 % (t 2.94).
+- **F4:** The rise is graded by how little the coin rose in the 10 days before the break, not by the breaking day's gain. The Spearman correlation of the prior 10-day return with the 20-day unusual move is -0.31 (p 0.002), and -0.16 with the 10-day move (p 0.10). The lower half of prior 10-day returns gives +8.0 % over 10 days (t 2.47, 54 cases), against +1.3 % (t 0.60, 55 cases) for the upper half (Welch t 1.85). The prior 20-day return points the same way: -0.24 with the 20-day move (p 0.02).
+- **F5:** Distance past the 60-day high grades the rise upward, not toward failure. Closes further past the high gave +8.2 % (t 2.21) against +2.1 % (t 1.21) for those just past it, though the Spearman is only 0.10 (p 0.31).
+
+## Ideas
+- `032-02.b1.e1.b1_quiet-breakouts-more-coins` (from F1, F3): In a coin that has gone nowhere over the past 60 days, a daily close above its prior 60-day high is followed by a rise over the next 10 days, and the smaller that day's own 1-day gain, the larger the rise.
+- `032-02.b1.e1.b2_unextended-breakouts-keep-rising` (from F1, F2, F4): In a coin that has gone nowhere over the past 60 days, a daily close above its prior 60-day high is followed by a rise over the next 20 days, and the smaller the coin's 10-day return into that close, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

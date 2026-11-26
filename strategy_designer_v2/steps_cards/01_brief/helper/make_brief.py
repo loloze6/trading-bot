@@ -14,7 +14,7 @@ repository, an empty working folder. This script reads no market data.
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
-from lib import call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, write_atomic, with_common  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 KEYS = {"venue", "instruments", "bar", "period", "side", "source"}
@@ -65,7 +65,7 @@ def main():
     briefs, index_path = args.briefs_dir, args.briefs_dir / "INDEX.md"
     briefs.mkdir(parents=True, exist_ok=True)
     index = index_path.read_text() if index_path.exists() else ""
-    system = (HERE / "system_prompt.md").read_text()
+    system = with_common((HERE / "system_prompt.md").read_text())
     if args.theme:
         ask = f"Write one research brief on this theme, given by the operator in their own words:\n\n{args.theme}"
     elif args.source:
@@ -81,6 +81,13 @@ def main():
         nr = re.search(r"^not-researchable:\s*(.+)", text, re.M | re.S)
         if nr and not re.match(r"\s*---", text):
             print(f"not researchable: {' '.join(nr.group(1).split())}")
+            print(f"cost: {cost:.4f} USD, attempts: {attempt}")
+            return
+        # A source whose only theory is already in the index (2026-11-24, topic 50: a discovery found again in another
+        # backtest): no brief, the existing one named, rather than another theory the source does not state.
+        ai = re.search(r"^already-indexed:\s*(\S+)", text, re.M)
+        if ai and not re.match(r"\s*---", text):
+            print(f"already indexed: {ai.group(1).strip()}")
             print(f"cost: {cost:.4f} USD, attempts: {attempt}")
             return
         try:

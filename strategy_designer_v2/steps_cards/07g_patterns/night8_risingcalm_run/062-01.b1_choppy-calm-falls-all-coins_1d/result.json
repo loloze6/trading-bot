@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "062-01.b1_choppy-calm-falls-all-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6286546,
+  "findings": {
+    "F1": "In choppy markets (60-day return between -10 % and +10 %, folds B and C), the coin's 20-day return in units of its 30-day daily swing predicts its next 5-day excess return in the same direction: slope +0.051 with t 3.67 (days pooled) on 126 calm cases over 58 days, against slope +0.084 with t 1.34 on only 26 agitated cases. Over all profiles the slope is only t 1.84, and in rising and falling markets t is 1.34 and 0.79.",
+    "F2": "The effect is larger at 10 days. In choppy markets the 20-day swing-scaled return predicts the next 10-day excess return with slope +0.080 and t 5.66 (77 non-overlapping cases, 33 days). By choppy quartile of that return, the most fallen quarter (mean -0.95 swing units) is followed by -9.06 % over 5 days (t -2.18, 21 days) and the next quarter by -2.65 % (t -1.73).",
+    "F3": "This continuation in choppy markets is not steady across time or coins. By year its slope t is -1.39 (2018), -0.10 (2019), 2.55 (2020) and 4.97 (2021). By coin it is positive on all 6 coins with enough cases, with t from 0.45 (BTC) to 4.67 (XRP). On the falling half alone (r20 < 0) it gives t 1.30 on 78 cases.",
+    "F4": "The tested 5-day swing-scaled fall is weaker than the 20-day one inside the profile. Its slope there has t 1.72 (211 grid cases), and only its deepest quintile stands out (-3.37 % excess over 5 days, t -2.29, 43 cases). Its yearly slopes on falls alone run from t -0.83 to 0.80. This matches step 5's inconclusive slope t of 0.87 and its size of 0.030 of a usual move, below the 0.22 % cost.",
+    "F5": "The book lost most on its weakest signals. Trades entered in the quartile of the smallest forecasts (mean -4.5) lost -2.47 % net on average (122 trades). The strongest quartile (mean -18.9) lost -0.56 %. The book's daily mean was negative in 8 of 12 windows.",
+    "F6": "A large swing-scaled down day is followed by a next-day rebound across all bars: the bottom quintile gives +0.76 % excess (t 5.25, 1,653 days). Wide days closing near their low, outside the profile, rebound +1.74 % next day (t 5.87, 391 cases), but not inside choppy calm (+0.09 %, t 0.15). This is the agitated rebound the profile map already holds 10 times or more, so it is not a discovery."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, a coin whose 20-day return is more negative, measured against its 30-day daily swing, falls further over the next 10 days. The larger the swing-scaled 20-day fall, the larger the further fall.",
+      "consequence": "In a flat, quiet market, a trader should short coins that have slid steadily over several weeks by a lot for their quiet swing, rather than after a single sharp week, and should refuse to buy them as range bargains.",
+      "name": "choppy calm weeks fall continues",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "062-01.b1.g1_choppy-calm-weeks-fall-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

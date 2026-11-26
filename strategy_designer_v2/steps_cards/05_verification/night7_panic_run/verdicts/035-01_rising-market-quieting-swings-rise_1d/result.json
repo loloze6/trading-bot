@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 3-bar return over positive-forecast grid bars",
+    "value": 0.0024426659665619933,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day pooled",
+      "value": 0.6051511241185306
+    },
+    "threshold": "confirm: positive with t >= 2 (and supporting difference > 0); reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return, forecast above median of positive forecasts minus forecast 0, inside rising profile",
+    "value": 0.004062319881488694,
+    "passed": true
+  },
+  "counts": {
+    "positive-forecast grid cases": 1209,
+    "distinct days": 522,
+    "supporting group above median": 604,
+    "supporting group forecast 0": 1015
+  },
+  "decided_by": "The t of the main measure lies between -2 and 2.",
+  "reading": "The rising profile is the recorded regime 'unknown' (not the chop veto), the coin's mean is over its grid 3-bar returns of all windows, the t pools each day's weighted deviations into one cluster (SE^2 = sum of squared day sums / (sum of weights)^2 x G/(G-1)), the median is over positive-forecast grid bars inside the profile, and a missing supporting group counts as a failed check."
+}

@@ -1,4 +1,9 @@
 Ideas. From your findings, write the ideas your line asks for. {{IDEA_DEFINITION}}
+[MARKET PROFILES]
+{{MARKET_PROFILE}}
+
+When your findings show the tested idea's effect lives in one market profile, the same idea in that profile is an idea
+of its own: its text with the profile named, and its profile line.
 Every idea rests on findings and names them. Write no idea that no finding supports. If your findings support none,
 say so.
 
@@ -13,6 +18,8 @@ idea: <the idea, in one or two sentences>
 consequence: <what it means for a trader, in one sentence>
 name: <three to five words>
 from: <the findings it rests on, for example F1, F3>
+profile: <only when the idea names a market profile: its trend, its agitation or both, such as falling agitated, or
+         choppy. Name one only when your findings show the effect lives there>
 data: <only if your idea is about other data than the backtest's: instruments: ...; bar: ...; period: ...>
 
 For the tested idea unchanged, on other data, a block of its own instead (the code copies the tested idea's text):

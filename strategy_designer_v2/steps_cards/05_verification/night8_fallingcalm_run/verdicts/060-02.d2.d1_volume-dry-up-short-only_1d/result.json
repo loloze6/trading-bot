@@ -1,0 +1,39 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar short move per case (drift - return)",
+    "value": 0.01316210323731654,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 2.5838007859075858
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 over >= 30 cases and supporting difference > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual short move, larger |forecast| half minus smaller half (Welch difference)",
+    "value": 0.018601276863966662,
+    "passed": true,
+    "welch_t": 2.1953341420199948
+  },
+  "counts": {
+    "cases": 472,
+    "days": 359
+  },
+  "decided_by": "Mean unusual short move above 0 with t >= 2 over at least 30 cases, and larger-minus-smaller shrinkage difference above 0.",
+  "reading": "Situation = regime 'mean_reversion' (falling-profile veto passed and 10-day return < 0), re-checked from prices (10-day return < 0, 60-day return < -10 %) where the window holds enough bars and raw volume log ratio < 0 where recorded; a case is the first short bet (rise of short forecast >= 2 points from its lowest level since the last bet) in each 5-bar grid cell with a full 5-bar return in the window; the day-clustered t uses a G/(G-1) correction; the split puts |forecast| > median in the larger half and <= median in the smaller.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01076 on the check folds against +0.01316 on every fold",
+    "main": 0.010758694204893251,
+    "statistic": 1.618027486416932,
+    "counts": {
+      "cases": 241,
+      "days": 191
+    }
+  }
+}

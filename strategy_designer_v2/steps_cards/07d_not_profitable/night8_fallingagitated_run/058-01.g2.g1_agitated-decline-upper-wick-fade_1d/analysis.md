@@ -1,0 +1,22 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 058-01.g2.g1_agitated-decline-upper-wick-fade_1d
+idea tested: 058-01.g2.g1_agitated-decline-upper-wick-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4290 USD
+---
+## Findings
+- **F1:** The book fails on Calmar (0.24) and on Sharpe against holding (−0.10). Its deepest fall, −5.1 % over 8 days in w14, came while the coins rose 25 %. In that fall the book was short after strong 3-day rallies: the 3-day return scaled by the 30-day swing averaged 0.40 to 1.20 by coin, against 0.19 to 0.25 on the book's held bars overall. Each held bar lost −0.6 % to −1.7 % at positions of −0.12 to −0.26.
+- **F2:** The book's gain sits almost entirely on up days that come while the coin's 3-day return is still negative, the lowest quartile of the scaled 3-day return. These held bars earned +0.58 % each (t 4.5, 109 bars, sum 0.63). The other three quartiles earned +0.00 %, +0.09 % and +0.11 % (t 0.04 to 0.77, 324 bars, sum 0.22).
+- **F3:** The added condition is not an effect of its own. In-profile bars with a negative 3-day return (below −0.25 scaled) but no short signal moved −1.73 % in the short direction over the next day (346 bars), so the coin rose. Where both the condition and the signal held, the move was +1.50 % (132 cases); the signal without the condition gave +0.74 % (396 cases). This fits the brief's theory: an up day inside a decline that is still running is the covering bounce that meets waiting sellers.
+- **F4:** The effect lasts one day only. The unusual move in the short direction is +0.99 % at 1 day (t 4.27, 607 cases), then +0.55 % at 2 days (t 1.60), +0.50 % at 3 days (t 1.35) and +0.21 % at 5 days (t 0.44). A longer hold would dilute it, so the 1-day horizon stays.
+- **F5:** The give-back grading is carried by its strongest part. The top quartile of the scaled close-to-high distance gave +1.79 % (t 2.59, 132 cases), against +0.58 % to +0.67 % in the lower three quartiles. The top quartile of |forecast| gave +1.61 % (t 2.64), against +0.64 % to +0.91 %.
+- **F6:** Losses gather where the rally was already extended. In w11 the book was short at a mean distance of 4.56 swings above the 20-day low and lost −1.77 % per held bar (14 bars, window −4.2 %). XRP lost −0.28 % per held bar (60 bars) while the other five coins gained +0.18 % to +0.33 %.
+
+## Ideas
+- `058-01.g2.g1.d1_bounce-in-decline-wick-fade` (from F1, F2, F3, F4, F5): In a falling, agitated market, a coin's up day that comes while its 3-day return is still negative is followed by a fall over the next day. The further the day closed below its high, measured against the standard deviation of its daily returns over the past 30 days, the larger that next-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

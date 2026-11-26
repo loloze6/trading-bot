@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "049-02_wide-day-high-close-giveback_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.22788489999999997,
+  "findings": {
+    "F1": "Step 5's slope points the way the idea predicts but falls short of the bar (+0.000412, day-clustered t 1.73, 2877 days); in folds B and C the slope on the forecast is +0.00088 (t 2.07, 7321 bars), and it is positive in every year (2018 t 1.32, 2019 t 1.51, 2020 t 1.48, 2021 t 0.29), so the effect is steady but small rather than absent.",
+    "F2": "The lean shows in five of the six coins (XMR slope +0.00188 t 3.47, LTC +0.00148 t 2.54, ETH +0.00110 t 2.19, BTC +0.00074 t 1.62, ZEC +0.00072 t 1.26) and runs the other way only in XRP (\u22120.00094, t \u22120.95), so it is broad but weak on any one coin, and more coins would add cases.",
+    "F3": "The effect is concentrated in falling, agitated markets (slope +0.00456, t 3.49, 805 bars), and also shows in choppy agitated ones (+0.00364, t 2.69, 224 bars); it is about zero in rising markets (calm \u22120.00063 t \u22120.78, agitated \u22120.00065 t \u22120.59) and in falling calm ones (\u22120.00025, t \u22120.27).",
+    "F4": "The reversal grows with the day's width. On days in the widest fifth, the slope on (0.5 \u2212 close location) \u00d7 width is +0.0126 (t 2.58, 1464 bars), and a close in the lowest fifth of the range is followed by +1.44 % next-day excess (t 4.73). The high-close side the idea names is weaker: \u22120.39 % (t \u22121.13) on the widest days.",
+    "F5": "Per case the total move is +0.15 % against a trade cost of 0.19 % (0.8 times), and the unusual move is 0.038 of a usual move (t 1.62, 2249 days), so the book lost money (Sharpe \u22120.29) on an effect too small to show clearly at six coins."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "wide-day giveback, all coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "The higher a coin closes in its day's high-low range, and the wider that day's range is against the coin's usual daily range over the past 30 days, the larger its fall over the next day.",
+      "consequence": "A close pinned near the high of a day far wider than usual marks forced buying absorbed at a concession, which is repaid by a fall the next day.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": null
+    },
+    {
+      "idea": "In a falling, agitated market, the higher a coin closes in its day's high-low range, and the wider that day's range is against the coin's usual daily range over the past 30 days, the larger its fall over the next day.",
+      "consequence": "A close pinned near the high of an unusually wide day is a reason to expect a next-day giveback when the coin has been falling and swinging more than usual, and a reason to stand aside in rising markets.",
+      "name": "falling-agitated wide-day giveback",
+      "from": "F3, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "049-02.b1_wide-day-giveback-all-coins",
+    "049-02.b2_falling-agitated-wide-day-giveback"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (20-bar return - coin mean 20-bar return)",
+    "value": 0.003092143143846922,
+    "statistic": {
+      "name": "t of the mean (cases summed per day)",
+      "value": 0.5361670609942921
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 20-bar return on cases with forecast < 0 is below 0",
+    "value": 0.009972474785855692,
+    "passed": false
+  },
+  "counts": {
+    "cases": 758,
+    "distinct days": 116,
+    "cases with forecast below 0": 257
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 (or its sign disagrees with the mean's).",
+  "reading": "The 60-day return is recomputed from closes inside each window where 60 prior bars exist and taken from the recorded regime otherwise; 'nearer than usual' is the standardised dist_low (post_pipeline_value) below 10; the coin's mean 20-bar return is the mean over the non-overlapping grid returns of all its windows; the main measure's value is the mean product per case and its t is the ordinary t of the per-day sums; per the instructions, fewer than 100 cases or 60 distinct days gives 'not observable'."
+}
