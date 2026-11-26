@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean unusual move of the short over the next bar",
+    "value": 0.0029948871359271553,
+    "statistic": {
+      "name": "t of the mean, cases of one day as one piece of evidence",
+      "value": 1.011100896064199
+    },
+    "threshold": "positive with day-clustered t >= 2 to confirm; negative with t <= -2 to reject; at least 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger minus smaller |forecast| half (Welch), Welch t = 1.538",
+    "value": 0.005514190031019732,
+    "passed": true
+  },
+  "counts": {
+    "short cases": 1051,
+    "distinct days with a short case": 534
+  },
+  "decided_by": "The main measure's t lies between -2 and 2.",
+  "reading": "The situation is location (close-low)/(high-low) >= 0.5 from prices on bars the detector put in 'mean_reversion' (the profile vetoes are read from the regime column since its components are not recorded) with the raw range position >= 0 where recorded; the day-clustered t of the weighted mean sums the weighted deviations per UTC day; the supporting halves are |forecast| above the median versus at or below it, compared by their unweighted mean unusual moves."
+}

@@ -10146,3 +10146,68 @@ class ChoppinessWeightedScaledReversalComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.period, self.vol_period, self.er_period) + 1
+
+
+class ScaledMoveSmallnessComponent(SubStrategyComponent):
+    """
+    Smallness of the current bar's move in usual one-bar moves, on every bar:
+
+        r[j] = close[j] / close[j-1] - 1
+        s    = std (ddof 1) of r[j], j = t-vol_period+1 .. t   (bar t's return included)
+        raw_value = 1 / (1 + abs(r[t]) / s)
+        s = 0 (every return of the window is 0, so r[t] = 0 too): raw_value = 1.0
+
+    Range: above 0, up to 1, never negative, no direction. It is 1 for a zero move and shrinks toward 0 as the
+    move grows against the usual swing. It grows smoothly as the move shrinks.
+    Warm-up: vol_period + 1 rows, bar t included.
+
+    NaN: a NaN close among the last vol_period + 1 rows gives NaN. A close not above 0 among the return bases
+    (bars t-vol_period .. t-1) gives NaN (never on real bars).
+    Building the component raises for a vol_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last vol_period + 1 rows of data, bar t (the
+    last row) included; a bar's close is known at that bar's close.
+    """
+
+    def __init__(self, name="ScaledMoveSmallness", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"ScaledMoveSmallnessComponent: vol_period must be >= 2, got {self.vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.vol_period
+        closes = data['close'].astype(float).to_numpy()[-(n + 1):]
+        if np.isnan(closes).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        bases = closes[:-1]
+        if not (bases > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = closes[1:] / bases - 1.0
+        mean_r = float(np.sum(rets)) / n
+        var = float(np.sum((rets - mean_r) ** 2)) / (n - 1)
+        s = float(np.sqrt(var)) if var > 0 else 0.0
+        r_t = float(rets[-1])
+        if s > 0:
+            value = 1.0 / (1.0 + abs(r_t) / s)
+        else:
+            value = 1.0
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'return': r_t, 'std': s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.vol_period + 1

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side next-day excess return over the coin's mean",
+    "value": 0.002013139882926978,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 0.7757193809419568
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess of larger-|forecast| half minus smaller half",
+    "value": 0.005514190031019733,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1051,
+    "distinct days": 534
+  },
+  "decided_by": "The t of the mean short-side excess lies between -2 and 2.",
+  "reading": "The falling-agitated profile is taken from the detector's recorded regime 'mean_reversion' (its profile components are not recorded and their 365-bar lookback cannot be rebuilt inside a window), the close location from the recorded raw value or the prices; the coin's mean daily return is the mean of all its in-window next-bar returns; the day-clustered t uses per-day summed deviations with a n_days/(n_days-1) correction; the supporting split puts cases with |forecast| above the median in the larger half and the rest in the smaller."
+}

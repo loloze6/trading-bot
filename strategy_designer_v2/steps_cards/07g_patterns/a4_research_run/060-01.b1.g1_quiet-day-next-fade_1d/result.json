@@ -1,0 +1,21 @@
+{
+  "line": "7.g",
+  "backtest": "060-01.b1.g1_quiet-day-next-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3625033,
+  "findings": {
+    "F1": "The tested flat-day fade is too small to trade. All 3,706 bars with a 20-day scaled move show only a weak slope (Spearman rho -0.071 between the scaled move and the drift-adjusted next-day return). The flattest fifth of days (|r|/s20 \u2264 0.19, 742 cases) are followed by -0.71 % (plain t -2.98). That is less than the 0.32 % round-trip cost after the -0.12 % drift is counted, and step 5's day-pooled t was only -1.26.",
+    "F2": "The largest pattern is on the other side and points to a rebound. After days whose move exceeds 1.17 of the 20-day swing (741 cases, 475 days), the next day is +1.31 % above drift (day-pooled t 1.92). For big down days alone it is +2.05 % (347 cases, t 1.59). Only ZECUSD clears t 2 on its own (+0.92 %, t 2.07, 316 cases).",
+    "F3": "Days whose high-low range is the widest fifth against the 20-day swing (above 2.09, 742 cases, 483 days) are followed by +1.22 % above drift (day-pooled t 1.80). No coin clears t 2: CRVUSD +3.16 % t 1.80, DOGEUSD +4.97 % t 1.34, BCHUSD +0.19 % t 0.39.",
+    "F4": "The second fifth of 30-day returns (-26 % to -8 %, 636 cases, 422 days) is followed by -0.69 % (day-pooled t -2.31). The pattern is not graded: the deepest fifth (below -26 %) gives -0.04 % (t -0.11). It is negative in only about three quarters of its 14 windows (median -0.41 %).",
+    "F5": "Close location is not graded. Only the 0.62\u20130.80 fifth is weak (-0.60 %, t -2.41, 846 cases). The top fifth (above 0.80) gives +0.04 % (t 0.14).",
+    "F6": "High closes after a 30-day fall of more than 10 % give -0.80 % (361 cases), against -0.04 % for mid-range closes in the same trend and +0.44 % for high closes after a rise. This repeats the brief's falling-agitated high-close fade, which the map already holds (060-01.g1.d2.d1, falling agitated short).",
+    "F7": "Weekday and short-term angles show nothing that stands out. No weekday reaches |t| 1.5 (Sunday -0.46 %, t -1.49). The 5-day scaled return has rho 0.001. The 5-day to 20-day swing ratio has rho 0.044 and is not monotonic across its fifths."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "Across about ten angles (scaled move, close location, range, 5-day and 30-day returns, swing ratio, weekday, coin), no pattern reaches a day-pooled |t| of 2.5. Those near 2 are either not graded (F4, F5), already held in the map (the agitated big-fall and wide-range rebounds behind F2 and F3, the falling-agitated high-close fade in F6), or smaller than the 0.32 % cost of a trade (F1)."
+}
