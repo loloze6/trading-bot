@@ -11,6 +11,7 @@
 060-01.g1.d1_wider-than-usual-high-close-fade_1d: inconclusive (fit: exact) [main: 0.00801093; t of the mean, cases summed per day 1.89077; cases 347, case-days 212, active bars 379]
 060-01.g1.d2.d1_own-range-close-height-fade_1d: confirmed (fit: adapted) [main: 0.00903956; t of the mean, cases of one day taken together 2.23138; case-days 236, cases 378]
 060-01.g1.d2.d2_wider-squeeze-day-fades-harder_1d: inconclusive (fit: exact) [main: 0.00406483; t of the mean, cases of one day together 1.83107; cases 1380, distinct days 669]
+060-01.g1.d2.g1_up-day-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00632021; t of the mean, cases of one day taken together 2.35839; cases 840, distinct days of cases 444]
 060-01.g1.d2_wide-day-close-location-graded-fade_1d: confirmed (fit: exact) [main: 0.00903956; t of the mean, cases of one day taken together 2.23138; distinct case days 236, case bars 378]
 060-01.g1.g1_graded-width-high-close-fade_1d: inconclusive (fit: exact) [main: 0.00406483; t of the mean, cases summed per day 1.83107; cases 1380, distinct days 669]
 060-01.g1_wide-day-high-close-fade_1d: confirmed (fit: adapted) [main: 0.0203712; t of the mean, cases clustered by day 2.5037; cases 89, days 56]

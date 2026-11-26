@@ -11,6 +11,7 @@
 060-01.g1.d1_wider-than-usual-high-close-fade_1d: 0 ideas, 1 discoveries (2 explorations)
 060-01.g1.d2.d1_own-range-close-height-fade_1d: 1 ideas, 2 discoveries (3 explorations)
 060-01.g1.d2.d2_wider-squeeze-day-fades-harder_1d: 2 ideas (2 explorations)
+060-01.g1.d2.g1_up-day-high-close-fade_1d: 0 ideas, 1 discoveries (3 explorations)
 060-01.g1.d2_wide-day-close-location-graded-fade_1d: 1 ideas (2 explorations)
 060-01.g1.g1_graded-width-high-close-fade_1d: 2 ideas (2 explorations)
 060-01.g1_wide-day-high-close-fade_1d: 1 ideas (2 explorations)

@@ -11,6 +11,7 @@
 060-01.g1.d1_wider-than-usual-high-close-fade_1d: not profitable enough [Sharpe 0.5295; Sharpe minus holding's Sharpe -0.04015; Calmar 0.3531]
 060-01.g1.d2.d1_own-range-close-height-fade_1d: profitable enough [Sharpe 0.6857; Sharpe minus holding's Sharpe 0.1161; Calmar 0.8063]
 060-01.g1.d2.d2_wider-squeeze-day-fades-harder_1d: not profitable enough [Sharpe 0.4354; Sharpe minus holding's Sharpe -0.1343; Calmar 0.2416]
+060-01.g1.d2.g1_up-day-high-close-fade_1d: not profitable enough [Sharpe 0.3536; Sharpe minus holding's Sharpe -0.216; Calmar 0.1846]
 060-01.g1.d2_wide-day-close-location-graded-fade_1d: not profitable enough [Sharpe 0.6485; Sharpe minus holding's Sharpe 0.07886; Calmar 0.6681]
 060-01.g1.g1_graded-width-high-close-fade_1d: not profitable enough [Sharpe 0.4354; Sharpe minus holding's Sharpe -0.1343; Calmar 0.2416]
 060-01.g1_wide-day-high-close-fade_1d: not profitable enough [Sharpe 0.6097; Sharpe minus holding's Sharpe 0.04007; Calmar 0.3798]

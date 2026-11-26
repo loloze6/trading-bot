@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.998158379373849,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual next-bar move after short-forecast rises of >= 2 points",
+    "value": 0.00632021447922614,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.3583919155784328
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move, split at median close location",
+    "value": -0.0050524961115982125,
+    "passed": false
+  },
+  "counts": {
+    "cases": 840,
+    "distinct days of cases": 444
+  },
+  "decided_by": "Positive main result with t >= 2 but the supporting check (upper minus lower half above 0) fails.",
+  "reading": "The falling-agitated profile (60-bar trend and 365-bar volatility percentile) cannot be rebuilt inside ~122-bar windows, so the situation check tests the up close (close above prior close in the same window, first bars left out) and close location > 0.5 with a short forecast; the day-clustered t uses per-day summed deviations with a G/(G-1) correction, and the median split puts locations above the median in the upper half and the rest in the lower half."
+}
