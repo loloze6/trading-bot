@@ -20,3 +20,4 @@
 069-01_low-range-up-day-fade: After an up day, a close lower in its 20-day high-low range is followed by a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only]
 069-02_below-high-up-day-fade: After an up day, a larger swing-scaled distance of close below its 20-day high is followed by a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only]
 070-01_falling-calm-run-break-fade: In falling calm markets, the first up day after a longer run of consecutive down days is followed by a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: falling calm]
+071-01_falling-agitated-swing-rise-next-fade: In falling agitated markets, a larger one-day rise in units of the 20-day daily swing is followed by a larger next-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: falling agitated]

@@ -26,22 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 068-02_falling-agitated-run-break-fade | - | plan | inconclusive (-1.00) | not profitable enough (failed: Calmar) | - | 7.b: 068-02.b1_run-break-fade-more-coins; 7.g: 068-02.g1_run-break-versus-continuation-fade | 5.43 | 21.7 |
 | 069-02_below-high-up-day-fade | - | plan | confirmed (+2.73) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 069-02.d1_falling-market-below-high-up-day-fade, 069-02.d2_agitated-below-high-up-day-fade, 069-02.d3_below-high-up-day-two-day-fade; 7.g: 069-02.g1_falling-market-below-high-fade, 069-02.g2_below-high-up-day-three-day-fade | 1.06 | 6.2 |
 | 069-02.d1_falling-market-below-high-up-day-fade | 069-02_below-high-up-day-fade | plan | confirmed (+2.29) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 069-02.d1.d1_agitated-fall-up-day-fade, 069-02.d1.d2_swing-graded-low-range-up-fade; 7.g: 069-02.d1.g1_calm-falling-low-range-fade | 1.09 | 6.0 |
+| 069-02.d2_agitated-below-high-up-day-fade | 069-02_below-high-up-day-fade | plan | inconclusive (-1.70) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 069-02.d2.b1_agitated-up-day-fade-more-coins; 7.g: 069-02.d2.g1_falling-agitated-up-day-fade | 0.84 | 6.0 |
 
 ## Consumption
-22 ideas, 27.92 USD, 164.0 minutes in all.
+23 ideas, 28.76 USD, 170.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.63 | 12.5 |
-| step4_backtest | 0.00 | 66.1 |
-| step5_verdict | 3.45 | 12.4 |
-| step6_check | 0.00 | 0.6 |
+| step3_plan | 3.71 | 12.9 |
+| step4_backtest | 0.00 | 68.8 |
+| step5_verdict | 3.62 | 13.0 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 2.78 | 9.0 |
 | step7_7.c | 0.42 | 1.2 |
 | step7_7.e | 0.46 | 1.3 |
-| step7_7.b | 7.02 | 25.6 |
-| step7_7.g | 10.15 | 32.2 |
+| step7_7.b | 7.24 | 26.3 |
+| step7_7.g | 10.53 | 33.6 |
 | similarity_check | 0.00 | 0.6 |
 | unseen_test | 0.00 | 2.3 |

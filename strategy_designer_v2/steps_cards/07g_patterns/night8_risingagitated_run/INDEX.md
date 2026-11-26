@@ -19,4 +19,5 @@
 068-02_falling-agitated-run-break-fade_1d: 1 ideas, 1 discoveries (3 explorations)
 069-01_low-range-up-day-fade_1d: 2 ideas (2 explorations)
 069-02.d1_falling-market-below-high-up-day-fade_1d: 1 ideas, 1 discoveries (2 explorations)
+069-02.d2_agitated-below-high-up-day-fade_1d: 1 ideas (2 explorations)
 069-02_below-high-up-day-fade_1d: 2 ideas (2 explorations)
