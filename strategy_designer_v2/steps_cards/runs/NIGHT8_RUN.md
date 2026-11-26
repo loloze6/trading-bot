@@ -140,6 +140,12 @@ the new books on the unseen coins (1u).
   agitated, short), E 058-02.b1.g1.b1.b1 (falling agitated, next-day reversal), E 058-02.b1.b2.b1.b2.b2.e1 (calm, a
   close at the range's edge carries on); D 064-01 profitable but "not observable" on both unseen periods and 0.53
   explained by the held 035-01.
+- **05:30 Paris, a fault in the designer's resume command (found by C):** `loop.py` keeps no budget in the run's
+  files; resumed without `--budget` (as the designer's messages, the launch messages' step 3 and NIGHT_RULES said),
+  every loop ran with no limit. C stopped its own loop at 42.42 of 40 USD (04:28 UTC, final report: 29 ideas, 9
+  confirmed, 3 profitable enough, 2 holding on both unseen periods; theme not real; 15 discovery briefs). Told A, B, D,
+  E to restart with `--budget` (45, 45, 35, 35: the whole run's spend counts), and the resumed F (over its 30) to stop.
+  NIGHT_RULES corrected.
 
 ## Reading
 (written in the morning)

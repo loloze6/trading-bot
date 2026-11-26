@@ -20,7 +20,10 @@ budget) and what changed since the last night; everything else is here.
 2. **Long jobs run as tracked background tasks, never detached (3f).** A detached process (`setsid nohup`) dies when the
    cloud reclaims an idle session's container (night 6: twice). A tracked task keeps the session attached; it is cut
    after 2 hours, so the session starts it with the longest timeout and, on its end notification, resumes the loop
-   (`loop.py --run <run> --python <venv>`): the loop resumes from its files, an idea cut mid-run is finished first.
+   (`loop.py --run <run> --python <venv> --budget <the session's budget>`): the loop resumes from its files, an idea
+   cut mid-run is finished first. **The budget must be given again:** the loop keeps none in the run's files and has no
+   limit without `--budget`; with it, it counts the run's whole spend (night 8: resumed without it, C reached 42.4 of
+   40 USD before it stopped its loop itself).
 3. A stop on "the model service refused a call" (the usage limit) is resumed after the limit's reset: the session
    schedules its own wake-up.
 4. Commits and pushes on the session's branch along the way (after each idea at most every 30 minutes), and at the end.
