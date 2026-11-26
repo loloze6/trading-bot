@@ -49,7 +49,7 @@ and step 9 then measures every candidate on all the portfolio coins.
 | Research, explore half (the analysts, step 8) | 2016-01-01 to 2021-12-31 |
 | Research, check half (step 5's direction) | 2022-01-01 to the end of the last complete window |
 | Research backtest, steps 5 and 6 | both halves, cut in 4-month windows |
-| Portfolio and final | every complete day from 2016-01-01 (or the coin's 91st day) to the last complete day, one series per coin |
+| Portfolio and final | the same 32 windows (`04_backtest/windows/research_2016.json`), each coin from its first window after its 91st day: one kind of record for steps 9, 11 and 12 (decided 2026-11-26 during the build) |
 
 **Refreshed:** the data is extended to the last complete day at the start of every batch (or run alone); a window
 that has ended joins the check half at the next run. The explore half never grows.
@@ -76,10 +76,10 @@ that has ended joins the check half at the next run. The explore half never grow
 | 6 | Does it pay? | the same | profitable or not | step 5 |
 | 7 | Similarity check | the same | the nearest held strategy (information) | step 6 |
 | 8 | Analysts | the run's 8 coins, **explore half only** | new ideas, back to 2 | step 6 |
-| 9 | The candidate's common record | **all portfolio coins**, every complete day | — | the strategy becomes a candidate |
+| 9 | The candidate's common record | **all portfolio coins**, the 32 windows | — | the strategy becomes a candidate |
 | 10 | Portfolio version | the candidates' common records | which candidates, their weights | **the list of candidates changed** |
 | 11 | Ready for the final test? | the version on the portfolio coins | it earns more than holding those coins (equal weight, the same days) | each new version |
-| 12 | Final test, once | **the final coins**, every complete day | **go or no-go for live** | step 11 says ready |
+| 12 | Final test, once | **the final coins**, the 32 windows | **go or no-go for live** | step 11 says ready |
 | 13 | After the final test | go: live or paper trading; no-go: back to research | a new final draw | step 12 |
 
 A strategy alone "holds" on data it was not found on when its effect keeps its direction and it earns after costs;
