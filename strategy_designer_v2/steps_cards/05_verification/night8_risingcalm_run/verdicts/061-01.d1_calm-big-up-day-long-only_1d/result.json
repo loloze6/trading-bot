@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast (calm grid bars), t clustered by date",
+    "value": 0.001754075179739336,
+    "statistic": {
+      "name": "date-clustered OLS slope t",
+      "value": 3.5088402581796
+    },
+    "threshold": "t >= 2 confirms (with check mean > 0); t <= -2 rejects; between is inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return over grid bars with forecast > 0",
+    "value": 0.010018364262374983,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 897,
+    "calm grid bars": 1829,
+    "dates (clusters)": 483
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess return over forecast > 0 grid bars is above 0.",
+  "reading": "Calm = regime 'unknown' (not the 'chop' veto) at bar t; the normal 5-bar drift is each coin's mean 5-bar return over all its non-overlapping grid bars in all windows (all regimes); the regression pools all coins with an intercept and CR1 date-clustered errors; the 100 minimum counts calm grid bars with forecast > 0 and, unmet, gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001325 on the check folds against +0.001754 on every fold",
+    "main": 0.001324843464336962,
+    "statistic": 2.3602457281381017,
+    "counts": {
+      "grid bars with forecast > 0": 462,
+      "calm grid bars": 923,
+      "dates (clusters)": 253
+    }
+  }
+}

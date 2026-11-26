@@ -1,0 +1,20 @@
+{
+  "line": "7.b",
+  "backtest": "062-02_choppy-calm-below-high-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.32505800000000007,
+  "findings": {
+    "F1": "The test's main result is zero, not a weak effect on the predicted side: the day-pooled slope of the 5-day excess return on the forecast is -0.00034 with t -0.44 over 233 days. This is slightly on the wrong side, even though the supporting check passed (mean excess -0.97 % on the 232 cases with forecast \u2264 -10). The test already used all four folds, so more data cannot help.",
+    "F2": "In folds B and C, the excess return is U-shaped across drop depth, not graded. Split into quartiles of the swing-scaled drop (35 cases each), it is -3.90 % (t -2.86) for the deepest, +0.67 % (t 0.41) for the second, -0.43 % (t -0.38) for the third and -2.36 % (t -2.24) for the shallowest. Forecast buckets show the same pattern: -3.31 % for -20 to -15, +1.18 % for -15 to -10, -0.32 % for -10 to -5, and -2.55 % for -5 to 0.",
+    "F3": "What separates the cases is being below the 5-day high at all, not how far below. Inside the profile, at 5 days, closes below the high are followed by -1.46 % excess (t -2.28, 163 cases) and closes at the high by +2.56 % (t 1.26, 38 cases). Among the closes below the high, the day-pooled slope on depth is only t 1.00 (80 days).",
+    "F4": "One year carries the fall. Closes below the high in the profile have a 5-day excess of -5.60 % (t -3.87, 33 cases) in 2018, -1.75 % (t -1.60) in 2019, +0.95 % (t 1.07) in 2020 and +0.80 % (t 0.40) in 2021. Without 2018, the day-pooled slope on the raw drop falls to t 0.64 (69 days).",
+    "F5": "Changing the horizon or the measure gives no clear gradient either. On the raw, unstandardised drop the day-pooled slope is t 1.70 at 5 days (92 days) and t 1.09 at 10 days (43 days). At 10 days the drop terciles are U-shaped again: -7.80 % deep, +5.51 % mid, -4.53 % shallow.",
+    "F6": "The idea's size is a +0.65 % unusual move per case (t 1.81, 492 days, strength 0.074), but it shorts against a -0.62 % drift in its direction. The total move is +0.02 %, 0.1 times the 0.19 % cost of a trade, and the book's Sharpe is -0.01."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "The theme's effect is not in the data. The further fall after a swing-scaled drop is not graded with the drop's depth (U-shaped in F2 and F5, slope t -0.44 in F1), and what fall there is comes mostly from 2018 (F4), a period rather than a market profile an idea could name."
+}

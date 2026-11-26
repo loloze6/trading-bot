@@ -14,20 +14,26 @@ One row per idea run; every status is read from the step's own result file. Each
 | 059-01_calm-decline-continues-return | - | plan | inconclusive (+0.97) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 059-01.b1_calm-decline-all-coins, 059-01.b2_falling-calm-decline-continues; 7.g: 059-01.g2_falling-calm-decline-continues | 0.83 | 5.8 |
 | 059-01.b1_calm-decline-all-coins | 059-01_calm-decline-continues-return | plan | inconclusive (+0.86) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 059-01.b1.b1_calm-decline-still-running, 059-01.b1.b2_calm-decline-three-days; 7.g: 059-01.b1.g1_calm-market-swing-scaled-continuation, 059-01.b1.g2_calm-narrow-low-close | 1.03 | 11.6 |
 | 059-01.b2_falling-calm-decline-continues | 059-01_calm-decline-continues-return | plan | inconclusive (+1.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 059-01.b2.b1_falling-calm-decline-more-coins; 7.g: 059-01.b2.g1_calm-market-decline-continues | 0.91 | 6.0 |
+| 061-01_calm-big-up-day-continues | - | plan | confirmed (+3.01) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 061-01.d1_calm-big-up-day-long-only, 061-01.d2_rising-calm-up-day-continuation; 7.g: 061-01.g1_choppy-calm-day-follow-through | 0.82 | 6.9 |
+| 061-01.d1_calm-big-up-day-long-only | 061-01_calm-big-up-day-continues | plan | confirmed (+3.51) | not profitable enough (failed: Calmar) | - | 7.d: 061-01.d1.d1_rising-calm-big-day-follow-through, 061-01.d1.d2_calm-big-day-in-uptrend; 7.g: 0 ideas, 2 discoveries (3 explorations) | 1.15 | 7.0 |
+| 061-01.d2_rising-calm-up-day-continuation | 061-01_calm-big-up-day-continues | plan | inconclusive (+1.55) | not profitable enough (failed: Calmar) | - | 7.b: 061-01.d2.b1_rising-calm-continuation-more-coins; 7.g: 061-01.d2.g1_rising-calm-down-day-continuation, 061-01.d2.g2_choppy-calm-up-day-continuation | 1.01 | 6.4 |
+| 062-01_choppy-calm-fall-continues | - | plan | inconclusive (+0.97) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 062-01.b1_choppy-calm-falls-all-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.81 | 5.7 |
+| 062-02_choppy-calm-below-high-falls | - | plan | inconclusive (-0.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The further fall after a swing-scaled drop is not graded with the drop's depth (U-shaped in F2 and F5, slope t -0.44 in F1), and what fall there is comes mostly from 2018 (F4), a period rather than a market profile an idea could name.; 7.g: no ideas: After seven angles at two horizons, the only new patterns are the deep-drop continuations (F2–F4); they rest on 26 days or fewer, are carried by the 2018 and 2020 crashes, and their day-pooled t stays under 2, while the patterns that do stand out (F5, F6) repeat ideas the profile map already holds. | 0.99 | 6.2 |
 
 ## Consumption
-10 ideas, 9.76 USD, 72.5 minutes in all.
+15 ideas, 14.54 USD, 104.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.74 | 4.3 |
-| step4_backtest | 0.00 | 36.5 |
-| step5_verdict | 1.65 | 5.8 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.10 | 6.2 |
+| step4_backtest | 0.00 | 51.5 |
+| step5_verdict | 2.46 | 8.8 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 0.00 | 0.0 |
-| step7_7.b | 3.29 | 11.4 |
-| step7_7.g | 4.08 | 13.9 |
+| step7_7.d | 0.57 | 2.4 |
+| step7_7.b | 4.14 | 14.0 |
+| step7_7.g | 6.27 | 20.8 |
+| similarity_check | 0.00 | 0.1 |

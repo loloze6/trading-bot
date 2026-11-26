@@ -8,3 +8,8 @@
 059-01.b1_calm-decline-all-coins_1d: 2 ideas (2 explorations)
 059-01.b2_falling-calm-decline-continues_1d: 1 ideas (1 explorations)
 059-01_calm-decline-continues-return_1d: 2 ideas (1 explorations)
+061-01.d1_calm-big-up-day-long-only_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+061-01.d2_rising-calm-up-day-continuation_1d: 1 ideas (2 explorations)
+061-01_calm-big-up-day-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+062-01_choppy-calm-fall-continues_1d: 1 ideas (1 explorations)
+062-02_choppy-calm-below-high-falls_1d: no ideas: The theme's effect is not in the data. The further fall after a swing-scaled drop is not graded with the drop's depth (U-shaped in F2 and F5, slope t -0.44 in F1), and what fall there is comes mostly from 2018 (F4), a period rather than a market profile an idea could name.

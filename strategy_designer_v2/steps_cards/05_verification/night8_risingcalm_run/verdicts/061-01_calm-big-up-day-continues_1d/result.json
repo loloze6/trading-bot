@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of 5-bar excess return on forecast, day-clustered t",
+    "value": 0.000901480968686194,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": 3.012475569377031
+    },
+    "threshold": "confirm if slope t >= 2 (100+ cases) and largest |forecast| third above smallest; reject if t <= -2 (100+ cases)"
+  },
+  "supporting_check": {
+    "name": "mean directional excess 5-bar return, largest |forecast| third minus smallest third",
+    "value": 0.006939462935862115,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases inside the calm profile": 1827,
+    "days": 483
+  },
+  "decided_by": "Slope t >= 2 with at least 100 cases and the largest |forecast| third above the smallest third.",
+  "reading": "Calm profile read as regime 'unknown' (no 'chop' veto) and the day's direction as the sign of the raw component (price return where missing); the slope t uses OLS with residual-score deviations summed per day (cluster-robust, G/(G-1) correction); the coin's mean 5-bar return is over all grid bars of all its windows; thirds are floor(n/3) cases at each end of |forecast|.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0005111 on the check folds against +0.0009015 on every fold",
+    "main": 0.0005110777477104489,
+    "statistic": 1.5079140242290836,
+    "counts": {
+      "non-overlapping cases inside the calm profile": 922,
+      "days": 253
+    }
+  }
+}

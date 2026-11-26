@@ -6,3 +6,5 @@
 060-02_scaled-fresh-high-keeps-rising: A close further above the prior 5-day high close, scaled by 30-day swing, is followed by a larger 5-day rise, in any market. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
 061-01_calm-big-up-day-continues: In calm markets, a larger one-day rise, scaled by 30-day swing, is followed by a larger 5-day rise. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: calm]
 061-02_calm-big-down-day-continues: In calm markets, a larger one-day fall, scaled by 30-day swing, is followed by a larger 5-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: calm]
+062-01_choppy-calm-fall-continues: In choppy calm markets, a deeper 5-day fall, scaled by 30-day swing, is followed by a larger 5-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]
+062-02_choppy-calm-below-high-falls: In choppy calm markets, a deeper drop below the 5-day high close, scaled by 30-day swing, is followed by a larger 5-day fall. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]

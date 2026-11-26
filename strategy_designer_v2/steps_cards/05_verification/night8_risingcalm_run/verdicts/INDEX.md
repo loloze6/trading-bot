@@ -8,3 +8,8 @@
 059-01.b1_calm-decline-all-coins_1d: inconclusive (fit: adapted) [main: 0.00529676; t of weighted mean, cases of a day grouped 0.861926; distinct days 379, cases 1739]
 059-01.b2_falling-calm-decline-continues_1d: inconclusive (fit: exact) [main: 0.00123013; day-clustered OLS t of the slope 1.21501; grid cases 438, distinct days 194]
 059-01_calm-decline-continues-return_1d: inconclusive (fit: exact) [main: 0.000495584; OLS t of slope 0.969911; grid bars with forecast < 0 907, cases 959]
+061-01.d1_calm-big-up-day-long-only_1d: confirmed (fit: exact) [main: 0.00175408; date-clustered OLS slope t 3.50884; grid bars with forecast > 0 897, calm grid bars 1829, dates (clusters) 483]
+061-01.d2_rising-calm-up-day-continuation_1d: inconclusive (fit: exact) [main: 0.00156373; t of slope, day-clustered 1.54843; grid cases with a positive forecast 337, days 176]
+061-01_calm-big-up-day-continues_1d: confirmed (fit: exact) [main: 0.000901481; slope t (day-clustered) 3.01248; non-overlapping cases inside the calm profile 1827, days 483]
+062-01_choppy-calm-fall-continues_1d: inconclusive (fit: adapted) [main: 0.00608693; t of the mean, cases of one day summed 0.968053; cases 269, distinct days holding cases 164]
+062-02_choppy-calm-below-high-falls_1d: inconclusive (fit: exact) [main: -0.00033653; OLS t of slope on day cases -0.441104; distinct days of grid cases with non-zero forecast 233, grid cases with non-zero forecast 425, grid cases with forecast <= -10 232]
