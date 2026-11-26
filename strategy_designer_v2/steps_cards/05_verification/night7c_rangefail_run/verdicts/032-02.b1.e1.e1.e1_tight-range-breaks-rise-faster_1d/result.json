@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move, upper minus lower forecast half",
+    "value": -0.0114601936697312,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.9236445479928667
+    },
+    "threshold": "Welch t >= 2 confirms (with overall mean unusual move > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move over all cases above 0",
+    "value": 0.017621385540540428,
+    "passed": true
+  },
+  "counts": {
+    "cases in upper half": 242,
+    "cases in lower half": 242,
+    "cases in all": 485
+  },
+  "decided_by": "the Welch t lies between -2 and 2, which the plan calls inconclusive",
+  "reading": "the breakout situation is recomputed inside each window as close above the max of the prior 60 recorded closes, so only active bars with 60 prior bars in their window enter the agreement share, and the expected side is long; a case is the first long bet (a forecast rise of at least 2 points from its lowest long level since the last bet) in each 5-bar grid cell of a window, its 5-bar return taken from that bet's close inside the window; the halves are the cases ranked by forecast, the lower n//2 against the upper n//2 (the middle case dropped when n is odd)."
+}

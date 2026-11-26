@@ -228,3 +228,7 @@ night8_choppycalm_run | 058-02_calm-range-bottom-drifts-up_1d | HighLowRangePosi
 night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePositionComponent | cannot build: no answer passed the checks after 3 attempts
 night8_choppyagitated_run | 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks_1d | centred mean-abs-scaled return | built: MeanAbsScaledReturnComponent {"base": "mean_abs_return", "form": "centred", "period": 7, "window": 30}
 night8_fallingagitated_run | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d | CappedScaledRiseTimesDepthBelowHigh | built: CappedScaledRiseTimesDepthBelowHighComponent {"cap": 1.0, "period": 20, "vol_period": 30}
+night7c_rangefail_run | 032-02.b1.e1.e1_tight-range-breakouts-continue_1d | ClosingRangeInUsualMovesComponent | built: ClosingRangeInUsualMovesComponent {"form": "width", "period": 60, "window": 60}
+night7c_rangefail_run | 032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d | BreakoutRunUpDiscount | built: BreakoutRunUpDiscountComponent {"period": 60, "rise_lag": 1, "rise_period": 20, "window": 120}
+night7c_rangefail_run | 032-01.b1.b1.e2_small-breaks-follow-through_1d | BreakProximityAboveHigh | cannot build: no answer passed the checks after 3 attempts
+night7c_rangefail_run | 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d | BreakoutMarginProximityComponent | built: BreakoutMarginProximityComponent {"period": 60}

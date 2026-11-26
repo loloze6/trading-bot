@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of the 20-bar forward return (minus the coin's mean 20-bar return) on the forecast",
+    "value": 0.0004974060657740908,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 0.609427202865843
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing part > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "timing part of the book's mean daily return (book minus market gain) > 0",
+    "value": 8.077376907877126e-05,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with a nonzero forecast": 827,
+    "non-overlapping grid cases": 827
+  },
+  "decided_by": "The slope's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The regression uses all non-overlapping 20-bar grid cases (positions 0, 20, ... of each window) with an intercept, the coin's mean 20-bar return is the mean over those grid cases of all its windows, and the timing part is the book's mean daily return (postRebalance_total_value, mean across coins per day) minus the previous bar's allocation times the coin's all-window mean daily return, averaged the same way."
+}

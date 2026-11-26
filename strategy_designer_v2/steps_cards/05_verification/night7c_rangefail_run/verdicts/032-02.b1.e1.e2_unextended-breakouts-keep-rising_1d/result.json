@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Welch t of 20-bar excess return, forecast above vs at/below cases' median",
+    "value": -0.025962894961593704,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.5319361941665841
+    },
+    "threshold": "confirm: t >= 2 with forecast-weighted mean excess > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean 20-bar excess return of cases",
+    "value": -0.01679282636473999,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping break cases": 205,
+    "cases above median forecast": 102,
+    "cases at or below median forecast": 103
+  },
+  "decided_by": "The main t lies between -2 and 2 (inconclusive rule).",
+  "reading": "Situation check uses only active bars with 60 prior closes inside the same window (149 active bars without them left out); cases are pooled over all coins and windows, a break is counted only if it is at least 20 bars after the last counted one in its coin-window, the forecast median is taken over all pooled cases, the coin's mean 20-bar return is from the 0,20,40,... grid of each window pooled over its windows, and minimum counts not reached give 'not observable'."
+}

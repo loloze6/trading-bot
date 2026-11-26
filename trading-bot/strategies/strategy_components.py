@@ -9876,3 +9876,206 @@ class CappedScaledRiseTimesDepthBelowHighComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.vol_period + 1, self.period)
+
+
+class ClosingRangeInUsualMovesComponent(SubStrategyComponent):
+    """
+    The closing range of the bars before bar t, counted in usual one-bar moves:
+
+        H = max(close[t-period .. t-1]), L = min(close[t-period .. t-1])    (bar t excluded)
+        m = mean(abs(close[j] / close[j-1] - 1)), j = t-window+1 .. t      (bar t's return included)
+        W = (H - L) / close[t-1] / m       (W = 0 when m = 0)
+        form = "width" (default):  raw_value = W
+        form = "compression":      raw_value = 1 / (1 + W)
+
+    Range and sign: "width" is 0 and up, unbounded above, never negative, with no direction. It grows as the
+    closing range widens in usual moves. "compression" is above 0 and up to 1, never negative. It is 1 for a
+    zero range and grows as the range narrows.
+    Warm-up: max(period, window) + 1 rows, bar t included.
+    NaN: a NaN close among the rows read gives NaN, and so does a close not above 0 there (never on real bars).
+    m = 0 gives W = 0 (never on real bars).
+    Building the component raises for a period below 2, a window below 1, or a form other than "width" or
+    "compression".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, window) + 1 rows of data,
+    the last row being bar t; no later row exists in data, and the range itself stops at bar t-1.
+    """
+
+    def __init__(self, name="ClosingRangeInUsualMoves", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 60))
+        if self.period < 2:
+            raise ValueError(f"ClosingRangeInUsualMovesComponent: period must be >= 2, got {self.period}")
+        self.window = int(self.parameters.get("window", 60))
+        if self.window < 1:
+            raise ValueError(f"ClosingRangeInUsualMovesComponent: window must be >= 1, got {self.window}")
+        self.form = self.parameters.get("form", "width")
+        if self.form not in ("width", "compression"):
+            raise ValueError(
+                f"ClosingRangeInUsualMovesComponent: form must be 'width' or 'compression', got {self.form!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        req = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-req:]
+        t = len(c) - 1
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rng = c[t - self.period:t]
+        hi = float(np.max(rng))
+        lo = float(np.min(rng))
+        seg = c[t - self.window:t + 1]
+        m = float(np.mean(np.abs(seg[1:] / seg[:-1] - 1.0)))
+        if m == 0.0:
+            w = 0.0
+        else:
+            w = (hi - lo) / c[t - 1] / m
+        if self.form == "compression":
+            self._raw_value = float(1.0 / (1.0 + w))
+        else:
+            self._raw_value = float(w)
+        self.confidence = 1.0
+        self.debug_info = {"range_high": hi, "range_low": lo, "usual_move": m, "width": w}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period, self.window) + 1
+
+
+class BreakoutRunUpDiscountComponent(SubStrategyComponent):
+    """
+    Run-up discount on a closing breakout above the prior closes:
+
+        G = 1 when close[t] > max(close[t-period] .. close[t-1]), else 0   (strictly higher; bar t excluded)
+        R = close[t-rise_lag] / close[t-rise_lag-rise_period] - 1         (the run-up before the break)
+        m = mean over i = t-window+1 .. t of abs(close[i] / close[i-rise_period] - 1)
+        raw_value = G x max(0, 1 - R / m)      (0.0 when m = 0)
+
+    Defaults: period 60, rise_period 20, rise_lag 1, window 120.
+    Range: 0 and up, at most 1 + 1/m (R >= -1), never negative, no direction. It is 0 without a break, and 0
+    when the run-up is one usual rise_period-bar move or more. On a break it is 1 at a flat run-up and above 1
+    after a prior fall. Graded and continuous in the closes while bar t breaks out.
+    Warm-up: max(period + 1, window + rise_period, rise_lag + rise_period + 1) rows (140), bar t included.
+    NaN: a NaN close among those rows gives NaN, whatever the gate. A close not above 0 there gives NaN.
+    m = 0 gives 0.0.
+    Building raises for period < 1, rise_period < 1, rise_lag < 0 or window < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows of data,
+    the last of which is bar t; every close used is at or before bar t.
+    """
+
+    def __init__(self, name="BreakoutRunUpDiscount", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 60))
+        self.rise_period = int(self.parameters.get("rise_period", 20))
+        self.rise_lag = int(self.parameters.get("rise_lag", 1))
+        self.window = int(self.parameters.get("window", 120))
+        if self.period < 1:
+            raise ValueError(f"BreakoutRunUpDiscountComponent: period must be >= 1, got {self.period}")
+        if self.rise_period < 1:
+            raise ValueError(f"BreakoutRunUpDiscountComponent: rise_period must be >= 1, got {self.rise_period}")
+        if self.rise_lag < 0:
+            raise ValueError(f"BreakoutRunUpDiscountComponent: rise_lag must be >= 0, got {self.rise_lag}")
+        if self.window < 1:
+            raise ValueError(f"BreakoutRunUpDiscountComponent: window must be >= 1, got {self.window}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        t = len(c) - 1
+        rp = self.rise_period
+        prior_high = float(np.max(c[t - self.period:t]))
+        brk = bool(c[t] > prior_high)
+        cur = c[t - self.window + 1:t + 1]
+        base = c[t - self.window + 1 - rp:t + 1 - rp]
+        m = float(np.mean(np.abs(cur / base - 1.0)))
+        r = float(c[t - self.rise_lag] / c[t - self.rise_lag - rp] - 1.0)
+        if not brk or m == 0.0:
+            value = 0.0
+        else:
+            value = max(0.0, 1.0 - r / m)
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {"prior_high": prior_high, "breakout": brk, "run_up": r, "mean_abs_return": m}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.period + 1, self.window + self.rise_period, self.rise_lag + self.rise_period + 1)
+
+
+class BreakoutMarginProximityComponent(SubStrategyComponent):
+    """
+    Nearness of a breaking close to the prior closing high, on every bar:
+
+        H = max(close[t-period] .. close[t-1])          (bar t excluded)
+        G = 1 if close[t] > H else 0
+        raw_value = G x 1 / (1 + (close[t] - H) / H x 100)
+
+    Range: 0 to 1, never negative, no direction. It is 0 when close[t] <= H (no break; a tie is not a
+    break). On a break it is in (0, 1): near 1 for a tiny margin above H, shrinking smoothly as the
+    margin (in percent of H) grows.
+    Warm-up: period + 1 rows, bar t included.
+    NaN: a NaN close in the last period + 1 rows gives NaN; an H not above 0 gives NaN (never on real bars).
+    Building raises for a period below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows of data, bars
+    t-period .. t, bar t being the last row; each close is known at its bar's close.
+    """
+
+    def __init__(self, name="BreakoutMarginProximity", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 60))
+        if self.period < 1:
+            raise ValueError(f"BreakoutMarginProximityComponent: period must be >= 1, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        closes = data['close'].astype(float).to_numpy()[-(p + 1):]
+        if np.isnan(closes).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        c = float(closes[-1])
+        h = float(np.max(closes[:-1]))
+        if not h > 0:
+            value = float("nan")
+        elif c > h:
+            value = 1.0 / (1.0 + (c - h) / h * 100.0)
+        else:
+            value = 0.0
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': h, 'close': c}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1

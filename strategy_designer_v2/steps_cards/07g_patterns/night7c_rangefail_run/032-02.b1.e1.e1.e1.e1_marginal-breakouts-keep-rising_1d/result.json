@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "032-02.b1.e1.e1.e1.e1_marginal-breakouts-keep-rising_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3858595,
+  "findings": {
+    "F1": "Across all bars on the non-overlapping 20-day grid (folds B, C), the closer a coin's close sits to its prior 60-day closing high, the larger its excess 20-day return. The per-coin quintile nearest the high (mean distance \u22124.75 %) gained +15.6 % above drift (t 3.31, 42 cases), while the middle quintile (mean distance \u221223.8 %) gave \u221210.75 % (t \u22123.71, 42 cases). Spearman of distance against excess return is 0.188 (p 0.008, 198 cases), and 0.222 (p 0.0017) with distance scaled by 60-day volatility.",
+    "F2": "The near-high effect holds in every slice we could cut. The top distance quintile beat the rest in all six coins (BTC +6.2 % vs \u22121.8 %, ETH +6.8 % vs \u22123.2 %, LTC +17.6 % vs \u22124.4 %, XMR +12.2 % vs \u22124.2 %, XRP +40.1 % vs \u22126.4 %, ZEC +10.9 % vs \u22124.5 %). It also beat the rest in every year that has top-quintile cases (2019 +10.2 % vs \u221211.0 %, 2020 +17.0 % vs +5.8 %, 2021 +17.4 % vs +7.7 %).",
+    "F3": "Most of that gain lies below the old high, not in true breakouts. On fixed bins of distance, closes 3\u20138 % under the 60-day high gained +16.0 % above drift over 20 days (t 2.89, 20 cases) and closes 0\u20133 % under gained +11.6 % (t 1.75, 7 cases). Closes above the high (the tested idea's only situation) gained +13.2 % (t 1.20, 7 cases).",
+    "F4": "The day after a fall larger than twice the coin's 60-day daily standard deviation, the coin rose +2.08 % on average (t 3.21, 102 cases). After falls of 1\u20132 standard deviations it rose +0.50 % (t 1.84, 320 cases), and after moves within \u00b11 it returned \u22120.04 % (2734 cases), so the bounce is graded. It is positive in 2019 (+2.08 %), 2020 (+5.41 %) and 2021 (+1.38 %), but only +0.04 % in 2018.",
+    "F5": "Up days larger than two standard deviations were followed by +4.09 % over 5 days (t 3.06, 136 cases), but this is not graded. Spearman of the up-move size against the 5-day return over all up days is 0.014 (p 0.55, 1844 cases), and the effect was +0.07 % in 2018, so it is not a finding to build on.",
+    "F6": "The book's trades do not scale with the forecast as the idea claims. The highest entry-forecast tercile (smallest margin) earned +21.0 % per trade net, against +13.4 % for the lowest tercile and +11.5 % for the middle, so the margin's ordering adds no graded edge. The weekday pattern (Sunday +0.41 %, t 2.40, one of seven days) does not stand out given the number of angles looked at."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's daily close is to its highest close of the prior 60 days, the larger the coin's rise over the next 20 days, with closes just under the old high rising about as much as closes just over it.",
+      "consequence": "A trader would hold coins trading near their 60-day high for about three weeks, giving more weight the nearer the close is to that high, without waiting for the high to be broken.",
+      "name": "nearness to 60-day high",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day fall relative to its usual daily move over the past 60 days, the larger its rise over the next day.",
+      "consequence": "A trader would buy a coin at the close of an unusually large down day and hold it one day, sizing up with the fall's size relative to the coin's recent daily swings.",
+      "name": "next-day bounce after big falls",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.b1.e1.e1.e1.e1.g1_nearness-to-60-day-high",
+    "032-02.b1.e1.e1.e1.e1.g2_next-day-bounce-after-big-falls"
+  ],
+  "no_ideas": null
+}

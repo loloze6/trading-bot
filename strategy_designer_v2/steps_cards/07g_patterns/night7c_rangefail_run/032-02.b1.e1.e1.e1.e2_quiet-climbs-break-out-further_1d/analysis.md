@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 032-02.b1.e1.e1.e1.e2_quiet-climbs-break-out-further_1d
+idea tested: 032-02.b1.e1.e1.e1.e2_quiet-climbs-break-out-further
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4157 USD
+---
+## Findings
+- **F1:** Over folds B and C, closes above the prior 60-day high were followed by a 20-day return 14.4 % above the coin's mean (47 cases on 34 days, day-clustered t 3.63, 77 % rising), while closes below the prior 60-day low were followed by +0.4 % (74 cases, t 0.07), and the plain grid was 0 by construction (414 cases). The edge lies in upside breakouts continuing, not in the run-up grading the idea tested: by tercile of 60-day run-up the excess was +13.4 %, +19.0 % and +9.8 %, which is not monotonic.
+- **F2:** Among upside breakouts, the narrower the prior 60-day range of closes, the larger the excess 20-day rise. By tercile (median range width 22 %, 39 %, 72 %) it was +25.4 % (t 3.64, 93 % rising), +9.4 % (t 1.30) and +7.6 % (t 1.23), with 15 to 16 cases each.
+- **F3:** Among upside breakouts, the calmer the last 20 days against the last 60, the larger the excess 20-day rise. By tercile of the 20-day/60-day volatility ratio (medians 0.78, 0.92, 1.20) it was +20.6 % (t 4.66, 15 of 15 rising), +13.7 % (t 1.48) and +8.0 % (t 1.42). By tercile of the 20-day daily volatility level (medians 2.7 %, 3.4 %, 5.4 %) it was +24.3 % (t 3.08), +14.8 % (t 2.31) and +3.6 % (t 0.64).
+- **F4:** Among upside breakouts, the smaller the margin of the close above the prior 60-day high, the larger the excess 20-day rise. By tercile (median margins 0.6 %, 2.3 %, 7.4 %) it was +23.3 % (t 2.66), +11.8 % (t 2.35) and +7.3 % (t 1.26). This runs against the brief: a small overshoot of a tight range keeps going rather than failing.
+- **F5:** Each tercile holds only 15 to 16 cases. The t-statistics test whether a group is above 0, not whether the low and high terciles differ. About 25 groupings were examined, so F2 to F4 count only because each is monotonic across terciles and the top tercile has t above 3 in F2 and F3. F2, F3 and F4 likely describe one overlapping "quiet compression" situation.
+- **F6:** The book's gain is concentrated. The top 5 % of in-position days carry 121 % of the summed daily gain. Trades in the lowest third of entry forecasts earned +2.1 % on average, against +15.1 % and +18.1 % for the other thirds (37 to 38 trades each). By coin, summed daily returns ranged from 0.07 (LTC) to 1.81 (ETH).
+- **F7:** Nothing on the plain 20-day grid stood out once the many angles were counted. Groupings by 60-day, 20-day, 5-day and 1-day return, position in range, volatility and range width all had day-clustered |t| below 2. The weekday effect rested on 1 to 7 distinct days per weekday.
+
+## Ideas
+- `032-02.b1.e1.e1.e1.e2.g1_tight-range-breakouts-run-further` (from F1, F2, F5): When a coin closes above its highest close of the prior 60 days, the narrower its 60-day range of closes was, the larger its rise over the next 20 days.
+- `032-02.b1.e1.e1.e1.e2.g2_calm-before-breakout-continuation` (from F1, F3, F5): When a coin closes above its highest close of the prior 60 days, the lower its daily volatility over the last 20 days compared with the last 60 days, the larger its rise over the next 20 days.
+- `032-02.b1.e1.e1.e1.e2.g3_small-overshoot-breakouts-continue` (from F1, F4, F5): When a coin closes above its highest close of the prior 60 days, the smaller the margin by which that close exceeds the prior high, the larger its rise over the next 20 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

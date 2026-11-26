@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 032-02.b1.e1.e1.e3_two-month-momentum-continues_1d
+idea tested: 032-02.b1.e1.e1.e3_two-month-momentum-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3858 USD
+---
+## Findings
+- **F1:** Large one-day moves partly reverse the next day: the slope of the next day's return (minus the coin's mean) on the day's return in units of its 20-day typical daily move is -0.0024 per unit (t -4.66, 7177 non-overlapping cases); it is negative in 5 of 6 coins (XMR t -3.91, ETH -2.82, ZEC -2.16, BTC -1.95, LTC -1.52) and flat in XRP (t -0.02).
+- **F2:** Over the next 5 days the same large daily moves continue rather than reverse: the 5-day slope on the volatility-scaled daily return is +0.0104 per unit (t 3.43, 1350 cases), positive in all 6 coins (XRP t 2.26, XMR 2.16), and the top fifth of daily moves is followed by +2.44 % over 5 days (t 3.27, 270 cases); at 10 days the slope is positive in each year 2018 to 2021 (t 0.52, 2.06, 0.38, 0.16).
+- **F3:** Closes beyond the 60-day high or low keep going instead of failing, against the brief: the break distance in units of the coin's daily volatility has a positive slope on the forward return at 5 days (t 2.76, 1710 cases), 10 days (+0.107, t 3.61, 846 cases) and 20 days (+0.193, t 3.56, 414 cases); breaks followed in their own direction gain +13.6 % over 10 days (t 2.42, only 17 breaks), positive in all 7 windows that had one.
+- **F4:** The tested 60-day momentum forecast carries no graded information over 20 days (slope t -0.004, 414 cases; quintile means -4.4 %, -1.3 %, +0.1 %, +4.9 %, +3.1 %, not monotone), and the book's per-bar gain comes from its long side (+0.125 % a bar, t 2.15, 4234 bars), while its short side lost (-0.048 %, t -1.32, 4441 bars).
+- **F5:** Thursday and Friday next-day returns are higher than other days (Thursday +0.47 %, t 3.19; Friday +0.39 %, t 2.87; Wednesday -0.49 %, t -2.69), with the gap positive in 2018, 2019 and 2020 and near zero in 2021 (-0.02 %). This is one angle among many and is not graded, so it gives no idea.
+
+## Ideas
+- `032-02.b1.e1.e1.e3.g1_one-day-overshoot-gives-back` (from F1): The larger a coin's one-day return measured against its typical daily move over the past 20 days, the larger the share of that return it gives back over the next 1 day.
+- `032-02.b1.e1.e1.e3.g2_large-daily-moves-carry-on` (from F2, F1): The larger a coin's one-day return measured against its typical daily move over the past 20 days, the larger its move in the same direction over the next 5 days.
+- `032-02.b1.e1.e1.e3.g3_range-breaks-keep-going` (from F3): The further a coin's daily close lies beyond its highest high or lowest low of the past 60 days, measured in its typical daily moves over the past 20 days, the larger its move in the direction of the break over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
