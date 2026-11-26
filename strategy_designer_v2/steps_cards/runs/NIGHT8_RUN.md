@@ -133,6 +133,13 @@ the new books on the unseen coins (1u).
   files; no new idea after 07:00 UTC). Also finished during the night: the unseen-coins check (9 of 35 books hold on
   coins they were never tested on; daily books carry to other coins, hourly ones mostly not) and v1 on the unseen
   coins (its reading on branch `combine-v1-unseen`), both read in the morning.
+- **05:07 Paris:** all 6 resumed between 04:04 and 04:06 UTC on their own machines and venvs, each first finishing the
+  idea the limit cut; no refusal. Spend before the stop: A 27.8 of 45, B about 20 of 45, C 36.3 of 40, D 18.8 of 35, E
+  25.2 of 35, F 32.1 of 30 (F stops after its cut idea: the loop finishes an idea it started). Confirmed and
+  profitable so far, both unseen periods holding: C 058-03.e1 (rising calm, long), C 060-01.g1.d2.d1 (falling
+  agitated, short), E 058-02.b1.g1.b1.b1 (falling agitated, next-day reversal), E 058-02.b1.b2.b1.b2.b2.e1 (calm, a
+  close at the range's edge carries on); D 064-01 profitable but "not observable" on both unseen periods and 0.53
+  explained by the held 035-01.
 
 ## Reading
 (written in the morning)
