@@ -13,8 +13,12 @@
 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: 1 ideas (3 explorations)
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: no ideas: The only effects that stand out are the falling- and rising-market rebounds after down days (F3, F5), which the profile map already holds. The fade after rises is neither graded nor reliable beyond the small up days (F1, F2, F4, F6). The other angles looked at (weekday, close position within the bar's range, window, coin, 2- to 5-day horizons, profiles outside this one) show nothing that stands out from chance.
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: 0 ideas, 1 discoveries (3 explorations)
+058-01.g2.b1.d3.b2_large-one-day-rises-fade_1d: 2 ideas (2 explorations)
 058-01.g2.b1.d3_one-day-rise-fades-over-5-days_1d: 0 ideas, 2 discoveries (3 explorations)
 058-01.g2.b1.g1_three-day-rise-fades-falling_1d: 1 ideas (2 explorations)
 058-01.g2.b1_one-day-rise-fades-wider_1d: 1 ideas (2 explorations)
+058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall_1d: 2 ideas (2 explorations)
+058-01.g2.g1.d1_bounce-in-decline-wick-fade_1d: 2 ideas (2 explorations)
+058-01.g2.g1_agitated-decline-upper-wick-fade_1d: 1 ideas (2 explorations)
 058-01.g2_agitated-decline-one-day-rise-fades_1d: 1 ideas (3 explorations)
 058-01_agitated-decline-rally-giveback_1d: 1 ideas, 1 discoveries (3 explorations)

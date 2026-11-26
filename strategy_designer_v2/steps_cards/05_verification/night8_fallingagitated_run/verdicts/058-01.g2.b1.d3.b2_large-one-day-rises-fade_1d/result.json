@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move after short bets, in the short direction",
+    "value": 0.013981475105895765,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 1.8413524438025803
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and size check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above minus below the cases' median |forecast|",
+    "value": 0.00701371428792795,
+    "passed": true
+  },
+  "counts": {
+    "cases": 449,
+    "distinct days": 202
+  },
+  "decided_by": "The t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The situation is checked as a raw scaled rise >= 1.0 (recorded last_history_value, recomputed from closes with a 30-return ddof-1 std including the day where missing) with a negative forecast, the falling-agitated profile not being recomputable from the record (365-bar percentile, warm-up not recorded); a case is the first short bet (forecast magnitude rising by >= 2 from its lowest short level since the last bet, from 0 after flat) in each 5-bar grid cell of a window, drift is the mean of the coin's grid 5-bar returns over all its windows, the day t sums deviations per UTC day, and the size check splits strictly above/below the cases' median |forecast|."
+}

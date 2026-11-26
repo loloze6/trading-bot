@@ -24,21 +24,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-01.g2.b1.d2.b1.d2.d1.d1_capped-rise-fade-three-days | 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day | plan | inconclusive (+0.82) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d1.d1.b1_capped-rise-fade-next-day; 7.g: 058-01.g2.b1.d2.b1.d2.d1.d1.g1_large-rise-fade-falling-agitated | 1.08 | 11.3 |
 | 058-01.g2.b1.d2.b1.d2.d1.d2_capped-rise-fade-two-days | 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d1.d2.b1_capped-rise-fade-next-day, 058-01.g2.b1.d2.b1.d2.d1.d2.b2_graded-rise-fade-three-days; 7.g: 058-01.g2.b1.d2.b1.d2.d1.d2.g1_capped-rise-fade-next-day | 1.11 | 11.4 |
 | 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | inconclusive (+1.71) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.g1.b1_sharp-rally-give-back-falling-agitated; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.04 | 10.9 |
+| 058-01.g2.b1.d3.b2_large-one-day-rises-fade | 058-01.g2.b1.d3_one-day-rise-fades-over-5-days | plan | inconclusive (+1.84) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The idea is on the predicted side only weakly. Where the give-back shows (the smallest standout rises, rises that break a fall, the 5-day horizon only), it runs against the brief's grading and its multi-day-rise situation (F1–F4). No amended idea on the theme is clear enough to test, so the theme's effect is not in the data.; 7.g: 058-01.g2.b1.d3.b2.g1_falling-calm-scaled-continuation, 058-01.g2.b1.d3.b2.g2_choppy-market-scaled-continuation | 4.40 | 24.7 |
+| 058-01.g2.g1_agitated-decline-upper-wick-fade | 058-01.g2_agitated-decline-one-day-rise-fades | plan | confirmed (+2.78) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.g1.d1_bounce-in-decline-wick-fade; 7.g: 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade | 1.16 | 7.0 |
+| 058-01.g2.g1.d1_bounce-in-decline-wick-fade | 058-01.g2.g1_agitated-decline-upper-wick-fade | plan | confirmed (+2.02) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall, 058-01.g2.g1.d1.d2_wide-range-bounce-fade-in-decline, 058-01.g2.g1.d1.d3_wide-bounce-after-deep-fall; 7.g: 058-01.g2.g1.d1.g1_agitated-decline-up-day-fade, 058-01.g2.g1.d1.g2_bounce-after-deep-fall-fails | 1.11 | 6.6 |
+| 058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall | 058-01.g2.g1.d1_bounce-in-decline-wick-fade | plan | inconclusive (+1.65) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g2.g1.d1.d1.b1_deep-fall-bounce-all-coins; 7.g: 058-01.g2.g1.d1.d1.g1_agitated-decline-rally-give-back, 058-01.g2.g1.d1.d1.g2_agitated-decline-up-day-reverses | 0.85 | 5.8 |
 
 ## Consumption
-20 ideas, 28.11 USD, 244.8 minutes in all.
+24 ideas, 35.63 USD, 289.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.25 | 10.1 |
-| step4_backtest | 0.00 | 150.7 |
-| step5_verdict | 3.90 | 13.9 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 3.57 | 12.0 |
+| step4_backtest | 0.00 | 166.0 |
+| step5_verdict | 4.60 | 16.6 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 1.90 | 6.2 |
-| step7_7.b | 9.38 | 32.1 |
-| step7_7.g | 9.69 | 30.1 |
-| similarity_check | 0.00 | 0.4 |
+| step7_7.d | 2.75 | 9.1 |
+| step7_7.b | 13.26 | 47.5 |
+| step7_7.g | 11.45 | 35.8 |
+| similarity_check | 0.00 | 0.5 |

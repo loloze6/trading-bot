@@ -13,8 +13,12 @@
 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: 2 ideas (2 explorations)
+058-01.g2.b1.d3.b2_large-one-day-rises-fade_1d: no ideas: The idea is on the predicted side only weakly. Where the give-back shows (the smallest standout rises, rises that break a fall, the 5-day horizon only), it runs against the brief's grading and its multi-day-rise situation (F1–F4). No amended idea on the theme is clear enough to test, so the theme's effect is not in the data.
 058-01.g2.b1.d3_one-day-rise-fades-over-5-days_1d: 2 ideas (2 explorations)
 058-01.g2.b1.g1_three-day-rise-fades-falling_1d: no ideas: The test already used every coin and fold available on daily bars. In the visible folds the give-back is neither graded with the rise's size (the largest rises keep rising over 5 days, t -2.03) nor present on any coin, period or horizon with t of 2 or more on a usable number of cases, so the theme's effect is not in the data.
 058-01.g2.b1_one-day-rise-fades-wider_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall_1d: 1 ideas (1 explorations)
+058-01.g2.g1.d1_bounce-in-decline-wick-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+058-01.g2.g1_agitated-decline-upper-wick-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2_agitated-decline-one-day-rise-fades_1d: 1 ideas (2 explorations)
 058-01_agitated-decline-rally-giveback_1d: 1 ideas (2 explorations)

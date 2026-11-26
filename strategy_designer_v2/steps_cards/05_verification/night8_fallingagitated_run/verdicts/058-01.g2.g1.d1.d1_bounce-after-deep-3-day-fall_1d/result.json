@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day fall after the bounce (sign flipped, coin mean removed)",
+    "value": 0.005090872310824982,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.6481176813055736
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "deeper minus shallower half mean unusual fall (split at median |forecast|)",
+    "value": 0.005119632099943254,
+    "passed": true
+  },
+  "counts": {
+    "cases": 804,
+    "distinct days": 412
+  },
+  "decided_by": "Main t lies between -2 and 2.",
+  "reading": "Cases are bars with forecast < 0 and a next close in the same window; the t is that of the per-day sums of deviations; the deeper half is |forecast| strictly above the median, ties going to the shallower half; the up day and prior fall come from prices or the recorded raw value, with the recorded regime used only where they cannot be computed (a window's first bars)."
+}
