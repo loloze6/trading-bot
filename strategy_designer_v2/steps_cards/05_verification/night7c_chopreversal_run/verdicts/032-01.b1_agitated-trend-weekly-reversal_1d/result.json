@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move of short cases (short direction)",
+    "value": -0.011689717135616076,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": -1.0273897412134012
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases (and slope > 0); reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": -0.002693555717936656,
+    "passed": false
+  },
+  "counts": {
+    "cases": 298,
+    "days": 220
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Situation recomputed from prices (30-day std of daily returns, ddof 1, over its 60-bar mean including the bar, >= 1, and 30-day Kaufman ER >= 0.3), falling back to the recorded regime on bars whose history lacks the warm-up, with a short forecast and a positive raw rise where recorded; a case is the first short bet (forecast deepening >= 2 points from its shallowest level since the last bet) in each 7-bar grid cell, its return taken from that bar's close over 7 bars inside the window, drift = mean of non-overlapping 7-bar grid returns over all the coin's windows, t clustered by calendar day."
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 7-bar excess forward return on forecast (grid cases, day-clustered)",
+    "value": 0.0009705464987605944,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": 2.141330514243376
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in signal's direction > 0",
+    "value": 0.0086435813605483,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1889,
+    "distinct days": 420
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean unusual move in the signal's direction is above 0.",
+  "reading": "The 30-bar efficiency ratio is recomputed from each window's closes and, on a window's first 30 bars where it cannot be, the recorded regime stands in; the side is the sign of the recorded raw scaled move (7-bar return where missing); the slope's t uses day-clustered standard errors, and the supporting check uses the same grid cases with excess return signed by the forecast.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0002274 on the check folds against +0.0009705 on every fold",
+    "main": 0.00022743747849183324,
+    "statistic": 0.5382147397763611,
+    "counts": {
+      "grid cases": 989,
+      "distinct days": 215
+    }
+  }
+}

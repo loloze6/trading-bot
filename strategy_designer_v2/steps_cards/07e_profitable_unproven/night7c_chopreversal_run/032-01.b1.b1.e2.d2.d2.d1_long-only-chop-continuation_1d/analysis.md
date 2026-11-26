@@ -1,0 +1,27 @@
+---
+line: 7.e profitable but not proven
+backtest: 032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation_1d
+idea tested: 032-01.b1.b1.e2.d2.d2.d1_long-only-chop-continuation
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.4400 USD
+---
+## Findings
+- **F1:** The book's gain is mostly timing rather than the market's own rise: its mean gain per coin-bar is 0.109 %, of which only 0.030 % is the market part, leaving 0.079 % of timing; the gain is positive on all six coins (0.024 % to 0.156 %), but on XMR the 0.024 % is below its market part of 0.027 %.
+- **F2:** The gain does not rest on a few trades or one period: 899 trades average +5.23 % net and still +3.58 % without the top 20; 8 of the 12 visible windows have a positive mean book return; 2018 is negative (-0.032 % per coin-bar) and 2019, 2020 and 2021 are positive (+0.090 %, +0.210 %, +0.167 %).
+- **F3:** In folds B and C the active bars show an unusual move of +2.24 % over 7 days (ordinary t 2.20, 250 grid cases) and +0.37 % over 1 day (t 2.85, 1875 cases), but only +0.01 % over 14 days (116 cases) and -0.96 % over 21 days (79 cases), so the move is made within the week and gone by two weeks.
+- **F4:** Among choppy up-weeks (30-day efficiency ratio at most 0.30, 7-day return above 0), the next 7 days' unusual move is +3.94 % when the 30-day return is up (day-clustered t 2.09, 178 cases on 70 days) against -0.92 % when it is down (t -0.44, 127 cases), so the 30-day rise carries the effect.
+- **F5:** Choppy down-weeks also continue rather than reverse, against the brief: their next 7 days' unusual move is -2.28 % (t -2.89, 307 cases), -3.54 % when the 30-day return is down (t -1.93, 166 cases on 69 days) and -1.16 % when it is up (t -0.59); signed 7-day momentum on all choppy bars is +2.18 % (day-clustered t 2.20, 612 cases).
+- **F6:** Inside chop the grading by the scaled 7-day move shows only at the top: the next 7 days' unusual move by scaled-move quintile is -2.13 %, -1.85 %, -3.37 %, +1.56 % and +4.39 % (top quintile t 1.82); among choppy rising months it is -0.38 %, +6.82 % and +5.93 % by tercile.
+- **F7:** Signed 7-day momentum depends on the 30-day efficiency ratio: +2.13 % in its lowest tercile (t 1.68, 286 cases), +1.96 % in the middle tercile (t 1.71, 286 cases) and -0.91 % in the most efficient tercile (t -0.59, 287 cases), so the continuation lives outside trending months.
+- **F8:** Inside chop the continuation does not grow with agitation: signed momentum by volatility tercile is +1.55 % (t 1.12), +2.92 % (t 2.45) and +2.08 % (t 1.16).
+- **F9:** Over all bars, the next 7 days' unusual move by 30-day-return quintile is +0.50 %, -3.04 %, -0.02 %, +2.05 % and +1.43 %, so it is higher in the upper 30-day quintiles than in the lower ones.
+
+## Ideas
+- `032-01.b1.b1.e2.d2.d2.d1.e1_choppy-month-rise-carries-week` (from F4, F9, F3, F1): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, and its 7-day return is up, the higher its 30-day return (counted in 30-day daily swings), the larger its rise over the next 7 days.
+- `032-01.b1.b1.e2.d2.d2.d1.e2_choppy-down-week-continuation` (from F5, F7, F2): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, and its 30-day net move is down, its 7-day fall (counted in 30-day daily swings) tends to be followed by a further fall over the next 7 days, larger after larger scaled falls.
+- `032-01.b1.b1.e2.d2.d2.d1.e3_chop-graded-weekly-momentum` (from F7, F5, F4, F8): The less net progress a coin's past 30 days made compared with the sum of its daily moves, the more its 7-day move (counted in 30-day daily swings) is continued in the same direction over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

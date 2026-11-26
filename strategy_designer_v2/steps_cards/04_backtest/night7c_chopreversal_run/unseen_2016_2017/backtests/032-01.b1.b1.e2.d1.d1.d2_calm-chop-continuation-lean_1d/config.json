@@ -1,0 +1,112 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 30,
+          "smooth_period": 1
+        }
+      },
+      {
+        "id": "r30",
+        "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+        "params": {
+          "comparison_period": 30
+        }
+      },
+      {
+        "id": "r7",
+        "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+        "params": {
+          "comparison_period": 7
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "lt",
+              "value": 0.3
+            },
+            {
+              "id": "r30",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "r7",
+              "op": "gt",
+              "value": 0.0
+            }
+          ],
+          [
+            {
+              "id": "er",
+              "op": "lt",
+              "value": 0.3
+            },
+            {
+              "id": "r30",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "r7",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "scaled_move",
+            "class": "strategies.strategy_components.RecentToPriorVolatilityWeightedReturnComponent",
+            "params": {
+              "period": 7,
+              "vol_period": 90,
+              "base_period": 30,
+              "base_lag": 0,
+              "return_scale": "base_std"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 91,
+                  "min_periods": 23
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 7
+  }
+}

@@ -1,0 +1,74 @@
+## held pnl: in chop vs held after chop
+             count      mean       sum       std
+inchop side                                     
+False  -1.0   1451 -0.000709 -1.029313  0.018163
+        1.0   1499  0.001722  2.581338  0.028985
+True   -1.0   1835  0.001260  2.312735  0.028561
+        1.0   1868  0.002895  5.407697  0.032387
+
+## fall windows w12-14 by side
+            count      mean       sum
+fall  side                           
+False -1.0   2260  0.000123  0.277025
+       1.0   2684  0.003466  9.301688
+True  -1.0   1026  0.000981  1.006397
+       1.0    683 -0.001922 -1.312653
+
+## fall windows by chop
+              count      mean       sum
+fall  inchop                           
+False False    2194  0.000938  2.058389
+      True     2750  0.002735  7.520324
+True  False     756 -0.000670 -0.506365
+      True      953  0.000210  0.200108
+
+## held pnl side x |r30s| tercile
+           count      mean       sum       std
+side r30q                                     
+-1.0 0.0     818 -0.000734 -0.600012  0.021838
+     1.0    1039  0.001522  1.581416  0.023781
+     2.0     654  0.000450  0.294001  0.029017
+ 1.0 0.0     853  0.002011  1.715358  0.024977
+     1.0     631  0.003238  2.042992  0.024034
+     2.0    1017  0.004192  4.263477  0.034660
+
+## chop bars pnl by |fc| tercile
+    count      mean       sum       std
+fq                                     
+0    1234  0.000559  0.690341  0.016488
+1    1234  0.001793  2.212633  0.022772
+2    1235  0.003901  4.817458  0.044786
+
+## grid s7 by sig x |r30s| tercile
+            count      mean       std
+sig   r30q                           
+False 0       136  0.009784  0.151031
+      1       133 -0.011278  0.128034
+      2       246 -0.014760  0.166563
+True  0       151  0.026155  0.129826
+      1       152  0.043256  0.139793
+      2        41  0.057448  0.186173
+
+## grid s30 (30d sign alone) by |r30s| tercile, no sig
+      count      mean       std
+r30q                           
+0       136 -0.009784  0.151031
+1       133 -0.010983  0.128060
+2       246  0.008542  0.166999
+
+## grid s7 sig by |scaled7| tercile
+    count      mean       std
+sq                           
+0     104  0.015649  0.133730
+1     128  0.036463  0.146910
+2     112  0.058794  0.141507
+
+## mean |pos| fall vs not
+fall
+False    0.351348
+True     0.306386
+
+## share bars chop
+fall
+False    0.433303
+True     0.452042

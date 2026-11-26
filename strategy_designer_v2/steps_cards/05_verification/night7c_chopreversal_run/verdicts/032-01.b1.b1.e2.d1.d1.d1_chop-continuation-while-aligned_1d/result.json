@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of sign(position) x (next-day return - coin mean daily return) on in-regime position bars",
+    "value": 0.0018194686695369878,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 2.194913865069185
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and top-minus-bottom difference > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess, top half minus bottom half of |forecast| (Welch t -0.501)",
+    "value": -0.0005593286005438794,
+    "passed": false
+  },
+  "counts": {
+    "in-regime position-days": 7563,
+    "distinct days": 2491
+  },
+  "decided_by": "The main measure meets the confirm rule but the top-half minus bottom-half difference is not above 0.",
+  "reading": "Situation recomputed per window from closes (ER = |close[t]-close[t-30]| / sum of 30 absolute daily changes, 30- and 7-day close-to-close returns, side = sign of the 7-day return) and agreement taken over active bars where it is computable (first 30 bars of each window left out); cases are bars with regime 'trending' and a non-zero position, the coin mean is the mean of all its within-window daily returns, the main t is clustered by calendar day (deviations summed per day), and the top half is |forecast| above its median among the cases, the bottom half at or below it."
+}

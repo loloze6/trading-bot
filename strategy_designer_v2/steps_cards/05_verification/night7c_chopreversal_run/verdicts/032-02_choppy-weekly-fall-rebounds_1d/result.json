@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered t of the slope of 7-bar excess return on forecast",
+    "value": 0.0010388858561794772,
+    "statistic": {
+      "name": "day-clustered slope t",
+      "value": 1.0058233696593593
+    },
+    "threshold": "confirm: slope t >= 2 and mean excess > 0; reject: slope t <= -2 or mean excess t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return of the cases > 0 (its day-clustered t: -1.283)",
+    "value": -0.012249336732258968,
+    "passed": false
+  },
+  "counts": {
+    "cases": 444,
+    "cases on distinct days": 196
+  },
+  "decided_by": "Inconclusive: the slope's t is between -2 and 2, and the mean excess t is above -2.",
+  "reading": "The regime part of the situation (30-day efficiency ratio <= 0.3 and 30-day volatility at or above its one-year median) is read from the recorded `regime` (the detector is not recorded and 365 days of history are not in a window), with the efficiency ratio also recomputed from in-window prices where 30 prior bars exist; the fall is the recorded raw scaled 7-day return below 0; the slope t is OLS with intercept and day-clustered standard errors; the plan's 'fewer than 40 cases on distinct days' is applied as the minimum count (not observable)."
+}

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 032-02_choppy-weekly-fall-rebounds_1d
+idea tested: 032-02_choppy-weekly-fall-rebounds
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3577 USD
+---
+## Findings
+- **F1:** Step 5's two measures point opposite ways: the slope of excess return on the forecast is on the predicted side but weak (day-clustered t 1.01, 196 distinct days), while the cases' mean excess 7-day return is against the idea (-1.22 %, t -1.28; size -0.84 %, t -1.23 over 454 days). That split is why the result is inconclusive.
+- **F2:** In folds B and C, the choppy, agitated regime does not show a rebound after a 7-day fall. On non-overlapping 7-day cells, the excess return after a fall is -3.17 % (t -2.56, n 119), and after a rise it is +2.58 % (t 1.70, n 126). Rises minus falls is +5.75 % (Welch t 2.94), so the weekly move continues in this regime.
+- **F3:** Outside the regime, falls are followed by roughly nothing (-0.14 %, t -0.16, n 282). The continuation of falls is specific to the choppy, agitated regime, the opposite of the brief's claim that the giving back is largest there.
+- **F4:** The continuation of falls grows as the 30-day efficiency ratio falls. Across the ER terciles inside the regime, the excess return after a fall is -6.66 % (t -3.37) in the lowest tercile (ER ≤ 0.127), -3.22 % (t -1.93) in the middle one and +0.37 % (t 0.14) in the highest.
+- **F5:** Within falls, the deepest quintile of scaled falls (z ≤ -0.69) is followed by -0.90 % (t -0.47), while milder falls (z between -0.69 and 0.26) are followed by about -3.4 % to -4.1 % (t about -2.0). The positive slope therefore comes from deep falls continuing less, not from any of them rebounding.
+- **F6:** The continuation of falls in the regime appears at longer horizons too: -5.19 % over 14 days (t -2.02, n 50) against -0.32 % over 3 days (t -0.62). It is also stronger when the 30-day return is negative (-5.51 %, t -3.02, n 60) than when it is positive (-0.79 %, t -0.48, n 59).
+- **F7:** The fall continuation is negative in every year from 2018 to 2021 (-3.06 %, -0.59 %, -6.89 % with t -2.52, and -1.54 %) and for 5 of 6 coins (XMR +0.02 %). It is therefore not confined to one period, though each group is small (12 to 39 cases).
+
+## Ideas
+- `032-02.b1_choppy-weekly-falls-keep-falling` (from F2, F3, F4, F6, F7): When a coin has fallen over the past 7 days while its past 30 days were choppy and agitated, with large daily swings both ways and little net progress, it tends to keep falling over the next 7 days. The less net progress the coin made over those 30 days relative to the path it travelled, the larger that further fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-day move on positive-forecast grid bars",
+    "value": 0.011880389451758731,
+    "statistic": {
+      "name": "day-clustered t of the mean",
+      "value": 1.3484883141194528
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and tercile difference > 0); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "top minus bottom forecast tercile mean unusual move",
+    "value": 0.02994841757699319,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 532,
+    "distinct days": 233
+  },
+  "decided_by": "The main t lies between -2 and 2 (inconclusive rule).",
+  "reading": "Situation recomputed per window from closes (ER30 = |close[t]-close[t-30]| / sum of 30 absolute daily changes, 30- and 7-bar simple returns), with the recorded regime=='chop' used only on active bars lacking 30 bars of in-window history; the coin's mean 7-day return is the mean over its non-overlapping grid returns of all windows; terciles split the forecast-sorted cases into three near-equal groups (np.array_split); the day-clustered t uses per-day summed deviations with a D/(D-1) correction; below the minimum counts the status is 'not observable'."
+}

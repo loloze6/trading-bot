@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation_1d
+idea tested: 032-01.b1.b1.e2.d2.d2_strong-case-chop-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6182 USD
+---
+## Findings
+- **F1:** Inside the choppy regime (30-day efficiency ratio at or below 0.3) the continuation comes from the 30-day move, not the week. Signed by the 30-day move and split into terciles of |30-day return in 30-day swings|, the unusual 7-day move is +0.29 % (t 0.26, 92 days), +1.79 % (t 1.51, 102 days) and +4.01 % (t 2.79, 108 days). The correlation of the next 7-day move with the scaled 30-day move (0.169) matches its correlation with the scaled 7-day move (0.173).
+- **F2:** In choppy months the weekly move continues only when it agrees with the 30-day move. With agreement the unusual 7-day move is +3.74 % (t 3.06 clustered, 344 cases, 120 days); against it the move is -0.18 % (t -0.13, 268 cases). Inside agreement, terciles of |scaled 7-day move| give +1.96 % (t 1.30), +3.78 % (t 2.06) and +5.49 % (t 2.83).
+- **F3:** Outside chop (efficiency ratio above 0.3), the past week's move reverses more the more volatile the coin is. By tercile of each coin's own 30-day volatility, the reversal over the next 7 days is -2.94 % (t -1.35, 40 days), +1.79 % (t 1.10, 56 days) and +6.98 % (t 2.23, 38 days, 72 cases). Inside the most volatile tercile the reversal does not grow with |scaled 7-day move|: +9.3 %, +11.1 % and +0.6 % by tercile.
+- **F4:** The trending high-volatility reversal is mostly a 7-day effect. It is +1.52 % at 3 days (t 0.93), +7.19 % at 7 days (t 2.32) and -2.7 % at 21 days. It is positive in 3 of the 4 years (2018 +9.1 %, 2020 +8.4 %, 2021 +6.2 %, 2019 -0.9 % on 7 cases).
+- **F5:** Choppy-agreeing weekly continuation is stronger when the 30-day volatility is low against the 90-day volatility. By tercile of that ratio, the unusual 7-day move is +6.86 % (t 2.61, 35 days), +3.82 % (t 1.93, 46 days) and +3.90 % (t 1.18, 30 days).
+- **F6:** Across all regimes, the continuation of the 30-day move peaks at middling efficiency. By efficiency-ratio quintile it is +0.22 %, +1.81 %, +3.67 % (t 2.85), +2.43 % and -1.02 %, so the most efficient months do not carry on.
+- **F7:** The choppy continuation is uneven by year. Signed by the 30-day move it is -0.78 % (2018), +0.34 % (2019), +3.18 % (2020) and +5.15 % (t 3.03, 2021). The book's long bars gained 0.55 % a bar in 2020 while its short bars lost 0.10 %, and long trades average +5.6 % against -2.1 % for shorts. Within choppy agreement, both sides continue alike (down weeks +3.54 %, up weeks +3.94 %), so this split follows the market's rise in those years, not the idea.
+- **F8:** The book's tails are not set by the market's direction. On its worst 2 % of days it lost 4.38 % while the coins averaged +0.64 %; on its best 2 % it gained 6.09 % with the coins at +1.63 %. Trades held about 19.6 days averaged +11.2 %, against -2.4 % for those held about 2 to 6.5 days.
+
+## Ideas
+- `032-01.b1.b1.e2.d2.d2.g1_choppy-month-carries-on` (from F1, F2, F6): When a coin's past 30 days have gone back and forth with little net progress against the sum of its daily moves, its 30-day net move tends to be followed by a move the same way over the next 7 days. The larger that 30-day move is in 30-day daily swings, the larger the move that follows.
+- `032-01.b1.b1.e2.d2.d2.g2_agitated-trend-week-reverses` (from F3, F4): When a coin's past 30 days have moved efficiently in one direction and its daily swings are large, its 7-day move tends to be given back over the next 7 days. The higher its 30-day daily volatility compared with its own usual level, the more of that week is reversed.
+- `032-01.b1.b1.e2.d2.d2.g3_quiet-chop-continues-more` (from F5, F2): In a choppy month whose last 7 days point the same way as its 30-day move, the following 7 days continue that move more strongly when its 30-day volatility is low against its 90-day volatility. The lower that ratio, the larger the continuation.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

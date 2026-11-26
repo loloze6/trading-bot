@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "032-02_choppy-weekly-fall-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3967684,
+  "findings": {
+    "F1": "The weekly reversal the idea bets on is not in the bars, and the bars lean the other way. On non-overlapping 7-day cells, the next 7-day excess return is -1.30 % (t -1.19) after the deepest fifth of scaled 7-day falls and +2.34 % and +2.18 % after the two highest fifths. The correlation of the scaled 7-day return with the next 7 days is +0.097 (p 0.005, 825 cases), with a day-clustered slope t of +1.40 on 155 days. The cases in the mean_reversion regime average only -0.15 % (t -0.15, 245 cases).",
+    "F2": "A large one-day fall is followed by a one-day rebound. In the bottom decile of the daily return divided by its 30-day standard deviation, the next day's return minus the coin's mean daily return is +0.84 %. That is t 2.01 with the cases of one day taken together, on 627 cases over 204 days. The next decile is +0.38 % (t 1.29), and deciles 5 to 9 are all negative (-0.07 % to -0.44 %).",
+    "F3": "That one-day rebound holds in every slice of the data. Its mean is positive in every year, from +0.44 % in 2019 to +1.37 % in 2020, and on every coin, from +0.49 % on BTC to +1.41 % on XMR (t 3.09) and +1.06 % on ZEC (t 1.95). The book held a position on only 43 % of these bottom-decile days.",
+    "F4": "The rebound grows with the depth of the fall, and most where volatility has risen. On down days the slope of the next-day excess return on the scaled fall is -0.0070 (t -1.82, 3049 cases, 787 days). In the highest tercile of 30-day volatility against 90-day volatility the slope is -0.0195 (t -2.29, 684 cases, 278 days); in the lowest tercile it is +0.0045 (t 1.17). On up days the slope is flat (+0.0011, t 0.58).",
+    "F5": "In the choppiest tercile (30-day efficiency ratio), the same down-day slope is -0.0080 (t -2.60, 465 days), against -0.0067 (t -0.96) in the most trending tercile. The one-day rebound is therefore where the brief placed its reversal: choppy, agitated markets. It works on a one-day horizon, not a seven-day one.",
+    "F6": "The tested idea's size cannot pay for its trades. Its total move per case is +0.13 % over 7 days, against a cost of 0.19 % per trade, and its unusual move is -0.84 % (t -1.23). By contrast, the one-day rebound after the deepest decile of falls (+0.84 % excess) is about 4.4 times that cost."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin falls sharply in one day, measured against its typical daily swing over the past 30 days, it tends to rise over the next day. The deeper that day's fall in units of its usual daily swing, the larger the next day's rise.",
+      "consequence": "A trader can take a one-day long after an unusually deep daily drop, sized by the depth of the drop, instead of waiting a week for a rebound that does not come.",
+      "name": "deep daily fall rebounds",
+      "from": "F2, F3, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's 30-day volatility has risen above its 90-day volatility, a sharp one-day fall, measured against its 30-day typical daily swing, tends to be followed by a rise over the next day. The deeper the fall, the larger the rise.",
+      "consequence": "A trader can concentrate one-day rebound longs on days when agitation is rising, where hurried selling overshoots most, and refuse them when volatility is subsiding.",
+      "name": "agitated daily fall rebound",
+      "from": "F4, F5, F2",
+      "refs": [
+        "F4",
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "032-02.g1_deep-daily-fall-rebounds",
+    "032-02.g2_agitated-daily-fall-rebound"
+  ],
+  "no_ideas": null
+}

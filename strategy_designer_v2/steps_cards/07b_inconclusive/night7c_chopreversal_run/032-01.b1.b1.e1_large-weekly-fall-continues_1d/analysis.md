@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 032-01.b1.b1.e1_large-weekly-fall-continues_1d
+idea tested: 032-01.b1.b1.e1_large-weekly-fall-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3808 USD
+---
+## Findings
+- **F1:** The tested result is on the side opposite to the idea, and it is not just short of the bar: after a large scaled 7-day fall the short-side unusual move was -2.16 % with t -1.10 (123 cases, 68 days), and in folds B and C the falls of at least 2 usual moves are only 19 cases, with a short-side unusual move of -2.2 % and t -0.32 over 7 days.
+- **F2:** On the fall side the effect is mixed and not graded. Falls of 1 to 2 usual moves were followed by a further 7-day unusual move of -2.7 % (t -1.16, 99 cases), while falls of 2 to 3 were followed by +2.0 % (t 0.28, 18 cases). Among all falls the slope of the next week's unusual move on the scaled fall is -0.09 (t -0.68) in choppy periods and 0.10 (t 1.04) in trending periods.
+- **F3:** The graded continuation the idea looks for exists, but on the rise side and in choppy periods. Across all 7-day cases, the next week's unusual move counted in usual moves has a slope of 0.08 on the scaled 7-day return (t 2.72, 859 cases). In choppy periods, meaning a 30-day efficiency ratio below the median, the slope is 0.20 (t 3.90; winsorised 0.19, t 3.79), against 0.03 (t 0.76) in trending periods. Among rises in choppy periods alone it is 0.31 (t 2.68, Spearman 0.16, p 0.017).
+- **F4:** The choppy-period slope is positive in every year: 2018 0.32 (t 3.41), 2019 0.17, 2020 0.13 and 2021 0.13. It is also positive in every coin, from 0.17 to 0.31 (t 1.2 to 1.99), and in 9 of 12 windows. Window w13 is the strongest by far, at 0.80 (t 4.09), so part of the strength comes from one period.
+- **F5:** Large rises continue over the plan's horizon. After scaled 7-day rises of at least 2 usual moves the next 7 days end 5.2 % above the drift (t 1.30, 46 cases, 24 days). Rises of 2 to 3 usual moves end 6.6 % above (t 1.41, 38 cases) over 7 days and 2.8 % above (t 1.84, 77 cases) over 3 days; over 14 days the effect is absent (-4.7 %, t -0.81).
+- **F6:** Size against cost is not what limits this idea. The tested move per case (2.16 % unusual, 3.07 % total) is about 11 to 16 times the 0.19 % cost of a trade, so the failure is the move's sign on the fall side, not its size.
+
+## Ideas
+- `032-01.b1.b1.e1.b1_choppy-large-weekly-rise-continues` (from F3, F4, F5, F6): When a coin has risen over the past 7 days by a large amount compared with its typical daily swing over the past 30 days, while its past 30 days have been choppy (its 30-day net move small compared with the sum of its daily moves), it tends to keep rising over the next 7 days. The larger that 7-day rise counted in 30-day daily swings, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,23 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean_1d
+idea tested: 032-01.b1.b1.e2.d1.d1_chop-continuation-with-monthly-lean
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5298 USD
+---
+## Findings
+- **F1:** The book's falls come mostly from bars held after the situation had ended: positions kept on "unknown" bars (44 % of the held bars, carried by the 7-bar minimum holding) earn a yearly +4.2 % with a deepest fall of -17.4 % (Calmar 0.24), while the same book counted only on regime bars earns +32.2 % a year with a deepest fall of -18.6 % (Calmar 1.73 against 1.39 for the whole book, worst window -6.9 % against -11.4 %) on folds B, C.
+- **F2:** On those post-regime bars the loss sits where the 30-day path is still choppy but the 7-day and 30-day returns no longer point the same way: a mean gain of -0.011 % a bar over 2014 held bars, against +0.19 % over 936 bars where the efficiency ratio had risen to 0.3 or more; the shorts held outside the regime lose -0.071 % a bar over 1451 bars, against +0.126 % inside it.
+- **F3:** The effect is graded in the scaled 7-day move: on the non-overlapping 7-day grid, signal cases in the lowest, middle and highest tercile of |mv7| are followed by an unusual move of +2.0 % (t 1.58, 115 cases), +3.8 % (t 2.70, 114) and +5.5 % (t 4.14, 115).
+- **F4:** The continuation is strongest when the coin is calm against its own recent past: signal cases in the lowest tercile of 30-day against 90-day daily volatility have an unusual 7-day move of +6.9 % (t 3.98, 80 cases), the middle +3.8 % (t 2.65, 83), the highest +3.9 % (t 1.73, 54); the same calm tercile without the signal earns only +0.6 % (t 0.42, 111), so calm is not an effect of its own.
+- **F5:** Both sides carry the effect on the grid (long cases +3.9 %, t 3.52, 178; short cases +3.5 %, t 3.40, 166), and dropping the shorts lowers the Calmar (long-only 1.22 against 1.39), so the shorts' weakness in the book (mean +0.039 % a held bar against +0.237 % for longs) comes from holding them past the situation (F2), not from the side.
+- **F6:** The losses concentrate in the most volatile quarter of held bars (30-day volatility top quartile: longs +0.040 %, shorts -0.069 % a bar), while longs in the calmest quarter earn +0.60 % a bar over 650 bars.
+
+## Ideas
+- `032-01.b1.b1.e2.d1.d1.d1_chop-continuation-while-aligned` (from F1, F2, F3, F5): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return still points the same way as its 7-day move and its past 30 days are still choppy, the move fading as soon as either stops holding; the larger that scaled 7-day move, the larger the following move.
+- `032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean` (from F4, F6, F3): When a coin's past 30 days have gone back and forth with little net progress compared with the sum of its daily moves, its 7-day move counted in 30-day daily swings tends to be followed by a move the same way over the next 7 days, only while its 30-day return points the same way as that 7-day move, and the more so the calmer its past 30 days' daily swings are compared with its past 90 days'; the larger that scaled 7-day move, the larger the following move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

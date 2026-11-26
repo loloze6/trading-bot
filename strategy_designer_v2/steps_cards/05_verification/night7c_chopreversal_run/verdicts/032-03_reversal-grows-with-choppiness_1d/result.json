@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of next-7-bar excess return on forecast (post_pipeline_value)",
+    "value": -0.0008270387675758513,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": -1.998801966358343
+    },
+    "threshold": "slope > 0 with t >= 2 to confirm; slope < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "slope on minus scaled 7-day move, upper minus lower half of 1 - ER(30)",
+    "value": -0.005572191233342173,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 2443,
+    "distinct days": 441,
+    "regression cases": 2443,
+    "regression days": 441,
+    "supporting cases": 1723
+  },
+  "decided_by": "The main slope's t lies between -2 and 2.",
+  "reading": "The regression uses every grid bar (positions 0, 7, 14, ... of each window with a full 7-bar forward return inside it) with a recorded post_pipeline_value, and its t uses day-clustered standard errors (G/(G-1) correction) so same-day cases count as one piece of evidence. The drift is each coin's mean grid return over all windows. The halves split at the pooled median of 1 - ER(30), median included in the lower half. 1 - ER and the 30-day std (ddof 1) are computed from closes inside the window only, so grid bars before bar 30 are left out of the supporting check."
+}
