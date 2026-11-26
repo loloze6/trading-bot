@@ -100,3 +100,11 @@ def test_changes_on_neighbouring_lines_both_kept():
     assert faults == [] and merged == "| `A` | 2 |\n| `B` | 3 |\n| `C` | 1 |\n"
     _, faults = nm.merge_lines(base, base.replace("| `B` | 1 |", "| `B` | 2 |"), theirs)
     assert faults and "both sides changed the same lines" in faults[0]
+
+
+def test_the_same_change_on_both_sides_is_kept_once():
+    # night 8: two sessions took the same fix of one catalogue row, and one of them changed the row next to it
+    base = "| `A` | 1 |\n| `B` | 1 |\n| `C` | 1 |\n"
+    fixed = base.replace("| `B` | 1 |", "| `B` | 2 |")
+    merged, faults = nm.merge_lines(base, fixed, fixed.replace("| `C` | 1 |", "| `C` | 3 |"))
+    assert faults == [] and merged == "| `A` | 1 |\n| `B` | 2 |\n| `C` | 3 |\n"

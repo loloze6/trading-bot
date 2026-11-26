@@ -37,8 +37,9 @@ Git merges every file it can. A conflict is resolved by the rule of its file; an
      class's new setting).
    - Without it: a line merge interleaves two new classes that share lines (`pass`, docstring lines).
 2. **The files sessions append to** (the component catalogue, the component index and journal, step 1's brief index):
-   three-way, line by line. Lines both sessions inserted at the same place are all kept, this session's first; lines
-   both changed stop the merge.
+   three-way, line by line. Lines both sessions inserted at the same place are all kept, this session's first; the
+   same change made by both is kept once (night 8: two sessions took the same catalogue fix); lines both changed
+   differently stop the merge.
    - For: every session adds rows; few edit the same row.
    - Without it: a session's rows lost, or two versions of one line kept (the catalogue's two counts).
 3. **The catalogue's class count:** derived, never merged: recomputed from the merged components file.

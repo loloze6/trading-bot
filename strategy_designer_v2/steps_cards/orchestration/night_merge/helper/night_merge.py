@@ -7,7 +7,7 @@ branch, in the order given: git's merge; then every conflict is resolved by the 
 stopped and the conflict reported (no guess):
 - the components file: three-way, class by class (a class both sides changed differently stops the merge);
 - the files the sessions append to (the catalogue, the component index and journal, the brief index): three-way, line
-  by line; lines both sides inserted at the same place are all kept; lines both sides changed stop the merge;
+  by line; lines both sides inserted at the same place are all kept; lines both sides changed differently stop the merge;
 - the catalogue's class count: derived, recomputed from the components file;
 - every merged file checked: nothing lost, nothing invented, every Python class defined once;
 - the similarity register's list of books: merged by key;
@@ -89,13 +89,19 @@ def merge_lines(base, ours, theirs):
 
 def merge_hunk(base, ours, theirs):
     """One conflict hunk, line by line: git joins changes on neighbouring lines into one hunk; here each side's changes
-    are placed against the base's lines, and only lines both sides changed are a fault. Inserts both sides made at the
-    same place are kept, ours first. Returns (lines, why) with why empty when merged."""
+    are placed against the base's lines, and only lines both sides changed differently are a fault (the same change on
+    both sides is kept once). Inserts both sides made at the same place are kept, ours first. Returns (lines, why) with why empty when merged."""
     import difflib
     def changes(side):
-        return [(i1, i2, side[j1:j2]) for tag, i1, i2, j1, j2 in
-                difflib.SequenceMatcher(None, base, side, autojunk=False).get_opcodes() if tag != "equal"]
-    co, ct = changes(ours), changes(theirs)
+        out = []
+        for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, base, side, autojunk=False).get_opcodes():
+            if tag == "replace" and i2 - i1 == j2 - j1:  # rows edited in place: one change per row
+                out += [(i1 + k, i1 + k + 1, side[j1 + k:j1 + k + 1]) for k in range(i2 - i1)]
+            elif tag != "equal":
+                out.append((i1, i2, side[j1:j2]))
+        return out
+    co = changes(ours)
+    ct = [c for c in changes(theirs) if c not in co]        # the same change made by both sides is one change
     for a1, a2, _ in co:
         for b1, b2, _ in ct:
             if max(a1, b1) < min(a2, b2):
