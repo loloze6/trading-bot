@@ -1,6 +1,5 @@
 """Steps 10 to 12 (update.py, final_test.py) on hand-made records: a changed list of candidates builds a version, an
 unchanged one does not, readiness against holding, the final test's refusals and its record written before the run."""
-import datetime as dt
 import json
 import sys
 from pathlib import Path
@@ -179,10 +178,12 @@ def test_a_final_test_that_fails_still_uses_the_group(world):
         ft.final_test("v3", "python3", run_book=broken)
 
 
-def test_the_final_series_starts_in_2016_or_on_the_91st_day_and_ends_on_the_last_complete_day(tmp_path):
+def test_the_final_windows_are_step_9s_past_each_coins_first_90_days(tmp_path):
+    wins = [{"label": l, "test": {"start": a, "end": b}} for l, a, b in
+            (("2016-01", "2016-01-01", "2016-04-30"), ("2020-05", "2020-05-01", "2020-08-31"), ("2020-09", "2020-09-01", "2020-12-31"))]
+    (tmp_path / "w.json").write_text(json.dumps(wins))
     for coin, start in (("OLD", "2014-03-01"), ("NEW", "2020-06-01")):
         d = pd.date_range(start, "2026-11-26", freq="D")
         pd.DataFrame({"timestamp": d.strftime("%Y-%m-%d"), "close": 1.0}).to_csv(tmp_path / f"kraken_{coin}USD_1d.csv", index=False)
-    today = dt.date(2026, 11, 26)
-    assert ft.series("OLD", tmp_path, today)["test"] == {"start": "2016-01-01", "end": "2026-11-25"}
-    assert ft.series("NEW", tmp_path, today)["test"] == {"start": "2020-08-30", "end": "2026-11-25"}
+    assert [w["label"] for w in ft.coin_windows("OLD", tmp_path, tmp_path / "w.json")] == ["2016-01", "2020-05", "2020-09"]
+    assert [w["label"] for w in ft.coin_windows("NEW", tmp_path, tmp_path / "w.json")] == ["2020-09"]   # 91st day: 2020-08-30

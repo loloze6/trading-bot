@@ -9,8 +9,10 @@ group (`common/coins.py`, FINAL). Then, in this order:
    this commit, the measures expected and the bar, the start time, status "started"). Its existence marks the group
    used: a second call is refused, whatever happened to the first (a run that fails does not give the group back).
 2. Each of the version's strategies, its plan unchanged (`03_test_plan/<run>/plans/<plan id>.md`), on each final coin,
-   one series per coin: from 2016-01-01 or the coin's 91st day, whichever is later, to the coin's last complete day
-   (step 4 with `--coins COIN --windows FILE`, one call per coin; then step 4's chart files). The records:
+   over the windows of `04_backtest/windows/research_2016.json` whose start is past the coin's first 90 days (the same
+   windows and rule as step 9's common record; the designer, 2026-11-26): step 4 with `--coins COIN --windows FILE`,
+   one call per coin; then step 4's chart files. At the merge with part 4, this becomes one call to
+   `common_record.backtest(..., coin_list=coins.FINAL)`. The records:
    `04_backtest/<run>/<group>/by_coin/<COIN>/<plan id>/`; the book's chart file over its coins:
    `04_backtest/<run>/<group>/backtests/<plan id>/chart_bars.csv.gz`.
 3. The portfolio at the version's weights, coin by coin (combine.py's rule 6), against holding the same coins (equal
@@ -19,7 +21,7 @@ group (`common/coins.py`, FINAL). Then, in this order:
 Why this cannot leak: the version, its strategies and its weights are fixed before the run and written in the record;
 nothing read here changes them; each bar's decision is the engine's, on data up to that bar's close.
 """
-import argparse, csv, datetime as dt, json, subprocess, sys, tempfile
+import argparse, json, subprocess, sys, tempfile
 from pathlib import Path
 import pandas as pd
 
@@ -30,7 +32,6 @@ import update as up  # noqa: E402
 sys.path.insert(0, str(cb.STEPS / "common"))
 import coins  # noqa: E402
 
-START = dt.date(2016, 1, 1)                       # data_use.md, section 2: portfolio and final from 2016-01-01
 MARKS = cb.FUNC / "final_tests"
 
 
@@ -55,23 +56,10 @@ def refusal(version):
     return None
 
 
-def last_complete_day(coin, data=coins.DATA, today=None):
-    """The coin's last day in its daily file before today (UTC): today's bar is not complete."""
-    today = today or dt.datetime.now(dt.timezone.utc).date()
-    last = None
-    with open(Path(data) / f"kraken_{coin}USD_1d.csv") as f:
-        next(f)
-        for row in csv.reader(f):
-            d = dt.date.fromisoformat(row[0][:10])
-            if d < today:
-                last = d
-    return last
-
-
-def series(coin, data=coins.DATA, today=None):
-    """The coin's one window: from 2016-01-01 or its 91st day, whichever is later, to its last complete day."""
-    return {"label": "all", "test": {"start": str(max(START, coins.first_usable_day(coin, data))),
-                                     "end": str(last_complete_day(coin, data, today))}}
+def coin_windows(coin, data=coins.DATA, windows=coins.WINDOWS):
+    """The coin's windows: those of research_2016.json whose start is past its first 90 days (coins.usable), the
+    same rule as step 9's common record; in the file's order (a suffix of it)."""
+    return [w for w in json.loads(Path(windows).read_text()) if coins.usable(coin, w["test"]["start"], data=data)]
 
 
 def run_book(r, python, data=coins.DATA):
@@ -82,9 +70,12 @@ def run_book(r, python, data=coins.DATA):
     parts = []
     for coin in coins.FINAL:
         out = base / "by_coin" / coin
+        wins = coin_windows(coin, data)
+        if not wins:
+            continue
         with tempfile.TemporaryDirectory() as d:
             w = Path(d) / f"{coin}.json"
-            w.write_text(json.dumps([series(coin, data)]))
+            w.write_text(json.dumps(wins))
             subprocess.run([sys.executable, cb.STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", python,
                             "--out-root", out, "--coins", coin, "--windows", w])
         rec = out / r["id"]
@@ -119,7 +110,7 @@ def final_test(version, python, run_book=run_book):
            "commit": sha, "started_utc": cb.utc_now(), "status": "started",
            "books": weights,
            "measures_expected": {"what": f"the version's daily Sharpe after costs on the final coins, against {up.HOLDING}",
-                                 "days": "every complete day from 2016-01-01 or the coin's 91st day",
+                                 "days": "the windows of research_2016.json past each coin's first 90 days (as step 9)",
                                  "go_if": "Sharpe above 0 and above holding's (common/data_use.md, section 4)",
                                  "step 11 on the portfolio coins": measures.get("portfolio_coins")}}
     MARKS.mkdir(parents=True, exist_ok=True)
