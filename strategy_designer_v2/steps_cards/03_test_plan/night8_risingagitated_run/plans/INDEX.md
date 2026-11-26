@@ -16,4 +16,5 @@
 060-01.g1_wide-day-high-close-fade_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 060-01_falling-agitated-high-close-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 068-01_falling-agitated-lone-rise-fade_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+068-02_falling-agitated-run-break-fade_1d: missing-components: The idea needs, on an up-closing day, the length of the run of down closes that ended on the bar [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 069-01_low-range-up-day-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

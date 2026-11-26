@@ -9603,3 +9603,58 @@ class PriorLowReclaimInRangeComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return self.period + 1
+
+
+class PriorDownRunOnUpCloseComponent(SubStrategyComponent):
+    """
+    Length of the down run that bar t's up close has just ended:
+
+        if close[t] > close[t-1]:
+            n = number of consecutive bars i = t-1, t-2, ... with close[i] < close[i-1], capped at max_bars
+            raw_value = n
+        else:
+            raw_value = 0
+
+    Range: 0 to max_bars, integers, never negative, no direction. It is 0 on a down or flat bar t, and 0 on an
+    up bar whose previous bar was not a down bar. A flat bar (equal close) ends the down run.
+    Warm-up: max_bars + 2 rows, bar t included.
+    NaN: a NaN close in the last max_bars + 2 rows gives NaN.
+    Building the component raises for a max_bars below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + 2 rows of data, which end at
+    bar t (the last row); a bar's close is known at that bar's close.
+    """
+
+    def __init__(self, name="PriorDownRunOnUpClose", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(f"PriorDownRunOnUpCloseComponent: max_bars must be >= 1, got {self.max_bars}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).to_numpy()[-self.get_required_periods():]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        n = 0
+        if c[-1] > c[-2]:
+            i = len(c) - 2
+            while n < self.max_bars and c[i] < c[i - 1]:
+                n += 1
+                i -= 1
+        self._raw_value = float(n)
+        self.confidence = 1.0
+        self.debug_info = {'prior_down_run': n, 'up_close': bool(c[-1] > c[-2])}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.max_bars + 2
