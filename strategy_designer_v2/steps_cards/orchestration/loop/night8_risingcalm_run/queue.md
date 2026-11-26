@@ -1,51 +1,53 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 26.59 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 27.76 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 061-01.g1.g3_calm-big-fall-rebounds | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 2 | 061-01.g1.d1.g1_day-move-follow-through-both-sides | 7.g | 4 | 0.121 | 0.0242 | candidate |
-| 3 | 061-01.g1.d1.d2.g1_choppy-far-below-high-decline | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 4 | 061-01.g1.d1.d2.g2_choppy-swing-scaled-move-continues | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 5 | 061-01.g1.d1.d2.g3_calm-only-large-rises-continue | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 6 | 062-01.b1_choppy-calm-falls-all-coins | 7.b | 2 | 0.2381 | 0.0794 | candidate |
-| 7 | 059-02_calm-below-high-keeps-falling | 7.g | 1 | 0.121 | 0.0605 | candidate |
-| 8 | 061-02_calm-big-down-day-continues | 7.g | 1 | 0.121 | 0.0605 | candidate |
-| 9 | 058-02.b1.b1.b1_calm-uptrend-dips-bounce-briefly | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 10 | 058-02.g1.b1.b1_rising-dip-continues-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 11 | 058-02.g1.b2.b1_dip-continuation-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 12 | 059-01.b1.b1_calm-decline-still-running | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 13 | 059-01.b2.b1_falling-calm-decline-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 14 | 061-01.d2.b1_rising-calm-continuation-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 15 | 058-02.b1.b1.b2_calm-uptrend-dip-next-day-rebound | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 16 | 059-01.b1.b2_calm-decline-three-days | 7.b | 3 | 0.2381 | 0.0595 | candidate |
-| 17 | 061-01.d1.d2_calm-big-day-in-uptrend | 7.d | 3 | 0.2919 | 0.073 | candidate |
-| 18 | 061-01.g1.g1.b1_calm-big-up-day-continues | 7.b | 4 | 0.2381 | 0.0476 | candidate |
-| 19 | 061-01.g1.g2.b1_agitated-big-day-reverts | 7.b | 4 | 0.2381 | 0.0476 | candidate |
+| 1 | 061-01.g1.d1.g1_day-move-follow-through-both-sides | 7.g | 4 | 0.121 | 0.0242 | candidate |
+| 2 | 061-01.g1.d1.d2.g1_choppy-far-below-high-decline | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 3 | 061-01.g1.d1.d2.g2_choppy-swing-scaled-move-continues | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 4 | 061-01.g1.d1.d2.g3_calm-only-large-rises-continue | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 5 | 062-01.b1_choppy-calm-falls-all-coins | 7.b | 2 | 0.2381 | 0.0794 | candidate |
+| 6 | 059-02_calm-below-high-keeps-falling | 7.g | 1 | 0.121 | 0.0605 | candidate |
+| 7 | 061-02_calm-big-down-day-continues | 7.g | 1 | 0.121 | 0.0605 | candidate |
+| 8 | 058-02.b1.b1.b1_calm-uptrend-dips-bounce-briefly | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 9 | 058-02.g1.b1.b1_rising-dip-continues-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 10 | 058-02.g1.b2.b1_dip-continuation-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 11 | 059-01.b1.b1_calm-decline-still-running | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 12 | 059-01.b2.b1_falling-calm-decline-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 13 | 061-01.d2.b1_rising-calm-continuation-more-coins | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 14 | 058-02.b1.b1.b2_calm-uptrend-dip-next-day-rebound | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 15 | 059-01.b1.b2_calm-decline-three-days | 7.b | 3 | 0.2381 | 0.0595 | candidate |
+| 16 | 061-01.d1.d2_calm-big-day-in-uptrend | 7.d | 3 | 0.2919 | 0.073 | candidate |
+| 17 | 061-01.g1.g1.b1_calm-big-up-day-continues | 7.b | 4 | 0.2381 | 0.0476 | candidate |
+| 18 | 061-01.g1.g2.b1_agitated-big-day-reverts | 7.b | 4 | 0.2381 | 0.0476 | candidate |
+| 19 | 061-01.g1.g3.b1_calm-big-rise-continues | 7.b | 4 | 0.2381 | 0.0476 | candidate |
 | 20 | 061-01.g1.g1.b2_rising-calm-up-day-continuation | 7.b | 4 | 0.2381 | 0.0476 | candidate |
 | 21 | 061-01.g1.g2.b2_calm-big-day-continues | 7.b | 4 | 0.2381 | 0.0476 | candidate |
-| 22 | 058-02.b1.g1_rising-calm-high-distance-continuation | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 23 | 060-01_scaled-five-day-dip-continues | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 24 | 059-01.g2_falling-calm-decline-continues | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 25 | 060-02_scaled-fresh-high-keeps-rising | 7.g | 2 | 0.121 | 0.0403 | candidate |
-| 26 | 061-01.g1.d1.d2.d2.b1_calm-breakout-all-coins | 7.b | 6 | 0.2381 | 0.034 | candidate |
-| 27 | 061-01.g1.d1.d2.d3.b1_calm-big-rise-nearness-graded | 7.b | 6 | 0.2381 | 0.034 | candidate |
-| 28 | 058-02.b1.b1.g1_calm-uptrend-one-day-dip-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 29 | 058-02.g1.b1.g1_rising-calm-dip-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 30 | 058-02.g1.b2.g1_rising-calm-dip-underperforms | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 31 | 059-01.b1.g1_calm-market-swing-scaled-continuation | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 32 | 059-01.b2.g1_calm-market-decline-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 33 | 061-01.d2.g1_rising-calm-down-day-continuation | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 34 | 058-02.b1.b1.g2_calm-uptrend-dip-three-day-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 35 | 059-01.b1.g2_calm-narrow-low-close | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 36 | 061-01.d2.g2_choppy-calm-up-day-continuation | 7.g | 3 | 0.121 | 0.0302 | candidate |
-| 37 | 061-01.g1.g1.g1_calm-big-day-follow-through | 7.g | 4 | 0.121 | 0.0242 | candidate |
-| 38 | 061-01.g1.d1.d1.g1_calm-big-day-both-way-continuation | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 39 | 063-01_falling-agitated-fall-rebounds | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 40 | 061-01.g1.d1.d1.g2_high-close-next-day-fade | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 41 | 063-02_falling-agitated-below-high-rebounds | 7.g | 5 | 0.121 | 0.0202 | candidate |
-| 42 | 061-01.g1.d1.d2.d2.g2_choppy-calm-day-follow-through | 7.g | 6 | 0.121 | 0.0173 | candidate |
+| 22 | 061-01.g1.g3.b2_calm-big-rise-ten-days | 7.b | 4 | 0.2381 | 0.0476 | candidate |
+| 23 | 058-02.b1.g1_rising-calm-high-distance-continuation | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 24 | 060-01_scaled-five-day-dip-continues | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 25 | 059-01.g2_falling-calm-decline-continues | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 26 | 060-02_scaled-fresh-high-keeps-rising | 7.g | 2 | 0.121 | 0.0403 | candidate |
+| 27 | 061-01.g1.d1.d2.d2.b1_calm-breakout-all-coins | 7.b | 6 | 0.2381 | 0.034 | candidate |
+| 28 | 061-01.g1.d1.d2.d3.b1_calm-big-rise-nearness-graded | 7.b | 6 | 0.2381 | 0.034 | candidate |
+| 29 | 058-02.b1.b1.g1_calm-uptrend-one-day-dip-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 30 | 058-02.g1.b1.g1_rising-calm-dip-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 31 | 058-02.g1.b2.g1_rising-calm-dip-underperforms | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 32 | 059-01.b1.g1_calm-market-swing-scaled-continuation | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 33 | 059-01.b2.g1_calm-market-decline-continues | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 34 | 061-01.d2.g1_rising-calm-down-day-continuation | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 35 | 064-01_falling-calm-up-day-fades | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 36 | 058-02.b1.b1.g2_calm-uptrend-dip-three-day-rebound | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 37 | 059-01.b1.g2_calm-narrow-low-close | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 38 | 061-01.d2.g2_choppy-calm-up-day-continuation | 7.g | 3 | 0.121 | 0.0302 | candidate |
+| 39 | 061-01.g1.g1.g1_calm-big-day-follow-through | 7.g | 4 | 0.121 | 0.0242 | candidate |
+| 40 | 061-01.g1.d1.d1.g1_calm-big-day-both-way-continuation | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 41 | 063-01_falling-agitated-fall-rebounds | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 42 | 061-01.g1.d1.d1.g2_high-close-next-day-fade | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 43 | 063-02_falling-agitated-below-high-rebounds | 7.g | 5 | 0.121 | 0.0202 | candidate |
+| 44 | 061-01.g1.d1.d2.d2.g2_choppy-calm-day-follow-through | 7.g | 6 | 0.121 | 0.0173 | candidate |
 | - | 058-01_rising-calm-dip-rebound | step 2 | 0 | 0.1961 | 0.1961 | tested: step 5 inconclusive (+0.33); step 6 not profitable enough (failed: Calmar) |
 | - | 058-02_rising-calm-below-recent-high | step 2 | 0 | 0.1961 | 0.1961 | tested: step 5 inconclusive (-1.67); step 6 not profitable enough (failed: Calmar) |
 | - | 059-01_calm-decline-continues-return | 7.g | 1 | 0.121 | 0.0605 | tested: step 5 inconclusive (+0.97); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
@@ -65,6 +67,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 061-01.g1.d1_calm-choppy-up-day-follow-through | 7.d | 3 | 0.2919 | 0.073 | tested: step 5 confirmed (+2.95); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 061-01.g1.g1_big-up-day-continues | 7.g | 3 | 0.121 | 0.0302 | tested: step 5 inconclusive (-0.84); step 6 not profitable enough (failed: Calmar) |
 | - | 061-01.g1.g2_agitated-big-day-continues | 7.g | 3 | 0.121 | 0.0302 | tested: step 5 inconclusive (-1.49); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 061-01.g1.g3_calm-big-fall-rebounds | 7.g | 3 | 0.121 | 0.0302 | tested: step 5 inconclusive (+0.74); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 061-01.g1.d1.d1_calm-big-rise-convex-follow-through | 7.d | 4 | 0.2919 | 0.0584 | tested: step 5 inconclusive (-0.32); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 061-01.g1.d1.d2_calm-big-rise-near-highs | 7.d | 4 | 0.2919 | 0.0584 | tested: step 5 confirmed (+2.49); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 061-01.g1.d1.d2.d1_calm-outsized-rise-continues | 7.d | 5 | 0.2919 | 0.0487 | tested: step 5 no verdict; step 6 not checked |

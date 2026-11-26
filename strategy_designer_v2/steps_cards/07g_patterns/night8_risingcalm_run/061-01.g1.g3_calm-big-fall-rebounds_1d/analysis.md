@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 061-01.g1.g3_calm-big-fall-rebounds_1d
+idea tested: 061-01.g1.g3_calm-big-fall-rebounds
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4101 USD
+---
+## Findings
+- **F1:** Outside rising markets (60-day return at or below +10 %), the larger a coin's up day in 30-day swing units, the lower its excess return over the next 3 days. The day-summed slope is -0.028 (t -3.23, 134 days). In falling markets alone it is -0.033 (t -2.97, 103 days). The sign holds in 2018 (t -2.30), 2019 (t -2.09) and 2020 (t -3.23), turns in 2021 (t +2.67), and is negative on all six coins (t from -3.10 on LTC to -0.02 on ZEC).
+- **F2:** In falling markets, an up day of more than one swing is followed by a 3-day excess return of -4.84 % when agitated (t -3.06, 29 cases) and -2.79 % when calm (t -2.10, 35 cases). The fade is present at both agitation levels. The profile map holds no strategy on the short side of falling agitated and only one on falling calm.
+- **F3:** In rising markets the same up-day size points the other way. The 3-day slope is +0.024 (t 3.68, 102 days) and the 5-day slope +0.038 (t 2.24, 60 days). This is continuation in a rising market, which the map already holds (034-01.e1, 033-03.b2, 034-02).
+- **F4:** The tested idea does not show inside calm markets. The day-summed slope of the excess return on the day's z is -0.0012 over 1 day (t -0.95, 969 days) and +0.0007 over 3 days (t 0.18, 327 days). Over 10 days it is +0.024 (t 1.76, 86 days), and its positive sign means a large day continues rather than reverses. This agrees with step 5's unusual move of -0.17 % (t -0.26), which is -0.9 times the 0.19 % cost of a trade.
+- **F5:** In agitated markets, a fall of more than two swings is followed by a next-day excess return of +4.36 % (t 4.40, 60 cases). The 1-day slope on z is -0.0086 (t -4.30, 856 days). This is the agitated fall rebound the map already holds many times (12 long strategies in falling agitated), so it is not a discovery.
+- **F6:** In calm markets, next-day excess return varies by weekday: Wednesday -0.60 % (t -3.21, 660 cases), Thursday +0.68 % (t 3.87, 655) and Friday +0.42 % (t 2.70, 664). Thursday is positive in only 3 of 4 years, and this is one of 14 weekday cells. Against that many tests it does not stand out enough to propose.
+- **F7:** The book follows the coins and adds nothing of its own. On its best 5 % of days it gains +5.97 % while the coins gain +7.64 %. On its worst 5 % it loses -5.99 % while the coins lose -8.26 %.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `061-01.g1.g3.g1_falling-market-rise-fades` (from F1, F2): In a falling market, the larger a coin's one-day rise against the standard deviation of its daily returns over the past 30 days, the more it falls back over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
