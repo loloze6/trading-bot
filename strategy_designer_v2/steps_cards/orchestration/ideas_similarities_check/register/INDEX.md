@@ -237,6 +237,9 @@ An idea's latest record counts once.
 | 058-01.g2_volume-drying-decline-continues_1d | confirmed | night8_fallingcalm_run | 1d | 6 | b11d25dc5 | 2026-11-26T00:36:02 |
 | 060-01_volume-shrink-fall-continues_1d | confirmed | night8_fallingcalm_run | 1d | 6 | bfe0858f0 | 2026-11-26T00:48:58 |
 | 060-02.d1_volume-growth-fall-still-running_1d | confirmed | night8_fallingcalm_run | 1d | 6 | 65f759abe | 2026-11-26T01:26:22 |
+| 060-02.d2.d1_volume-dry-up-short-only_1d | confirmed | night8_fallingcalm_run | 1d | 6 | f22bc2e3d | 2026-11-26T04:17:40 |
+| 060-02.d2.d2_volume-growth-capitulation-rebound_1d | confirmed | night8_fallingcalm_run | 1d | 6 | f22bc2e3d | 2026-11-26T04:23:34 |
+| 060-02.d2_volume-growth-recent-ten-day-fall_1d | confirmed | night8_fallingcalm_run | 1d | 6 | f22bc2e3d | 2026-11-26T04:06:46 |
 | 060-02_volume-growth-fall-stalls_1d | confirmed | night8_fallingcalm_run | 1d | 6 | 65f759abe | 2026-11-26T01:21:15 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |

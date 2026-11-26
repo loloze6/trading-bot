@@ -28,21 +28,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 062-02_rising-volume-growth-stalls | - | plan | inconclusive (+0.18) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The tested measure is zero (t 0.18, F1), and no part of the rising market shows the shrinking-volume rise clearly. Its only strong cases sit in one window (F4), and its sign flips across windows, years and coins (F5, F6).; 7.g: 062-02.g1_agitated-uptrend-volume-dry-up | 1.20 | 6.4 |
 | 060-02_volume-growth-fall-stalls | - | plan | confirmed (+2.96) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 060-02.d1_volume-growth-fall-still-running, 060-02.d2_volume-growth-recent-ten-day-fall, 060-02.d3_volume-growth-ten-day-hold; 7.g: 060-02.g2_calm-fall-volume-dry-up | 1.21 | 6.3 |
 | 060-02.d1_volume-growth-fall-still-running | 060-02_volume-growth-fall-stalls | plan | confirmed (+3.85) | not profitable enough (failed: Calmar) | - | 7.d: 060-02.d1.d1_volume-shrinkage-extends-running-falls, 060-02.d1.d2_volume-signal-outside-crash-falls, 060-02.d1.d3_shrinkage-short-in-moderate-falls; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.17 | 6.3 |
+| 060-02.d2_volume-growth-recent-ten-day-fall | 060-02_volume-growth-fall-stalls | plan | confirmed (+2.24) | not profitable enough (failed: Calmar) | - | 7.d: 060-02.d2.d1_volume-dry-up-short-only, 060-02.d2.d2_volume-growth-capitulation-rebound, 060-02.d2.d3_dry-up-in-moderate-declines; 7.g: 060-02.d2.g1_volume-dry-up-deepens-fall | 1.89 | 6.7 |
+| 060-02.d3_volume-growth-ten-day-hold | 060-02_volume-growth-fall-stalls | plan | inconclusive (+1.87) | not profitable enough (failed: Calmar) | - | 7.b: 060-02.d3.b1_volume-growth-all-coins; 7.g: 060-02.d3.g1_volume-growth-twenty-day-hold | 0.89 | 5.3 |
+| 060-02.d2.d1_volume-dry-up-short-only | 060-02.d2_volume-growth-recent-ten-day-fall | plan | confirmed (+2.58) | not profitable enough (failed: Calmar) | - | 7.d: 060-02.d2.d1.d1_deep-volume-dry-up-shorts; 7.g: 060-02.d2.d1.g1_calm-fall-volume-dry-up | 1.31 | 6.6 |
+| 060-02.d2.d2_volume-growth-capitulation-rebound | 060-02.d2_volume-growth-recent-ten-day-fall | plan | confirmed (+2.31) | not profitable enough (failed: Calmar) | - | 7.d: 060-02.d2.d2.d1_capitulation-rebound-five-days, 060-02.d2.d2.d2_deep-fall-capitulation-volume-rebound; 7.g: 060-02.d2.d2.g1_calm-falling-volume-dry-up | 1.12 | 6.2 |
 
 ## Consumption
-24 ideas, 25.32 USD, 195.9 minutes in all.
+28 ideas, 30.54 USD, 220.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.88 | 12.9 |
-| step4_backtest | 0.00 | 106.9 |
-| step5_verdict | 4.04 | 14.8 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 3.99 | 14.8 |
+| step4_backtest | 0.00 | 115.0 |
+| step5_verdict | 4.75 | 17.6 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 1.95 | 6.2 |
-| step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 6.25 | 20.8 |
-| step7_7.g | 10.20 | 32.7 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.d | 3.40 | 11.3 |
+| step7_7.e | 0.00 | 0.1 |
+| step7_7.c | 0.00 | 0.1 |
+| step7_7.b | 6.44 | 21.4 |
+| step7_7.g | 11.96 | 38.5 |
+| similarity_check | 0.00 | 0.6 |

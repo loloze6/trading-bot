@@ -19,6 +19,10 @@
 060-01.d3_dry-up-without-bounce_1d: 1 ideas (1 explorations)
 060-01_volume-shrink-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 060-02.d1_volume-growth-fall-still-running_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+060-02.d2.d1_volume-dry-up-short-only_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+060-02.d2.d2_volume-growth-capitulation-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+060-02.d2_volume-growth-recent-ten-day-fall_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+060-02.d3_volume-growth-ten-day-hold_1d: 1 ideas (1 explorations)
 060-02_volume-growth-fall-stalls_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 062-01_rising-volume-shrink-continues_1d: 1 ideas (1 explorations)
 062-02_rising-volume-growth-stalls_1d: no ideas: The theme's effect is not in the data. The tested measure is zero (t 0.18, F1), and no part of the rising market shows the shrinking-volume rise clearly. Its only strong cases sit in one window (F4), and its sign flips across windows, years and coins (F5, F6).
