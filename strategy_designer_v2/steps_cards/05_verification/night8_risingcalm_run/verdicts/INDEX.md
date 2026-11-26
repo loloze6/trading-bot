@@ -16,6 +16,7 @@
 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold_1d: inconclusive (fit: exact) [main: -0.00870363; t of the mean, cases of one day taken together -1.27049; distinct case days 346, cases 473]
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: confirmed (fit: exact) [main: 0.00258539; slope t, errors clustered by date 2.48722; grid bars with forecast > 0 285, distinct dates 168]
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: confirmed (fit: adapted) [main: 0.00223133; OLS slope t 2.94873; grid cases with forecast > 0 285]
+061-01.g1.g1_big-up-day-continues_1d: inconclusive (fit: adapted) [main: -0.00258307; t of the mean, same-day cases pooled -0.838026; cases 2954, days 1179]
 061-01.g1_choppy-calm-day-follow-through_1d: confirmed (fit: exact) [main: 0.000905422; OLS slope t 3.06597; grid cases with a non-zero forecast 566, grid cases with |forecast| >= 10 248]
 061-01_calm-big-up-day-continues_1d: confirmed (fit: exact) [main: 0.000901481; slope t (day-clustered) 3.01248; non-overlapping cases inside the calm profile 1827, days 483]
 062-01_choppy-calm-fall-continues_1d: inconclusive (fit: adapted) [main: 0.00608693; t of the mean, cases of one day summed 0.968053; cases 269, distinct days holding cases 164]

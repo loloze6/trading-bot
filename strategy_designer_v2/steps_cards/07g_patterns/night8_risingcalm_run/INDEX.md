@@ -16,6 +16,7 @@
 061-01.g1.d1.d2.d3_calm-big-rise-longer-hold_1d: 0 ideas, 1 discoveries (2 explorations)
 061-01.g1.d1.d2_calm-big-rise-near-highs_1d: 3 ideas (2 explorations)
 061-01.g1.d1_calm-choppy-up-day-follow-through_1d: 1 ideas (3 explorations)
+061-01.g1.g1_big-up-day-continues_1d: 1 ideas (3 explorations)
 061-01.g1_choppy-calm-day-follow-through_1d: 3 ideas (2 explorations)
 061-01_calm-big-up-day-continues_1d: 1 ideas, 2 discoveries (2 explorations)
 062-01_choppy-calm-fall-continues_1d: 0 ideas, 1 discoveries (2 explorations)
