@@ -6,6 +6,7 @@
 059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks_1d: 3 ideas (3 explorations)
 059-01.b1.b1.d1.b1.b2.d1_choppy-calm-rise-held-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+059-01.b1.b1.d1.b1.b2.d3_held-rise-in-rising-month_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week_1d: 3 ideas (2 explorations)
 059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
