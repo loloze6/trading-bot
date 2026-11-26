@@ -145,7 +145,10 @@ the new books on the unseen coins (1u).
   every loop ran with no limit. C stopped its own loop at 42.42 of 40 USD (04:28 UTC, final report: 29 ideas, 9
   confirmed, 3 profitable enough, 2 holding on both unseen periods; theme not real; 15 discovery briefs). Told A, B, D,
   E to restart with `--budget` (45, 45, 35, 35: the whole run's spend counts), and the resumed F (over its 30) to stop.
-  NIGHT_RULES corrected.
+  NIGHT_RULES corrected. **05:31 Paris:** A, B, D and E restarted with `--budget` at 04:29-04:30 UTC (spend then 33.8, 26.8,
+  22.6 and 30.1 USD: none had passed its budget); the resumed F stopped at 04:29 UTC on its own count, 36.89 of 30
+  USD (15 ideas in its two parts after the first stop, 0 confirmed). Overspend of the night: C +2.4, F +6.9 USD; at
+  most 239 USD for the six runs if A, B, D and E reach their budgets.
 
 ## Reading
 (written in the morning)
