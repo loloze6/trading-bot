@@ -50,6 +50,15 @@ box; the spend after each brief was answered.
   session_012maTgU5oYFjQviY1WCoPbJ, C session_012maTgXQjABpAt28f1NaT6W, D session_012maTgWKHxciErKS8p8QxBx, E
   session_012maTgXZeByYDKaY7hNoCyZ, F session_012maTgXSHfqjCc58AZKxYqd; the data session session_012maTgYEHsvC54ogG22iB3h
   (branch `data-coins`). The designer's check-ins: 01:15, 03:30, 05:45 Paris; the morning merge from 08:15 Paris.
+- **23:25 Paris, the data session ended** (branch `data-coins`, fc9d0121ec, report `runs/DATA_COINS_RUN.md`): 20 of 20
+  daily files, read from Kraken's archive by byte ranges (about 2 MB; each member's checksum checked), then the public
+  API to 2026-11-25; prices agree on the 664 days both sources cover. The 19 present files unchanged (checksums), the
+  policy file untouched. Gaps: XLM misses 181 days (177 in a row, August 2017 to February 2018); DASH and ETC 1 day
+  each; the others none. Odd: OCEAN still trades but is near-dead (median 16k USD a day in 2026); BCH's first day has a
+  bad print. Finding: Kraken rebuilt its archive; against our BTC file the new edition differs on 8 days' highs (2013)
+  and on volume for 1,083 days (at most 4.5 %); nothing changed. Two data tools gained options (defaults unchanged).
+  For `common/data_use.md`: a liquidity rule (a coin left out of a window where it barely trades) to add; the 90-day
+  rule covers BCH's first print.
 
 ## Reading
 (written in the morning)

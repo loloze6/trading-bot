@@ -125,3 +125,7 @@ it, each branch holds only its own candidates). No person builds a version; ever
 2. The category source.
 3. Step 11's bar: earns more than holding (proposed), or a fixed target.
 4. The 90-day exclusion after a coin's listing.
+5. A liquidity rule (the data session, 2026-11-26: OCEAN still trades but barely, a median 16k USD a day in 2026): a
+   coin left out of a window where its median daily traded value is under a fixed amount (to choose).
+6. Kraken rebuilt its archive: the 20 new files come from the new edition, the 19 old ones from the earlier one (BTC:
+   8 highs in 2013 and volumes up to 4.5 % apart). Refetch the 19 from the new edition, with a rerun proof?
