@@ -69,6 +69,12 @@ box; the spend after each brief was answered.
   (session_012maTgXRa1jWmZqLrKEGSXH, `build-a4-research`); part 4, a candidate's common record
   (session_012maTgUMyP5tGx1A41UkuNs, `build-a4-common`); part 5, the portfolio versions by rule, readiness, the final test
   (session_012maTgXAtxsdTfut9XYn1TR, `build-a4-portfolio`). None changes what tonight's six research sessions run.
+- **23:51 Paris, part 5 built** (`build-a4-portfolio`, 975ffd478e, `runs/BUILD_A4_PORTFOLIO.md`): `update.py` (a new
+  version when the candidates with a common record change; ready when its Sharpe beats holding the same coins),
+  `final_test.py` (refuses unless ready and the final group unused; writes its record before running; not run), the
+  calls from `run_idea` (new mode only) and `night_merge`; 8 tests; on today's files it writes nothing (INDEX.md
+  unchanged); cards 184 passed, bot 1677. For the merge: its call in `run_idea` after part 4's step; one runner for "one
+  series per coin" with part 4; a "complete" field in the common record's json.
 
 ## Reading
 (written in the morning)
