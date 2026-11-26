@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise_1d
+idea tested: 059-01.b1.b1.d1_choppy-calm-swing-scaled-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6552 USD
+---
+## Findings
+- **F1:** The tested idea does not hold up in its own profile: inside choppy calm, a 7-day rise of more than 2 usual swings was followed over 3 days by -1.48 % (t -1.16, 30 cases), and across all profiles the same large rises in choppy calm gave -2.64 % over 3 days (t -2.64 is not it: t -1.43, 16 cases, 11 days); its only 14-day support is +27.5 % on 13 cases for rises of 1 to 2 swings, matching step 5's negative slope (-0.00063).
+- **F2:** Across the 10 coins of folds B and C, a one-day fall is followed by a next-day rebound that grows with the fall's size in units of the coin's 30-day daily swing: +0.92 % beyond drift for falls of 1 to 2 swings (t 2.22 with same-day cases taken together, 275 days) and +1.68 % for falls beyond 2 swings (t 1.86, 67 days); all 10 coins are positive, and the correlation between fall size and the next day's unusual move is 0.096 (4,035 cases).
+- **F3:** The next-day rebound is clearest in a rising, calm market: falls of at least 1 swing are followed by +1.63 % beyond drift (t 2.75, 61 days), against -0.91 % in choppy calm (t -0.94) and +0.01 % in falling calm (t 0.02); the rebound grades from +1.61 % for falls of 1 to 2 swings (t 2.66, 57 days) to +2.32 % beyond 2 swings (t 1.91, 11 days); it is positive in 2018, 2020 (t 5.16) and 2021 (t 2.44) but not in 2019 (-0.66 %, t -0.48), and positive on all 9 coins with more than one case.
+- **F4:** Over 2 days, the rebound after falls of at least 1 swing stays only in rising markets: +2.70 % in rising agitated (t 2.15, 30 days) and +1.91 % in rising calm (t 1.77, 36 days), against -0.88 % in falling agitated (t -0.50).
+- **F5:** The other angles add nothing new. A wide-range day closing near its low gave +2.39 % over 3 days (t 3.65, 195 cases, not day-clustered), which is already held (039-02, 045-01). The weekday effects (Wednesday -0.44 %, t -2.60; Friday +0.37 %, t 2.85, both not day-clustered) are close to the held 045-01 late-week gain. The lowest quartile of 30-day swing against its 60-day median gave +2.42 % over 7 days (t 1.20 with same-day cases together) and changed sign between years (2018 -9.7 %, 2020 +7.3 %).
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `059-01.b1.b1.d1.g1_rising-calm-dip-rebound` (from F2, F3, F4): In a rising, calm market, the larger a coin's one-day fall measured in multiples of its usual daily swing over the past 30 days, the larger its rebound over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted next 1-day return on short size (-forecast), active bars",
+    "value": -0.00027706037238117584,
+    "statistic": {
+      "name": "slope t, day-clustered SE",
+      "value": -0.5948820211415186
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and mean drift-adjusted return < 0; reject: slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted next-day return on active bars < 0",
+    "value": -0.00517908237572287,
+    "passed": true
+  },
+  "counts": {
+    "active bars": 2538,
+    "distinct days": 758
+  },
+  "decided_by": "The slope t lies between -2 and +2.",
+  "reading": "Situation checked as rise bar (prior close-to-close return > 0, raw scaled_rise sign on a window's first bar) with regime 'trending' as the profile (detector components not recorded, its vetoes encode falling/agitated) and short side; slope by OLS with intercept, t from day-clustered (CR1) standard errors, drift is each coin's mean daily return over all its windows, and the plan's minimum counts unmet give 'not observable'."
+}

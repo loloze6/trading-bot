@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1_choppy-calm-rise-more-coins_1d
+idea tested: 059-01.b1_choppy-calm-rise-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3679 USD
+---
+## Findings
+- **F1:** The tested result is on the predicted side but well short of the bar: the forecast-weighted excess 7-day return is +1.20 % with t 0.99 over 163 days (409 cases), and the size is +0.30 % (t 0.52, 490 days), or 0.015 of a usual move; this already uses all 19 coins and all four folds, so no more data is available.
+- **F2:** On the visible folds B and C, the effect sits only in the larger scaled rises. In the choppy calm profile, weeks with a scaled rise of 0 to 0.5 are followed by -5.7 % excess over 7 days (t -2.77, 26 days, 32 cases). Scaled rises of 0.5 to 1, 1 to 1.5 and above 1.5 are followed by +7.2 % (t 1.79), +7.8 % (t 1.69) and +3.4 % (t 1.40). The forecast terciles agree: low -5.6 % (t -2.77), mid +3.5 % (t 1.01), high +4.2 % (t 1.53).
+- **F3:** Across all in-profile bars, the top quintile of the scaled 7-day return is followed by +6.2 % excess over 7 days (t 2.24, 16 days, 29 cases), while quintiles 2 to 4 are at -3.6 % to 0.0 %. The slope of excess return on the scaled rise over the 78 rising cases is +0.060 per unit.
+- **F4:** The continuation grows over a longer horizon. For the strategy's signals, the excess return is -0.8 % over 3 days (t -0.84), +0.7 % over 7 days (t 0.30) and +2.9 % over 14 days (t 0.71). Over 14 days, scaled rises of 1 to 1.5 are followed by +27.4 % (t 1.58) and those above 1.5 by +5.2 % (t 2.00, 10 days), against -7.3 % (t -1.94) for rises of 0 to 0.5.
+- **F5:** The effect is mixed across periods, so part of it is drowned by the market's own moves. Signal cases earn -8.3 % excess over 7 days in 2018 (t -2.46) and -2.8 % in 2019 (t -1.45), but +2.0 % in 2020 and +7.7 % in 2021 (t 1.62). The top in-profile quintile carries +9.9 % in 2021 (t 2.60) and -0.5 % in 2019.
+- **F6:** The book cannot fix this at the tested horizon. The total move per case is +1.26 % against a 0.22 % trade cost, but the unusual move is only 1.3 times that cost, and the book's Calmar is 0.34 against the 0.75 rule.
+
+## Ideas
+- `059-01.b1.b1_choppy-calm-rise-two-weeks` (from F1, F2, F3, F4): In a choppy, calm market, the larger a coin's rise over the past 7 days against its usual daily swing over the past 30 days, the larger its further rise over the next 14 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

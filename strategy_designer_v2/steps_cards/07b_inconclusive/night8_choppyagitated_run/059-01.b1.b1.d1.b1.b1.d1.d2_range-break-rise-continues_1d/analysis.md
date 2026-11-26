@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues_1d
+idea tested: 059-01.b1.b1.d1.b1.b1.d1.d2_range-break-rise-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3964 USD
+---
+## Findings
+- **F1:** The step-5 result is on the side the idea predicts but short of the bar: a forecast-weighted mean excess 14-day return of +4.49 % with t 1.26 (180 grid bars, 79 days). The unusual move per case is only +0.45 % (t 0.40, 340 days), a strength of 0.013 of the 18.92 % usual move. The test already used every coin, fold and daily bar available, so more data cannot be added.
+- **F2:** In folds B and C, inside the choppy-calm profile, the whole 14-day gain sits with coins whose close is within 2.5 % of their 30-day highest close. Those cases earn +14.6 % excess (median +11.4 %, 61 % positive, t 1.20, 18 cases on 9 days). Cases further from the high earn -1.1 % (t -0.30, 48 cases). Rises that end below the high earn +0.3 % (20 cases), so the scaled rise alone carries nothing.
+- **F3:** The near-high 14-day mean rests on a few outliers. Dropping the two largest of the 18 cases cuts it from +14.6 % to +2.5 % (largest case +168 %). By year it is negative in 2018 (-35.6 %, 2 cases) and 2019 (-30.6 %, 2 cases) and positive in 2020 (+33.7 %, 7 cases) and 2021 (+22.7 %, 7 cases). By coin it is mixed: XRP +61.5 % and ADA +55.0 %, against ETH -28.9 % and XMR -11.9 %.
+- **F4:** At 7 days the same near-high effect shows on twice as many cases and with the larger t:
+- **F5:** The test's 14-day horizon is not where the grading is steadiest. The correlation of the excess return with the scaled rise times nearness is:
+
+## Ideas
+- `059-01.b1.b1.d1.b1.b1.d1.d2.b1_range-break-rise-one-week` (from F2, F4, F5): In a choppy, calm market, the larger a coin's rise over the past 7 days in multiples of its usual 7-day swing over the past 30 days, and the closer its close sits to its highest close of the past 30 days, the larger its further rise over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

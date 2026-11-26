@@ -1,0 +1,24 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess next-day return on forecast, within windows",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm: slope t >= 2 and mean excess > 0; reject: slope t <= -2 or mean excess t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return > 0",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "distinct case days": 67,
+    "cases": 164
+  },
+  "decided_by": "Only 67 distinct case days, fewer than the plan's 100.",
+  "reading": "Situation profile taken from the recorded regime 'mean_reversion' (the detector's profile components are not recorded) with ret1 from closes and volume ratio from heavy_volume raw value + 1 (prices when missing); bars whose situation cannot be computed are left out; the slope uses forecast and excess return demeaned within each coin-window, and both t's use day-clustered standard errors (deviations summed per UTC day, factor G/(G-1)); the plan's 100 distinct case days is treated as the minimum count."
+}

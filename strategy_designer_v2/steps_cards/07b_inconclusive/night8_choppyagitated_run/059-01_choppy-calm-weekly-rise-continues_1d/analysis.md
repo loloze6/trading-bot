@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 059-01_choppy-calm-weekly-rise-continues_1d
+idea tested: 059-01_choppy-calm-weekly-rise-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2142 USD
+---
+## Findings
+- **F1:** The test's main measure is on the side the idea predicts but just short of the bar. The slope of the 7-day excess return on the forecast has a t of 1.95, against a bar of 2. It rests on 220 cases spread over only 127 days, so the test is limited by too few independent cases, not by a reversed effect.
+- **F2:** The effect is graded but crosses zero, which drags its average size below zero. In folds B and C, on the 76 positive-forecast grid cases, the 7-day slope t is 3.03, yet the mean excess return is only -0.09 % (t -0.06). By forecast quartile the excess return runs -6.5 %, -2.6 %, +5.3 % and +3.4 %, so small scaled rises give back and only the larger half continues. This matches the idea's whole-data size: an unusual move of -0.36 % (t -0.62, 337 days, 438 cases) and a strength of -0.034.
+- **F3:** The grading is not carried by one coin or one year. The 7-day slope t is positive for 5 of 6 coins: BTC 2.04, LTC 1.80, XMR 1.50, XRP 0.76 and ETH 0.70, with ZEC at -0.62. Each coin has only 7 to 17 cases. It is also positive in 3 of 4 years: 2018 0.68, 2020 1.42 and 2021 1.33, with 2019 at -1.39. The same direction appears in small separate samples, which points to a real but noisy effect that more coins would sharpen.
+- **F4:** The grading holds beyond the plan's horizon. Over 14 days the slope t is 2.40 and the mean excess return is +1.35 % (73 cases). Over 3 days the slope t is 0.86 and the mean excess return is -1.2 %. The same profile cases graded on the raw scaled 7-day return, falls included, give a slope t of only 1.41 (141 cases), with the top quintile at +4.0 % over 7 days and +10.3 % over 14 days. The continuation is a property of the larger rises.
+- **F5:** The test used only the 6 default coins, while 13 more coins have daily data: ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO and ONDO. The choppy calm profile covers only about 22 % of days, so adding these coins is the way to raise the number of independent case-days behind a slope t that sits at 1.95.
+
+## Ideas
+- `059-01.b1_choppy-calm-rise-more-coins` (from F1, F3, F5): In a choppy, calm market, the larger a coin's rise over the past 7 days against its usual daily swing over the past 30 days, the larger its further rise over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

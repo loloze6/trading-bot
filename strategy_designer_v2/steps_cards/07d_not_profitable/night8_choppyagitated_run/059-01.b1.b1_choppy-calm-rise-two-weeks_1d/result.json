@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "059-01.b1.b1_choppy-calm-rise-two-weeks_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6912061,
+  "findings": {
+    "F1": "The idea's cases do no better than holding the coin, which is why the book trails holding: over 589 cases the unusual move per case over 14 days is -0.04 % (t -0.04, 377 days), against a total move of +2.17 % that is 9.7 times the 0.22 % cost of a trade, so fees are not the problem and the missing excess is.",
+    "F2": "Inside the profile, the excess return lives only in rises that are large against the coin's own usual weekly swing. On the 14-day grid, cells with a positive forecast and a raw scaled 7-day rise above 0.5 earn +22.1 % excess (t 2.20, 22 cases, 9 days). Cells with a positive forecast and a smaller raw rise give back -11.0 % (t -2.55, 20 cases, 17 days), and cells with no signal earn -3.2 % (t -0.81, 38 cases).",
+    "F3": "The book's weakest forecasts are its losers, because the forecast is re-standardised over its own past 60 values, which lets small raw rises open longs. Grid cells with a forecast of 0-5 lose -11.9 % excess (t -3.09, 12 cases), while forecasts of 15-20 earn +23.2 % (t 2.41, 18 cases). Trades entered at a forecast of 0-5 average -2.33 % net (32 trades), against +7.23 % for 15-20 (163 trades).",
+    "F4": "The same split holds on 7 days, so a shorter hold does not rescue the weak cases. Raw scaled rises of 0-0.5 in the profile lose -5.7 % excess (t -3.47, 32 cases), while rises of 0.5-1 gain +7.2 % (t 2.19, 21 cases). On 14 days, rises above 1 gain +26.5 % (t 2.06, 13 cases), so the further rise grows with the raw scaled size.",
+    "F5": "The book's deep falls are market-wide losing spells, and every coin loses in them. In w14 the book drawdown was -32.8 % (book Sharpe -3.52), with 40 trades averaging -18.9 % net at a 7.5 % hit rate; BTC lost -11.6 % of book, ETH -6.7 % and LTC -6.8 %. w7 fell -19.9 % and w9 -19.1 %. The 15 worst trades were entered at a mean forecast of 16.2 but after a mean 30-day return of -3.1 %.",
+    "F6": "Among strong-rise trades (raw scaled rise above 0.5), a positive 30-day return separates winners from losers. Trades with a positive 30-day return average +8.84 % net and carry +1214 of the book's P&L (125 trades); those without average -1.42 % and lose -99 (84 trades). On the grid, a positive 30-day return without the signal earns only +1.2 % excess (t 0.16, 14 cases), so it is not an effect of its own. Strong cells with a positive 30-day return earn +13.5 % (t 2.26, 17 cases). The strong cells with a non-positive 30-day return are only 5 cases on 2 days, so the grid evidence on that side is thin."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 14 days. The rise is scaled by the coin's own swing, not ranked against the coin's recent history of such rises, so only rises that stand out from the coin's usual swing carry the continuation.",
+      "consequence": "A trader should go long only when a quiet, trendless coin's weekly rise is large in units of its own usual swing, and ignore modest rises that merely look large against recent weeks, since those give the move back.",
+      "name": "choppy calm swing-scaled rise",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days against its usual daily swing over the past 30 days, the larger its further rise over the next 14 days, only while its 30-day return is also positive.",
+      "consequence": "A trader should hold a quiet coin's weekly breakout for two weeks when the week extends a month that is already up, and pass on weekly rises that are only rebounds within a falling month.",
+      "name": "choppy calm rise up-month",
+      "from": "F5, F6, F2",
+      "profile": "choppy calm",
+      "refs": [
+        "F5",
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-01.b1.b1.d1_choppy-calm-swing-scaled-rise",
+    "059-01.b1.b1.d2_choppy-calm-rise-up-month"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

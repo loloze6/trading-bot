@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual move over the next 1 bar",
+    "value": 0.00517908237572287,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 2.348830979006158
+    },
+    "threshold": "confirm: > 0 with t >= 2 (and slope > 0); reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-direction unusual move on abs(forecast)",
+    "value": 0.0001341969643842287,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2538,
+    "distinct days": 758
+  },
+  "decided_by": "The main measure is above 0 with t >= 2 and the slope on abs(forecast) is above 0.",
+  "reading": "Profile bars are read from the recorded regime ('unknown', the regime left when neither 'chop' veto fires) and up days from the raw scaled rise > 0; cases are every active bar with a next-bar return in its window, the coin's mean is over all its 1-bar returns in all windows, and the day-clustered t uses se = sqrt(G/(G-1) * sum over days of (summed deviations)^2) / n.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003485 on the check folds against +0.005179 on every fold",
+    "main": 0.003484987531251616,
+    "statistic": 1.303067771987992,
+    "counts": {
+      "cases": 1810,
+      "distinct days": 477
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "059-01.b1.b1.d1.b1_choppy-calm-rise-three-weeks_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3668905,
+  "findings": {
+    "F1": "Step 5 found the grading the idea predicts but not the rise itself. The 21-day slope t is 2.00, but the mean excess return of its 103 cases (48 days) is -0.61 %. The idea's size is an unusual move of -0.88 % per case (t -0.59, 309 days, strength -0.051), so a larger scaled rise does better than a smaller one without the cases beating the coin's drift.",
+    "F2": "On the 21-day grid of folds B and C the effect is absent and the cases are few: 19 cases on 10 days, slope t 0.13, mean excess -0.09 % (t -0.02). The forecast quartiles do not line up: q2 +22.3 %, q3 -1.0 %, q4 -10.8 %. Three weeks is where the test measured, not where the effect shows.",
+    "F3": "Over the next 7 days the grading is clear. There are 89 cases on 45 days, slope t 3.17, and the core six coins alone give slope t 2.66. The upper half of forecasts earns +3.5 % above drift (t 1.60) against -2.2 % for the lower half. The slope is positive in 2018, 2020 and 2021 (t 1.94, 1.92, 1.83) and negative only in 2019 (t -0.96). The mean excess is small: +0.69 % (t 0.30), and -0.09 % on the core coins.",
+    "F4": "Over the next 14 days the grading holds and the mean is positive. There are 42 cases on 21 days, slope t 2.47 and mean excess +6.4 % (t 0.85). The core coins alone give 35 cases, slope t 2.13 and mean +3.9 %. By forecast tercile: low -13.0 %, mid +20.5 %, high +11.5 %.",
+    "F5": "The weakest rises are what pull the mean below the drift. The lowest forecast tercile is followed by -6.2 % at 7 days and -13.0 % at 14 days, against +6.8 %/+1.7 % (7 days) and +20.5 %/+11.5 % (14 days) for the mid and high terciles. So the slope passes while the mean of all cases fails.",
+    "F6": "The continuation is not smooth in its horizon, so the horizon decides what the test sees. At 10 days the slope t is only 0.49 (65 cases), against 3.17 at 7 days, 2.47 at 14 days and 0.13 at 21 days."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 14 days.",
+      "consequence": "A trader buying a quiet, trendless coin after a week's rise that is large against its own swing should expect the continuation within two weeks, not three, and should favour the largest scaled rises.",
+      "name": "choppy calm rise two weeks",
+      "from": "F1, F2, F4, F5",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the larger a coin's rise over the past 7 days measured in multiples of its usual 7-day swing over the past 30 days, the larger its further rise over the next 7 days.",
+      "consequence": "A trader in a quiet, trendless coin should expect a week's rise that is large against its swing to carry on over the following week, and a small rise to give back.",
+      "name": "choppy calm rise one week",
+      "from": "F1, F3, F5, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "059-01.b1.b1.d1.b1.b1_choppy-calm-rise-two-weeks",
+    "059-01.b1.b1.d1.b1.b2_choppy-calm-rise-one-week"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

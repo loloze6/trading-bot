@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the coin-demeaned 28-bar forward return on the forecast, pooled over coins, non-overlapping grid, non-zero forecast bars",
+    "value": -0.042122088956250234,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.042122088956250234
+    },
+    "threshold": "t >= 2 with at least 50 grid cases (and timing gain > 0) confirms; t <= -2 with at least 50 grid cases rejects"
+  },
+  "supporting_check": {
+    "name": "timing gain: book mean daily return minus position held x coin's mean daily return",
+    "value": 3.716459667379865e-05,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a non-zero forecast": 188
+  },
+  "decided_by": "The slope's t is between -2 and 2 with at least 50 grid cases.",
+  "reading": "Profile bars are those whose recorded regime is 'unknown' (the only regime with a strategy) and the expected side is the sign of the raw centred multiple; the coin's mean 28-bar return is taken on all its windows' non-overlapping grid bars, the regression has an intercept, and the timing gain uses daily returns of postRebalance_total_value with the previous day's postRebalance_current_allocation for the market part."
+}
