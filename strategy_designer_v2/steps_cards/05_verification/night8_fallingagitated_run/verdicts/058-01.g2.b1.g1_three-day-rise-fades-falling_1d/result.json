@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 3-day move of bets (vs coin's normal drift)",
+    "value": 0.00696698288701944,
+    "statistic": {
+      "name": "t with same-day cases summed",
+      "value": 1.4622631525695453
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual short move on |forecast|",
+    "value": -0.0003145057100678726,
+    "passed": false
+  },
+  "counts": {
+    "cases": 952,
+    "distinct case days": 391
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Profile taken from the recorded regime ('unknown' = falling agitated) and rise from the scaled_rise raw value; a case is the first short bet in each non-overlapping 3-bar grid cell of a window, its return taken from that bet bar's close 3 bars ahead inside the window; the day-clustered t uses a G/(G-1) correction so that one case per day gives the ordinary t."
+}
