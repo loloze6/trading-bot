@@ -9,21 +9,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 074-01_rising-calm-wide-low-close-rebound | - | plan | inconclusive (+1.93) | not profitable enough (failed: Calmar) | - | 7.b: 074-01.b1_low-close-nearness-rebound, 074-01.b2_three-day-low-close-rebound; 7.g: 074-01.g1_rising-calm-low-close-three-days | 1.11 | 13.0 |
 | 074-01.b1_low-close-nearness-rebound | 074-01_rising-calm-wide-low-close-rebound | plan | confirmed (+2.31) | not profitable enough (failed: Trades per day) | - | 7.d: 074-01.b1.d1_wide-lower-close-calm-rebound; 7.g: 074-01.b1.g1_width-times-low-close-rebound | 1.14 | 12.9 |
 | 074-01.b1.d1_wide-lower-close-calm-rebound | 074-01.b1_low-close-nearness-rebound | plan | inconclusive (+1.71) | not profitable enough (failed: Calmar) | - | 7.b: 074-01.b1.d1.b1_wide-day-nearer-low-rebounds, 074-01.b1.d1.b2_low-close-three-day-rebound; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.08 | 12.4 |
+| 074-01.b1.g1_width-times-low-close-rebound | 074-01.b1_low-close-nearness-rebound | plan | inconclusive (+2.23) | not profitable enough (failed: Calmar, Trades per day) | - | 7.b: 074-01.b1.g1.b1_graded-wide-low-close-rebound; 7.g: no ideas: The tested idea's effect is confined to rising calm (F1), but its grading does not hold (F2). The other patterns that stand out either repeat the source brief (F3) or repeat rebounds the map already holds (F4). Nothing else stood out across profiles, the sign and size of the last day's move, volatility quartiles or weekdays (F5), so no new, ungraded-free idea is supported. | 1.08 | 13.0 |
+| 074-01.b2_three-day-low-close-rebound | 074-01_rising-calm-wide-low-close-rebound | plan | inconclusive (+1.14) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The rebound is strong and present on every coin, year and sub-regime visible in folds B and C (F1, F2), yet it nets to about zero over all four folds. No condition read from a coin's bars at the close separates where it holds from where it reverses (F2, F4, F5), and the test already used all the data available (F6), so neither a narrower idea nor more data would give a clearer answer.; 7.g: 074-01.b2.g1_rising-calm-width-graded-rebound | 1.41 | 13.4 |
+| 074-01.b1.d1.b1_wide-day-nearer-low-rebounds | 074-01.b1.d1_wide-lower-close-calm-rebound | plan | inconclusive (+1.71) | not profitable enough (failed: Calmar) | - | 7.b: 074-01.b1.d1.b1.b1_wide-low-close-three-day-rebound, 074-01.b1.d1.b1.b2_wide-day-pinned-low-rebound; 7.g: 074-01.b1.d1.b1.g1_wide-low-close-three-day-rebound, 074-01.b1.d1.b1.g2_rising-calm-wide-day-continuation | 1.11 | 12.7 |
 
 ## Consumption
-5 ideas, 5.97 USD, 64.4 minutes in all.
+8 ideas, 9.57 USD, 103.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.52 | 3.1 |
-| step4_backtest | 0.00 | 44.0 |
-| step5_verdict | 1.17 | 4.2 |
-| step6_check | 0.00 | 0.2 |
+| step3_plan | 0.82 | 5.0 |
+| step4_backtest | 0.00 | 70.5 |
+| step5_verdict | 1.75 | 6.3 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 0.41 | 1.2 |
-| step7_7.b | 1.50 | 4.2 |
-| step7_7.g | 2.37 | 7.4 |
+| step7_7.b | 2.85 | 8.4 |
+| step7_7.g | 3.73 | 11.7 |
 | similarity_check | 0.00 | 0.1 |

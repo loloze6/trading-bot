@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-bar return of cases with forecast > 0 (vs coin's all-window mean daily return)",
+    "value": 0.009792016267600111,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 2.234201125269443
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess above median forecast minus at/below median",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "distinct days with cases": 138,
+    "cases": 231
+  },
+  "decided_by": "The mean excess return is above 0 with t >= 2 but the supporting check fails.",
+  "reading": "Situation checked from prices as range/close over the ddof-1 std of the last 30 in-window daily returns (current bar included) >= 2 and (high-close)/(high-low) >= 0.8 with a long forecast, on the active bars where 30 prior returns exist in the window (the rising-calm profile, needing 60/365-bar histories, is not recomputed); t groups cases per UTC day by summing their deviations; the 30-day minimum is reported as not observable; cases with the median forecast go to the lower group."
+}
