@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 074-01.b1_falling-wide-up-fade-more-coins_1d
+idea tested: 074-01.b1_falling-wide-up-fade-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3733 USD
+---
+## Findings
+- **F1:** The predicted next-day fade is there, but it does not grow with the day's width. In folds B and C, the 654 falling-market wide up days are followed by a short-direction excess return of +0.57 % (t 2.41). Across the range-ratio quintiles it runs +0.99 %, +1.18 %, +0.40 %, -0.16 % and +1.53 %, which is no ordering at all, and the Spearman correlation between ratio and outcome is 0.04. This is why step 5's supporting check failed (Welch t -0.93).
+- **F2:** The plan's grading runs against the effect. Its |forecast| is the width standardised over 60 bars, and its quintiles fall from +1.51 % (t 2.55) in the smallest to -0.17 % (t -0.26) in the largest. A larger bet therefore marked a weaker fade, so the test graded the idea where it does not show.
+- **F3:** The fade depends on where the wide up day closes in its range. Days closing in the lowest third of their range give -0.26 % (t -0.53, 218 cases). Days closing in the middle third give +0.92 % (t 2.63), and days closing in the top third give +1.06 % (t 2.72). The pattern holds in both width halves: high close +1.37 % and +1.15 %, low close +0.44 % and -0.36 %.
+- **F4:** The effect is spent within the one day, as the brief says. The excess over two days is -0.09 % (t -0.26) and over three days +0.37 % (t 0.98).
+- **F5:** Agitation does not separate the effect clearly. On 10-day volatility, agitated days give +1.19 % (t 2.94) against +0.04 % for calm days. But on the 30-day swing against the coin's median, with each day's cases taken together, agitated days give +0.86 % (t 1.34) and calm days +0.34 % (t 1.09). The two sub-samples cannot be told apart, so no profile narrower than "falling" is supported.
+- **F6:** The effect is spread across years and coins rather than concentrated in a few, and it never turns clearly negative anywhere. By year it is 2018 +1.14 % (t 2.68), 2019 +0.52 %, 2020 -0.08 % and 2021 +0.43 %. It is positive in 9 of 12 coins, and the three negative ones (LINK, XRP, TRX) all have |t| under 0.7.
+- **F7:** The plan already used every fold and every coin with data, so there is no more data to add. The answer is to move the grading to where the fade shows.
+
+## Ideas
+- `074-01.b1.b1_falling-wide-up-day-high-close-fade` (from F1, F2, F3, F4, F6): In a falling market, an up day whose high-to-low range is wide compared with the coin's average daily range over the past 20 days is followed by a fall over the next day, and the closer that day closes to its high within its range, the larger the next day's fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

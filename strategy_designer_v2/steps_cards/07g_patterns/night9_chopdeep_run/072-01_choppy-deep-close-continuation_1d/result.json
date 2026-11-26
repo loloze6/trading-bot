@@ -1,0 +1,38 @@
+{
+  "line": "7.g",
+  "backtest": "072-01_choppy-deep-close-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5895309,
+  "findings": {
+    "F1": "The tested effect is not in these folds. In choppy markets the next-day excess return does not fall with depth below the 20-day high. The slope is +0.13 % per unit of depth on down days (t 0.67, 621 cases, 386 days) and +0.20 % on up days (t 1.40, 629 cases, 378 days). By quintile, the middle three choppy depth quintiles sit between \u22120.03 % and \u22120.11 % (|t| \u2264 0.41).",
+    "F2": "The choppy result rests on one quintile and is not graded. Only the deepest choppy quintile is negative (\u22120.95 %, t \u22122.15, 250 cases), and that comes from down days (\u22121.50 %, t_day \u22122.03, 88 cases) and not from up days (\u22120.65 %, t_day \u22120.78). It does not hold by year: 2021 shows +0.01 %, and 2020 shows \u22123.40 % with t \u22120.89 on 38 cases.",
+    "F3": "In falling markets (60-day return below \u221210 %), the wider an up day's range against its own 20-day mean range, the lower the next day's excess return. The slope is \u22121.37 % per unit of relative range (t_day \u22122.86, 969 cases, 277 days). The same slope is \u22120.44 % in choppy markets (t \u22120.86) and +0.24 % in rising markets (t 0.73).",
+    "F4": "The F3 effect is graded across quintiles of relative range on falling-market up days. The next-day excess return runs +0.43 %, \u22120.21 %, \u22120.92 % (t \u22122.27), \u22120.55 % and \u22121.58 % (t_day \u22122.63, 195 cases, 86 days) from narrowest to widest. The widest quintile's move is about 8 times the 0.19 % cost of a trade.",
+    "F5": "The F3 slope is negative on all six coins: BTC \u22121.68 % (t \u22122.61), ETH \u22122.07 % (t \u22123.17), LTC \u22121.49 % (t \u22122.10), ZEC \u22121.39 % (t \u22122.28), XMR \u22121.13 % (t \u22121.43) and XRP \u22120.73 % (t \u22120.90). It is also negative in 3 of 4 years: 2018 \u22121.72 % (t \u22121.97), 2019 \u22120.40 %, 2020 \u22122.38 % (t \u22123.23), against 2021 +0.79 % (t 0.97).",
+    "F6": "The F3 fade is stronger when the coin's 20-day swing is in its upper half (slope \u22121.73 %, t \u22122.83, 578 cases) than in its lower half (\u22120.75 %, t \u22121.63, 391 cases). It is a one-day effect: the two-day slope is \u22120.57 % (t \u22120.90).",
+    "F7": "The opposite case is already held. Wide down days are followed by relative rises, with a slope of +0.76 % per unit of relative range (t_day 2.04, 3627 cases). The profile map already holds several wide-range-fall rebound strategies, so this is not a discovery."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, the wider a day that closed up is against the coin's average daily range of the last 20 days, the larger the coin's fall over the next day.",
+      "consequence": "A trader in a falling coin should read an unusually wide up day as a relief bounce to sell into for one day, not as the start of a turn.",
+      "name": "falling wide up-day fade",
+      "from": "F3, F4, F5, F6",
+      "profile": "falling",
+      "theme": "discovery",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "072-01.g1_falling-wide-up-day-fade"
+  ],
+  "no_ideas": null
+}

@@ -163,3 +163,4 @@
 032_choppy-market-breakouts-fail: In a coin trendless for two months, a daily close beyond the range returns inside over days, more so the further it broke out. [bar: 1d]
 032_agitated-chop-weekly-reversal: In choppy, agitated, trendless markets, a coin's large past-week move partly reverses next week, as patient liquidity is paid for absorbing rushed flow. [bar: 1d]
 032_calm-decline-keeps-falling: In a calm multi-week decline, larger past falls predict further falls over the next days, as holders sell into every pause without a flush. [bar: 1d]
+074_falling-market-wide-up-day-fade: In a falling market, any up day wide against recent ranges falls next day, more the wider, as urgent covering's overshoot is repaid. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, source: line 7.g patterns, backtest 072-01_choppy-deep-close-continuation_1d (idea 072-01_choppy-deep-close-continuation, brief 072_choppy-deep-below-high-falls)]

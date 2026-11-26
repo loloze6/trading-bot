@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day return minus coin mean on abs(depth post_pipeline_value)",
+    "value": 1.6657639498613715e-05,
+    "statistic": {
+      "name": "OLS t, SE clustered by day",
+      "value": 0.09857346079186967
+    },
+    "threshold": "confirm: slope < 0 with clustered t <= -2 (and check passes); reject: slope > 0 with t >= 2"
+  },
+  "supporting_check": {
+    "name": "slope below 0 on up-close and on down-close bars (larger of the two slopes shown)",
+    "value": 8.455688035278777e-05,
+    "passed": false
+  },
+  "counts": {
+    "in-profile bars": 4219,
+    "distinct days": 1901,
+    "up-day bars": 2184,
+    "down-day bars": 2029
+  },
+  "decided_by": "The slope's |t| is below 2 (inconclusive rule).",
+  "reading": "The choppy profile is read as the bars whose regime is 'unknown' (the config's only regime with a strategy, flat when the 60-day trend veto says 'chop'), the situation as that regime with a raw depth below 0 and a short forecast; 'the day closed up/down' is close above/below the same bar's open; the minimum counts are taken on the regression's sample (non-zero forecast with a next-day return and a depth value), days being UTC calendar dates."
+}
