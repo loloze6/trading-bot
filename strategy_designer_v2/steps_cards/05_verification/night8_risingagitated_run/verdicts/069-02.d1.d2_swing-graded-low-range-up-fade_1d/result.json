@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day short-direction excess return on abs(forecast)",
+    "value": -0.0003241654363172755,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.6064057860302519
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean excess > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean short-direction next-day excess return > 0",
+    "value": 0.00716229858690973,
+    "passed": true
+  },
+  "counts": {
+    "cases": 378
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Bars whose 60-day, 20-day or 1-day evolution cannot be recomputed inside their window (no warm-up recorded) are left out of the situation check, the falling profile is read as a 60-bar price evolution in percent below -10 (the config veto), and every bar is a case grid cell since the horizon is 1 bar; the plan's 'fewer than 100 cases' is applied as a minimum count."
+}

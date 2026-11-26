@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 069-02.d1.d2_swing-graded-low-range-up-fade_1d
+idea tested: 069-02.d1.d2_swing-graded-low-range-up-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4714 USD
+---
+## Findings
+- **F1:** In falling markets on agitated bars (30-day swing above the coin's median), the next-day excess return falls as the day's own move grows, measured in units of the coin's daily swing: the slope is -1.26 % per unit, t -9.4, over 1,047 bars. On calm falling bars there is no such slope (+0.14 %, t 0.6, 697 bars). This reversal is the effect the tested swing grading was trying to reach, but it runs through the size of the day's move, not through the swing level alone.
+- **F2:** In falling markets, up days are followed by a smaller next-day excess return the lower their close sits in the 20-day high-low range. The means are -1.19 % (t -4.1, 258) in the second-lowest band, -0.74 % (t -2.6, 159) in the middle, -0.35 % (t -1.0, 133) in the upper-middle and +0.25 % (t 0.6, 134) in the top band. The lowest band breaks the order at -0.85 % (t -1.6, 147). In rising markets no such grading shows: every band lies between -0.17 % and +0.59 %.
+- **F3:** In agitated falling markets, the up-day side of F1 is graded too. Up days of 1 to 2 usual swings are followed by -1.27 % (t over days -1.70, 57 days), and up days above 2 swings by -1.73 % (t -1.28, 19 days), against -0.36 % after rises under 1 swing. The slope on up days alone is -0.58 % per unit, t -1.96, over 519 bars. Large rises in falling markets point down on all six coins (-0.42 % to -1.91 %) and in three of four years.
+- **F4:** Most of F1 comes from down days, which rebound: the slope is -2.05 % per unit, t -8.8, over 528 bars, and falls beyond 2 swings are followed by +6.9 % (t over days 1.98, 14 days). This falling agitated long rebound is already held by 12 strategies on the profile map, so it is not a discovery.
+- **F5:** Inside the tested cases (falling market, up day, close in the lowest fifth of the range), the agitation grading runs the wrong way. Calm cases are followed by -1.18 % (t -1.85, 110) and agitated cases by +0.11 % (t 0.1, 37). This matches the slope of t -0.61 at step 5: the swing level does not grade the fade.
+- **F6:** Choppy agitated bars show the same reversal slope, -1.14 % per unit with t -2.54 over 176 bars, while choppy calm bars show none (+0.12 %, t 0.36). Weekdays show nothing that stands out: the largest is Wednesday at -0.76 %, with a t over days of -1.26.
+
+## Ideas
+- `069-02.d1.d2.g1_falling-range-depth-up-day-fade` (from F2, F5): In a falling market, the lower a coin's up day closes within its 20-day high-low range, the larger its fall over the next day.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `069-02.d1.d2.g2_agitated-falling-big-rise-fade` (from F1, F3): In a falling, agitated market, the larger a coin's one-day rise against its usual daily swing, the larger its fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

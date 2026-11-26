@@ -19,6 +19,7 @@
 068-02_falling-agitated-run-break-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 069-01_low-range-up-day-fade_1d: not run: entry condition not met (step 5: rejected; step 6: not profitable enough)
 069-02.d1.d1_agitated-fall-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+069-02.d1.d2_swing-graded-low-range-up-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 069-02.d1_falling-market-below-high-up-day-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 069-02.d2_agitated-below-high-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 069-02.d3_below-high-up-day-two-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

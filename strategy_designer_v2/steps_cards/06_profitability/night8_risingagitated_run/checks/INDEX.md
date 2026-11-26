@@ -19,6 +19,7 @@
 068-02_falling-agitated-run-break-fade_1d: not profitable enough [Sharpe 0.7413; Sharpe minus holding's Sharpe 0.1717; Calmar 0.3572]
 069-01_low-range-up-day-fade_1d: not profitable enough [Sharpe 0.3336; Sharpe minus holding's Sharpe -0.2206; Calmar 0.1614]
 069-02.d1.d1_agitated-fall-up-day-fade_1d: not profitable enough [Sharpe 0.4036; Sharpe minus holding's Sharpe -0.166; Calmar 0.316]
+069-02.d1.d2_swing-graded-low-range-up-fade_1d: not profitable enough [Sharpe 0.2426; Sharpe minus holding's Sharpe -0.3147; Calmar 0.08966]
 069-02.d1_falling-market-below-high-up-day-fade_1d: not profitable enough [Sharpe 0.294; Sharpe minus holding's Sharpe -0.2601; Calmar 0.1604]
 069-02.d2_agitated-below-high-up-day-fade_1d: not profitable enough [Sharpe 0.2946; Sharpe minus holding's Sharpe -0.275; Calmar 0.1066]
 069-02.d3_below-high-up-day-two-day-fade_1d: not profitable enough [Sharpe 0.02336; Sharpe minus holding's Sharpe -0.5308; Calmar -0.05007]
