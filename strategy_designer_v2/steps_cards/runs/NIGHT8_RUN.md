@@ -149,6 +149,14 @@ the new books on the unseen coins (1u).
   22.6 and 30.1 USD: none had passed its budget); the resumed F stopped at 04:29 UTC on its own count, 36.89 of 30
   USD (15 ideas in its two parts after the first stop, 0 confirmed). Overspend of the night: C +2.4, F +6.9 USD; at
   most 239 USD for the six runs if A, B, D and E reach their budgets.
+- **05:40 Paris, path audit (146 ideas tested):** every plan exact or adapted to its idea. **The night's effect:**
+  "a rise fades in a falling, agitated market" (short), confirmed by four sessions on their own (B 4 times, C 5, D 1, E
+  2); 2 of them profitable enough and holding on both unseen periods (C 060-01.g1.d2.d1, E 058-02.b1.g1.b1.b1). Others
+  confirmed and profitable: C 058-03.e1 (rising calm, long; both unseen periods), E 058-02.b1.b2.b1.b2.b2.e1 (calm,
+  a close at the range's edge carries on; both), D 064-01 (falling agitated rebound, 0.53 explained by the held
+  035-01). Volume in declines (A: 7 confirmed, none profitable, all failing Calmar). Profile drift: E's theme lineage
+  still moves out of "choppy calm" (into falling and falling agitated: E reads the old theme definition, its
+  permission check having refused the new one); its best book came from that drift.
 
 ## Reading
 (written in the morning)
