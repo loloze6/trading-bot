@@ -18,21 +18,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-01.g2.b1.d2.b1_next-day-fade-of-rises | 058-01.g2.b1.d2_deep-decline-one-day-rise-fade | plan | confirmed (+2.09) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day, 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade; 7.g: no ideas: The only effects that stand out are the falling- and rising-market rebounds after down days (F3, F5), which the profile map already holds. The fade after rises is neither graded nor reliable beyond the small up days (F1, F2, F4, F6). The other angles looked at (weekday, close position within the bar's range, window, coin, 2- to 5-day horizons, profiles outside this one) show nothing that stands out from chance. | 1.24 | 12.7 |
 | 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day | 058-01.g2.b1.d2.b1_next-day-fade-of-rises | plan | inconclusive (+2.43) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. In-profile up days are followed by a small give-back the next day, but it does not grow with the rise against the coin's usual swing, at one day or over several days, in any part of the data (F1 to F5). The brief names exactly this as the case where its theory is wrong, and the test already used every coin and fold available.; 7.g: 058-01.g2.b1.d2.b1.d1.g1_three-day-rallies-fade-three-days | 1.17 | 12.6 |
 | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | 058-01.g2.b1.d2.b1_next-day-fade-of-rises | plan | confirmed (+2.38) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day, 058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades, 058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day; 7.g: 058-01.g2.b1.d2.b1.d2.g1_multi-day-rally-give-back | 2.22 | 13.9 |
+| 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | confirmed (+2.04) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 058-01.g2.b1.d2.b1.d2.d1.d1_capped-rise-fade-three-days, 058-01.g2.b1.d2.b1.d2.d1.d2_capped-rise-fade-two-days; 7.g: no ideas: The strong patterns are already tested or already held: the capped up-day fade in F1 and F2 is this backtest's idea, and the falling agitated rebounds in F3 and F4 repeat the 12 long strategies the map holds there. The remaining candidates are weak given the angles examined: the brief's multi-day give-back (F6: n 6 to 33, |t| ≤ 2.3) and the 3-day continuation outside the profile (|t| ≈ 2). The other angles also showed nothing that stands out: weekday, close location, distance from the day's low, and year. | 1.25 | 13.0 |
+| 058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | inconclusive (+1.92) | not profitable enough (failed: Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d2.b1_bounce-after-steep-slide-fades, 058-01.g2.b1.d2.b1.d2.d2.b2_larger-bounce-in-slide-fades; 7.g: 058-01.g2.b1.d2.b1.d2.d2.g1_deep-slide-bounce-fades, 058-01.g2.b1.d2.b1.d2.d2.g2_calm-slide-bounce-fades | 1.89 | 11.4 |
+| 058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade | plan | inconclusive (+1.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g2.b1.d2.b1.d2.d3.b1_prior-rally-fades-next-day; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.31 | 11.5 |
 
 ## Consumption
-14 ideas, 20.43 USD, 175.3 minutes in all.
+17 ideas, 24.88 USD, 211.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.99 | 7.4 |
-| step4_backtest | 0.00 | 104.7 |
-| step5_verdict | 2.72 | 9.8 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 3.03 | 8.8 |
+| step4_backtest | 0.00 | 128.0 |
+| step5_verdict | 3.30 | 11.8 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 1.46 | 4.6 |
-| step7_7.b | 7.51 | 26.6 |
-| step7_7.g | 6.75 | 21.0 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.d | 1.90 | 6.2 |
+| step7_7.b | 8.24 | 28.8 |
+| step7_7.g | 8.41 | 26.1 |
+| similarity_check | 0.00 | 0.4 |

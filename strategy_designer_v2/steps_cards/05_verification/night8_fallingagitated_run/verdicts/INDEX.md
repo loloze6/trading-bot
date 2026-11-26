@@ -5,6 +5,8 @@
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: inconclusive (fit: adapted) [main: 0.00431077; t of the mean, cases of one day taken together 0.970977; cases 1137, distinct days 430, cases with forecast <= -10 595, cases with forecast between -2 and -10 542]
 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day_1d: inconclusive (fit: exact) [main: 0.00602223; t of the mean, cases pooled by day 2.4334; cases 1577, distinct case days 563, largest-rise days 145, middling cases 1251]
 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day_1d: confirmed (fit: exact) [main: 0.00529898; t of the mean, cases of one day summed 2.03989; distinct days with cases 519, cases 1283]
+058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades_1d: inconclusive (fit: exact) [main: 0.00559812; t of the mean, cases of a day taken together 1.92093; cases 1250, distinct days 455]
+058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day_1d: inconclusive (fit: exact) [main: 0.0044517; t of the mean, cases pooled by day 1.73619; distinct case days 494, cases 1291, larger half cases 645, smaller half cases 646]
 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: confirmed (fit: adapted) [main: 0.00629713; t of the mean over case days (cases summed per day) 2.37844; distinct case days 566, cases 1716, larger cases 858, smaller cases 858]
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: confirmed (fit: adapted) [main: 0.00559097; t of the mean, cases of one day pooled 2.08792; distinct days with cases 565, cases 1669]
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: inconclusive (fit: adapted) [main: 0.0056467; t of the mean, same-day cases together 1.33798; cases 1465, distinct case days 510]

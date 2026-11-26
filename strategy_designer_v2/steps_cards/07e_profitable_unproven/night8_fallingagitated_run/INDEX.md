@@ -5,6 +5,8 @@
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

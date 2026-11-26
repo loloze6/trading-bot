@@ -5,6 +5,8 @@
 058-01.g2.b1.d1_raw-sized-one-day-rise-fade_1d: not profitable enough [Sharpe -0.03477; Sharpe minus holding's Sharpe -0.5876; Calmar -0.03951]
 058-01.g2.b1.d2.b1.d1_middling-rises-fade-next-day_1d: not profitable enough [Sharpe 0.4425; Sharpe minus holding's Sharpe -0.1103; Calmar 0.2731]
 058-01.g2.b1.d2.b1.d2.d1_capped-rise-fade-next-day_1d: not profitable enough [Sharpe 0.3945; Sharpe minus holding's Sharpe -0.1583; Calmar 0.2472]
+058-01.g2.b1.d2.b1.d2.d2_modest-bounce-in-slide-fades_1d: not profitable enough [Sharpe 0.7585; Sharpe minus holding's Sharpe 0.2058; Calmar 0.6658]
+058-01.g2.b1.d2.b1.d2.d3_multi-day-rally-fades-next-day_1d: not profitable enough [Sharpe 0.3967; Sharpe minus holding's Sharpe -0.156; Calmar 0.2764]
 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d: not profitable enough [Sharpe 0.447; Sharpe minus holding's Sharpe -0.1057; Calmar 0.4164]
 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d: not profitable enough [Sharpe 0.3799; Sharpe minus holding's Sharpe -0.1729; Calmar 0.3348]
 058-01.g2.b1.d2_deep-decline-one-day-rise-fade_1d: not profitable enough [Sharpe -0.003583; Sharpe minus holding's Sharpe -0.5564; Calmar -0.02602]
