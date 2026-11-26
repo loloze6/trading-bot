@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 058-01_agitated-decline-rally-giveback_1d
+idea tested: 058-01_agitated-decline-rally-giveback
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3331 USD
+---
+## Findings
+- **F1:** The main measure is on the side the idea predicts but far too small to show here: +0.33 % unusual 5-day fall per case (t 0.49, 422 cases on 244 days), a strength of 0.025 of the coin's usual 10.60 % move. The coin's normal drift against the short (-0.65 %) leaves the total move at -0.32 %, which is -1.6 times the 0.19 % cost of a trade.
+- **F2:** The effect flips sign by period. On the 5-day grid in the profile in folds B and C (93 cases), the unusual 5-day give-back is +6.05 % (t 2.94) in 2018, +2.40 % (t 2.05) in 2019 and +2.44 % (t 1.37) in 2021, but -3.19 % (t -2.46) in 2020. By window, w14 gives +6.78 % (t 3.38) and w16 gives -3.68 % (t -2.74). The market's own moves in each period drown a small average.
+- **F3:** The grading the idea claims is not there. Step 5's share-given-back check, top minus bottom half of the forecast, has a Welch t of -1.87, on the wrong side. In my 5-day quartiles of the scaled rise, q4 gives +1.11 % (t 0.51) against +3.98 % (t 2.84) for q2, with a Spearman correlation of only 0.08 between rise size and the 5-day give-back.
+- **F4:** Where any give-back shows, it is quick and not graded at the top. On a 1-day grid (437 cases, the smallest independent samples) the 1-day give-back is +0.40 % (t 1.51), carried by the third quartile (+1.43 %, t 3.06), while the largest rises (q4) give back -0.19 % (t -0.30). The 2-day grid shows the same: q3 +2.02 % (t 2.85), q4 -0.60 %.
+- **F5:** No single coin carries the effect. On the 5-day grid only ZEC passes t 2 (+4.84 %, t 2.03, 16 cases), while XMR is -0.56 % and the others sit between +0.21 % and +1.41 % with t under 0.8. More cases are available from the 13 other coins, which have data in folds A and D and in part of B and C.
+
+## Ideas
+- `058-01.b1_rally-giveback-all-coins` (from F1, F2, F5): In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 5 days, taking back a larger share of that rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

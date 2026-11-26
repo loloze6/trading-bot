@@ -227,3 +227,4 @@ night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePosit
 night8_choppycalm_run | 058-02_calm-range-bottom-drifts-up_1d | HighLowRangePosition | built: DonchianBreakoutComponent {"period": 20, "scaling_factor": 1.0, "source": "high_low"}
 night8_choppycalm_run | 058-01_calm-range-top-drifts-down_1d | HighLowRangePositionComponent | cannot build: no answer passed the checks after 3 attempts
 night8_choppyagitated_run | 059-01.b1.b1.d1.b1.b1.d1.d1_raw-scaled-rise-four-weeks_1d | centred mean-abs-scaled return | built: MeanAbsScaledReturnComponent {"base": "mean_abs_return", "form": "centred", "period": 7, "window": 30}
+night8_fallingagitated_run | 058-01.g2.b1.d2.b1.d2_rises-deep-in-decline-fade_1d | CappedScaledRiseTimesDepthBelowHigh | built: CappedScaledRiseTimesDepthBelowHighComponent {"cap": 1.0, "period": 20, "vol_period": 30}

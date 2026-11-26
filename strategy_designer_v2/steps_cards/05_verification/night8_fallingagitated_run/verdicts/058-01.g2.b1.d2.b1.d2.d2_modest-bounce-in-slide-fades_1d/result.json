@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side next-day return minus the coin's drift",
+    "value": 0.00559811939236377,
+    "statistic": {
+      "name": "t of the mean, cases of a day taken together",
+      "value": 1.9209337940771194
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting difference > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean short-side unusual move (split at median |forecast|)",
+    "value": 0.003516567991719665,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1250,
+    "distinct days": 455
+  },
+  "decided_by": "The t of the main mean lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation checked as today's return above 0 and at most 1 standard deviation of the last 30 daily returns (ddof 1, today included), the recorded depth value (four-day scaled return to yesterday) below 0 and a short forecast, on active bars where 30 returns of history exist in the window, the falling-agitated profile being left to step 3's code; cases are all bars with forecast below 0 and a next bar in the window, drift is the coin's mean next-day return over all its windows, the day-clustered t uses per-day summed deviations with a G/(G-1) correction, and the deeper half is |forecast| strictly above the median, the shallower half at or below it; the plan's 'inconclusive' for too few cases is reported as 'not observable'."
+}

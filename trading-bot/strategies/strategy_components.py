@@ -9805,3 +9805,74 @@ class VolumeChangeTimesFallDepthComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(2 * self.volume_period, self.fall_period + 1)
+
+
+class CappedScaledRiseTimesDepthBelowHighComponent(SubStrategyComponent):
+    """
+    Bar t's rise in usual one-bar moves, capped, times the close's percent depth below its closing high:
+
+        r(j) = close[j] / close[j-1] - 1
+        s    = std (ddof 1) of r(j), j = t-vol_period+1 .. t (bar t's return included)
+        x    = min(max(0, r(t) / s), cap)        (x = 0 when s = 0)
+        H    = max(close[t-period+1 .. t])       (bar t included)
+        D    = max(0, (H - close[t]) / H x 100)
+        raw_value = x * D
+
+    Range and sign: 0 to below cap x 100, never negative, no direction. It is 0 on down and flat bars and 0 at the
+    closing high. It grows with the rise up to cap usual moves and linearly with the depth below the high.
+    Warm-up: max(vol_period + 1, period) rows, bar t included (31 at the defaults).
+    NaN: a NaN close in the last max(vol_period + 1, period) rows gives NaN; a close not above 0 there gives NaN
+    (never on real bars). s = 0 gives 0. Building the component raises for vol_period < 2, period < 2, or a cap
+    that is not above 0.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(vol_period + 1, period) rows of data,
+    the last of which is bar t; a close is known at its bar's close.
+    """
+
+    def __init__(self, name="CappedScaledRiseDepthBelowHigh", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 30))
+        if self.vol_period < 2:
+            raise ValueError(f"CappedScaledRiseTimesDepthBelowHighComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 2:
+            raise ValueError(f"CappedScaledRiseTimesDepthBelowHighComponent: period must be >= 2, got {self.period}")
+        try:
+            self.cap = float(self.parameters.get("cap", 1.0))
+        except (TypeError, ValueError):
+            raise ValueError("CappedScaledRiseTimesDepthBelowHighComponent: cap must be a number above 0")
+        if not self.cap > 0:
+            raise ValueError(f"CappedScaledRiseTimesDepthBelowHighComponent: cap must be above 0, got {self.cap}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data["close"].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or (c <= 0).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        vp = self.vol_period
+        rets = c[-vp:] / c[-vp - 1:-1] - 1.0
+        s = float(np.std(rets, ddof=1))
+        r = float(rets[-1])
+        if s > 0:
+            x = min(max(0.0, r / s), self.cap)
+        else:
+            x = 0.0
+        h = float(np.max(c[-self.period:]))
+        d = max(0.0, (h - float(c[-1])) / h * 100.0)
+        self._raw_value = float(x * d)
+        self.confidence = 1.0
+        self.debug_info = {"scaled_rise_capped": x, "std": s, "high": h, "depth_pct": d}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.vol_period + 1, self.period)

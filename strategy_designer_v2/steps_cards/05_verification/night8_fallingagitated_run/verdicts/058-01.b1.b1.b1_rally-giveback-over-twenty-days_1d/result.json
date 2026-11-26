@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 20-bar forward return on abs(forecast), forecast<0 grid cells",
+    "value": -0.008349394709169277,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -2.9195619969527
+    },
+    "threshold": "slope t <= -2 confirms (with supporting check); slope t >= +2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 20-bar return over cases < 0 with day-clustered t <= -2",
+    "value": -1.9566954109020358,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases": 112,
+    "days": 36,
+    "active bars": 2361
+  },
+  "decided_by": "Neither the confirm rule (slope t <= -2 with supporting check passed) nor the reject rule (slope t >= +2 or mean t >= +2) is met.",
+  "reading": "Cases are grid cells at positions 0,20,40,... of each window with forecast < 0 and a full 20-bar forward return inside the window, drift is the coin's mean over that grid in all windows, the supporting t clusters deviations by UTC day, the same t is used for the reject rule's mean, and the plan's 30-case minimum gives 'not observable' when unmet."
+}

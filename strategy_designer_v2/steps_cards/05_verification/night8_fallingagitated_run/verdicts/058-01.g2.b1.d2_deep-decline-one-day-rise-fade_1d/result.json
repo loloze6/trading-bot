@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move after short bets, short direction",
+    "value": 0.005646703066459536,
+    "statistic": {
+      "name": "t of the mean, same-day cases together",
+      "value": 1.3379770358705014
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and correlation > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "correlation of |forecast| with unusual move",
+    "value": 0.019715438618595833,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1465,
+    "distinct case days": 510
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "The rise and the 60-day fall are read from the recorded raw values (rise > 0, fall < -10 as the config's veto), the agitation (365-day volatility percentile, not recomputable inside ~122-bar windows) from the detector's regime being 'trending', a case is the first short bet in each 3-bar grid cell of a window, and the t clusters deviations by signal day with a G/(G-1) correction."
+}

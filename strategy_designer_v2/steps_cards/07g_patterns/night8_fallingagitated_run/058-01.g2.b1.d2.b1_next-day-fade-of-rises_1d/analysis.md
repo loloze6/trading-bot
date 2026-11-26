@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d
+idea tested: 058-01.g2.b1.d2.b1_next-day-fade-of-rises
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4076 USD
+---
+## Findings
+- **F1:** In the falling agitated profile, the next-day fade after up days does not grow with the rise. Ranked into terciles of the rise in 30-day swings, the next-day unusual move is -0.99 % (t -1.47, 120 days) for the smallest, -1.17 % (t -2.21, 115 days) for the middle and only -0.38 % (t -0.60, 105 days) for the largest. By bucket it is -1.03 % (t -2.67, n 262) for rises of 0.3 to 1 swing, -0.17 % (t -0.32, n 101) for 1 to 2 swings and +0.21 % (t 0.13, n 21) above 2 swings. The book's confirmed fade comes from many small up days, not from the large rises the theory is about.
+- **F2:** In the profile, the brief's multi-day version only leans its way. After 3-day rises on a non-overlapping grid, the largest tercile is followed by -2.98 % over the next 3 days, but with t -1.63 over only 29 days; the Spearman correlation is -0.16 (p 0.03, n 180). The 2-day version (Spearman +0.05, p 0.43) and the 5-day version (-0.06, p 0.59) show nothing. That cannot be told from chance after this many angles.
+- **F3:** In the profile, down days are followed by rebounds the next day. The next-day unusual move is +6.2 % (t 3.69, n 29) after falls beyond 2 swings, +2.17 % (t 3.22, n 112) after falls of 1 to 2 swings and +1.21 % (t 4.57, n 325) after falls of 0.3 to 1 swing. These t's are not pooled by day. This repeats the falling agitated long rebound that the map already holds 12 times, so it is not a discovery.
+- **F4:** Outside the profile, up days in falling but calm markets are followed by -0.88 % the next day (t -2.36, n 149, not day-pooled). With cases pooled by day it does not hold: terciles of falling-market up days give -0.24 % (t -0.60), +0.06 % (t 0.11) and -0.48 % (t -1.07). The thin falling calm short cell is not filled by anything that stands out.
+- **F5:** Outside the profile, down days in rising markets are followed by +1.40 % the next day (t 3.65, n 223, not day-pooled). This is a rising-market dip rebound, a long effect in cells the map already fills (10 strategies in rising agitated long, 6 in rising calm long).
+- **F6:** The book is too thin and too lumpy to pay. Its mean daily return is +0.006 % with a 0.32 % daily standard deviation, and its best 5 % of days sum to 5.6 times its total gain. Two windows carry the profit: w14 (+6.3 %) and w16 (+3.6 %). w11 (-2.9 %) and w17 (-2.7 %) lose. In w16 alone, up days above 1 swing were followed by -2.16 % (t -2.98, n 35), while in w18 they were followed by +2.47 % (t 2.18, n 19).
+- **F7:** Other angles showed no pattern that stands out once the number of angles looked at is counted. In the profile, Tuesday gave +1.25 % (t 3.13), but it is one of seven weekdays. Where an up day closes within its range changes nothing: -0.51 % (t -0.78) for closes in the top fifth against +0.70 % (t 0.81) for closes between the middle and the top fifth.
+
+## Ideas
+- No ideas: The only effects that stand out are the falling- and rising-market rebounds after down days (F3, F5), which the profile map already holds. The fade after rises is neither graded nor reliable beyond the small up days (F1, F2, F4, F6). The other angles looked at (weekday, close position within the bar's range, window, coin, 2- to 5-day horizons, profiles outside this one) show nothing that stands out from chance.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

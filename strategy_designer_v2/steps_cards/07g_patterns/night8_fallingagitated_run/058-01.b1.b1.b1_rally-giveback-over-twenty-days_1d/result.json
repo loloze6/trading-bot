@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "058-01.b1.b1.b1_rally-giveback-over-twenty-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4169845,
+  "findings": {
+    "F1": "Inside the falling, agitated profile, a large 3-day rise is given back over the following few days but not over the following weeks. After 3-day rises of more than 2 of the coin's 30-day daily swings, the drift-adjusted return was -3.3 % over 3 days (t -1.58, 29 cases, 17 days) and -4.8 % over 5 days (t -2.22, 16 cases, 11 days), a strength of -0.31 of a usual 5-day move.",
+    "F2": "Inside the profile, the 3-day give-back grows with the size of the scaled rise. The drift-adjusted 3-day return was +0.2 % after rises of 0 to 1 swings (104 cases), -2.0 % after 1 to 2 swings (47 cases, t -1.09) and -3.3 % after more than 2 swings (29 cases), against +2.4 % after falls of more than 1 swing (104 cases).",
+    "F3": "Over 20 days the profile's general rebound swamps the give-back, which is why the tested book lost. Every 20-day grid cell in the profile averaged +3.9 % above the coin's normal drift (64 cases, t 1.08). Cells after a 3-day fall of 0 to 1 swings gained +17.0 % (t 2.91, 20 cases), and the step-5 size shows the cases' unusual move at +3.74 % against the short (t 2.01).",
+    "F4": "The short book's losses come from that 20-day hold, not from how large the forecast was. All 208 trades were shorts averaging -6.2 % net, with no improvement with forecast size (terciles -5.6 %, -6.8 %, -6.1 %). One window, w16, held 37 trades averaging -42 % (ZEC -117 % at worst) and summed -0.30 of daily book return, against +0.04 to +0.09 in w13 to w15.",
+    "F5": "Outside the profile, large scaled 3-day rises tended to continue, but not reliably. The drift-adjusted return was +2.8 % over 5 days (t 1.96, 154 cases, 68 days) and +5.2 % over 10 days (t 1.85, 88 cases). The graded slope was not significant (t 1.79 at 3 days, 1.00 at 5 days), and the sign changed by year (2019 -2.3 %, 2021 +4.9 %), so it is not a finding to build on."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 5 days.",
+      "consequence": "A trader would short a scaled rally in a falling, agitated market for about a week, sized by how many usual swings the rally spans, and close it before the profile's multi-week rebound sets in.",
+      "name": "rally giveback within five days",
+      "from": "F1, F2, F3, F4",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.b1.b1.b1.g1_rally-giveback-within-five-days"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

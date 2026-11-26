@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 058-01.g2.b1_one-day-rise-fades-wider_1d
+idea tested: 058-01.g2.b1_one-day-rise-fades-wider
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4173 USD
+---
+## Findings
+- **F1:** In the falling agitated profile, the larger a coin's 3-day rise against its 30-day swing, the lower its excess return over the next 3 days. The slope is -0.0319, day-clustered t -2.20, on 180 cases over 75 days. By size of rise, the excess return is -2.13 % for rises of 0.5 to 1.5 usual moves (t -2.21, 71 cases) and -3.59 % above 1.5 (15 cases). Outside the profile the same slope has the other sign, +0.0117 (clustered t 1.79, 1138 cases, 289 days). There the excess return is +1.01 % (t 2.79) for rises of 0.5 to 1.5 and +1.82 % (t 2.03) above 1.5.
+- **F2:** The tested one-day version is weaker once each day's cases are taken together. In the profile, the slope of the 3-day excess return on the size of a one-day up move is -0.0262, day-clustered t -1.73, on 225 cases over 88 days. The 1-to-2 usual-move bin gives -2.71 % (41 cases).
+- **F3:** The tested idea's total move per case does not cover the cost of a trade. It is -0.00 % per case against a cost of 0.22 %, because the coin's drift in the short's direction is -0.43 % and cancels the +0.43 % unusual move (t 1.01, 488 days). Accordingly the book's Sharpe is -0.03, its mean daily return on days in a position is -0.005 %, and its window sums range from -0.24 to +0.22 with no fold holding up.
+- **F4:** In the profile, larger one-day falls against usual swing are followed by larger 3-day rebounds. The slope is +0.0414, day-clustered t 2.05, on 202 cases over 78 days, and falls beyond 2 usual moves are followed by +11.8 % (11 cases). This is a long rebound in falling agitated markets, already held in the map (035-01, 047-01, 051-01 and others).
+- **F5:** The weekday pattern in next-day returns does not survive taking each day's cases together. Every weekday has |t| ≤ 1.44 on about 207 days each. Wednesday's -0.44 % and the Thursday/Friday gains do not hold every year (Wednesday is +0.18 % in 2021).
+- **F6:** Where the day closes in its range shows no graded pattern in the profile, so it is not a finding. Closes in the bottom fifth are followed by +4.71 % (t 3.74, 73 cases), but the next fifth by -3.76 % (t -4.45, 95 cases), and the upper bins by +2.05 %, +0.40 % and -0.78 %.
+
+## Ideas
+- `058-01.g2.b1.g1_three-day-rise-fades-falling` (from F1, F2, F3): In a falling, agitated market, the larger a coin's 3-day rise against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

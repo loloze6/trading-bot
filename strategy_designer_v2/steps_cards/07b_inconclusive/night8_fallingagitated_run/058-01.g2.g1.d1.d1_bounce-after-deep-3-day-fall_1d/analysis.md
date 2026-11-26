@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall_1d
+idea tested: 058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2013 USD
+---
+## Findings
+- **F1:** The test's result points the way the idea predicts but falls short of the bar: the mean unusual next-day fall is +0.51 % with t 1.65 over 804 cases on 412 days, and the idea's size is +0.72 % per case (0.152 of a usual move, t 2.05, 300 days).
+- **F2:** In the folds shown (B, C), the effect is positive in every year (2018 +1.66 %, 2019 +0.87 %, 2020 +0.46 %, 2021 +0.60 %, t 0.47 to 1.49). It is also positive in 9 of 10 windows; the one exception is w11 at −8.6 % on only 9 cases. So it is consistent everywhere and too small in each part to show alone.
+- **F3:** Five of six coins point the predicted way (BTC +1.28 % t 2.40, ZEC +1.41 % t 2.05, LTC +1.42 % t 1.82, XMR +0.66 %, ETH +0.48 %), and only XRP is slightly negative (−0.15 %, t −0.10, 47 cases). The weak t comes from too few cases per coin, not from one coin carrying the result.
+- **F4:** The effect is graded at its deep end. The deepest quarter of forecasts gives +3.00 % (t 2.54, 94 cases, 51 days) against −0.41 % to +0.99 % for the other three quarters. The rank correlation of the forecast's depth with the next-day fall is 0.15, and step 5's deeper-minus-shallower check passed (+0.51 %).
+- **F5:** The effect is a one-day effect, matching the plan's horizon: the unusual fall is +0.93 % at 1 day (t 1.74, 177 days) and fades to +0.32 % at 2 days (t 0.43), +0.03 % at 3 days and −0.47 % at 5 days (t −0.52). Another horizon would not make it clearer.
+- **F6:** The size of the up day itself does not grade the fall. Its rank correlation with the next-day fall is −0.05, and the biggest-up-day quarter gives +0.12 % against +1.1 % to +1.9 % for the others. The prior 3-day fall carries the effect, as the idea says.
+- **F7:** The move is large enough to trade. The total move per case (+0.59 %) is 3.1 times the 0.19 % cost of a trade, so what is missing is evidence, not size.
+
+## Ideas
+- `058-01.g2.g1.d1.d1.b1_deep-fall-bounce-all-coins` (from F1, F2, F3, F4, F7): In a falling, agitated market, a coin's up day that comes after a 3-day fall is followed by a fall over the next day, and the deeper that 3-day fall against the standard deviation of its daily returns over the past 30 days, the larger the next-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

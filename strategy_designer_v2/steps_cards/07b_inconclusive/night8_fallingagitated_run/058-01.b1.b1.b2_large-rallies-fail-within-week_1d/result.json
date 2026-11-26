@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "058-01.b1.b1.b2_large-rallies-fail-within-week_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5785058,
+  "findings": {
+    "F1": "Over 3 days the graded effect the idea claims shows in folds B and C. On 167 rise cases on 68 days, the slope of the 3-day excess return on the scaled 3-day rise is -0.018 (t -2.08 clustered by day; t -1.84 on the strength), with Spearman -0.145. The short-direction excess climbs across the quartiles of the scaled rise: -0.68 %, +0.05 %, +1.91 %, +2.48 % (top quartile t 2.15).",
+    "F2": "The plan's 5-day horizon is where the grading fades. The same slope is -0.004 at 5 days (t -0.56, Spearman -0.08), and it goes to +0.003 (t 0.23) at 4 days and +0.007 (t 0.40) at 6 days. The 5-day quartiles are not ordered (+0.33 %, +4.08 %, +0.58 %, +0.76 %). This is why step 5's slope stopped at t 0.93 although it has the predicted sign.",
+    "F3": "Over 3 days, the top half of scaled rises is followed by a short-direction excess of +2.20 %, with 65 % of cases ending below the coin's normal drift (83 cases, 36 days). The bottom half shows -0.31 % (54 % below; 84 cases, 47 days). The give-back is about ten times the 0.22 % cost of a trade.",
+    "F4": "At 5 days and beyond, the give-back after rises exists as a level but is not graded. The mean short excess is +1.45 % at 5 days (day-clustered t 0.96; 103 cases, 40 days) and +6.80 % at 8 days (t 3.19; 60 cases, 23 days). Even at 8 days the quartiles are flat (2.7 %, 7.8 %, 9.0 %, 7.7 %) and the slope on the scaled rise is -0.026 (t -0.64).",
+    "F5": "The 3-day grading varies by period and coin but mostly points the predicted way. By year, the 3-day slope is -0.032 (t -2.08) in 2020 and -0.021 (t -2.44) in 2021, but -0.006 (t -0.32) in 2018 and +0.009 (t 0.49) in 2019. The rank correlation is negative in 5 of the 7 coins with at least 10 cases (XRP -0.44, LTC -0.32, ETH -0.26, ADA -0.25, ZEC -0.24); BTC (+0.05) and XMR (+0.05) are the exceptions.",
+    "F6": "Inside the profile the market's own moves drown the 5-day measure. A coin's usual 5-day move is 11.7 %, against an unusual move of +0.86 % (t 1.24), and the normal drift in the short's direction is -0.74 %, leaving a total of only +0.12 % per case. Over 3 days, by contrast, the top scaled rallies give back several times the cost."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the larger a coin's 3-day rise is against the standard deviation of its daily returns over the past 30 days, the larger the fall in its price over the next 3 days.",
+      "consequence": "A trader would short a large scaled rally in a falling, agitated market for a few days only, sized by the rally's size, rather than holding the short through the week.",
+      "name": "large rallies fail within days",
+      "from": "F1, F2, F3, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.b1.b1.b2.b1_large-rallies-fail-within-days"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

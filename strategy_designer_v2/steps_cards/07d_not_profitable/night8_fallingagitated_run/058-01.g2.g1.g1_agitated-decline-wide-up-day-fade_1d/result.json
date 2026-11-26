@@ -1,0 +1,36 @@
+{
+  "line": "7.d",
+  "backtest": "058-01.g2.g1.g1_agitated-decline-wide-up-day-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40619269999999996,
+  "findings": {
+    "F1": "The whole effect sits on the first up day after a down day. On those days the next-day unusual move of the short is +1.55 % (370 cases on 165 days, day-clustered t 3.31, hit 64 %) and the book gained a summed +168 % of position-weighted returns. On second and later up days in a row it is -0.01 % (253 cases, 130 days, t -0.01, hit 53 %), and the book's summed gain there is -3.4 %.",
+    "F2": "The later up days carry the falls that sink Calmar. The worst single-case gain is -23.0 % on a later up day against -8.3 % on a first up day, and 12.6 % of later-up cases lose more than 5 % against 8.9 % of first-up cases. The book's 15 worst days all came while the coins rose (+3 % to +12.5 % on the day, e.g. -5.9 % for the book on a +11 % day in w14), which is shorting into a multi-day squeeze that kept going.",
+    "F3": "Within first up days the effect is graded by the tested measure. By tercile of the day's range against the 30-day standard deviation of returns, the next-day unusual move is +0.69 % (t 1.18), +1.17 % (t 1.69) and +2.30 % (t 2.36, hit 71 %). On later up days the terciles are flat and none can be told from 0 (-0.20 %, +0.19 %, +0.33 %, all |t| < 0.4).",
+    "F4": "Restricting to first up days is not an effect of its own. Outside the falling agitated profile, first up days give only +0.35 % (1598 cases, 552 days, t 1.84) against +1.55 % inside it, and later up days outside give -0.06 % (t -0.27). The profile from the idea's own theory, a crowded, levered decline, is what carries the move: a lone up day there is the squeeze that fades, while a run of up days is buying that persists.",
+    "F5": "The horizon is right at one day and cost is not the binding problem. Over 1, 2 and 3 days the cases give +0.92 % (t 3.99), +0.46 % (t 1.35) and +0.41 % (t 1.12). The total move per case (+0.69 %) is 3.6 times the 0.19 % cost of a trade. The failing Sharpe against holding and Calmar come from losing later-up-day trades (w11 cases -3.9 %, a window where the coins rose 149 %), not from fees."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, the first up day after a down day is followed by a fall over the next day, and the wider that day's range from low to high, measured against the standard deviation of its daily returns over the past 30 days, the larger that next-day fall.",
+      "consequence": "In an agitated decline a trader would short only the first up day after a down day for one day, shorting more the wider its range against the coin's usual swing, and would stand aside once up days follow each other, where squeezes run on.",
+      "name": "agitated decline first-up-day fade",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

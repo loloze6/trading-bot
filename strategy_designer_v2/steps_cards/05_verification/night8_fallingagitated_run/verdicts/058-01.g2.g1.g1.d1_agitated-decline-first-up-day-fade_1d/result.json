@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day short-signed return beyond the coin's mean daily return",
+    "value": 0.00943373338305816,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 3.253075274963511
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half |forecast| short-signed excess return",
+    "value": 0.0066786186338802156,
+    "passed": true
+  },
+  "counts": {
+    "cases": 759,
+    "days": 387
+  },
+  "decided_by": "the main mean is positive with t >= 2 and the top-minus-bottom difference is positive (confirm rule)",
+  "reading": "situation recomputed from closes within each window as close[t]>close[t-1] and close[t-1]<=close[t-2] with a short forecast; active bars on a window's first two rows (streak not computable) are left out; the falling-agitated profile (365-day volatility percentile) cannot be rebuilt from the record's windows and is not re-checked; the t clusters cases by UTC day (deviations from the mean summed per day, with a D/(D-1) correction); the top and bottom halves split the cases sorted by |forecast| (ties ordered by time then coin), the bottom half taking the extra case when the count is odd; fewer than 100 cases is reported as not observable",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004877 on the check folds against +0.009434 on every fold",
+    "main": 0.004876822326275398,
+    "statistic": 1.4270861200238618,
+    "counts": {
+      "cases": 385,
+      "days": 219
+    }
+  }
+}
