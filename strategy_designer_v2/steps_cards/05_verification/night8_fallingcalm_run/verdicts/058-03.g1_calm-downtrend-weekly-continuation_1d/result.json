@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (next 5-bar return - coin drift), day-clustered",
+    "value": 0.006593816901598695,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.0324286653015282
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 50 distinct days; reject: mean < 0 with t <= -2 over >= 50 distinct days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "distinct days": 255,
+    "cases": 654
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan rules inconclusive.",
+  "reading": "Profile taken from the recorded regime ('unknown' = falling calm, both vetoes off), side = sign of the 5-day return (ret5 raw value, else recomputed from closes); drift = coin's mean next-5-bar return over all windows' grid bars; day-clustered t uses per-day summed deviations with a G/(G-1) correction; fewer than 50 distinct days is reported as not observable."
+}

@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "060-02.d2.d1_volume-dry-up-short-only_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4583727,
+  "findings": {
+    "F1": "In a falling market (60-day return below \u221210 %) on the 5-day grid of folds B and C, the tested situation stands out clearly: a negative 10-day return with shrinking 30-day volume is followed by an unusual 5-day move of \u22123.71 % (t \u22124.25, 147 cases), and the most-shrunk volume quintile by \u22123.59 % (t \u22122.76, 81 cases), while the growing-volume quintiles are +1.81 % (t 1.73) and +0.49 % (t 0.32); this is the idea itself, not a new pattern.",
+    "F2": "The continuation is stronger in calm falling markets than in agitated ones: with shrinking volume and a negative 10-day return, calm gives \u22124.07 % over 5 days (t \u22122.03 with cases of one day together, 79 cases, 34 days) against \u22123.28 % for agitated (t \u22121.39, 68 cases); by the coin's own 30-day swing, the falling market's calmest tercile drifts \u22122.45 % over 5 days (t \u22122.62, 101 cases), the middle \u22121.02 % (t \u22121.10) and the most agitated +0.95 % (t 1.02).",
+    "F3": "Day by day, a calm falling market also continues down after middling closes: the next day's unusual return is \u22120.83 % after a close at 20\u201340 % of the day's range (t \u22122.07, 199 cases, 120 days) and \u22121.05 % after 40\u201360 % (t \u22122.51, 162 cases); over 2 days, closes above 40 % of the range are followed by \u22121.13 % (t \u22121.97, 232 cases). An agitated falling market instead rebounds after a low close, +1.99 % (t 2.62, 146 cases) and grows with range/swing to +3.46 % (t 2.29), and after a fall of more than one daily swing, +2.03 % (t 2.22). That rebound is already held by 039-02, 044-01, 045-01 and 047-01.",
+    "F4": "In a choppy market (60-day return between \u221210 % and +10 %), the quintile with the largest 5-day fall is followed by a further unusual 5-day move of \u221210.54 % (t \u22124.11, 26 cases), while the other four quintiles lie between \u22120.26 % and +1.86 % (|t| \u2264 1.11). Next day, a choppy calm close in the lowest tenth of the range is followed by \u22122.87 % (t \u22123.06, 19 cases, 16 days). The choppy short cells are empty or thin on the map (choppy agitated short: 0; choppy calm short: 1), but the cases are few.",
+    "F5": "The book's gain is concentrated in a few windows: the daily returns sum to +0.226 in w7 and +0.10 to +0.13 in each of w13, w14 and w15, against \u22120.066 in w16 and \u22120.061 in w17. Per trade, the median is \u22120.24 % for BTC and \u22120.32 % for ETH, and XRP's worst trade is \u221268 %. This fits the failed Calmar of 0.24 more than a missing effect, since the per-case total move is 3.8 times the 0.19 % cost."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, while the coin's 10-day return is still negative, the more its trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 5 days.",
+      "consequence": "A trader keeps the volume dry-up short to falling markets that are still calm, where thin selling drifts on, and stays out of it once the fall turns agitated and starts to rebound.",
+      "name": "calm fall volume dry-up",
+      "from": "F1, F2, F3",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the larger the coin's fall over the past 5 days, the further it falls over the next 5 days.",
+      "consequence": "A trader in a sideways market treats a sharp 5-day drop as the start of a further decline to short, not as a dip to buy.",
+      "name": "choppy sharp fall continues",
+      "from": "F4",
+      "profile": "choppy",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-02.d2.d1.g1_calm-fall-volume-dry-up"
+  ],
+  "discovery_ids": [
+    "060-02.d2.d1.g2_choppy-sharp-fall-continues"
+  ],
+  "no_ideas": null
+}

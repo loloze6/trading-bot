@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-bar excess return on forecast (grid cases, nonzero forecast)",
+    "value": 0.0007592945947954504,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.960599029108236
+    },
+    "threshold": "confirm t >= 2 (with positive-minus-negative difference > 0); reject t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, positive minus negative forecast cases",
+    "value": 0.01504009777433932,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 1255,
+    "cases with a positive forecast": 535,
+    "cases with a negative forecast": 720
+  },
+  "decided_by": "The slope has t >= 2 and the positive-minus-negative excess return difference is above 0, with at least 100 cases.",
+  "reading": "Falling profile recomputed as 60-bar % price change < -10 inside each window (detector regime 'unknown' where 60 prior bars are not in the window), expected side = sign of the raw log volume ratio; the slope is one pooled least-squares fit with intercept over all coins' grid cases, each coin's drift being its mean grid 5-bar return over all its windows.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001315 on the check folds against +0.0007593 on every fold",
+    "main": 0.00013150040452149532,
+    "statistic": 0.4127160112900148,
+    "counts": {
+      "grid cases with a nonzero forecast": 578,
+      "cases with a positive forecast": 247,
+      "cases with a negative forecast": 331
+    }
+  }
+}

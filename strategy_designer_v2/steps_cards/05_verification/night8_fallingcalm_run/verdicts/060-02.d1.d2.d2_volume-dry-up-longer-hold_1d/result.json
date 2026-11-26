@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (20-bar forward return - coin mean 20-bar return) on grid cases",
+    "value": 0.02378397556841857,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.6054745270848105
+    },
+    "threshold": "mean > 0 with t >= 2 (confirm), mean < 0 with t <= -2 (reject), from at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with a non-zero forecast": 150,
+    "days": 54
+  },
+  "decided_by": "The t lies between -2 and 2 (inconclusive rule).",
+  "reading": "Situation taken as price-computed 20-day return < -10 % and 60-day return < -10 % (falling profile), falling back to regime == mean_reversion where a window lacks the history, with the expected side the sign of the raw log volume ratio; the coin's mean 20-bar return is taken over all windows' non-overlapping grid bars, the t is the day-clustered t of the case mean (per-day summed deviations), and fewer than 30 cases gives 'not observable' as the minimum-count rule."
+}

@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 060-02.d2.d2_volume-growth-capitulation-rebound_1d
+idea tested: 060-02.d2.d2_volume-growth-capitulation-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4292 USD
+---
+## Findings
+- **F1:** In a falling market (60-day return below -10 %), the 5-day unusual move rises steadily with the 30-day volume ratio. Across its quintiles it goes -3.10 % (t -2.69, 101 cases), -0.85 %, +0.27 %, +0.80 %, +1.31 %. So the more volume has dried up, the more the coin keeps falling, which is the brief's own claim.
+- **F2:** The dry-up continuation is concentrated in the coin's calmer stretches. In falling markets, the two driest volume quintiles in the lowest 30-day-swing tercile give -3.93 % (25 cases, 14 days, t -1.24) and -4.33 % (30 cases, 20 days, t -1.86). The same quintiles in the highest tercile give -3.24 % and +1.32 %.
+- **F3:** Calmness alone also grades the falling-market drift. In the coin's low, middle and high 30-day-swing terciles, the 5-day unusual move is -2.51 % (t -2.74, 104 cases), -0.96 % and +1.07 %.
+- **F4:** The dry-up continuation is not stable across years. The driest volume quintile in falling markets gives -6.59 % in 2018 (27 cases, 16 days, t -2.10) and -6.39 % in 2019 (19 cases, 6 days, t -2.05), but +5.51 % in 2020 (7 cases, 4 days). It is also uneven across coins: ZEC -6.29 % (t -3.28) and ETH -6.69 % (t -2.02), against LTC and XMR near 0.
+- **F5:** Inside the tested regime (falling, volume grown, 10-day fall), the volume-growth part adds nothing and the gain comes from the depth of the fall.
+- **F6:** The book's trades with the highest entry forecasts (top quartile, forecast 13.9 and above) earn +0.76 % net per trade, against +3.6 % to +4.1 % for the three lower quartiles. The forecast's top end does not pay, which weighs on the Calmar of 0.33.
+- **F7:** In rising markets, the lowest 30-day-swing tercile gives +4.15 % (111 cases, 47 days, t 2.46), against -1.62 % in the highest tercile. This is rising-calm continuation, which the profile map already holds with six strategies, so it is not a discovery.
+- **F8:** Other angles do not stand out against the number of angles examined.
+
+## Ideas
+- `060-02.d2.d2.g1_calm-falling-volume-dry-up` (from F1, F2, F4): In a falling, calm market, the more a coin's trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 5 days.
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `060-02.d2.d2.g2_quiet-downtrend-keeps-falling` (from F3, F2): In a falling market, the calmer a coin's daily swings over the past 30 days have been against its past year, the larger its further fall over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

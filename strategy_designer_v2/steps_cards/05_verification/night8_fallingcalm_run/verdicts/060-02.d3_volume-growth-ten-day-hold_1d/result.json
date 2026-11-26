@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 10-bar return per day-case",
+    "value": 0.08292134314543333,
+    "statistic": {
+      "name": "t of the mean over day-cases",
+      "value": 1.8651131433808406
+    },
+    "threshold": "t >= 2 confirms (with rank correlation > 0), t <= -2 rejects, on >= 30 day-cases"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation forecast vs excess 10-bar return > 0",
+    "value": 0.1646945465640118,
+    "passed": true
+  },
+  "counts": {
+    "day-cases": 147,
+    "cells": 447
+  },
+  "decided_by": "The t lies between -2 and 2 on at least 30 day-cases, so the plan calls it inconclusive.",
+  "reading": "The situation is checked as the 20-day close return below 0 (from prices, or the recorded 'mean_reversion' regime where the window holds fewer than 20 earlier bars), the falling profile being left to the code as the Fidelity says, and the expected side as the sign of the recorded raw 30/30-day log volume ratio; the coin's mean 10-bar return is taken over all its grid cells in all windows, and the main measure is the mean over day-cases of the per-date summed cell values, with the ordinary t of that mean."
+}

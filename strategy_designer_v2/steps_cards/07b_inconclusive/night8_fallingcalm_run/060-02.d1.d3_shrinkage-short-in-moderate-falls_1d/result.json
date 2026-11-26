@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "060-02.d1.d3_shrinkage-short-in-moderate-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3652165,
+  "findings": {
+    "F1": "Inside the falling profile the effect sits in the deeper moderate falls. When the 20-day return is between -20 % and -10 %, active short cases earn a mean short excess 5-day return of +5.10 % (t 5.11, 86 cases). Between -10 % and -5 % they earn +3.39 % (t 2.14, 35 cases). Between -5 % and 0 % they earn only +0.93 % (t 0.50, 39 cases), so the shallow part of the tested range adds cases and no effect.",
+    "F2": "Scoring each falling case by depth of fall times volume shrinkage gives a graded result. The short excess 5-day return rises from +1.50 % (t 1.08, 53 cases) in the low tercile to +3.78 % (t 2.42, 53) in the middle tercile and +4.39 % (t 2.86, 54) in the high tercile.",
+    "F3": "The dry-up matters within the deeper fall band (60-day return below -10 %, 20-day return from -20 % to -10 %). Shrinking-volume cases give +5.32 % short excess (t 4.11, 59 cases), while growing-volume cases give -2.49 % (t -1.34, 25). In the -5 % to 0 % band the order flips: shrink +1.10 % (t 0.43) against growth +2.91 % (t 1.35).",
+    "F4": "The effect varies across periods, which matches the check folds A and D disagreeing (-0.0009 against +0.0171 on all folds).",
+    "F5": "The strongest cases carry the measure.",
+    "F6": "The effect is not tied to the plan's 5 days. The mean product is 0.0063 (t 3.66, 971 cases) at 1 day, 0.0350 (t 3.44, 192) at 5 days and 0.0584 (t 3.44, 102) at 10 days.",
+    "F7": "Some coins show it and others barely do. BTC (t 0.36, 24 cases) and XMR (t 0.21, 22) show little, while ETH (t 2.63), XRP (t 2.24) and ZEC (t 2.05) carry it."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, while the coin's 20-day return is negative but not yet a crash, the deeper that 20-day fall and the more its trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 5 days.",
+      "consequence": "A trader shorts volume shrinkage in a falling coin, weighted toward falls that are already deep but not crashing. They stand aside from shallow dips, where the dry-up predicts nothing.",
+      "name": "deep moderate fall dry-up",
+      "from": "F1, F2, F3, F5",
+      "profile": "falling",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-02.d1.d3.b1_deep-moderate-fall-dry-up"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

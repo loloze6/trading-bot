@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 058-01.b2_quiet-volume-calm-fall-continues_1d
+idea tested: 058-01.b2_quiet-volume-calm-fall-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3471 USD
+---
+## Findings
+- **F1:** The plan's main measure has its sign reversed against the idea. (-forecast/10) is positive on a short signal, so the measure is positive when the coin rises, and the confirm rule asked for a rise. Step 5's -0.0059 (t -0.68, 385 cases, 178 days) is therefore on the idea's side: the coins fell more than their drift. The size agrees: the unusual move in the short direction is +0.58 % per case (t 0.86, 259 days, strength 0.056).
+- **F2:** In folds B and C the same quiet-volume cases at 5 days give a short gain of +1.30 % (t 1.04, 220 cases on 90 days); unweighted it is +1.17 % (t 1.17). The effect points the idea's way but sits far below t 2 on this data.
+- **F3:** The effect is real in direction only and not graded by volume. Among quiet cases the forecast and the 5-day excess return have a Spearman rho of -0.005 (p 0.94, n 220). By forecast quartile the excess return is quietest -1.32 %, then -0.57 %, -1.69 % and -1.11 %, with no gradient. The heavy-volume cases fall too (-0.29 %, t -0.14, n 26), only a little less than the quiet ones (-1.17 %, t -1.86).
+- **F4:** The result is mixed across periods. Quiet cases kept falling in 2018 (-2.95 %, t -2.81, n 92) and 2019 (-1.71 %, t -2.25, n 91). They rose instead in 2020 (+7.20 %, t 3.31, n 16) and 2021 (+2.56 %, t 1.09, n 21), and windows w16 to w18 are all positive (+11.7 %, +6.0 %, +4.2 %).
+- **F5:** The brief's depth claim does not show either. Within the trending cases, the 30-day fall and the 5-day excess return have a Spearman rho of +0.09 (p 0.21, n 193). The middle third of falls drops most (-2.72 %, t -2.49), against -1.08 % (t -0.99) for the deepest and +0.04 % for the shallowest.
+- **F6:** The continuation is specific to the falling calm situation. The trending cases show -1.08 % excess over 5 days (t -1.78, n 246), against +0.18 % in chop (n 1,237) and +0.54 % in unknown (n 86). But these are too few cases on 6 coins and 178 days to tell the effect from 0. The other 13 coins have data in folds A and D and part of B and C, and they would add cases.
+
+## Ideas
+- `058-01.b2.b1_quiet-calm-fall-more-coins` (from F1, F2, F6): In a falling, calm market, after a coin has fallen over its last 30 days, the quieter its volume over those 30 days compared with its usual volume, the more it keeps falling over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

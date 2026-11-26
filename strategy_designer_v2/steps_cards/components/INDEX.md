@@ -221,3 +221,5 @@ pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimedLowPierceDe
 pilot_panic_run | 054-04_weak-reclaim-low-continuation_1d | ReclaimNearnessInRange | built: PriorLowReclaimInRangeComponent {"form": "nearness", "period": 30}
 night8_risingagitated_run | 058-02_agitated-rise-swing-scaled-giveback_1d | MovingAverageDistanceInUsualMovesComponent | built: MovingAverageDistanceComponent {"average": "sma", "base": "usual_moves", "period": 20, "vol_period": 20}
 night8_risingagitated_run | 068-02_falling-agitated-run-break-fade_1d | PriorDownRunOnUpCloseComponent | built: PriorDownRunOnUpCloseComponent {"max_bars": 30}
+night8_fallingcalm_run | 060-01.d2_dry-up-in-moderate-declines_1d | VolumeDryUpTimesFallModerationComponent | built: VolumeDryUpTimesFallModerationComponent {"fall_period": 20, "volume_period": 30}
+night8_fallingcalm_run | 060-02.d1.d2.d1_volume-signal-in-deeper-falls_1d | VolumeChangeTimesFallDepth | built: VolumeChangeTimesFallDepthComponent {"fall_period": 20, "volume_period": 30}

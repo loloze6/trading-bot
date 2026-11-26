@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move of the short cases, drift removed",
+    "value": 0.009125936804898172,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.6980673187728226
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 cases; reject: mean < 0 with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, cases with |forecast| above median minus below median",
+    "value": 0.005941549389427874,
+    "passed": true
+  },
+  "counts": {
+    "cases": 487,
+    "days": 377
+  },
+  "decided_by": "t is between -2 and 2.",
+  "reading": "Falling profile taken as the 60-bar price evolution in percent below -10 (the detector's regime where 60 past bars are not in the window) and the dry-up as a raw component value above 0; a case is the first bet (short forecast rising at least 2 points from its lowest level since the last bet, from 0 after flat) in each 5-bar grid cell from each window's first row, cases without 5 bars ahead in the window are dropped, the drift is the coin's mean non-overlapping 5-bar return over all windows, the day-clustered t uses summed deviations per day with a D/(D-1) correction, and cases with |forecast| equal to the median are in neither group."
+}

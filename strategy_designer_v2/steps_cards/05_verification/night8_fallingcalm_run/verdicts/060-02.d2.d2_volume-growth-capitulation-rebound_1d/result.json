@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move of the bets",
+    "value": 0.017297404566476476,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.3140296878527127
+    },
+    "threshold": "positive with t >= 2 (and check passing) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast and unusual 5-day move over in-position grid cells",
+    "value": 0.1021426302828918,
+    "passed": true
+  },
+  "counts": {
+    "cases": 435,
+    "distinct days": 308,
+    "in-position cells": 469
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 and the forecast/unusual-move correlation is above 0.",
+  "reading": "The situation is checked as recorded log volume ratio > 0 and 10-day return < 0 (recomputed from prices where not recorded), long side, with the falling profile left to the profile code as the Fidelity line states; a case is the first bet (forecast rise >= 2 points from its lowest level on its side since the last bet, from 0 after a flat or side change) in each 5-bar grid cell, its 5-bar return taken from that bet's close; the coin's mean 5-day return uses the 5-bar grid of all its windows; in-position cells are grid bars with a non-zero held allocation; the t is cluster-by-day; the plan's minimum counts (30 cases, 20 days) give 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003458 on the check folds against +0.0173 on every fold",
+    "main": 0.0034584248698607163,
+    "statistic": 0.4145591178250257,
+    "counts": {
+      "cases": 220,
+      "distinct days": 164,
+      "in-position cells": 224
+    }
+  }
+}

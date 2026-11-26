@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-day excess return on forecast (grid bars, forecast < 0)",
+    "value": 0.0011051054108937642,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.7675653980779733
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean excess < 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 5-day excess return on the same bars below 0",
+    "value": -0.01982093592347304,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast < 0": 160
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The profile is read from the regime column (regime 'unknown', no veto fired) and the fall from the sign of the raw scaled 30-day return; holding is the coin's mean 5-day return over its non-overlapping grid of all windows, and the plan's minimum of 30 grid bars is applied as 'not observable'."
+}

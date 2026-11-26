@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-5-bar excess return on forecast",
+    "value": 0.0011784181080408413,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.9489524468202934
+    },
+    "threshold": "confirm: slope positive with t >= 2 and supporting check passes; reject: slope negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus market-rise gain (timing), before costs",
+    "value": 0.00027140317088953834,
+    "passed": true
+  },
+  "counts": {
+    "grid cases where the forecast is not 0": 599
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing part is above 0.",
+  "reading": "Situation = falling profile (60-bar return below -10 %, the config's veto) and 20-bar return in [-20 %, 0 %), recomputed from closes inside each window and checked on active bars where it is computable (the detector's regime is used only if none is), the expected side being the sign of the raw log volume ratio; the main measure is one pooled OLS of (5-bar return minus the coin's mean grid 5-bar return over all windows) on the forecast across all coins; the supporting check uses the before-cost book built from the held position times the next bar's return, each day averaged over coins.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001177 on the check folds against +0.001178 on every fold",
+    "main": 0.00011771140851782082,
+    "statistic": 0.25019316475148995,
+    "counts": {
+      "grid cases where the forecast is not 0": 320
+    }
+  }
+}

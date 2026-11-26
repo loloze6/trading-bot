@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar forward return, heavy minus quiet volume",
+    "value": -0.012926597481251512,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.9757505822301215
+    },
+    "threshold": "difference > 0 with Welch t >= 2 confirms; < 0 with t <= -2 rejects; at least 30 cases per group"
+  },
+  "supporting_check": null,
+  "counts": {
+    "heavy-volume cases (forecast > 0)": 58,
+    "quiet-volume cases (forecast < 0)": 408
+  },
+  "decided_by": "Welch t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The situation is checked on active bars whose 30-bar return can be computed inside their window (30-bar return < 0 from closes, with the falling-calm profile taken from the recorded regime 'mean_reversion' since its components are not recorded), and the expected side is the sign of the raw log volume ratio (heavier than the 365-bar mean = long); cases are the bars at positions 0, 5, 10, ... of each window with regime 'mean_reversion', a non-zero forecast and a close 5 bars later in the same window, and the plan's 'fewer than 30 cases in either group' is applied as the minimum count giving 'not observable'."
+}

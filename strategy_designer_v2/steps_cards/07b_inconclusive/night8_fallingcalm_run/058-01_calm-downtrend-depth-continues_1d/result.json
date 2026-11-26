@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "058-01_calm-downtrend-depth-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3423931,
+  "findings": {
+    "F1": "The tested effect is on the predicted side but small and uncertain: step 5's weighted mean signed 5-day excess return is +0.29 % with a day-pooled t of 0.37 (475 cases, 201 days), and the unusual move is +0.74 % per case (t 1.16, 321 days, strength 0.067). On folds B and C the in-position short excess stays positive at every horizon but never reaches t 2 (1 day +0.24 %, t 1.16, 1464 cases; 5 days +0.69 %, t 0.66, 277 cases; 20 days +5.3 %, t 1.18, 72 cases). The likely problem is too few cases, not the wrong horizon.",
+    "F2": "The grading the idea claims is not in the data. Step 5's deeper-half minus shallower-half check is -0.05 % and fails. On folds B and C the 30-day-fall quartiles do not rise with depth: deepest +0.28 %, q2 +1.33 %, q3 +4.16 %, shallowest -0.75 %. The Spearman correlation of the 30-day return with the next 5-day return is only +0.06.",
+    "F3": "In the falling calm profile, the continuation sits on the falls made on quiet volume, as the brief says (30-day mean volume over its 180-day mean, in terciles). Quiet: +3.61 % short excess over 5 days (55 cases, 35 days, t 1.59). Mid: +1.64 % (t 0.96). Heavy: -0.29 % (t -0.19). Quiet minus heavy is +3.89 % (Welch t 1.89), and the Spearman correlation of the volume ratio with the short excess is -0.12.",
+    "F4": "The volume split is much weaker outside the profile, which places the effect in the calm downtrend. On falls outside it, quiet minus heavy is +1.84 % (Welch t 0.94, 163 cases), against +3.89 % inside.",
+    "F5": "The effect is uneven across periods and coins, which also blurs the pooled test. In the profile, by year: 2018 +1.27 % (133 cases), 2019 +2.02 % (101), 2020 -6.91 % (17), 2021 -2.45 % (26). By window, w16 to w18 are negative (-11.7 %, -6.0 %, -4.1 %, 19 cases together). By coin, ETH is +2.96 % and XRP -1.93 %.",
+    "F6": "The book cannot pay at this size whatever the result. The total move per case is +0.09 %, 0.4 times the 0.19 % cost of a trade, because the coins' drift in the short direction is -0.65 %. Only an idea with a larger unusual move, such as the quiet-volume cases at +3.6 % (F3), would clear the cost."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "calm downtrend, all coins",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ],
+      "idea": "In a falling, calm market, the more a coin has fallen over its last 30 days, the more it keeps falling over the next 5 days.",
+      "consequence": "A calm downtrend carries on, and a deeper past-weeks fall is followed by more falling, because the holders still selling a little at a time have not finished.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "falling calm"
+    },
+    {
+      "idea": "In a falling, calm market, after a coin has fallen over its last 30 days, the quieter its volume over those 30 days compared with its usual volume, the more it keeps falling over the next 5 days.",
+      "consequence": "A trader in a calm downtrend would short a coin whose fall came on thin volume, and hold off when the same fall came on heavy volume.",
+      "name": "quiet-volume calm fall continues",
+      "from": "F3, F4, F2, F6",
+      "profile": "falling calm",
+      "refs": [
+        "F3",
+        "F4",
+        "F2",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-01.b1_calm-downtrend-all-coins",
+    "058-01.b2_quiet-volume-calm-fall-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,40 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (5-bar forward return minus coin mean 5-bar return) x forecast/10 on grid bars with forecast < 0",
+    "value": 0.01705441296300587,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.623182781960253
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, shrink bars minus growth bars, inside the regime (must be < 0)",
+    "value": -0.027072724173260336,
+    "passed": true
+  },
+  "counts": {
+    "active grid cases": 386,
+    "regime shrink grid bars": 386,
+    "regime growth grid bars": 213
+  },
+  "decided_by": "Confirmed on every fold, but the main measure points the other way on the check folds (A, D), the years step 7 does not explore: main measure -0.0009326 on the check folds against +0.01705 on every fold.",
+  "reading": "Situation taken as 20-day return in [-20 %, 0 %), 60-day return below -10 % (the falling profile of the config's veto) and a negative raw log volume ratio, short side, using the recorded regime where a window lacks the price history; 'inside the regime' read as bars whose recorded regime is 'trending', and the coin's mean 5-bar return taken on the same non-overlapping grid over all its windows.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": false,
+    "why": "main measure -0.0009326 on the check folds against +0.01705 on every fold",
+    "main": -0.0009325967288181577,
+    "statistic": -0.11776601027152937,
+    "counts": {
+      "active grid cases": 194,
+      "regime shrink grid bars": 194,
+      "regime growth grid bars": 126
+    }
+  }
+}

@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 058-02.g1_choppy-agitated-deep-fall-continues_1d
+idea tested: 058-02.g1_choppy-agitated-deep-fall-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4480 USD
+---
+## Findings
+- **F1:** Among 30-day falls (5-day grid, folds B and C, 558 cases), the quietest third by 5-day volume against the 30-day average was followed by a 5-day excess return of -2.26 % (t -2.16 with one day's cases taken together, 186 cases on 74 days). The middle third was followed by -0.38 % (t -0.28) and the heaviest third by -1.23 % (t -0.78); by volume-ratio quintile the excess return was -2.71 % (t -3.15), -2.22 % (t -2.72), +1.04 %, -0.90 % and -1.62 %.
+- **F2:** The continuation of quiet-volume falls sits in calm markets, where the 30-day swing is at or below its running median: there quiet falls gave -2.68 % over 5 days (t -2.46, n 71) against -0.95 % (t -0.65, n 41) in agitated markets, while heavy-volume falls in agitated markets also fell, -3.58 % (t -2.26, n 75).
+- **F3:** The brief's grading by depth is absent: quiet falls by depth tercile (shallow, mid, deep) gave -2.05 %, -2.05 % and -2.67 % (day t -1.15, -2.14, -1.69), heavy falls gave -1.04 %, -1.69 % and -0.95 %, and among all falls the correlation of the excess return with the vol-scaled 30-day return is -0.04 (n 558).
+- **F4:** The quiet-volume signal points down only after falls: 30-day rises on quiet volume were followed by +1.01 % over 5 days (t 1.17, n 170) against -2.39 % for quiet falls (t -4.02, n 221), and on all days the lowest volume-ratio quintile was followed by a next-day excess of -0.41 % (t -2.99, n 1212).
+- **F5:** In choppy markets (60-day return between -10 % and +10 %) every 30-day fall continued, more so on heavy volume: quiet -2.58 % (t -1.67, n 18), mid -4.09 % (t -1.54, n 22), heavy -6.59 % (t -2.90, n 27). There, the 5-day excess return rose with the vol-scaled 30-day return across its quintiles: -10.5 %, -3.2 %, -2.5 %, +3.4 %, +7.3 %.
+- **F6:** Within the tested profile's own bars in folds B and C (regime "unknown", 46 grid cases), the deepest third of falls gave -14.5 % (t -3.56, n 15), the middle third -5.8 % (t -3.20, n 15) and the shallowest +0.1 %. Over all folds, however, the verdict's slope t is only 0.77, and the book earns 0.027 % a day in a position, with 8 % of coin-days held and a Sharpe of 0.095.
+- **F7:** The largest down days, in the lowest decile of the day's return over the 20-day swing, were followed by +0.74 % the next day (t 3.15, n 659); this is the falling or agitated rebound the profile map already holds 12 times, so it is not a discovery.
+
+## Ideas
+- `058-02.g1.g1_calm-quiet-volume-fall-continues` (from F1, F2, F4): In a calm market, a coin that has fallen over its last 30 days keeps falling over the next 5 days, and the quieter its volume over the last 5 days against its 30-day average, the more it keeps falling.
+- `058-02.g1.g2_choppy-scaled-fall-continues` (from F5, F6): In a choppy market, the deeper a coin's 30-day fall measured against its usual daily swing over the last 20 days, the more it keeps falling over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

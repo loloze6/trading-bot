@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move, short direction",
+    "value": 0.011113453909594936,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 2.0017616560497484
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half, mean unusual move",
+    "value": 0.011116425107896984,
+    "passed": true
+  },
+  "counts": {
+    "distinct case-days": 270,
+    "cases": 332
+  },
+  "decided_by": "The mean unusual short move is above 0 with t >= 2 and the larger-forecast half beats the smaller half.",
+  "reading": "Situation = regime 'mean_reversion' (the detector's fall30<0 with the falling-calm profile vetoes passed) and the 30-day return from prices <0 where computable in the window, and the raw vol_dryup log ratio <0 (recomputed from volume where not recorded), on the short side; a case is the first short bet in each 5-bar grid cell counted from each window's first row, with cases lacking 5 bars ahead in the window dropped; the day-clustered t uses the per-day summed deviations with a G/(G-1) correction; the larger half is |forecast| strictly above the median and the smaller half at or below it; the plan's 'at least 30 distinct case-days' is applied as the minimum count giving 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.008 on the check folds against +0.01111 on every fold",
+    "main": 0.008000312247299218,
+    "statistic": 1.1503824422749476,
+    "counts": {
+      "distinct case-days": 144,
+      "cases": 170
+    }
+  }
+}

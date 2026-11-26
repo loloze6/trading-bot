@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of short-direction 5-bar unusual move x |forecast|/10, per case",
+    "value": 0.004611032856884448,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 0.6744018866445025
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half, mean short-direction unusual move",
+    "value": -3.45941490618373e-05,
+    "passed": false
+  },
+  "counts": {
+    "cases": 907,
+    "distinct days": 263
+  },
+  "decided_by": "The t lies between -2 and 2: inconclusive by the plan's rule",
+  "reading": "Profile membership is the recorded regime 'unknown' (the only regime with a strategy, i.e. neither veto fired) and a fall is a negative raw quiet_fall value; the case value is (drift - forward return) x (-forecast/10), i.e. the unusual move taken in the short direction as the plan's confirm rule describes; t uses per-day summed deviations; the larger |forecast| half is the top floor(n/2) cases by |forecast| (ties broken by coin then time)."
+}

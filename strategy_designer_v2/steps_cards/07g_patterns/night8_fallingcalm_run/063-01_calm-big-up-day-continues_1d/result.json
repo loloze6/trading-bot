@@ -1,0 +1,38 @@
+{
+  "line": "7.g",
+  "backtest": "063-01_calm-big-up-day-continues_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40152699999999997,
+  "findings": {
+    "F1": "The continuation is real only on up days in calm markets. On calm 5-day grid cases, a regression of the excess 5-day return on the day's swing-scaled return, split by side, gives t 4.05 for the rise part and t 1.26 for the fall part (773 cases). In agitated markets the same terms give t 0.44 and -0.40 (591 cases).",
+    "F2": "The gain sits in the largest calm up days. Calm days of +1 to +2 usual swings are followed by +2.41 % excess over 5 days (t 1.98, 76 cases), and days above +2 swings by +6.83 % (t 2.08, 28 cases). Days of -0.3 to +1 swings earn about +0.3 % (t under 0.6). This explains why the mean unusual move over all 1,765 band cases is +0.01 % (t 0.02), below the 0.19 % cost of a trade.",
+    "F3": "Among calm up days, a wider day predicts less continuation. Given the scaled rise (t 3.83), the day's high-low range against its own 30-day average range has a negative slope, t -2.76 (364 calm up days). In agitated up days the range term is t -0.45 (246 cases).",
+    "F4": "Calm down days carry on falling only on average, not in proportion to their size. Mild calm falls (-1 to -0.3 swings) are followed by -2.07 % excess over 5 days (t -3.08, 199 cases), and falls beyond -2 swings by -3.61 % (t -1.60, 16 cases). Yet the fall-side slope is only t 1.26 (F1), so this effect is not graded.",
+    "F5": "The calm-market slope is positive in every year, but its strength varies by year and by coin. By year: t 0.71 (2018), 3.85 (2019), 1.80 (2020) and 2.19 (2021). By coin it is positive on all six, strongest on XMR (t 3.26) and XRP (t 3.30), and weakest on ZEC (t 0.36).",
+    "F6": "Where the day closes in its range adds nothing once the size of the move is known. Alone in calm markets the close location has t 3.94, but next to the scaled move it falls to t 0.81 while the move keeps t 2.87. It is also strong in 2019 only (t 3.52; the other years range from -1.31 to 0.94).",
+    "F7": "The book mostly carries the market. Its mean daily return is 0.092 % against 0.140 % for holding, with a correlation of 0.62 over 1,449 days. In 2021 it earned 0.075 % a day against 0.409 % for holding.",
+    "F8": "The weekday pattern is a known effect, not a new one. Next-day excess returns are positive from Thursday and Friday closes (t 2.80 and 2.74) and negative from Wednesday closes (t -2.78, about 1,190 bars each). It comes from 2019 and 2020 only (Thursday and Friday t 4.55 and 3.07 in those years, against 0.16 and 0.99 in 2018 and 2021). The t values are inflated because six correlated coins share each day. The late-week gain is already held (045-01), so this is no discovery."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, the larger a coin's one-day rise against its usual daily swing (the standard deviation of its daily returns over the past 30 days), and the narrower that day's high-low range against its average range over the past 30 days, the larger its rise over the next 5 days.",
+      "consequence": "A trader in a calm market should back a large up day most when the coin got there with little intraday swinging, and less when the day was wide and choppy.",
+      "name": "calm narrow-range rise continues",
+      "from": "F1, F2, F3",
+      "profile": "calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "063-01.g1_calm-narrow-range-rise-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

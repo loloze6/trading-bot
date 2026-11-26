@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "060-01_volume-shrink-fall-continues_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.444539,
+  "findings": {
+    "F1": "In the falling profile, the drop after volume shrinkage sits almost entirely in the strongest shrink. The lowest quintile of the 30-day log volume ratio (mean \u22120.76) is followed by an excess 5-day return of \u22123.6 % (day-clustered t \u22121.83, 81 non-overlapping cases). The other quintiles show \u22120.9 %, \u22120.3 %, +1.8 % and +0.5 %, none with |t| above 1.4. This makes the idea's average size small: an unusual move of +0.72 % with t 1.46 and a total move of +0.13 %, against a cost of 0.19 % per trade.",
+    "F2": "In rising markets (60-day return above +10 %), volume shrinkage is followed by the opposite of the tested effect: the coin rises more.",
+    "F3": "The rising-market effect shows in both agitation states, at each end of the volume ratio.",
+    "F4": "Read across both trends, volume shrinkage goes with continuation of the coin's 60-day direction. The trend-signed excess 5-day return on the volume ratio has a slope of \u22120.029 (t \u22121.70, 719 cases). Over all bars, with no trend split, the slope is \u22120.0005 (t \u22120.03, 846 cases): the effect only appears once it is signed by the trend.",
+    "F5": "Inside the falling profile, the shrinkage effect leans on calm markets.",
+    "F6": "The book's gain depends on a few windows and a few days.",
+    "F7": "No other angle stood out against the many looked at. None of these reached |t| \u2265 2 in any quintile:"
+  },
+  "ideas": [
+    {
+      "idea": "In a rising market, the more a coin's trading volume over the past 30 days has shrunk against the 30 days before, the larger its rise over the next 5 days.",
+      "consequence": "An uptrend that keeps going on drying volume has no sellers left to stop it, so a trader would hold or add to longs in it rather than read the thin volume as a warning.",
+      "name": "rising volume dry-up continuation",
+      "from": "F2, F3, F4",
+      "profile": "rising",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, the more a coin's trading volume over the past 30 days has shrunk against the 30 days before, the larger its fall over the next 5 days.",
+      "consequence": "The dry-up short belongs in quiet downtrends, where selling seeps out unabsorbed, and not in agitated ones, where it shows no edge.",
+      "name": "calm fall volume dry-up",
+      "from": "F1, F5",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "060-01.g2_calm-fall-volume-dry-up"
+  ],
+  "discovery_ids": [
+    "060-01.g1_rising-volume-dry-up-continuation"
+  ],
+  "no_ideas": null
+}

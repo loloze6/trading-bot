@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "058-03_heavy-volume-fall-exhausts_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36872459999999996,
+  "findings": {
+    "F1": "In falling calm bars, the coin's past 5-day return predicts its next 5-day return in the same direction (slope 0.17, t 2.62, 342 non-overlapping cases). The lowest third of past 5-day returns is followed by -1.6 %, the middle third by -0.3 % and the highest third by +2.2 %. Inside the tested situation (30-day return below 0) the slope is 0.22 (t 2.68, 254 cases), with thirds at -2.1 %, +0.0 % and +1.9 %.",
+    "F2": "Outside falling calm, the same 5-day continuation is absent (slope -0.001, t -0.05, 1207 cases), so this short-horizon continuation lives in the falling calm profile.",
+    "F3": "The brief's own situation does not grade the move: in falling calm, the depth of the 30-day fall has no link with the next 5 days (slope 0.017, t 0.48, 281 cases), nor does the 60-day fall (t -0.26, 209 cases).",
+    "F4": "Volume does not separate the outcomes. Inside the regime the 30-day-versus-year volume ratio has a slope of -0.006 (t -0.35, 268 cases), and the verdict's heavy-minus-quiet difference is -1.29 % (Welch t -0.98, 58 against 408 cases). The worst cell is shallow falls on quiet volume (-1.7 %, 54 cases), while deep falls return about 0.0 % on both quiet and heavy volume (53 cases each).",
+    "F5": "The tested idea has no size against its cost. Its unusual move is +0.08 % per 5-day case (t 0.13 over 305 days), 0.017 of a usual move, against a 0.19 % cost per trade. The book has a Sharpe of 0.086 and a yearly return of +0.3 %.",
+    "F6": "Other angles did not stand out after counting how many were looked at, so no idea is drawn from them:"
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a coin's last 5 days carry on over the next 5 days, and the further it has fallen over its last 5 days, the more it falls over the next 5 days. The further it has risen over those 5 days, the more it rises.",
+      "consequence": "In a calm downtrend, a trader would trade the coin in the direction of its past week rather than the depth of its past month, shorting the sharpest recent drops.",
+      "name": "calm downtrend weekly continuation",
+      "from": "F1, F2, F3",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "058-03.g1_calm-downtrend-weekly-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next 5-bar return minus coin mean 5-bar return on forecast/10 (grid, forecast != 0)",
+    "value": 0.004259966347863964,
+    "statistic": {
+      "name": "t of slope, day-clustered",
+      "value": 0.9044975849636692
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive; needs >= 100 grid cases and >= 60 distinct days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 1274,
+    "distinct days": 309
+  },
+  "decided_by": "inconclusive rule: the slope's t lies between -2 and 2.",
+  "reading": "Profile read from the recorded regime ('unknown' = not vetoed) and side from the sign of ret5; the slope is ordinary least squares with an intercept, the coin's mean 5-bar return is taken over all grid bars of all its windows, and the t uses a day-clustered standard error (per-day sums of score, G/(G-1) correction)."
+}
