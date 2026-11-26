@@ -82,6 +82,25 @@ the new books on the unseen coins (1u).
 - **00:46 Paris, limit watch:** all 6 sessions running (last commits 23:22 to 23:36 UTC), no call refused. 53 turns, 46
   ideas tested, about 49 USD; confirmed 5 (C 3, B 1, D 1), profitable enough 2 (C). E's "no candidate left" in the
   watch is its stop of 22:43 (the catalogue fault); it resumed and is at turn 10.
+- **01:00 Paris, a path audit (the operator: "worth checking that sessions act as expected, no idea deviation"; 58
+  ideas tested, read from each branch):**
+  - Step 3 builds what the idea says (fit exact or adapted on every plan); every idea naming a profile has its gate.
+  - A (falling calm) and B (falling agitated): every tested idea is the theme in its regime (11 of 11, 9 of 9).
+  - C (rising agitated): its brief itself states the counter-case ("weak or reversed in the calm one"), and step 2 wrote
+    it (058-03, rising calm): that is where its confirmed and profitable book comes from (058-03.e1). Not a deviation.
+  - D: theme answered "not in the data" on both first ideas; discoveries since, as designed.
+  - **E (choppy calm) and F (rising calm): the follow-ups widen or move the profile** (E: choppy calm → choppy →
+    calm; F: rising calm → choppy agitated → rising → none). `common/theme.md` allows a follow-up to change "the
+    profile", so it is by the definition, but it takes the search out of the night's target box. For the morning:
+    when a brief names a profile, the profile is part of the theme's situation (a follow-up keeps or narrows it;
+    another profile is a discovery).
+  - Discoveries: no longer the held rebound (17 of the night's discoveries answered "already indexed" by step 1); but
+    the same patterns are found by several sessions (a rally fades in a falling, agitated market: B's theme, briefed
+    again by C and D), each session's index seeing its own briefs only.
+  - **Results so far:** short books confirmed in "falling agitated" by three sessions (B 058-01.g2.b1, C 060-01 and its
+    follow-ups, D 060-01.b1), none profitable enough yet; one confirmed, profitable book holding on both unseen periods
+    (C 058-03.e1, rising calm, long). The confirmed calm continuations of E and F (E's nearness to the 20-day high, t
+    3.96) may be the held "near its high" books again: the morning's similarity check says.
 
 ## Reading
 (written in the morning)
