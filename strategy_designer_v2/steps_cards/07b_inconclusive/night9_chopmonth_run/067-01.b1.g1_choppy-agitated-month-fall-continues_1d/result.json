@@ -1,0 +1,50 @@
+{
+  "line": "7.b",
+  "backtest": "067-01.b1.g1_choppy-agitated-month-fall-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3641381,
+  "findings": {
+    "F1": "Inside the tested choppy agitated profile, on folds B and C, the slope of the 7-day excess return on the 30-day fall is zero (slope 0.0000, t 0.00, 58 grid cases), and the mean short unusual move is +1.71 % with t 0.45 over the cases' days, so the full-data slope (t 1.09) has no support in these windows.",
+    "F2": "In choppy markets that are not agitated (choppy calm), deeper 30-day falls are followed by weaker excess returns. The slope is 0.0045 at 7 days (t 2.31, 36 cases) and 0.0114 at 10 days (t 3.50, 29 cases), and the mean short unusual move is +2.8 % and +4.4 % (day-clustered t 1.13 and 0.97).",
+    "F3": "Over all choppy coin-days, calm and agitated together (the trend condition only, the brief's own profile), the continuation is clearest. The slope is 0.0047 at 7 days (t 3.34, 54 cases) and 0.0095 at 10 days (t 5.19, 39 cases), with a mean short unusual move of +5.7 % and +7.7 % (day-clustered t 1.68 and 1.67).",
+    "F4": "Restricting to the agitated half removes the effect rather than sharpening it, so the narrowing to choppy agitated measured the idea where it is weakest.",
+    "F5": "The choppy slopes rise with the horizon up to 10 days. Beyond that the case counts drop (23 at 14 days, 12 at 21 days) and the mean short move turns negative (-1.6 % and -12.3 %), so 10 days is the horizon where the graded continuation shows most clearly.",
+    "F6": "The slope t-statistics in F2 and F3 are not clustered by day, while the day-clustered t of the mean short move stays below 2. Cases from several coins on the same days carry part of the evidence, so the effect is suggestive and needs the held-out folds to settle."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, the larger a coin's fall over the past 30 days, the more it keeps falling over the next 10 days.",
+      "consequence": "When a coin has been flat over two months but slid over the last month, a trader should short it, or refuse to buy it as a range bottom, more firmly the deeper the slide, holding for about ten days.",
+      "name": "choppy month fall continues",
+      "from": "F3, F4, F5, F6",
+      "profile": "choppy",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the larger a coin's fall over the past 30 days, the more it keeps falling over the next 10 days.",
+      "consequence": "When a trendless coin that is swinging no more than usual has slid over the past month, a trader should lean short on it, more firmly the deeper the slide, over the next ten days.",
+      "name": "choppy calm fall continues",
+      "from": "F2, F4, F5, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-01.b1.g1.b1_choppy-month-fall-continues",
+    "067-01.b1.g1.b2_choppy-calm-fall-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

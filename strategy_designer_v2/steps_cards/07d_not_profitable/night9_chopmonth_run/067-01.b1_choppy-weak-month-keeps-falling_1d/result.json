@@ -1,0 +1,38 @@
+{
+  "line": "7.d",
+  "backtest": "067-01.b1_choppy-weak-month-keeps-falling_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5226168,
+  "findings": {
+    "F1": "The book's gain is lost to the coin's own drift, and nearly all of that loss comes in calm choppy markets. Across all folds a short case's total 7-day move is -0.01 % against an unusual move of +1.13 %, because the coins drift up 1.13 % a week against the short. On folds B and C, the calm choppy short cases (30-day vs 90-day swing \u2264 1) earn a total of -0.25 % (t -0.19, 112 cases). The agitated ones earn +7.68 % (t 2.75, 23 cases).",
+    "F2": "The trades split the same way. The 498 short trades entered in calm markets average -3.37 % gross (t -4.98) and -3.47 % net. The 96 trades entered in agitated markets average +3.27 % gross (t 2.32) and +3.17 % net, about 14 times the 0.22 % cost of a trade. On the book's days in a position, the mean daily return is +0.168 % when agitated (315 coin-days) and -0.015 % when calm (1,641 coin-days). The calm days are what hold the book below the 0.05 % mean daily return it needs.",
+    "F3": "Agitation is not an effect of its own; it strengthens this idea's signal. Using the agitated-profile measure (30-day swing above its past percentile median), short cases with the signal earn +8.74 % total over 7 days (t 2.70, 19 cases). Agitated choppy bars without the signal earn -4.72 % for a short (t -0.92, 9 cases). Agitated bars without the signal under the 30/90-day ratio measure earn only +1.84 % (t 0.74, 19 cases).",
+    "F4": "Inside an agitated choppy market the effect stays graded, measured as the short's total 7-day move by 30-day-return tercile:",
+    "F5": "A 60-day fall inside the choppy band also separates good shorts from bad, but alone it is no edge for a short.",
+    "F6": "The failure of the lowest Sharpe with one window left out comes from scattered losing windows, not one lucky window. The book's mean daily return is negative in 6 of the 12 windows on folds B and C (w10 -0.073 %, w8 -0.042 %, w17 -0.038 %). The best window, w16, earns +0.10 % a day, with 7 short cases at +22.2 % (t 3.93).",
+    "F7": "Trades cut short lose the most. The 156 trades that lasted 3 days or less average -4.84 % gross (t -8.88), against -1.89 % for those of 3 to 7 days and +1.41 % for those of 7 to 8 days. Exits forced as the forecast or the profile changes cost the book."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, the larger a coin's fall over the past 30 days, the more it falls over the next 7 days.",
+      "consequence": "A trader shorts weak months in a trendless market only while the coin is swinging more than usual; in a calm, trendless market the coin's upward drift takes the edge away.",
+      "name": "agitated chop weak month falls",
+      "from": "F1, F2, F3, F4, F6",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-01.b1.d1_agitated-chop-weak-month-falls"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

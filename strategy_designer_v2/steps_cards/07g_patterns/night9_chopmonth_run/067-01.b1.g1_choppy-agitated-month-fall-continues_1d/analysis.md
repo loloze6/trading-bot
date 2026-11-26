@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 067-01.b1.g1_choppy-agitated-month-fall-continues_1d
+idea tested: 067-01.b1.g1_choppy-agitated-month-fall-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4294 USD
+---
+## Findings
+- **F1:** In choppy markets (60-day return between -10 % and +10 %), the past 30-day return orders the next 7 days in the same direction: slope of the 7-day excess return on the 30-day return 0.334 (t 4.95, 109 non-overlapping cases), signed mean move +5.1 % per case (day-clustered t 2.11, 46 days), mean strength 0.31. By 30-day-return quartile, the excess move climbs from -9.2 % (t -3.7, 28 cases) to -1.8 %, then +3.0 %, then +6.0 % (t 2.0).
+- **F2:** The same slope is absent in rising markets (-0.003, t -0.11, 259 cases) and falling markets (-0.016, t -0.40, 285 cases), so the continuation lives only in the choppy trend.
+- **F3:** Inside choppy markets the grading holds on calm stretches (slope 0.30, t 3.25, 60 cases, signed mean +5.3 %, day-clustered t 1.70) as well as agitated ones (slope 0.21, t 2.05, 49 cases). It is not specific to the agitated profile the tested idea named.
+- **F4:** The grading is steeper after choppy-market falls (slope 0.47, t 3.34, 54 cases, signed mean +5.7 %) than after rises (slope 0.20, t 1.28, 55 cases, signed mean +4.4 %). Both sides point the same way.
+- **F5:** Other look-backs give the same continuation in choppy markets: the 14-day return has slope 0.38 (t 4.59) and the 45-day return 0.42 (t 4.32). Over 3 days instead of 7 the move is about half (slope 0.155, t 3.21). The effect builds over the week.
+- **F6:** The continuation appears in each year with enough cases (2019 slope 0.085, t 0.85; 2020 0.98, t 6.2; 2021 0.33, t 3.4). It is positive in every coin with 15 or more cases (BTC t 0.53, XMR 1.35, XRP 4.70, ZEC 1.20), though weak in 2019 and BTC.
+- **F7:** The tested book's choppy-agitated short cases are few in these folds (74 grid cases in the active regime). Their lowest 30-day-return quintile fell -10.6 % in excess over 7 days (t -3.3, 18 cases). The step-5 slope on the standardised forecast is much weaker (t 1.09), so standardising over 60 values seems to blur the grading that the plain 30-day return shows.
+- **F8:** Patterns that stood out but repeat what the map already holds:
+- **F9:** Many angles were examined:
+
+## Ideas
+- `067-01.b1.g1.g1_choppy-calm-month-continuation` (from F1, F3, F4, F5): In a choppy, calm market, the larger a coin's plain return over the past 30 days, the larger its move the same way over the next 7 days: deeper monthly falls are followed by larger falls, and stronger monthly rises by larger rises.
+- `067-01.b1.g1.g2_choppy-month-fall-continues` (from F1, F2, F4, F7): In a choppy market, the larger a coin's fall over the past 30 days, the more it keeps falling over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

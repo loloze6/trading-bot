@@ -1,0 +1,32 @@
+{
+  "line": "7.g",
+  "backtest": "067-01.b1.d1_agitated-chop-weak-month-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4072353,
+  "findings": {
+    "F1": "The 7-day move does not follow the 30-day fall inside the idea's profile. In the explored folds, regressing the drift-adjusted 7-day move (in units of the coin's usual move) on the 30-day return gives t 0.40 inside choppy agitated (36 cases, 21 days) and t 0.61 outside it (945 cases, 155 days). Outside the profile the five 30-day-return quintiles are not ordered: mean z -0.01, -0.15, +0.01, +0.20, +0.06.",
+    "F2": "Inside choppy agitated the 7-day move after a case sits below drift in all five 30-day-return quintiles, from -0.99 down to -0.28 usual moves, on 7 or 8 cases each. The weakness is in the profile as a whole, not graded by the month's fall, and the cases are too few to count as a finding of their own.",
+    "F3": "The book lost on its shorts and was flat in most windows. Its 186 short trades averaged -4.0 % net (median -3.97 %). Its 2 % largest days include 104 losing days on which the coin rose 9.8 % on average, and in w7 to w14 its daily mean is about 0.",
+    "F4": "Over the next day, where a coin closes in its day's range points the other way. A lower close is followed by a higher next day: slope -0.21, day-clustered t -3.00, 9,903 cases on 1,448 days. The same holds for the day's return: t -3.13, and t -2.80 in a falling 60-day trend. The effect lives entirely on wider-than-median days (t -3.83 on 1,192 days, against +0.12 on narrow days). This is the wide-low-close next-day rebound that the map already holds in the agitated and falling-agitated long cells, so it is not a discovery.",
+    "F5": "Over the next 7 days, close location points the same way. A day closing high in its range is followed by a 7-day move above drift: slope +0.42 usual moves per unit of close location, t 4.20 on 1,317 grid cases over 218 days, not clustered by day. The slope is positive on all 10 coins, with a day-clustered t of 2.03 on BTC (204 days) and 2.04 on ETH (203 days). The same measure over 3 days shows nothing (t 0.13), and the 7-day grid's weekdays are tied to windows (Fridays come from only 2 windows, mean z +0.30). The pattern may therefore be partly window-specific, and it is the only one in this exploration that stands near the bar set by the many angles examined."
+  },
+  "ideas": [
+    {
+      "idea": "A coin whose day closes near the top of its day's range keeps rising over the next 7 days, and the higher the close sits in the day's range, the larger the rise.",
+      "consequence": "A trader leans long for the following week after days that close near their high, and refuses longs, or leans short, after days that close near their low.",
+      "name": "daily close height week continuation",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-01.b1.d1.g1_daily-close-height-week-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

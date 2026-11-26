@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 067-01.b1_choppy-weak-month-keeps-falling_1d
+idea tested: 067-01.b1_choppy-weak-month-keeps-falling
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4171 USD
+---
+## Findings
+- **F1:** In a choppy, agitated market, the coin's 30-day fall carries on. On the non-overlapping 7-day grid, the excess return in the short direction is +8.73 % (t 2.96, 40 cases on 25 days). The deeper the fall, the more it carries on (slope of the usual-move-scaled excess on the 30-day return 2.11, t 2.22). In the same situation in a calm choppy market it is only +3.11 % (t 1.67, 71 cases).
+- **F2:** The agitated choppy fall effect is graded and stable. By tercile of the 30-day fall it is +11.9 % (deep), +9.1 % (mid) and +5.5 % (shallow). It is positive in both halves (w7–12: +5.3 %, t 1.95; w13–18: +10.6 %, t 2.50) and in every year from 2018 to 2021 (+2.2 % to +20.3 %). It is positive on 10 of the 11 coins that have cases.
+- **F3:** The effect needs the choppy trend. Outside the choppy profile, agitated falls are followed by only +0.71 % in the short direction (t 0.36, 281 cases). Over all bars, the slope of the 7-day excess on the 30-day return is 0.977 (t 3.73, n 215) inside the choppy profile and −0.019 (t −0.34, n 1004) outside it.
+- **F4:** Among the tested idea's own cases (forecast ≤ −2), agitated ones carry the move: +9.63 % (t 2.76, 33 cases on 20 days) against +4.66 % (t 2.36, 59 cases on 31 days) for calm ones.
+- **F5:** Rises behave differently in agitated choppy markets: they reverse, at −5.65 % (t −2.01, slope −1.57, t −2.45). This rests on only 16 cases on 15 days, so it cannot be told from chance across this many angles. The brief's claim that the effect holds "after rises and falls alike" does not show here.
+- **F6:** The book earned nothing (book mean daily return between −0.07 % and +0.10 % in every window, yearly +0.3 %). Its total move per case is −0.01 %, because the coins' normal drift against a short is −1.13 % per 7 days. That cancels the +1.13 % unusual move, which is diluted across calm choppy cases.
+- **F7:** Other angles did not give a new pattern:
+
+## Ideas
+- `067-01.b1.g1_choppy-agitated-month-fall-continues` (from F1, F2, F3, F4, F6): In a choppy, agitated market, the larger a coin's fall over the past 30 days, the more it keeps falling over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

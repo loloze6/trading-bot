@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar forward return minus coin drift on fall30 post_pipeline_value",
+    "value": 0.0016579133307757985,
+    "statistic": {
+      "name": "ordinary OLS slope t",
+      "value": 1.093677989227952
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean short unusual move > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean short unusual move (minus excess return)",
+    "value": 0.005388296212677618,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases with a forecast below 0": 215
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The choppy agitated profile is read from the recorded regime ('unknown', the only regime the detector does not veto to chop) and the fall from the raw 30-bar return (recomputed from closes where missing); cases are grid bars (positions 0,7,14,... of each window, forward return inside the window) with forecast < 0, regressed on fall30's post_pipeline_value, with each coin's drift as the mean 7-bar return on the same grid over all its windows; the plan's 30-case minimum gives 'not observable' when unmet."
+}
