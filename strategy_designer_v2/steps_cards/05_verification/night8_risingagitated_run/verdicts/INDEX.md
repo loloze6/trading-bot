@@ -15,3 +15,4 @@
 060-01.g1.g1_graded-width-high-close-fade_1d: inconclusive (fit: exact) [main: 0.00406483; t of the mean, cases summed per day 1.83107; cases 1380, distinct days 669]
 060-01.g1_wide-day-high-close-fade_1d: confirmed (fit: adapted) [main: 0.0203712; t of the mean, cases clustered by day 2.5037; cases 89, days 56]
 060-01_falling-agitated-high-close-fade_1d: confirmed (fit: exact) [main: -0.00587368; Welch t -2.46416; bars in top group 942, bars in middle group 886, bars in a position 2689]
+068-01_falling-agitated-lone-rise-fade_1d: no verdict: no backtest record

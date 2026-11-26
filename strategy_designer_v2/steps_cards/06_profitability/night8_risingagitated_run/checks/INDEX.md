@@ -15,3 +15,4 @@
 060-01.g1.g1_graded-width-high-close-fade_1d: not profitable enough [Sharpe 0.4354; Sharpe minus holding's Sharpe -0.1343; Calmar 0.2416]
 060-01.g1_wide-day-high-close-fade_1d: not profitable enough [Sharpe 0.6097; Sharpe minus holding's Sharpe 0.04007; Calmar 0.3798]
 060-01_falling-agitated-high-close-fade_1d: not profitable enough [Sharpe 0.006541; Sharpe minus holding's Sharpe -0.5631; Calmar -0.02312]
+068-01_falling-agitated-lone-rise-fade_1d: not checked: the record holds no window that ran
