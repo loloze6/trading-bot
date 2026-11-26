@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade_1d
+idea tested: 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4436 USD
+---
+## Findings
+- **F1:** In the falling agitated profile, the first up day after a down day is followed by a next-day return 1.55 % below the coin's drift (t -3.31, 370 cases on 165 days). The second up day is followed by +0.39 % (t 0.48, 131 cases), and the third and later up days by -0.71 % (t -1.04, 112 cases). So the give-back belongs to the first up day only, not to a multi-day rally as the brief claims, and it does not persist: on the first up days it is -0.67 % over 2 days (t -0.62) and -0.68 % over 3 days (t -0.51).
+- **F2:** On those in-profile first up days, the day's range against the 30-day swing grades the next-day short gain: +0.69 % (t 1.18), +1.17 % (t 1.69) and +2.30 % (t 2.36) by tercile, Spearman 0.14 over 318 cases. The day's own return against its swing does not grade it (Spearman 0.03; terciles +1.58 %, +1.48 %, +1.09 %), nor does the close's place in the range.
+- **F3:** The fade is spread evenly across coins, with a short gain of +1.47 % to +1.66 % for each of the six coins (t 1.98 to 2.87, 45 to 80 cases each). It holds in every year seen: +2.25 % in 2018 (t 2.32), +1.60 % in 2019 (t 3.01), +1.28 % in 2020 (t 1.35) and +0.82 % in 2021 (t 0.70), shrinking year by year.
+- **F4:** Outside the profile, the first up day in a falling 60-day trend (which outside this profile means falling calm) is also followed by a next-day fall: short gain +0.85 % (t 2.07, 296 cases on 149 days). In a choppy trend it is +0.60 % (t 1.40, 179 cases), and in a rising trend it reverses to -0.34 % (t -0.92, 447 cases).
+- **F5:** In the profile, down days are followed by rises graded by the fall's size against the swing: +2.25 % (t 2.65), +1.42 % (t 2.64) and +0.46 % (t 0.64) by tercile. Closes at the day's low are followed by +2.04 % (t 2.80). This rebound is already held: the map lists 12 long strategies in falling agitated, so it is left out as a discovery.
+- **F6:** The book's gain is concentrated, which is why Calmar fails. Its best 10 days sum to +23.9 % of a +24.2 % total, its worst 10 days to -14.0 %, and window w14 alone holds +14.2 %. Only 305 days of the folds seen are not flat.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `058-01.g2.g1.g1.d1.g1_falling-market-first-up-day-fade` (from F1, F2, F4): In a falling market, the first up day after a down day is followed by a fall over the next day, and the wider that day's low-to-high range against the standard deviation of its daily returns over the past 30 days, the larger that next-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

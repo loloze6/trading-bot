@@ -28,21 +28,26 @@ One row per idea run; every status is read from the step's own result file. Each
 | 058-01.g2.g1_agitated-decline-upper-wick-fade | 058-01.g2_agitated-decline-one-day-rise-fades | plan | confirmed (+2.78) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.g1.d1_bounce-in-decline-wick-fade; 7.g: 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade | 1.16 | 7.0 |
 | 058-01.g2.g1.d1_bounce-in-decline-wick-fade | 058-01.g2.g1_agitated-decline-upper-wick-fade | plan | confirmed (+2.02) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall, 058-01.g2.g1.d1.d2_wide-range-bounce-fade-in-decline, 058-01.g2.g1.d1.d3_wide-bounce-after-deep-fall; 7.g: 058-01.g2.g1.d1.g1_agitated-decline-up-day-fade, 058-01.g2.g1.d1.g2_bounce-after-deep-fall-fails | 1.11 | 6.6 |
 | 058-01.g2.g1.d1.d1_bounce-after-deep-3-day-fall | 058-01.g2.g1.d1_bounce-in-decline-wick-fade | plan | inconclusive (+1.65) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g2.g1.d1.d1.b1_deep-fall-bounce-all-coins; 7.g: 058-01.g2.g1.d1.d1.g1_agitated-decline-rally-give-back, 058-01.g2.g1.d1.d1.g2_agitated-decline-up-day-reverses | 0.85 | 5.8 |
+| 058-01.g2.g1.d1.d2_wide-range-bounce-fade-in-decline | 058-01.g2.g1.d1_bounce-in-decline-wick-fade | plan | inconclusive (+1.93) | profitable enough | - | 7.b: 058-01.g2.g1.d1.d2.b1_wide-bounce-fade-all-coins; 7.e: 058-01.g2.g1.d1.d2.e2_wide-bounce-two-day-fade; 7.g: 058-01.g2.g1.d1.d2.g1_large-bounce-three-day-giveback | 1.57 | 7.8 |
+| 058-01.g2.g1.d1.d3_wide-bounce-after-deep-fall | 058-01.g2.g1.d1_bounce-in-decline-wick-fade | plan | inconclusive (+1.63) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 058-01.g2.g1.d1.d3.b1_wide-bounce-all-coins; 7.g: 058-01.g2.g1.d1.d3.g1_high-close-next-day-giveback | 0.95 | 6.6 |
+| 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade | 058-01.g2.g1_agitated-decline-upper-wick-fade | plan | confirmed (+2.50) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade; 7.g: 058-01.g2.g1.g1.g1_agitated-decline-up-day-wick-fade | 1.23 | 6.9 |
+| 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade | 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade | plan | confirmed (+3.25) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade, 058-01.g2.g1.g1.d1.d2_first-up-day-fade-concave, 058-01.g2.g1.g1.d1.d3_wide-range-small-gain-fade; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.33 | 7.2 |
+| 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade | 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade | plan | confirmed (+3.38) | not profitable enough (failed: Calmar) | - | 7.d: 058-01.g2.g1.g1.d1.d1.d1_deep-rejected-rally-fade, 058-01.g2.g1.g1.d1.d1.d2_rejected-rally-fade-before-capitulation; 7.g: 058-01.g2.g1.g1.d1.d1.g1_agitated-decline-first-bounce-fade | 1.11 | 6.7 |
 
 ## Consumption
-24 ideas, 35.63 USD, 289.0 minutes in all.
+29 ideas, 41.81 USD, 324.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.57 | 12.0 |
-| step4_backtest | 0.00 | 166.0 |
-| step5_verdict | 4.60 | 16.6 |
-| step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.4 |
+| step3_plan | 4.00 | 14.7 |
+| step4_backtest | 0.00 | 179.5 |
+| step5_verdict | 5.44 | 19.6 |
+| step6_check | 0.00 | 1.0 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 2.75 | 9.1 |
-| step7_7.b | 13.26 | 47.5 |
-| step7_7.g | 11.45 | 35.8 |
-| similarity_check | 0.00 | 0.5 |
+| step7_7.e | 0.68 | 1.8 |
+| step7_7.d | 4.19 | 13.7 |
+| step7_7.b | 13.69 | 48.8 |
+| step7_7.g | 13.81 | 43.8 |
+| similarity_check | 0.00 | 0.7 |

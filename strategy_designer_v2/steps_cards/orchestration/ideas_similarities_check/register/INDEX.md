@@ -239,6 +239,9 @@ An idea's latest record counts once.
 | 058-01.g2.b1.d2.b1_next-day-fade-of-rises_1d | confirmed | night8_fallingagitated_run | 1d | 19 | 4b9fedcd6 | 2026-11-26T00:44:51 |
 | 058-01.g2.b1_one-day-rise-fades-wider_1d | confirmed | night8_fallingagitated_run | 1d | 19 | 01042f37a | 2026-11-25T23:07:53 |
 | 058-01.g2.g1.d1_bounce-in-decline-wick-fade_1d | confirmed | night8_fallingagitated_run | 1d | 6 | 3edbe0af5 | 2026-11-26T05:30:23 |
+| 058-01.g2.g1.g1.d1.d1_agitated-decline-rejected-rally-fade_1d | confirmed | night8_fallingagitated_run | 1d | 6 | efe53f8f1 | 2026-11-26T06:05:11 |
+| 058-01.g2.g1.g1.d1_agitated-decline-first-up-day-fade_1d | confirmed | night8_fallingagitated_run | 1d | 6 | efe53f8f1 | 2026-11-26T05:59:08 |
+| 058-01.g2.g1.g1_agitated-decline-wide-up-day-fade_1d | confirmed | night8_fallingagitated_run | 1d | 6 | efe53f8f1 | 2026-11-26T05:53:31 |
 | 058-01.g2.g1_agitated-decline-upper-wick-fade_1d | confirmed | night8_fallingagitated_run | 1d | 6 | 3edbe0af5 | 2026-11-26T05:24:53 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |

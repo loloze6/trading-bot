@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction next-day excess return on bars with forecast <= -2",
+    "value": 0.0050877940596164946,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.6276051293106446
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on at least 100 cases; reject: mean < 0 with t <= -2 on at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half (by |forecast|) mean short excess return, Welch t",
+    "value": 0.005316325635730036,
+    "passed": true,
+    "welch_t": 1.3849735597015431
+  },
+  "counts": {
+    "cases": 792,
+    "days with cases": 406,
+    "top-half cases": 396,
+    "bottom-half cases": 396
+  },
+  "decided_by": "Inconclusive: the main t is between -2 and 2 and no reject rule is met.",
+  "reading": "The situation is checked as a 1-day close-to-close return > 0 and a negative 3-day return ending the previous bar (recorded fall_depth raw value, else recomputed from closes), bars whose prior close is outside the window left out, profile not required; the coin mean is the mean of all its 1-bar returns over all windows; the main t clusters case deviations summed per UTC day; the top half is |forecast| above the cases' median, the bottom half at or below it."
+}
