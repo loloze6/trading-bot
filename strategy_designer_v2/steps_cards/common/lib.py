@@ -253,3 +253,38 @@ def windows_of(plan_text, folds, record=None):
         return []
     fw = fold_windows(plan_text)
     return [w for f in folds for w in fw.get(f, [])]
+
+
+# The new data use (data_use.md, section 2; explore_and_check.md, "In the new data use"): a record backtested in it
+# holds the run's data_use.json; its windows are the research windows, named w1..wN in their file's order; the explore
+# half is the windows before coins.CHECK_FROM, the check half the windows from it.
+def record_data_use(record):
+    """The data use a record was backtested in (its data_use.json), or None (the old data use: the plan's folds)."""
+    p = Path(record) / "data_use.json"
+    return json.loads(p.read_text()) if record is not None and p.exists() else None
+
+
+def halves(du):
+    """(explore half, check half): the window names of the research windows in a data use (data_use.json's content)."""
+    from coins import CHECK_FROM
+    wins = json.loads((COMMON.parent / du["windows"]).read_text())
+    explore = [f"w{i}" for i, w in enumerate(wins, 1) if w["test"]["start"] < CHECK_FROM]
+    return explore, [f"w{i}" for i in range(len(explore) + 1, len(wins) + 1)]
+
+
+def check_windows(plan_text, record):
+    """What step 5's direction check reads: (its name in the files, its windows). The old data use: the check folds of
+    the plan (none when the record did not run on its folds); the new: the check half."""
+    du = record_data_use(record)
+    if du:
+        return "the check half (2022 onward)", halves(du)[1]
+    return "folds " + ", ".join(CHECK_FOLDS), windows_of(plan_text, CHECK_FOLDS, record)
+
+
+def exploration_windows(plan_text, record):
+    """What step 7 explores: (its name, its windows). The old data use: the exploration folds (none when the record did
+    not run on its plan's folds); the new: the explore half."""
+    du = record_data_use(record)
+    if du:
+        return "the explore half", halves(du)[0]
+    return "folds " + ", ".join(EXPLORATION_FOLDS), windows_of(plan_text, EXPLORATION_FOLDS, record)

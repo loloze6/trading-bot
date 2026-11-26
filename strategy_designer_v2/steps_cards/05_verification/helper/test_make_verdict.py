@@ -72,3 +72,22 @@ def test_the_check_reads_the_measures_own_count_names():
     assert m.direction_check(full, named)[0] is True
     assert m.direction_check(full, unnamed)[0] is False        # no count names cases: the smallest count is taken
     assert m.direction_check(full, few_days)[0] is None
+
+
+def test_the_new_data_use_checks_on_the_check_half(tmp_path):
+    """A record in the new data use (its data_use.json): step 7 explores the windows before 2022, step 5 checks on the
+    windows from 2022 (common/explore_and_check.md); the plan's folds are not read."""
+    import json, lib
+    rec = tmp_path / "rec"
+    (rec / "BTCUSD" / "w1").mkdir(parents=True)
+    (rec / "data_use.json").write_text(json.dumps({"version": 2, "research_coins": ["BTC"],
+                                                   "windows": "04_backtest/windows/research_2016.json"}))
+    plan = "---\ndata-period: folds A, B, C, D\n---\n"
+    on, check = lib.check_windows(plan, rec)
+    seen, explore = lib.exploration_windows(plan, rec)
+    assert on == "the check half (2022 onward)" and seen == "the explore half"
+    assert explore == [f"w{i}" for i in range(1, 19)] and check == [f"w{i}" for i in range(19, 33)]
+    old = tmp_path / "old"
+    (old / "BTCUSD" / "fold_A").mkdir(parents=True)
+    assert lib.check_windows(plan, old) == ("folds A, D", lib.windows_of(plan, lib.CHECK_FOLDS, old))
+    assert lib.exploration_windows(plan, old) == ("folds B, C", lib.windows_of(plan, lib.EXPLORATION_FOLDS, old))

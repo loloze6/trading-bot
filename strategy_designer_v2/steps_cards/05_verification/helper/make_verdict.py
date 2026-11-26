@@ -18,7 +18,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "common"))
-from lib import common_text, call, write_atomic, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
+from lib import common_text, call, write_atomic, check_windows, record_data_use  # noqa: E402  (shared helpers, common/lib.py)
 from idea_size import size as idea_size  # noqa: E402  (the size of an idea, common/measures.md)
 
 ATTEMPTS = 3
@@ -200,7 +200,8 @@ def render(d, plan_id, h, out, plan_path, record, size=None):
 def check_line(c):
     """The direction check in one line (common/explore_and_check.md)."""
     said = {True: "agrees", False: "disagrees", None: "not judged"}[c.get("agrees")]
-    return f"- Direction check on folds {c.get('folds')} (the years step 7 does not explore): {said}: {c.get('why')}"
+    on = c["half"] if c.get("half") else f"folds {c.get('folds')}"
+    return f"- Direction check on {on} (the years step 7 does not explore): {said}: {c.get('why')}"
 
 
 def main():
@@ -258,8 +259,9 @@ def main():
         sys.exit(f"no valid function after {ATTEMPTS} attempts; cost {cost:.4f} USD")
 
     # The direction check (common/explore_and_check.md): a confirm must point the same way on the check folds alone.
+    # In the new data use (the record's data_use.json), the check half (common/data_use.md).
     if out["status"] == "confirmed":
-        only = windows_of(plan_text, CHECK_FOLDS, record)
+        on, only = check_windows(plan_text, record)
         if only:
             try:
                 sub = run_measure(args.python, record, code, only)
@@ -268,15 +270,21 @@ def main():
             agrees, why = direction_check(out, sub)
         else:
             sub, agrees, why = None, None, "no check fold (the plan has none, or the backtest did not run on its folds)"
+        new = record_data_use(record) is not None
+        if new and why:   # the same words, for the check half
+            why = why.replace("on the check folds", f"on {on}").replace("on every fold", "on every window")
         smm = (sub or {}).get("main_measure") or {}
         st = smm.get("statistic")
-        out["direction_check"] = {"folds": ", ".join(CHECK_FOLDS), "agrees": agrees, "why": why,
+        where = {"half": on} if new else {"folds": on[len("folds "):]}
+        out["direction_check"] = {**where, "agrees": agrees, "why": why,
                                   "main": smm.get("value"), "statistic": st.get("value") if isinstance(st, dict) else None,
                                   "counts": (sub or {}).get("counts")}
         if agrees is False:
             out["status"] = "inconclusive"
-            out["decided_by"] = ("Confirmed on every fold, but the main measure points the other way on the check folds "
-                                 f"({', '.join(CHECK_FOLDS)}), the years step 7 does not explore: {why}.")
+            out["decided_by"] = ((f"Confirmed on every window, but the main measure points the other way on {on}, the "
+                                  f"years step 7 does not explore: {why}.") if new else
+                                 ("Confirmed on every fold, but the main measure points the other way on the check folds "
+                                  f"({on[len('folds '):]}), the years step 7 does not explore: {why}."))
 
     d = args.verdicts_dir / plan_id
     d.mkdir(parents=True, exist_ok=True)

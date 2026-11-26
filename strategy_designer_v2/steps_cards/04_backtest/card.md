@@ -111,6 +111,19 @@ coins in place of the plan's `data-instruments`; the record's data line names th
 record on other coins is not the plan's own). Used to test an idea on coins its plan never tested
 (`common/unseen_coins.md`). A coin without data in a window is skipped there, as in-sample.
 
+**The new data use** (`--data-use FILE`, 2026-11-26, `runs/BUILD_A4_RESEARCH.md`; `common/data_use.md`): the run's
+`data_use.json` decides the data in place of the plan's coins and folds: its 8 research coins, on the windows of its
+windows file (`windows/research_2016.json`, 32 windows, `w1` to `w32` in the file's order), one call per coin. Before the
+engine runs, a coin is left out of a window by `data_use.md`'s section 3 (`common/coins.py`, `left_out`): the window
+starts before the coin's 91st day, or the coin's daily file misses more than one day in a row inside the window (its
+edges included); a window left out keeps its number (the halves and step 6's "one window left out" read the same number
+as the same dates on every coin). Left-out windows are counted in `run.md` (per coin, with the reason) and on the index
+line (`ADAUSD 30/32 (2 left out by the data use)`); the engine's own reasons (warm-up, dates not fetched) are "not run",
+as always. The record holds a copy of `data_use.json` (steps 5 and 7 read their halves from it); its data line names
+`windows research_2016, data use 2`. Passed by `run_idea` for a run that holds `orchestration/loop/<run>/data_use.json`
+(the one place that decides a run's backtest data). **Why this can't leak:** the left-out rule reads the coin's daily
+file's dates only, never a price, and decides before any bar is read; each window runs as before, with its own warm-up.
+
 The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 
 **Venue.** Binance is not reachable from this environment (HTTP 451). Kraken is reachable, and the repository holds Kraken caches for 19 coins, daily and hourly; six cover all four folds (BTC, ETH, LTC, XMR, XRP, ZEC: step 3's default). Coins run as `<COIN>USD`, with the pipeline's Kraken keys: Kraken spot prices, Kraken futures costs, no funding. Costs do not change the verification, which is judged before costs; branch 3 judges the book after them.

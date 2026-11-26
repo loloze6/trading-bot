@@ -20,6 +20,10 @@ visibility: nothing in it controls a step (operator, 2026-11-15).
 step before it, and recorded under one run name.**
 
 - **It calls; it decides nothing.** No step is changed, skipped by judgment, or given anything its card does not say.
+- **The run's backtest data** (2026-11-26, `../../runs/BUILD_A4_RESEARCH.md`): when the run holds
+  `orchestration/loop/<run>/data_use.json` (started by `run_brief --data-use 2`, `../../common/data_use.md`), step 4 is
+  called with `--data-use` on it: every plan on the run's research coins and windows, in place of the plan's coins and
+  folds. This is the one place that decides it. Without the file, step 4 is called as before.
 - **The chart files** (2026-11-17): after step 6 it writes the record's chart files (`04_backtest/helper/chart_files.py`,
   code only), for the run viewer, for every backtest: under the committed names for a backtest confirmed by step 5 or
   profitable enough by step 6, under the local names (ignored by git) for any other; one journal line (`chart_files`).

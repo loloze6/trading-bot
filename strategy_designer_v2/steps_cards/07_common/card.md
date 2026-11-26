@@ -32,7 +32,8 @@ and 7.g may also write discoveries: findings off the brief's theme, each written
 - **It chooses on some years; its ideas are checked on others** (operator, 2026-11-24; `../common/explore_and_check.md`).
   The analyst explores folds B and C (2018 to 2021); step 5 then requires a confirmed idea to point its way on folds A
   and D (2022 to 2025) too. Why: an idea chosen after looking at results looks better than it is on the years it was
-  chosen from.
+  chosen from. **In the new data use** (a record holding `data_use.json`, `common/data_use.md`): it explores the
+  explore half (the windows before 2022), the check half is kept for step 5 (2026-11-26, `runs/BUILD_A4_RESEARCH.md`).
 - **Its ideas answer the brief's theme** (operator, 2026-11-24; topic 50; `../common/theme.md`). The lines that read
   a verdict (7.a, 7.b, 7.c) write only ideas on the theme: the theme's situation, or a narrower case of it; when none is
   worth testing, they answer "no ideas: the theme's effect is not in the data". Lines 7.e and 7.g mark each idea `theme:

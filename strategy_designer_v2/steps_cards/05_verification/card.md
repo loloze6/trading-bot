@@ -28,7 +28,9 @@ every fold but pointing the other way on the check folds) or **not observable** 
   `../common/explore_and_check.md`). The verdict is judged on every fold; a "confirmed" is then checked on the check
   folds (A and D, 2022 to 2025) alone, with the same measure: if it points the other way there, the status is
   "inconclusive". Why: step 7 chooses its ideas on what it explored; an effect that exists only in those years is not an
-  effect to trade.
+  effect to trade. **In the new data use** (a record holding `data_use.json`, `common/data_use.md`): judged on every
+  window, checked on the check half (the windows from 2022) alone; `direction_check` names `half` in place of `folds`
+  (2026-11-26, `runs/BUILD_A4_RESEARCH.md`).
 - **The verdict is about the idea's reality, judged before costs.** Whether the book pays is branch 3's question (`06_profitability`).
 - **Next to the verdict, the idea's size** (operator, 2026-11-20): how large its effect is, not only whether it exists.
   Computed by code from the record's prices and forecast (`../common/measures.md`, "The size of an idea";

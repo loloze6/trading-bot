@@ -72,9 +72,17 @@ orchestration/run_brief/
 ## How to call it
 ```
 python3 orchestration/run_brief/helper/run_brief.py --run NAME_run --python VENV_PYTHON
-    (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model MODEL]
+    (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model MODEL] [--data-use 2]
 ```
 Called again with the same brief on the same run, it resumes. Called with another brief, it adds it to the run.
+
+**`--data-use 2`** (2026-11-26, `../../runs/BUILD_A4_RESEARCH.md`; `../../common/data_use.md`): the run in the new data
+use. Before step 1, it writes `orchestration/loop/<run>/data_use.json` once: `{"version": 2, "research_coins": the run's
+8 coins (common/coins.py, research_draw: seeded by the run's name), "windows": "04_backtest/windows/research_2016.json"}`
+(the file other helpers read; resumed, it is kept as written, with or without the flag). `run_idea` then backtests every
+plan of the run on those coins and windows; step 7 explores the explore half, step 5 checks on the check half
+(`../../common/explore_and_check.md`). Refused: a run that has already tested ideas without it (`run_idea`'s
+`table.json` exists), or whose file names another version. Without the flag, nothing changes.
 
 ## Checks in code
 Refused before any call: a run name not ending in `_run`; none or more than one of brief, theme, source; a brief file

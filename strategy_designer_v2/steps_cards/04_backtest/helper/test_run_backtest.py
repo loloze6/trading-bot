@@ -223,3 +223,38 @@ def test_coins_in_place_of_the_plans(monkeypatch, plan, tmp_path):
     monkeypatch.setattr(sys, "argv", ["run_backtest.py", str(plan), "--python", "py", "--out-root", str(out_root)])
     rb.main()                                        # the plan's own coins: another record, so it runs
     assert sorted(seen) == [("BTCUSD", ["A"]), ("ETHUSD", ["A"])]
+
+
+def test_data_use_runs_the_runs_coins_on_its_windows_and_leaves_windows_out(monkeypatch, plan, tmp_path):
+    """--data-use (common/data_use.md): the run's coins on its windows, whatever the plan names; a coin-window left out
+    by section 3 is not run, keeps its number for the others, and is counted in run.md and the index line."""
+    wins = [{"label": f"W{i}", "test": {"start": f"20{i:02d}-01-01", "end": f"20{i:02d}-04-30"}} for i in (1, 2, 3, 4)]
+    (tmp_path / "wins.json").write_text(json.dumps(wins))
+    du = {"version": 2, "research_coins": ["SOL", "ADA"], "windows": str(tmp_path / "wins.json")}
+    (tmp_path / "data_use.json").write_text(json.dumps(du))
+    reasons = {("ADA", "2001-01-01"): "the coin's first 90 days", ("ADA", "2003-01-01"): "a hole of 2 days"}
+    monkeypatch.setattr(rb.coin_rules, "dates", lambda coin: [])
+    monkeypatch.setattr(rb.coin_rules, "left_out", lambda coin, start, end, days=None: reasons.get((coin, start)))
+    seen = []
+    monkeypatch.setattr(rb, "protocol", lambda python, symbol, bar, folds, windows=None: {
+        "symbols": [symbol], "windows": windows, "venue": {"label": "Kraken spot"}})
+    monkeypatch.setattr(rb, "call_protocol", lambda python, config_path, proto, windows, tmp: seen.append(
+        (proto["symbols"][0], [w["label"] for w in windows])) or fake_call(tmp / "out", windows))
+    out_root = tmp_path / "backtests"
+    monkeypatch.setattr(sys, "argv", ["run_backtest.py", str(plan), "--python", "py", "--out-root", str(out_root),
+                                      "--data-use", str(tmp_path / "data_use.json")])
+    rb.main()
+    assert sorted(seen) == [("ADAUSD", ["W2", "W4"]), ("SOLUSD", ["W1", "W2", "W3", "W4"])]   # not the plan's BTC, ETH
+    rec = out_root / "001-01_some-idea_1d"
+    assert sorted(p.name for p in (rec / "ADAUSD").iterdir()) == ["w2", "w4", "windows"]
+    assert json.loads((rec / "data_use.json").read_text()) == du
+    run_md = (rec / "run.md").read_text()
+    assert "- Data: SOL, ADA as SOLUSD, ADAUSD; 1d bars; windows wins, data use 2\n" in run_md
+    assert ("- ADAUSD: 2 of 4 windows run. 2 left out by the data use (common/data_use.md, section 3): "
+            "w1 (the coin's first 90 days); w3 (a hole of 2 days).") in run_md
+    assert "| w4 |" in run_md and "| w3 |" not in run_md.split("- ADAUSD:")[1]
+    assert (out_root / "INDEX.md").read_text() == (
+        "001-01_some-idea_1d: ran: SOLUSD 4/4; ADAUSD 2/4 (2 left out by the data use) [1d, windows wins, data use 2]\n")
+    seen.clear()
+    rb.main()                                        # the same data use again: the record is kept
+    assert seen == []
