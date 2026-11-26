@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move on short cases (short side, coin drift removed)",
+    "value": 0.00903956283654824,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.231381631259457
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper |forecast| half minus lower half",
+    "value": 0.004527904972840633,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 236,
+    "cases": 378
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 and the upper-minus-lower half difference is above 0.",
+  "reading": "Profile (falling agitated) taken from the recorded regime since its 365-bar/60-bar inputs cannot be rebuilt inside windows, width = high-low range over the mean high-low range of the last 20 bars (today included, regime trusted where fewer than 20 in-window bars), loc > 0.5 from prices; clustered t uses per-day summed deviations with a G/(G-1) correction; upper half is |forecast| above the median, lower half the rest; the plan's 30 case-day minimum gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.005429 on the check folds against +0.00904 on every fold",
+    "main": 0.005428568127036828,
+    "statistic": 1.0498263878573173,
+    "counts": {
+      "case-days": 141,
+      "cases": 218
+    }
+  }
+}

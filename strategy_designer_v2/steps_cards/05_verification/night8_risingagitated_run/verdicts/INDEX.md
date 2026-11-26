@@ -9,6 +9,7 @@
 059-01_swing-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.000341715; slope t 2.0759; grid cases 3419]
 060-01.d1_wide-day-high-close-next-day-fade_1d: inconclusive (fit: adapted) [main: -0.00800085; t of the mean, cases of one day summed -1.78099; days with cases 329, cases 572]
 060-01.g1.d1_wider-than-usual-high-close-fade_1d: inconclusive (fit: exact) [main: 0.00801093; t of the mean, cases summed per day 1.89077; cases 347, case-days 212, active bars 379]
+060-01.g1.d2.d1_own-range-close-height-fade_1d: confirmed (fit: adapted) [main: 0.00903956; t of the mean, cases of one day taken together 2.23138; case-days 236, cases 378]
 060-01.g1.d2_wide-day-close-location-graded-fade_1d: confirmed (fit: exact) [main: 0.00903956; t of the mean, cases of one day taken together 2.23138; distinct case days 236, case bars 378]
 060-01.g1_wide-day-high-close-fade_1d: confirmed (fit: adapted) [main: 0.0203712; t of the mean, cases clustered by day 2.5037; cases 89, days 56]
 060-01_falling-agitated-high-close-fade_1d: confirmed (fit: exact) [main: -0.00587368; Welch t -2.46416; bars in top group 942, bars in middle group 886, bars in a position 2689]

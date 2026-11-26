@@ -18,22 +18,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 060-01.g1_wide-day-high-close-fade | 060-01_falling-agitated-high-close-fade | plan | confirmed (+2.50) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 060-01.g1.d1_wider-than-usual-high-close-fade, 060-01.g1.d2_wide-day-close-location-graded-fade; 7.g: 060-01.g1.g1_graded-width-high-close-fade | 1.11 | 7.1 |
 | 060-01.g1.d1_wider-than-usual-high-close-fade | 060-01.g1_wide-day-high-close-fade | plan | inconclusive (+1.89) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 060-01.g1.d1.b1_wide-high-close-fade-more-coins; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.10 | 7.0 |
 | 060-01.g1.d2_wide-day-close-location-graded-fade | 060-01.g1_wide-day-high-close-fade | plan | confirmed (+2.23) | not profitable enough (failed: Calmar) | - | 7.d: 060-01.g1.d2.d1_own-range-close-height-fade, 060-01.g1.d2.d2_wider-squeeze-day-fades-harder; 7.g: 060-01.g1.d2.g1_up-day-high-close-fade | 1.13 | 7.2 |
+| 060-01.g1.d2.d1_own-range-close-height-fade | 060-01.g1.d2_wide-day-close-location-graded-fade | plan | confirmed (+2.23) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 060-01.g1.d2.d1.g3_wide-high-close-fade | 0.90 | 7.4 |
 
 ## Consumption
-14 ideas, 16.22 USD, 100.6 minutes in all.
+15 ideas, 17.12 USD, 108.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.89 | 6.3 |
-| step4_backtest | 0.00 | 46.0 |
-| step5_verdict | 2.29 | 8.2 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.98 | 6.8 |
+| step4_backtest | 0.00 | 49.2 |
+| step5_verdict | 2.47 | 8.9 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 2.00 | 6.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.46 | 1.2 |
 | step7_7.b | 2.96 | 9.5 |
-| step7_7.g | 6.61 | 21.0 |
+| step7_7.g | 7.24 | 22.7 |
 | similarity_check | 0.00 | 0.4 |
-| unseen_test | 0.00 | 1.1 |
+| unseen_test | 0.00 | 2.3 |

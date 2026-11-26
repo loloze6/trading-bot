@@ -16,6 +16,6 @@ profile holding that one; on a side when it holds that side: long, short, or bot
 | falling calm | long | 1 | 035-01.b1 (calm, both): calm market nearness to high |
 | falling calm | short | 1 | 035-01.b1 (calm, both): calm market nearness to high |
 | falling agitated | long | 12 | 035-01 (falling agitated, long): falling agitated scaled fall rebound; 039-02.d1 (agitated, long): wide range low close next day rebound; 043-01 (falling agitated, long): falling agitated intraday drop rebound; 044-01 (agitated, long): agitated wide range fall rebound; 044-02 (agitated, long): agitated down day range rebound; 045-01 (agitated, long): agitated wide low close rebound; 047-01 (falling agitated, long): falling agitated daily fall rebound; 051-01 (falling agitated, long): falling agitated scaled fall next day rebound; 038-01 (falling agitated, long): agitated fall next day rebound; 038-02 (falling agitated, long): agitated fall vs swing rebound; 039-02 (agitated, long): agitated range fall low close rebound; 041-03 (falling agitated, long): agitated fall drop vs range rebound |
-| falling agitated | short | 0 | - |
+| falling agitated | short | 1 | 060-01.g1.d2.d1 (falling agitated, short): own range close height fade |
 
 Proven and profitable strategies acting in every profile (their idea names none): 77 long, 1 short, 13 on both sides.
