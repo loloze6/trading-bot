@@ -59,6 +59,16 @@ box; the spend after each brief was answered.
   and on volume for 1,083 days (at most 4.5 %); nothing changed. Two data tools gained options (defaults unchanged).
   For `common/data_use.md`: a liquidity rule (a coin left out of a window where it barely trades) to add; the 90-day
   rule covers BCH's first print.
+- **23:30 Paris, the operator: "use the best of the tokens during the night, so feel free":** the build of
+  `common/data_use.md` started tonight. The designer merged `data-coins` into the working branch (05020744fd), wrote
+  `common/coins.md` (the universe: Kraken, 3 years, at least 100,000 USD traded a day, which leaves out STORJ, OCEAN,
+  YFI, SNX, COMP, ETC, XTZ: 32 coins; the final draw, seed 20261126: XLM, SOL, DASH, UNI, LINK, FET, SHIB; the portfolio
+  group the other 25), `common/coins.py` (the groups, the per-run draw, the 90-day rule; 3 tests) and the 32 research
+  windows 2016-01 to 2026-08 (`04_backtest/windows/research_2016.json`). Three build sessions from 80957b2e84, each on
+  its own branch, with fixed interfaces between them: part 3, the research run's coins and windows
+  (session_012maTgXRa1jWmZqLrKEGSXH, `build-a4-research`); part 4, a candidate's common record
+  (session_012maTgUMyP5tGx1A41UkuNs, `build-a4-common`); part 5, the portfolio versions by rule, readiness, the final test
+  (session_012maTgXAtxsdTfut9XYn1TR, `build-a4-portfolio`). None changes what tonight's six research sessions run.
 
 ## Reading
 (written in the morning)
