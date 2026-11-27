@@ -5171,31 +5171,36 @@ class TouchWeightedSupportBreakDepthComponent(SubStrategyComponent):
 
 class VolatilityScaledDistanceFromHighComponent(SubStrategyComponent):
     """
-    Distance of the close from a recent high, counted in usual one-bar moves:
+    Distance of the close from a window extreme, in usual one-bar moves, on every bar:
 
-        H = max of `source` values over bars t-period .. t-1   (exclude_current = 1, default; bar t excluded)
-            or over bars t-period+1 .. t                       (exclude_current = 0; bar t included)
-            source = "close" (default): the closes; source = "high": the highs
-        D = H (base = "level", default) or close[t] (base = "close")
+        window = bars t-period .. t-1        (exclude_current 1, default: bar t excluded)
+                 bars t-period+1 .. t        (exclude_current 0: bar t included)
+        source "close" (default): the values are the closes of the window
+        source "high":            the values are the bar's extreme on the `extreme` side
+                                  (the `high` column for extreme "high", the `low` column for extreme "low")
+        extreme "high" (default): R = max(values)
+        extreme "low":            R = min(values)
+        D = R (base "level", default) or close[t] (base "close")
         s = std (ddof 1) of the vol_period one-bar returns close[j] / close[j-1] - 1, j = t-vol_period+1 .. t
-        raw_value = (close[t] - H) / D / s       (0.0 when s = 0)
+        raw_value = (close[t] - R) / D / s,   0.0 when s = 0
 
-    The defaults are the original output, unchanged: (close[t] - max(close[t-20..t-1])) / H / s20.
-    With period 1, source "high", exclude_current 0 and base "close" it is (close[t] - high[t]) / close[t] / s:
-    never positive on real bars. `negate` gives the low-close reading (high[t] - close[t]) / close[t] / s.
-    Range: unbounded, signed; 0 at H, positive above it, negative below it (never positive with exclude_current 0).
+    With period 1, vol_period 30, source "high", exclude_current 0, base "close", extreme "low":
+    (close[t] - low[t]) / close[t] / s30.
+    Range and sign: unbounded, signed; 0 at R, positive above it, negative below it. With exclude_current 0,
+    "high" is never positive and "low" is never negative on real bars. Graded, in usual one-bar moves.
+    The defaults (and every setting with extreme "high") are the original output, unchanged.
     Warm-up: max(period + exclude_current, vol_period + 1) rows, bar t included.
-    NaN: a NaN in any value read gives NaN; an H, a return base close or (base "close") a close[t] not above 0
-    gives NaN (never on real bars); a flat return window (s = 0) gives 0.0.
-    Building the component raises for period < 1, vol_period < 2, a source other than "close" or "high", an
-    exclude_current other than 0 or 1, or a base other than "level" or "close".
 
-    WHY THIS CANNOT LEAK: it reads the `close` column (and `high` with source "high") of the last
-    max(period + exclude_current, vol_period + 1) rows of data only, the last of them being bar t; every value read
-    is known at bar t's close.
+    NaN: a NaN in any value read (window values, close[t], the vol_period + 1 closes) gives NaN. An R, a
+    return base close, or (base "close") a close[t] not above 0 gives NaN (never on real bars). s = 0 gives 0.0.
+    Building the component raises for period < 1, vol_period < 2, an unknown source, exclude_current not 0 or 1,
+    an unknown base, or an extreme other than "high" or "low".
+
+    WHY THIS CANNOT LEAK: it reads only the rows up to and including bar t (the last row of data): the window
+    rows ending at t or t-1, the last vol_period + 1 closes, and close[t], all known at bar t's close.
     """
 
-    def __init__(self, name="VolScaledDistFromHigh", weight=1.0, parameters=None):
+    def __init__(self, name="VolScaledDistanceFromHigh", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.period = int(self.parameters.get("period", 20))
         if self.period < 1:
@@ -5219,50 +5224,57 @@ class VolatilityScaledDistanceFromHighComponent(SubStrategyComponent):
         if self.base not in ("level", "close"):
             raise ValueError(
                 f"VolatilityScaledDistanceFromHighComponent: base must be 'level' or 'close', got {self.base!r}")
+        self.extreme = self.parameters.get("extreme", "high")
+        if self.extreme not in ("high", "low"):
+            raise ValueError(
+                f"VolatilityScaledDistanceFromHighComponent: extreme must be 'high' or 'low', got {self.extreme!r}")
         self._raw_value = 0.0
 
-    def update(self, data):
+    def update(self, data: pd.DataFrame):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
         if not self.is_ready():
             return
+        nan = float("nan")
         close = data["close"].astype(float).to_numpy()
         n = len(close)
-        t = n - 1
-        vals = close if self.source == "close" else data["high"].astype(float).to_numpy()
-        ex = self.exclude_current
-        win = vals[t - self.period + 1 - ex: t + 1 - ex]
-        rc = close[t - self.vol_period: t + 1]
-        c = close[t]
-        if np.isnan(win).any() or np.isnan(rc).any():
-            self._raw_value = float("nan")
-            self.confidence = 1.0
+        stop = n - self.exclude_current
+        start = stop - self.period
+        if self.source == "close":
+            vals = close[start:stop]
+        else:
+            col = "high" if self.extreme == "high" else "low"
+            vals = data[col].astype(float).to_numpy()[start:stop]
+        c = float(close[-1])
+        rc = close[n - self.vol_period - 1:]
+        self.confidence = 1.0
+        if np.isnan(vals).any() or np.isnan(c) or np.isnan(rc).any():
+            self._raw_value = nan
             return
-        H = float(np.max(win))
-        if not H > 0 or not (rc[:-1] > 0).all():
-            self._raw_value = float("nan")
-            self.confidence = 1.0
+        if not (rc[:-1] > 0).all():
+            self._raw_value = nan
+            return
+        R = float(vals.max()) if self.extreme == "high" else float(vals.min())
+        if not R > 0:
+            self._raw_value = nan
             return
         if self.base == "close" and not c > 0:
-            self._raw_value = float("nan")
-            self.confidence = 1.0
+            self._raw_value = nan
             return
         rets = rc[1:] / rc[:-1] - 1.0
         s = float(np.std(rets, ddof=1))
-        D = H if self.base == "level" else float(c)
+        D = R if self.base == "level" else c
         if s == 0:
             self._raw_value = 0.0
         else:
-            self._raw_value = float((c - H) / D / s)
-        self.confidence = 1.0
-        self.debug_info = {"H": H, "divisor": D, "s": s, "source": self.source,
-                           "exclude_current": ex, "base": self.base}
+            self._raw_value = float((c - R) / D / s)
+        self.debug_info = {"extreme_value": R, "divisor": D, "return_std": s, "extreme": self.extreme}
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self):
+    def get_required_periods(self) -> int:
         return max(self.period + self.exclude_current, self.vol_period + 1)
 
 

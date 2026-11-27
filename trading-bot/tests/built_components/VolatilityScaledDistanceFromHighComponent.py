@@ -1,50 +1,59 @@
 """Spec of VolatilityScaledDistanceFromHighComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'VolatilityScaledDistanceFromHighComponent'
-SETTINGS = [{}, {"period": 20, "vol_period": 20}, {"period": 1, "vol_period": 20, "source": "high", "exclude_current": 0, "base": "close"}]
+SETTINGS = [{}, {"period": 20, "vol_period": 20}, {"period": 1, "vol_period": 20, "source": "high", "exclude_current": 0, "base": "close"}, {"period": 1, "vol_period": 30, "source": "high", "exclude_current": 0, "base": "close", "extreme": "low"}]
 
 
 def hand(df, params):
     import math
-    p = int(params.get("period", 20))
+    period = int(params.get("period", 20))
     vp = int(params.get("vol_period", 20))
     source = params.get("source", "close")
     ex = int(params.get("exclude_current", 1))
     base = params.get("base", "level")
-    c = [float(x) for x in list(df["close"])]
-    src = c if source == "close" else [float(x) for x in list(df["high"])]
-    t = len(c) - 1
-    # window of the high: bars t-p-ex+1 .. t-ex
-    win = []
-    for k in range(p):
-        win.append(src[t - ex - k])
-    # closes for the returns: bars t-vp .. t
-    closes = []
-    for k in range(vp + 1):
-        closes.append(c[t - vp + k])
-    for x in win + closes:
+    extreme = params.get("extreme", "high")
+    closes = [float(x) for x in list(df["close"])]
+    t = len(closes) - 1
+    if source == "close":
+        col = closes
+    elif extreme == "high":
+        col = [float(x) for x in list(df["high"])]
+    else:
+        col = [float(x) for x in list(df["low"])]
+    # window: bars t-ex-period+1 .. t-ex
+    vals = []
+    for k in range(period):
+        vals.append(col[t - ex - k])
+    c = closes[t]
+    rc = []
+    for j in range(t - vp, t + 1):
+        rc.append(closes[j])
+    for x in vals + [c] + rc:
         if x != x:
             return float("nan")
-    H = win[0]
-    for x in win:
-        if x > H:
-            H = x
-    if not H > 0:
-        return float("nan")
-    for x in closes[:-1]:
+    for x in rc[:-1]:
         if not x > 0:
             return float("nan")
-    ct = c[t]
-    if base == "close" and not ct > 0:
+    R = vals[0]
+    for x in vals:
+        if extreme == "high":
+            if x > R:
+                R = x
+        else:
+            if x < R:
+                R = x
+    if not R > 0:
+        return float("nan")
+    if base == "close" and not c > 0:
         return float("nan")
     rets = []
-    for k in range(1, len(closes)):
-        rets.append(closes[k] / closes[k - 1] - 1.0)
-    mean = sum(rets) / len(rets)
-    ss = 0.0
+    for i in range(1, len(rc)):
+        rets.append(rc[i] / rc[i - 1] - 1.0)
+    m = sum(rets) / len(rets)
+    var = 0.0
     for r in rets:
-        ss = ss + (r - mean) ** 2
-    s = math.sqrt(ss / (len(rets) - 1))
+        var += (r - m) * (r - m)
+    s = math.sqrt(var / (len(rets) - 1))
     if s == 0:
         return 0.0
-    D = H if base == "level" else ct
-    return (ct - H) / D / s
+    D = R if base == "level" else c
+    return (c - R) / D / s
