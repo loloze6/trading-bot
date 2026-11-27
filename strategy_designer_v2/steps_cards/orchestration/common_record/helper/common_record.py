@@ -91,7 +91,9 @@ def backtest(plan, python, dest, windows, coin_list, usable=coins.usable):
     syms = {c: f"{c}USD" for c in coin_list}
     protos = {c: rb.protocol(python, syms[c], bar, None, ws) for c, (_, ws) in per.items()}
     with ThreadPoolExecutor(max_workers=max(1, min(len(protos), rb.cores()))) as pool:
-        futs = {c: pool.submit(rb.run_part, python, config_path, protos[c], per[c][0], dest / syms[c],
+        # run_part names window i w<numbers[i]> (step 4, since data use 2): the file's numbering, K continued
+        futs = {c: pool.submit(rb.run_part, python, config_path, protos[c],
+                               list(range(per[c][0] + 1, per[c][0] + 1 + len(per[c][1]))), dest / syms[c],
                                dest / syms[c] / "windows") for c in protos}
         done = {c: f.result() for c, f in futs.items()}
     report, summary = [], []
