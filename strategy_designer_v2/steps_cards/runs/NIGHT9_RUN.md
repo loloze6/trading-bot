@@ -139,6 +139,11 @@ box; the spend after each brief was answered.
   run-break up-day fades in a falling market" (on target)); shards 1 and 2 went on (20 and 19 records), shards 3 to 6
   stopped near 03:00 (14 to 16 records each). The designer's 03:30 watch did not run (its worker restarted).
   **05:10 Paris:** all 6 research sessions and shards 3 to 6 told to resume after the reset (`--budget 42`).
+  **05:15 Paris:** A? (no answer yet), B, C, D, E, F resumed at 04:10 to 04:11 UTC with `--budget 42`; B's worker had
+  restarted (about 2 hours lost); D near its budget (33.3 of 42). B: brief 072's own line 0 confirmed in 10 tested.
+  Shard 3 finished (20 of 20; on the common data 17 confirmed, 16 profitable; 3.3 h of engine time); shard 6 resumed
+  (14 of 20), its 1h book needing about 2.5 h, longer than the 2-hour task cut, so it runs detached with a tracked
+  watcher (NIGHT_RULES 3f's risk, accepted for this one job).
 
 ## Reading
 (written in the morning)
