@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of next-day excess return on forecast, day-clustered",
+    "value": 0.000637476784103034,
+    "statistic": {
+      "name": "day-clustered slope t",
+      "value": 1.8606230330036932
+    },
+    "threshold": "confirm: slope t >= 2 with mean excess > 0; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return over cases > 0",
+    "value": -0.00044146536879332535,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1273,
+    "distinct days": 758
+  },
+  "decided_by": "Inconclusive: slope t lies between -2 and 2.",
+  "reading": "The situation is a positive one-day scaled return (the recorded scaled_rise raw value > 0, or the day's close-to-close return > 0 where it is not recorded) on the long side; the horizon of 1 bar makes every bar its own grid cell; the coin's mean daily return pools all its windows' 1-day returns; the regression is OLS with an intercept and day-clustered (CR1) standard errors; the plan's 'fewer than 100 cases on at least 50 distinct days' minimum is reported as not observable, as the workflow requires.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.861 (not below 1), 1273 cases (30 needed)",
+    "t_in_idea_direction": 1.8606230330036932,
+    "cases": 1273
+  }
+}
