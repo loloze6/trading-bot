@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 061-01.b1.b1.b1.d1.d1.d1.d2_upper-close-deep-fall-ten-day_1d
+idea tested: 061-01.b1.b1.b1.d1.d1.d1.d2_upper-close-deep-fall-ten-day
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4202 USD
+---
+## Findings
+- **F1:** In a choppy market (60-day return between -10 % and +10 %), the coin's next 10-day move, less its average, follows its 20-day return in strict order across the five 20-day-return quintiles. The lowest quintile gives -16.43 % (t -4.85, 13 non-overlapping cases), then -8.64 % (t -3.30, 17), -2.64 % (t -0.63, 20), +5.79 % (t 1.75, 17) and +10.37 % (t 1.27, 10) for the highest. The same order holds over 2 days, from -3.02 % (t -2.34, 59 cases) in the lowest quintile to +1.70 % (t 1.62, 44) in the highest.
+- **F2:** In a falling market the 20-day return shows no such order. Over 10 days the lowest quintile gives +2.37 % (t 1.19, 86 cases) and the second -5.79 % (t -3.99, 60), so the continuation of F1 belongs to the choppy trend, not to deep falls in general.
+- **F3:** The brief's own situation does not show in windows w7 to w18. In a choppy agitated market a close in the top third of the day's range is followed over 2 days by -0.32 % against the coin's average (t -0.32, 37 cases). In a choppy calm market it is followed by -0.09 % (t -0.16, 111 cases), so agitation adds nothing to a fade after a high close.
+- **F4:** The book mostly carries the coins' own moves against it. Its daily return correlates -0.36 with the coins' daily return. On its worst 1 % of days the coins rose +8.88 %, and on its best 1 % they fell -9.37 %. Its result is set by a few windows: w16 summed +12.05 % and w11 summed -6.84 %, while three windows held no position at all.
+- **F5:** In an agitated market, the lowest quintile of the coin's own 1-day return is followed by +1.37 % over 2 days (t 3.20, 518 cases). This is the agitated-fall rebound the profile map already holds in 16 falling agitated long strategies, so it is not a discovery.
+- **F6:** The other angles do not stand out given how many were looked at:
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `061-01.b1.b1.b1.d1.d1.d1.d2.g1_choppy-twenty-day-continuation` (from F1, F2, F3): In a choppy market, a coin keeps moving the way its 20-day return has gone over the next ten days. The deeper its 20-day fall, the larger its further fall, and the larger its 20-day rise, the larger its further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

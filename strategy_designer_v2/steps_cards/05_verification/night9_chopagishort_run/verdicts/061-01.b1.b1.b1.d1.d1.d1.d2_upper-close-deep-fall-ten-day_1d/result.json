@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 10-bar move per case",
+    "value": 0.02136667306872862,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.219217311517525
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 on >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 on >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(|forecast| at signal, short-direction unusual move) > 0",
+    "value": -0.14262273759895855,
+    "passed": false
+  },
+  "counts": {
+    "cases": 120,
+    "days": 97
+  },
+  "decided_by": "The t lies between -2 and 2, so neither the confirm nor the reject rule is met.",
+  "reading": "Situation computed from prices (close location (close-low)/(high-low) > 0.5, 5-bar return < 0, 20-bar return < -10 %, inside each window, the recorded fall20 raw value used where the window holds fewer than 20 prior bars) and active bars where it cannot be evaluated are left out; the profile is not part of the Fidelity situation; a case is the first short bet (rise of -forecast of >= 2 points from its low since the last bet, reset at flat) in each 10-bar grid cell of a window; the per-day t is the cluster-by-day t of the mean; forecast size is |forecast|; the plan's 'fewer than 30 cases' is reported as not observable."
+}

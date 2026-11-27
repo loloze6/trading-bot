@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 061-01.b1.b1.b1.d1.d1.d1.d3_moderate-fall-high-close-fades_1d
+idea tested: 061-01.b1.b1.b1.d1.d1.d1.d3_moderate-fall-high-close-fades
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4632 USD
+---
+## Findings
+- **F1:** In the choppy agitated profile, the fall over the next 5 days grows with how near the close is to the day's high, with no 5-day or 20-day condition on the bars. On the 5-day grid, the mean unusual move is +1.35 % (n 14) for closes in 0.2–0.4 of the range, −2.75 % (n 26) for 0.4–0.6, −4.57 % (n 13) for 0.6–0.8 and −7.18 % (t −2.97, n 21) for closes in the top fifth. The tested filters kept only 77 cases, about 1 % of days, at 0.004 trades a day.
+- **F2:** Outside the choppy agitated profile, a high close is not followed by a fall over 5 days. Closes in the top fifth of the range give an unusual move of +0.76 % (t 1.03, n 389), and closes in 0.6–0.8 give +0.98 % (t 1.49, n 391). This points to the agitated, trendless market as what carries the fade, as the brief claims, though calm markets were not checked on their own.
+- **F3:** Inside the profile, the fade is not limited to moderate 20-day falls. Cases with a negative 5-day return and a 20-day fall deeper than a fifth had an unusual 5-day move of −8.3 % (t −1.94, n 20), against −8.8 % (n 6) in the tested band of a tenth to a fifth. Leaving out the deepest falls therefore discarded cases that also fell.
+- **F4:** The book's losses come from one coin. Its 32 trades lost 1.41 % each on average after fees, with 34 % winners. ZEC's 13 trades averaged −10.1 %, while BTC (+4.1 %, 7 trades), LTC (+4.6 %, 4), ETH (+12.3 %, 2) and XMR (+0.8 %, 5) were all positive.
+- **F5:** The fade weakened over time. The in-profile unusual 5-day move was −14.6 % in 2018 (n 5), −3.7 % in 2019 (t −2.99, n 22) and −6.0 % in 2020 (n 26), but +1.0 % in 2021 (n 33).
+- **F6:** Over 2 days, the in-profile fade after high closes is small and not distinguishable from chance. Closes in 0.6–0.8 of the range give −1.41 % (t −1.53, n 50), and closes in the top fifth give −1.07 % (t −0.67, n 40). The move shows mostly over 5 days, not the brief's 2.
+- **F7:** Outside the profile, a 20-day fall of a tenth to a fifth of the price is followed by a further fall over 5 days, with an unusual move of −3.22 % (t −4.19, n 204). This is the strongest reading of all the angles explored. Coins up 0 to 10 % over 20 days rose by +2.39 % (t 3.38, n 285). Falls deeper than a fifth did not continue, at +0.36 % (n 271), which fits the rebound strategies the map already holds in falling agitated markets.
+
+## Ideas
+- `061-01.b1.b1.b1.d1.d1.d1.d3.g1_choppy-agitated-high-close-fade` (from F1, F2, F3, F6): In a choppy, agitated market, the nearer a coin's daily close sits to that day's high, the more its price falls over the next five days, whatever its past 5-day and 20-day returns.
+- `061-01.b1.b1.b1.d1.d1.d1.d3.g2_moderate-twenty-day-fall-continues` (from F7): A coin whose 20-day return is a fall of a tenth to a fifth of its price keeps falling over the next five days, and the deeper that fall within this span, the larger the further fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

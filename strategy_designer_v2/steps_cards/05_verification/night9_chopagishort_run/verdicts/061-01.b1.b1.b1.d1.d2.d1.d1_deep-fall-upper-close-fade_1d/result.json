@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of short cases, in the short's direction",
+    "value": 0.03168007528605197,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 1.9612754845000937
+    },
+    "threshold": "positive with t >= 2 to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third by |forecast|, mean unusual move",
+    "value": -0.01672986496623308,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 99,
+    "cases": 139,
+    "active bars": 509
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Profile part of the situation is read as the recorded regime not being 'chop' (its components are not recorded and the 365-bar volatility percentile cannot be rebuilt), each grid cell's case is its first bet bar, the day-pooled t uses a D/(D-1) cluster correction, thirds are floor(n/3) cases by |forecast|, and fewer than 30 distinct case days is reported as 'not observable' as the workflow's minimum-count rule asks."
+}

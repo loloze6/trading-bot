@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 5-bar move per case",
+    "value": 0.0326045558936538,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.74970425500884
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half, mean unusual move",
+    "value": 0.03125693192512946,
+    "passed": true
+  },
+  "counts": {
+    "cases": 77,
+    "distinct days": 72
+  },
+  "decided_by": "Mean short-direction unusual move above 0 with t >= 2 and the supporting check above 0.",
+  "reading": "Profile taken from the recorded regime (its volatility percentile cannot be rebuilt from the recorded bars) with ret5, ret20, ret60 and close location recomputed from prices where the window has the history; a case is the first short bet (rise of |forecast| >= 2) in each 5-bar grid cell of a window with a full 5-bar return in that window; 'fewer than 30 cases on fewer than 20 distinct days' read as not observable if either count is short; the median split puts |forecast| above the median in the larger half and the rest in the smaller half.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (61 cases, 56 days)",
+    "main": 0.03003845069276981,
+    "statistic": 2.4821161883084457,
+    "counts": {
+      "cases": 61,
+      "distinct days": 56
+    }
+  }
+}
