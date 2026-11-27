@@ -12,20 +12,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 086-02_volume-weighted-up-move-continuation | - | plan | no effect (+0.51) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 086-02.c1_calm-decline-five-day-continuation, 086-02.c2_calm-decline-ten-day-continuation | 0.68 | 7.9 |
 | 050-03_falling-calm-range-scaled-week-fall | - | plan | no effect (+0.19) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 050-03.c1_calm-downtrend-scaled-rise-continues, 050-03.c2_weekly-scaled-rise-longer-carry | 0.62 | 7.8 |
 | 050-04_falling-calm-range-scaled-week-rise | - | plan | inconclusive (+1.26) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-04.b1_range-scaled-week-rise-all-coins; 7.g: no ideas: The only graded pattern is the 14-day rise carrying on over the next week in falling calm markets, and on the long side it rests on 23 cases and 19 days, with t near 2, mostly from one window; after about forty angles tested, it does not stand out from chance. | 0.83 | 7.9 |
+| 077-01_falling-calm-deep-close-drift | - | plan | no effect (+0.61) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 077-01.c1_falling-calm-recovery-continues; 7.g: 077-01.g1_falling-calm-rebound-continuation, 077-01.g2_calm-decline-five-day-momentum | 1.13 | 8.9 |
 
 ## Consumption
-8 ideas, 4.63 USD, 55.8 minutes in all.
+9 ideas, 5.75 USD, 64.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.72 | 4.3 |
-| step4_backtest | 0.00 | 38.4 |
-| step5_verdict | 1.24 | 4.7 |
+| step3_plan | 0.80 | 4.7 |
+| step4_backtest | 0.00 | 43.9 |
+| step5_verdict | 1.40 | 5.3 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.g | 0.38 | 1.0 |
+| step7_7.g | 0.74 | 2.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.43 | 1.5 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 1.85 | 5.5 |
+| step7_7.c | 2.38 | 7.0 |

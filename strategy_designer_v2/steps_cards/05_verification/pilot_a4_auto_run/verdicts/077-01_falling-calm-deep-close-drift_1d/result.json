@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-excess 3-bar forward return on forecast (before costs)",
+    "value": 0.00025231471730618766,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.6078591107580031
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return of deepest third minus shallowest third (< 0 passes)",
+    "value": -0.002509266655742891,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 1045,
+    "active bars": 3222,
+    "cases per third": 348
+  },
+  "decided_by": "The slope has |t| < 2. No effect (common/verdicts.md): t in the idea's direction +0.608 (below 1), 348 cases (30 needed).",
+  "reading": "The profile is read from the recorded regime (\"unknown\" = not vetoed) and the depth from its raw value; cases are grid bars 0,3,6,... of each window with a non-zero forecast and a full 3-bar return in the window, the coin's mean is over all its grid bars in all windows, and the thirds are the floor(n/3) most negative and floor(n/3) least negative forecasts.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.608 (below 1), 348 cases (30 needed)",
+    "t_in_idea_direction": 0.6078591107580031,
+    "cases": 348
+  }
+}
