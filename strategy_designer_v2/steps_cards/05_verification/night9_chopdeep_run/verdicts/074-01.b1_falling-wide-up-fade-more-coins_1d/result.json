@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return in the short direction over short bets",
+    "value": 0.005552910294941089,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.0998637251321774
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 cases; reject: mean < 0 with t <= -2 over >= 100 cases"
+  },
+  "supporting_check": {
+    "name": "Welch t, larger-half minus smaller-half |forecast| excess return (>= 1)",
+    "value": -0.9329849701962658,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1717,
+    "distinct days": 697
+  },
+  "decided_by": "The main t is >= 2 but the supporting check fails.",
+  "reading": "Profile trend recomputed as the 60-bar % price change (veto at >= -10) and up day as close > previous close, falling back to the recorded regime where a window's own bars cannot give them; cases are short-side forecast rises of >= 2 points from the lowest short level since the last bet; day-clustered t without small-sample correction; halves split at n//2 after sorting by |forecast|; both 100 cases and 60 distinct days taken as minimum counts."
+}

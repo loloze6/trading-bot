@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9935064935064936,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual next-day move (next-day return minus coin's mean daily return, sign flipped)",
+    "value": 0.012726404309670753,
+    "statistic": {
+      "name": "t of the mean, cases of one day grouped",
+      "value": 2.2832549841758745
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (cases of one day grouped); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half",
+    "value": 0.01264914242314008,
+    "passed": true
+  },
+  "counts": {
+    "cases": 433,
+    "distinct days with cases": 190
+  },
+  "decided_by": "the mean short-side unusual move is above 0 with t >= 2 and the larger-|forecast| half beats the smaller half.",
+  "reading": "Cases are short bets (forecast moving at least 2 points further short from its lowest short level since the last bet, from 0 after flat or a side change) with the coin's mean taken over all next-day returns of all its windows, the t uses per-day summed deviations with a D/(D-1) correction, the median split puts ties in the smaller half, and the situation check uses the adapted regime's three conditions (the profile veto only narrows it).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01043 on the check folds against +0.01273 on every fold",
+    "main": 0.010430511055809038,
+    "statistic": 1.5448160361629828,
+    "counts": {
+      "cases": 332,
+      "distinct days with cases": 131
+    }
+  }
+}

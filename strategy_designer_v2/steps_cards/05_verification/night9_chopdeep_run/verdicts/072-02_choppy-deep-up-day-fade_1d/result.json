@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "depth-weighted short gain vs holding, next day, mean per case",
+    "value": 0.0028551854774383624,
+    "statistic": {
+      "name": "t of the mean over per-day sums",
+      "value": 1.8684832312782527
+    },
+    "threshold": "confirm if t >= 2 with check < 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "deepest third minus shallowest third, mean excess next-day return",
+    "value": 1.8366832923166765e-06,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1691,
+    "distinct days": 1028
+  },
+  "decided_by": "The main-measure t is between -2 and 2.",
+  "reading": "Choppy is read as the 60-bar close-to-close return within -10 % and +10 % (the config's veto bounds), an up day as a 1-bar return above 0 and the depth as the raw component below 0, with active bars whose 60-bar return cannot be computed inside the window left out of the agreement share; the main value is the per-case mean and its t is the ordinary t over the per-day sums of the cases; thirds are cut on the cases sorted by post_pipeline_value (most negative = deepest) into three near-equal groups."
+}

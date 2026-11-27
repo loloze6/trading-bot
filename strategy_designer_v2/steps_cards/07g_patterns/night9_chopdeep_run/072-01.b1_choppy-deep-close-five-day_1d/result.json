@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "072-01.b1_choppy-deep-close-five-day_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3756188,
+  "findings": {
+    "F1": "In choppy bars (regime 'unknown'), the 5-day return minus the coin's normal drift is concentrated in the deepest fifth of closes below the 20-day high, at \u22126.6 % (t \u22123.7, 52 non-overlapping cases, depth \u22129.2 to \u22124.6 swings). The other four fifths sit between \u22120.9 % and \u22120.1 % (all |t| < 0.9). The effect is convex, not linear, which is why the plan's linear slope only reached t 1.08.",
+    "F2": "By choppy deciles, the two deepest give \u22126.5 % (t \u22122.2) and \u22126.4 % (t \u22123.1) over 5 days, against \u22121.5 % to +1.5 % for deciles 2 to 9 (25 cases each). The book's forecast correlates 0.92 with raw depth, and its allocation grows smoothly from \u22120.22 to \u22120.80. The book therefore spends most of its short exposure where there is no move.",
+    "F3": "The deep-close fall in choppy bars holds after down days (\u22125.3 %, t \u22122.5, 32 cases) and after up days (\u22128.4 %, t \u22122.6, 18 cases). It points the same way in 5 of 6 coins (LTC \u22120.5 % the exception) and in 2018, 2019 and 2020 (t \u22122.4, \u22122.0, \u22123.2), but not in 2021 (+0.1 %, 9 cases).",
+    "F4": "The deep-close fall is larger when the coin is swinging more than usual. In the deepest choppy fifth, the 5-day excess is \u221212.0 % in the high-volatility half (15 cases) against \u22124.1 % in the low half (35 cases). In choppy bars, the top two volatility terciles give \u22123.4 % and \u22123.3 % (70 and 39 cases), against \u22120.3 % in the lowest (140 cases). The map has no strategy in the choppy agitated short cell.",
+    "F5": "Per case, the deepest choppy fifth's \u22126.6 % excess is about 0.6 of the coin's usual 5-day move (10.6 %). That is roughly 35 times the 0.19 % cost of a trade, against the tested idea's average 0.43 % (strength 0.051).",
+    "F6": "Outside the choppy profile, the sign flips. Closes nearest the 20-day high are followed by +3.5 % over 5 days (t 3.9, 236 cases), and the deepest by \u22121.2 % (t \u22121.4). This is nearness-to-high continuation, already held (034-01.b1, 035-01.b1).",
+    "F7": "Other patterns found are already held:"
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, a coin's fall over the next five days grows faster than its close's depth below its 20-day high, measured in units of the standard deviation of its last 20 days' daily returns. A close twice as deep below the high is followed by much more than twice the fall.",
+      "consequence": "A short in a sideways market earns its keep only on the deepest closes below the range top, so exposure should rise steeply with depth rather than in proportion to it.",
+      "name": "choppy convex deep close fall",
+      "from": "F1, F2, F3, F5",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, the further a coin closes below its 20-day high, in units of the standard deviation of its last 20 days' daily returns, the larger its fall over the next five days.",
+      "consequence": "Deep breakdowns below a sideways range's top are worth shorting mainly when the coin has been swinging more than usual over the past month, a market no current strategy shorts.",
+      "name": "choppy agitated deep close fall",
+      "from": "F4, F1, F3",
+      "profile": "choppy agitated",
+      "theme": "on",
+      "refs": [
+        "F4",
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "072-01.b1.g1_choppy-convex-deep-close-fall",
+    "072-01.b1.g2_choppy-agitated-deep-close-fall"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,53 @@
+{
+  "line": "7.d",
+  "backtest": "074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.47466319999999995,
+  "findings": {
+    "F1": "The book fails on its rarity, not on its falls: the recorded situation fired on 35 coin-days in folds B and C (19 distinct days), the book held a position on 0.26 % of coin-bars, and it made 0.0034 trades per day. Its deepest fall was only -0.71 %, and its worst day was -0.52 %, so the Calmar of 0.71 is low because the yearly return is only +1.7 %, not because the falls are deep.",
+    "F2": "Five conditions in the situation make it rare. When the width and close-near-high thresholds are dropped, the situation becomes a falling market (60-day return below -10 %), an up day, and a 5-day return still negative. It then gives 598 cases on 191 days, with a next-day short-side unusual move of +1.19 % (t 2.66) and a 62 % hit rate. A rough book of it (a 1-day short, sized by depth against swing, 0.22 % cost) would trade on 4.9 % of coin-days, with a yearly return of +10.5 %, a deepest fall of -4.9 %, a Calmar of 2.15 and a Sharpe of 1.21.",
+    "F3": "The broader situation is still the idea's effect, not a condition earning on its own. Days that miss one of its parts earn little next day, all against +1.19 % for the full situation:",
+    "F4": "Width grades the fade rather than switching it on. In the broad set, the next-day short-side move by quartile of the range against its 20-day average range is:",
+    "F5": "The depth of the 5-day loss grades the fade, most clearly when measured against the coin's own swing. By quartile of the 5-day loss over the 20-day daily standard deviation times \u221a5, the next-day short-side move is:",
+    "F6": "The effect is spent within one day on the tested situation. Over two days the recorded cases give +1.07 % (t 1.00), against +2.25 % over one day. In the broad set, the two-day move of +1.57 % is partly the falling market's own drift: falling-market down days with the week still down earn +0.73 % (t 1.59) over the same two days.",
+    "F7": "The broad situation does not rest on one period. Its next-day short-side move is positive in 10 of the 11 windows that hold cases, with w12, w13, w14 and w18 at +1.7 % to +2.6 %, and negative only in w16 (-0.26 %, 67 cases)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, an up day on which the coin's 5-day return including that day is still negative is followed by a fall over the next day. The fall is larger the wider that day's high-to-low range is against the coin's average daily range over the past 20 days, and the further the coin is still down over those 5 days.",
+      "consequence": "A trader should sell for one day into every downtrend up day that has not recovered the past week's loss, betting more the wider the day and the deeper the week's loss, instead of waiting for the rare wide bounce that closes at its high.",
+      "name": "graded still-down bounce fade",
+      "from": "F1, F2, F3, F4, F5, F7",
+      "profile": "falling",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a falling market, an up day on which the coin's 5-day return including that day is still negative is followed by a fall over the next day. The fall is larger the deeper that 5-day loss is against the coin's own daily swing over the past 20 days.",
+      "consequence": "A trader should size one-day shorts into downtrend bounces by how many usual swings the coin is still down over the week, staying nearly flat when the week's loss is shallow for that coin.",
+      "name": "swing-scaled still-down fade",
+      "from": "F2, F3, F5, F6",
+      "profile": "falling",
+      "refs": [
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade",
+    "074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

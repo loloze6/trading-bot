@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9998470948012232,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move in the short direction over forecast < 0 bars",
+    "value": 0.002601473009016785,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.8846836342272175
+    },
+    "threshold": "mean unusual move positive with day-clustered t >= 2 confirms; negative with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "larger-half minus smaller-half mean unusual move (split at median abs(forecast))",
+    "value": 0.0018180698218920484,
+    "passed": true
+  },
+  "counts": {
+    "cases": 6519,
+    "distinct days": 1426
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Falling market = 60-bar close return below -10 % and up day = close above prior close, from the window's prices, using the recorded regime where the window lacks the past prices; cases are all bars with forecast < 0 and a next close in the window; the larger half is abs(forecast) above the cases' median, the smaller half at or below it; the day-clustered t uses the per-day summed deviations with a G/(G-1) correction."
+}

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "next-day excess return, deepest third minus shallowest third of forecast",
+    "value": -0.0014248540587546068,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.816259791050875
+    },
+    "threshold": "Welch t <= -2 (with deepest third mean < 0) to confirm, >= +2 to reject"
+  },
+  "supporting_check": {
+    "name": "deepest third mean next-day excess return below 0",
+    "value": -0.0028023926078100786,
+    "passed": true
+  },
+  "counts": {
+    "active bars": 3358,
+    "deepest third": 1120,
+    "middle third": 1119,
+    "shallowest third": 1119
+  },
+  "decided_by": "Welch t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Thirds are cut on the pooled active bars sorted by forecast (stable sort, np.array_split, lowest third = deepest); the choppy profile is checked as a 60-bar close-to-close change within +/-10 % where the window holds 60 prior bars, else as a regime other than 'chop', the up day as close above the prior close in the window (first bar of a window left out), and the depth as a negative raw distance from the high."
+}

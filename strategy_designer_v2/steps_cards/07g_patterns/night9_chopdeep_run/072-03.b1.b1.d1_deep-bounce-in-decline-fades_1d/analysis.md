@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 072-03.b1.b1.d1_deep-bounce-in-decline-fades_1d
+idea tested: 072-03.b1.b1.d1_deep-bounce-in-decline-fades
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4403 USD
+---
+## Findings
+- **F1:** In choppy-market bars with an up day and a negative 20-day return, the next-10-day unusual move falls steadily as the close sits deeper below the 20-day high in units of the 20-day swing. On the 10-day grid the three depth terciles give -6.2 % (t -1.38, 14 cases on 11 days), -10.9 % (t -3.32, 13 cases on 10 days) and -13.9 % (t -4.55, 14 cases on 11 days). Measured on raw depth, the idea's grading is present in folds B and C, even though step 5's supporting check on the standardised forecast was -0.48 %.
+- **F2:** The same up-day, negative-20-day-return bars on the 5-day grid concentrate the fall in the deepest tercile. Depth 4.9 to 8.3 swings is followed by -8.9 % unusual over 5 days (t -3.63, 28 cases on 23 days), against -2.9 % (t -1.75) and -2.2 % (t -1.26) for the two shallower terciles.
+- **F3:** The brief's "up day or down day alike" does not hold. Choppy down days with a negative 20-day return show no reliable depth effect over 5 days: -1.0 % (t -0.89), -0.9 % (t -0.37) and -4.6 % (t -1.00) by tercile. Over 10 days all choppy down days give between -4.9 % and +0.6 %, every t below 1 in size. The effect lives in the bounce days.
+- **F4:** The tested book's total move per case is +0.01 % against a 0.22 % trade cost, because the coins' normal drift is -1.47 % per case in the short direction. The +1.49 % unusual move is eaten by shorting coins that usually rise. The book lost most in 2020, -0.17 % a day while its coins rose +0.46 % a day. A case only pays when its unusual move is far above the drift, which the deep-tercile bounces of F1 and F2 provide (-8.9 % to -13.9 %).
+- **F5:** The year correlation is unstable. Depth against the 5-day unusual move on choppy bars with a negative 20-day return gives +0.07 (2018), -0.20 (2019), -0.68 (2020) and +0.18 (2021). The choppy 20-day-return continuation flips sign by year as well: -0.25 and -0.22 in 2018 and 2019, +0.26 and +0.20 in 2020 and 2021. Neither is a steady broad pattern, so I propose no idea from the 20-day return alone.
+- **F6:** Weekday next-day unusual moves (Monday -0.36 %, t -2.59; Friday +0.39 %, t 2.94; about 1,750 bars each) do not stand out across seven weekdays and the many angles looked at. The near-high choppy rise (+13.1 % over 10 days, t 1.50) is already held by the nearness-to-high books. Neither gives an idea.
+
+## Ideas
+- `072-03.b1.b1.d1.g1_deep-bounce-five-day-fade` (from F2, F1, F4): In a choppy market, on a day that closed up while the coin's 20-day return is still negative, the further the close sits below the coin's 20-day high in units of its 20-day daily-return standard deviation, the larger its fall over the next 5 days.
+- `072-03.b1.b1.d1.g2_convex-deep-bounce-fade` (from F1, F4, F3): In a choppy market, on a day that closed up while the coin's 20-day return is still negative, the larger the close's distance below the 20-day high in units of its 20-day daily-return standard deviation, the further the coin falls over the next 10 days, the fall growing faster than the depth itself.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

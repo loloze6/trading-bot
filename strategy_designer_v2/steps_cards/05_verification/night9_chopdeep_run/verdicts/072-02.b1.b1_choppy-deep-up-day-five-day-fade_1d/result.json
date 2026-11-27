@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-day return minus drift on forecast, pooled, day-clustered",
+    "value": 0.0011339256431144088,
+    "statistic": {
+      "name": "day-clustered slope t",
+      "value": 0.936799978551975
+    },
+    "threshold": "confirm if slope t >= 2 (with supporting check), reject if slope t <= -2, with at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-day move in the short direction > 0",
+    "value": 0.0002445147624454477,
+    "passed": true
+  },
+  "counts": {
+    "cases": 841,
+    "days": 295
+  },
+  "decided_by": "Slope t lies between -2 and 2 with at least 30 cases.",
+  "reading": "Up day recomputed from consecutive closes inside each window (the detector's regime on a window's first bar), situation = up day with the recorded depth at or below 0, side short; grid = rows 0,5,10,... of each window with a 5-bar return inside it; drift = coin's mean grid 5-day return over all its windows; OLS with intercept, CR1 cluster-robust SE by UTC day; fewer than 30 cases is reported as not observable."
+}

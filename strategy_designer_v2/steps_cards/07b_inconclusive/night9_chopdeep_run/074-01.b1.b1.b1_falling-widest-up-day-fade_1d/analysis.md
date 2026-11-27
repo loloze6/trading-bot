@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 074-01.b1.b1.b1_falling-widest-up-day-fade_1d
+idea tested: 074-01.b1.b1.b1_falling-widest-up-day-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4078 USD
+---
+## Findings
+- **F1:** Step 5's result is on the predicted side but short of the bar: +0.47 % unusual move per case with t 1.18 over 416 days. On folds B and C, recomputed on the regime's bars, it is +0.57 % with t 1.62 (654 cases, 306 days). The test already used every fold and every coin available, so there is no more data to add.
+- **F2:** The fade lives in wide up days that close in the upper part of their range. Split into terciles of close location, the next-day short-direction unusual move is:
+- **F3:** The width grading the idea claims is not clear. The Spearman correlation of the range multiple with the next-day short move is 0.04 (p 0.31). The range-multiple quintiles run +0.99 %, +1.18 %, +0.40 %, −0.16 %, +1.53 %: only the widest quintile (mean multiple 2.40, t 2.32) stands out, with no steady rise.
+- **F4:** The profile is the right place for the effect. Among up days in a falling market, wide ones are followed by +0.95 % (t 2.24, 400 cases, 168 days) against +0.40 % for narrow ones (Welch t 1.74). In rising markets, wide up days go the other way: −0.60 % (t −1.35, 643 cases).
+- **F5:** The fade is spent in one day and partly given back. The short-direction move on the day after next is −0.63 % (t −2.27, 651 cases). Over two days it is −0.09 % (t −0.18), so the 1-day horizon is the right one, and a longer one would measure the idea where it is gone.
+- **F6:** The effect is spread thin and is not present everywhere:
+
+## Ideas
+- `074-01.b1.b1.b1.b1_falling-wide-high-close-fade` (from F1, F2, F3, F4, F5): In a falling market, an up day whose high-to-low range is wide compared with the coin's average daily range over the past 20 days and that closes near its high is followed by a fall over the next day. The wider that day's range against its 20-day average and the nearer its close to the day's high, the larger the next day's fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

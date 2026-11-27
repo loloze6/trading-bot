@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9688221709006929,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day return minus drift, short direction, over forecast <= -2",
+    "value": 0.0047667652961713635,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.277396345661862
+    },
+    "threshold": "confirm: mean is a fall with day-clustered t >= 2 over >= 30 case-days; reject: t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day return minus drift on forecast (positive, t >= 1)",
+    "value": -0.25495391688931857,
+    "passed": false
+  },
+  "counts": {
+    "cases": 440,
+    "case-days": 258,
+    "active bars": 866
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (any other result).",
+  "reading": "Falling market read as the config's profile (60-bar close change in percent below -10), with the bar's regime used only where a window lacks the bars to compute a condition; positive forecasts count as off side; cases are forecast <= -2 per the plan, drift is the coin's mean 1-bar return over all windows, the day-clustered t sums deviations per UTC day with a D/(D-1) factor, and the slope t is ordinary OLS across cases; fewer than 30 case-days gives 'not observable'."
+}

@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "081-01_deep-up-day-next-day-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40966669999999994,
+  "findings": {
+    "F1": "The fade sits almost entirely in the deepest fifth of up days by depth: the next-day excess return is \u22121.00 % (t \u22125.49, 1049 cases), against \u22120.27 % (t \u22121.70) in the second fifth and +0.26 % (t 1.24) in the shallowest; the book gains 0.69 % per active bar in the deepest fifth against a cost of 0.059 %, but \u22120.04 % in the middle fifth and \u22120.04 % in the shallowest (cost 0.018 %), so the shallow shorts the standardised forecast still takes eat the gain and pull the mean daily return on days in a position down to 0.040 %.",
+    "F2": "For the deepest fifth the fade grows with the horizon: the excess is \u22121.26 % over 3 days (t \u22122.45, 360 non-overlapping cases) and \u22124.04 % over 5 days (t \u22124.24, 175 cases), four times the one-day move and about 18 times the 0.22 % cost of a trade; the shallowest fifth instead rises +5.87 % over 5 days (t 2.57), so a short there loses.",
+    "F3": "In a rising 60-day trend the book loses (\u22120.013 % per bar, against +0.153 % in falling and +0.138 % in choppy markets); the deepest up days fall \u22120.83 % next day in falling and \u22120.80 % in choppy markets but only \u22120.17 % in rising ones, where all bars drift +0.60 % a day. Being out of rising markets is not an effect on its own: falling and choppy bars alone move +0.04 % and \u22120.04 % the next day, nothing a short earns.",
+    "F4": "The falls come in strong rallies: in w11 the coins rose +1.93 % a day and the book lost \u22120.13 % a day, and on the 10 % strongest coin days the book loses \u22120.96 % against +1.68 % on the 10 % weakest days, which is the short book's exposure behind the 0.17 Calmar.",
+    "F5": "Depth alone after a down day gives no next-day fade (deepest fifth +0.86 %, shallowest +0.89 %), as the theory says. Over 3 days the deepest down days lag the drift by \u22120.65 %, half the up days' \u22121.46 % (\u22120.72 % against the 0.75 % drift), so the up-day condition still carries most of the effect at the longer horizon.",
+    "F6": "Turnover is high for the move captured: a held position averages 0.45 of the book and changes by 0.33 of the book per held bar, so about three-quarters of each position is traded every day for a one-day move whose total is 0.9 times the cost."
+  },
+  "ideas": [
+    {
+      "idea": "In any market, a day that closes up while sitting deeper below the coin's 20-day high, measured in the coin's own usual daily swing over the last 20 days, is followed by a larger fall over the next five days.",
+      "consequence": "A trader shorting deep up days keeps the position for about a week, where the fade is several times the cost of the trade, instead of paying that cost every day for a one-day move.",
+      "name": "deep up-day five-day fade",
+      "from": "F2, F6, F5",
+      "refs": [
+        "F2",
+        "F6",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In any market, a day that closes up while sitting deeper below the coin's 20-day high, measured in the coin's own usual daily swing over the last 20 days, is followed by a larger fall over the next day, the fall growing faster than the depth so that the up days furthest below the high, in swing units, carry most of it.",
+      "consequence": "A trader sizes the short by the raw depth in swings, so that it is large on the deepest up days and close to nothing on shallow ones, rather than by the depth against its own recent values.",
+      "name": "deepest up days carry fade",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In any market, a day that closes up while sitting deeper below the coin's 20-day high, measured in the coin's own usual daily swing over the last 20 days, is followed by a larger fall over the next day, except when the coin has been rising over the last 60 days.",
+      "consequence": "A trader takes the deep-up-day short only while the coin is not in a rising 60-day trend, where the coin's own drift and its rallies absorb the fade.",
+      "name": "deep up-day fade outside uptrends",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "081-01.d1_deep-up-day-five-day-fade",
+    "081-01.d2_deepest-up-days-carry-fade",
+    "081-01.d3_deep-up-day-fade-outside-uptrends"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

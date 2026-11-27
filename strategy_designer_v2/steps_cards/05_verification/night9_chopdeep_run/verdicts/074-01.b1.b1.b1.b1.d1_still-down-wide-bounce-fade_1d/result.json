@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day drift-adjusted short-side return per case (fraction)",
+    "value": 0.02464761210173542,
+    "statistic": {
+      "name": "t of the mean, cases of a day summed",
+      "value": 2.477024886931928
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman(|forecast|, drift-adjusted short-side next-day return) > 0",
+    "value": 0.21572180496563614,
+    "passed": true
+  },
+  "counts": {
+    "cases": 126,
+    "distinct case days": 52
+  },
+  "decided_by": "The mean short-side unusual move is above 0 with a t of 2 or more and the Spearman correlation is above 0.",
+  "reading": "Regime components recomputed from prices inside each window (60-day and 5-day returns in percent, range over the mean high-low of the last 20 bars including the bar, close location from the low); the agreement is taken over active bars where all five can be computed (falling back to the computable conditions only if none can be: basis 'full'); cases are short-side bets per the holding rule (rise of |forecast| of at least 2 from its lowest level since the last bet, reset on flat/long), drift is the coin's mean 1-bar return over all its windows, the t uses deviations summed per UTC day (day-clustered standard error), and fewer than 30 distinct case days is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (35 cases, 35 days)",
+    "main": 0.024708517578283115,
+    "statistic": 2.025653590131593,
+    "counts": {
+      "cases": 94,
+      "distinct case days": 35
+    }
+  }
+}

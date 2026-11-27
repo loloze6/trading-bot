@@ -1,0 +1,94 @@
+## choppy up grid: raw depth quartile
+            n       d10         t  share_sig    mean_fc  mean_depth
+dq                                                                 
+deep     22.0 -0.115227 -4.954398   1.000000 -16.965263   -4.364537
+q2       22.0 -0.066456 -1.907399   1.000000  -9.933471   -2.221249
+q3       21.0  0.029272  1.123861   1.000000  -3.989864   -0.846265
+shallow  22.0  0.190987  1.377084   0.136364  -0.056101   -0.015130
+
+## choppy up grid: raw depth quartile x signal
+                  n       d10         t  share_sig    mean_fc  mean_depth
+dq      sig                                                              
+deep    False   NaN       NaN       NaN        NaN        NaN         NaN
+        True   22.0 -0.115227 -4.954398        1.0 -16.965263   -4.364537
+q2      False   NaN       NaN       NaN        NaN        NaN         NaN
+        True   22.0 -0.066456 -1.907399        1.0  -9.933471   -2.221249
+q3      False   NaN       NaN       NaN        NaN        NaN         NaN
+        True   21.0  0.029272  1.123861        1.0  -3.989864   -0.846265
+shallow False  19.0  0.227414  1.428044        0.0   0.000000    0.000000
+        True    3.0 -0.039715 -0.576757        1.0  -0.411405   -0.110952
+
+## choppy up grid: ret20<0 x signal
+                n       d10         t  share_sig    mean_fc  mean_depth
+neg20 sig                                                              
+False False  19.0  0.227414  1.428044        0.0   0.000000    0.000000
+      True   27.0  0.027127  1.057537        1.0  -4.170862   -0.941211
+True  True   41.0 -0.103266 -5.323515        1.0 -13.760493   -3.355585
+
+## choppy up grid: ret20<0 x raw depth half
+                n       d10         t  share_sig    mean_fc  mean_depth
+neg20 depth                                                            
+False False  41.0  0.114543  1.508470   0.536585  -1.736521   -0.382905
+      True    5.0  0.071401  0.929431   1.000000  -8.283187   -1.942719
+True  False   3.0  0.010831  0.368319   1.000000  -6.210325   -1.322693
+      True   38.0 -0.112273 -5.577192   1.000000 -14.356559   -3.516077
+
+## spearman raw depth vs d10
+          n  spearman         p
+False  46.0  0.080910  0.592971
+True   41.0  0.220732  0.165491
+all    87.0  0.476327  0.000003
+
+## signal bars: raw depth quartile counts
+                                n
+depth                            
+(-9.017999999999999, -3.466]  178
+(-3.466, -2.169]              177
+(-2.169, -1.187]              177
+(-1.187, -0.00361]            178
+
+## corr forecast vs raw depth (signal bars)
+0.9030953471225297
+
+## position bars gain by ret20<0
+           mean  count       sum
+neg20                           
+False -0.003952   1419 -5.607613
+True   0.001867   1649  3.078725
+
+## position bars gain by window
+         mean  count       sum
+w                             
+w10 -0.015562    273 -4.248507
+w11 -0.009088    112 -1.017807
+w12  0.001047    591  0.618578
+w13  0.000672    113  0.075988
+w14  0.006260    184  1.151835
+w15  0.000356    161  0.057322
+w16  0.006843     84  0.574786
+w17 -0.003949    385 -1.520189
+w18  0.001029    320  0.329438
+w7   0.004040    245  0.989917
+w8  -0.001258    345 -0.433880
+w9   0.003504    255  0.893630
+
+## position bars gain by raw depth quartile
+             mean  count       sum
+dq                                
+deep     0.003824    686  2.623459
+q2      -0.000017    685 -0.011901
+q3      -0.001166    685 -0.798827
+shallow -0.006047    685 -4.142005
+
+## trades summary
+     n  mean_gross  mean_net  mean_days       win
+0  526    -3.22067 -3.322281  12.646388  0.309886
+
+## trades by duration
+                 mean  count
+dur_bin                     
+(0, 5]      -4.861056    129
+(5, 10]     -5.267077    156
+(10, 15]    -7.092168     95
+(15, 30]    -0.344052    117
+(30, 1000]  14.835382     28

@@ -1,0 +1,58 @@
+## regressions
+                             slope       t       n   days
+raw depth h5 choppy=True    0.0142  2.1205   249.0  128.0
+raw depth h5 choppy=False   0.0061  1.8508  1173.0  254.0
+forecast h5 choppy fc<0     0.0014  0.8646   257.0  141.0
+raw depth h5 all            0.0070  2.1455  1422.0  256.0
+raw depth h10 choppy=True   0.0202  2.6369   126.0   63.0
+raw depth h10 choppy=False  0.0105  1.4876   576.0  125.0
+forecast h10 choppy fc<0    0.0020  0.7613   126.0   69.0
+raw depth h10 all           0.0120  1.8976   702.0  126.0
+
+## 10d by choppy x agit x depth tercile
+                     mean  count       t
+choppy agit  dq                         
+False  False deep -0.0426    100 -3.9534
+             mid   0.0040     93  0.2265
+             near  0.0483    101  3.2909
+       True  deep  0.0040     96  0.2120
+             mid   0.0066     92  0.3720
+             near  0.0215     94  0.9908
+True   False deep -0.0775     26 -3.2401
+             mid   0.0063     35  0.2146
+             near  0.0284     33  1.1772
+       True  deep -0.0544     12 -1.1678
+             mid  -0.0484     14 -2.2162
+             near -0.0957      6 -1.9869
+
+## 10d by year x depth tercile (all)
+        mean                 count         
+dq      deep     mid    near  deep mid near
+yr                                         
+2018 -0.0561 -0.0549 -0.0422    98  50   26
+2019 -0.0425 -0.0149  0.0005    55  59   60
+2020 -0.0736  0.0599  0.0524    32  65   83
+2021  0.0745  0.0040  0.0613    49  60   65
+
+## 10d by coin x depth tercile (all)
+dq        deep     mid    near
+coin                          
+BTCUSD -0.0095  0.0099  0.0124
+ETHUSD -0.0352 -0.0248  0.0388
+LTCUSD -0.0387  0.0644  0.0027
+XMRUSD -0.0132 -0.0204  0.0432
+XRPUSD -0.0317 -0.0348  0.0853
+ZECUSD -0.0346  0.0245  0.0055
+
+## 10d choppy by coin x tercile
+dq        deep     mid    near
+coin                          
+BTCUSD -0.0715 -0.0296 -0.0087
+ETHUSD -0.0107  0.0191 -0.0051
+LTCUSD -0.0836  0.0736 -0.0404
+XMRUSD -0.0429 -0.0760 -0.0333
+XRPUSD -0.1357 -0.0276  0.0842
+ZECUSD -0.0698  0.0375  0.0402
+
+## corr depth vs forecast (choppy, fc<0)
+0.883513135785776

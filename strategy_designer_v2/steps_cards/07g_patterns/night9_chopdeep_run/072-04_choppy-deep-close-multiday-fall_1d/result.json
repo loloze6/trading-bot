@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "072-04_choppy-deep-close-multiday-fall_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.40614490000000003,
+  "findings": {
+    "F1": "The tested idea's effect appears only in the deepest closes and does not grow with depth. In the choppy bars, on the non-overlapping 3-day grid, the deepest fifth of closes below the 20-day high (mean depth \u22126.2 swings) was followed by an excess 3-day return of \u22122.80 % (t \u22122.76, 82 cases). The other four fifths sat between \u22120.54 % and +0.44 %, all with |t| < 0.9. The choppy deciles were not ordered either: \u22122.06 %, \u22123.53 %, then +0.53 % and +0.35 %. This matches step 5's flat slope (t \u22120.05) and the book's Sharpe of \u22120.22.",
+    "F2": "Deep closes below the 20-day high were followed by a continued fall mainly in falling, calm markets. Here falling means a 60-day return below \u221210 %, and calm is my stand-in for the profile: 30-day swing below the 90-day swing, not the profile's past-year median. Across the deepest two depth deciles of all bars, falling calm cases had an excess 3-day return of \u22122.38 % (t \u22124.03, 211 cases). Falling agitated cases had \u22120.34 % (t \u22120.21, 52), rising calm \u22122.74 % (t \u22121.50, 32) and choppy calm \u22125.63 % (t \u22122.50, 27).",
+    "F3": "A large 5-day fall continued in the same calm markets. In the lowest fifth of the 5-day return scaled by its usual swing, the excess 3-day return was \u22122.61 % in falling calm markets (t \u22123.63, 166 cases) and \u22127.43 % in choppy calm ones (t \u22123.67, 31 cases). In falling agitated markets it was +1.27 % (t 0.65, 33), so the continuation is a calm-market effect.",
+    "F4": "Over all bars the deep-close effect is weaker than its plain t suggests. The second-deepest depth decile had \u22122.34 % (t \u22124.23, 236 cases), but the deepest decile's t falls from \u22121.28 to \u22120.77 when its cases are taken together by day (107 days). The pooled effect is crowded into few days, which is why only the per-profile split in F2 stands out.",
+    "F5": "Other angles showed only patterns the portfolio already holds or chance-level ones. One-day reversal after the largest scaled down days was +0.85 % the next day (t 3.69, 718), which the rebound strategies already hold. The next day's excess return was +0.47 % on Thursdays (t 3.19) and +0.39 % on Fridays (t 2.87), and 045-01 already holds the late-week gain. Upward 5-day momentum in rising calm markets gave +2.35 % (t 2.24), which the rising calm continuation strategies hold.",
+    "F6": "The book lost mainly on the coins that rallied out of deep closes. Its daily return moved against the coins' average (correlation \u22120.51), and its mean net trade result was \u22126.44 % on ZEC (128 trades) and about \u22121.1 % on LTC and XRP. Its mean was positive in only 5 of the 12 windows shown."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, the further a coin's close sits below its 20-day high, in units of its 20-day daily-return standard deviation, the larger its fall over the next three days.",
+      "consequence": "In a calm downtrend a close far below the recent high is a reason to short for a continued fall, not to buy a rebound.",
+      "name": "falling calm deep close continuation",
+      "from": "F2, F3, F4",
+      "profile": "falling calm",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the further a coin's close sits below its 20-day high, in units of its 20-day daily-return standard deviation, the larger its fall over the next three days.",
+      "consequence": "The brief's continued breakdown should be traded only when the sideways market is also quiet, where a deep close keeps falling, and refused in agitated chop.",
+      "name": "choppy calm deep close fall",
+      "from": "F1, F2, F3",
+      "profile": "choppy calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "072-04.g2_choppy-calm-deep-close-fall"
+  ],
+  "discovery_ids": [
+    "072-04.g1_falling-calm-deep-close-continuation"
+  ],
+  "no_ideas": null
+}

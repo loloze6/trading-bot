@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day t of the slope of drift-adjusted 5-bar return on forecast (grid bars, forecast < 0)",
+    "value": 3.20714038936534e-05,
+    "statistic": {
+      "name": "slope t, clustered by day (CR1)",
+      "value": 0.044060352755568244
+    },
+    "threshold": "confirm if t >= +2 with supporting check passing; reject if t <= -2; else inconclusive; at least 100 grid cases with forecast < 0"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted 5-bar return on grid bars with forecast <= -10 is below 0",
+    "value": -0.013122072357318226,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast below 0": 721,
+    "days of those cases": 352,
+    "grid cases with forecast at or below -10": 379
+  },
+  "decided_by": "The slope's t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Grid cases are grid bars (positions 0,5,10,... per window) with a 5-bar forward return inside the window, the normal drift is each coin's mean 5-bar return over all its grid bars in all windows, 'cases of one day together' is a day-clustered (CR1) OLS slope t, the choppy situation is the recorded default regime 'unknown', and a missing minimum count gives 'not observable' as the workflow requires."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side next-day excess return",
+    "value": 0.011998208287203613,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.0899318875545607
+    },
+    "threshold": "mean > 0 with t >= 2 (and correlation > 0) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "correlation forecast vs next-day excess return",
+    "value": 0.10978738370219569,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4,
+    "independent case days": 4
+  },
+  "decided_by": "Only 4 independent case days, below the plan's minimum of 30.",
+  "reading": "Agreement counts active bars whose situation can be computed inside the window (up day, close above mid-range, recorded or price-rebuilt compression below 0) and short; the 30 independent case days minimum is applied as 'not observable'; the t clusters deviations by UTC day with a D/(D-1) correction; the supporting correlation is Pearson between the forecast and the raw (unsigned) next-day excess return."
+}

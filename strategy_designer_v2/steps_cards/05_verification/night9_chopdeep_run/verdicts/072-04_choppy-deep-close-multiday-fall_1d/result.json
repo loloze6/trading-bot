@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 3-bar forward return (minus coin's normal drift) on forecast, pooled, day-clustered",
+    "value": -2.346588636312773e-05,
+    "statistic": {
+      "name": "OLS t clustered by day",
+      "value": -0.054056956540072525
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and deepest third mean excess < 0); reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "deepest third of forecasts: mean excess 3-bar return below 0",
+    "value": -0.001221990248513044,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 1398,
+    "distinct days": 634
+  },
+  "decided_by": "The slope's |t| is below 2 (inconclusive rule).",
+  "reading": "Choppy profile read from the recorded regime (the config's strategy regime 'unknown', since the detector's PriceEvolution component is not recorded), close below the 20-day high as raw depth < 0, expected side short (forecast < 0); slope t is OLS with intercept, CR1 cluster-robust by UTC day; the deepest third is the floor(n/3) cases with the most negative forecasts; the plan's minimum counts (100 cases, 60 days) are applied as 'not observable' when not reached."
+}

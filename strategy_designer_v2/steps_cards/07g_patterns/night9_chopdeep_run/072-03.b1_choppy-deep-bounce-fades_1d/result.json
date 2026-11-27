@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "072-03.b1_choppy-deep-bounce-fades_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.7170418000000001,
+  "findings": {
+    "F1": "The book lost because the coins rose while it was short: over 383 trades lasting 13 to 16 days, the coin rose in 66.8 % of them (mean coin return +6.18 %, median +3.25 %); the mean net trade loss did not grow with the size of the short, at -5.5 %, -8.0 %, -4.4 % and -7.3 % across the |entry forecast| quartiles; and the total move per case, +0.02 %, is 0.1 times the 0.19 % cost of a trade.",
+    "F2": "The depth gradient appears only in calm markets: the 5-day unusual move per standard deviation of depth below the 20-day high is -3.23 % (t -3.54, 160 cases) in choppy calm, -1.88 % (t -4.18, 298 cases) in falling calm and -6.27 % (t -5.16, 178 cases) in rising calm, against -1.66 % (t -1.17), +0.29 % (t 0.51) and -1.25 % (t -0.71) in the agitated versions; over 10 days, choppy calm is -5.56 % (t -2.96, 79 cases) and choppy agitated -2.01 % (t -0.65).",
+    "F3": "In a choppy market the depth gradient comes from up days. Over 10 days it is -7.07 % per depth sd after up days (t -3.45, 64 cases) against -2.40 % after down days (t -1.25, 62 cases). In choppy calm it is -9.23 % after up days (t -3.59, 47 cases on 27 days) against -0.70 % after down days (t -0.25). The 10-day choppy-calm slope over all days is not stable by year: 2021 t -3.07, 2020 t -1.29, 2019 t 0.10, 2018 t +2.15.",
+    "F4": "In a choppy market, a coin swinging more than usual falls, and the fall is large against the cost of a trade. In choppy agitated bars the 5-day unusual move is -5.55 % (t -2.99, 60 cases on 48 days), about 29 times the 0.19 % cost. Across all choppy bars, the 5-day move falls with the coin's 30-day swing rank against its own year, by -2.23 % per sd of rank (t -3.17, 220 cases on 113 days). The fall sits mostly in the top swing-rank quartile (-5.67 %, t -2.74); the other three quartiles are close to 0 (-0.04 %, -0.46 %, -0.67 %).",
+    "F5": "The choppy swing-rank slope over 5 days is negative in every year and every coin. By year it is -1.44 % (t -1.08), -1.76 % (t -2.00), -6.02 % (t -3.28) and -2.89 % (t -1.57) for 2018 to 2021. By coin, all six slopes are negative, with t from -0.86 (XRP) to -2.40 (BTC). In the profile map, the choppy agitated short cell is empty."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, on a day that closed up, the further the close sits below the coin's 20-day high, in units of its 20-day daily-return standard deviation, the larger its fall over the next 10 days.",
+      "consequence": "An up day in a quiet sideways market that still closes deep below the range top is a day to sell into, with a larger short the deeper it sits, and none in an agitated sideways market.",
+      "name": "choppy calm deep bounce fades",
+      "from": "F2, F3",
+      "profile": "choppy calm",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the more a coin's 30-day swing exceeds its usual swing over the past year, the larger its fall over the next 5 days.",
+      "consequence": "A sideways market that turns unusually agitated is a reason to go short, with a larger short the more agitated it gets, in a profile and side where no strategy acts on purpose.",
+      "name": "choppy agitation precedes fall",
+      "from": "F4, F5, F1",
+      "profile": "choppy",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F5",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "072-03.b1.g1_choppy-calm-deep-bounce-fades"
+  ],
+  "discovery_ids": [
+    "072-03.b1.g2_choppy-agitation-precedes-fall"
+  ],
+  "no_ideas": null
+}

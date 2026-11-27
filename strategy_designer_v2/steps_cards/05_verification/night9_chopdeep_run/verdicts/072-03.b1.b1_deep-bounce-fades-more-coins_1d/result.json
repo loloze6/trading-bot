@@ -1,0 +1,39 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (10-day return minus coin drift) x forecast/10 on grid cases",
+    "value": 0.03444930878798452,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 2.116885337577995
+    },
+    "threshold": "confirm: above 0 with t >= 2 (and check passes); reject: below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean 10-day return minus drift (Welch t <= -1)",
+    "value": -0.046235535852822834,
+    "passed": true,
+    "welch_t": -2.9309150967711983
+  },
+  "counts": {
+    "distinct case days": 128,
+    "cases": 306
+  },
+  "decided_by": "the main measure is above 0 with t >= 2 and the supporting check passes (confirm rule)",
+  "reading": "Cases are grid bars (0, 10, 20, ... of each window, with 10 bars ahead inside it) whose recorded regime is mean_reversion, whose close is above the prior close and whose forecast is below 0; the coin's drift is the mean 10-day return over all grid bars of all its windows; the deeper half is |forecast| strictly above the median, the rest the shallower half; the plan's 'fewer than 30 distinct case days' is applied as the minimum count giving 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "too few cases on the check folds (86 cases, 86 days)",
+    "main": 0.015146774136308161,
+    "statistic": 0.7657546548922494,
+    "counts": {
+      "distinct case days": 86,
+      "cases": 229
+    }
+  }
+}

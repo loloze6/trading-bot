@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move in the short direction",
+    "value": 0.014855704418177938,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.786538450051307
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half mean unusual move",
+    "value": -0.004781893944507147,
+    "passed": false
+  },
+  "counts": {
+    "cases": 742,
+    "distinct days carrying cases": 435
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Day return and 20-bar return are recomputed from closes inside each window (the regime column stands in where the lookback precedes the window's first bar) and the choppy profile is read as regime != 'chop'; a short bet is a fall of the forecast of at least 2 points from its shallowest short level since the last bet (from 0 after flat), the first bet of each 10-bar grid cell counts as the case, the drift is the coin's mean 10-bar return on the grid of all its windows, the t clusters deviations by UTC day, and the deeper half is |forecast| strictly above the cases' median against the rest."
+}

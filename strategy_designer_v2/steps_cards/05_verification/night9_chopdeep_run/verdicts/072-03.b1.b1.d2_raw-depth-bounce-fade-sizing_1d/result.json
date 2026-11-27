@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-day move in the short direction",
+    "value": 0.009282378522378263,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": 1.3740487435328101
+    },
+    "threshold": "confirm: mean > 0 with t \u2265 2; reject: t \u2264 \u22122"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half (median |forecast| at entry)",
+    "value": 0.016760803849748856,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1293,
+    "distinct days of cases": 696
+  },
+  "decided_by": "The t lies between \u22122 and 2.",
+  "reading": "Choppy is read as the 60-day close-to-close move within \u00b110 % (the veto's thresholds read as percent), an up day as a positive one-day close return, below the high as a raw depth < 0, on bars with 60 bars of in-window history (the recorded regime only if none have it); a case is a short bet (|forecast| rising \u2265 2 from its lowest short level since the last bet, from 0 after flat), the first per 10-bar cell counted from each window's first row, needing 10 bars after it in the window; the deeper half is |forecast| above the median and the shallower half at or below it; the clustered t sums the deviations from the mean per UTC day."
+}

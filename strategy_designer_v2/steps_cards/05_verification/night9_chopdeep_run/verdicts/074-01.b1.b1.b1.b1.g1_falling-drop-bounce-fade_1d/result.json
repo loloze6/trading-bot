@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day move on short cases (return minus coin drift, short direction)",
+    "value": 0.014562238868771709,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 2.504952685976474
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 on >= 30 case-days and check passes; reject: mean < 0 with t <= -2 on >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-size half minus smaller-size half",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "case-days": 204,
+    "cases": 544,
+    "active bars": 570
+  },
+  "decided_by": "t >= 2 but the supporting check fails (larger-size half minus smaller-size half not above 0).",
+  "reading": "Cases are short bets per the holding-period rule (forecast magnitude rising >= 2 from its lowest level since the last bet, from 0 after flat); the t is cluster-robust with deviations summed per UTC day; the larger half is size above the median |forecast|, the smaller half at or below it; for the situation check the falling profile is 60-bar change in percent < -10 and conditions not computable from a window's prices fall back to the recorded regime."
+}

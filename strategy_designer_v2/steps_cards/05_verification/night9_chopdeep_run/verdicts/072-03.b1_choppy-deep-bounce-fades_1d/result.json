@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move over 10 bars after short bets, short direction",
+    "value": 0.011593191878183121,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.9886252270308629
+    },
+    "threshold": "mean > 0 with t >= 2 confirms (with deeper-minus-shallower > 0); mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "deeper-minus-shallower mean unusual move (median |forecast| split)",
+    "value": -0.0016597344188907688,
+    "passed": false
+  },
+  "counts": {
+    "cases": 628,
+    "distinct days": 463
+  },
+  "decided_by": "The main measure's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Up day computed from consecutive closes (first window bar from the recorded regime) and the choppy profile taken as the recorded regime not being 'chop'; a case is the first short bet in each 10-bar cell of a window's grid, the per-day clustered t uses a D/(D-1) correction, the deeper half is |forecast| strictly above the median, and the plan's minimum-count clause is reported as 'not observable'."
+}

@@ -1,0 +1,36 @@
+{
+  "line": "7.e",
+  "backtest": "074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.5170323,
+  "findings": {
+    "F1": "The supporting check failed because the forecast saturates, not because the grading is absent. 76 % of the 99 active falling-market cases sit at the cap of -20, with only 25 distinct forecast values, so the larger-size half came out empty and its difference was None. The grading shows when the same cases are split by the depth of the prior 5-day fall itself:",
+    "F2": "Over all 390 wide up days in falling markets, with no threshold on the prior fall, the next-day short unusual move grows with the depth of the prior 5-day fall (Spearman -0.117 between the scaled fall and the move):",
+    "F3": "The book's gain is timing, not the market's own rise or fall. Its mean position is -0.01 of the book, so its drift part is about -0.000028 a day against a book mean of +0.00022 a day.",
+    "F4": "The gain is concentrated in time and in a few days.",
+    "F5": "The fade lives in falling markets.",
+    "F6": "Within falling markets, the 32 qualifying cases the book left flat show -0.25 %, while the 99 it shorted show +2.37 % (t 4.47). These flat cases are the ones whose fall was shallow against its own 60-day history, where the standardised forecast was clipped to 0. The sizing does pick the stronger cases; the failure is that it cannot rank among them once capped."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, a wide up day is followed by a fall over the next day, and the deeper the coin's fall over the 5 days before that up day, measured in its usual 5-day moves, the larger that next-day fall.",
+      "consequence": "A trader should sell for one day into wide bounces in a downtrend in proportion to how deep the preceding 5-day drop was, with the largest short after the steepest drops and little or none after a flat or rising week.",
+      "name": "graded drop depth bounce fade",
+      "from": "F1, F2, F5, F6",
+      "profile": "falling",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

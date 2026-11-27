@@ -1,0 +1,22 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 074-01.g1_falling-agitated-wide-up-fade_1d
+idea tested: 074-01.g1_falling-agitated-wide-up-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4157 USD
+---
+## Findings
+- **F1:** The Calmar failure comes from one fall: the book's deepest fall on folds B and C is -4.9%, a 653-day episode that starts in w9. Its worst day, -3.84%, is in w11, where XRP's next day after a signal rose 56.9% (short loss -56.9%). That single case makes w11's four cases average -16.2%, while every other window's cases average between -0.6% and +3.3%.
+- **F2:** Where the signal day closes inside its range decides whether it fades. Signals that close in the top part of their range fade the next day; those that close in the lower part do not:
+- **F3:** Close location on its own is not the effect. In the falling agitated profile, up days that are not wide (no signal) and close at 0.68 to 0.85 of their range are followed by an unusual fall of only +0.04% (t 0.06, 125 cases). Those closing at 0.85 to 1 show +0.37% (t 0.43, 100 cases). The upper close therefore matters only together with the wide range. This fits the brief's theory: a wide day that closes near its high is a forced squeeze that finished its push, while a wide day that already gave back its gain during the day has been sold before the next day.
+- **F4:** Leaving the book flat on the day after the 35 lower-close signals (close location at or below 0.68) changes the book on folds B and C as follows. The yearly return is almost unchanged and the falls halve:
+- **F5:** The effect is spent in one day, as the brief says. On the 143 signal cases the next-day short earns +1.63% on average, but the two-day return averages only -0.62%, so about a percent is given back on the second day. The one-day holding is right and a longer one would not help.
+- **F6:** The effect holds across the 60-day trend inside the falling profile. Every r60 quartile is positive (+2.1% to +3.1%, t 2.2 to 3.1). By coin, the short gain is positive on five of six coins (+1.2% to +2.9%); XRP is negative at -0.9%, carried by its w11 case.
+
+## Ideas
+- `074-01.g1.d1_wide-close-high-bounce-fade` (from F1, F2, F3, F4, F5): In a falling, agitated market, an up day whose high-to-low range is wide compared with the coin's average daily range over the past 20 days is followed by a fall over the next day, only while that day closes in the upper part of its own range; the wider that range is against the 20-day average, the larger the next day's fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

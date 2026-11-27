@@ -1,0 +1,39 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9999307479224376,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean daily timing gain (position x (next-day return - coin mean daily return)), summed per day across coins",
+    "value": 0.009516867191040832,
+    "statistic": {
+      "name": "t of the mean (daily sums)",
+      "value": 2.9457456618165674
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Welch t of next-day excess return, deepest third minus shallowest third by depth (pass: difference < 0 and t <= -1)",
+    "value": -3.3307068087941705,
+    "passed": true,
+    "difference": -0.0033288682361835055
+  },
+  "counts": {
+    "up-day cases": 14361,
+    "distinct days": 2273
+  },
+  "decided_by": "Mean daily timing gain positive with t >= 2 and the deepest-minus-shallowest Welch t <= -1.",
+  "reading": "Up day = close above the prior close in the same window (first bar: recorded regime); position = postRebalance_current_allocation; days with no case are left out of the daily series; terciles are pooled over all coins on the raw depth (last_history_value, most negative = deepest); the minimum is read as at least 300 cases and at least 100 distinct days, either failing gives not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.005093 on the check folds against +0.009517 on every fold",
+    "main": 0.005092561082250985,
+    "statistic": 1.056621750068264,
+    "counts": {
+      "up-day cases": 9561,
+      "distinct days": 1247
+    }
+  }
+}

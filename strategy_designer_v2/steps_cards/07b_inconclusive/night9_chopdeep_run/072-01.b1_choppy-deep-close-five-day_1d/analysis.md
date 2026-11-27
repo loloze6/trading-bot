@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 072-01.b1_choppy-deep-close-five-day_1d
+idea tested: 072-01.b1_choppy-deep-close-five-day
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.1994 USD
+---
+## Findings
+- **F1:** Step 5's main measure is on the side the idea predicts but short of the bar: the slope of the 5-day excess return on the forecast is +0.00057 with t 1.08, over 819 grid cases on 374 days. The size agrees: the unusual move is +0.43 % per case in the short direction, with t 1.35 over 734 days and a strength of 0.051. That is about what real ideas show, but this sample cannot tell it from 0.
+- **F2:** In the visible folds B and C the same regression is clearer on the 5-day horizon. On the forecast it gives t 2.46 (287 cases); on the raw depth it gives t 2.96, a slope of 0.0095 per unit of depth. The deepest third shows an excess return of -3.31 % against -0.33 % for the shallowest third. Since all four folds give only t 1.08, folds A and D must carry a weaker or noisier version of the same sign, so the gap is one of precision, not of direction.
+- **F3:** The effect is mostly in the deepest closes, as a graded idea predicts it should be strongest there. The deepest fifth (mean depth -6.2 daily swings) is followed by -5.5 % excess over 5 days. The next four fifths (depth -3.9 to -0.9) sit between -0.6 % and +0.4 %. A few tail cases therefore carry the slope, which is what makes it noisy at this sample size.
+- **F4:** The sign holds across the horizons in folds B and C: depth slope t 1.42 at 1 day (1484 cases), 1.28 at 3 days (494), 2.96 at 5 days (287) and 2.37 at 10 days (143). The plan's 5-day horizon is where it shows best, so the test was not measured in the wrong place.
+- **F5:** The effect varies by period but is not confined to one part of the data, so no condition isolates it.
+- **F6:** The market's own drift drowns the effect in the book. The coins' normal drift is -0.57 % per case in the short direction, so the total move is -0.14 % against a cost of 0.19 % per trade. The unusual move is 2.2 times the cost, but too uncertain to rely on with six coins.
+
+## Ideas
+- `072-01.b1.b1_choppy-deep-close-more-coins` (from F1, F2, F3, F4, F5): In a choppy market, the further a coin's close sits below its 20-day high, measured in units of the standard deviation of its daily returns over the last 20 days, the larger its fall over the next five days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

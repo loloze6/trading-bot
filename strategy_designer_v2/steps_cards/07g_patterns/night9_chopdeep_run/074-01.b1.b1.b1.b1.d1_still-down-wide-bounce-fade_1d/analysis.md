@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d
+idea tested: 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4540 USD
+---
+## Findings
+- **F1:** In falling markets (60-day return below -10 %), the next day after an up day weakens as the range widens against the 20-day mean range: next-day unusual move -0.40 % (range under 1x, 896 cases, 262 days), -0.68 % (1 to 1.5x, 251 cases), -0.86 % (1.5 to 2.2x, 113 cases) and -3.04 % (above 2.2x, 36 cases, 24 days, t -2.79). Rising markets show no such fade: +2.07 % after their widest up days (116 cases, t 1.42).
+- **F2:** Across all 1,296 up days in falling markets, the next-day unusual move rises with the day's 5-day return (Spearman +0.117, p < 0.0001): the further the coin is still down over 5 days, the larger the next-day fall. The same correlation is -0.020 (p 0.65, 503 days) in choppy markets and -0.002 (p 0.93, 1,386 days) in rising ones, so the gradient lives only in falling markets and needs no wide range.
+- **F3:** Range width also grades next days across all falling-market up days (Spearman -0.089, p 0.0014, 1,296 cases), but not in choppy (-0.043, p 0.33) or rising markets (+0.011, p 0.68). The close's place in the range does not grade them (Spearman +0.007, p 0.80).
+- **F4:** The fade after a falling-market wide up day is a one-day move, partly given back afterwards: day 1 -1.39 % (t -2.08, 149 cases, 79 days), day 2 +0.97 % (t 1.93), day 3 -0.67 % (t -1.00).
+- **F5:** Among falling-market wide up days, the cases that close in the top quarter and are still down over 5 days carry the fade: -3.51 % (t -2.40, 26 cases, 13 days). The same days with a positive 5-day return give only -0.51 % (t -0.58, 65 cases).
+- **F6:** The book's profit rests on very few days. It is active on 64 coin-days, wins on only 34 % of them, averages +0.85 % per active day, and its 5 best days make 54 % of its summed gain. Thin activity, not a small move, is what fails Calmar and trades per day.
+- **F7:** Other angles showed nothing that stands out after this many cuts. Weekday unusual moves stay within t ±1.5. Large down days rebound (z -3 to -2: +1.10 %, t 2.05; wide low-close down days in rising markets: +1.98 %, t 2.23), but the map already holds this many times over on the long side.
+
+## Ideas
+- `074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade` (from F2, F5, F6): In a falling market, an up day is followed by a fall over the next day, larger the more the coin is still down over its 5-day return including that day, whatever the width of the day's range.
+- `074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade` (from F1, F2, F3, F4, F6): In a falling market, an up day is followed by a fall over the next day, larger the wider its high-to-low range against the coin's average daily range over the past 20 days and the more the coin is still down over its 5-day return including that day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

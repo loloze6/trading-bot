@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 081-01.d2_deepest-up-days-carry-fade_1d
+idea tested: 081-01.d2_deepest-up-days-carry-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6200 USD
+---
+## Findings
+- **F1:** On up days, the next-day fade is graded by the fall over the five days before the up day, measured in 20-day swing units. The quintile that fell most shows -1.41 % excess next day (t -3.44, 1097 cases on 316 days). The next quintile shows -0.59 % (t -2.29). The three upper quintiles sit between -0.12 % and +0.16 % (|t| ≤ 0.52). The Spearman rho between that prior fall and the next-day excess return is 0.057 (p 2e-5, n 5482).
+- **F2:** Once the prior five-day fall is known, depth below the 20-day high adds little. In the fell-most quintile, deep, mid and shallow up days give -1.39 %, -1.52 % and -0.93 %. In the rose-most quintile, deep up days give -0.12 % on only 37 cases. The tested depth grading (deep -1.18 %, t -2.79, down to shallow +0.15 %, t 0.60) mostly rides on how far the coin fell just before.
+- **F3:** Within the deep and q2 up days, the effect is concentrated on two sub-cases. Those that fell most over the prior five days give -1.88 % (t -3.16, 731 cases), against -0.22 % and -0.32 % for the other two terciles. The first up day of a run gives -1.14 % (t -3.11, 1444 cases), against +0.09 % (t 0.16) for the second.
+- **F4:** The effect belongs to up days. Down days in the fell-most prior-five-day quintile show +0.64 % (t 1.13). Down days at the deepest depth show +0.52 % (t 1.00). Neither shows a fade.
+- **F5:** The fade after the sharpest prior fall holds in every year of folds B and C: 2018 -1.96 %, 2019 -0.43 %, 2020 -1.17 %, 2021 -1.72 %. By trend it is strongest in falling markets (-1.55 %, t -2.46) and choppy markets (-1.14 %, t -1.50), and weak in rising ones (-0.33 %, t -0.65). The falling-market part repeats the held 074 "still down bounce fade" family.
+- **F6:** The move is spent in one day. Deep up days show f1 -0.78 % and f2 -0.87 %. The 3-day non-overlapping deep-up excess return is -1.34 % with t only -1.42. The fell-most next-day excess of 1.41 % is about 6 times the 0.22 % cost of a trade.
+- **F7:** The book's result is carried by its tail days. On its best 2 % of days (29), it averages +6.1 % while the coins average -10.9 %. On its worst 2 % (29), it averages -4.4 % while the coins average +8.2 %. These are 179 % and -131 % of the book's summed daily return, so the short pays mainly on crash days.
+
+## Ideas
+- `081-01.d2.g1_bounce-after-swing-scaled-drop-fades` (from F1, F2, F3, F4, F6): In any market, an up day that comes after a fall over the previous five days is followed by a fall the next day, and the fall is larger the deeper that five-day fall was, measured in the coin's own usual daily swing over the last 20 days.
+- `081-01.d2.g2_first-green-day-fade` (from F3, F1, F4): In any market, the first up day after one or more down days is followed by a fall the next day, and the fall is larger the larger the fall over the five days before it, measured in the coin's own usual daily swing over the last 20 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
