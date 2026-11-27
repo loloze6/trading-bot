@@ -7,5 +7,6 @@
 074-01.b1.d2_run-break-fade-steep-slide_1d: 1 ideas (3 explorations)
 074-01.b1.d3_agitated-falling-run-break-fade_1d: 2 ideas (3 explorations)
 074-01.b1.g1_convex-deep-run-fade_1d: no ideas: Every pattern that stands out repeats the tested idea (F1 to F4, already in the map as 074-01.b1.g1, falling short) or long rebounds the map already holds (F6). What remains is an ungraded weekday split (F5) or choppy-market fades too weak to tell from chance (F7), after looking at run length, depth, up-day size, close position, agitation, trend, weekday, window and large moves.
+074-01.b1.g2_calm-downtrend-relief-fade_1d: 1 ideas, 1 discoveries (2 explorations)
 074-01.b1_falling-deep-run-break-fade_1d: 2 ideas (2 explorations)
 074-01_falling-market-run-break-fade_1d: 1 ideas (2 explorations)

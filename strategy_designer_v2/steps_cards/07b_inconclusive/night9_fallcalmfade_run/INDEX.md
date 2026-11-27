@@ -7,5 +7,6 @@
 074-01.b1.d2_run-break-fade-steep-slide_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 074-01.b1.d3_agitated-falling-run-break-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01.b1.g1_convex-deep-run-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+074-01.b1.g2_calm-downtrend-relief-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01.b1_falling-deep-run-break-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01_falling-market-run-break-fade_1d: 1 ideas (2 explorations)

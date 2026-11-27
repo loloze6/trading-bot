@@ -7,5 +7,6 @@
 074-01.b1.d2_run-break-fade-steep-slide_1d: confirmed (fit: exact) [main: 0.00921947; t of the mean, cases of the same day taken together 3.53551; cases (bars with forecast < 0) 834, days with cases 426]
 074-01.b1.d3_agitated-falling-run-break-fade_1d: confirmed (fit: exact) [main: 0.0127161; t of the mean (cases summed per day) 2.84182; cases 342, distinct days 201]
 074-01.b1.g1_convex-deep-run-fade_1d: confirmed (fit: adapted) [main: 0.0150073; t of weighted mean, cases of one day pooled 4.26308; case-days 735, cases 1685]
+074-01.b1.g2_calm-downtrend-relief-fade_1d: confirmed (fit: exact) [main: 0.00628636; t of the mean, cases of one day pooled 2.38868; case-days 286, cases 465]
 074-01.b1_falling-deep-run-break-fade_1d: confirmed (fit: exact) [main: 0.00892257; t of weighted mean, day-clustered 3.53519; cases 1692, days 739]
 074-01_falling-market-run-break-fade_1d: inconclusive (fit: exact) [main: 0.00921947; day-clustered t 3.53551; cases 834, distinct days 426, cases run >= 3 428, cases run == 2 406]

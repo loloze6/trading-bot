@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "074-01.b1.g2_calm-downtrend-relief-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4575618,
+  "findings": {
+    "F1": "In the falling calm profile the run-break fade lasts beyond the tested day. After an up close ending 2 or more down closes, the short-signed excess return is +0.92 % at 1 day (t 2.22, 258 cases, 152 days), +1.35 % at 2 days (t 2.23, 150 days) and +1.38 % at 3 days (t 1.73). On a non-overlapping 3-day grid the 3-day reading rises to +2.56 % (t 2.15, 103 cases, 58 days). That is about 2.5 times the 1-day move, against the same 0.19 % cost per trade.",
+    "F2": "Among all run-breaks with 2 or more down closes, the fade is convex in the run's depth scaled by the 30-day swing. The bottom three depth quartiles give next-day short excess of \u22120.05 %, +0.88 % and +0.35 % (t \u2264 1.7). The deepest quartile gives +2.11 % (t 4.16, 216 cases, 99 days). The convex deep-run fade in falling markets is already held (074-01.b1.g1).",
+    "F3": "The fade is absent in rising markets, as the brief predicts. There the 1-, 2-, 3- and 5-day short excess is \u22120.39 %, \u22120.67 %, \u22120.31 % and \u22120.33 % (t from \u22120.24 to \u22120.80, 176 cases, 98 days), and the deep half is \u22120.40 % at 1 day.",
+    "F4": "The fade also appears in choppy markets (60-day return between \u221210 % and +10 %), and grows with the horizon. The short excess is +1.26 % at 1 day (t 1.78), +2.36 % at 3 days (t 2.37) and +3.42 % at 5 days (t 2.78), over 77 to 81 cases on 61 to 65 days.",
+    "F5": "The choppy fade is graded by depth. The deep half gives +3.49 % over 3 days (t 2.11, 40 cases, 35 days) against +1.16 % for the shallow half (t 1.17), and the 3-day slope on depth is +0.0133 (Spearman 0.12).",
+    "F6": "Part of the choppy fade is drift. Every choppy day taken short on a 3-day grid already gives +1.34 % excess (t 1.70, 212 cases). The choppy run-break on the 3-day grid is +1.79 % (t 1.32, 31 cases), so the gain over the profile's base rate is only about 1 point on few independent cases.",
+    "F7": "In falling agitated markets the deep half of run-breaks gives +3.43 % the next day (t 3.43) and +5.86 % over 3 days (t 3.40, 33 cases, 24 days), with Spearman 0.33 on depth. This cell is already held by 074-01.b1.d1.d1 and 074-01.b1.g1 (falling, short).",
+    "F8": "The tested book's cases are concentrated in one year. 2018 gives +1.79 % next-day short excess (t 2.46, 120 cases), while 2019, 2020 and 2021 give +0.23 %, +0.18 % and +0.11 % (all t < 0.5). This fits its Calmar of 0.23 and its Sharpe falling short of holding's.",
+    "F9": "Other angles stood out from chance only weakly or repeat what is held:"
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, the first up day after a run of down days is followed by a fall in the coin's close over the next three days. The deeper the run's fall against the coin's usual daily swing over the last 30 days, the larger that three-day fall.",
+      "consequence": "A trader shorting relief days in a quiet downtrend holds the short for about three days rather than one, so each trade captures several times its cost.",
+      "name": "calm downtrend relief fade three days",
+      "from": "F1, F2, F3, F8",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the first up day after a run of down days is followed by a fall in the coin's close over the next five days. The deeper the run's fall against the coin's usual daily swing over the last 30 days, the larger that fall.",
+      "consequence": "A trader in a sideways market fades the first bounce after a deep slide, in the choppy short cells where the research holds almost no short strategy.",
+      "name": "choppy market relief fade",
+      "from": "F4, F5, F6, F3",
+      "profile": "choppy",
+      "theme": "discovery",
+      "refs": [
+        "F4",
+        "F5",
+        "F6",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.g2.g1_calm-downtrend-relief-fade-three-days"
+  ],
+  "discovery_ids": [
+    "074-01.b1.g2.g2_choppy-market-relief-fade"
+  ],
+  "no_ideas": null
+}

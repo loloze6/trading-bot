@@ -302,6 +302,7 @@ An idea's latest record counts once.
 | 074-01.b1.d2_run-break-fade-steep-slide_1d | paying | night9_fallcalmfade_run | 1d | 6 | cf8a40630 | 2026-11-26T23:14:02 |
 | 074-01.b1.d3_agitated-falling-run-break-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:21:02 |
 | 074-01.b1.g1_convex-deep-run-fade_1d | paying | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:39:11 |
+| 074-01.b1.g2_calm-downtrend-relief-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:46:20 |
 | 074-01.b1_falling-deep-run-break-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | cf8a40630 | 2026-11-26T23:02:15 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |

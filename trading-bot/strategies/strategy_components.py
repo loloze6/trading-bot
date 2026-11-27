@@ -9611,30 +9611,30 @@ class PriorLowReclaimInRangeComponent(SubStrategyComponent):
 
 class PriorDownRunOnUpCloseComponent(SubStrategyComponent):
     """
-    The length of the down run that bar t's up close breaks:
+    Length of the run that bar t's close breaks, on every bar:
 
-        if close[t] > close[t-1]:
+        side = "down" (default): when close[t] > close[t-1],
             n = number of consecutive bars i ending at t-1 (i = t-1, t-2, ...) with close[i] < close[i-1]
-            m = min(n, max_bars)
-            form = "count" (default):  raw_value = m
-            form = "beyond_first":     raw_value = max(0, m - 1)
-        else:
-            raw_value = 0
+        side = "up": when close[t] < close[t-1],
+            n = number of consecutive bars i ending at t-1 with close[i] > close[i-1]
+        m = min(n, max_bars); 0 when bar t does not close to the breaking side
+        form = "count" (default): raw_value = m
+        form = "beyond_first":    raw_value = max(0, m - 1)
 
-    Range and sign: "count" is 0 .. max_bars and "beyond_first" is 0 .. max_bars - 1, both integers, never
-    negative, with no direction. Both are 0 on down and flat bars and on an up bar after an up or flat bar.
-    "beyond_first" is also 0 on an up bar after a single down day. Each further down bar of the broken run
-    adds one. A flat bar ends the down run and is not a bounce. form "count" is the original output, unchanged.
+    Range: integers 0 .. max_bars ("count") or 0 .. max_bars - 1 ("beyond_first"), never negative, no direction.
+    It grows by one with each further bar in the broken run. A flat bar ends either run and is not a break.
+    side "down" (default) with either form is the original output, unchanged.
     Warm-up: max_bars + 2 rows, bar t included.
 
     NaN: a NaN close anywhere in the last max_bars + 2 rows gives NaN.
-    Building the component raises for a max_bars below 1 or a form other than "count" or "beyond_first".
+    Building the component raises for max_bars < 1, a form other than "count" or "beyond_first",
+    or a side other than "down" or "up".
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + 2 rows of data (bars
-    t-max_bars-1 .. t), the last row being bar t; a bar's close is known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + 2 rows of data, ending at
+    bar t (the last row); a close is known at that bar's close.
     """
 
-    def __init__(self, name="PriorDownRunOnUpClose", weight=1.0, parameters=None):
+    def __init__(self, name="PriorRunOnBreakClose", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.max_bars = int(self.parameters.get("max_bars", 30))
         if self.max_bars < 1:
@@ -9643,41 +9643,48 @@ class PriorDownRunOnUpCloseComponent(SubStrategyComponent):
         if self.form not in ("count", "beyond_first"):
             raise ValueError(
                 f"PriorDownRunOnUpCloseComponent: form must be 'count' or 'beyond_first', got {self.form!r}")
+        self.side = self.parameters.get("side", "down")
+        if self.side not in ("down", "up"):
+            raise ValueError(f"PriorDownRunOnUpCloseComponent: side must be 'down' or 'up', got {self.side!r}")
         self._raw_value = 0.0
 
-    def update(self, data):
+    def update(self, data: pd.DataFrame):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
         if not self.is_ready():
             return
-        c = data["close"].astype(float).to_numpy()[-(self.max_bars + 2):]
+        c = data['close'].astype(float).iloc[-(self.max_bars + 2):].to_numpy()
         if np.isnan(c).any():
             self._raw_value = float("nan")
             self.confidence = 1.0
+            self.debug_info = {'nan': True}
             return
-        if not c[-1] > c[-2]:
-            self._raw_value = 0.0
-            self.confidence = 1.0
-            self.debug_info = {"run": 0, "form": self.form}
-            return
-        n = 0
-        i = len(c) - 2
-        while n < self.max_bars and c[i] < c[i - 1]:
-            n += 1
-            i -= 1
-        if self.form == "beyond_first":
-            value = max(0, n - 1)
+        t = len(c) - 1
+        if self.side == "down":
+            breaks = c[t] > c[t - 1]
         else:
-            value = n
-        self._raw_value = float(value)
+            breaks = c[t] < c[t - 1]
+        n = 0
+        if breaks:
+            i = t - 1
+            while i >= 1 and n < self.max_bars:
+                moved = (c[i] < c[i - 1]) if self.side == "down" else (c[i] > c[i - 1])
+                if not moved:
+                    break
+                n += 1
+                i -= 1
+        m = n
+        if self.form == "beyond_first":
+            m = max(0, m - 1)
+        self._raw_value = float(m)
         self.confidence = 1.0
-        self.debug_info = {"run": n, "form": self.form}
+        self.debug_info = {'run_length': n, 'side': self.side, 'form': self.form}
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self):
+    def get_required_periods(self) -> int:
         return self.max_bars + 2
 
 
@@ -10167,30 +10174,30 @@ class ChoppinessWeightedScaledReversalComponent(SubStrategyComponent):
 
 class PriorDownRunLossOnUpCloseComponent(SubStrategyComponent):
     """
-    The total loss of the down run that bar t breaks, on the bounce bar only:
+    The move of the run that bar t breaks, on the breaking bar only:
 
-        when close[t] > close[t-1]:
+        side = "down" (default): when close[t] > close[t-1],
             n = number of consecutive bars i ending at t-1 (i = t-1, t-2, ...) with close[i] < close[i-1],
                 capped at max_bars
-            L = (close[t-1-n] - close[t-1]) / close[t-1-n]
-            base = "percent" (default): raw_value = L x 100
-            base = "usual_moves":       raw_value = L / m,
-                m = mean(abs(close[j] / close[j-1] - 1)), j = t-exclude_current-window+1 .. t-exclude_current
-            base = "std":               raw_value = L / s, s = std (ddof 1) of the same one-bar returns
-        raw_value = 0 when close[t] <= close[t-1] or n = 0, and 0 when m = 0 or s = 0.
+            M = (close[t-1-n] - close[t-1]) / close[t-1-n]          (the down run's loss)
+        side = "up": when close[t] < close[t-1],
+            n = number of consecutive bars i ending at t-1 with close[i] > close[i-1], capped at max_bars
+            M = (close[t-1] - close[t-1-n]) / close[t-1-n]          (the up run's gain)
+        base = "percent" (default): raw_value = M x 100
+        base = "usual_moves":       raw_value = M / m, m = mean(abs(close[j] / close[j-1] - 1)),
+                                    j = t-exclude_current-window+1 .. t-exclude_current
+        base = "std":               raw_value = M / s, s = std (ddof 1) of close[j] / close[j-1] - 1, same j
+        raw_value = 0 when bar t does not close to the breaking side, when n = 0, or when m = 0 / s = 0.
 
-    exclude_current = 0 (default): the base returns end at bar t (bar t's return included), the original output.
-    exclude_current = 1: the base returns are j = t-window .. t-1, so the bounce's own return is not in the base.
-    exclude_current is not read by base "percent".
-    Range: "percent" 0 to below 100; "usual_moves" and "std" 0 and up, unbounded; never negative, no direction.
-    Warm-up: max_bars + 2 rows ("percent"); max(max_bars + 2, window + 1 + exclude_current) rows otherwise.
-    NaN: a NaN close, or a close not above 0, in the last warm-up rows gives NaN.
+    exclude_current 0 includes bar t's return in the base; 1 uses the window returns ending at t-1.
+    side "down" is the original output, unchanged, for every base and exclude_current.
+    Range: "down" with "percent" is 0 to below 100; "up" with "percent" is 0 and up; "usual_moves" and
+    "std" are 0 and up, unbounded. Never negative, no direction. A flat bar ends either run and is not a break.
+    Warm-up: max_bars + 2 rows with "percent"; max(max_bars + 2, window + 1 + exclude_current) otherwise.
+    NaN: a NaN close in the last (warm-up) rows gives NaN, and so does a close not above 0 there.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows of data, the
-    last of which is bar t; no later row exists in the data it is given.
-
-    Building the component raises for max_bars < 1, window < 1, window < 2 with "std", a base other than
-    "percent", "usual_moves" or "std", or an exclude_current other than 0 or 1.
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows of data,
+    the last of them being bar t; every close read is at or before bar t.
     """
 
     def __init__(self, name="PriorDownRunLossOnUpClose", weight=1.0, parameters=None):
@@ -10206,57 +10213,65 @@ class PriorDownRunLossOnUpCloseComponent(SubStrategyComponent):
         if self.window < 1:
             raise ValueError(f"PriorDownRunLossOnUpCloseComponent: window must be >= 1, got {self.window}")
         if self.base == "std" and self.window < 2:
-            raise ValueError(f"PriorDownRunLossOnUpCloseComponent: window must be >= 2 with 'std', got {self.window}")
+            raise ValueError("PriorDownRunLossOnUpCloseComponent: window must be >= 2 with base 'std'")
         ex = self.parameters.get("exclude_current", 0)
-        if isinstance(ex, bool):
-            ex = int(ex)
         if ex not in (0, 1):
             raise ValueError(f"PriorDownRunLossOnUpCloseComponent: exclude_current must be 0 or 1, got {ex!r}")
         self.exclude_current = int(ex)
+        self.side = self.parameters.get("side", "down")
+        if self.side not in ("down", "up"):
+            raise ValueError(f"PriorDownRunLossOnUpCloseComponent: side must be 'down' or 'up', got {self.side!r}")
         self._raw_value = 0.0
 
-    def update(self, data: pd.DataFrame):
+    def update(self, data):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
         if not self.is_ready():
             return
-        req = self.get_required_periods()
-        c = data['close'].astype(float).to_numpy()[-req:]
-        if np.isnan(c).any() or not (c > 0).all():
+        c = data["close"].astype(float).to_numpy()
+        need = self.get_required_periods()
+        tail = c[-need:]
+        self.confidence = 1.0
+        if np.isnan(tail).any() or (tail <= 0).any():
             self._raw_value = float("nan")
-            self.confidence = 1.0
             return
         t = len(c) - 1
-        value = 0.0
+        up = self.side == "up"
+        breaks = (c[t] < c[t - 1]) if up else (c[t] > c[t - 1])
+        if not breaks:
+            return
         n = 0
-        if c[t] > c[t - 1]:
-            i = t - 1
-            while n < self.max_bars and c[i] < c[i - 1]:
-                n += 1
-                i -= 1
-            if n > 0:
-                start = c[t - 1 - n]
-                loss = (start - c[t - 1]) / start
-                if self.base == "percent":
-                    value = loss * 100.0
-                else:
-                    end = t - self.exclude_current
-                    js = np.arange(end - self.window + 1, end + 1)
-                    rets = c[js] / c[js - 1] - 1.0
-                    if self.base == "usual_moves":
-                        scale = float(np.mean(np.abs(rets)))
-                    else:
-                        scale = float(np.std(rets, ddof=1))
-                    value = float(loss / scale) if scale > 0 else 0.0
+        while n < self.max_bars:
+            i = t - 1 - n
+            moved = (c[i] > c[i - 1]) if up else (c[i] < c[i - 1])
+            if not moved:
+                break
+            n += 1
+        if n == 0:
+            return
+        start = c[t - 1 - n]
+        if up:
+            move = (c[t - 1] - start) / start
+        else:
+            move = (start - c[t - 1]) / start
+        if self.base == "percent":
+            value = move * 100.0
+        else:
+            end = t - self.exclude_current
+            rets = np.array([c[j] / c[j - 1] - 1.0 for j in range(end - self.window + 1, end + 1)])
+            if self.base == "usual_moves":
+                d = float(np.mean(np.abs(rets)))
+            else:
+                d = float(np.std(rets, ddof=1))
+            value = move / d if d > 0 else 0.0
         self._raw_value = float(value)
-        self.confidence = 1.0
-        self.debug_info = {'run_length': n, 'base': self.base, 'exclude_current': self.exclude_current}
+        self.debug_info = {"run_bars": n, "run_move": float(move), "side": self.side, "base": self.base}
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self) -> int:
+    def get_required_periods(self):
         if self.base == "percent":
             return self.max_bars + 2
         return max(self.max_bars + 2, self.window + 1 + self.exclude_current)

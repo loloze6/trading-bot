@@ -7,5 +7,6 @@
 074-01.b1.d2_run-break-fade-steep-slide_1d: profitable enough [Sharpe 0.8831; Sharpe minus holding's Sharpe 0.329; Calmar 0.7686]
 074-01.b1.d3_agitated-falling-run-break-fade_1d: not profitable enough [Sharpe 0.8155; Sharpe minus holding's Sharpe 0.2458; Calmar 0.6136]
 074-01.b1.g1_convex-deep-run-fade_1d: profitable enough [Sharpe 1.1; Sharpe minus holding's Sharpe 0.5463; Calmar 1.271]
+074-01.b1.g2_calm-downtrend-relief-fade_1d: not profitable enough [Sharpe 0.4683; Sharpe minus holding's Sharpe -0.1013; Calmar 0.2307]
 074-01.b1_falling-deep-run-break-fade_1d: not profitable enough [Sharpe 0.7136; Sharpe minus holding's Sharpe 0.1594; Calmar 0.459]
 074-01_falling-market-run-break-fade_1d: not profitable enough [Sharpe 0.6855; Sharpe minus holding's Sharpe 0.1313; Calmar 0.3691]
