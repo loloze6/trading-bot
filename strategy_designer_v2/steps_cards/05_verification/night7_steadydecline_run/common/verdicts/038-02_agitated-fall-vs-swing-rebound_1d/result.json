@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of next-day excess return on forecast, bars with forecast > 0",
+    "value": 0.0006575049975901325,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.974699077069358
+    },
+    "threshold": "confirm: slope t >= 2 (with mean excess > 0 and >= 100 cases); reject: slope t <= -2 or mean excess t <= -2 (>= 100 cases)"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return on forecast > 0 bars above 0",
+    "value": 0.0027515921736474334,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 4200
+  },
+  "decided_by": "Confirm: the slope's t is 2 or more, the mean next-day excess return is above 0, with at least 100 cases. (mean excess t = 3.412)",
+  "reading": "Profile read from the recorded regime ('unknown' = no veto, i.e. falling agitated) since the detector's components are not recorded; the fall is a raw scaled return below 0 and the expected side long; the regression pools all coins' bars with forecast > 0, each coin's mean daily return taken over all its windows, and the cases are those bars with a next bar in the same window.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

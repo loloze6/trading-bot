@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (next-day return - coin mean daily return) x position held, on non-zero positions",
+    "value": 0.0008182849508529476,
+    "statistic": {
+      "name": "t of the mean (cases of one day summed)",
+      "value": 1.6608129660481807
+    },
+    "threshold": "confirm: t >= 2 with supporting check > 0; reject: t <= -2; otherwise inconclusive; minimum 300 position days on 150 distinct days"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of non-zero forecasts, drift-adjusted next-day return",
+    "value": 0.006135488751419898,
+    "passed": true
+  },
+  "counts": {
+    "position days": 18993,
+    "distinct days": 3108
+  },
+  "decided_by": "The main measure's t is between -2 and 2 (inconclusive rule).",
+  "reading": "Agitated profile read as regime 'unknown' (the non-chop regime carrying the strategy) and the situation as a raw value above 0 there, long; positions are postRebalance_current_allocation != 0 with a next-day return in the same window, every bar counted (1-bar horizon), the t uses per-day sums of the products across coins, the coin mean is over all its windows' daily returns, and the thirds are floor(n/3) lowest and highest non-zero forecasts pooled over all coins; fewer cases than the plan's minimums is reported as 'not observable'."
+}

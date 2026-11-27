@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of Saturday excess return on forecast (Friday bars, forecast > 0)",
+    "value": 0.0003221034160929626,
+    "statistic": {
+      "name": "slope t, residuals summed per Saturday",
+      "value": 1.9509081519484877
+    },
+    "threshold": "confirm if slope t >= 2 and forecast-weighted mean excess > 0; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean Saturday excess return",
+    "value": 0.005729528402648162,
+    "passed": true
+  },
+  "counts": {
+    "Friday cases with forecast > 0": 3800,
+    "distinct Saturdays": 474
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Friday = bar stamped Friday UTC (next bar Saturday); situation from last_history_value > 0 (prices close[t-1]/close[t-4]-1 when not recorded); excess = Saturday return minus the coin's mean 1-bar return over all its windows; slope from pooled OLS with intercept across coins, its t from cluster-robust errors with residual scores summed per Saturday date (G/(G-1) correction); the plan's 'else inconclusive' for too few cases is applied as 'not observable' per the workflow."
+}
