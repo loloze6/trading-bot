@@ -1,0 +1,1 @@
+022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d1_range-expansion-in-uptrends.b1_range-expansion-uptrend-more-coins_1d: confirmed (fit: exact) [main: 0.0140627; Welch t 3.38214; cases in upper half 2587, cases in lower half 2588, cases 5175]
