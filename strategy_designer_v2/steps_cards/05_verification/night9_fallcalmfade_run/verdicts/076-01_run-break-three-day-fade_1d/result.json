@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "short-signed 3-day return minus normal 3-day drift on run-breaking up days",
+    "value": 0.0033912900345654815,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.6060446297673647
+    },
+    "threshold": "positive with t >= 2 to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "unusual move after 3+ down-day runs minus after 1-day runs (Welch t)",
+    "value": 0.007282299373787119,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4160,
+    "cases after runs of 3 or more down days": 971,
+    "cases after runs of exactly 1 down day": 2063,
+    "days": 1429
+  },
+  "decided_by": "inconclusive: t between -2 and 2 on the main measure and no reject rule met",
+  "reading": "Cases are run-breaking up days recomputed from closes (close above prior close after >=1 strict down closes, the recorded run_len raw value used for run length where present), taking the first such day in each 3-bar grid cell from each window's first row with its 3-bar return inside the window, the normal drift being the coin's mean non-overlapping 3-bar return over all its windows, and the t using day-clustered standard errors."
+}

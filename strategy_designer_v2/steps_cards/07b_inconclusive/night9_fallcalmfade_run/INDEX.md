@@ -2,6 +2,8 @@
 064-01_calm-decline-big-rise-fades_1d: no ideas: The fade the theme claims is not in the data: large scaled rises in falling calm markets were followed by a rise, not a fall (-2.25 % short-direction, t -1.42, 62 cases). The giveback does not grow with the rise's size (correlation +0.038, or -0.245 on the forecast). The opposite move is too unstable across sampling, coins and years (F2, F3) to support an idea on another side.
 070-01.b1.b1_calm-decline-depth-fade_1d: 1 ideas (2 explorations)
 070-01.b1_calm-decline-fade-more-coins_1d: 1 ideas (2 explorations)
+070-01.g1.d2.d1_depth-graded-run-break-fade_1d: 2 ideas (2 explorations)
+070-01.g1.d2.d2_falling-market-depth-run-break-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 070-01.g1.d2_run-break-fade-every-market_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 070-01.g1_calm-decline-long-run-break_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 070-01_calm-decline-run-break-fade_1d: 1 ideas (2 explorations)
@@ -14,3 +16,5 @@
 074-01.b1.g2_calm-downtrend-relief-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01.b1_falling-deep-run-break-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01_falling-market-run-break-fade_1d: 1 ideas (2 explorations)
+076-01_run-break-three-day-fade_1d: 2 ideas (1 explorations)
+076-02_run-break-delayed-fade_1d: 1 ideas (2 explorations)

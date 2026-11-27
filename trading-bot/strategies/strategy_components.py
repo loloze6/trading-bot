@@ -10275,3 +10275,85 @@ class PriorDownRunLossOnUpCloseComponent(SubStrategyComponent):
         if self.base == "percent":
             return self.max_bars + 2
         return max(self.max_bars + 2, self.window + 1 + self.exclude_current)
+
+
+class ScaledFallTimesBrokenDownRunComponent(SubStrategyComponent):
+    """
+    The slide in usual moves times the length of the down run that bar t's up close breaks:
+
+        gate: close[t] > close[t-1], else the output is 0
+        n = number of consecutive bars i ending at t-1 (i = t-1, t-2, ...) with close[i] < close[i-1],
+            capped at max_bars; the output is 0 when n = 0
+        run = close[t-n .. t-1];  d = (close[t-1] - min(run)) / (max(run) - min(run)), 0 when max = min
+        s = std (ddof 1) of the vol_period one-bar returns close[j]/close[j-1] - 1, j = t-vol_period+1 .. t
+        F = max(0, -(close[t]/close[t-period] - 1) / (s * sqrt(period))),  F = 0 when s = 0
+        raw_value = F * (n - 1 + d)
+
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 on down and flat bars, on an up
+    bar that follows an up or flat bar, after a single down bar, and when close[t] >= close[t-period].
+    The run of lower closes is strictly falling, so min(run) = close[t-1] and d is 0 on every bar.
+    Warm-up: max(max_bars + 2, period + 1, vol_period + 1) rows, bar t included (32 at the defaults).
+    NaN: a NaN close, or a close not above 0, in the warm-up rows gives NaN, whatever the gate.
+    s = 0 gives 0. Building raises for period < 1, vol_period < 2, max_bars < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows of data,
+    the last of which is bar t; no later row exists in data.
+    """
+
+    def __init__(self, name="ScaledFallTimesBrokenDownRun", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"ScaledFallTimesBrokenDownRunComponent: period must be >= 1, got {self.period}")
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(
+                f"ScaledFallTimesBrokenDownRunComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(
+                f"ScaledFallTimesBrokenDownRunComponent: max_bars must be >= 1, got {self.max_bars}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        need = self.get_required_periods()
+        w = data['close'].astype(float).to_numpy()[-need:]
+        if np.isnan(w).any() or not (w > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        t = len(w) - 1
+        value = 0.0
+        n = 0
+        d = 0.0
+        fall = 0.0
+        if w[t] > w[t - 1]:
+            i = t - 1
+            while n < self.max_bars and w[i] < w[i - 1]:
+                n += 1
+                i -= 1
+            if n > 0:
+                run = w[t - n:t]
+                hi = float(run.max())
+                lo = float(run.min())
+                d = (w[t - 1] - lo) / (hi - lo) if hi > lo else 0.0
+                rets = w[t - self.vol_period + 1:t + 1] / w[t - self.vol_period:t] - 1.0
+                s = float(np.std(rets, ddof=1))
+                if s > 0:
+                    r = w[t] / w[t - self.period] - 1.0
+                    fall = max(0.0, -r / (s * np.sqrt(self.period)))
+                value = fall * (n - 1 + d)
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'run_length': n, 'tiebreak': d, 'scaled_fall': fall}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.max_bars + 2, self.period + 1, self.vol_period + 1)
