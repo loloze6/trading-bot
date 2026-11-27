@@ -22,6 +22,7 @@
 077-03.d1.b1_widest-low-close-next-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-03.d1_choppy-agitated-low-close-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-03.d2_low-close-rebound-three-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+077-03.g1.b1.d1_choppy-agitated-two-sided-close-fade_1d: 2 ideas (3 explorations)
 077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d: 3 ideas (3 explorations)
 077-03.g1_choppy-agitated-high-close-fall_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-03_choppy-agitated-close-position-reversal_1d: 2 ideas (2 explorations)

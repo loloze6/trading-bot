@@ -22,6 +22,7 @@
 077-03.d1.b1_widest-low-close-next-day-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
 077-03.d1_choppy-agitated-low-close-rebound_1d: 0 ideas, 2 discoveries (2 explorations)
 077-03.d2_low-close-rebound-three-days_1d: 0 ideas, 2 discoveries (2 explorations)
+077-03.g1.b1.d1_choppy-agitated-two-sided-close-fade_1d: 0 ideas, 2 discoveries (2 explorations)
 077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d: 1 ideas, 1 discoveries (2 explorations)
 077-03.g1_choppy-agitated-high-close-fall_1d: 0 ideas, 2 discoveries (2 explorations)
 077-03_choppy-agitated-close-position-reversal_1d: 1 ideas (2 explorations)

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the daily mean of forecast/10-weighted drift-adjusted next-day returns",
+    "value": 0.008178852222711504,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 2.6202312498719573
+    },
+    "threshold": "confirm if t >= 2 with supporting check passing; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third |forecast| mean drift-adjusted next-day return in forecast direction",
+    "value": 0.007721652785811979,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2278,
+    "distinct days": 1086
+  },
+  "decided_by": "The main t is 2 or more and the top-third minus bottom-third difference is above 0.",
+  "reading": "Profile bars are those whose recorded regime is the config's strategy regime 'unknown' (not 'chop'), the expected side is the opposite sign of the close's off-mid distance (raw value, prices where missing), cases are all active bars with a next bar in the window, days are UTC calendar days, and thirds are the lowest and highest n//3 cases ranked by |forecast| with unweighted means.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003811 on the check folds against +0.008179 on every fold",
+    "main": 0.0038109869052390002,
+    "statistic": 1.1499871108194708,
+    "counts": {
+      "cases": 1829,
+      "distinct days": 795
+    }
+  }
+}

@@ -22,6 +22,7 @@
 077-03.d1.b1_widest-low-close-next-day-rebound_1d: not profitable enough [Sharpe 0.4998; Sharpe minus holding's Sharpe -0.053; Calmar 0.3375]
 077-03.d1_choppy-agitated-low-close-rebound_1d: not profitable enough [Sharpe 0.6174; Sharpe minus holding's Sharpe 0.06457; Calmar 0.2516]
 077-03.d2_low-close-rebound-three-days_1d: not profitable enough [Sharpe 0.1583; Sharpe minus holding's Sharpe -0.3945; Calmar 0.07524]
+077-03.g1.b1.d1_choppy-agitated-two-sided-close-fade_1d: not profitable enough [Sharpe 0.7457; Sharpe minus holding's Sharpe 0.193; Calmar 0.4141]
 077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d: not profitable enough [Sharpe 0.5432; Sharpe minus holding's Sharpe -0.00956; Calmar 0.3534]
 077-03.g1_choppy-agitated-high-close-fall_1d: not profitable enough [Sharpe 0.5215; Sharpe minus holding's Sharpe -0.03128; Calmar 0.3854]
 077-03_choppy-agitated-close-position-reversal_1d: not profitable enough [Sharpe 0.6988; Sharpe minus holding's Sharpe 0.146; Calmar 0.4147]
