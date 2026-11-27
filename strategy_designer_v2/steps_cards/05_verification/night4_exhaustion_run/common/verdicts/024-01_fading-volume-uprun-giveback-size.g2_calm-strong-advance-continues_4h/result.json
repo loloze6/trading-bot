@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-18-bar return minus coin's mean 18-bar return, on the forecast",
+    "value": 0.000720590046812065,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 5.031097108578509
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and low-vol slope > high-vol slope; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "low-vol slope minus high-vol slope",
+    "value": -0.00017246215693737072,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with a forecast above 0": 5672,
+    "low-volatility grid cases with a forecast above 0": 2142,
+    "high-volatility grid cases with a forecast above 0": 2140,
+    "grid cases in the regression": 11111
+  },
+  "decided_by": "the main t is >= 2 but the low-volatility slope does not exceed the high-volatility slope.",
+  "reading": "all grid bars (positions 0, 18, 36, ... of each window with a full 18-bar forward return), forecast 0 included, enter the regressions; the coin's mean is the mean of its grid 18-bar returns over all windows; volatility is the rolling 180-bar std of 4h close returns inside each window (grid cases without 180 past returns are left out of the split), split at the coin's median over its grid cases with low = at or below the median; the minimum counts are counted on grid cases with a forecast above 0."
+}

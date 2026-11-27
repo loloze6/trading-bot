@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move per long case",
+    "value": 0.023815437792520017,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 3.103147886622485
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, top third by forecast minus bottom third",
+    "value": 0.02587192136716129,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 833,
+    "cases": 1730
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 and the top-minus-bottom-third check above 0.",
+  "reading": "A case is the first long bet (forecast rise of at least 2 points from its lowest long level since the last bet) in each 10-bar grid cell of a window, its return taken from that bar's close 10 bars ahead within the window, the drift is the mean of the coin's grid 10-bar returns over all its windows, and the thirds are floor(n/3) cases at each end of the forecast ranking.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

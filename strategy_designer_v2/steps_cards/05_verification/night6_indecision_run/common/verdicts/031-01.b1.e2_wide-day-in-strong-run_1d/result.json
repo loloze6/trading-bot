@@ -1,0 +1,37 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "3-day forward return minus the coin's normal 3-day drift, top-fifth forecast in-rise grid bars",
+    "value": 0.017878312918377392,
+    "statistic": {
+      "name": "t of the mean, same-day cases taken together",
+      "value": 3.3405289790803336
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 (and top-minus-bottom > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess top fifth minus bottom fifth in-rise (Welch t 5.593)",
+    "value": 0.022151097375622854,
+    "passed": true
+  },
+  "counts": {
+    "top-fifth cases on separate days": 583,
+    "top-fifth cases": 1816,
+    "bottom-fifth in-rise cases": 1816,
+    "in-rise grid bars": 9076
+  },
+  "decided_by": "The main-measure mean is above 0 with t >= 2 and the top-minus-bottom difference is above 0.",
+  "reading": "The top and bottom fifths are the in-rise (5-day return > 0) bars of the 3-bar grid, pooled over all coins and windows, with forecast at or above the 80th (at or below the 20th) percentile of those bars' forecasts; the day-clustered t sums each day's deviations with a G/(G-1) correction, and the minimum count missed makes the status not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
