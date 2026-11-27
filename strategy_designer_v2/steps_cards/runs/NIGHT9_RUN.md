@@ -122,6 +122,12 @@ box; the spend after each brief was answered.
   night 8 run copy too (night 8 is over; its discovery files stay in its 07g folders); then every copy agrees. For the
   next-steps list: a run's starting brief is generation 0 whatever its origin, and `find_brief` reads step 1's list
   (one source of a brief).
+  **02:00 Paris:** all six applied it (E after a check of the glob: B's reading right); every copy of the 9 starting
+  briefs without the line; for the merge, the night 8 run copies and step 1's list change on these branches.
+- **02:47 Paris, the shards (found by shard 3):** the register's `paying_rerun_run` books have no plan in that run (it
+  reran plans of other runs), so `common_record.py --register` stops on them (6 of shard 3's 20; 13 done, pushed). The
+  part 4 session asked for one rule: a book's plan and measure found by its plan id in its own run, else in the one run
+  whose plan's config equals the book's record config; then it tells the six shards to merge it and rerun.
 
 ## Reading
 (written in the morning)
