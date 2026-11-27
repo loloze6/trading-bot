@@ -13,20 +13,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 087-01_low-close-starts-unwinding | - | plan | no effect (+0.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 087-01.c1_shallow-low-close-unwinds, 087-01.c2_narrow-low-close-continues; 7.g: no ideas: Over the close location, recent returns, range, volume, drawdown, up-day runs, weekday, coin and window, no pattern in rising agitated markets on the short side stands out from chance given the number of angles tested (the best is p 0.012 among about 16 rank tests, and it reverses at longer horizons), so no idea is supported. | 1.17 | 9.2 |
 | 064-02_rising-agitated-volume-growth-stalls | - | plan | no effect (-0.63) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 064-02.c1_crowded-rise-volume-reversal, 064-02.c2_volume-surge-precedes-fall; 7.g: no ideas: Across about 36 feature-and-horizon slopes and the weekday and year splits in the rising agitated profile, nothing clears chance (largest |t| 1.85 on 43 cases); in this box, shorts lost on every coin (F3), so the data gives no short-side pattern to build an idea on. | 0.94 | 8.1 |
 | 041-01.b1.b1_rise-continuation-more-coins | 041-01.b1_rising-agitated-rise-continues | plan | no effect (+0.81) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 041-01.b1.b1.c1_agitated-rise-falls-keep-falling, 041-01.b1.b1.c2_weak-up-day-giveback-short; 7.g: no ideas: Across the forecast, the positions, the trades, the regimes and the bars (the scaled one-, three-, five- and ten-day moves, close location, range, wick, volume, stretch, drawdown, up-day streaks, volatility ratio, weekday, coin and year, at horizons of 1 to 10 days), no pattern in rising agitated markets that a short could act on stands apart from chance (F1–F5), and the explore half holds only three coins and 65 to 624 cases per horizon in the profile. | 1.15 | 8.4 |
+| 036-02.g1_rising-agitated-scaled-rally-continuation | 036-02_range-scaled-rally-continuation | plan | inconclusive (+1.62) | not profitable enough (failed: Calmar) | - | 7.b: 036-02.g1.b1_scaled-rally-continuation-more-coins; 7.g: no ideas: None of the patterns I examined in rising agitated markets on the short side stood out from chance. I looked at the scaled 1, 3, 7 and 10-day rises, close location, wide range, upper wick, opening gap, body, volume ratio, distance to the 20-day high, the 60-day return, weekdays, windows, coins and trades, at 1 to 5 days; the strongest falling pattern had t −1.79 across about 60 tests. | 1.00 | 8.6 |
 
 ## Consumption
-9 ideas, 10.24 USD, 78.0 minutes in all.
+10 ideas, 11.24 USD, 86.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.72 | 5.4 |
-| step4_backtest | 0.00 | 46.2 |
-| step5_verdict | 1.65 | 6.5 |
+| step3_plan | 1.82 | 5.9 |
+| step4_backtest | 0.00 | 51.5 |
+| step5_verdict | 1.85 | 7.3 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.g | 3.10 | 8.3 |
+| step7_7.g | 3.46 | 9.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 0.43 | 1.2 |
+| step7_7.b | 0.78 | 2.3 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.c | 3.33 | 10.0 |

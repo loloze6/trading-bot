@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move after bet bars",
+    "value": 0.016687520463411067,
+    "statistic": {
+      "name": "t of the mean, same-day cases pooled",
+      "value": 1.6152410550003802
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and positive slope; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on forecast",
+    "value": 0.001618203283641798,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 193,
+    "cases": 240
+  },
+  "decided_by": "t is between -2 and 2.",
+  "reading": "Situation = scaled rise >= 1.0 from the recorded scaled_rise raw value (recomputed from prices where missing) on bars the detector labelled trending, since the profile components are not recorded and the regime carries their vetoes; side long; a case is the first bet bar (long-side forecast rise >= 2 from its lowest level since the last bet) in each 3-bar grid cell of a window, t pools same-day deviations with a G/(G-1) cluster correction, and fewer than 30 distinct case days gives not observable.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.615 (not below 1), 193 cases (30 needed)",
+    "t_in_idea_direction": 1.6152410550003802,
+    "cases": 193
+  }
+}

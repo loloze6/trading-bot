@@ -1,3 +1,4 @@
+036-02.g1_rising-agitated-scaled-rally-continuation_1d: not profitable enough [Sharpe 0.5998; Sharpe minus holding's Sharpe 0.3758; Calmar 0.3095]
 041-01.b1.b1_rise-continuation-more-coins_1d: not profitable enough [Sharpe 0.05712; Sharpe minus holding's Sharpe -0.1668; Calmar -0.002486]
 041-01.b1_rising-agitated-rise-continues_1d: not profitable enough [Sharpe 0.05712; Sharpe minus holding's Sharpe -0.1668; Calmar -0.002486]
 064-02_rising-agitated-volume-growth-stalls_1d: not profitable enough [Sharpe -0.2194; Sharpe minus holding's Sharpe -0.4433; Calmar -0.1015]
