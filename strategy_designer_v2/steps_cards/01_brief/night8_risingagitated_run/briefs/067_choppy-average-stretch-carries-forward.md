@@ -3,7 +3,6 @@ instruments: BTC, ETH, LTC, XMR, XRP, ZEC
 bar: 1d
 side: long and short
 source: line 7.g patterns, backtest 058-02_agitated-rise-swing-scaled-giveback_1d (idea 058-02_agitated-rise-swing-scaled-giveback, brief 058_rising-agitated-overextension-gives-back)
-discovery: 058-02.g1_choppy-stretch-continues-ten-days
 ---
 In a choppy market, one that has gone roughly nowhere over the past two months, calm or agitated, a coin whose close stands far from its recent average keeps moving the same way over the following days. "Far" is measured against the coin's own recent daily swing. A close well above the average is followed by more rise, and one well below it by more fall. The larger the stretch is for the current swing, the larger the move that follows, and this holds on both sides of the average.
 
