@@ -185,3 +185,36 @@ def test_a_boxed_run_s_turns_say_whether_the_idea_acts_in_the_box(tmp_path):
     assert loop.box_field("a_run", f, tmp_path) == {"in_box": True}
     box.write_text(json.dumps({"profile": "rising calm", "side": "long"}))
     assert loop.box_field("a_run", f, tmp_path) == {"in_box": False}
+
+
+def test_a_boxed_run_takes_the_untested_ideas_that_name_its_box_exactly(tmp_path):
+    """Next steps B13 (common/target_box.md): the untested ideas of other runs naming the box word for word, on a side
+    their brief allows, copied with `taken-from`, their brief too; once; nothing without a box."""
+    def idea(run, iid, prof, brief="010_b"):
+        d = tmp_path / "02_ideation" / run / "ideas"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{iid}.md").write_text(f"---\nbrief: {brief}\n" + (f"profile: {prof}\n" if prof else "") + f"---\nIdea: {iid}.\n")
+    def brief(run, bid, side=None):
+        d = tmp_path / "01_brief" / run / "briefs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{bid}.md").write_text("---\n" + (f"side: {side}\n" if side else "") + "---\nA theory.\n")
+    brief("a_run", "010_b"); brief("a_run", "011_s", "short only")
+    idea("a_run", "010-01_exact", "falling calm"); idea("a_run", "010-02_wider", "falling"); idea("a_run", "010-03_none", None)
+    idea("a_run", "010-04_tested", "falling calm"); idea("a_run", "011-01_short", "calm falling", brief="011_s")
+    idea("b_run", "010-01_exact", "falling calm")                                   # the same id again: once, from a_run
+    t = tmp_path / "orchestration" / "run_idea" / "a_run" / "table.json"
+    t.parent.mkdir(parents=True)
+    t.write_text(json.dumps([{"idea": "010-04_tested", "step5": "confirmed (+2.1)"}]))
+    assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 0          # no box: nothing
+    box = tmp_path / "orchestration" / "loop" / "new_run" / "target_box.json"
+    box.parent.mkdir(parents=True)
+    box.write_text(json.dumps({"profile": "falling calm", "side": "long"}))
+    assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 1
+    f = tmp_path / "02_ideation" / "new_run" / "ideas" / "010-01_exact.md"
+    assert "taken-from: a_run" in f.read_text() and (tmp_path / "01_brief" / "new_run" / "briefs" / "010_b.md").exists()
+    assert loop.box_field("new_run", f, tmp_path) == {"in_box": True, "taken_from": "a_run"}
+    assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 0          # resumed: not again
+    lines = [json.loads(l) for l in box.with_name("loop.jsonl").read_text().splitlines()]
+    assert [(l["taken"], l["from"]) for l in lines] == [("010-01_exact", "a_run")]
+    box.write_text(json.dumps({"profile": "falling calm", "side": "short"}))
+    assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 1          # 011-01: short only

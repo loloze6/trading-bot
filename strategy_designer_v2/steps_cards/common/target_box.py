@@ -100,6 +100,36 @@ def in_box(text, run, box, steps=STEPS):
     return holds(profile_name(h.get("profile")), box["profile"]) and box["side"] in brief_side(h.get("brief", ""), run, steps)
 
 
+# --- the ideas already written in the box (next steps B13) ------------------------------------------------------
+
+def answered(steps=STEPS):
+    """The ideas with a step 5 answer in some run (every run's `orchestration/run_idea/*/table.json`)."""
+    out = set()
+    for f in steps.glob("orchestration/run_idea/*_run/table.json"):
+        out |= {r["idea"] for r in json.loads(f.read_text()) if r.get("step5")}
+    return out
+
+
+def box_ideas(run, box, steps=STEPS):
+    """The untested ideas of every other run that name the box exactly (common/target_box.md, B13): [(their run, the
+    idea file)], one per id (the first run by name), none already written in `run`."""
+    sys.path.insert(0, str(steps / "orchestration" / "select_next" / "helper"))
+    from select_next import written_in
+    done, have, out = answered(steps), {f.stem for f in written_in(run, steps)}, {}
+    runs = sorted({p.parent.name for p in steps.glob("02_ideation/*_run/ideas")}
+                  | {p.parents[1].name for p in steps.glob("07?_*/*_run/*/ideas")})
+    for r in runs:
+        if r == run:
+            continue
+        for f in written_in(r, steps):
+            if f.stem in done or f.stem in have or f.stem in out:
+                continue
+            h = header_fields(f.read_text())
+            if profile_name(h.get("profile")) == box["profile"] and box["side"] in brief_side(h.get("brief", ""), r, steps):
+                out[f.stem] = (r, f)
+    return list(out.values())
+
+
 # --- the rule that chooses it -----------------------------------------------------------------------------------
 
 def map_strategies(steps=STEPS):

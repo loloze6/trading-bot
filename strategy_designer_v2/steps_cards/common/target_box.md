@@ -56,6 +56,24 @@ lines 7.a to 7.g). It asks every idea to keep to the box: its situation in the b
 line, its position on the box's side; and a discovery (a pattern off the theme) to be looked for inside the box only.
 Without a box the note is empty and the prompts are byte for byte as before.
 
+## A boxed run starts from the ideas already written in its box (next steps B13; the operator, 2026-11-27)
+**Before its first turn, a boxed run takes the untested ideas of every other run that name its box exactly**; they are
+ranked with the run's own ideas by `select_next`'s one score, then the loop goes on as usual.
+- **Named exactly:** the idea file's `profile:` line is the box's profile word for word (as `profile_name` reads it): an
+  idea naming only "falling" or only "calm", or no profile, is not taken. **Its side:** its brief's `side:` line (the
+  brief its header names, as step 3 reads it) includes the box's side; a brief with no side line allows both.
+- **Untested:** no step 5 answer in any run (the `step5` field of every run's `orchestration/run_idea/*/table.json`).
+- **Kept as written:** the idea keeps its id and its brief. The loop copies the idea file into the run's step 2 folder
+  (`02_ideation/<run>/ideas/`, where `run_idea` copies every idea it tests) with one header line added,
+  `taken-from: <its run>`, and copies its brief into the run's briefs (`01_brief/<run>/briefs/`, as `run_idea` does).
+- **No clash with the run's own ideas:** a brief's own ideas are those with its number whose header names that brief
+  (`run_brief`, `ideas_of`), not the number alone: brief numbers were shared by parallel sessions (next steps E3), so an
+  idea taken from another run with the same number is not counted as the run's own brief's. An id already written in
+  the run is not taken again; an id found in several runs is taken once, from the first run by name.
+- **Recorded:** one line per idea taken in `loop.jsonl` (`"taken"`: the id, `"from"`: its run), and each turn of such an
+  idea carries `taken_from`, so the reading counts them and what they gave. Taken again on resume: only ideas not yet in
+  the run.
+
 ## Visibility, not control
 An idea written outside the box anyway is neither refused nor filtered: it is tested like any other. **Each turn of a
 boxed run says whether its idea acts in the box** (`loop.jsonl`, field `in_box`), so the reading can count them. An

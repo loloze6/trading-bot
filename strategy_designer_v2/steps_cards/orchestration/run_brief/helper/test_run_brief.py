@@ -101,3 +101,10 @@ def test_step_1_is_told_the_run_only_in_a_boxed_run(monkeypatch, tmp_path):
     rb.write_brief("plain_run", theme="t")
     rb.write_brief("box_run", theme="t")
     assert "--run" not in seen[0] and seen[1][-2:] == ["--run", "box_run"]
+
+
+def test_a_brief_s_ideas_name_it_in_their_header(tmp_path):
+    """B13 (E3): an idea taken from another run, from another brief with the same number, is not this brief's."""
+    (tmp_path / "060-01_own.md").write_text("---\nbrief: 060_mine\n---\nIdea: a.\n")
+    (tmp_path / "060-01_taken.md").write_text("---\nbrief: 060_theirs\ntaken-from: x_run\n---\nIdea: b.\n")
+    assert [p.stem for p in rb.ideas_of(Path("060_mine.md"), tmp_path)] == ["060-01_own"]

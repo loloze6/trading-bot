@@ -70,6 +70,14 @@ resumed idea, a ranked idea) carries `in_box` (true or false: the idea's `profil
 brief's side includes the box's side), so the reading counts the ideas written outside the box. Without a box, the
 lines are as before.
 
+**A boxed run starts from the ideas already written in its box** (next steps B13, the operator 2026-11-27;
+`../../common/target_box.md`): before its first turn (and again on resume, for ideas not yet in the run), the loop takes
+the untested ideas (no step 5 answer in any run) of every other run whose `profile:` line is the box's profile word for
+word and whose brief allows the box's side. Each is copied into the run's step 2 folder with `taken-from: <its run>`
+(its id and brief kept; its brief copied into the run's briefs), one line in `loop.jsonl` each (`"taken"`, `"from"`);
+`select_next` then ranks them with the run's own ideas by its one score, unchanged; each of their turns carries
+`taken_from`.
+
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.

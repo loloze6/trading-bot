@@ -36,6 +36,9 @@ lines propose from them, until a stop rule is met.**
    the run already holds ideas of this brief. "No ideas" ends the call, with step 2's reason.
 4. **`loop`** on the run, without a starting idea: the brief's ideas are its first candidates.
 
+A brief's own ideas in the run are those with its number whose header names it (B13, 2026-11-27: an idea a boxed run
+took from another run, written from another brief with the same number, is not this brief's; next steps E3).
+
 Steps 1 and 2 are two functions (`write_brief`, `write_ideas`) the loop also calls, to turn a discovery into a brief
 (`../loop/card.md`, "Discoveries become briefs"; topic 50): one way to write a brief and its first ideas. A brief
 written from a discovery gets a `discovery:` header field (the discovery's id), written by code: `select_next` ranks its

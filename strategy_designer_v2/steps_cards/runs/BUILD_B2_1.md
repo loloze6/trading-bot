@@ -81,8 +81,46 @@ identical once times, shas, run ids, temporary paths and durations are masked, 4
 `build_b2_1/compare_result.txt`. The loop is not run there (it would call models); without a box `box_field` adds
 nothing to a turn's line (`test_loop.py`).
 
+## Addition 1: step 1 writes a boxed run's brief inside the box (the designer, 2026-11-27, after the revision)
+Expected: the operator can launch a boxed run with a theme that says nothing of the box; step 1's prompt without a box
+byte for byte as before. Built: `01_brief/helper/make_brief.py` takes `--run` (which `run_brief` passes only for a
+boxed run, for its brief and its discoveries' briefs alike), pastes the same note after its request, and accepts a
+`profile:` header line; the note now also says a brief has both header lines. Proof (`build_b2_1/prompts_with_box.py`,
+`prompts_with_box.txt`): **step 1 without a box byte for byte identical** (93,683 characters), with a box +555, the note
+after the request; steps 2 and 7.g likewise (16,111 and 48,634 characters; the note is now 555 characters). Tests:
+`01_brief/helper/test_make_brief.py` (new: the profile line accepted), `test_run_brief.py` (`--run` only for a boxed run).
+
+## Addition 2: B13, a boxed run starts from the ideas already written in its box (the operator's yes, 2026-11-27)
+The rule, written first in `common/target_box.md` (and the loop's card): before its first turn, a boxed run takes the
+untested ideas (no step 5 answer in any run's `table.json`) of every other run whose `profile:` line is the box's
+profile word for word and whose brief allows the box's side; copied into the run's step 2 folder with
+`taken-from: <run>`, their brief into the run's briefs; ranked by `select_next` unchanged; one `loop.jsonl` line each
+(`taken`, `from`) and `taken_from` on their turns.
+
+**Ids: the rule that cannot clash.** An idea keeps its id. Two clashes were possible: (a) `run_brief`'s `ideas_of` found
+a brief's ideas by number alone, and brief numbers were shared by parallel sessions (E3), so a taken 060-01_x would have
+passed for the run's own brief 060_y's (and step 2 skipped); now a brief's ideas are those with its number **whose header
+names it**. Proof: the same ideas as before for all **249 briefs of every run (549 ideas)**
+(`build_b2_1/ideas_of_all_runs.py`). (b) the same id in two runs: taken once, from the first run by name; an id already
+in the run is not taken. Briefs are found by their full id (`find_brief`, as `run_idea` does).
+
+**On today's files** (`build_b2_1/box_ideas_today.py`; 1,261 ideas have a step 5 answer):
+
+| Box | Ideas taken | From (run: ideas) |
+|---|---|---|
+| falling calm, long | 52 | night7_panic_run: 7; night7_steadydecline_run: 3; night8_choppyagitated_run: 1; night8_choppycalm_run: 6; night8_fallingagitated_run: 6; night8_fallingcalm_run: 12; night8_risingagitated_run: 1; night8_risingcalm_run: 6; night9_chopdeep_run: 1; night9_chopmonth_run: 2; night9_chopstretch_run: 5; night9_fallcalmwide_run: 2 |
+| falling calm, short | 72 | night7_panic_run: 7; night7_steadydecline_run: 3; night8_choppyagitated_run: 1; night8_choppycalm_run: 6; night8_fallingagitated_run: 6; night8_fallingcalm_run: 12; night8_risingagitated_run: 5; night8_risingcalm_run: 6; night9_chopdeep_run: 1; night9_chopmonth_run: 2; night9_chopstretch_run: 5; night9_fallcalmfade_run: 13; night9_fallcalmwide_run: 5 |
+| rising agitated, long | 8 | night7_chopreversal_run: 1; night8_fallingcalm_run: 5; topic1q_proof_run: 1; topic1t_check_run: 1 |
+| rising agitated, short | 8 | night7_chopreversal_run: 1; night8_fallingcalm_run: 5; topic1q_proof_run: 1; topic1t_check_run: 1 |
+
+Falling calm long: 52 (49 different by text and data: `select_next` lists 3 as duplicates); falling calm short 72 (69);
+rising agitated 8 on each side (7), two of them from proof runs (`topic1q_proof_run`, `topic1t_check_run`: "every
+other run" includes them). No id too long. The 20 falling calm ideas that cannot go long have a "short only" brief.
+A run without a box: `take_box_ideas` does nothing (`test_loop.py`), and the seeded proof above covers `run_idea` and
+`select_next`, unchanged.
+
 ## Tests
-- The cards' suite: **213 passed** (`VENV -m pytest -q strategy_designer_v2/steps_cards`); `topics/47_review/fold_rules_test.csv`
+- The cards' suite: **217 passed** after both additions (213 after the revision) (`VENV -m pytest -q strategy_designer_v2/steps_cards`); `topics/47_review/fold_rules_test.csv`
   restored. New or changed: `common/test_target_box.py` (6: the twelve boxes; the rule's exact count, score and the
   tie by the map's count; the note empty without a box; the brief's check; the field; the run's file written once),
   `test_loop.py` (the field, nothing without a box), `test_run_brief.py` (a box not one of twelve refused; a boxed run
@@ -92,17 +130,16 @@ nothing to a turn's line (`test_loop.py`).
   `trading-bot/` changed).
 
 ## Open (for the designer and the operator)
-1. **Step 1 writes no `profile:` line** (its header keys: venue, instruments, bar, period, side, source). A boxed run
-   started from `--theme` or `--source` is therefore refused after step 1's call (about 0.05 USD), the brief kept in
-   step 1's list. Today a boxed run starts from a brief file whose header the operator writes. Smallest fix, proposed:
-   step 1 gets the same note (the box in its request) and `profile` among its header keys.
-2. **A discovery's brief in a boxed run is not checked** (it is the lines' output: visibility only); its ideas' turns
-   carry `in_box` like any other.
-3. **Choppy calm's two sides tie on the map's count too** (2 and 2): the map's order decides (long first).
-4. **The side in `in_box` is the brief's**, not the idea's practice: a brief with "long and short" lets its ideas count
-   in on either side.
-5. **Untested with a model:** the note's effect on what the lines write. The first boxed run's `in_box` count is its
-   test (what share of its ideas keep to the box).
+1. **Step 1 writes the box only if its model follows the note:** the header lines are asked for, not added by code; a
+   brief without them is refused by `run_brief` before step 2 (its reason given). A discovery's brief written in the
+   loop is not checked (the lines' output: visibility only); its ideas' turns carry `in_box`.
+2. **Choppy calm's two sides tie on the map's count too** (2 and 2): the map's order decides (long first).
+3. **The side in `in_box` and in B13 is the brief's**, not the idea's practice: a brief with no side line lets its ideas
+   count on either side.
+4. **B13 takes from every other run, proof runs included** (2 of rising agitated's 8). And the warning in next steps:
+   falling-market specialists have not held on the 25 coins so far (0 of 17 before night 9, 0 of night 9's 11).
+5. **Untested with a model:** the note's effect on what steps 1, 2 and 7 write. The first boxed run's `in_box` count is
+   its test.
 6. The first version's proofs (the night 9 filter count, `select_next` on 65 runs) are removed with the filter; git keeps
    them (79f4c5e66b2).
-7. `topics/NEXT_STEPS.md` line B2.1 not updated here (left to the designer).
+7. `topics/NEXT_STEPS.md` lines B2.1 and B13 not updated here (left to the designer).

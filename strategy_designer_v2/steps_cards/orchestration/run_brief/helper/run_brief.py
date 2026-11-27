@@ -17,7 +17,7 @@ STEPS = ORCH.parent
 sys.path.insert(0, str(ORCH / "run_idea" / "helper"))
 sys.path.insert(0, str(STEPS / "common"))
 from run_idea import Journal, copy_into  # noqa: E402  (one journal for every orchestration function)
-from lib import with_header_field, write_atomic  # noqa: E402
+from lib import with_header_field, write_atomic, header_fields  # noqa: E402
 import coins  # noqa: E402  (the run's data use, common/coins.py and common/data_use.md)
 import target_box  # noqa: E402  (the run's target box, common/target_box.md)
 
@@ -37,9 +37,11 @@ def brief_number(brief):
 
 def ideas_of(brief, ideas_dir):
     """The run's ideas created from this brief by step 2: ids NNN-KK_name (an id with a line's .<letter><n>_ part is
-    an idea a line created, even when a run copied it here as its starting idea)."""
+    an idea a line created, even when a run copied it here as its starting idea) whose header names this brief (an idea
+    another run wrote from another brief with the same number, taken into a boxed run, is not this brief's: B13, E3)."""
     num = brief_number(brief)
-    return sorted(p for p in Path(ideas_dir).glob(f"{num}-*.md") if re.fullmatch(rf"{num}-\d{{2}}_[^.]+", p.stem))
+    return sorted(p for p in Path(ideas_dir).glob(f"{num}-*.md") if re.fullmatch(rf"{num}-\d{{2}}_[^.]+", p.stem)
+                  and header_fields(p.read_text()).get("brief", Path(brief).stem) == Path(brief).stem)
 
 
 def spent(table_dir):
