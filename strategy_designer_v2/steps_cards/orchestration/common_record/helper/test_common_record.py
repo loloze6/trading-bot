@@ -127,3 +127,52 @@ def test_step4_runs_each_coin_on_its_windows_with_the_files_numbering(tmp_path, 
     assert "- NEWUSD: 5 of 5 windows run. w1 to w27 not used" in md and "| w28 |" in md
     assert "- NONEUSD: 0 of 0 windows run" in md and "; 1d bars; windows research_2016" in md
     assert line.startswith("001-01_x_1d: ran: OLDUSD 32/32; NEWUSD 5/5; NONEUSD not run")
+
+
+def _book(steps, run, rid, config, plan=True, measure=True, record=True):
+    if plan:
+        (steps / "03_test_plan" / run / "plans").mkdir(parents=True, exist_ok=True)
+        (steps / "03_test_plan" / run / "plans" / f"{rid}.md").write_text("---\n---\n")
+        (steps / "03_test_plan" / run / "plans" / f"{rid}_config.json").write_text(json.dumps(config))
+    if measure:
+        (steps / "05_verification" / run / "verdicts" / rid).mkdir(parents=True, exist_ok=True)
+        (steps / "05_verification" / run / "verdicts" / rid / "measure.py").write_text("def measure(bars): pass\n")
+    if record:
+        (steps / "04_backtest" / run / "backtests" / rid).mkdir(parents=True, exist_ok=True)
+        (steps / "04_backtest" / run / "backtests" / rid / "config.json").write_text(json.dumps(config, indent=1))
+
+
+def test_the_plan_is_found_in_its_own_run_first(tmp_path):
+    rid = "001-01_x_1d"
+    _book(tmp_path, "a_run", rid, {"k": 1})
+    _book(tmp_path, "b_run", rid, {"k": 1})                         # the same config elsewhere: not looked at
+    plan, measure = C.find_plan("a_run", rid, tmp_path)
+    assert plan.parts[-3] == "a_run" and measure.parts[-4] == "a_run"
+
+
+def test_else_the_one_other_run_with_the_records_config(tmp_path):
+    """paying_rerun_run (2026-11-27): steps 4 and 6 only; the plan is in the run whose plan's config is the record's."""
+    rid = "001-01_x_1d"
+    _book(tmp_path, "rerun_run", rid, {"k": 1}, plan=False)           # its own measure.py, no plan
+    _book(tmp_path, "src_run", rid, {"k": 1})
+    _book(tmp_path, "other_run", rid, {"k": 2})                      # another config: not this book's plan
+    plan, measure = C.find_plan("rerun_run", rid, tmp_path)
+    assert plan.parts[-3] == "src_run" and measure.parts[-4] == "rerun_run"
+    _book(tmp_path, "bare_run", rid, {"k": 1}, plan=False, measure=False)
+    plan, measure = C.find_plan("bare_run", rid, tmp_path)          # measure.py too from the matched run
+    assert plan.parts[-3] == "src_run" and measure.parts[-4] == "src_run"
+
+
+def test_no_match_or_several_matches_are_refused_naming_them(tmp_path):
+    import pytest
+    rid = "001-01_x_1d"
+    _book(tmp_path, "rerun_run", rid, {"k": 1}, plan=False)
+    with pytest.raises(C.Refused, match="0 other runs"):
+        C.find_plan("rerun_run", rid, tmp_path)
+    _book(tmp_path, "one_run", rid, {"k": 1})
+    _book(tmp_path, "two_run", rid, {"k": 1})
+    with pytest.raises(C.Refused, match=r"2 other runs with its config \(one_run, two_run\)"):
+        C.find_plan("rerun_run", rid, tmp_path)
+    _book(tmp_path, "norec_run", rid, {"k": 1}, plan=False, record=False)
+    with pytest.raises(C.Refused, match="no record config"):
+        C.find_plan("norec_run", rid, tmp_path)
