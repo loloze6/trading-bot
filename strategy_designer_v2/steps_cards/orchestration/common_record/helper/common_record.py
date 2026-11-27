@@ -168,14 +168,51 @@ def index_line(rel_id, r):
             f"Calmar {f(sh.get('calmar_min'))}); {r['seconds']:.0f} s")
 
 
-def record_one(plan, run, python, steps=None, coin_list=None, usable=coins.usable):
+class Refused(Exception):
+    """A book whose plan or measure.py cannot be found by the rule of find_plan."""
+
+
+def _config(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def find_plan(run, rid, steps=None):
+    """A book's plan and step 5's measure.py, one rule for every book (designer, 2026-11-27): each is found by the plan
+    id in the book's own run first; else in the one other run whose plan's config equals the book's record config
+    (04_backtest/<run>/backtests/<id>/config.json; a run that reran other runs' plans, e.g. paying_rerun_run, holds
+    only steps 4 and 6). No match, or several: Refused, naming them. Returns (plan, measure.py)."""
+    steps = steps or STEPS
+    plan = steps / "03_test_plan" / run / "plans" / f"{rid}.md"
+    measure = steps / "05_verification" / run / "verdicts" / rid / "measure.py"
+    if plan.exists() and measure.exists():
+        return plan, measure
+    want = _config(steps / "04_backtest" / run / "backtests" / rid / "config.json")
+    if want is None:
+        raise Refused(f"{run}/{rid}: no plan or measure.py in its run, and no record config to find them by")
+    hits = sorted(p.parents[1].name for p in steps.glob(f"03_test_plan/*/plans/{rid}.md")
+                  if p.parents[1].name != run and _config(p.with_name(rid + "_config.json")) == want)
+    if len(hits) != 1:
+        raise Refused(f"{run}/{rid}: no plan in its run, and {len(hits)} other runs with its config"
+                      + (f" ({', '.join(hits)})" if hits else ""))
+    other = hits[0]
+    plan = plan if plan.exists() else steps / "03_test_plan" / other / "plans" / f"{rid}.md"
+    measure = measure if measure.exists() else steps / "05_verification" / other / "verdicts" / rid / "measure.py"
+    if not measure.exists():
+        raise Refused(f"{run}/{rid}: no measure.py in its run nor in {other}")
+    return plan, measure
+
+
+def record_one(plan, run, python, steps=None, coin_list=None, usable=coins.usable, measure_py=None):
     """The common record of one plan, every step skipped whose output exists. Returns the result."""
     steps = steps or STEPS
     plan = Path(plan).resolve()
     rid = plan.stem
     f = folders(run, steps)
     out_file = f["result"] / f"{rid}.json"
-    measure_py = steps / "05_verification" / run / "verdicts" / rid / "measure.py"
+    measure_py = measure_py or steps / "05_verification" / run / "verdicts" / rid / "measure.py"
     if not measure_py.exists():
         sys.exit(f"no in-sample measure.py for {rid} in {run}")
     coin_list = coin_list or coins.portfolio_group()
@@ -202,7 +239,7 @@ def record_one(plan, run, python, steps=None, coin_list=None, usable=coins.usabl
     mm = (v or {}).get("main_measure") or {}
     st = mm.get("statistic")
     old = load(out_file) or {}
-    res = {"plan": os.path.relpath(plan, steps), "run": run, "id": rid,
+    res = {"plan": os.path.relpath(plan, steps), "measure": os.path.relpath(measure_py, steps), "run": run, "id": rid,
            "record": os.path.relpath(record, steps), "windows_file": os.path.relpath(WINDOWS, steps),
            "coins_asked": [f"{x}USD" for x in coin_list], "coins_run": sorted(cov), "coin_windows": cov,
            "windows_run": sum(cov.values()),
@@ -253,7 +290,12 @@ def main():
                 print(f"{b['key']}: record exists, not run again", flush=True)
                 continue
             t0 = time.time()
-            r = record_one(STEPS / "03_test_plan" / b["run"] / "plans" / f"{b['id']}.md", b["run"], args.python)
+            try:
+                plan, measure = find_plan(b["run"], b["id"])
+            except Refused as e:                          # recorded in the log; the shard goes on
+                print(f"{b['key']}: refused: {e}", flush=True)
+                continue
+            r = record_one(plan, b["run"], args.python, measure_py=measure)
             print(f"{b['key']}: {time.time() - t0:.0f} s; {json.dumps({'step6': r['step6']['status']})}", flush=True)
         return
     if not args.plan or not args.run:
