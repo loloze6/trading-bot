@@ -7,6 +7,7 @@
 067-01_choppy-up-stretch-keeps-rising_1d: inconclusive (fit: exact) [main: 0.000566707; slope t, cases summed by date 0.72738; grid cases in total 408, long cases 208, short cases 200, dates 187]
 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d: inconclusive (fit: exact) [main: 0.00480145; t of the mean, cases of one day taken together 0.841609; cases 407, distinct days 297]
 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries_1d: inconclusive (fit: exact) [main: 0.0119778; t of the weighted mean, clustered by day 0.64556; cases 133, distinct days 93]
+067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins_1d: inconclusive (fit: exact) [main: 0.0079231; t of the weighted mean, same-day cases pooled 0.950987; grid cases 797, distinct days 288]
 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d: inconclusive (fit: exact) [main: 0.0103086; t of the mean, cases of each day taken together 1.702; cases 405, distinct days 228]
 067-02.b1.b1_two-sided-swing-stretch-five-days_1d: inconclusive (fit: exact) [main: 0.000353043; day-clustered t of slope 0.910955; grid cases in total 819, long grid cases 414, short grid cases 405]
 067-02.b1_raw-swing-stretch-keeps-falling_1d: inconclusive (fit: exact) [main: 0.00155493; slope t, day-clustered 0.177733; grid cases 200, days 114]

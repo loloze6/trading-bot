@@ -7,6 +7,7 @@
 067-01_choppy-up-stretch-keeps-rising_1d: not profitable enough [Sharpe 0.05696; Sharpe minus holding's Sharpe -0.4972; Calmar -0.0211]
 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d: not profitable enough [Sharpe -0.09055; Sharpe minus holding's Sharpe -0.6443; Calmar -0.06152]
 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries_1d: not profitable enough [Sharpe -0.2745; Sharpe minus holding's Sharpe -0.8441; Calmar -0.1154]
+067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins_1d: not profitable enough [Sharpe -0.1722; Sharpe minus holding's Sharpe -0.7797; Calmar -0.08269]
 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d: not profitable enough [Sharpe -0.2155; Sharpe minus holding's Sharpe -0.7696; Calmar -0.09536]
 067-02.b1.b1_two-sided-swing-stretch-five-days_1d: not profitable enough [Sharpe 0.2332; Sharpe minus holding's Sharpe -0.321; Calmar 0.0748]
 067-02.b1_raw-swing-stretch-keeps-falling_1d: not profitable enough [Sharpe -0.3635; Sharpe minus holding's Sharpe -0.9177; Calmar -0.1271]

@@ -5,6 +5,7 @@
 067-01.b1.b1_choppy-stretch-carries-both-ways_1d: 1 ideas (2 explorations)
 067-01.b1_choppy-down-stretch-keeps-falling_1d: 0 ideas, 1 discoveries (2 explorations)
 067-01_choppy-up-stretch-keeps-rising_1d: 0 ideas, 2 discoveries (2 explorations)
+067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d: 2 ideas (3 explorations)
 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries_1d: 2 ideas (2 explorations)
 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d: no ideas: The only graded effects (F1, F4) are the tested idea itself, still unproven, and a rising-market continuation the map already holds. The weekday pattern (F5) is inflated by coins moving together and already held, and nothing else stood out across the angles in F6.
 067-02.b1.b1_two-sided-swing-stretch-five-days_1d: 2 ideas (2 explorations)

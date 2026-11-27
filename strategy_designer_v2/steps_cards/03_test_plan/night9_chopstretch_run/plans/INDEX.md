@@ -7,6 +7,7 @@
 067-01_choppy-up-stretch-keeps-rising_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, 1d, folds A, B, C, D]
 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 067-02.b1.b1_two-sided-swing-stretch-five-days_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 067-02.b1_raw-swing-stretch-keeps-falling_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

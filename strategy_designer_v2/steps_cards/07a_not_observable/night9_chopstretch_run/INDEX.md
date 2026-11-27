@@ -7,6 +7,7 @@
 067-01_choppy-up-stretch-keeps-rising_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1_two-sided-swing-stretch-five-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1_raw-swing-stretch-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

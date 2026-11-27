@@ -29,20 +29,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 077-01.b1.b2_choppy-calm-swing-momentum | 077-01.b1_swing-rise-carry-more-coins | plan | inconclusive (+0.35) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 077-01.b1.b2.b1_choppy-calm-large-rises-carry; 7.g: 0 ideas, 3 discoveries (2 explorations) | 1.08 | 12.9 |
 | 067-01.b1.b1.b1.b1_choppy-two-sided-stretch-carries | 067-01.b1.b1.b1_choppy-downside-stretch-keeps-falling | plan | inconclusive (+0.73) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.b1.b1.b1.b1_choppy-stretch-carries-more-coins; 7.g: 0 ideas, 3 discoveries (2 explorations) | 1.05 | 6.2 |
 | 067-01.b1.b1.b2.b1_calm-choppy-stretch-carry | 067-01.b1.b1.b2_choppy-stretch-carry-all-coins | plan | inconclusive (+1.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: no ideas: The test already used all the daily data available (folds A–D, all 19 coins). Its positive but weak slope comes from one year, 2021 (t 3.59), while 2018–2020 show nothing or reversion (2018 t −2.55). No coin, side, stretch size or horizon carries the effect apart from that period, so no amendment of the idea would give a clearer answer.; 7.g: no ideas: Across stretch, one-day moves, 20-day returns, volatility level, profile, side, weekday and year, no pattern counted per day beats |t| ≈ 2.7 on more than a few dozen cases, which does not stand out from the more than sixty cells looked at; the one firmer-looking effect (F4) disappears once each day's cases are counted together and repeats a family the map already holds. | 1.03 | 12.3 |
+| 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins | 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries | plan | inconclusive (+0.84) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.b1.b1.b1_choppy-downside-stretch-carries, 067-02.b1.b1.b1.b1.b2_choppy-two-sided-stretch-carry; 7.g: 067-02.b1.b1.b1.b1.g1_choppy-stretch-carries-ten-days, 067-02.b1.b1.b1.b1.g2_choppy-calm-upside-stretch-continuation | 1.26 | 11.9 |
 
 ## Consumption
-25 ideas, 27.14 USD, 226.9 minutes in all.
+26 ideas, 28.40 USD, 238.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.12 | 13.3 |
-| step4_backtest | 0.00 | 135.5 |
-| step5_verdict | 4.39 | 15.4 |
-| step6_check | 0.00 | 0.9 |
+| step3_plan | 3.19 | 13.7 |
+| step4_backtest | 0.00 | 143.2 |
+| step5_verdict | 4.59 | 16.2 |
+| step6_check | 0.00 | 1.0 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.42 | 1.2 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 8.06 | 24.8 |
-| step7_7.g | 11.15 | 35.1 |
+| step7_7.b | 8.46 | 26.1 |
+| step7_7.g | 11.74 | 36.8 |
