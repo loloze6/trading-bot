@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move in the short direction over the cases",
+    "value": -0.0016029662875130925,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": -0.0987658293254847
+    },
+    "threshold": "t >= +2 confirms (with deeper-minus-shallower > 0); t <= -2 rejects; fewer than 30 distinct case days is not observable"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half mean unusual move",
+    "value": -0.01133994137498753,
+    "passed": false
+  },
+  "counts": {
+    "cases": 288,
+    "distinct case days": 218
+  },
+  "decided_by": "The main t lies between -2 and +2. No effect (common/verdicts.md): t in the idea's direction -0.099 (below 1), 218 cases (30 needed).",
+  "reading": "Profile taken as the recorded regime 'unknown' (not vetoed to chop), down day as the scaled_fall raw value < 0; a case is the first short bet in each 10-bar grid cell of its window, the t clusters cases by UTC day with a D/(D-1) correction, and the median split puts cases strictly above the median of |forecast| in the deeper half, at or below in the shallower.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.099 (below 1), 218 cases (30 needed)",
+    "t_in_idea_direction": -0.0987658293254847,
+    "cases": 218
+  }
+}

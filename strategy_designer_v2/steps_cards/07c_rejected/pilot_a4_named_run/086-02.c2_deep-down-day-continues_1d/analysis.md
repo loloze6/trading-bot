@@ -1,0 +1,23 @@
+---
+line: 7.c no effect
+backtest: 086-02.c2_deep-down-day-continues_1d
+idea tested: 086-02.c2_deep-down-day-continues
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3646 USD
+---
+## Findings
+- **F1:** The tested effect is not there at any horizon. Short-side unusual moves after down days in the profile are 0.05 % (t 0.11, n 239) at 1 day, -0.24 % (t -0.26) at 3 days, 1.58 % (t 0.98) at 5 days, 0.34 % (t 0.12, n 63) at 10 days and 0.37 % (t 0.09) at 20 days. Step 5 found the same: -0.16 % at 10 days, t -0.10, 218 case days.
+- **F2:** The depth of the down day does not grade the move that follows. The Spearman correlation between the day's depth in 30-day swings and the short unusual move is between -0.03 and -0.11 at every horizon from 1 to 20 days. At 10 days, the deep, mid and shallow terciles give +1.2 %, -1.2 % and +1.3 % (all |t| < 0.3), and step 5's deeper-minus-shallower difference is -1.13 %.
+- **F3:** The brief's own grading, by the size of the run before the first down day, does show at longer horizons. Measured as the run's rise over the 30-day daily swing, its Spearman correlation with the short unusual move rises with the horizon: -0.08 at 5 days, 0.00 at 10, 0.22 at 15, 0.51 at 20 (31 first-down-day cases).
+- **F4:** At 20 days, the first down day after the largest runs is followed by a fall, and after the smallest runs by a rise. The top tercile of run size gives a short unusual move of +16.8 % (t 5.8, n 11, strength 0.67 of a usual move, total move +14.7 %). The middle tercile gives +5.0 %, and the bottom tercile gives -24.2 % (t -2.2, n 10). At 15 days the top tercile gives +14.1 % (t 2.6, n 14).
+- **F5:** The large-run effect at 20 days appears on both coins with cases and in both years with cases. By coin, the top tercile gives BCH +16.0 % (n 5) and ZEC +17.4 % (t 9.1, n 6). By year, it gives 2020 +21.8 % (t 5.0, n 5) and 2021 +12.8 % (t 3.2, n 5). At 10 days, however, the same tercile splits by year: 2020 +12.9 %, 2021 -7.0 %. So the move needs the longer horizon.
+- **F6:** The number of up days in the run grades the move less well than the run's size in swings. The Spearman correlation of run length with the 20-day move is 0.32. By run length, the 20-day short unusual move is +17.1 % (t 3.4) for 2-day runs, -12.9 % for 1-day runs and -8.7 % for 3-day runs, which is not monotone.
+- **F7:** The size the large-run move shows is well above the 0.37 % cost of a trade. The top tercile's 20-day total move of +14.7 % per case is about 40 times that cost. The case count is small, though: 31 first down days, 11 in the top tercile, on the explore half only.
+
+## Ideas
+- `086-02.c2.c1_large-run-first-dip-falls` (from F3, F4, F5, F7): In a rising, agitated market, after the first down day that follows a run of up days, the coin falls more over the next 20 days the larger that run's rise was, measured in units of the coin's daily swing over the last 30 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

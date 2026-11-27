@@ -1,2 +1,3 @@
 086-01_first-down-day-streak-length: In rising agitated markets, the first down day after an up streak starts a 3-day fall, larger after longer streaks. [side: short only, profile: rising agitated]
 086-02_first-down-day-run-size: In rising agitated markets, the first down day after an up streak starts a 3-day fall, larger after bigger volatility-scaled gains. [side: short only, profile: rising agitated]
+087-01_low-close-starts-unwinding: In rising agitated markets, a close near the day's low starts a 3-day decline, larger the nearer the close is to the low. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: rising agitated]
