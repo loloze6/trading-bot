@@ -27,3 +27,5 @@
 067-02_choppy-weak-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-01_agitated-high-close-week-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-02_agitated-low-close-week-fall_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+077-03_agitated-high-close-later-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+077-04_agitated-low-close-later-fall_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

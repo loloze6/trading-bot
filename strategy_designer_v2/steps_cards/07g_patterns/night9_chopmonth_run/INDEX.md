@@ -27,3 +27,5 @@
 067-02_choppy-weak-month-fall-continues_1d: 2 ideas, 1 discoveries (2 explorations)
 077-01_agitated-high-close-week-rise_1d: 1 ideas (2 explorations)
 077-02_agitated-low-close-week-fall_1d: no ideas: The week continuation the brief claims flips sign with the choice of 7-day grid (F1), the only robust pattern is a next-day reversal the profile map already holds in falling agitated markets (F3, F4), and the one candidate in an empty cell, choppy agitated shorts, has a t under 2 on 25 days after many angles were looked at (F5).
+077-03_agitated-high-close-later-rise_1d: 1 ideas (3 explorations)
+077-04_agitated-low-close-later-fall_1d: no ideas: The only patterns that stand out (the next-day reversal of close location in agitated markets and the next-day rebound after a large fall, F1 and F6) are ideas the map already holds; the rest (later-week continuation, rising-agitated high closes, calm 20-day momentum, weekdays, F2 to F5 and F7) either flip across grid offsets and coins or rest on too few days to stand out after the many angles looked at.

@@ -27,3 +27,5 @@
 067-02_choppy-weak-month-fall-continues_1d: 2 ideas (2 explorations)
 077-01_agitated-high-close-week-rise_1d: 1 ideas (3 explorations)
 077-02_agitated-low-close-week-fall_1d: 1 ideas (2 explorations)
+077-03_agitated-high-close-later-rise_1d: 1 ideas (2 explorations)
+077-04_agitated-low-close-later-fall_1d: no ideas: The test already used every fold and every coin with daily data, so no more data is available. The positive but weak move (t 0.93) changes sign across windows and years (F2), and no coin, trend, range width, prior return or close-location group shows it clearly (F3–F5). The close-location gradient is also as present in calm markets as in agitated ones (F6), so there is no part of the data to narrow the idea to.

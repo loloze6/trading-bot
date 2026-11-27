@@ -27,3 +27,5 @@
 067-02_choppy-weak-month-fall-continues_1d: not profitable enough [Sharpe 0.08259; Sharpe minus holding's Sharpe -0.5249; Calmar 0.01401]
 077-01_agitated-high-close-week-rise_1d: not profitable enough [Sharpe 0.4436; Sharpe minus holding's Sharpe -0.1092; Calmar 0.1933]
 077-02_agitated-low-close-week-fall_1d: not profitable enough [Sharpe -0.3713; Sharpe minus holding's Sharpe -0.9241; Calmar -0.1735]
+077-03_agitated-high-close-later-rise_1d: not profitable enough [Sharpe 0.5854; Sharpe minus holding's Sharpe 0.03259; Calmar 0.4233]
+077-04_agitated-low-close-later-fall_1d: not profitable enough [Sharpe -0.2267; Sharpe minus holding's Sharpe -0.7795; Calmar -0.1394]

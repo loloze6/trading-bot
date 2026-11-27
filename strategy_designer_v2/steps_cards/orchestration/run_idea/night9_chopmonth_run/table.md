@@ -33,22 +33,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+0.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.g1.b1_agitated-chop-monthly-fall-continues; 7.g: no ideas: Across about twenty tables of forecast buckets, profiles, prior moves, volatility, range, weekday and the book, no pattern stood out beyond what that many looks produce by chance. The best candidates (choppy-calm continuation, F3, and the Saturday gain, F5) rest on 6 days or on a single t of 2.4. The tested short already fails on cost, because its total move per case is a tenth of a trade's cost (F1). | 1.10 | 12.6 |
 | 077-01_agitated-high-close-week-rise | - | plan | inconclusive (+0.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 077-01.b1_agitated-low-close-rebounds; 7.g: 077-01.g1_agitated-top-close-week-rise | 1.21 | 13.4 |
 | 077-02_agitated-low-close-week-fall | - | plan | inconclusive (+0.99) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 077-02.b1_agitated-low-close-delayed-fall; 7.g: no ideas: The week continuation the brief claims flips sign with the choice of 7-day grid (F1), the only robust pattern is a next-day reversal the profile map already holds in falling agitated markets (F3, F4), and the one candidate in an empty cell, choppy agitated shorts, has a t under 2 on 25 days after many angles were looked at (F5). | 1.25 | 12.9 |
-| 077-03_agitated-high-close-later-rise | - | missing-components | - | - | - | - | 0.06 | 0.2 |
+| 077-03_agitated-high-close-later-rise | - | plan | inconclusive (+1.27) | not profitable enough (failed: Calmar) | - | 7.b: 077-03.b1_agitated-low-close-later-fall; 7.g: 077-03.g1_agitated-wide-close-next-day-fade | 2.19 | 14.0 |
+| 077-04_agitated-low-close-later-fall | - | plan | inconclusive (+0.93) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The test already used every fold and every coin with daily data, so no more data is available. The positive but weak move (t 0.93) changes sign across windows and years (F2), and no coin, trend, range width, prior return or close-location group shows it clearly (F3–F5). The close-location gradient is also as present in calm markets as in agitated ones (F6), so there is no part of the data to narrow the idea to.; 7.g: no ideas: The only patterns that stand out (the next-day reversal of close location in agitated markets and the next-day rebound after a large fall, F1 and F6) are ideas the map already holds; the rest (later-week continuation, rising-agitated high closes, calm 20-day momentum, weekdays, F2 to F5 and F7) either flip across grid offsets and coins or rest on too few days to stand out after the many angles looked at. | 1.18 | 13.2 |
 
 ## Consumption
-30 ideas, 32.84 USD, 352.9 minutes in all.
+31 ideas, 36.15 USD, 379.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.47 | 13.5 |
-| step4_backtest | 0.00 | 242.9 |
-| step5_verdict | 5.60 | 19.6 |
-| step6_check | 0.00 | 1.3 |
+| step3_plan | 3.51 | 15.0 |
+| step4_backtest | 0.00 | 261.1 |
+| step5_verdict | 5.99 | 20.9 |
+| step6_check | 0.00 | 1.4 |
 | chart_files | 0.00 | 0.6 |
 | step7_7.d | 2.88 | 9.2 |
 | step7_7.a | 0.44 | 1.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.1 |
-| step7_7.b | 8.11 | 24.1 |
-| step7_7.g | 13.33 | 39.7 |
+| step7_7.b | 8.91 | 26.6 |
+| step7_7.g | 14.43 | 43.0 |
 | similarity_check | 0.00 | 0.6 |

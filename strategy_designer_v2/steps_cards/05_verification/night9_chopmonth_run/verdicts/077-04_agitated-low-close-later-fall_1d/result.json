@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 6-bar move of short cases (short direction, coin drift removed)",
+    "value": 0.005153879399367318,
+    "statistic": {
+      "name": "day-clustered t of the mean",
+      "value": 0.9253887330059759
+    },
+    "threshold": "t >= 2 confirms (with supporting difference > 0); t <= -2 rejects; at least 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move by |forecast| at entry",
+    "value": 0.006152955334361766,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 736,
+    "cases": 1907
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The situation is checked as previous-day close location (recorded raw value, else rebuilt from prices) >= 0.75 with a negative forecast, the agitated profile not being recomputable from the record; a case is the first short bet (rise of -forecast by >= 2 from its low since the last bet) in each 6-bar grid cell of a window, its return taken from that bar's close over 6 bars inside the window, the drift is the coin's mean 6-bar return on the non-overlapping grid of all its windows, the t is day-clustered (deviations summed per UTC day), and the median split puts |forecast| above the median in the upper half and at or below it in the lower half."
+}

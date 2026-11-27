@@ -27,3 +27,5 @@
 067-02_choppy-weak-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.0155944; weighted t, cases of one day summed 1.57148; independent days with cases 211, cases 633]
 077-01_agitated-high-close-week-rise_1d: inconclusive (fit: adapted) [main: 0.00281163; t of weighted mean, same-day cases together 0.300872; independent grid cases with forecast > 0 1138, days the cases fall on 277]
 077-02_agitated-low-close-week-fall_1d: inconclusive (fit: exact) [main: 0.00650169; t of the mean, cases of one day summed 0.994816; cases 1738, distinct case days 679]
+077-03_agitated-high-close-later-rise_1d: inconclusive (fit: adapted) [main: 0.00606355; t of the mean, cases of one day taken together 1.27241; cases 1899, distinct days 751, cases with close location >= 0.9 924, cases with close location 0.8 to 0.9 975]
+077-04_agitated-low-close-later-fall_1d: inconclusive (fit: adapted) [main: 0.00515388; day-clustered t of the mean 0.925389; distinct case days 736, cases 1907]
