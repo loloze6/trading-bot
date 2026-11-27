@@ -48,8 +48,9 @@ def related(a, b):
     return len(j) >= MIN_DAYS and abs(j.corr().iloc[0, 1]) >= RELATED
 
 
-def choose(books, cells):
-    """Rules 2 to 5: admitted, one per family, unrelated where they share a box, weights 1 / n."""
+def choose(books, cells, related=related):
+    """Rules 2 to 5: admitted, one per family, unrelated where they share a box, weights 1 / n. `related` tells whether
+    two books are the same bet (default: their research daily returns; update.py passes their common records')."""
     rows = {r["key"]: r for r in books}
     boxes = cells[cells.in_boxes].groupby("key").apply(lambda g: list(zip(g.profile, g.box_side)), include_groups=False).to_dict()
     ret = cells.groupby("key").return_in_boxes.first().to_dict()

@@ -18,7 +18,8 @@ The names of the night's branches, in the order to merge; the working branch che
 
 ## Output
 One merge commit per branch on the working branch (or the merge stopped, with what stopped it); the similarity
-register rebuilt over every book, in its own commit; the brief numbers used twice; both test suites' results. Nothing
+register rebuilt over every book, in its own commit; then the portfolio update (`../combine/helper/update.py`,
+`common/data_use.md` step 10: a new version, in its own commit, only when the list of candidates changed); the brief numbers used twice; both test suites' results. Nothing
 is pushed.
 
 ## What a merged night is

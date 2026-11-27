@@ -127,7 +127,7 @@ def _fake_run(tmp_path, monkeypatch, data_use=None):
     idea.write_text("---\nbrief: 001_b\n---\nIdea: a.\nConsequence: b.\n")
     brief.write_text("b")
     f = r.folders(run)
-    called = []
+    called, calls = [], []
 
     def fake(cmd):
         name = Path(str(cmd[0])).name
@@ -144,12 +144,20 @@ def _fake_run(tmp_path, monkeypatch, data_use=None):
         elif name == "check_profitability.py":
             (f["checks"] / rid).mkdir(parents=True, exist_ok=True)
             (f["checks"] / rid / "result.json").write_text(json.dumps({"status": "profitable enough", "measures": []}))
+        elif name == "common_record.py":
+            b = tmp_path / "04_backtest" / run / "common" / "backtests" / rid
+            b.mkdir(parents=True, exist_ok=True)
+            (b / "chart_bars.csv.gz").write_text("")
+            (tmp_path / "orchestration" / "common_record" / run).mkdir(parents=True, exist_ok=True)
+            (tmp_path / "orchestration" / "common_record" / run / f"{rid}.json").write_text("{}")
+        calls.append([str(c) for c in cmd])
         return "", 0.0, 0
 
     monkeypatch.setattr(r, "call", fake)
     monkeypatch.setattr(r.wishes, "unblocked", lambda plan: False)
     monkeypatch.setattr(sys, "argv", ["run_idea.py", str(idea), "--run", run, "--python", "py", "--brief", str(brief)])
     r.main()
+    _fake_run.calls = calls
     return called
 
 
@@ -161,3 +169,34 @@ def test_the_common_record_only_in_the_data_use_mode(tmp_path, monkeypatch):
     called = _fake_run(tmp_path / "c", monkeypatch, {"version": 2})
     assert called.index("common_record.py") == called.index("chart_files.py") + 1     # right after step 6's files
     assert r.data_use_version("nothing_run") is None
+
+
+def test_the_portfolio_update_is_called_only_in_data_use_version_2_with_a_common_record(tmp_path, monkeypatch):
+    monkeypatch.setattr(r, "STEPS", tmp_path)
+    assert r.data_use_version("a_run") is None                          # no data_use.json: today's runs
+    (tmp_path / "orchestration/loop/a_run").mkdir(parents=True)
+    (tmp_path / "orchestration/loop/a_run/data_use.json").write_text('{"version": 2}')
+    assert r.data_use_version("a_run") == 2
+    assert not r.has_common_record("a_run", "x_1d")
+    (tmp_path / "04_backtest/a_run/common/backtests/x_1d").mkdir(parents=True)
+    (tmp_path / "04_backtest/a_run/common/backtests/x_1d/chart_bars.csv.gz").write_text("")
+    assert not r.has_common_record("a_run", "x_1d")                    # the result file too
+    (tmp_path / "orchestration/common_record/a_run").mkdir(parents=True)
+    (tmp_path / "orchestration/common_record/a_run/x_1d.json").write_text("{}")
+    assert r.has_common_record("a_run", "x_1d")
+
+
+def test_the_new_data_use_runs_its_steps_in_order(tmp_path, monkeypatch):
+    """The three parts joined (common/data_use.md, 2026-11-27): in data use 2, step 4 reads the run's data_use.json,
+    the common record follows step 6's files, the unseen test is not run (step 9 replaces it), and the portfolio
+    update follows the common record. Without the file, the old order: no --data-use, the unseen test, no step 9 or 10."""
+    old = _fake_run(tmp_path / "a", monkeypatch)
+    old_calls = _fake_run.calls
+    assert "unseen_test.py" in old and "common_record.py" not in old and "update.py" not in old
+    assert not any("--data-use" in c for c in old_calls)
+    new = _fake_run(tmp_path / "b", monkeypatch, {"version": 2})
+    new_calls = _fake_run.calls
+    step4 = next(c for c in new_calls if Path(c[0]).name == "run_backtest.py")
+    assert step4[step4.index("--data-use") + 1].endswith("orchestration/loop/demo_run/data_use.json")
+    assert "unseen_test.py" not in new
+    assert new.index("chart_files.py") < new.index("common_record.py") < new.index("update.py")

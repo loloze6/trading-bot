@@ -272,6 +272,13 @@ def main():
         git("add", "-A", f"{REGISTER}/register", root=root)
         if git("diff", "--cached", "--name-only", root=root).strip():
             git("commit", "-q", "-m", "Similarity register rebuilt over every book after the night merges (night_merge)", root=root)
+    # Step 10 (common/data_use.md): after the register's rebuild, a new portfolio version when the list of candidates
+    # changed (orchestration/combine/card.md); with no new common record it writes nothing.
+    r = subprocess.run([args.python, f"{SC}/orchestration/combine/helper/update.py"], capture_output=True, text=True, cwd=root)
+    print(f"portfolio update: exit {r.returncode}; {((r.stdout + r.stderr).strip().splitlines() or [''])[-1][:200]}")
+    git("add", "-A", f"{SC}/orchestration/combine/portfolios", root=root)
+    if git("diff", "--cached", "--name-only", root=root).strip():
+        git("commit", "-q", "-m", "Portfolio version built after the night merges (combine/update.py)", root=root)
     for n, v in brief_number_clashes(root).items():
         print(f"brief number {n} used by {len(v)} briefs: {', '.join(v)}")
     if not args.no_tests:

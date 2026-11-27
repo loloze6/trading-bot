@@ -15,7 +15,6 @@ HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
 from lib import header_fields, write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402  (shared helpers, common/lib.py)
-import coins  # noqa: E402  (the run's data use, common/coins.py and common/data_use.md)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 sys.path.insert(0, str(STEPS / "04_backtest" / "helper"))
@@ -54,6 +53,12 @@ def active_lines():
         if line.get("active", True):
             out.append((line["id"], y.parents[1]))
     return out
+
+
+def has_common_record(run, rid):
+    """A candidate's common record (common/data_use.md, step 9): its chart file and its result."""
+    return ((STEPS / "04_backtest" / run / "common" / "backtests" / rid / "chart_bars.csv.gz").exists()
+            and (STEPS / "orchestration" / "common_record" / run / f"{rid}.json").exists())
 
 
 def find_brief(brief_id):
@@ -251,7 +256,8 @@ def main():
     # Step 4: the backtest (it skips a record it already holds). The one place that decides a run's backtest data: a
     # run in the new data use (its data_use.json, common/data_use.md) runs every plan on its research coins and windows
     record = f["backtests"] / rid
-    du = ["--data-use", coins.data_use_file(args.run)] if coins.data_use(args.run) else []
+    du = (["--data-use", STEPS / "orchestration" / "loop" / args.run / "data_use.json"]
+          if data_use_version(args.run) == 2 else [])
     out, _ = j.step("step4_backtest", [STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python,
                                        "--out-root", f["backtests"]] + du, [record / "run.md"], done=(record / "run.md").exists(), required=True)
     if not (record / "run.md").exists():
@@ -318,11 +324,19 @@ def main():
 
     # The unseen test (code only, no model call): a confirmed idea whose book pays, its plan unchanged on every unseen
     # period (common/unseen_dates.md). After step 7, which never reads its files. The rule is steps 5 and 6's results.
+    # Not in the new data use (version 2): its unseen dates lie inside the research windows, and step 9's common record
+    # replaces it (common/data_use.md, "What it replaces").
     unseen = STEPS / "orchestration" / "unseen_test"
-    if (result(v) or {}).get("status") == "confirmed" and (rc or {}).get("status") == "profitable enough":
+    if (data_use_version(args.run) != 2 and (result(v) or {}).get("status") == "confirmed"
+            and (rc or {}).get("status") == "profitable enough"):
         j.step("unseen_test", [unseen / "helper/unseen_test.py", plan, "--run", args.run, "--python", args.python],
                [unseen / args.run / f"{rid}.json"], done=(unseen / args.run / f"{rid}.json").exists())
         row["unseen"] = index_says(unseen / args.run / "INDEX.md", rid) or "no answer"
+    # Step 10 (common/data_use.md, version 2 only): right after a candidate's common record, a new portfolio version
+    # when the list of candidates changed (code only; orchestration/combine/card.md). The rule is the record's existence.
+    if data_use_version(args.run) == 2 and has_common_record(args.run, rid):
+        combine = STEPS / "orchestration" / "combine"
+        j.step("portfolio_update", [combine / "helper/update.py"], [combine / "portfolios" / "INDEX.md"])
     write_row(f["table"], row)
     print(f"{rid}: step 3 {row['step3']}; step 5 {row['step5']}; step 6 {row['step6']}; "
           + (f"unseen dates: {row['unseen']}; " if row.get("unseen") else "") +
