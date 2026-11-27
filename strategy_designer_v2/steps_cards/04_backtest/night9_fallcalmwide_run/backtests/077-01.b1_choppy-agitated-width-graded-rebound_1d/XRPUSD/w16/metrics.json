@@ -1,0 +1,149 @@
+{
+  "core": {
+    "net_return_pct": 0.337,
+    "sharpe": 0.28,
+    "max_drawdown_pct": -2.17,
+    "trade_count": 3,
+    "win_rate": 33.33,
+    "avg_trade_net_pnl": 0.879665,
+    "fees_paid": 2.268911,
+    "gross_pnl": 4.907906,
+    "net_pnl": 2.638995,
+    "cost_drag_pct": 46.2297,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": 0.005002,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.956856,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 1.0,
+    "sigma_bar_bps": 574.1568,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -7.235,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "chop": {
+      "bar_count": 118,
+      "avg_forecast": 0.0
+    },
+    "unknown": {
+      "bar_count": 3,
+      "avg_forecast": 15.339337,
+      "trade_count": 3,
+      "total_net_pnl": 2.638994
+    }
+  },
+  "forecast_bins": {
+    "10_to_15": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -10.262,
+      "avg_pnl_per_trade_usd": -10.262
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 2,
+      "profitable_trades": 1,
+      "success_rate_pct": 50.0,
+      "total_net_pnl_usd": 12.901,
+      "avg_pnl_per_trade_usd": 6.4505
+    }
+  },
+  "dynamic": {
+    "debug_info.components.width_vs_swing.last_history_value": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": 2.593615,
+        "std": 0.886392
+      }
+    },
+    "debug_info.components.width_vs_swing.post_pipeline_value": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": 15.339337,
+        "std": 4.643714
+      }
+    },
+    "debug_info.components.width_vs_swing.weight_normalized": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.width_vs_swing.weighted_contribution": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": 15.339337,
+        "std": 4.643714
+      }
+    }
+  },
+  "regime_validity": {
+    "chop": {
+      "forward_return_mean": 0.00262341,
+      "forward_return_std": 0.05805781,
+      "n_bars": 117,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": -0.00012376,
+      "forward_return_std": 0.02516281,
+      "n_bars": 3,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -2.2414,
+    "sharpe": 0.1803,
+    "sortino": 0.3637,
+    "exposure_pct": 2.4793,
+    "turnover": 4.582128,
+    "n_bars_total": 121,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 5,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "XRPUSD",
+        "timestamp": "2018-01-13 00:00:00",
+        "previous_timestamp": "2018-01-11 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

@@ -17,3 +17,6 @@
 075-01_heavy-volume-next-day-rise_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 077-01.b1_choppy-agitated-width-graded-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 077-01_choppy-agitated-wide-low-close-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+077-02_choppy-agitated-wide-high-close-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+077-03.d1_choppy-agitated-low-close-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+077-03_choppy-agitated-close-position-reversal_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]

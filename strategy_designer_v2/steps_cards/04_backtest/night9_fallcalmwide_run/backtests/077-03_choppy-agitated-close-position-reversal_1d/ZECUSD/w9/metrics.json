@@ -1,0 +1,142 @@
+{
+  "core": {
+    "net_return_pct": 10.84,
+    "sharpe": 0.0,
+    "max_drawdown_pct": 0.0,
+    "trade_count": 1,
+    "win_rate": 100.0,
+    "avg_trade_net_pnl": 107.41052,
+    "fees_paid": 0.865837,
+    "gross_pnl": 108.276357,
+    "net_pnl": 107.41052,
+    "cost_drag_pct": 0.7997,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": 0.264663,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.004041,
+    "forecast_return_corr_all_bars_n_eff": 121,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 1.0,
+    "sigma_bar_bps": 400.7077,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 1177.2082,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "chop": {
+      "bar_count": 121,
+      "avg_forecast": 0.0
+    },
+    "unknown": {
+      "bar_count": 1,
+      "avg_forecast": -17.503926,
+      "trade_count": 1,
+      "total_net_pnl": 107.41052
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 1,
+      "profitable_trades": 1,
+      "success_rate_pct": 100.0,
+      "total_net_pnl_usd": 107.4105,
+      "avg_pnl_per_trade_usd": 107.4105
+    }
+  },
+  "dynamic": {
+    "debug_info.components.close_off_mid.last_history_value": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": 1.262526,
+        "std": null
+      }
+    },
+    "debug_info.components.close_off_mid.post_pipeline_value": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": -17.503926,
+        "std": null
+      }
+    },
+    "debug_info.components.close_off_mid.weight_normalized": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": 1.0,
+        "std": null
+      }
+    },
+    "debug_info.components.close_off_mid.weighted_contribution": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "unknown": {
+        "mean": -17.503926,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "chop": {
+      "forward_return_mean": -0.00233282,
+      "forward_return_std": 0.03880392,
+      "n_bars": 120,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": -0.11899038,
+      "forward_return_std": null,
+      "n_bars": 1,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -0.1123,
+    "sharpe": 1.7186,
+    "sortino": 166.3676,
+    "exposure_pct": 0.8197,
+    "turnover": 1.653075,
+    "n_bars_total": 122,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 1,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2018-01-13 00:00:00",
+        "previous_timestamp": "2018-01-11 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

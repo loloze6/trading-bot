@@ -1,0 +1,37 @@
+{
+  "line": "7.g",
+  "backtest": "077-03_choppy-agitated-close-position-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4399729,
+  "findings": {
+    "F1": "Inside the tested profile (choppy agitated, as the backtest's regime marks it), the reversal lives on wide days and is stronger after high closes, the opposite of the brief's claim. Wide days closing in the upper half were followed by a next-day excess return of \u22123.94 % (t \u22122.76, 69 cases). Wide days closing in the lower half were followed by +1.40 % (t 1.57, 69 cases). Narrow days showed +0.54 % (t 1.18, 127 cases) after high closes and \u22120.01 % (t \u22120.01, 92 cases) after low closes.",
+    "F2": "Inside the profile, the result is graded only at the low-close extreme. The lowest quintile of the forecast's product (close's distance from mid-range \u00d7 range in usual moves) was followed by +2.06 % (t 2.61, 72 cases). The highest quintile was followed by \u22121.29 % (t \u22121.41, 72 cases), and the middle quintiles were mixed: q2 \u22120.68 % (t \u22121.23), q3 \u22120.10 %, q4 \u22121.51 % (t \u22121.47). The book earned about the same per in-position bar on each side: long +0.51 % (t 3.45, 157 bars) and short +0.56 % (t 1.99, 180 bars).",
+    "F3": "Over all bars, with the profile approximated as the 60-day return and the 30-day swing against the 120-day swing, the product's reversal appears only in agitated markets that are not rising. The correlation of the reversed product with next-day excess return in usual moves was 0.25 in falling agitated (t 7.19, 780 bars) and 0.20 in choppy agitated (t 3.03, 227 bars). It was between \u22120.01 and 0.03 in every calm profile and in rising agitated (|t| \u2264 1.06). The falling agitated part is already held as 058-02.b1.g1.b1.b1, \"falling agitated next day reversal\".",
+    "F4": "Choppy agitated high-close days under the approximate profile fell the next day in every product tercile: \u22121.66 %, \u22122.44 % and \u22122.48 % (t_day \u22120.86, \u22121.31, \u22121.71; 40, 41 and 40 cases). The fall grows weakly with the product.",
+    "F5": "The septile of largest down days (in usual moves) was followed by +0.97 % next day (t 5.49, 1181 cases) and +1.15 % over three days (t 3.88). It was largest in falling agitated: +2.08 % (t_day 1.70, 51 days). This is the falling agitated rebound family that the map already holds 16 times.",
+    "F6": "In falling agitated markets, the larger an up day against its 30-day swing, the larger the next-day fall: rank correlation \u22120.12 (t \u22122.37, 384 up days). High-close days there fell in all three terciles: \u22121.03 %, \u22121.12 % and \u22121.34 % (t_day \u22121.44, \u22121.36, \u22121.66). This lies inside the two strategies already held for falling agitated short (058-02.b1.g1.b1.b1 and 060-01.g1.d2.d1), so it is not a discovery.",
+    "F7": "The other angles do not stand out given how many were tried:"
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, a day closing near its high falls over the next day, and the fall is larger the closer the close sits to the high and the wider the day's range against the coin's 30-day swing of daily returns.",
+      "consequence": "A trader in a choppy, agitated coin would sell a wide day that closes near its high for one day, the most after the widest days closing closest to their highs, a side no current strategy takes in this market.",
+      "name": "choppy agitated high close fall",
+      "from": "F1, F2, F4",
+      "profile": "choppy agitated",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-03.g1_choppy-agitated-high-close-fall"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

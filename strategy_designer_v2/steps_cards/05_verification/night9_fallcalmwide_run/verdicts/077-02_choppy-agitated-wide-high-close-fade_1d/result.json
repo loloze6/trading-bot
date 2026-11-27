@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-bar unusual move of short bets (signed for the short)",
+    "value": 0.006381597234843287,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.5415736677984853
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passing; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half mean unusual move, split at median |forecast|",
+    "value": -0.009344239149995123,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 163,
+    "cases": 220
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "Range is high minus low against the mean of the last 30 ranges including the current bar, with active bars in a window's first 29 rows left out of the agreement; the upper half is the cases strictly above the median |forecast| and ties go to the lower half; the day-clustered t uses a D/(D-1) correction; the plan's 100-day minimum gives 'not observable' when not reached."
+}

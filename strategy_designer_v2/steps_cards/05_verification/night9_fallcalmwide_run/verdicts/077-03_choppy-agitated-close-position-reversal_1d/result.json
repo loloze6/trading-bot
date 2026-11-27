@@ -1,0 +1,42 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast",
+    "value": 0.0003482634986471374,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 2.5140028639817347
+    },
+    "threshold": "t >= 2 (with supporting check) confirms; t <= -2 rejects; between is inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return in forecast direction, top third |forecast|",
+    "value": 0.005510370249934994,
+    "passed": true
+  },
+  "counts": {
+    "in-position bars": 2193,
+    "distinct days": 1065,
+    "bars with non-zero forecast (regression cases)": 2278,
+    "top-third bars": 731
+  },
+  "reading": "In-position bars are bars with a non-zero postRebalance_current_allocation and a next-day return in the same window; the top third is the n//3 largest |forecast| among them; the slope is OLS with an intercept on non-zero-forecast bars, its t from day-clustered (sandwich, G/(G-1)*(n-1)/(n-2)) standard errors; the coin's mean daily return uses all its in-window close-to-close returns.",
+  "status": "confirmed",
+  "decided_by": "The slope's t is 2 or more and the top-third mean directional excess return is above 0.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.0001479 on the check folds against +0.0003483 on every fold",
+    "main": 0.0001478950330805455,
+    "statistic": 1.1545450372840906,
+    "counts": {
+      "in-position bars": 1776,
+      "distinct days": 787,
+      "bars with non-zero forecast (regression cases)": 1829,
+      "top-third bars": 592
+    }
+  }
+}

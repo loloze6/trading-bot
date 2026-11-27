@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 077-01.b1_choppy-agitated-width-graded-rebound_1d
+idea tested: 077-01.b1_choppy-agitated-width-graded-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6454 USD
+---
+## Findings
+- **F1:** Over all bars of folds B and C, ranking each day by its width against the 30-day mean range times how far its close sits below the middle of its range, the top decile has a next-day excess return of +1.07 % (t 2.70, 745 cases on 242 days). The bottom decile, wide days closing high, has -0.47 % (t -1.35). Deciles 2 to 9 lie between -0.30 % and +0.28 %. This top-decile move is about 5 times the 0.22 % cost of a trade, against 1.2 times for the tested idea's unusual move.
+- **F2:** The top-decile rebound shows in every coin and every year. All 10 coins are positive (BTC +1.15 % t 2.80, LTC +1.38 % t 2.45, XRP +1.65 % t 2.17, ZEC +1.02 % t 2.05). All four years are positive (2018 +1.02 %, 2019 +0.59 %, 2020 +2.05 %, 2021 +0.78 %). All 12 windows are positive (from +0.01 % to +2.42 %).
+- **F3:** Both parts of the situation grade the rebound. Among the widest quarter of days, a close in the lowest fifth of the range is followed by +1.61 % (t 2.89, 328 cases, 146 days). A close at 20-40 % gives +0.61 % (t 1.17) and one at 40-60 % gives +0.56 %. Among falls of more than one 30-day standard deviation, a close in the lowest fifth is followed by +1.25 % (t 2.49, 453 cases), a close at 20-50 % by +0.78 %, and a close above the middle by -1.78 % (46 cases).
+- **F4:** The tested forecast graded by width alone, and did not grade. Its upper half beat its lower half by only +0.05 %, and its unusual move was +0.27 % (t 0.82, 263 days). Inside the book's own regime, the choppy-agitated in-position bars of folds B and C rose +2.05 % the next day (t 2.27, 66 cases, 53 days). Split by range over swing, the top tercile rose +3.86 % against +0.34 % for the lowest tercile (about 12 cases each).
+- **F5:** The choppy agitated profile is rare in these folds. Only 66 of 9,904 bars fell in the book's regime, and the book was in a position on 2 % of coin-days. With the brief's own profile definition, the widest days closing high in choppy agitated markets number only 4. The short mirror cannot be read here.
+- **F6:** The rebound is spent within the next day. The top decile's 2-day excess return is +1.11 % (t 2.33), no more than its 1-day +1.07 %.
+- **F7:** The other strong patterns are already held. A wide low close after a 20-day rise rebounds +2.25 % (t 2.57, 160 cases), while after a 20-day fall it gives +0.17 % (t 0.18); rising long cells already hold 9-10 strategies, including agitated wide low close rebounds. A wide high close after a 20-day fall falls -1.83 % the next day (t -2.53, 106 cases). Falling agitated high closes give -2.95 % (t -3.21), which repeats 060-01.g1.d2.d1 ("own range close height fade") and brief 060's falling calm fade. A fall of more than two standard deviations rebounds +2.98 % (t 2.37), the falling agitated rebound family with 16 strategies.
+- **F8:** Weekday shows nothing. No weekday's next-day excess return has |t| above 1.44.
+
+## Ideas
+- `077-01.b1.g1_choppy-agitated-width-depth-rebound` (from F1, F2, F3, F4, F6): In a choppy, agitated market, a day that closes low in its range is followed by a rise over the next day. The rise is larger the more the day's width against its 30-day mean range and the depth of the close below the middle of the range compound each other.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

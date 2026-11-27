@@ -15,4 +15,7 @@
 075-01.g1_heavy-volume-down-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 075-01.g2_light-volume-up-day-fade_1d: 1 ideas (2 explorations)
 075-01_heavy-volume-next-day-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+077-01.b1_choppy-agitated-width-graded-rebound_1d: 2 ideas (2 explorations)
 077-01_choppy-agitated-wide-low-close-rebound_1d: 1 ideas (2 explorations)
+077-02_choppy-agitated-wide-high-close-fade_1d: no ideas: The mean move points the idea's way but the test already used all the data, and the move does not grow with the day's width or the close's nearness to the high (F2, F3), so no graded amendment of the tested idea is supported by any part of the data.
+077-03_choppy-agitated-close-position-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

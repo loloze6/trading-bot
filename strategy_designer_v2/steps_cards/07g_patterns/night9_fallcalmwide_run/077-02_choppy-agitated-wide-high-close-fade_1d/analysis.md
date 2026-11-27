@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 077-02_choppy-agitated-wide-high-close-fade_1d
+idea tested: 077-02_choppy-agitated-wide-high-close-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6246 USD
+---
+## Findings
+- **F1:** Outside the tested profile, in falling markets (60-day return below -10 %), a wide day (range at or above its 30-day mean) that closes in the upper half of its range is followed by a fall the next day: 1.27 % below the coin's drift (t 2.63, 287 cases on 128 days).
+- **F2:** That fade is concentrated in the more agitated half of those days (2.04 %, t 2.67, 143 cases on 70 days) against 0.50 % in the calmer half (t 1.14). It is also largest in the widest tercile of range against the 30-day swing (1.80 %, t 2.58) against 1.14 % in the narrowest (t 1.64). The pattern is falling and agitated, which is a cell the map already fills on the short side: 060-01.g1.d2.d1, own range close height fade.
+- **F3:** After that next-day fall, the following day gives it back: the day-two move is -0.88 % on the short side (t -2.38, 284 cases on 125 days). The two-day move is close to zero, so the fade is spent within one day.
+- **F4:** Across all falling days, a graded score (close location minus one half, times the range in 30-day return standard deviations) runs against the next day's move. The Spearman rho is -0.113 (p < 0.0001, n 2238). The lowest score quintile gains +1.07 % (t 1.88) and the highest loses 0.77 % (t -2.03). This both-sided falling-market reversal is already held: 058-02.b1.g1.b1.b1, falling agitated next-day reversal.
+- **F5:** Inside the tested choppy agitated profile, the samples are small and no result is reliable:
+- **F6:** In choppy markets outside the recorded profile, wide days show no next-day reversal at any close location: every t is under 0.82 (for example, wide high closes +0.16 %, t 0.26, 90 cases). The choppy close-location effect therefore does not appear beyond the tested sample.
+- **F7:** Over all bars, the lowest quintile of the day's return scaled by its 30-day swing is followed by +0.62 % (t 2.16, 1489 cases on 412 days). This is the sharp-fall rebound that the map's falling agitated long cell already holds 16 times. No weekday stands out (every |t| ≤ 1.44).
+
+## Ideas
+- No ideas: The only patterns that stand out are the falling-market wide high-close fade and its both-sided graded form (F1, F2, F4), and the map already holds both in the falling agitated profile (060-01.g1.d2.d1 and 058-02.b1.g1.b1.b1). The day-two give-back (F3) and the in-profile choppy agitated readings (F5) are too marginal to stand out after this many angles. I looked at close location by width inside and outside the profile, by trend, by agitation, by width tercile, by year, by coin and by weekday, at the return scaled by its 30-day swing, at 7-day and 60-day returns, at the 5-day horizon and at choppy calm and agitated proxies.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

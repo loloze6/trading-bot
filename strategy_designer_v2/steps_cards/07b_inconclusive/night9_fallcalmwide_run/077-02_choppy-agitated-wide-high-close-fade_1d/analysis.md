@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 077-02_choppy-agitated-wide-high-close-fade_1d
+idea tested: 077-02_choppy-agitated-wide-high-close-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3719 USD
+---
+## Findings
+- **F1:** The verdict's mean next-day unusual move of the short bets is +0.64 % with t 1.54 over 163 case days (220 cases), which is on the side the idea predicts but short of t 2; the test already used all four folds and all 19 coins on daily bars, so there is no more data to add.
+- **F2:** The size does not grow with the forecast, as the idea requires: the verdict's upper half minus lower half by |forecast| is −0.93 %. In folds B and C (45 cases, 33 days), the top |forecast| tercile earns +0.50 % (t 0.23), against +1.34 % (t 1.73) for the bottom and +3.34 % (t 1.44) for the middle; the correlation of the move with |forecast| is −0.002.
+- **F3:** Both parts of the grading run against the idea in folds B and C. Closes nearest the high are the weakest (top close-location tercile −0.18 %, t −0.09, against +2.27 %, t 2.35, in the middle tercile). The widest days are weaker than the narrower ones (range-in-std top tercile +2.58 %, t 0.74, against +5.43 %, t 4.02, in the bottom tercile). The move correlates −0.14 with both width and close location.
+- **F4:** The effect is spent within the next day, as the idea says: folds B and C give +1.73 % at 1 day (t 1.51), +0.61 % at 2 days (t 0.32) and +0.35 % at 3 days (t 0.16).
+- **F5:** The profile concentrates the move. The same wide high-closing days outside the choppy agitated profile give only +0.22 % next day (t 0.71, 903 cases, 364 days), against +1.73 % inside. The low-close mirror inside the profile gives +2.41 % (t 1.49, 22 cases).
+- **F6:** The cases are spread thinly over coins and windows, and no single part shows the effect clearly. No coin with more than 3 cases has t above 2 except ETH (+2.72 %, t 2.06, 7 cases). BTC is at −0.09 %, and windows w12 and w16 are negative.
+
+## Ideas
+- No ideas: The mean move points the idea's way but the test already used all the data, and the move does not grow with the day's width or the close's nearness to the high (F2, F3), so no graded amendment of the tested idea is supported by any part of the data.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
