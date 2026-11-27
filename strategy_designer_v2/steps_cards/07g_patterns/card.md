@@ -6,7 +6,25 @@
 The parts every line shares (input, output, how the data is read, the model, storage, quality criteria) are in `../07_common/card.md`.
 
 ## Entry condition
-None: every backtest. Otherwise the line does not run, and its index line says so (`helper/line.yaml`).
+Every backtest (`helper/line.yaml`), **in a run, only when an idea it would write would be the next idea tested** (the
+operator, 2026-11-27, next steps B10). When we want an idea from a discovery rather than keep the line of the idea
+being tested: when the discovery would be the next idea tested.
+- **The rule:** after a test, before the step 7 lines start, an idea this line would write gets select_next's own
+  score: the higher of the records "7.g" (its follow-ups) and "7.g discovery" (a discovery's brief), over 1 plus the
+  generation it would have (the tested idea's, as ranked, plus one), with the group and the priority of any follow-up of
+  the tested idea (its parent's difference w). It is compared with the best waiting idea as select_next ranks the queue
+  (the loop's failed ideas left out): a brief's own idea waiting goes first; otherwise by group, then priority. The line
+  is called when its idea would rank first (ties included), or when nothing waits.
+- **Where:** in the one place `run_idea` calls the lines (`../orchestration/run_idea/helper/run_idea.py`,
+  `call_patterns`; the score: `../orchestration/select_next/helper/select_next.py`, `discovery_call`). A call not made
+  is one line in the run's journal, `not called:` and the two priorities compared; no analysis, no index line. An
+  analysis already in the run is not decided again.
+- **Why:** night 9, the line was called after each of 184 tests, 90 of 224 USD of model calls (40 %), and every run
+  ended with 20 or more ideas never tested: 84 of 165 discovery briefs never tested. An idea that would not be tested
+  next is paid for and waits. No budget, no number chosen: the rule is the ranking's own.
+- **Rejected:** 7.g only after a confirmed test (it would have lost night 9's 10 profitable discoveries, all found after
+  an unclear test); only when the queue is empty (it never emptied in night 9).
+- **Proof:** night 9's six runs replayed (`../runs/BUILD_B10.md`).
 
 ## Input
 The shared input: the backtest record, its plan and brief, step 5's verdict and step 6's check.

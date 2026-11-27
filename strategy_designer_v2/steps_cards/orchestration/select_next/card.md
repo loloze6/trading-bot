@@ -32,7 +32,7 @@ In the words of `../../common/idea_created_from.md`.
 
 | Part | What it is | Why |
 |---|---|---|
-| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea (tested: it has a verdict from step 5; an idea step 3 could not plan is not evidence about the line, 2026-11-17), in every run (the same idea read by the line in two runs is two analyses; for step 2, an analysis is one brief in one run): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas with a profitable book (step 6's "profitable enough"; operator, 2026-11-19; until then confirmed or profitable, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
+| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief, or **"7.g discovery"** for an idea of a brief written from a discovery (below; B10). Over every analysis of that line with at least one tested idea (tested: it has a verdict from step 5; an idea step 3 could not plan is not evidence about the line, 2026-11-17), in every run (the same idea read by the line in two runs is two analyses; for step 2, an analysis is one brief in one run): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas with a profitable book (step 6's "profitable enough"; operator, 2026-11-19; until then confirmed or profitable, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
 | **1 + generation** | the generation is the number of analyses between the idea and its brief (0 for a brief's idea) | ideas close to the theory first; a deeper idea goes first only if its line's record is clearly better, so one thread does not take the run |
 
 **Order (operator, 2026-11-17): a brief's own ideas first.** The candidates of generation 0 (a brief's ideas) come
@@ -47,6 +47,29 @@ their own follow-ups count their generation from it. The link is the brief's `di
 night 7's committed states replayed early in the night: panic after 2 turns, as it ran 033-01 and 034-01 (discovery
 briefs) first and the theme's 032-02 third; with the rule 032-02, then 032-01.b1 (on the theme), then the discovery
 ideas; rangefail after 7 turns, the theme's 032-02.b1.b1 moves from sixth to first.
+
+**The record of a discovery's brief (the operator, 2026-11-27; next steps B10).** A tested idea of a brief written from
+a discovery counts as an analysis of a line of its own, **"7.g discovery"** (one per brief in a run), not of step 2: its
+ideas are ranked as the discovery's (above), so its result is counted where it comes from. The ranking scores the
+brief's own ideas with that record; their follow-ups keep their own line's, and 7.g's on-theme follow-ups keep "7.g". A
+brief is a discovery's by its `discovery:` field, or, for a brief written before the field (nights 7 and 8), by the
+loop's line that wrote it from the discovery (`loop.jsonl`). A success is the same as every line's: one of the brief's
+own ideas with a profitable book (a follow-up's success is its own line's). The records before and after, every run
+(`../../runs/BUILD_B10.md`):
+
+| Line | Before | After |
+|---|---|---|
+| step 2 | 22 of 143, 0.159 | 5 of 61, 0.095 |
+| 7.g discovery | (counted in step 2) | 17 of 82, 0.214 |
+| 7.a to 7.g | unchanged | unchanged (7.g: 18 of 154, 0.122) |
+
+The designer's 23 of 81 (0.29) counted a brief's success down its whole lineage (follow-ups of 7.b and 7.d included):
+6 of the 23 briefs paid only through a follow-up, whose success is that line's. With the field alone (the older briefs
+left in step 2), 2 of 29.
+
+**Line 7.g's call (B10):** `discovery_call(run, idea)` scores the idea line 7.g would write after a test (the higher of
+"7.g" and "7.g discovery", over 1 plus its generation, with its group and w) against the best waiting candidate;
+`run_idea` calls the line only when it would rank first (`../../07g_patterns/card.md`, "Entry condition").
 
 **Real ideas unlike what we hold next (operator, 2026-11-22; topic 45; the held books, 2026-11-24, P9).** After a brief's own ideas, the order has two
 more groups, each ranked by **priority = score x w**:

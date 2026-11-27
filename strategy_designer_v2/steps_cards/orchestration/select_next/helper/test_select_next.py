@@ -175,7 +175,7 @@ def test_a_discovery_s_brief_ideas_rank_as_follow_ups(tmp_path):
     assert order[0] == "003-02_y"
     assert rows["004-02.b1_child"]["generation"] == 2                # its follow-ups count from the discovery's level                                   # the theme's own idea first
     d = rows["004-01_from-discovery"]
-    assert (d["line"], d["generation"], d["group"], d["discovery"]) == ("7.g", 1, 3, "003-01.g1_a-pattern")
+    assert (d["line"], d["generation"], d["group"], d["discovery"]) == ("7.g discovery", 1, 3, "003-01.g1_a-pattern")
     assert rows["003-02_y"]["group"] == 1
 
 

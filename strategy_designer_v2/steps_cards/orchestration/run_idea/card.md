@@ -32,6 +32,11 @@ step before it, and recorded under one run name.**
   book paying or not), it calls `orchestration/ideas_similarities_check/` (code only): the book added to the register and
   compared with the paying books, a repair also with the idea it repairs; one journal line (`similarity_check`).
   `select_next` reads the register for the next idea's order. The rule is step 5's result.
+- **Line 7.g's call** (the operator, 2026-11-27; next steps B10): after the similarity register, before the step 7 lines
+  start, line 7.g is called only when an idea it would write would rank first in the run's queue (select_next's own
+  score and order; the loop's failed ideas left out), or when nothing waits. A call not made is one journal line
+  (`step7_7.g`, `not called:` and the two priorities compared). The rule and its reason: `../../07g_patterns/card.md`,
+  "Entry condition". This is the one place it is decided; the other lines run on their own entry conditions.
 - **The unseen test** (2026-11-18): after step 7, for an idea step 5 confirmed and step 6 found profitable enough, it
   calls `orchestration/unseen_test/` (code only): the plan unchanged on every unseen period; one journal line
   (`unseen_test`). Step 7 has run before it and never reads its files. The rule is steps 5 and 6's results. **Not in
