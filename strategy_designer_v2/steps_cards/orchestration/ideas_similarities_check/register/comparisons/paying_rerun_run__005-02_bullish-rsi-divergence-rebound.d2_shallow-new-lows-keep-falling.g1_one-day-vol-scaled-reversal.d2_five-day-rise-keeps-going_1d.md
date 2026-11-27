@@ -141,6 +141,17 @@
 | 064-01_falling-agitated-heavy-volume-fall-rebound_1d | night8_choppyagitated_run | 1d | 1d | 2898 | 0.00 | same period | + | +0.1046 % (3.24) |
 | 066-01_falling-agitated-sixty-day-scaled-fall-rebound_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.00 | same period | + | +0.1061 % (3.29) |
 | 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d | night3_learned_run | 1d | 1d | 2898 | 0.00 | same period | + | +0.1072 % (3.33) |
+| 074-01.g1.d1_wide-close-high-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1133 % (3.51) |
+| 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1133 % (3.52) |
+| 074-01.b1.d3.d2.d1_falling-market-deep-run-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1137 % (3.53) |
+| 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1127 % (3.50) |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | short_1d_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1118 % (3.47) |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_weekend-reversal-in-rising-volatility_1d | retest_monday_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1134 % (3.52) |
+| 074-01.b1.d2_run-break-fade-steep-slide_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1130 % (3.51) |
+| 074-01.b1.g1_convex-deep-run-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1132 % (3.51) |
+| 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1124 % (3.49) |
+| 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1122 % (3.48) |
+| 074-01.b1.d3.d1_deep-run-break-fade-falling_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1126 % (3.49) |
 | 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.00 | new one period ahead | - | +0.1166 % (3.60) |
+| 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1116 % (3.46) |
+| 074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.1115 % (3.46) |

@@ -112,6 +112,7 @@
 | 031-02.b1.b1.b1.d2_width-graded-flat-uprun-day_1d | night6_indecision_run | 1d | 1d | 2898 | 0.03 | same period | + | +0.0334 % (1.93) |
 | 034-01.b1_nearness-to-high-10-days_1d | night7_rangefail_run | 1d | 1d | 2898 | 0.02 | same period | + | +0.0343 % (1.98) |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_weekend-reversal-in-rising-volatility_1d | retest_monday_run | 1d | 1d | 2898 | 0.02 | same period | + | +0.0365 % (2.11) |
+| 074-01.g1.d1_wide-close-high-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.02 | new one period ahead | + | +0.0384 % (2.20) |
 | 022-02_combination-beats-best-single.d1_combination-only-in-downtrends.d2_momentum-inside-90-day-rises_1d | paying_rerun_run | 1d | 1d | 2898 | 0.02 | same period | + | +0.0355 % (2.05) |
 | 026-03_weekend-reversal-exceeds-weekday.b1_midweek-moves-continue-into-weekend_1h | night4_weekend_run | 1h | 1d | 2898 | 0.02 | same period | - | +0.0458 % (2.64) |
 | 026-02_weekend-drop-reverses-early-week.d2_weekend-break-of-rising-week_1h | night4_weekend_run | 1h | 1d | 2898 | 0.02 | same period | - | +0.0455 % (2.62) |
@@ -121,20 +122,30 @@
 | 025-03_bounce-falling-versus-rising-regime.b1_falling-regime-bounce-all-coins_1d | night4_fallingbounce_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0391 % (2.25) |
 | 031-01.g1.g1.g2.g1.d1_thursday-rise-into-weekend_1d | night6_yearlow_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0364 % (2.09) |
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d | paying_rerun_run | 1d | 1d | 2898 | 0.01 | same period | - | +0.0497 % (2.86) |
+| 074-01.b1.g1_convex-deep-run-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0380 % (2.17) |
 | 023-03_flatter-range-stronger-reversion.d2_monthly-return-momentum-continuation.d1_momentum-near-the-60-day-high.b1_near-high-momentum-more-coins_1d | night4_range_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0379 % (2.18) |
 | 045-01_rising-market-late-week-gain_1d | night7_panic_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0379 % (2.18) |
+| 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0398 % (2.27) |
+| 074-01.b1.d3.d2.d1_falling-market-deep-run-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0392 % (2.23) |
 | 025-03_bounce-falling-versus-rising-regime.d2_sharp-rises-follow-monthly-trend_1d | night4_fallingbounce_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0375 % (2.15) |
+| 074-01.b1.d3.d1_deep-run-break-fade-falling_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0391 % (2.22) |
 | 058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0389 % (2.23) |
 | 031-01.g1.g1.g2.g1.d2_uptrend-thursday-weekend-momentum_1d | night6_yearlow_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0379 % (2.17) |
+| 074-01.b1.d2_run-break-fade-steep-slide_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0406 % (2.31) |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | short_1d_run | 1d | 1d | 2898 | 0.01 | same period | - | +0.0462 % (2.65) |
 | 032-01.b1.b1.e2.d1.d1.d2_calm-chop-continuation-lean_1d | night7c_chopreversal_run | 1d | 1d | 2898 | 0.01 | same period | - | +0.0476 % (2.73) |
+| 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0413 % (2.35) |
 | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d | night8_choppycalm_run | 1d | 1d | 2898 | 0.01 | same period | - | +0.0483 % (2.76) |
+| 074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0405 % (2.30) |
 | 022-04_signal-weights-carry-forward.b2_volatility-power-turns-around_1d | night3_learned_run | 1d | 1d | 2898 | 0.01 | same period | + | +0.0416 % (2.38) |
+| 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.01 | new one period ahead | + | +0.0412 % (2.34) |
+| 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.00 | new one period ahead | + | +0.0416 % (2.36) |
 | 022-01_learned-combined-signal-score.d2_four-week-momentum-alone.b1_four-week-momentum-more-coins_1d | paying_rerun_run | 1d | 1d | 2898 | 0.00 | same period | - | +0.0466 % (2.66) |
 | 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d | night4_range_run | 1d | 1d | 2898 | 0.00 | new one period behind | + | +0.0406 % (2.30) |
 | 025-02_deeper-fall-bigger-giveback.b1_deeper-fall-bigger-giveback-more-coins.b1_bounce-fades-in-monthly-fall_1d | night4_fallingbounce_run | 1d | 1d | 2898 | 0.00 | new one period ahead | + | +0.0428 % (2.43) |
 | 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d | volume_run | 1d | 1d | 2898 | 0.00 | new one period ahead | - | +0.0446 % (2.53) |
 | 023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.b2_building-trend-continues-five-days_1d | night4_range_run | 1d | 1d | 2898 | 0.00 | new one period ahead | + | +0.0424 % (2.40) |
+| 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.00 | new one period ahead | + | +0.0421 % (2.39) |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h | retest_weekend_run | 1h | 1d | 2898 | 0.00 | same period | - | +0.0457 % (2.61) |
 | 026-01_weekend-rise-reverses-early-week.d1_calm-regime-weekend-move-continues_1h | night4_weekend_run | 1h | 1d | 2898 | 0.00 | same period | - | +0.0449 % (2.57) |
 | 013-04_heavy-volume-below-high-breakout_1d | volume_run | 1d | 1d | 2898 | 0.00 | new one period ahead | + | +0.0435 % (2.47) |

@@ -11,8 +11,13 @@
 | 074-01.b1.d3.d1_deep-run-break-fade-falling_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.93 | same period | + | -0.0007 % (-0.38) |
 | 074-01.b1.d2_run-break-fade-steep-slide_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.85 | same period | + | +0.0036 % (1.20) |
 | 074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.82 | same period | + | +0.0011 % (0.35) |
+| 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.62 | same period | + | +0.0088 % (1.86) |
+| 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.61 | same period | + | +0.0063 % (1.30) |
+| 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.59 | same period | + | +0.0069 % (1.40) |
+| 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.55 | same period | + | +0.0076 % (1.47) |
 | 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.53 | same period | + | +0.0051 % (0.97) |
 | 074-01.b1.d3.d2_agitated-deep-run-fade_1d | night9_fallcalmfade_run | 1d | 1d | 2898 | 0.48 | same period | + | +0.0088 % (1.58) |
+| 074-01.g1.d1_wide-close-high-bounce-fade_1d | night9_chopdeep_run | 1d | 1d | 2898 | 0.26 | same period | + | +0.0122 % (1.84) |
 | 060-01.g1.d2.d1_own-range-close-height-fade_1d | night8_risingagitated_run | 1d | 1d | 2898 | 0.21 | same period | + | +0.0145 % (2.11) |
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins_1d | night3_ichimoku_run | 1d | 1d | 2898 | 0.12 | same period | + | +0.0200 % (2.76) |
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d | night_006_run | 1d | 1d | 2898 | 0.11 | same period | - | +0.0269 % (3.69) |
