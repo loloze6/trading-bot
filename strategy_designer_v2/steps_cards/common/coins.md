@@ -1,7 +1,7 @@
 # Coins: the universe, the categories, the final draw
 
-(Shared definition, read by `data_use.md`. Written 2026-11-26, the operator's go on `data_use.md`'s design. Not yet
-read by any step: the research still runs on its 6 coins until `data_use.md` is built.)
+(Shared definition, read by `data_use.md`. Written 2026-11-26, the operator's go on `data_use.md`'s design; the research
+draw among drawable coins, 2026-11-27, next steps A12. Code: `common/coins.py`.)
 
 ## Business objective, one question
 **Which coins may the research, the portfolio and the final test use, so that every kind of crypto is represented and
@@ -52,9 +52,25 @@ Left out on 2026-11-26 by rule 3: STORJ (14k USD a day), OCEAN (18k), YFI (23k),
 XMR, CRV, AAVE, INJ, LDO, ONDO, FIL, GRT, TAO, DOGE, PEPE.
 
 ## The research draw, at each run
-8 coins from the portfolio group: first one per category, drawn at random within it (the categories in the table's
-order, coins sorted by name), then an 8th drawn among the rest; `random.Random(<the run's name>)`; the 8 coins written in
-the run's header. Every category has at least one coin in the portfolio group (AI: TAO).
+8 coins among the **drawable** coins of the portfolio group (`data_use.md`, 1.3: a coin that can be tested on at least
+half of the check half's windows, counted with the market-profile detector's warm-up): first one per category that has
+a drawable coin, drawn at random within it (the categories in the table's order, coins sorted by name), then the rest
+drawn among all the remaining drawable coins; `random.Random(<the run's name>)`; the 8 coins and the count they were
+drawn from are written in the run's `data_use.json`. A run already started (its `data_use.json` exists) keeps its coins.
+
+**Drawable on 2026-11-27 (19 of 25, 6 categories; check-half windows testable, of 14):**
+| Category | Drawable | Not drawable |
+|---|---|---|
+| Payments | BTC 14, LTC 14, BCH 14, XRP 13 | |
+| Platforms | ETH 14, ADA 14, ATOM 14, ALGO 13, TRX 12, DOT 11, AVAX 7 | NEAR 6, SUI 3 |
+| Privacy | ZEC 14, XMR 14 | |
+| Finance | CRV 11, AAVE 10, INJ 8 | LDO 6, ONDO 0 |
+| Infrastructure | FIL 11, GRT 10 | |
+| AI | | TAO 0 |
+| Meme | DOGE 13 | PEPE 3 |
+
+So a run draws 6 coins by category and 2 among the 13 left; DOGE is in every run (the only drawable meme coin) and no
+run has an AI coin. The list is counted again at each run's start (a coin becomes drawable as its history grows).
 
 ## Data notes (the data session, `runs/DATA_COINS_RUN.md`)
 XLM misses 177 days in a row (August 2017 to February 2018); DASH and ETC 1 day each; BCH's first day has a bad price

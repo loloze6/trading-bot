@@ -18,6 +18,7 @@ idea: <the idea, in one or two sentences>
 consequence: <what it means for a trader, in one sentence>
 name: <three to five words>
 from: <the findings it rests on, for example F1, F3>
+side: <what the idea bets: long, short or both>
 profile: <only when the idea names a market profile: its trend, its agitation or both, such as falling agitated, or
          choppy. Name one only when your findings show the effect lives there>
 data: <only if your idea is about other data than the backtest's: instruments: ...; bar: ...; period: ...>

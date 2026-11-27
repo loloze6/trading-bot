@@ -38,6 +38,7 @@ idea: <what we would see, one or two sentences of plain prose>
 consequence: <the consequence of the theory, or the answer to the brief's question, that the idea shows, one line>
 short-name: <three to five lowercase words joined by hyphens>
 index-line: <the idea in one short sentence, at most 25 words>
+side: <what the idea bets: long, short or both>
 profile: <the idea's market profile: its trend, its agitation or both, such as falling agitated, or choppy; only when
           the idea names one, otherwise leave this line out>
 bar: 1h   (only when the brief's header gives no bar size and what the idea says we would see cannot be seen on daily

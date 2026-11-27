@@ -12,7 +12,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parent
 sys.path.insert(0, str(HERE))
-from lib import header_fields, profile_name, write_atomic, utc_now, PROFILES  # noqa: E402
+from lib import header_fields, profile_name, side_name, write_atomic, utc_now, PROFILES  # noqa: E402
 
 SIDES = ("long", "short")
 BOXES = [(p, s) for p in PROFILES for s in SIDES]          # the twelve boxes, in the map's order
@@ -59,7 +59,8 @@ def theme_note(run, steps=STEPS):
     return (f"\n[THE MARKET AND SIDE OF THIS RESEARCH: PART OF THE BRIEF'S THEME]\n"
             f"This research is about one market profile and one side: {p} markets, {s} positions. They are part of the "
             f"brief's theme. Every idea you write keeps to them: its situation is in a {p} market, and it says so in a "
-            f"`profile: {p}` line; its position is {s} only. A pattern off the brief's theme is looked for in {p} markets, "
+            f"`profile: {p}` line; its position is {s} only, and it says so in a `side: {s}` line. A pattern off the "
+            f"brief's theme is looked for in {p} markets, "
             f"for {s} positions, only. A brief written for this research has both in its header: `profile: {p}` and "
             f"`side: {s} only`.\n")
 
@@ -83,21 +84,32 @@ def brief_refusal(text, box):
     return "; ".join(why) or None
 
 
-# --- visibility: whether an idea acts in the box ----------------------------------------------------------------
+# --- the idea's side, and whether an idea acts in the box (visibility) ---------------------------------------------
 
-def brief_side(brief_id, run, steps=STEPS):
-    """The sides an idea's brief allows, as step 3 reads them (`make_test_plan.py`, `brief_side`): the run's copy of the
-    brief, else step 1's lists; no side line (or no brief found) allows both."""
+def brief_file(brief_id, run, steps=STEPS):
+    """An idea's brief: the run's copy, else step 1's lists (the first by name); None when it is not found."""
     hits = [steps / "01_brief" / run / "briefs" / f"{brief_id}.md"] + sorted(steps.glob(f"01_brief/*/briefs/{brief_id}.md"))
-    f = next((h for h in hits if h.exists()), None)
-    return (brief_sides(f.read_text()) if f else ()) or SIDES
+    return next((h for h in hits if h.exists()), None)
+
+
+def idea_side(text, run, steps=STEPS):
+    """What an idea (its file's text) bets (common/target_box.md, "The idea's side"): its own `side:` line (long, short
+    or both); else, for an idea written before that line existed, its brief's "long only" or "short only"; else None
+    (unknown). A brief's "long and short", or no side line, tells nothing of one idea's bet."""
+    h = header_fields(text)
+    own = side_name(h.get("side"))
+    if own:
+        return own
+    f = brief_file(h.get("brief", ""), run, steps)
+    sides = brief_sides(f.read_text()) if f else ()
+    return sides[0] if len(sides) == 1 else None
 
 
 def in_box(text, run, box, steps=STEPS):
-    """Whether an idea (its file's text) acts in the box: its `profile:` line holds the box's profile, and its brief's
-    side includes the box's side. Recorded, never used to refuse or filter (the operator, 2026-11-27)."""
-    h = header_fields(text)
-    return holds(profile_name(h.get("profile")), box["profile"]) and box["side"] in brief_side(h.get("brief", ""), run, steps)
+    """Whether an idea (its file's text) acts in the box: its `profile:` line holds the box's profile, and its own side
+    is the box's side. Recorded, never used to refuse or filter (the operator, 2026-11-27)."""
+    return (holds(profile_name(header_fields(text).get("profile")), box["profile"])
+            and idea_side(text, run, steps) == box["side"])
 
 
 # --- the ideas already written in the box (next steps B13) ------------------------------------------------------
@@ -111,8 +123,9 @@ def answered(steps=STEPS):
 
 
 def box_ideas(run, box, steps=STEPS):
-    """The untested ideas of every other run that name the box exactly (common/target_box.md, B13): [(their run, the
-    idea file)], one per id (the first run by name), none already written in `run`."""
+    """The untested ideas of every other run that name the box exactly and whose side is known and is the box's
+    (common/target_box.md, B13 and "The idea's side"): [(their run, the idea file)], one per id (the first run by
+    name), none already written in `run`."""
     sys.path.insert(0, str(steps / "orchestration" / "select_next" / "helper"))
     from select_next import written_in
     done, have, out = answered(steps), {f.stem for f in written_in(run, steps)}, {}
@@ -124,8 +137,8 @@ def box_ideas(run, box, steps=STEPS):
         for f in written_in(r, steps):
             if f.stem in done or f.stem in have or f.stem in out:
                 continue
-            h = header_fields(f.read_text())
-            if profile_name(h.get("profile")) == box["profile"] and box["side"] in brief_side(h.get("brief", ""), r, steps):
+            text = f.read_text()
+            if profile_name(header_fields(text).get("profile")) == box["profile"] and idea_side(text, r, steps) == box["side"]:
                 out[f.stem] = (r, f)
     return list(out.values())
 

@@ -58,11 +58,12 @@ def refusal(version):
 
 def run_book(r, python, data=coins.DATA):
     """One strategy, its plan unchanged, on every final coin over step 9's windows (common_record.backtest, the same
-    runner and the same 90-day rule as the common record), then its chart file. Returns the coins that gave bars."""
+    runner and the same count of usable windows as the common record: common/data_use.md, section 3), then its chart file. Returns the coins that gave bars."""
     plan = cb.STEPS / "03_test_plan" / r["run"] / "plans" / f"{r['id']}.md"
     dest = up.record_dir(r, group())
     windows = json.loads(Path(coins.WINDOWS).read_text())
-    cr.backtest(plan, python, dest, windows, coins.FINAL, usable=lambda c, start: coins.usable(c, start, data=data))
+    cr.backtest(plan, python, dest, windows, coins.FINAL, usable=lambda c, start: coins.usable(c, start, data=data),
+                data=data)
     subprocess.run([sys.executable, cb.STEPS / "04_backtest/helper/chart_files.py", dest])
     chart = dest / "chart_bars.csv.gz"
     return sorted(pd.read_csv(chart).coin.unique()) if chart.exists() else []

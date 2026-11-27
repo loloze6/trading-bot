@@ -60,16 +60,31 @@ def test_a_boxed_run_s_brief_names_a_profile_and_a_side_holding_the_box():
     assert "not long" in tb.brief_refusal("---\nprofile: falling calm\nside: short only\n---\nx", box)
 
 
-def test_whether_an_idea_acts_in_the_box_is_read_from_its_lines(tmp_path):
+def test_whether_an_idea_acts_in_the_box_is_read_from_its_own_profile_and_side(tmp_path):
     box = {"profile": "rising agitated", "side": "long"}
-    idea = lambda prof: "---\nbrief: 003_b\n" + (f"profile: {prof}\n" if prof else "") + "---\nIdea: x.\n"
+    idea = lambda prof, side="long": ("---\nbrief: 003_b\n" + (f"profile: {prof}\n" if prof else "")
+                                      + (f"side: {side}\n" if side else "") + "---\nIdea: x.\n")
     for prof, inside in (("rising agitated", True), ("rising", True), ("agitated", True), ("rising calm", False),
                          ("choppy", False), (None, False)):
-        assert tb.in_box(idea(prof), "a_run", box, tmp_path) is inside, prof           # no brief found: both sides
+        assert tb.in_box(idea(prof), "a_run", box, tmp_path) is inside, prof
+    for side in ("short", "both", None, "long only"):                 # not the box's side, or unknown: outside
+        assert not tb.in_box(idea("rising", side), "a_run", box, tmp_path), side
+
+
+def test_an_idea_s_side_is_its_own_line_else_its_brief_s_only(tmp_path):
     d = tmp_path / "01_brief" / "b_run" / "briefs"
     d.mkdir(parents=True)
-    (d / "003_b.md").write_text("---\nside: short only\n---\nA theory.\n")
-    assert not tb.in_box(idea("rising"), "b_run", box, tmp_path)
+    (d / "003_short.md").write_text("---\nside: short only\n---\nA theory.\n")
+    (d / "004_both.md").write_text("---\nside: long and short\n---\nA theory.\n")
+    (d / "005_none.md").write_text("---\n---\nA theory.\n")
+    idea = lambda brief, side=None: f"---\nbrief: {brief}\n" + (f"side: {side}\n" if side else "") + "---\nIdea: x.\n"
+    assert tb.idea_side(idea("003_short", "long"), "b_run", tmp_path) == "long"        # its own line first
+    assert tb.idea_side(idea("004_both", "both"), "b_run", tmp_path) == "both"
+    assert tb.idea_side(idea("003_short"), "b_run", tmp_path) == "short"               # written before the line: the brief's "only"
+    assert tb.idea_side(idea("003_short", "short only"), "b_run", tmp_path) == "short"  # a brief's line copied by step 2, before
+    assert tb.idea_side(idea("004_both"), "b_run", tmp_path) is None                   # "long and short": unknown
+    assert tb.idea_side(idea("005_none"), "b_run", tmp_path) is None                   # no side line: unknown
+    assert tb.idea_side(idea("009_missing"), "b_run", tmp_path) is None                # no brief found: unknown
 
 
 def test_the_run_s_box_is_written_once_and_kept(tmp_path, monkeypatch):

@@ -68,6 +68,12 @@ and 7.g may also write discoveries: findings off the brief's theme, each written
    - Without it: an idea cannot be tested.
    - **Id:** `<tested idea id>.<line letter><n>_<short name>`, for example `002-03_price-cross-above-long-sma.d1_above-average-with-rising-month`.
    - **Its profile** (header `profile:`, topic 49): when the idea names one; a same-idea-on block copies the tested idea's.
+   - **Its side** (header `side:`, next steps A12, 2026-11-27): `long`, `short` or `both`, what the idea bets
+     (`../common/idea_definition.md`); mandatory in every idea block; a same-idea-on block copies the tested idea's (none
+     when that idea was written before the line).
+   - **Its instruments in the new data use:** the record's research coins (its `data_use.json`), not the plan's: the
+     backtest ran on them. A discovery's "Seen on" line says the same (pilot A4: it named the plan's coins, three of them
+     final-group coins, and step 1 copied them into brief 087).
 4b. **One file per discovery** (`discoveries/<id>.md`, lines 7.e and 7.g; topic 50): a source for step 1 in plain text:
    the pattern, what it would mean for a trader, where it was seen (bar size, coins, profile), the line and backtest
    that found it, and the findings it rests on. Ids are numbered with the line's ideas.
@@ -113,7 +119,7 @@ and 7.g may also write discoveries: findings off the brief's theme, each written
 
 **One call:** the same model explores, writes its findings, then its ideas (chosen over an analyst-then-deducer split, see "Variants compared").
 
-**Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas"; a `same-idea-on:` block (the tested idea unchanged, on other data) whose data is not in `../common/data_available.md`; a `profile:` line that names no market profile (`../common/market_profile.md`). For that block, code copies the tested idea's Idea and Consequence into the idea file. A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year (a month name next to a year, a quarter with its year, a year and month written as numbers): periods are named by window or by year. The verdict and check text given to the model carry no path lines.
+**Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas"; a `same-idea-on:` block (the tested idea unchanged, on other data) whose data is not in `../common/data_available.md`; a `profile:` line that names no market profile (`../common/market_profile.md`); an idea without a `side:` line saying long, short or both. For that block, code copies the tested idea's Idea and Consequence into the idea file. A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year (a month name next to a year, a quarter with its year, a year and month written as numbers): periods are named by window or by year. The verdict and check text given to the model carry no path lines.
 
 **Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis.
 

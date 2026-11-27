@@ -207,6 +207,16 @@ def profile_name(text):
     return " ".join(t + a)
 
 
+IDEA_SIDES = ("long", "short", "both")      # what an idea bets (common/idea_definition.md), on its `side:` line
+
+
+def side_name(text):
+    """An idea's side from its `side:` line: "long", "short" or "both"; None for anything else (no line, a brief's
+    "long only", an unknown word)."""
+    v = (text or "").strip().lower().rstrip(".")
+    return v if v in IDEA_SIDES else None
+
+
 # What step 3 reads of an idea file (operator, 2026-11-14): the same subset whatever step wrote it (step 2 or step 7).
 # Anything else (a step 7 idea's "Why", with numbers measured on the data; a source line) never reaches a model that
 # plans or analyses the idea's test.

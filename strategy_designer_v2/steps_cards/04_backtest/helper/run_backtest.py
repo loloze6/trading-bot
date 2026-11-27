@@ -6,7 +6,8 @@ Options: --out-root (default: ../backtests next to this folder), --force (rerun 
 has changed), --windows FILE (a JSON list of windows run in place of the plan's folds: the same plan on other dates),
 --coins "ADA, DOGE" (these coins in place of the plan's: the same plan on other coins, common/unseen_coins.md),
 --data-use FILE (a run's data_use.json, common/data_use.md: the run's research coins on the research windows, in place
-of the plan's coins and folds; a coin is left out of a window by data_use.md's section 3, counted in run.md).
+of the plan's coins and folds; a coin is left out of a window by data_use.md's section 3 (its first 90 days, a history
+shorter than the plan's warm-up, a hole), before the engine runs, counted in run.md).
 
 What it does, in order:
   1. Reads the plan's header: coins, bar size, fold, outcome. A plan whose outcome is untestable or missing-components
@@ -311,14 +312,17 @@ def main():
     # The calls at the same time, as many as the machine has cores: one call per coin and fold (change C, 2026-11-20:
     # 6 coins on 4 cores ran in two waves when a call held a whole coin). Each call is a separate process with its own
     # folders. The record is written in the coins' and windows' order, whichever call finishes first.
-    # The new data use: a coin is left out of a window by data_use.md's section 3 (its first 90 days, a hole of more
-    # than one day), decided from its daily file's dates before the engine runs; the windows kept keep their numbers.
+    # The new data use: a coin is left out of a window by data_use.md's section 3 (its first 90 days, a history shorter
+    # than the warm-up the wrapper loads for this plan, a hole of more than one day), decided from its daily file's
+    # dates before the engine runs; the windows kept keep their numbers.
     kept = {s: list(range(1, len(windows) + 1)) for s in symbols} if windows is not None else {}
     left = {s: [] for s in symbols}
+    warmup = coin_rules.plan_warmup(args.python, config_path, bar) if du else None
     for symbol, base in zip(symbols, coins(instruments)):
         if du:
             days = coin_rules.dates(base)
-            why = [coin_rules.left_out(base, w["test"]["start"], w["test"]["end"], days=days) for w in windows]
+            why = [coin_rules.left_out(base, w["test"]["start"], w["test"]["end"], days=days, warmup_seconds=warmup)
+                   for w in windows]
             kept[symbol] = [k for k, y in enumerate(why, 1) if y is None]
             left[symbol] = [(k, y) for k, y in enumerate(why, 1) if y is not None]
     with ThreadPoolExecutor(max_workers=max(1, min(len(symbols), cores()))) as pool:

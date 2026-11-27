@@ -57,7 +57,8 @@ def write_brief(run, theme=None, source=None, model=None):
     j = Journal(ORCH / "run_brief" / run, run, "step1_" + re.sub(r"\W+", "-", (theme or Path(source).stem))[:40].strip("-"))
     out, _ = j.step("step1_brief", [STEPS / "01_brief/helper/make_brief.py", *what, "--briefs-dir", BRIEFS]
                     + (["--model", model] if model else [])
-                    + (["--run", run] if target_box.run_box(run) else []),     # a boxed run: the box in its theme
+                    # a boxed run: the box in its theme; a run in the new data use: its coins as the brief's instruments
+                    + (["--run", run] if target_box.run_box(run) or coins.data_use(run) else []),
                     [BRIEFS / "INDEX.md"])
     nr, ai, b = NOT_RESEARCHABLE.search(out), ALREADY_INDEXED.search(out), BRIEF_LINE.search(out)
     if nr:
@@ -89,9 +90,10 @@ def write_ideas(run, brief, model=None):
     return ideas, (None if ideas else f"step 2 wrote no idea: {why.group(1) if why else ' '.join(out.split())[-300:]}")
 
 
-def start_data_use(run, version):
+def start_data_use(run, version, python=None):
     """A run started in the new data use (--data-use 2) gets its data_use.json once (common/data_use.md): its 8 research
-    coins (drawn by the run's name) and the research windows. Resumed, the file stays as written. Refused: a run that
+    coins (drawn by the run's name among the drawable coins, counted with the bot's own warm-up: `python`, the venv) and
+    the research windows. Resumed, the file stays as written: a run already started keeps its coins. Refused: a run that
     has tested ideas in the old data use (its plans would be backtested on two kinds of data), or one whose file names
     another version. Returns the run's data use (None: the old one)."""
     du, p = coins.data_use(run), coins.data_use_file(run)
@@ -104,7 +106,7 @@ def start_data_use(run, version):
     if (ORCH / "run_idea" / run / "table.json").exists():
         sys.exit(f"{run}: the run has tested ideas in the old data use; start a new run for data use {version}")
     p.parent.mkdir(parents=True, exist_ok=True)
-    du = coins.new_data_use(run)
+    du = coins.new_data_use(run, python)
     write_atomic(p, json.dumps(du, indent=1) + "\n")
     return du
 
@@ -134,7 +136,7 @@ def main():
     if args.budget is not None and args.budget <= 0:
         sys.exit("a budget is a positive number of USD")
 
-    du = start_data_use(args.run, args.data_use)
+    du = start_data_use(args.run, args.data_use, args.python)
     if du:
         print(f"{args.run}: data use {du['version']}: research coins {', '.join(du['research_coins'])}; windows {du['windows']}")
     box = target_box.start(args.run, args.target_box)

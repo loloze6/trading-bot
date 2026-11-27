@@ -26,28 +26,28 @@ def test_no_period_by_month_and_year():
 
 
 def test_an_idea_rests_on_existing_findings():
-    ideas, none = a.parse_ideas("idea: X rises.\nconsequence: buy.\nname: x rises\nfrom: F1\n", F)
+    ideas, none = a.parse_ideas("idea: X rises.\nconsequence: buy.\nname: x rises\nfrom: F1\nside: long\n", F)
     assert ideas[0]["refs"] == ["F1"] and none is None
     with pytest.raises(ValueError, match="do not exist"):
-        a.parse_ideas("idea: X rises.\nconsequence: buy.\nfrom: F9\n", F)
+        a.parse_ideas("idea: X rises.\nconsequence: buy.\nfrom: F9\nside: long\n", F)
     ideas, none = a.parse_ideas("no-ideas: the effect is not there\n", F)
     assert ideas == [] and none == "the effect is not there"
 
 
 def test_an_idea_may_name_one_market_profile():
     # topic 49: one of the six profiles, or none; any other text is refused
-    ideas, _ = a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nprofile: falling, agitated\n", F)
+    ideas, _ = a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nside: long\nprofile: falling, agitated\n", F)
     assert a.profile_name(ideas[0]["profile"]) == "falling agitated"
-    ideas, _ = a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nprofile: none\n", F)
+    ideas, _ = a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nside: long\nprofile: none\n", F)
     assert a.profile_name(ideas[0]["profile"]) is None
     with pytest.raises(ValueError, match="a market profile"):
-        a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nprofile: a bear market\n", F)
+        a.parse_ideas("idea: X rebounds.\nconsequence: buy.\nname: x\nfrom: F1\nside: long\nprofile: a bear market\n", F)
 
 
 def test_an_idea_off_the_theme_is_a_discovery_written_for_step_1():
     # topic 50: lines 7.e and 7.g mark an idea `theme: discovery`; it is written as a source for a new brief
-    ideas, _ = a.parse_ideas("idea: A week's gain carries into Saturday.\nconsequence: buy Friday.\nname: x\nfrom: F1\n"
-                             "theme: discovery\n\nidea: X rebounds.\nconsequence: buy.\nname: y\nfrom: F1\ntheme: on\n", F)
+    ideas, _ = a.parse_ideas("idea: A week's gain carries into Saturday.\nconsequence: buy Friday.\nname: x\nfrom: F1\nside: long\n"
+                             "theme: discovery\n\nidea: X rebounds.\nconsequence: buy.\nname: y\nfrom: F1\nside: long\ntheme: on\n", F)
     assert [a.is_discovery(g) for g in ideas] == [True, False]
     src = a.discovery_source(ideas[0], {"bar": "1d", "instruments": "BTC, ETH"}, {"id": "7.g", "name": "patterns"},
                              "031-01_x_1d", {"idea": "031-01_x", "brief": "031_y"}, "\n- F1: " + F["F1"])
@@ -146,3 +146,17 @@ def test_lines_e_and_g_read_the_profile_map():
         t = (Path(a.STEPS) / line / "helper" / "line_prompt.md").read_text()
         assert "{{PROFILE_MAP}}" in t and "[THE PROFILE MAP]" in t
     assert "{{PROFILE_MAP}}" not in a.with_common((Path(a.STEPS) / "07g_patterns" / "helper" / "line_prompt.md").read_text().replace("{{PROFILE_MAP}}", a.profile_map()))
+
+
+def test_every_idea_states_its_side():
+    """A12 (common/idea_definition.md): long, short or both, on its own line; missing or unknown: refused. The tested
+    idea on other data needs none: code copies the tested idea's."""
+    block = "idea: X falls.\nconsequence: sell.\nname: x\nfrom: F1\n"
+    ideas, _ = a.parse_ideas(block + "side: Short\n", F)
+    assert a.side_name(ideas[0]["side"]) == "short"
+    for bad in ("", "side: short only\n", "side: down\n"):
+        with pytest.raises(ValueError, match="side"):
+            a.parse_ideas(block + bad, F)
+    ideas, _ = a.parse_ideas("same-idea-on: instruments: BTC, ETH; period: folds A, B, C, D\nname: x\nfrom: F1\n", F)
+    assert "side" not in ideas[0]
+

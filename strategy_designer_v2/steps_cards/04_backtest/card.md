@@ -114,15 +114,18 @@ record on other coins is not the plan's own). Used to test an idea on coins its 
 **The new data use** (`--data-use FILE`, 2026-11-26, `runs/BUILD_A4_RESEARCH.md`; `common/data_use.md`): the run's
 `data_use.json` decides the data in place of the plan's coins and folds: its 8 research coins, on the windows of its
 windows file (`windows/research_2016.json`, 32 windows, `w1` to `w32` in the file's order), one call per coin. Before the
-engine runs, a coin is left out of a window by `data_use.md`'s section 3 (`common/coins.py`, `left_out`): the window
-starts before the coin's 91st day, or the coin's daily file misses more than one day in a row inside the window (its
-edges included); a window left out keeps its number (the halves and step 6's "one window left out" read the same number
+engine runs, a coin is left out of a window by `data_use.md`'s section 3 (`common/coins.py`, `left_out`: one count,
+the same in steps 9 and 12): the window starts before the coin's 91st day; or the coin's history is shorter than the
+warm-up the wrapper will load for this plan before the window (twice the bars the plan's strategy needs, asked from
+the bot's own strategy class on the plan's config, `coins.plan_warmup`; next steps A12, 2026-11-27, after pilot A4's 28
+windows refused by the engine for a short history); or the coin's daily file misses more than one day in a row inside
+the window (its edges included); a window left out keeps its number (the halves and step 6's "one window left out" read the same number
 as the same dates on every coin). Left-out windows are counted in `run.md` (per coin, with the reason) and on the index
-line (`ADAUSD 30/32 (2 left out by the data use)`); the engine's own reasons (warm-up, dates not fetched) are "not run",
-as always. The record holds a copy of `data_use.json` (steps 5 and 7 read their halves from it); its data line names
+line (`ADAUSD 30/32 (2 left out by the data use)`); anything else the engine refuses is "not run" with the engine's
+reason, as always. The record holds a copy of `data_use.json` (steps 5 and 7 read their halves from it); its data line names
 `windows research_2016, data use 2`. Passed by `run_idea` for a run that holds `orchestration/loop/<run>/data_use.json`
 (the one place that decides a run's backtest data). **Why this can't leak:** the left-out rule reads the coin's daily
-file's dates only, never a price, and decides before any bar is read; each window runs as before, with its own warm-up.
+file's dates and the plan's config (how many bars its strategy needs), never a price, and decides before any bar is read; each window runs as before, with its own warm-up.
 
 The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 

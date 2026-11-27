@@ -177,7 +177,7 @@ def test_each_discovery_becomes_a_brief_once(tmp_path, monkeypatch):
 def test_a_boxed_run_s_turns_say_whether_the_idea_acts_in_the_box(tmp_path):
     """The operator, 2026-11-27 (common/target_box.md): visibility, not control. Nothing in a run without a box."""
     f = tmp_path / "003-01_a.md"
-    f.write_text("---\nbrief: 003_b\nprofile: falling\n---\nIdea: a.\n")
+    f.write_text("---\nbrief: 003_b\nprofile: falling\nside: long\n---\nIdea: a.\n")
     assert loop.box_field("a_run", f, tmp_path) == {}
     box = tmp_path / "orchestration" / "loop" / "a_run" / "target_box.json"
     box.parent.mkdir(parents=True)
@@ -185,23 +185,30 @@ def test_a_boxed_run_s_turns_say_whether_the_idea_acts_in_the_box(tmp_path):
     assert loop.box_field("a_run", f, tmp_path) == {"in_box": True}
     box.write_text(json.dumps({"profile": "rising calm", "side": "long"}))
     assert loop.box_field("a_run", f, tmp_path) == {"in_box": False}
+    box.write_text(json.dumps({"profile": "falling calm", "side": "short"}))       # the idea bets long: outside
+    assert loop.box_field("a_run", f, tmp_path) == {"in_box": False}
 
 
 def test_a_boxed_run_takes_the_untested_ideas_that_name_its_box_exactly(tmp_path):
-    """Next steps B13 (common/target_box.md): the untested ideas of other runs naming the box word for word, on a side
-    their brief allows, copied with `taken-from`, their brief too; once; nothing without a box."""
-    def idea(run, iid, prof, brief="010_b"):
+    """Next steps B13 and A12 (common/target_box.md): the untested ideas of other runs naming the box word for word,
+    whose own side is known and is the box's (their `side:` line, else their brief's "only"), copied with `taken-from`,
+    their brief too; once; nothing without a box."""
+    def idea(run, iid, prof, brief="010_b", side=None):
         d = tmp_path / "02_ideation" / run / "ideas"
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"{iid}.md").write_text(f"---\nbrief: {brief}\n" + (f"profile: {prof}\n" if prof else "") + f"---\nIdea: {iid}.\n")
+        (d / f"{iid}.md").write_text(f"---\nbrief: {brief}\n" + (f"profile: {prof}\n" if prof else "")
+                                     + (f"side: {side}\n" if side else "") + f"---\nIdea: {iid}.\n")
     def brief(run, bid, side=None):
         d = tmp_path / "01_brief" / run / "briefs"
         d.mkdir(parents=True, exist_ok=True)
         (d / f"{bid}.md").write_text("---\n" + (f"side: {side}\n" if side else "") + "---\nA theory.\n")
     brief("a_run", "010_b"); brief("a_run", "011_s", "short only")
-    idea("a_run", "010-01_exact", "falling calm"); idea("a_run", "010-02_wider", "falling"); idea("a_run", "010-03_none", None)
-    idea("a_run", "010-04_tested", "falling calm"); idea("a_run", "011-01_short", "calm falling", brief="011_s")
-    idea("b_run", "010-01_exact", "falling calm")                                   # the same id again: once, from a_run
+    idea("a_run", "010-01_exact", "falling calm", side="long"); idea("a_run", "010-02_wider", "falling", side="long")
+    idea("a_run", "010-03_none", None, side="long"); idea("a_run", "010-04_tested", "falling calm", side="long")
+    idea("a_run", "010-05_unknown-side", "falling calm")            # no side line, a brief with none: unknown, not taken
+    idea("a_run", "010-06_bets-short", "falling calm", side="short")  # in the box's profile, on the other side
+    idea("a_run", "011-01_short", "calm falling", brief="011_s")    # written before the side line: its brief's "short only"
+    idea("b_run", "010-01_exact", "falling calm", side="long")                      # the same id again: once, from a_run
     t = tmp_path / "orchestration" / "run_idea" / "a_run" / "table.json"
     t.parent.mkdir(parents=True)
     t.write_text(json.dumps([{"idea": "010-04_tested", "step5": "confirmed (+2.1)"}]))
@@ -217,4 +224,4 @@ def test_a_boxed_run_takes_the_untested_ideas_that_name_its_box_exactly(tmp_path
     lines = [json.loads(l) for l in box.with_name("loop.jsonl").read_text().splitlines()]
     assert [(l["taken"], l["from"]) for l in lines] == [("010-01_exact", "a_run")]
     box.write_text(json.dumps({"profile": "falling calm", "side": "short"}))
-    assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 1          # 011-01: short only
+    assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 2          # 010-06 and 011-01: short

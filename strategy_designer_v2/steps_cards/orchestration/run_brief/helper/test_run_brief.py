@@ -50,14 +50,18 @@ def test_a_run_in_the_new_data_use_gets_its_file_once(tmp_path, monkeypatch):
     monkeypatch.setattr(rb, "ORCH", tmp_path)
     assert rb.start_data_use("a_run", None) is None                  # without the flag: nothing written, the old data use
     assert not (tmp_path / "loop" / "a_run").exists()
-    du = rb.start_data_use("a_run", 2)
-    assert json.loads((tmp_path / "loop" / "a_run" / "data_use.json").read_text()) == du == rb.coins.new_data_use("a_run")
-    assert rb.start_data_use("a_run", 2) == du and rb.start_data_use("a_run", None) == du   # resumed: kept as written
+    drawn = []
+    monkeypatch.setattr(rb.coins, "new_data_use", lambda run, python: drawn.append((run, python)) or
+                        {"version": 2, "research_coins": ["BTC"], "windows": "w.json"})
+    du = rb.start_data_use("a_run", 2, "venv_py")
+    assert json.loads((tmp_path / "loop" / "a_run" / "data_use.json").read_text()) == du and drawn == [("a_run", "venv_py")]
+    assert rb.start_data_use("a_run", 2, "venv_py") == du and rb.start_data_use("a_run", None) == du   # resumed: kept as written
+    assert drawn == [("a_run", "venv_py")]                           # a run already started keeps its coins: no new draw
     (tmp_path / "run_idea" / "b_run").mkdir(parents=True)
     (tmp_path / "run_idea" / "b_run" / "table.json").write_text("[]")
     import pytest
     with pytest.raises(SystemExit):                                  # ideas tested in the old data use: refused
-        rb.start_data_use("b_run", 2)
+        rb.start_data_use("b_run", 2, "venv_py")
 
 
 def test_a_target_box_not_one_of_twelve_is_refused_before_any_call(tmp_path):
@@ -85,8 +89,9 @@ def test_a_boxed_run_refuses_a_brief_that_does_not_name_its_box(tmp_path):
         shutil.rmtree(rb.ORCH / "loop" / run_name, ignore_errors=True)
 
 
-def test_step_1_is_told_the_run_only_in_a_boxed_run(monkeypatch, tmp_path):
-    """B2.1: step 1 gets `--run` (so the box is in its theme) only when the run has a box: otherwise its call as before."""
+def test_step_1_is_told_the_run_only_in_a_boxed_run_or_in_the_new_data_use(monkeypatch, tmp_path):
+    """Step 1 gets `--run` when the run has a box (B2.1: the box in its theme) or a data_use.json (A12: its research
+    coins as the brief's instruments); otherwise its call as before."""
     seen = []
 
     class J:
@@ -98,9 +103,11 @@ def test_step_1_is_told_the_run_only_in_a_boxed_run(monkeypatch, tmp_path):
             return "not researchable: x\n", None
     monkeypatch.setattr(rb, "Journal", J)
     monkeypatch.setattr(rb.target_box, "run_box", lambda run: {"profile": "falling calm", "side": "long"} if run == "box_run" else None)
+    monkeypatch.setattr(rb.coins, "data_use", lambda run: {"version": 2, "research_coins": ["BTC"]} if run == "du_run" else None)
     rb.write_brief("plain_run", theme="t")
     rb.write_brief("box_run", theme="t")
-    assert "--run" not in seen[0] and seen[1][-2:] == ["--run", "box_run"]
+    rb.write_brief("du_run", theme="t")
+    assert "--run" not in seen[0] and seen[1][-2:] == ["--run", "box_run"] and seen[2][-2:] == ["--run", "du_run"]
 
 
 def test_a_brief_s_ideas_name_it_in_their_header(tmp_path):
