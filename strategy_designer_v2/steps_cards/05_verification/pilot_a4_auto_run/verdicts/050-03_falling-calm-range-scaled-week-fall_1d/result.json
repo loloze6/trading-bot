@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move in the short direction",
+    "value": 0.0007439123801780596,
+    "statistic": {
+      "name": "t of the mean (per-day summed deviations)",
+      "value": 0.18926775033401716
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-|forecast| half minus smaller half",
+    "value": 0.0012070297505235947,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 414,
+    "cases": 649
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (or its sign disagrees with the mean). No effect (common/verdicts.md): t in the idea's direction +0.189 (below 1), 414 cases (30 needed).",
+  "reading": "Situation = 7-day close-to-close return below 0 inside the window (the raw scaled_fall sign where the 7 prior bars are not in the window) on bars whose regime is 'trending' (the profile vetoes give 'chop'), side short; cases are short-side bets of >= 2 forecast points, the first one per 3-bar grid cell from each window's first row; the mean unusual move is the mean over cases and its t is over per-day summed deviations; the median split puts |forecast| above the median in the larger half, the rest in the smaller.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.189 (below 1), 414 cases (30 needed)",
+    "t_in_idea_direction": 0.18926775033401716,
+    "cases": 414
+  }
+}
