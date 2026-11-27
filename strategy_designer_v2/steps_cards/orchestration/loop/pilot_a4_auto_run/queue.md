@@ -1,17 +1,17 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 8.02 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 9.90 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 060-02_falling-calm-low-to-close-fade | step 2 | 0 | 0.0896 | 0.0896 | candidate |
-| 2 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 3 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 4 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 5 | 040-02.b1_calm-downtrend-falls-continue-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 6 | 050-01.b1_calm-downtrend-fall-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 7 | 050-02.b1_calm-downtrend-week-rise-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 8 | 050-04.b1_range-scaled-week-rise-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 1 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 2 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 3 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 4 | 040-02.b1_calm-downtrend-falls-continue-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 5 | 050-01.b1_calm-downtrend-fall-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 6 | 050-02.b1_calm-downtrend-week-rise-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 7 | 050-04.b1_range-scaled-week-rise-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 8 | 060-02.c1_falling-calm-surge-continuation | 7.c | 1 | 0.1818 | 0.0909 | candidate |
 | 9 | 061-01.c1_falling-calm-scaled-fall-rebound | 7.c | 1 | 0.1818 | 0.0909 | candidate |
 | 10 | 064-01.c1_calm-decline-big-rise-follows-through | 7.c | 1 | 0.1818 | 0.0909 | candidate |
 | 11 | 086-02.c1_calm-decline-five-day-continuation | 7.c | 1 | 0.1818 | 0.0909 | candidate |
@@ -60,14 +60,15 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | 54 | 060-02.d1.d2.g2_calm-fall-volume-dry-up | 7.g | 5 | 0.1218 | 0.0203 | candidate |
 | 55 | 058-02.b1.b2.b1.b2.e2.g2_falling-calm-low-continuation | 7.g | 6 | 0.1218 | 0.0174 | candidate |
 | 56 | 058-01.g2.b1.d2.b1.d2.d2.g2_calm-slide-bounce-fades | 7.g | 7 | 0.1218 | 0.0152 | candidate |
-| - | 050-02_falling-calm-scaled-week-rise-continuation | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 inconclusive (+1.50); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
-| - | 050-03_falling-calm-range-scaled-week-fall | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (+0.19); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
-| - | 050-04_falling-calm-range-scaled-week-rise | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 inconclusive (+1.26); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
-| - | 061-01_falling-calm-scaled-rise-fade | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (-1.44); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
-| - | 064-01_falling-calm-up-day-fades | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (+0.45); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 050-02_falling-calm-scaled-week-rise-continuation | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 inconclusive (+1.50); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 050-03_falling-calm-range-scaled-week-fall | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 no effect (+0.19); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 050-04_falling-calm-range-scaled-week-rise | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 inconclusive (+1.26); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 060-02_falling-calm-low-to-close-fade | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 no effect (+0.28); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 061-01_falling-calm-scaled-rise-fade | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 no effect (-1.44); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 064-01_falling-calm-up-day-fades | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 no effect (+0.45); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 077-01_falling-calm-deep-close-drift | 7.g discovery | 1 | 0.2118 | 0.1059 | tested: step 5 no effect (+0.61); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
-| - | 086-01_heavy-volume-up-day-continuation | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (+0.82); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
-| - | 086-02_volume-weighted-up-move-continuation | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (+0.51); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 086-01_heavy-volume-up-day-continuation | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 no effect (+0.82); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
+| - | 086-02_volume-weighted-up-move-continuation | step 2 | 0 | 0.0882 | 0.0882 | tested: step 5 no effect (+0.51); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 050-03.c1_calm-downtrend-scaled-rise-continues | 7.c | 1 | 0.1818 | 0.0909 | tested: step 5 inconclusive (+1.70); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 060-02.g2_calm-fall-volume-dry-up | 7.g | 3 | 0.1218 | 0.0304 | duplicate of 060-01.g2_calm-fall-volume-dry-up |
 | - | 050-03.c1.g1_calm-downtrend-rise-continues | 7.g | 2 | 0.1218 | 0.0406 | duplicate of 050-03.c1_calm-downtrend-scaled-rise-continues |

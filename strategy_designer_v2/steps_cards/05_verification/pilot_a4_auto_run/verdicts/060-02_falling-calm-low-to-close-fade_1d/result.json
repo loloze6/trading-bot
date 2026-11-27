@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move, signed for the short, before costs",
+    "value": 0.0013927056733419067,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 0.2762844700162281
+    },
+    "threshold": "positive with t >= 2 to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at raw lift median)",
+    "value": 0.003850398118782967,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 104,
+    "cases": 161
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.276 (below 1), 104 cases (30 needed).",
+  "reading": "Situation = recorded raw lift (recomputed from prices if missing) >= 2.0 on bars where the regime detector chose mean_reversion (its vetoes are the falling-calm profile, whose 60- and 365-bar inputs cannot be rebuilt inside a window), expected side short; cases = every bar with forecast < 0 that has a next bar in its window; drift = coin's mean 1-bar return over all its windows; t clusters deviations by UTC day; supporting split: upper = raw lift strictly above the cases' median, lower = at or below.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.276 (below 1), 104 cases (30 needed)",
+    "t_in_idea_direction": 0.2762844700162281,
+    "cases": 104
+  }
+}

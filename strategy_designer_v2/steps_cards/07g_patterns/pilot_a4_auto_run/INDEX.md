@@ -1,3 +1,4 @@
 050-03.c1_calm-downtrend-scaled-rise-continues_1d: 1 ideas (2 explorations)
 050-04_falling-calm-range-scaled-week-rise_1d: no ideas: The only graded pattern is the 14-day rise carrying on over the next week in falling calm markets, and on the long side it rests on 23 cases and 19 days, with t near 2, mostly from one window; after about forty angles tested, it does not stand out from chance.
+060-02_falling-calm-low-to-close-fade_1d: no ideas: In falling calm markets on these coins, no angle I looked at (the forecast's quartiles, the trades by coin, the book's best and worst days, the range, the close location, the high-to-close and low-to-close distances, the 5- and 20-day returns, volume and weekday, at 1, 3 and 5 days) shows a graded effect that stands out from the chance expected over about 100 tests, and the few marginal cells point short, outside the long-only box.
 077-01_falling-calm-deep-close-drift_1d: 2 ideas (2 explorations)

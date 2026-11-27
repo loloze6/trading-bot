@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 060-02_falling-calm-low-to-close-fade_1d
+idea tested: 060-02_falling-calm-low-to-close-fade
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3632 USD
+---
+## Findings
+- **F1:** In the falling calm profile the tested measure does not predict the next day: the next-day unusual move by quartile of the close's lift above the low runs -0.49 %, +0.19 %, -0.14 %, -0.14 % (t -1.37 to 0.45, about 131 cases each), and the per-coin Spearman correlation of lift with the next-day return is -0.09 (p 0.20) on BTC, +0.08 (p 0.52) on DOGE and -0.04 (p 0.48) on XMR.
+- **F2:** The idea's size cannot cover a trade: its total move per case is +0.14 % and its unusual move +0.18 % (t 0.36, 98 days), against a cost of 0.33 % per trade, so the total move is 0.4 times the cost.
+- **F3:** The book's 25 trades, nearly all held 1 day, split by coin with no common sign: BTC shorts average -0.53 % (t -1.36, 7 trades), DOGE +2.91 % (t 2.08, 6 trades) and XMR +0.94 % (t 1.03, 12 trades); the 51 active days average +0.31 % (t 1.32).
+- **F4:** Being in the falling calm profile carries no drift of its own: the unusual move inside it is -0.01 % over 1 day (t -0.06, 597 cases), +0.14 % over 3 days (t 0.29, 197) and +0.14 % over 5 days (t 0.17, 120), against about 0 outside it.
+- **F5:** Across about 100 cells (8 bar features in quartiles at 1-, 3- and 5-day horizons, plus weekdays), the few with |t| above 2 are isolated and do not grade with their feature: the 5-day return's lowest quartile gives -4.9 % over 5 days (t -2.49, 26 cases), but the neighbouring quartiles give +1.3 %, +2.4 % and +0.4 %. The 20-day return's second quartile gives -1.07 % next day (t -2.40), with the lowest quartile at +0.22 %. The high-to-close drop's third quartile gives -3.9 % over 5 days (t -2.57), with the others positive. Mondays give -1.03 % (t -1.94, 84 cases). That is about the number of such cells chance alone would produce.
+- **F6:** None of the patterns that look strongest points long: the weakest cells (F5) are falls, a short-side continuation, which is outside this research's long-only box.
+
+## Ideas
+- No ideas: In falling calm markets on these coins, no angle I looked at (the forecast's quartiles, the trades by coin, the book's best and worst days, the range, the close location, the high-to-close and low-to-close distances, the 5- and 20-day returns, volume and weekday, at 1, 3 and 5 days) shows a graded effect that stands out from the chance expected over about 100 tests, and the few marginal cells point short, outside the long-only box.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

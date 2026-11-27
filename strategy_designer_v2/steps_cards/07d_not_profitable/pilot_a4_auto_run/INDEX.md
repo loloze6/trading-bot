@@ -2,6 +2,7 @@
 050-03.c1_calm-downtrend-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough; 2 of step 6's measures failed, at most 2)
 050-03_falling-calm-range-scaled-week-fall_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 4 of step 6's measures failed, at most 2)
 050-04_falling-calm-range-scaled-week-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough; 2 of step 6's measures failed, at most 2)
+060-02_falling-calm-low-to-close-fade_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 061-01_falling-calm-scaled-rise-fade_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 064-01_falling-calm-up-day-fades_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 077-01_falling-calm-deep-close-drift_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)

@@ -2,6 +2,7 @@
 050-03.c1_calm-downtrend-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.0208186; t of the mean, cases of one day pooled (day-clustered) 1.697; independent cases (days) 78, cases 148]
 050-03_falling-calm-range-scaled-week-fall_1d: no effect (fit: exact) [main: 0.000743912; t of the mean (per-day summed deviations) 0.189268; distinct case days 414, cases 649]
 050-04_falling-calm-range-scaled-week-rise_1d: inconclusive (fit: exact) [main: 0.00697167; t of weighted mean, cases of one day summed 1.26174; cases 389, days 204]
+060-02_falling-calm-low-to-close-fade_1d: no effect (fit: adapted) [main: 0.00139271; t of the mean, cases grouped by day 0.276284; distinct case days 104, cases 161]
 061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: adapted) [main: -0.00163353; t of the mean, day-clustered -1.44168; distinct days with a nonzero position 607, position bars with next-day return 1164, days of position cases 607, forecast-below-0 bars in regression 1461, days in regression 722]
 064-01_falling-calm-up-day-fades_1d: no effect (fit: exact) [main: 0.000228104; OLS slope t 0.451945; grid cases with forecast < 0 483, distinct days 242]
 077-01_falling-calm-deep-close-drift_1d: no effect (fit: exact) [main: 0.000252315; OLS slope t 0.607859; independent cases 1045, active bars 3222, cases per third 348]
