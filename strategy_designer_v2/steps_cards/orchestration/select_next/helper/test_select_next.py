@@ -185,24 +185,3 @@ def test_with_header_field():
     t = with_header_field("---\nbar: 1d\nsource: x\n---\nBody.\n", "discovery", "003-01.g1_p")
     assert header_fields(t) == {"bar": "1d", "source": "x", "discovery": "003-01.g1_p"} and t.endswith("---\nBody.\n")
     assert header_fields(with_header_field(t, "discovery", "z"))["discovery"] == "z"
-
-
-def test_a_run_with_a_target_box_keeps_only_the_ideas_acting_in_it(tmp_path):
-    """Next steps B2.1 (common/target_box.md): the ideas outside the run's box are listed, not candidates; a run without
-    a box is unchanged."""
-    run, d = "box_run", tmp_path / "02_ideation" / "box_run" / "ideas"
-    d.mkdir(parents=True)
-    for iid, prof in (("003-01_a", "rising agitated"), ("003-02_b", "rising"), ("003-03_c", "falling calm"), ("003-04_d", None)):
-        (d / f"{iid}.md").write_text("---\nbrief: 003_b\n" + (f"profile: {prof}\n" if prof else "")
-                                     + f"---\nIdea: {iid}.\nConsequence: c.\n")
-    assert [r["idea"] for r in s.rank(run, tmp_path) if r["status"] == "candidate"] == ["003-01_a", "003-02_b", "003-03_c", "003-04_d"]
-    f = tmp_path / "orchestration" / "loop" / run / "target_box.json"
-    f.parent.mkdir(parents=True)
-    f.write_text(json.dumps({"profile": "rising agitated", "side": "long"}))
-    rows = {r["idea"]: r["status"] for r in s.rank(run, tmp_path)}
-    assert rows["003-01_a"] == rows["003-02_b"] == "candidate"
-    assert rows["003-03_c"] == rows["003-04_d"] == "outside the run's box (rising agitated, long)"
-    b = tmp_path / "01_brief" / run / "briefs"                          # the brief allows the short side only
-    b.mkdir(parents=True)
-    (b / "003_b.md").write_text("---\nside: short only\n---\nA theory.\n")
-    assert not [r for r in s.rank(run, tmp_path) if r["status"] == "candidate"]

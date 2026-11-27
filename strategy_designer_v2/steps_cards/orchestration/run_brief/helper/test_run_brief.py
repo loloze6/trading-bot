@@ -67,3 +67,19 @@ def test_a_target_box_not_one_of_twelve_is_refused_before_any_call(tmp_path):
     out = run(str(brief), "--run", "nosuchbox_test_run", "--python", "p", "--target-box", "rising, long")
     assert out.returncode != 0 and "twelve boxes" in out.stderr
     assert not rb.target_box.box_file("nosuchbox_test_run").exists()
+
+
+def test_a_boxed_run_refuses_a_brief_that_does_not_name_its_box(tmp_path):
+    """The operator, 2026-11-27 (common/target_box.md): a boxed run's brief names a profile and a side holding the box;
+    otherwise refused, with the reason, before step 2."""
+    import shutil
+    brief = tmp_path / "012_x.md"
+    brief.write_text("---\nprofile: rising\nside: short only\n---\nA theory.\n")
+    run_name = "boxcheck_test_run"
+    try:
+        out = run(str(brief), "--run", run_name, "--python", "p", "--target-box", "falling calm, long")
+        assert out.returncode != 0 and "not a brief for the run's box (falling calm, long)" in out.stderr
+        assert "does not hold falling calm" in out.stderr and "not long" in out.stderr
+        assert not (rb.STEPS / "02_ideation" / run_name).exists()
+    finally:
+        shutil.rmtree(rb.ORCH / "loop" / run_name, ignore_errors=True)

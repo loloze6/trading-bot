@@ -26,12 +26,10 @@ profiles the map shows empty or thin, names the profile a pattern lives in, and 
 the map already lists in the same profile. Why: on night 7, 29 of 70 discoveries were the next-day rebound after a fall,
 already held, and 31 of the 51 confirmed books were that one effect.
 
-**In a run with a target box** (`../common/target_box.md`; next steps B2.1, the operator 2026-11-27), the line is given
-the run's box first, in its prompt where the map is given (`{{TARGET_BOX}}`, written by `07_common/helper/analyse.py`,
-`target_box_note`, from `orchestration/loop/<run>/target_box.json`): the box's profile and side are the first place to
-look, before the map's other empty or thin boxes. Without a box, the placeholder is empty: the prompt as before. Why:
-night 8's rising agitated session found 0 of 167 discoveries in its box; 7.g followed the map to its empty boxes, and
-rising agitated was not empty in the map (10 strategies from ideas naming only "agitated" or "rising").
+**In a run with a target box** (`../common/target_box.md`; next steps B2.1, 2026-11-27): the box is part of the brief's
+theme (`../07_common/card.md`, the note after the brief), and a discovery is looked for inside the box only; the map
+then shows what the box already holds. Why: night 8's rising agitated session found 0 of 167 discoveries in its box;
+the line followed the map to its other empty boxes.
 
 Each idea is marked `theme: on` (on the brief's theme) or `theme: discovery` (off it; `../common/theme.md`). A
 discovery is written as a source for a new brief (`discoveries/`), not as a follow-up; the loop turns it into a brief

@@ -172,3 +172,16 @@ def test_each_discovery_becomes_a_brief_once(tmp_path, monkeypatch):
     monkeypatch.setattr(loop.run_brief, "write_brief", refuse)
     assert loop.brief_discoveries(args, steps, orch) is False
     assert "031-03" not in " ".join(loop.briefed("x_run", orch)) and "stop" in loop.turns("x_run", orch)[-1]
+
+
+def test_a_boxed_run_s_turns_say_whether_the_idea_acts_in_the_box(tmp_path):
+    """The operator, 2026-11-27 (common/target_box.md): visibility, not control. Nothing in a run without a box."""
+    f = tmp_path / "003-01_a.md"
+    f.write_text("---\nbrief: 003_b\nprofile: falling\n---\nIdea: a.\n")
+    assert loop.box_field("a_run", f, tmp_path) == {}
+    box = tmp_path / "orchestration" / "loop" / "a_run" / "target_box.json"
+    box.parent.mkdir(parents=True)
+    box.write_text(json.dumps({"profile": "falling calm", "side": "long"}))
+    assert loop.box_field("a_run", f, tmp_path) == {"in_box": True}
+    box.write_text(json.dumps({"profile": "rising calm", "side": "long"}))
+    assert loop.box_field("a_run", f, tmp_path) == {"in_box": False}

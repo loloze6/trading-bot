@@ -26,6 +26,7 @@ sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402
 sys.path.insert(0, str(ORCH / "run_brief" / "helper"))
 import run_brief  # noqa: E402
+import target_box  # noqa: E402  (the run's target box: common/target_box.md)
 
 RUN_IDEA = ORCH / "run_idea" / "helper" / "run_idea.py"
 BUILDER = STEPS / "components" / "helper" / "build_component.py"
@@ -187,6 +188,13 @@ def brief_discoveries(args, steps=STEPS, root=ORCH):
     return True
 
 
+def box_field(run, idea_path, steps=STEPS):
+    """In a run with a target box, whether the idea acts in it (`in_box`, common/target_box.md): recorded in the turn's
+    line so the reading can count it; never a reason to skip an idea. Nothing in a run without a box."""
+    box = target_box.run_box(run, steps)
+    return {"in_box": target_box.in_box(Path(idea_path).read_text(), run, box, steps)} if box else {}
+
+
 def call_run_idea(idea_path, args, brief=None):
     cmd = [sys.executable, str(RUN_IDEA), str(idea_path), "--run", args.run, "--python", args.python]
     if brief:
@@ -230,7 +238,8 @@ def main():
 
     if args.idea is not None and args.idea.stem not in {r["idea"] for r in table_rows(args.run)}:
         used = spent(args.run)
-        log_turn(args.run, {"turn": next_turn(args.run), "idea": args.idea.stem, "why": "the starting idea", "spent_before": used})
+        log_turn(args.run, {"turn": next_turn(args.run), "idea": args.idea.stem, "why": "the starting idea", "spent_before": used,
+                            **box_field(args.run, args.idea)})
         code, last = call_run_idea(args.idea, args, args.brief)
         if refused(args.run, args.idea.stem, code, last):
             return
@@ -245,7 +254,8 @@ def main():
             log_turn(args.run, {"stop": why, "spent": spent(args.run)})
             print(f"{args.run}: stopped: {why}")
             return
-        log_turn(args.run, {"idea": iid, "resumed": "its run was stopped before it finished", "spent_before": spent(args.run)})
+        log_turn(args.run, {"idea": iid, "resumed": "its run was stopped before it finished", "spent_before": spent(args.run),
+                            **box_field(args.run, paths[iid])})
         code, last = call_run_idea(paths[iid], args)
         if refused(args.run, iid, code, last):
             return
@@ -276,7 +286,7 @@ def main():
         top = cands[0]
         log_turn(args.run, {"turn": next_turn(args.run), "idea": top["idea"],
                             "why": f"select_next rank 1: score {top['score']} = record {top['record']} ({top['line']}) / (1 + generation {top['generation']})",
-                            "spent_before": used})
+                            "spent_before": used, **box_field(args.run, top["path"])})
         code, last = call_run_idea(Path(top["path"]), args)
         if refused(args.run, top["idea"], code, last):
             return

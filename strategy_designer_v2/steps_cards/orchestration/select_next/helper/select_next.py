@@ -5,8 +5,7 @@
 Candidates: the ideas written in the run (by step 2, or the run's starting idea, in 02_ideation/<run>/ideas/; by a step 7
 line in 07x_<line>/<run>/<backtest>/ideas/), not yet tested in the run (no plan for them in 03_test_plan/<run>/plans/,
 or a missing-components refusal the components step has unblocked: components/card.md), not duplicates (same Idea text
-and same data as an idea tested or listed before them), and, in a run with a target box (orchestration/loop/<run>/
-target_box.json, written by run_brief), acting in that box (common/target_box.md): the others are "outside the run's box".
+and same data as an idea tested or listed before them).
 
 Order (operator, 2026-11-17 and 2026-11-22), three groups, each ranked by its priority:
   1. a brief's own ideas (generation 0), by score: every idea of a theory is tested once before the workflow goes deep;
@@ -36,7 +35,6 @@ sys.path.insert(0, str(STEPS / "common"))
 from lib import header_fields, idea_code  # noqa: E402  (shared helpers, common/lib.py)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
-import target_box  # noqa: E402  (the run's target box: common/target_box.md)
 
 SEG = re.compile(r"\.([a-g])(\d+)(?=[._])")          # one analysis in an id: .<line letter><number>, then _ or .
 BRIEF_IDEA = re.compile(r"^(\d{3})-(\d{2})_")          # an idea created from a brief: NNN-KK_
@@ -172,7 +170,6 @@ def rank(run, root=STEPS, exclude=()):
     """The run's ideas: candidates ranked by score, then the others (tested, duplicate, unreadable, excluded)."""
     recs, tested = records(root), tested_in(run, root)
     evidence = parent_evidence(root)
-    box = target_box.run_box(run, root)                 # the run's target box, or None (common/target_box.md)
     seen, rows = {}, []
     files = written_in(run, root)
     # an idea tested in the run is seen first, so a later idea with the same text and data is its duplicate
@@ -214,8 +211,6 @@ def rank(run, root=STEPS, exclude=()):
             row["status"] = "tested"
         elif key[0] and key in seen:
             row["status"] = f"duplicate of {seen[key]}"
-        elif box and not target_box.in_box(text, run, box, root):
-            row["status"] = f"outside the run's box ({target_box.box_name(box)})"
         elif iid in exclude:
             row["status"] = "excluded"
         elif too_long(iid, run):

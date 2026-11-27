@@ -64,10 +64,11 @@ the budget is reached; a refused model call stops the loop, and the discovery is
 2 count in the run's spend.
 
 **In a run with a target box** (`../../common/target_box.md`, written by `run_brief --target-box`; next steps B2.1,
-2026-11-27): the loop tests only ideas acting in the box; `select_next` lists the others as outside it. A discovery
-outside the box still becomes a brief, as above (in step 1's list, kept for a later run); its ideas are written in the
-run and listed in the queue as outside the box, not tested. The filter is `select_next`'s, once; the loop adds none.
-An idea given as the loop's starting idea, or one resumed (its test begun), is run as before.
+the operator 2026-11-27): the box is part of the brief's theme, so the steps that write ideas keep to it (their prompt
+says so); the loop adds no filter. Visibility, not control: each turn's line in `loop.jsonl` (the starting idea, a
+resumed idea, a ranked idea) carries `in_box` (true or false: the idea's `profile:` line holds the box's profile and its
+brief's side includes the box's side), so the reading counts the ideas written outside the box. Without a box, the
+lines are as before.
 
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
@@ -102,9 +103,9 @@ the queue from these files.
 ## Visibility
 - **The queue** (`<name>_run/queue.md`, `queue.json`): every idea written in the run: its line, generation, record,
   score, rank (its parent is its id), and what happened (tested: its step 5 and step 6, a goal marked; candidate:
-  waiting; duplicate of; excluded: its call failed; outside the run's box).
+  waiting; duplicate of; excluded: its call failed).
 - **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
-  USD so far; one line per call of the components step (its summary); one line per discovery turned into a brief.
+  USD so far (in a boxed run, `in_box`); one line per call of the components step (its summary); one line per discovery turned into a brief.
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.
 
 ## Storage

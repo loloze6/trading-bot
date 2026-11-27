@@ -142,6 +142,9 @@ def main():
         if brief is None:
             print(f"{args.run}: {why}")
             return
+    why = target_box.brief_refusal(brief.read_text(), box) if box else None
+    if why:                                             # a boxed run's brief names a profile and a side holding the box
+        sys.exit(f"{args.run}: {brief.stem}: not a brief for the run's box ({target_box.box_name(box)}): {why}")
     ideas, why = write_ideas(args.run, brief, args.model)
     if not ideas:
         sys.exit(f"{args.run}: {brief.stem}: {why}")

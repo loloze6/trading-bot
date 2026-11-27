@@ -23,11 +23,6 @@ tested in the run, and not a duplicate.**
   `../../components/card.md`, "Unblocking"; 2026-11-17).
 - **Not a duplicate:** its text and its data are not those of an idea already tested or already a candidate (the same
   text on other data, a `same-idea-on:` proposal, is not a duplicate). A duplicate is listed, with the idea it repeats.
-- **In the run's box** (a run with a target box only: `orchestration/loop/<run>/target_box.json`, written by
-  `run_brief --target-box`; next steps B2.1, 2026-11-27): the idea acts in the box (`../../common/target_box.md`: its
-  `profile:` line is the box's profile or a wider one holding it, and its brief's side includes the box's side). An
-  idea naming no profile is not in the box. The others are listed "outside the run's box (<box>)", not candidates. This
-  is the only place the run is kept in its box. A run without the file: no change.
 - The words (created from, line, analysis, generation) are those of `../../common/idea_created_from.md`.
 
 ## The score

@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-import target_box  # noqa: E402  (the run's target box, common/target_box.md)
+import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
 from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
@@ -273,16 +273,6 @@ def profile_map():
     return f.read_text() if f.exists() else "(no profile map yet: no proven and profitable strategy is in the register)"
 
 
-def target_box_note(run):
-    """The run's target box for a line prompt's {{TARGET_BOX}} (line 7.g: next steps B2.1, the operator 2026-11-27): the
-    first place to look, before the map's other empty boxes. Empty for a run without one (the prompt as before)."""
-    box = target_box.run_box(run)
-    if not box:
-        return ""
-    return (f"The first place to look: {box['profile']} markets, for a {box['side']} position (`profile: {box['profile']}`). "
-            "Look there before the map's other empty or thin boxes, and name that profile when a pattern lives there.\n\n")
-
-
 def slug(s, n=8):
     w = re.findall(r"[a-z0-9]+", s.lower())[:n]
     return "-".join(w) or "idea"
@@ -340,13 +330,13 @@ def main():
                      f"folds {', '.join(CHECK_FOLDS)} are kept to check the ideas you propose (common/explore_and_check.md): "
                      "step 5 judges an idea on every fold and requires it to point the same way on those it does not show you.")
                     if only else "Your explorations see every window of this backtest.")
+    brief += target_box.theme_note(args.plan.resolve().parents[1].name)   # the run's box (empty without one)
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record)}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n{explore_note}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record, only)}\n")
-    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text().replace("{{PROFILE_MAP}}", profile_map())
-                            .replace("{{TARGET_BOX}}", target_box_note(args.plan.resolve().parents[1].name)))
+    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text().replace("{{PROFILE_MAP}}", profile_map()))
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
               + (HERE / "output_one_call.md").read_text()
               ).replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION)

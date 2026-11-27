@@ -119,6 +119,12 @@ and 7.g may also write discoveries: findings off the brief's theme, each written
 
 **Prompts.** `helper/common_rules.md` + the workflow's measuring definitions (`../common/measures.md`) + the line's `line_prompt.md` + `helper/output_one_call.md`, with the definition of an idea (`../common/idea_definition.md`) and of the market profiles (`../common/market_profile.md`); lines 7.b, 7.c, 7.e and 7.g also get the definition of a theme (`../common/theme.md`); shared files are pasted where a prompt names them (`{{NAME}}`).
 
+**In a run with a target box** (`../common/target_box.md`; next steps B2.1, the operator 2026-11-27), every line (7.a to
+7.g) gets the box as part of the brief's theme: one note pasted after the brief in the request (`helper/analyse.py`,
+from `target_box.py`'s `theme_note`; the run read from the plan's folder): every idea keeps to the box's profile (named
+in a `profile:` line) and side, and a discovery (lines 7.e and 7.g) is looked for inside the box only. Written once for
+all lines, not line by line. Without a box the request is byte for byte as before.
+
 ## Quality criteria (every line)
 - **Every finding states its numbers,** and they are in its exploration results.
 - **Every idea rests on named findings** and follows from them.
