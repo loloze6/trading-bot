@@ -1,7 +1,8 @@
 """run_brief: one trading theory researched from end to end: step 1 (theme or source only), step 2, then loop.
 
   python3 orchestration/run_brief/helper/run_brief.py --run NAME_run --python VENV_PYTHON
-      (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model M]
+      (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model M] [--data-use 2]
+      [--target-box auto | --target-box "rising agitated, long"]
 
 It adds no rule of its own: steps 1 and 2 as validated, the next idea by select_next, the stop rules of loop. Its state
 is the run's files, so a second call resumes. Visibility only: orchestration/run_brief/<run>/journal.jsonl (one line
@@ -16,8 +17,9 @@ STEPS = ORCH.parent
 sys.path.insert(0, str(ORCH / "run_idea" / "helper"))
 sys.path.insert(0, str(STEPS / "common"))
 from run_idea import Journal, copy_into  # noqa: E402  (one journal for every orchestration function)
-from lib import with_header_field, write_atomic  # noqa: E402
+from lib import with_header_field, write_atomic, header_fields  # noqa: E402
 import coins  # noqa: E402  (the run's data use, common/coins.py and common/data_use.md)
+import target_box  # noqa: E402  (the run's target box, common/target_box.md)
 
 BRIEFS = STEPS / "01_brief" / "briefs"          # step 1's list of every brief: one number per theory
 LOOP = ORCH / "loop" / "helper" / "loop.py"
@@ -35,9 +37,11 @@ def brief_number(brief):
 
 def ideas_of(brief, ideas_dir):
     """The run's ideas created from this brief by step 2: ids NNN-KK_name (an id with a line's .<letter><n>_ part is
-    an idea a line created, even when a run copied it here as its starting idea)."""
+    an idea a line created, even when a run copied it here as its starting idea) whose header names this brief (an idea
+    another run wrote from another brief with the same number, taken into a boxed run, is not this brief's: B13, E3)."""
     num = brief_number(brief)
-    return sorted(p for p in Path(ideas_dir).glob(f"{num}-*.md") if re.fullmatch(rf"{num}-\d{{2}}_[^.]+", p.stem))
+    return sorted(p for p in Path(ideas_dir).glob(f"{num}-*.md") if re.fullmatch(rf"{num}-\d{{2}}_[^.]+", p.stem)
+                  and header_fields(p.read_text()).get("brief", Path(brief).stem) == Path(brief).stem)
 
 
 def spent(table_dir):
@@ -52,7 +56,9 @@ def write_brief(run, theme=None, source=None, model=None):
     what = ["--theme", theme] if theme else ["--source", source]
     j = Journal(ORCH / "run_brief" / run, run, "step1_" + re.sub(r"\W+", "-", (theme or Path(source).stem))[:40].strip("-"))
     out, _ = j.step("step1_brief", [STEPS / "01_brief/helper/make_brief.py", *what, "--briefs-dir", BRIEFS]
-                    + (["--model", model] if model else []), [BRIEFS / "INDEX.md"])
+                    + (["--model", model] if model else [])
+                    + (["--run", run] if target_box.run_box(run) else []),     # a boxed run: the box in its theme
+                    [BRIEFS / "INDEX.md"])
     nr, ai, b = NOT_RESEARCHABLE.search(out), ALREADY_INDEXED.search(out), BRIEF_LINE.search(out)
     if nr:
         return None, f"step 1: not researchable: {nr.group(1)}"
@@ -114,6 +120,8 @@ def main():
     a.add_argument("--model")
     a.add_argument("--data-use", type=int, choices=[coins.DATA_USE_VERSION], help="2: the run in the new data use "
                    "(common/data_use.md): every plan backtested on the run's 8 research coins and the research windows")
+    a.add_argument("--target-box", help="the run's target box (common/target_box.md): 'auto' (the rule on the profile "
+                   "map) or a profile and a side ('rising agitated, long'); written once, kept when resumed")
     args = a.parse_args()
     if not args.run.endswith("_run"):
         sys.exit("a run name ends in _run")
@@ -129,12 +137,18 @@ def main():
     du = start_data_use(args.run, args.data_use)
     if du:
         print(f"{args.run}: data use {du['version']}: research coins {', '.join(du['research_coins'])}; windows {du['windows']}")
+    box = target_box.start(args.run, args.target_box)
+    if box:
+        print(f"{args.run}: target box {target_box.box_name(box)} ({box['chosen_by']})")
     brief = args.brief
     if brief is None:                                   # step 1: a theme or a source becomes a brief
         brief, why = write_brief(args.run, args.theme, args.source, args.model)
         if brief is None:
             print(f"{args.run}: {why}")
             return
+    why = target_box.brief_refusal(brief.read_text(), box) if box else None
+    if why:                                             # a boxed run's brief names a profile and a side holding the box
+        sys.exit(f"{args.run}: {brief.stem}: not a brief for the run's box ({target_box.box_name(box)}): {why}")
     ideas, why = write_ideas(args.run, brief, args.model)
     if not ideas:
         sys.exit(f"{args.run}: {brief.stem}: {why}")

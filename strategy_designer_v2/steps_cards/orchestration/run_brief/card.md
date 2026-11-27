@@ -36,6 +36,9 @@ lines propose from them, until a stop rule is met.**
    the run already holds ideas of this brief. "No ideas" ends the call, with step 2's reason.
 4. **`loop`** on the run, without a starting idea: the brief's ideas are its first candidates.
 
+A brief's own ideas in the run are those with its number whose header names it (B13, 2026-11-27: an idea a boxed run
+took from another run, written from another brief with the same number, is not this brief's; next steps E3).
+
 Steps 1 and 2 are two functions (`write_brief`, `write_ideas`) the loop also calls, to turn a discovery into a brief
 (`../loop/card.md`, "Discoveries become briefs"; topic 50): one way to write a brief and its first ideas. A brief
 written from a discovery gets a `discovery:` header field (the discovery's id), written by code: `select_next` ranks its
@@ -73,6 +76,7 @@ orchestration/run_brief/
 ```
 python3 orchestration/run_brief/helper/run_brief.py --run NAME_run --python VENV_PYTHON
     (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model MODEL] [--data-use 2]
+    [--target-box auto | --target-box "falling calm, long"]
 ```
 Called again with the same brief on the same run, it resumes. Called with another brief, it adds it to the run.
 
@@ -84,9 +88,23 @@ plan of the run on those coins and windows; step 7 explores the explore half, st
 (`../../common/explore_and_check.md`). Refused: a run that has already tested ideas without it (`run_idea`'s
 `table.json` exists), or whose file names another version. Without the flag, nothing changes.
 
+**`--target-box auto` or `--target-box "falling calm, long"`** (2026-11-27, next steps B2.1;
+`../../common/target_box.md`; `../../runs/BUILD_B2_1.md`): the run's target box, the box (a market profile and a side)
+where it searches. `auto` applies the rule (share of market days on the 25 portfolio coins / (1 + strategies whose idea
+names the box exactly); a tie of a profile's two sides to the side with fewer strategies acting there in the profile
+map); a box in words is the operator's choice. Before step 1 (after the data use), it writes
+`orchestration/loop/<run>/target_box.json` once: the profile, the side, who chose it, and for the rule its table of the
+twelve boxes. Resumed, the file is kept (with or without the option); a call naming another box is refused.
+**The brief must name the box:** its header's `profile:` line holds the box's profile and its `side:` line includes
+the box's side; otherwise the call ends, with the reason, before step 2. For a theme or a source, step 1 is called
+with `--run` and writes the brief inside the box, header lines included (the same for a discovery's brief in the loop).
+Then the box is part of the brief's theme: steps 1 and 2 and every step 7 line get it in their prompt
+(`theme_note`); the loop records, per turn, whether the idea acts in it. Nothing is filtered. Without the option,
+nothing changes.
+
 ## Checks in code
 Refused before any call: a run name not ending in `_run`; none or more than one of brief, theme, source; a brief file
-that does not exist; a budget that is not a positive number.
+that does not exist; a budget that is not a positive number; a target box that is not `auto` or one of the twelve boxes. In a boxed run, a brief whose header does not name a profile and a side holding the box (before step 2).
 
 ## Done when
 On one brief from step 1's list, with a small budget: step 2 writes the brief's ideas in the run, the loop's first

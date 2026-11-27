@@ -54,6 +54,8 @@ on 61 to 75 %): coins move together, but not always in the same profile.
     the register, and after a night's merge. Read by lines 7.e and 7.g: a discovery is looked for where the map is
     empty or thin, by profile and by side. A filled cell is a profile and side some strategy specialises in; an empty
     cell is a place no strategy acts in on purpose: a target for the next briefs.
+  - **A run's target box** (`target_box.md`, 2026-11-27) is chosen from the map, counting only the strategies whose
+    idea names the box's profile exactly (a cell here also holds those whose idea names a wider profile).
   - **Not yet in it:** the boxes where the strategies acting in every profile really trade (their presence by box,
     above); the combination step reads them first. Whether a profile reads the market rightly is topic 54.
 

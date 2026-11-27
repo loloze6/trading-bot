@@ -26,6 +26,11 @@ and the coins and the bar size. A changed effect still answers the brief's quest
 on the theme keeps it, or narrows it; the same situation in another or a wider profile is off the theme: a discovery.
 A brief that names no profile may be followed in any one.
 
+**A run's target box is part of the theme** (`target_box.md`; the operator, 2026-11-27). In a run with a box, the
+theme's situation includes the box's profile and side: an idea on the theme is in the box's profile (or names it), on
+its side; a discovery is a pattern off the theme inside the box. Every step that writes a brief or ideas is told so (one note:
+step 1, step 2 and every step 7 line). An idea written outside the box anyway is not refused: the loop records it.
+
 **An idea off the theme** has another situation. Example (night 6): from the indecision brief, "a wide day that closes
 near its low rebounds" is another situation (a low close after a fall, not a flat close after a run): off the theme.
 

@@ -12,6 +12,7 @@ import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 from lib import with_common, call, write_atomic, profile_name  # noqa: E402  (shared helpers, common/lib.py)
+import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
 
 HERE = Path(__file__).resolve().parent
 MAX_FIELD_WORDS, ATTEMPTS = 300, 3   # 300 words: a guard against a runaway answer, not a length rule
@@ -79,7 +80,8 @@ def main():
     index = index_path.read_text() if index_path.exists() else ""
     system = with_common((HERE / "system_prompt.md").read_text())
     request = (f"[INDEX OF IDEAS ALREADY WRITTEN]\n{index.strip() or '(empty)'}\n\n"
-               f"Write the ideas this research brief gives.\n\n[BRIEF]\n{brief_text}")
+               f"Write the ideas this research brief gives.\n\n[BRIEF]\n{brief_text}"
+               + target_box.theme_note(ideas_dir.resolve().parent.name))       # the run's box (empty without one)
 
     cost, refusal = 0.0, ""
     for attempt in range(1, ATTEMPTS + 1):

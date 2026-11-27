@@ -58,3 +58,53 @@ def test_a_run_in_the_new_data_use_gets_its_file_once(tmp_path, monkeypatch):
     import pytest
     with pytest.raises(SystemExit):                                  # ideas tested in the old data use: refused
         rb.start_data_use("b_run", 2)
+
+
+def test_a_target_box_not_one_of_twelve_is_refused_before_any_call(tmp_path):
+    """Next steps B2.1 (common/target_box.md): the option takes 'auto' or one of the twelve boxes."""
+    brief = tmp_path / "012_x.md"
+    brief.write_text("---\n---\nA theory.\n")
+    out = run(str(brief), "--run", "nosuchbox_test_run", "--python", "p", "--target-box", "rising, long")
+    assert out.returncode != 0 and "twelve boxes" in out.stderr
+    assert not rb.target_box.box_file("nosuchbox_test_run").exists()
+
+
+def test_a_boxed_run_refuses_a_brief_that_does_not_name_its_box(tmp_path):
+    """The operator, 2026-11-27 (common/target_box.md): a boxed run's brief names a profile and a side holding the box;
+    otherwise refused, with the reason, before step 2."""
+    import shutil
+    brief = tmp_path / "012_x.md"
+    brief.write_text("---\nprofile: rising\nside: short only\n---\nA theory.\n")
+    run_name = "boxcheck_test_run"
+    try:
+        out = run(str(brief), "--run", run_name, "--python", "p", "--target-box", "falling calm, long")
+        assert out.returncode != 0 and "not a brief for the run's box (falling calm, long)" in out.stderr
+        assert "does not hold falling calm" in out.stderr and "not long" in out.stderr
+        assert not (rb.STEPS / "02_ideation" / run_name).exists()
+    finally:
+        shutil.rmtree(rb.ORCH / "loop" / run_name, ignore_errors=True)
+
+
+def test_step_1_is_told_the_run_only_in_a_boxed_run(monkeypatch, tmp_path):
+    """B2.1: step 1 gets `--run` (so the box is in its theme) only when the run has a box: otherwise its call as before."""
+    seen = []
+
+    class J:
+        def __init__(self, *a):
+            pass
+
+        def step(self, name, cmd, *a, **k):
+            seen.append([str(c) for c in cmd])
+            return "not researchable: x\n", None
+    monkeypatch.setattr(rb, "Journal", J)
+    monkeypatch.setattr(rb.target_box, "run_box", lambda run: {"profile": "falling calm", "side": "long"} if run == "box_run" else None)
+    rb.write_brief("plain_run", theme="t")
+    rb.write_brief("box_run", theme="t")
+    assert "--run" not in seen[0] and seen[1][-2:] == ["--run", "box_run"]
+
+
+def test_a_brief_s_ideas_name_it_in_their_header(tmp_path):
+    """B13 (E3): an idea taken from another run, from another brief with the same number, is not this brief's."""
+    (tmp_path / "060-01_own.md").write_text("---\nbrief: 060_mine\n---\nIdea: a.\n")
+    (tmp_path / "060-01_taken.md").write_text("---\nbrief: 060_theirs\ntaken-from: x_run\n---\nIdea: b.\n")
+    assert [p.stem for p in rb.ideas_of(Path("060_mine.md"), tmp_path)] == ["060-01_own"]

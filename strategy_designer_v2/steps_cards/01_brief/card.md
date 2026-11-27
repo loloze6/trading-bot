@@ -84,6 +84,13 @@ smaller and less traded coins take on part of that move only later... (prose, at
 one market profile only, named by its trend, its agitation or both ("in a falling, agitated market"; the definition,
 `../common/market_profile.md`, is pasted into the call); a request that names a profile gets a theory for it.
 
+**In a run with a target box** (`../common/target_box.md`; next steps B2.1, the operator 2026-11-27): the box is part
+of the brief's theme. `run_brief` calls this step with `--run` (only for a boxed run, the run's starting brief and its
+discoveries' briefs alike), and code pastes one note after the request (`target_box.py`, `theme_note`): the theory is
+written inside the box, its header says so (`profile: <the box's profile>`, `side: <its side> only`; `profile` is
+among the header keys). So a brief launched with no box information is written inside the run's box. Without a box the
+request is byte for byte as before.
+
 **A source may be a discovery** (operator, 2026-11-24; topic 50): a pattern off its brief's theme that line 7.e or 7.g
 found (`../common/theme.md`). The loop calls this step with it as the source: the brief states the pattern's theory in
 its own words, without the numbers, and gets its own number. **When a source's theory is already in the index** and

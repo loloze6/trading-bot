@@ -109,6 +109,11 @@ Index line: `001-01_rsi-high-extreme-gives-back: after an extreme high RSI, pric
 
 **Cost.** 0.02 to 0.05 USD per brief; a retry doubles it.
 
+**In a run with a target box** (`../common/target_box.md`; next steps B2.1, the operator 2026-11-27): the box is part
+of the brief's theme; code pastes one note after the brief (`target_box.py`, `theme_note`, from the run's
+`target_box.json`, the run read from the ideas folder): every idea keeps to the box's profile (named in a `profile:`
+line) and side. Without a box the request is byte for byte as before.
+
 **Prompt**: `helper/system_prompt.md`, with the definition of an idea from `../common/idea_definition.md` (shared with step 7; operator, 2026-11-14).
 
 ## Quality criteria on the ideas

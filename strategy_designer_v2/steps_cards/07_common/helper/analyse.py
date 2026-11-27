@@ -24,6 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
+import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
 from lib import step5_answer, call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
@@ -343,6 +344,7 @@ def main():
                      f"folds {', '.join(CHECK_FOLDS)} are kept to check the ideas you propose (common/explore_and_check.md): "
                      "step 5 judges an idea on every fold and requires it to point the same way on those it does not show you.")
                     if only else "Your explorations see every window of this backtest.")
+    brief += target_box.theme_note(args.plan.resolve().parents[1].name)   # the run's box (empty without one)
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"

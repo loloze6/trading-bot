@@ -63,6 +63,21 @@ discovery: one line in `loop.jsonl` (`"discovery"`: its file, the brief, the num
 the budget is reached; a refused model call stops the loop, and the discovery is handled when it resumes. Steps 1 and
 2 count in the run's spend.
 
+**In a run with a target box** (`../../common/target_box.md`, written by `run_brief --target-box`; next steps B2.1,
+the operator 2026-11-27): the box is part of the brief's theme, so the steps that write ideas keep to it (their prompt
+says so); the loop adds no filter. Visibility, not control: each turn's line in `loop.jsonl` (the starting idea, a
+resumed idea, a ranked idea) carries `in_box` (true or false: the idea's `profile:` line holds the box's profile and its
+brief's side includes the box's side), so the reading counts the ideas written outside the box. Without a box, the
+lines are as before.
+
+**A boxed run starts from the ideas already written in its box** (next steps B13, the operator 2026-11-27;
+`../../common/target_box.md`): before its first turn (and again on resume, for ideas not yet in the run), the loop takes
+the untested ideas (no step 5 answer in any run) of every other run whose `profile:` line is the box's profile word for
+word and whose brief allows the box's side. Each is copied into the run's step 2 folder with `taken-from: <its run>`
+(its id and brief kept; its brief copied into the run's briefs), one line in `loop.jsonl` each (`"taken"`, `"from"`);
+`select_next` then ranks them with the run's own ideas by its one score, unchanged; each of their turns carries
+`taken_from`.
+
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.
@@ -98,7 +113,7 @@ the queue from these files.
   score, rank (its parent is its id), and what happened (tested: its step 5 and step 6, a goal marked; candidate:
   waiting; duplicate of; excluded: its call failed).
 - **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
-  USD so far; one line per call of the components step (its summary); one line per discovery turned into a brief.
+  USD so far (in a boxed run, `in_box`); one line per call of the components step (its summary); one line per discovery turned into a brief.
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.
 
 ## Storage
@@ -110,6 +125,8 @@ orchestration/loop/
   <name>_run/
     queue.md, queue.json     every idea proposed in the run and what happened to it
     loop.jsonl               one line per turn
+    data_use.json            a run in the new data use (run_brief --data-use 2)
+    target_box.json          a run with a target box (run_brief --target-box; common/target_box.md)
 (the ideas' own runs: orchestration/run_idea/<name>_run/ and the steps' <name>_run/ folders)
 ```
 

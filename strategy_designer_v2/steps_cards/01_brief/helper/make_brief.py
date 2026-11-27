@@ -15,9 +15,10 @@ import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 from lib import call, write_atomic, with_common  # noqa: E402  (shared helpers, common/lib.py)
+import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
 
 HERE = Path(__file__).resolve().parent
-KEYS = {"venue", "instruments", "bar", "period", "side", "source"}
+KEYS = {"venue", "instruments", "bar", "period", "side", "source", "profile"}   # profile: a boxed run's brief (B2.1)
 MAX_THEORY_WORDS, MAX_INDEX_WORDS, ATTEMPTS = 900, 100, 3   # guards against a runaway answer, not length rules
 def slug(text, max_words=8):
     """A file-safe name: lowercase words joined by hyphens, at most max_words words."""
@@ -60,6 +61,7 @@ def main():
     g.add_argument("--source", type=Path)
     a.add_argument("--briefs-dir", type=Path, default=HERE.parent / "briefs")
     a.add_argument("--model", default="claude-opus-5-5")
+    a.add_argument("--run", help="the run the brief is for: in a run with a target box, the box is part of its theme")
     args = a.parse_args()
 
     briefs, index_path = args.briefs_dir, args.briefs_dir / "INDEX.md"
@@ -73,6 +75,7 @@ def main():
     else:
         ask = "Write one research brief on a trading theory of your choice."
     request = f"[INDEX OF BRIEFS ALREADY WRITTEN]\n{index.strip() or '(empty)'}\n\n{ask}"
+    request += target_box.theme_note(args.run) if args.run else ""       # the run's box (empty without one)
 
     cost, refusal = 0.0, ""
     for attempt in range(1, ATTEMPTS + 1):
