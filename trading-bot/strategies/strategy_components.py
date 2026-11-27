@@ -10148,3 +10148,69 @@ class ChoppinessWeightedScaledReversalComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.period, self.vol_period, self.er_period) + 1
+
+
+class CloseFromMidRangeInMeanRangesComponent(SubStrategyComponent):
+    """
+    The close's signed distance from the middle of the current bar's range, in mean bar ranges:
+
+        mid = (high[t] + low[t]) / 2
+        B   = mean(high[i] - low[i]) over i = t - base_period + 1 .. t   (bar t included)
+        raw_value = (close[t] - mid) / B          (0.0 when B = 0)
+
+    This equals (2 x loc - 1) / 2 x (high[t] - low[t]) / B, with loc = (close[t] - low[t]) / (high[t] - low[t]).
+    Range and sign: signed. On real bars it runs from -base_period/2 to +base_period/2, because the mean includes
+    bar t's own range. It is positive above the middle of the day's range, negative below it, and 0 at the middle
+    or for a zero-range bar. Graded: it grows linearly with the distance from the middle and with the day's range
+    against its mean.
+    Warm-up: base_period rows, bar t included.
+    NaN: a NaN high or low in the last base_period rows, or a NaN close[t], gives NaN. B = 0 (base_period
+    zero-range bars in a row, never seen on real bars) gives 0.0, because the distance is then 0 too.
+    Building the component raises for a base_period that is not an integer >= 1.
+
+    WHY THIS CANNOT LEAK: it reads only the high and low of the last base_period rows of data and the close of
+    the last row (bar t); every one of them is known at bar t's close.
+    """
+
+    def __init__(self, name="CloseFromMidRangeInMeanRanges", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        bp = self.parameters.get("base_period", 20)
+        if isinstance(bp, bool):
+            raise ValueError(f"CloseFromMidRangeInMeanRangesComponent: base_period must be an integer >= 1, got {bp!r}")
+        try:
+            bp_int = int(bp)
+        except (TypeError, ValueError):
+            raise ValueError(f"CloseFromMidRangeInMeanRangesComponent: base_period must be an integer >= 1, got {bp!r}")
+        if bp_int != bp or bp_int < 1:
+            raise ValueError(f"CloseFromMidRangeInMeanRangesComponent: base_period must be an integer >= 1, got {bp!r}")
+        self.base_period = bp_int
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.base_period
+        high = data['high'].astype(float).iloc[-n:].to_numpy()
+        low = data['low'].astype(float).iloc[-n:].to_numpy()
+        close_t = float(data['close'].astype(float).iloc[-1])
+        if np.isnan(high).any() or np.isnan(low).any() or np.isnan(close_t):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        base = float(np.mean(high - low))
+        mid = (float(high[-1]) + float(low[-1])) / 2.0
+        if base == 0.0:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float((close_t - mid) / base)
+        self.confidence = 1.0
+        self.debug_info = {'mid_range': mid, 'mean_bar_range': base, 'close': close_t}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.base_period

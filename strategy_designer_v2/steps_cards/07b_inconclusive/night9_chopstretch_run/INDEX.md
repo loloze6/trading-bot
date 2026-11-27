@@ -7,15 +7,18 @@
 067-01_choppy-up-stretch-keeps-rising_1d: 1 ideas (2 explorations)
 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d: 2 ideas (2 explorations)
 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries_1d: 3 ideas (2 explorations)
+067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins_1d: no ideas: The theme's effect is not in the data as the theory states it. The move after a stretch below the average does not grow with the stretch (F2, F4), the mirror side does not carry (F5), and the mild excess fall is spread unevenly over periods and profiles rather than living clearly in one (F6), with no more data left to test it on (F1).
 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d: 1 ideas (1 explorations)
 067-02.b1.b1_two-sided-swing-stretch-five-days_1d: 2 ideas (2 explorations)
 067-02.b1_raw-swing-stretch-keeps-falling_1d: 1 ideas (2 explorations)
 067-02_choppy-down-stretch-keeps-falling_1d: 1 ideas (2 explorations)
 074-01.b1_agitated-stretch-all-coins_1d: no ideas: The theme's effect is not in the data. In agitated markets a close below the 20-day average is followed by no rebound at 3, 5, 10 or 20 days (F1), the move does not grow with depth (F2), no trend, year or coin shows the rebound (F4), and the test already covered all the data available (F5).
 074-01_agitated-stretch-below-rebounds_1d: 1 ideas (1 explorations)
+074-02.b1.b1.b1_falling-calm-stretch-keeps-falling_1d: 1 ideas (2 explorations)
 074-02.b1.b1_calm-stretch-falls-more-coins_1d: 1 ideas (2 explorations)
 074-02.b1_calm-stretch-falls-five-days_1d: 1 ideas (1 explorations)
 074-02_calm-stretch-below-keeps-falling_1d: 1 ideas (2 explorations)
+076-01.b1.b1.b1_falling-agitated-wide-close-fade_1d: 1 ideas (2 explorations)
 076-01.b1.b1_agitated-wide-upper-close-fade_1d: 1 ideas (2 explorations)
 076-01.b1_agitated-wide-close-fade-more-coins_1d: 1 ideas (2 explorations)
 076-01_agitated-wide-high-close-fades_1d: 1 ideas (2 explorations)

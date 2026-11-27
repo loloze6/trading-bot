@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar short move (fraction)",
+    "value": 0.008992307097406678,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 1.839456127648489
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 (and supporting check) to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half mean unusual short move",
+    "value": -0.0008437493860649348,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1051,
+    "distinct days": 508
+  },
+  "decided_by": "The t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation: raw stretch < 0 on short-forecast bars (profile left to the regime); a case is the first short bet (forecast rise of >= 2 points on the short side) in each 5-bar grid cell, with its 5-bar return inside the window; t is the mean over a day-clustered standard error with D/(D-1) correction; halves are the floor(n/2) largest and smallest |forecast| cases, the middle one dropped when n is odd."
+}

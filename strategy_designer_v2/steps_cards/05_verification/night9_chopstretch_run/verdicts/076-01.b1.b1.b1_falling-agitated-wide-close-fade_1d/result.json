@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move in the short direction (return minus coin drift)",
+    "value": 0.007925837963454621,
+    "statistic": {
+      "name": "t of the mean, same-day cases clustered",
+      "value": 1.7577557982828522
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases above median forecast size minus at/below median",
+    "value": 0.008840574915509599,
+    "passed": true
+  },
+  "counts": {
+    "cases": 660,
+    "distinct days": 282
+  },
+  "decided_by": "t between -2 and 2, which the plan calls inconclusive.",
+  "reading": "cases are short bets (forecast fall of >= 2 points from its lowest short level since the last bet, reset at 0) on every bar (1-bar grid) with a next bar in the window; larger cases are those with size strictly above the median, smaller those at or below it; the t clusters cases by UTC day; the plan's minimum counts give 'not observable'."
+}

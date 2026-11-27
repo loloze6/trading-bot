@@ -1,67 +1,59 @@
 def explore(data):
     import numpy as np, pandas as pd
     from scipy import stats
-    H=5
-    rows=[]
-    for coin,ws in data["bars"].items():
-        for w,b in ws.items():
+    rows=[]; d1=[]
+    for coin, ws in data["bars"].items():
+        for w, b in ws.items():
             b=b.reset_index(drop=True)
             c=b["close"].astype(float)
-            r1=c.pct_change()
-            sma=c.rolling(20).mean()
-            sd=r1.rolling(20).std()
-            st=(c/sma-1)/sd
-            sd5=r1.rolling(30).std()
-            # agitation proxy: 30d sd vs its rolling median within window (limited)
-            ret5=c.shift(-H)/c-1
-            ret1=r1.shift(-1)
-            past5=c/c.shift(5)-1
-            past1=r1
+            r=c.pct_change()
+            sma=c.rolling(20).mean(); sd=r.rolling(20).std()
+            z=(c-sma)/sma/sd
+            ret5=c.shift(-5)/c-1
+            ret1n=c.shift(-1)/c-1
+            ret3=c.shift(-3)/c-1
+            r5p=c/c.shift(5)-1
             ts=pd.to_datetime(b["timestamp"])
             chop=(b["regime"]=="unknown")
-            idx=np.arange(0,len(b),H)
-            for i in idx:
-                if i+H>=len(b) or np.isnan(st.iloc[i]): continue
-                rows.append(dict(coin=coin,w=w,yr=ts.iloc[i].year,wd=ts.iloc[i].weekday(),day=ts.iloc[i].normalize(),
-                    st=st.iloc[i],chop=bool(chop.iloc[i]),r5=ret5.iloc[i],p5=past5.iloc[i]/ (sd.iloc[i]*np.sqrt(5)) if sd.iloc[i]>0 else np.nan,
-                    p1=past1.iloc[i]/sd.iloc[i] if sd.iloc[i]>0 else np.nan,
-                    vol=sd.iloc[i],fc=b["forecast"].iloc[i],alloc=b["postRebalance_current_allocation"].iloc[i]))
-    d=pd.DataFrame(rows)
-    drift=d.groupby("coin")["r5"].mean()
-    usual=d.groupby("coin")["r5"].std()
-    d["ex"]=d["r5"]-d["coin"].map(drift)
-    d["z"]=d["ex"]/d["coin"].map(usual)
-    def tday(x):
-        g=x.groupby("day")["z"].sum()
-        n=len(x); m=x["z"].mean()
-        se=np.sqrt((g-g.count()*0+0).pow(2).sum())/n if n>1 else np.nan
-        dev=x.groupby("day")["z"].apply(lambda s:(s-m).sum())
-        se=np.sqrt((dev**2).sum())/n
-        return pd.Series(dict(n=n,days=x["day"].nunique(),mean_z=m,mean_ex=x["ex"].mean(),t=m/se if se>0 else np.nan))
+            for i in range(0,len(b),5):
+                rows.append(dict(coin=coin,w=w,z=z[i],r5=ret5[i],chop=chop[i],sd=sd[i],r5p=r5p[i]/(sd[i]*np.sqrt(5)) if sd[i]>0 else np.nan,
+                                 wd=ts[i].dayofweek,yr=ts[i].year,f=b["forecast"][i]))
+            for i in range(len(b)):
+                d1.append(dict(coin=coin,w=w,r=r[i],rn=ret1n[i],sd=sd[i],chop=chop[i],wd=ts[i].dayofweek,z=z[i]))
+    g=pd.DataFrame(rows); D=pd.DataFrame(d1)
+    g=g.dropna(subset=["r5"])
+    drift=g.groupby("coin")["r5"].mean(); g["ex"]=g["r5"]-g["coin"].map(drift)
+    g["usd"]=g["coin"].map(g.groupby("coin")["r5"].std()); g["st"]=g["ex"]/g["usd"]
+    def summ(x,col="st"):
+        x=x[col].dropna(); 
+        return pd.Series(dict(n=len(x),mean=x.mean(),t=x.mean()/(x.std()/np.sqrt(len(x))) if len(x)>2 else np.nan))
+    gz=g.dropna(subset=["z"]).copy()
+    gz["zb"]=pd.cut(gz["z"],[-99,-1.5,-0.75,-0.25,0.25,0.75,1.5,99])
     out={}
-    d["q"]=pd.qcut(d["st"],5,labels=False)
-    out["stretch_quintile_by_chop"]=d.groupby(["chop","q"]).apply(tday)
-    out["stretch_q_mean"]=d.groupby("q")["st"].mean()
-    d["pq"]=pd.qcut(d["p5"],5,labels=False)
-    out["past5_scaled_quintile_by_chop"]=d.groupby(["chop","pq"]).apply(tday)
-    d["vq"]=d.groupby("coin")["vol"].transform(lambda s:pd.qcut(s,3,labels=False))
-    out["stretch_q_by_volterc_chop"]=d[d.chop].groupby(["vq","q"]).apply(tday)[["n","mean_z","t"]]
-    out["weekday"]=d.groupby("wd").apply(tday)
-    out["year_low_stretch_chop"]=d[d.chop&(d.q==0)].groupby("yr").apply(tday)
-    out["year_high_stretch_chop"]=d[d.chop&(d.q==4)].groupby("yr").apply(tday)
-    # correlation st vs z in chop and not
-    for k,g in d.groupby("chop"):
-        g=g.dropna(subset=["st","z"])
-        rr,p=stats.spearmanr(g["st"],g["z"]); out[f"spearman_st_z_chop{k}"]=f"{rr:.3f} p {p:.3g} n {len(g)}"
-    # book days
+    out["z_bins_chop"]=gz[gz.chop].groupby("zb").apply(summ)
+    out["z_bins_nonchop"]=gz[~gz.chop].groupby("zb").apply(summ)
+    out["corr_z_ex"]=pd.DataFrame({k:[stats.spearmanr(v["z"],v["st"])[0],len(v)] for k,v in [("chop",gz[gz.chop]),("nonchop",gz[~gz.chop])]},index=["rho","n"])
+    gp=g.dropna(subset=["r5p"]).copy(); gp["pb"]=pd.qcut(gp["r5p"],5,labels=False)
+    out["past5_scaled_quint_chop"]=gp[gp.chop].groupby("pb").apply(summ)
+    out["past5_scaled_quint_nonchop"]=gp[~gp.chop].groupby("pb").apply(summ)
+    gs=g.dropna(subset=["sd"]).copy(); gs["vrel"]=gs["sd"]/gs["coin"].map(gs.groupby("coin")["sd"].median())
+    gs["vb"]=pd.qcut(gs["vrel"],4,labels=False)
+    out["vol_quart_fwd5"]=gs.groupby("vb").apply(summ)
+    out["year_chop_z<0"]=gz[gz.chop&(gz.z<0)].groupby("yr").apply(summ)
+    D=D.dropna(subset=["rn","r","sd"]).copy(); D["rs"]=D["r"]/D["sd"]
+    D["rb"]=pd.cut(D["rs"],[-99,-2.5,-1.5,-0.5,0.5,1.5,2.5,99])
+    D["rnn"]=D["rn"]/D["sd"]
+    out["next_day_after_scaled_move_chop"]=D[D.chop].groupby("rb").apply(lambda x:summ(x,"rnn"))
+    out["next_day_after_scaled_move_nonchop"]=D[~D.chop].groupby("rb").apply(lambda x:summ(x,"rnn"))
+    out["weekday_next"]=D.groupby("wd").apply(lambda x:summ(x,"rnn"))
+    # book
     dd=[]
     for coin,ws in data["days"].items():
-        for w,x in ws.items():
-            x=x.copy(); x["coin"]=coin; x["w"]=w; dd.append(x)
-    D=pd.concat(dd)
-    D["day"]=pd.to_datetime(D["day"])
-    bk=D.groupby("day")[["book_return","coin_return"]].mean().dropna()
-    bk["wd"]=bk.index.weekday
-    out["book_by_weekday"]=bk.groupby("wd")["book_return"].agg(["mean","count"])
-    out["book_by_year"]=bk.groupby(bk.index.year)["book_return"].agg(["mean","std","count"])
+        for w,t in ws.items():
+            t=t.copy(); t["coin"]=coin; t["w"]=w; dd.append(t)
+    dd=pd.concat(dd); dd=dd.dropna(subset=["book_return"])
+    bk=dd.groupby(["w","day"]).agg(b=("book_return","mean"),c=("coin_return","mean")).reset_index()
+    q=bk["b"].quantile([0.02,0.98])
+    out["book_extremes"]=pd.DataFrame({"worst2%":bk[bk.b<=q.iloc[0]][["b","c"]].mean(),"best2%":bk[bk.b>=q.iloc[1]][["b","c"]].mean(),"all":bk[["b","c"]].mean()})
+    out["book_by_window"]=bk.groupby("w")["b"].agg(["mean","std","count"])
     return out

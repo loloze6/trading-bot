@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 076-01.b1.b1.b1_falling-agitated-wide-close-fade_1d
+idea tested: 076-01.b1.b1.b1_falling-agitated-wide-close-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3937 USD
+---
+## Findings
+- **F1:** In folds B and C, the tested cases hold the predicted side only over the plan's own one-day horizon. The mean unusual move is +1.03 % (t 1.29; 182 cases on 105 days) over the next day. It falls to +0.04 % (t 0.05) over two days and +0.11 % (t 0.09) over three. The effect is a one-day fade, and the plan measured it where it shows.
+- **F2:** The effect is mixed by the day's own direction. Cases that closed above their open (up days) fell +1.71 % more than drift the next day (t 2.31; 152 cases on 88 days). Cases that closed below their open (down days) rose instead, -2.40 % (t -1.27; 30 cases on 21 days). This minority on the other side is what drowns the overall t.
+- **F3:** The up-day cases stay on the predicted side in every year shown: 2018 +2.00 % (t 1.55), 2019 +1.21 % (t 1.44), 2020 +1.64 % (t 1.45), 2021 +1.65 % (t 0.55). The all-case means swing from +2.17 % in 2018 to -0.39 % in 2021, so the down-day cases are what makes the effect unstable.
+- **F4:** The grading the idea names is present but noisy. The Spearman correlation of the next-day unusual move with width × height above mid-range is 0.15 (location alone 0.14, width alone 0.08). The weakest forecast quartile is on the wrong side, -1.78 % (t -1.14), against +1.32 %, +1.91 % and +2.73 % (t 3.15) for the three stronger quartiles. The widest tercile gives +2.43 % (t 2.07).
+- **F5:** The pattern does not fade outside the falling-agitated profile. In falling-but-calm bars it gives +0.70 % (t 1.57; 201 cases), in choppy bars +0.52 % (t 0.96) and in rising bars -0.41 % (t -0.96; 530 cases). Bars inside the profile without the pattern give -0.33 % (t -1.08; 1,328). So the falling-agitated profile is the right place, and a wider profile would dilute it.
+- **F6:** The full test already used every coin and every fold on daily bars (660 cases on 282 days, t 1.76), so no more daily data is available. Across coins the effect is carried by ETH (+2.17 %, t 2.42; 31 cases) and ZEC (+2.00 %, t 2.40; 33 cases), with BTC near zero (+0.24 %, t 0.28; 36 cases).
+
+## Ideas
+- `076-01.b1.b1.b1.b1_falling-agitated-wide-up-day-fade` (from F1, F2, F3, F4, F5, F6): In a falling, agitated market, a day whose high-low range is wide against the coin's average range over the past 20 days and which closes in the upper part of its range, near its high, is followed by a fall over the next day, only when that day closed above its open. The fall is larger the wider the day's range and the farther above the middle of its range it closes, the two multiplying.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
