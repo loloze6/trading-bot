@@ -1,0 +1,24 @@
+---
+line: 7.c no effect
+backtest: 061-01_falling-calm-scaled-rise-fade_1d
+idea tested: 061-01_falling-calm-scaled-rise-fade
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3788 USD
+---
+## Findings
+- **F1:** The tested fade is not there and points slightly the other way. The step-5 timing gain of the short was -0.163 % per bar (day-clustered t -1.44, 607 days), and its slope on the forecast had the wrong sign (t -1.35). Per case the coin moved +0.25 % beyond its drift against the short (t -1.45, 478 days), a total of +0.31 %, about 0.9 times the 0.33 % cost of a trade.
+- **F2:** There is no grading on the rise side. In falling calm bars, the next-day excess return after up days, scaled by the 30-day swing, is -0.08 % for rises of 0 to 0.5σ, -0.46 % for 0.5 to 1σ and -0.79 % above 1σ. None of these is sure (t -0.18, -0.52, -1.41; 143, 52 and 53 cases). The regression of the next-day excess on the scaled rise has slope -0.63 % per σ (t -1.28, 248 cases).
+- **F3:** The fade appears only in 2018. After rises above 0.5σ the next-day excess was -1.81 % in 2018 (t -1.71, 45 cases), -0.06 % in 2019 (t -0.13, 27 cases) and +0.55 % in 2021 (t +1.00, 32 cases). At 3 days, 2021 was +3.51 % (t 2.35, 7 cases).
+- **F4:** The market's lopsidedness runs the other way from the brief. In falling calm bars, one-day falls beyond -1.5σ were followed by a next-day excess of +1.08 % (t 1.00, 47 cases on 34 days; total +1.24 %). Over 2 days the excess was +1.54 % (t 1.07, 27 cases; total +1.86 %). That is 3.8 to 5.6 times the cost of a trade, while large rises gave only -0.79 %.
+- **F5:** The rebound after falls beyond -1σ is positive on every coin and in most years:
+- **F6:** Outside the falling calm profile, the same large one-day falls (beyond -2σ) rebound by +1.70 % the next day (t 2.00, 51 cases). Inside the profile the rebound's grading is only in the right direction, not sure: slope -0.15 % per σ of fall (t -0.30, 277 cases).
+- **F7:** Over 5 days the signal turns to continuation, but on thin samples:
+
+## Ideas
+- `061-01.c1_falling-calm-scaled-fall-rebound` (from F4, F5, F6, F1): In a falling, calm market, a coin's one-day fall that is large against the standard deviation of its daily returns over the last 30 days is followed by a rise over the next two days, and the larger the scaled fall, the larger that rise.
+- `061-01.c2_falling-calm-rise-continuation` (from F1, F2, F7): In a falling, calm market, a coin's one-day rise that is large against the standard deviation of its daily returns over the last 30 days is followed by a further rise over the next five days, and the larger the scaled rise, the larger that rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

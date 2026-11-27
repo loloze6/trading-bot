@@ -1,0 +1,1 @@
+061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: adapted) [main: -0.00163353; t of the mean, day-clustered -1.44168; distinct days with a nonzero position 607, position bars with next-day return 1164, days of position cases 607, forecast-below-0 bars in regression 1461, days in regression 722]

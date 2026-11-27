@@ -1,0 +1,36 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean timing gain: position x (next-day return - coin mean daily return)",
+    "value": -0.0016335291126146217,
+    "statistic": {
+      "name": "t of the mean, day-clustered",
+      "value": -1.4416830824098612
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on forecast (forecast < 0), day-clustered t >= 2",
+    "value": -1.3531438356017587,
+    "passed": false
+  },
+  "counts": {
+    "distinct days with a nonzero position": 607,
+    "position bars with next-day return": 1164,
+    "days of position cases": 607,
+    "forecast-below-0 bars in regression": 1461,
+    "days in regression": 722
+  },
+  "decided_by": "Main t between -2 and 2: inconclusive. No effect (common/verdicts.md): t in the idea's direction -1.442 (below 1), 607 cases (30 needed).",
+  "reading": "The falling calm profile is read from the recorded regime ('unknown' = neither veto fired), an up day from the raw scaled rise > 0; a nonzero position is postRebalance_current_allocation != 0; 'cases of one day summed together' is read as day-clustered standard errors (deviations / scores summed per day) for both the mean and the slope; the 100-day minimum counts all bars with a nonzero position.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -1.442 (below 1), 607 cases (30 needed)",
+    "t_in_idea_direction": -1.4416830824098612,
+    "cases": 607
+  }
+}
