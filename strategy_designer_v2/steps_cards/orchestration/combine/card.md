@@ -49,7 +49,7 @@ or judges a version: three rules do.
 | Step | Rule | Where | Output |
 |---|---|---|---|
 | **10, a new version** | **when the list of candidates changes**, the next version (`v<n+1>`) is built by rules 1 to 5 above, each candidate read on its **common record** (all portfolio coins, the windows of `research_2016.json`; step 9) in place of its research record; rule 4's correlation on the common records' daily returns | `helper/update.py`, called by `run_idea` right after a candidate's common record (version 2 runs only) and by `night_merge` at the end, after the register's rebuild | the version's folder and its INDEX line |
-| **11, ready for the final test** | the version's daily Sharpe after costs on the portfolio coins **above** holding the same coins (equal weight, the coin-days it trades, the same days) | `update.py`, on every new version | `measures.json` (`portfolio_coins`, `ready`), the INDEX line |
+| **11, ready for the final test** | the version's daily Sharpe after costs on the portfolio coins **above** holding the same coins (equal weight, the coin-days it trades, the same days) | `update.py`, on every new version | `measures.json` (`portfolio_coins`, `ready`; the scale and the yearly return at a worst fall of 20 %, informative), the INDEX line |
 | **12, the final test, once** | a ready version's strategies, unchanged, at its weights, on the **final coins** (`common/coins.py`, `FINAL`), over the windows of `research_2016.json` past each coin's first 90 days (the same windows and rule as step 9's common record: one kind of record for steps 11 and 12; the designer, 2026-11-26); **go** when its Sharpe after costs is above 0 and above holding the same coins; **once per final group** | `helper/final_test.py VERSION`, by hand (the operator's act) | `final_tests/<group>.json`, `measures.json` (`final_test`), the INDEX line |
 
 - **A candidate:** a register book of kind `paying` (`books.json`; steps 5 and 6 answered) with a common record: its
@@ -61,6 +61,20 @@ or judges a version: three rules do.
 - **Why holding as the bar** (`data_use.md`, Open 3, proposed): a portfolio that earns less than holding its own coins
   adds nothing an investor could not get by buying them. Same days, same coins: the comparison reads the market the
   version was in, not another one.
+- **Holding is one number** (next steps A10, 2026-11-27). A **coin-day of the portfolio** is one coin on one day for
+  which at least one of its strategies has a return. Holding is read from the coins' daily data files
+  (`trading-bot/local_data/kraken_<COIN>_1d.csv`): each coin's return from the previous day's close to that day's
+  close, on the portfolio's coin-days, then the mean over the coins of that day, on the same days as the portfolio. A
+  coin-day whose previous day is missing from the file has no holding return (counted, not filled). Before, each
+  coin's closes came from the first strategy's record holding that coin: a record with fewer windows gave the coin
+  fewer days, so the bar moved with the order of the strategies (v4: 1.075 or 0.945).
+  Why this cannot leak: the closes are read after the fact, for a comparison; no strategy's decision uses them.
+- **The return at the risk the operator accepts** (next steps A11; the operator, 2026-11-27: "Fall 20% yes"): one
+  informative number on every version, its yearly return when every daily return is multiplied by one scale k, k
+  chosen so that the worst fall of the scaled returns is **20 %**. The method: the worst fall grows with k, so k is
+  found by halving an interval (from 0, doubling an upper bound until its fall reaches 20 %, then 60 halvings); the
+  yearly return is step 6's formula on the scaled returns. A version that never falls has no k. It is before any cost
+  of leverage (k above 1 means borrowed money) and **in no rule**: `ready` does not read it.
 - **The final test's record is written before the run** (the group, the version and its commit, this commit, the
   measures expected and the go bar); its existence marks the final group used, so a second test on the same group is
   refused, even when the first stopped half-way (a test that could be rerun until it says go would be a search).
@@ -68,6 +82,24 @@ or judges a version: three rules do.
   by steps 11 and 12. **`judge_unseen.py` is no longer the judge**: it stays only to read the versions built on the
   research records (v1, v2, v2b), and goes with `unseen_coins.md` in the clean-up list of `data_use.md` (section 6,
   for the operator's go).
+
+## What a run adds to the portfolio (next steps A8, 2026-11-27; `helper/addition.py`)
+**The question:** did this run, or this batch (a list of runs), make the portfolio better? A run is judged by the
+final product, not by its count of confirmed and profitable strategies (night 9: 11 candidates, almost nothing added).
+
+**The rule:** the portfolio is built twice by rules 1 to 5 on the common records, as step 10 builds it: **with** every
+candidate, and **without** the candidates of the run or batch. Both are then measured on the **same coin-days** (the
+coin-days on which both have a return), and the reading reports for both:
+- Sharpe, yearly return, worst fall, and the yearly return at a worst fall of 20 % with its scale (A11);
+- the same on each calendar year (the year's return at a 20 % fall uses the whole period's scale: one scale per
+  portfolio, not one per year);
+- which strategies entered the portfolio with the run, and which left it.
+
+It decides nothing and is in no rule: no version is built, nothing is written in `portfolios/`. It writes one small
+file, `additions/<name>.md` (the run's name, or the batch's given with `--name`), that the run's reading quotes
+(`../../runs/NIGHT_RULES.md`). The file holds no date and no commit: the same candidates give the same file.
+Why this cannot leak: it reads finished records after the fact; the two portfolios are built by rules that read no
+result beyond step 6's answer.
 
 ## Input
 The register (`../ideas_similarities_check/register/books.json`, each book's `side`), each book's records (steps 5
@@ -80,7 +112,10 @@ boxes, its return there), `portfolio.json` (the strategies, their boxes and weig
 (in-sample; then the unseen coins; the overlap shown); one line per version in `portfolios/INDEX.md`.
 Versions by rule (steps 10 to 12): the same folder, `boxes.csv` read on the common records, `portfolio.json` with
 `records: common` and `candidates`, `measures.json` with `portfolio_coins`, `ready` and, after step 12, `final_test`;
-their lines in INDEX.md's second table ("Versions by rule"); `final_tests/<final group>.json`, one per final group;
+their lines in INDEX.md's second table ("Versions by rule"); `measured_again.json` when a version built before a
+change of measure is measured again by the current one (`update.py --measure-again`: its strategies and weights as
+stored, its `measures.json` untouched); `additions/<name>.md`, what a run or batch adds (A8);
+`final_tests/<final group>.json`, one per final group;
 the final records in `04_backtest/<run>/<final group>/backtests/<plan id>/` (per coin, made by step 9's runner
 `common_record.backtest` with the final coins, joined 2026-11-27: one runner for steps 9 and 12), with the book's chart
 file over the final coins.
@@ -90,6 +125,8 @@ file over the final coins.
 python3 orchestration/combine/helper/boxes.py                    # each register book's presence by box
 python3 orchestration/combine/helper/combine.py --version NAME    # a version, by the rules above
 python3 orchestration/combine/helper/update.py                    # steps 10 and 11: a version if the list changed
+python3 orchestration/combine/helper/update.py --measure-again VERSION [VERSION ...]   # a built version, by today's measures
+python3 orchestration/combine/helper/addition.py --runs RUN [RUN ...] [--name NAME]    # A8: what a run or batch adds
 python3 orchestration/combine/helper/final_test.py VERSION --python VENV_PYTHON   # step 12, once per final group
 ```
 Why this cannot leak: it reads finished records after the fact; each day's profile uses closes up to that day.
@@ -102,6 +139,10 @@ Steps 10 to 12: their tests pass on hand-made records (`helper/test_update.py`: 
 unchanged one does not, ready and not ready against holding, the final test's refusals, its record before the run);
 status 2026-11-26: met on hand-made records only; no common record exists yet, and no final test has been made
 (`../../runs/BUILD_A4_PORTFOLIO.md`).
+
+Holding from the data files (A10), the return at a 20 % fall (A11) and what a run adds (A8): their tests pass
+(`helper/test_update.py`, `helper/test_addition.py`); v3 and v4 measured again, nights 7 to 9 read; status 2026-11-27:
+built (`../../runs/BUILD_A8_A10.md`).
 
 ## What this function does not do
 It does not change a strategy, choose ideas (step 7 and `select_next` never read it), read the unseen results to

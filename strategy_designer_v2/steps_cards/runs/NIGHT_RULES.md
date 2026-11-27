@@ -38,5 +38,11 @@ budget) and what changed since the last night; everything else is here.
    the theme found real, not real, or open (budget ended), the turn at which it was answered and the spend after it;
    the discoveries and the briefs they became; confirmed books,
    paying books, portfolio candidates; the cost. Counts, not impressions.
-3. Step back before anything else: what the night shows, and the one change a practitioner would make; added to the
+3. **What the night adds to the portfolio (next steps A8, 2026-11-27):** the reading of a run or of a batch carries
+   the table of `orchestration/combine/helper/addition.py --runs <the night's runs> --name night<n>` (the portfolio
+   built by rule with and without the night's candidates, on the same coin-days: Sharpe, yearly return, worst fall, the
+   return at a 20 % fall, each calendar year, the strategies that entered or left), quoted from
+   `orchestration/combine/additions/night<n>.md`. A run or batch is judged by this table; the count of confirmed and
+   profitable strategies stays in the reading as information.
+4. Step back before anything else: what the night shows, and the one change a practitioner would make; added to the
    next-step list.
