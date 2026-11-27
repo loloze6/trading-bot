@@ -1,3 +1,4 @@
+061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: not profitable enough [Sharpe 0.3055; Sharpe minus holding's Sharpe -0.2473; Calmar 0.4271]
 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d: not profitable enough [Sharpe 0.5607; Sharpe minus holding's Sharpe 0.007899; Calmar 0.7148]
 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade_1d: not profitable enough [Sharpe 0.4725; Sharpe minus holding's Sharpe -0.0803; Calmar 0.2233]
 061-01.b1.b1.b1.d2.d2_upper-close-quiet-day-fade_1d: not profitable enough [Sharpe 0.4546; Sharpe minus holding's Sharpe -0.09817; Calmar 0.3221]

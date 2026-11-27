@@ -1,3 +1,4 @@
+061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: confirmed (fit: adapted) [main: 0.0223753; day-clustered t of the mean 2.70431; cases 279, distinct days 210]
 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d: confirmed (fit: exact) [main: 0.0253697; t of the mean, cases grouped by day 3.80481; cases 190, days 157]
 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade_1d: inconclusive (fit: exact) [main: 0.029998; t of the mean, same-day cases pooled 3.15752; cases 225, distinct days 176]
 061-01.b1.b1.b1.d2.d2_upper-close-quiet-day-fade_1d: inconclusive (fit: adapted) [main: 0.0139877; day-clustered t 1.67972; cases 325, distinct days 254]

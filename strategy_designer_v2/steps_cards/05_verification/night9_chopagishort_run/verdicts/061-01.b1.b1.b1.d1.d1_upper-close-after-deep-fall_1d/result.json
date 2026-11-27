@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move in the short direction vs coin drift",
+    "value": 0.022375258360522576,
+    "statistic": {
+      "name": "day-clustered t of the mean",
+      "value": 2.7043076696572563
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-|forecast| half minus smaller half, mean unusual short move",
+    "value": 0.023748397480740355,
+    "passed": true
+  },
+  "counts": {
+    "cases": 279,
+    "distinct days": 210
+  },
+  "decided_by": "The mean unusual short move is positive with t >= 2 and the larger-size half beats the smaller-size half.",
+  "reading": "Profile taken from the recorded regime (not 'chop', the vetoes' result outside the choppy agitated profile) since its 365-bar volatility percentile cannot be rebuilt from the record, close location and 5-day return from prices (5-day return from fall5's raw value where recorded); a case is the first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet, reset at flat) in each 5-bar grid cell of a window, with a full 5-bar forward return in that window; drift is the mean of the coin's grid 5-bar returns over all its windows; the day-clustered t uses per-day summed deviations with a D/(D-1) correction; the larger-size half is cases with |forecast| above the median, the smaller-size half those at or below it; the plan's 'fewer than 30 cases or days' is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01044 on the check folds against +0.02238 on every fold",
+    "main": 0.010435784468009825,
+    "statistic": 1.61098539979944,
+    "counts": {
+      "cases": 202,
+      "distinct days": 152
+    }
+  }
+}

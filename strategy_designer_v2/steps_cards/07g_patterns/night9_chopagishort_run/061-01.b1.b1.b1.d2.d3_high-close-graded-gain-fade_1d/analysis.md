@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade_1d
+idea tested: 061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 3.6497 USD
+---
+## Findings
+- **F1:** In folds B and C, the tested situation is confirmed in the profile. Bars graded choppy agitated with the close in the top fifth of the day's range on an up day were followed by a 5-day move 8.0 % below the coin's drift (t -3.40, 20 cases on 16 days). The book is short, so this is a gain for it.
+- **F2:** In the profile, the fall on up days grows the nearer the close is to the day's high. The 5-day move after an up day is +7.0 % with the close in the middle fifth (t 1.05, 8 cases), -4.0 % in the fourth fifth (t -0.71, 7 cases) and -8.0 % in the top fifth (t -3.40, 20 cases). The gradient runs across close locations the tested book never trades.
+- **F3:** The tested grading, "the smaller the day's gain, the larger the fall", does not show clearly in the profile across all close locations. Day returns of -0.3 to +0.3 usual moves were followed by -4.5 % (t -1.55, 23 cases), +0.3 to +1 usual moves by -7.3 % (t -2.48, 15 cases), and +1 to +2 usual moves by -5.5 % (t -1.67, 8 cases).
+- **F4:** Outside the profile, the same high-close up days carry no fade. The 5-day move was -0.04 % (t -0.04, 342 cases on 110 days). The effect lives in the profile the brief names.
+- **F5:** In the profile, the effect weakens over the years. The 5-day moves were -14.6 % in 2018 (t -2.83), -3.7 % in 2019 (t -2.68), -6.0 % in 2020 (t -0.90) and +1.0 % in 2021 (t 0.40, 33 cases).
+- **F6:** The situation is rare, which is why the book fails its trade-count rule. In folds B and C, 1,864 of 1,950 grid bars are vetoed as out of the profile, and only 20 are in the short regime. The book is in a position on 2 % of the coins' days and makes 0.006 trades per day.
+- **F7:** A high close on an up day in a falling market, with that window more agitated than its median, was followed by -3.9 % over 5 days (t -2.94, 28 cases on 11 days); the calm half shows +2.1 % (t 0.65). The map already holds this pattern as 060-01.g1.d2.d1 ("own range close height fade", falling agitated, short), so it is not a discovery.
+- **F8:** In the profile, a 3-day rise of +1 to +3 usual moves was followed by -7.1 % (t -3.06, 14 cases on 11 days). A rise above +3 usual moves was followed by only -0.7 % (t -0.26, 5 cases). The pattern is not graded, and among the many angles examined it does not stand out from chance.
+
+## Ideas
+- `061-01.b1.b1.b1.d2.d3.g1_choppy-agitated-close-height-fade` (from F1, F2, F4, F6): In a choppy, agitated market, after an up day, the nearer the coin's daily close sits to the top of that day's high-low range, the larger its fall over the next five days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
