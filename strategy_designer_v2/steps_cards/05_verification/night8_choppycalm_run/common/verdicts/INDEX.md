@@ -1,0 +1,1 @@
+058-02.b1.b2.b1.b2.b1.b1_convex-range-edge-continuation_1d: confirmed (fit: exact) [main: 0.00164577; t of slope (day-clustered) 2.47751; non-overlapping grid cases with a non-zero forecast 692, days 188]
