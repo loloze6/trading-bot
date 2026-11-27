@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 21-bar excess move of deep cases (forecast <= -10)",
+    "value": 0.058418502068448876,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.3650151856414263
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2; at least 20 deep cases"
+  },
+  "supporting_check": {
+    "name": "deep mean minus shallow mean short-direction excess move (> 0 passes)",
+    "value": 0.03170525976042512,
+    "passed": true
+  },
+  "counts": {
+    "deep cases": 22,
+    "days of deep cases": 17,
+    "shallow cases": 41,
+    "active bars": 1395
+  },
+  "decided_by": "The t of the deep cases' mean lies between -2 and 2.",
+  "reading": "Grid bars are positions 0, 21, 42, ... of each window with a full 21-bar return inside it; the coin's drift is the mean of all its grid returns over all its windows; the day t uses per-day sums of deviations from the case mean with a K/(K-1) correction; the situation is a negative raw 30-day return with a negative forecast; fewer than 20 deep cases is reported as not observable."
+}

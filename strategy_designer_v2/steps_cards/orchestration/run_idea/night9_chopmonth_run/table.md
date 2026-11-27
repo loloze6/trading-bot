@@ -28,21 +28,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | confirmed (+2.60) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks, 067-02.b1.b1.d1.d2_agitated-choppy-deep-falls; 7.g: 067-02.b1.b1.d1.g1_choppy-agitated-month-falls-continue | 1.32 | 13.3 |
 | 067-02.b1.b1.d2_agitated-choppy-month-fall-continues | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+0.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The effect points the predicted way but is small (t 0.74 on the main measure, t 1.66 on the size). The test already used every coin and fold available on daily bars. No coin, period, depth, position in range or horizon shows it clearly apart from one window's episode (F1–F4), so no further test on this data would give a clearer answer.; 7.g: 067-02.b1.b1.d2.g1_calm-choppy-month-continuation | 1.03 | 12.6 |
 | 067-02.b1.b1.d3_calm-choppy-month-rise-continues | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+1.35) | not profitable enough (failed: Calmar) | - | 7.b: 067-02.b1.b1.d3.b1_large-calm-choppy-month-continues; 7.g: no ideas: Across about fifteen angles (forecast quintiles in and out of the profile, past 7-day and 1-day returns, range and relative range, close position at 1, 3 and 7 days by trend and year, volatility ratio, weekdays, trades by side, forecast and coin), no pattern holds a day-clustered t clearly above the bar such a search requires (the best are t -2.83 and 2.09). The few near it repeat ideas the profile map already holds: close near the high continuing in rising markets, next-day close-height fade, and late-week gain. | 1.10 | 12.4 |
+| 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks | 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | plan | not observable (+1.25) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.a: no ideas: The plan needs 30 distinct days among the deepest-fifth cases, but the full available data (all 19 coins, all four folds) gives only 22. A 21-day horizon defined in real time yields the same number of cases on any bar size, so no available data can reach the minimum.; 7.g: 067-02.b1.b1.d1.d1.g1_choppy-agitated-month-fall-continues, 067-02.b1.b1.d1.d1.g2_choppy-month-fall-week | 1.19 | 12.0 |
+| 067-02.b1.b1.d1.d2_agitated-choppy-deep-falls | 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | plan | inconclusive (+1.37) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.d1.d2.b1_agitated-chop-falls-five-days, 067-02.b1.b1.d1.d2.b2_agitated-chop-falls-ten-days; 7.g: 067-02.b1.b1.d1.d2.g1_choppy-scaled-month-week-continuation | 1.24 | 12.5 |
 
 ## Consumption
-24 ideas, 26.79 USD, 289.2 minutes in all.
+26 ideas, 29.22 USD, 313.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.96 | 10.7 |
-| step4_backtest | 0.00 | 198.9 |
-| step5_verdict | 4.65 | 16.4 |
+| step3_plan | 2.13 | 11.7 |
+| step4_backtest | 0.00 | 215.8 |
+| step5_verdict | 5.04 | 17.6 |
 | step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.d | 2.88 | 9.2 |
-| step7_7.a | 0.00 | 0.0 |
+| step7_7.a | 0.44 | 1.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 6.45 | 19.2 |
-| step7_7.g | 10.84 | 32.6 |
+| step7_7.b | 6.81 | 20.1 |
+| step7_7.g | 11.92 | 35.6 |
 | similarity_check | 0.00 | 0.6 |

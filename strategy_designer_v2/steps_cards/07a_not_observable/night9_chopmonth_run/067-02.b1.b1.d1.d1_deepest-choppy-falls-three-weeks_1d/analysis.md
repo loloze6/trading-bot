@@ -1,0 +1,24 @@
+---
+line: 7.a not observable
+backtest: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks_1d
+idea tested: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks
+step 5: not observable
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.4363 USD
+---
+## Findings
+- **F1:** Over all four folds and all 19 coins, the test found 189 negative-forecast grid cases and 38 deepest-fifth cases, which fall on only 22 distinct days against the plan's minimum of 30, so the deepest choppy-market falls could not be observed.
+- **F2:** In the folds shown (B and C, w7 to w18, 13 coins), 510 non-overlapping 21-day grid cells gave 82 choppy cells (16 %) and 46 negative-forecast cases on 23 days. The deepest fifth held 10 cases on only 6 distinct days, and one day carried 5 of them: the coins' deep falls arrive together and count as one day.
+- **F3:** The situation is rare per coin. A coin sits in the choppy regime on 8 % (SOL) to 22 % (BTC) of its bars and has a negative forecast on 6 % to 12 % of its bars. On the 21-day grid that leaves 1 to 6 negative-forecast cases per coin over twelve windows.
+- **F4:** The cases are spread thin in time. In folds B and C there are 4 to 20 negative-forecast cases per year (2018 to 2021). The deepest fifth appears only in 2019 (3 cases, 3 days) and 2021 (7 cases, 3 days). No window gives more than 3 distinct days of cases.
+- **F5:** The forecast is lumpy at its deep end. Its 10th percentile is -20, the clip, and its 20th percentile is -12.7. The deepest fifth is therefore mostly clipped cases, and adding cases by grading deeper is not possible.
+- **F6:** The outcome varies widely from case to case. The deepest fifth has a mean short return of +9.8 % with a standard deviation of 25.3 % over 21 days, against a rest mean of -11.6 % and standard deviation of 37.5 %. Only a few dozen independent days could settle its sign.
+- **F7:** The test already used every coin (19) and every fold (A to D) available. The idea's times are in days, so hourly or 4-hour bars give the same number of non-overlapping 21-day cells. Hourly bars also end in 2025, which would give fewer cases.
+- **F8:** At the observed ratio of 38 cases to 22 days and 5 negative cases per deep case, 30 distinct days would need about 52 deepest-fifth cases, or about 260 negative-forecast cases. That is roughly 1.4 times the 189 the full available data gives.
+
+## Ideas
+- No ideas: The plan needs 30 distinct days among the deepest-fifth cases, but the full available data (all 19 coins, all four folds) gives only 22. A 21-day horizon defined in real time yields the same number of cases on any bar size, so no available data can reach the minimum.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
