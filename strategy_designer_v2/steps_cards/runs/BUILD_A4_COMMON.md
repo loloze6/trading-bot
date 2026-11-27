@@ -106,3 +106,17 @@ hourly books are spread across the shards. The two records above already exist a
 - The 1h books would make larger records: a 6-coin 1h chart file is up to about 6 MB today.
 - The data rules for holes longer than a day and for coins that stop trading mid-window (3.2 and 3.4 of
   `data_use.md`) are not applied here; they belong with step 4's draw (part 3). Listed in the card's Open.
+
+## Fix of 2026-11-27 (found by shard 3)
+The register's 35 `paying_rerun_run` books have no `03_test_plan/paying_rerun_run/`: that run reran other runs' plans
+(steps 4 and 6 only), so `--register` stopped on them. **Rule (designer):** a book's plan and `measure.py` are each
+found by the plan id in its own run first; else in the one other run whose plan's config equals the book's record
+config; none or several: refused with a message naming them, and the shard goes on to the next book. 3 tests (own
+run first; the one other run, measure.py from the book's run or else the matched run; none, several, no record
+config). On the 120 books: 85 in their own run, 32 in another run, **3 refused** (002-01.b1 more-coins 1h, 010-03.e1
+1d, 013-01.d2.d2.b1 1d: the same config in `hold2_rerun_run` and `hold_paying_run`). The result file gains `measure`.
+
+**Refinement (designer, 2026-11-27):** several matches whose plan files and `measure.py` are byte-identical are one plan:
+the first in sorted order is used, and the result records every match (`plan_found_in`). Only matches that differ are
+refused. 1 test. Now all 120 books resolve: 85 in their own run, 32 in one other run, 3 in two identical runs (the 3
+above, `hold2_rerun_run` used; shards 4, 4 and 6).
