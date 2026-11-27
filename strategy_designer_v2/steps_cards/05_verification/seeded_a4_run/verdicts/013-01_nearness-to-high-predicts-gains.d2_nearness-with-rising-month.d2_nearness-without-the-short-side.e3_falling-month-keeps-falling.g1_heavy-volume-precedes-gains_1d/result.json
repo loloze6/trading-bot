@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-demeaned 3-bar forward return on forecast (non-overlapping grid, pooled)",
+    "value": 0.0024320602299152737,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.198864336193071
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive; at least 300 non-overlapping cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping cases": 5920,
+    "active bars": 18138
+  },
+  "decided_by": "The slope is positive with t = 5.20 >= 2 over 5920 cases (confirm rule).",
+  "reading": "The coin's mean 3-bar return is taken over that coin's non-overlapping grid samples pooled over all its windows, the regression is OLS with an intercept, the 300-case minimum counts the pooled grid cases with a forecast and a return, and the situation check rebuilds standardise from raw values where the full 60-bar history is inside the window and uses the recorded post-pipeline values before that.",
+  "direction_check": {
+    "half": "the check half (2022 onward)",
+    "agrees": true,
+    "why": "main measure +0.002076 on the check half (2022 onward) against +0.002432 on every window",
+    "main": 0.002075807587182455,
+    "statistic": 3.7557596657863477,
+    "counts": {
+      "non-overlapping cases": 3811,
+      "active bars": 11682
+    }
+  }
+}

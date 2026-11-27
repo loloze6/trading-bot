@@ -490,6 +490,7 @@ An idea's latest record counts once.
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation_1h | confirmed | retest_weekend_run | 1h | 6 | f93d3231b | 2026-11-23T07:14:45 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins_1h | confirmed | retest_weekend_run | 1h | 6 | 2fdadf83d | 2026-11-23T01:47:55 |
 | 026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue_1h | confirmed | retest_weekend_run | 1h | 6 | 2fdadf83d | 2026-11-23T01:36:32 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d | confirmed | seeded_a4_run | 1d | 8 | 65faeec34 | 2026-11-27T23:19:58 |
 | 023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d | paying | seeded_a4_run | 1d | 8 | 4c72e161d | 2026-11-27T22:11:23 |
 | 029-03_close-below-breakout-bar-low.d1_failed-breakout-after-small-run-up_1d | confirmed | short_1d_run | 1d | 6 | 5865da4f9 | 2026-11-22T13:41:35 |
 | 029-05_failed-breakout-multiday-drift.b1_volatility-scaled-failed-breakout-depth_1d | confirmed | short_1d_run | 1d | 6 | 9a768b6d6 | 2026-11-22T13:10:58 |
@@ -511,5 +512,4 @@ An idea's latest record counts once.
 | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d | confirmed | volume_run | 1d | 6 | 38bc58ada | 2026-11-17T12:15:41 |
 | 012-01_liquidation-flush-rebound_1d | confirmed | volume_run | 1d | 6 | 4d023abd1 | 2026-11-18T01:33:29 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d | confirmed | volume_run | 1d | 6 | 4fa09c054 | 2026-11-17T11:51:37 |
-| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d | confirmed | volume_run | 1d | 6 | 240d747f1 | 2026-11-17T11:58:36 |
 | 013-04_heavy-volume-below-high-breakout_1d | confirmed | volume_run | 1d | 6 | 09f55b658 | 2026-11-18T01:52:02 |

@@ -1,0 +1,2 @@
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: not profitable enough [Sharpe 0.5907; Sharpe minus holding's Sharpe -0.3203; Calmar 0.2678]
+023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d: profitable enough [Sharpe 1.239; Sharpe minus holding's Sharpe 0.3284; Calmar 1.002]
