@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.b1.b1.b1.d1.d2.d2.d1_high-close-fall-falling-market_1d
+idea tested: 061-01.b1.b1.b1.d1.d2.d2.d1_high-close-fall-falling-market
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4110 USD
+---
+## Findings
+- **F1:** The test's result points the way the idea predicts but stays short of the bar. On all folds the mean short-direction unusual 5-day move is +0.67 % with t 1.00 (1055 cases, 390 days). On folds B and C it is +2.10 % with t 1.91 (297 cases, 135 days). The test already used every coin and fold available on daily bars, so there is no more data to add.
+- **F2:** The effect sits in the deepest falls only.
+- **F3:** At the plan's 5-day horizon the size of the forecast does grade the move (slope 0.0036, correlation 0.20). At 1 and 2 days it does not (correlation 0.06 and -0.01). The 1- to 2-day moves are just as large (+1.53 % t 2.04, +1.61 % t 2.01), but they are ungraded. So the 5-day horizon is where the graded effect shows.
+- **F4:** The effect also swings with the period, and the market's moves add noise.
+- **F5:** Agitation does not separate the result clearly. Agitated cases give +3.52 % (t 1.67) and calm cases +1.67 % (t 0.61). Agitated cases are only 18 of 297, so no profile narrowing is supported.
+- **F6:** Even the full idea's total move per case (-0.15 %) is below the 0.22 % cost of a trade. A book can only pay on the larger moves of the deepest-fall cases (+4.6 % unusual in F2).
+
+## Ideas
+- `061-01.b1.b1.b1.d1.d2.d2.d1.b1_high-close-after-deep-fall` (from F2, F3, F6): When a coin's daily close sits near the top of that day's high-low range after a 5-day fall larger than the coin's usual 5-day move, in a falling market, its price falls over the next five days, and the deeper the 5-day fall, the larger the fall that follows.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

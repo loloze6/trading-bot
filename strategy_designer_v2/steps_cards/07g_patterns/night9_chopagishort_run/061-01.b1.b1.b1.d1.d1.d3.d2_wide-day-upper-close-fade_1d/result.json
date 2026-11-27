@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "061-01.b1.b1.b1.d1.d1.d3.d2_wide-day-upper-close-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43884730000000005,
+  "findings": {
+    "F1": "Inside the choppy agitated profile, on the 5-day grid of folds B and C, closes in the top fifth of the day's range were followed by a 5-day move 7.18 % below the coin's drift (t \u22122.80, 21 cases on 16 days). Closes in the 0.6\u20130.8 band were followed by \u22124.57 % (t \u22120.96), and closes in the bottom fifth by \u22121.22 % (t \u22120.49).",
+    "F2": "The fall inside the profile is graded by where the close sits in the day's range, not by the day's width. By close location tercile the unusual 5-day move was \u22120.11 %, \u22123.62 % and \u22125.96 % (top tercile t \u22122.09, 29 cases, 20 days), with a Spearman correlation of \u22120.215 between close location and the move. By range-multiple quartile it was \u22125.11 %, \u22120.51 %, \u22129.29 % and +1.86 %, with the widest days showing no fall (t +0.51, 10 cases).",
+    "F3": "Among closes in the top fifth of the range inside the profile, the fall appears whatever the 5-day return. After a negative 5-day return it was \u221210.5 % (t \u22122.14, 8 cases); after a positive one it was \u22125.2 % (t \u22122.09, 13 cases).",
+    "F4": "The pattern needs the agitation. In choppy markets outside the agitated profile, closes in the top third of the range were followed by +4.26 % against drift (t +1.54, 52 cases, 32 days), against \u22129.88 % in choppy agitated (t \u22122.01, 8 cases). Outside the profile no close-location bin shows a fall: all bins from 0.4 upward lie between +0.76 % and +1.06 %, with |t| \u2264 1.06.",
+    "F5": "Inside the profile the fall grows as the coin's 10-day swing rises against its 30-day swing: \u22122.91 %, \u22126.32 % and \u221211.65 % by tercile, with the top tercile at t \u22122.01 on 18 cases and 12 days. This is one angle among about a dozen I looked at, so it is suggestive, not decisive.",
+    "F6": "The effect is thin in time and not uniform. The profile covers 131 of 9,986 bars in the mean-reversion regime. By year inside the profile the unusual move was \u221214.6 % (2018, 5 cases), \u22123.7 % (2019, t \u22122.68), \u22126.0 % (2020) and +1.0 % (2021, t +0.40). Weekday showed nothing (all |t| < 1.25)."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, the nearer a coin's daily close sits to the top of that day's high-low range, the more its price falls over the next five days, whatever its 5-day return before.",
+      "consequence": "A trader shorting upper closes in choppy agitated markets should size by how close the close is to the high rather than by how wide the day was, and drop the prior-fall condition, which keeps out half the cases.",
+      "name": "close near high five-day fade",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy agitated",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, a coin whose daily close sits near the top of that day's range falls more over the next five days the higher its swing over the last 10 days stands against its swing over the last 30 days.",
+      "consequence": "A trader leans the upper-close short toward coins whose swings have been widening in the past ten days, and keeps little on coins whose recent days have grown quieter.",
+      "name": "widening swing upper close fade",
+      "from": "F5, F1, F4",
+      "profile": "choppy agitated",
+      "theme": "on",
+      "refs": [
+        "F5",
+        "F1",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d1.d1.d3.d2.g1_close-near-high-five-day-fade",
+    "061-01.b1.b1.b1.d1.d1.d3.d2.g2_widening-swing-upper-close-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

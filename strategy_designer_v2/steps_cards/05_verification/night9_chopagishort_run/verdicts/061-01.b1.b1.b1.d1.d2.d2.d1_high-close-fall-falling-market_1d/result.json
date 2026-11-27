@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 5-bar move over cases",
+    "value": 0.006691719227139253,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.0030801079894536
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": 0.0010814119204335944,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1055,
+    "distinct days with cases": 390
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The 5-day return is the recorded fall5 raw value where present (else recomputed from closes), the falling profile is the 60-bar return below -10 % recomputed inside each window, and active bars whose 60-bar return cannot be computed (first 60 bars of a window) are left out of the agreement; a case is the first short bet (rise of the short forecast by >= 2 points from its low since the last bet) in each 5-bar grid cell counted from the window's first row, cases whose 5-bar return leaves the window are dropped, the day-clustered t uses the G/(G-1) correction, and fewer than 30 distinct case days gives 'not observable'."
+}
