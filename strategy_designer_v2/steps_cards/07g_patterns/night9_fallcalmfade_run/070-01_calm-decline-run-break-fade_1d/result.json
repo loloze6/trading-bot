@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "070-01_calm-decline-run-break-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44412950000000007,
+  "findings": {
+    "F1": "Across all coins and profiles, an up day that ends a run of down days is followed by a next-day unusual fall that depends on the run's length. After a 1-day run the fall is only -0.20 % (t -0.85, 1236 cases, 463 days). After a 2-day run it is -1.03 % (t -3.07, 551 cases, 263 days), and after runs of 5 days or more it is -2.37 % (t -3.53, 76 cases, 56 days); these t take the cases of one day together.",
+    "F2": "The tested book weighted 1-day runs, which carry almost nothing. In the falling calm profile, up days after a 1-day run were followed by -0.23 % (t -0.80, 226 cases). After a 2-day run the move was -0.91 % (t -2.05, 125 cases), after a 4-day run -1.25 % (22 cases), and after runs of 5 days or more -2.12 % (t -3.09, 36 cases). Yet 634 of the backtest's 870 cases were 1-to-2-day runs, so its main t was only 0.98.",
+    "F3": "The fall after a run of 2 or more down days is not confined to falling calm. In falling agitated markets it is -1.15 % (t -1.65, 145 cases), against -1.58 % (t -2.65, 108 cases) in falling calm. Outside the book's profile, 2-day runs give -1.06 % (t -4.43, 426 cases). In rising markets it vanishes: +0.89 % in rising calm (87 cases) and -0.09 % in rising agitated (89 cases).",
+    "F4": "The fall after a run of 2 or more down days holds on every coin, between -0.55 % and -1.23 %. It reaches t -2.4 to -3.1 on five coins (LTC: t -1.19). It is negative in all four years, from -2.02 % in 2018 (t -3.76) to -0.47 % in 2020 (t -0.96), and in 11 of 12 windows (the exception is w11, +0.90 %).",
+    "F5": "This move is about 5 to 8 times the 0.19 % cost of a trade. The run-2+ cases move about -1.0 % per case unusual, against +0.20 % for the tested idea's case mix. The tested book earned +1.3 % a year, and almost all of its gain came from two windows, w7 (+0.10 %/day) and w14 (+0.07 %/day); the other windows were near 0 or negative.",
+    "F6": "Within run-2+ breaks, neither the size of the up day nor where it closes in its range changed the fall reliably. The up-day size terciles gave -0.88 %, -0.84 % and -0.73 %. The close-position terciles gave -0.95 %, -0.72 % and -1.35 %, all with t around -2 to -3.4.",
+    "F7": "Other patterns were either already held or too weak given how many angles I looked at. The lowest decile of the day's scaled return was followed by +0.87 % (t 3.76), and low closes in falling agitated markets by +1.52 % (t 2.32); both are fall rebounds the map already holds. The weekday effect (Thursday +0.41 % t 2.83, Friday +0.36 % t 2.58) is close to the held late-week gain, and it varies by year (t 0.1 to 2.2)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, an up day that ends a run of down days is followed by a fall over the next day. The fall is larger the more down days that run held beyond the first, so the up day after a single down day is followed by almost no fall.",
+      "consequence": "A trader fading relief days in a quiet decline should bet on the breaks of long down runs and give little weight to the break of a single down day, which carries almost nothing.",
+      "name": "calm decline long run break",
+      "from": "F2, F1, F5",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling market, an up day that ends a run of down days over the past days is followed by a fall over the next day. The fall is larger the longer that run of down days.",
+      "consequence": "A trader can fade the first up day after several down days whenever the coin's 60-day trend is down, whether the market is calm or agitated, a short side the map holds only thinly.",
+      "name": "falling market run break fade",
+      "from": "F3, F1, F4, F5",
+      "profile": "falling",
+      "theme": "discovery",
+      "refs": [
+        "F3",
+        "F1",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "070-01.g1_calm-decline-long-run-break"
+  ],
+  "discovery_ids": [
+    "070-01.g2_falling-market-run-break-fade"
+  ],
+  "no_ideas": null
+}

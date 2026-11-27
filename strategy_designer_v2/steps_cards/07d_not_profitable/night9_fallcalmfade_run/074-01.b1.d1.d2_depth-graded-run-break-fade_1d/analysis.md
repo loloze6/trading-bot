@@ -1,0 +1,23 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 074-01.b1.d1.d2_depth-graded-run-break-fade_1d
+idea tested: 074-01.b1.d1.d2_depth-graded-run-break-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4039 USD
+---
+## Findings
+- **F1:** The book's falls come from shorts held into sharp relief rallies. In folds B and C the chained book's deepest fall is -8.1 % (w9), and its 10 worst days, from -4.9 % to -1.1 %, all fall on days the coins rose by +2.1 % to +14.9 %; the 5 % worst held case loses -6.7 % in one day.
+- **F2:** The effect lives entirely in the 5-day fall, and the one-day fade is graded by it. On held cases the next-day short return is +3.16 % (t 5.68, n 99) when the 5-day return is below -2.1 daily swings, +1.26 % (t 2.17) between -2.1 and -0.85, +0.69 % (t 1.50) between -0.85 and +0.07, and -0.19 % (t -0.49, n 99) when the 5-day return is above +0.07 swings.
+- **F3:** The deep 5-day fall is not an effect of its own. In falling markets, bars with a 5-day return below -2.1 swings and no run-ending up day give a next-day short return of -0.32 % (t -1.04, n 366), against +3.60 % (t 5.41, n 71) when the run-ending up day is there too. On all falling-market bars the next-day short return is +0.01 % (t 0.09, n 2063), so the 5-day fall belongs to the idea's trapped-holder situation.
+- **F4:** The run-length part adds size without adding edge. The short return is not graded by run length (run 2: +1.65 %, run 3: +0.03 %, run 4: +1.36 %, run 5+: +2.28 %). The forecast bucket from -12.3 to -10, where the 5-day part is mostly clipped to 0 and only the run's fall sizes the short, earns +0.03 % (t 0.10, n 169), against +2.52 % (t 5.03) in the deepest bucket.
+- **F5:** Keeping only the deep-5-day-fall cases cuts the falls by more than it cuts the gain. A rebuilt book on folds B and C holding the same shorts only when the 5-day return is below -0.85 swings keeps 197 of 394 cases. It has a yearly +17.3 % and a deepest fall of -4.5 % (Calmar 3.84), against +17.9 % and -7.6 % (Calmar 2.37) as held. Cutting only the cases with a 5-day rise gives Calmar 2.89 (fall -6.4 %).
+- **F6:** A longer horizon adds nothing. The 2-day short return on deep-5-day-fall signals is +3.49 %, against +3.60 % over 1 day, so the move is spent in the next day.
+- **F7:** The idea's size covers its cost. The unusual move is +0.91 % per case (t 3.49, 423 days), 4.7 times the 0.19 % cost of a trade, and it rises to about +3.6 % in the deepest 5-day-fall cases (F2). The book's failure (Calmar 0.55) is one of falls taken on the weak cases, not of cost.
+
+## Ideas
+- `074-01.b1.d1.d2.d1_five-day-fall-graded-relief-fade` (from F1, F2, F3, F4, F5, F6, F7): In a falling market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next day, only while the coin's 5-day return is still a fall. That fall is larger the deeper the coin's 5-day fall, measured against its usual daily swing over the last 30 days, whatever the run's own length.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

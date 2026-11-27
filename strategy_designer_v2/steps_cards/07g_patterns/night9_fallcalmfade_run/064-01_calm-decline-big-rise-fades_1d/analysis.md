@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 064-01_calm-decline-big-rise-fades_1d
+idea tested: 064-01_calm-decline-big-rise-fades
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3706 USD
+---
+## Findings
+- **F1:** In falling markets (60-day return below -10 %), up days of 1 to 2 swings (one-day return over the 20-day standard deviation) are followed by a 3-day excess return of -4.10 % (t -2.60, 48 cases on 25 days). The tested regime started at 2 swings, and above 2 swings the fade weakens to -1.31 % (t -0.41, 19 cases). The test's threshold therefore left out the band where the fade lives.
+- **F2:** In falling markets the fade grows with the size of the up day from 0 up to 2 swings. The 3-day excess return is +0.14 % for 0–0.5 swings (166 cases), -1.40 % for 0.5–1 (94), -3.42 % for 1–1.5 (t -1.84, 29) and -5.13 % for 1.5–2 (t -2.70, 15 days). Above 2 swings it falls back to -1.76 % (18 cases on 7 days). The correlation of swings with excess return over all falling-market up days is -0.143.
+- **F3:** The fade after 1–2 swing up days in falling markets points the same way on all six coins:
+- **F4:** The fade is stronger in calm falling markets. On up days above 1 swing, the 3-day excess return is -6.74 % (t -2.33, 16 cases on 10 days) when the 30-day swing is at or below its recent median, against -2.23 % (t -1.28, 51 cases) when it is above. Calm here was read on a 90-day rank, a proxy, not the 365-day one.
+- **F5:** The fade does not build smoothly over time. After 1–2 swing up days in falling markets the excess return is -1.94 % at 1 day (t -1.91), -0.32 % at 2 days, -4.10 % at 3 days (t -2.60) and -2.87 % at 5 days (t -1.52). This is noisy, but negative at every horizon.
+- **F6:** Two other angles show nothing that counts:
+
+## Ideas
+- `064-01.g1_calm-decline-up-day-fade` (from F1, F2, F3, F4, F5): In a falling, calm market, a coin's up day is followed by a fall over the next three days that grows with the day's rise measured in units of its 20-day daily swing, across ordinary and moderately large rises alike, not only the rare extreme ones.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

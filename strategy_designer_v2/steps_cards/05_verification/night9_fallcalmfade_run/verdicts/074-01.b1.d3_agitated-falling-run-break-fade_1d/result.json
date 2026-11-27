@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day short-signed excess return on nonzero-forecast bars",
+    "value": 0.012716059455283753,
+    "statistic": {
+      "name": "t of the mean (cases summed per day)",
+      "value": 2.8418238845063906
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-signed excess on |forecast|",
+    "value": 0.0010455368772593484,
+    "passed": true
+  },
+  "counts": {
+    "cases": 342,
+    "distinct days": 201
+  },
+  "decided_by": "The mean short-signed excess return is above 0 with t >= 2 and the supporting slope is above 0.",
+  "reading": "The run break is recomputed from in-window closes (up close after at least two down closes, falling back on a positive recorded run_depth raw value on the first three bars of a window) and the falling-agitated profile is read from the recorded regime being 'mean_reversion' since the 365-day volatility percentile cannot be rebuilt from ~120-bar windows; the main value is the mean per case, its t is the ordinary t of the per-day sums, and the slope is an OLS of per-case short-signed excess on absolute forecast.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.004901 on the check folds against +0.01272 on every fold",
+    "main": 0.004900836997099489,
+    "statistic": 0.9467817654160663,
+    "counts": {
+      "cases": 182,
+      "distinct days": 113
+    }
+  }
+}

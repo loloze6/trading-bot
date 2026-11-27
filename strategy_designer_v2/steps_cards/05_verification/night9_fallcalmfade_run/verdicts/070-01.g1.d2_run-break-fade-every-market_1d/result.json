@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 1-day move on bars with forecast <= -2",
+    "value": 0.005931401553165558,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 3.5712806552219156
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2; at least 100 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, runs of 3+ (forecast <= -8) minus runs of 2 (-8 < forecast <= -2), above 0",
+    "value": 0.002410706168126226,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 922,
+    "cases": 2126,
+    "cases with forecast <= -8": 945,
+    "cases with forecast between -8 and -2": 1181
+  },
+  "decided_by": "Mean short-direction unusual move above 0 with t >= 2 and longer runs show a larger move: the confirm rule.",
+  "reading": "Situation from prices: close up on the bar and the previous close down (strict), using the regime column only on a window's first two bars; the next-day return stays inside the window and the coin's mean is over all its 1-bar returns in all windows; the day-clustered t sums deviations per UTC day with a G/(G-1) correction; case-days are distinct UTC days with a case; the shorter-run group is -8 < forecast <= -2.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001763 on the check folds against +0.005931 on every fold",
+    "main": 0.0017630721851689289,
+    "statistic": 1.0260930452115493,
+    "counts": {
+      "case-days": 501,
+      "cases": 1060,
+      "cases with forecast <= -8": 478,
+      "cases with forecast between -8 and -2": 582
+    }
+  }
+}

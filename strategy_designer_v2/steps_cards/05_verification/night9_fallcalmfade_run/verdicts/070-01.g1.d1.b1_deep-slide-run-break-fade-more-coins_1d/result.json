@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction next-day unusual move (return minus coin drift, negated)",
+    "value": 0.004998478947867061,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.6045350726910175
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on abs(forecast)",
+    "value": 0.0032795327920996796,
+    "passed": true
+  },
+  "counts": {
+    "cases": 405,
+    "distinct days": 218
+  },
+  "decided_by": "Inconclusive rule: the t lies between -2 and 2.",
+  "reading": "Case bars are every bar with forecast below 0 whose next close is in the same window, the drift is the coin's mean daily return over all its windows, the t clusters the cases by UTC day (deviations summed per day, G/(G-1) correction), the slope is ordinary least squares on abs(forecast), and both 30-case and 30-day minimums are treated as minimum counts for observability."
+}

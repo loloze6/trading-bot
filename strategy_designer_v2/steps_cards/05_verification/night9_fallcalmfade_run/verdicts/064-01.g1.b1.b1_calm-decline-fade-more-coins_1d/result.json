@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction next-day unusual move (return minus coin drift)",
+    "value": -0.00043024350324052447,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.19245048077650603
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom half (median |forecast|) mean unusual move",
+    "value": 0.0005562837170914863,
+    "passed": true,
+    "welch_t": 0.16568759232993316
+  },
+  "counts": {
+    "cases": 655,
+    "distinct days": 331
+  },
+  "decided_by": "The main measure's t is between -2 and 2.",
+  "reading": "The situation is taken as zr >= 1 (the recorded raw value of the identical 'rise' component, recomputed from closes as return / 20-return std if missing) with the regime 'trending' standing for the falling-calm profile (its detector components are not recorded and the 365-bar percentile cannot be rebuilt inside a window), on the short side; cases are the workflow's short bets (band 2) on every bar of the 1-bar grid; the median split puts |forecast| above the median in the top half and at or below it in the bottom half; the plan's 'fewer than 50 cases or 30 days' is applied as the minimum counts (not observable)."
+}

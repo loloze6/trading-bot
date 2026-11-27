@@ -1,0 +1,29 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual short-side move, top third of cases by |forecast|",
+    "value": 0.0005443681286617942,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.10180092843757106
+    },
+    "threshold": "t >= 2 confirms (with top minus bottom > 0), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third mean unusual short-side move",
+    "value": -0.0028791093194808957,
+    "passed": false
+  },
+  "counts": {
+    "cases": 118,
+    "top-third cases": 39,
+    "top-third distinct days": 19,
+    "bottom-third cases": 39
+  },
+  "decided_by": "The plan's minimum of 30 top-third cases on at least 30 distinct days is not reached.",
+  "reading": "Situation bars are computed from prices (up close after at least 2 consecutive down closes, and 60-bar percent price change below -10) on active bars where both can be computed inside the window; the top and bottom thirds are the first and last round(n/3) cases sorted by |forecast| (stable order by coin, window, bar); the day-clustered t sums deviations per UTC day; fewer than 30 top-third cases or days is reported as not observable."
+}

@@ -1,0 +1,71 @@
+{
+  "line": "7.g",
+  "backtest": "070-01.g1.d2.d1_depth-graded-run-break-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4019507,
+  "findings": {
+    "F1": "Over runs of at least 2 down days, the depth of the run in percent grades the next-day short excess in a steady way: from the shallowest to the deepest quartile it is +0.37 % (t 1.28, 177 days), -0.08 %, +1.41 % (t 2.52) and +2.43 % (t 3.42, 120 days), with a Spearman correlation of 0.16. The run's length in days does not grade it (Spearman -0.009). Scaling the loss by the 30-day swing gives the same picture, from +0.00 % (t 0.01) to +1.94 % (t 3.13, 99 days). Step 5 found no grading through the book's 60-value standardised forecast, so the grading exists in the raw depth and is lost in that transform.",
+    "F2": "The up day's volume against its own past 20-day mean also grades the fade: from the lowest to the highest quartile the next-day short excess is +0.45 % (t 0.96), +0.84 % (t 2.21), +1.10 % (t 2.32) and +1.51 % (t 3.19, 146 days), with a Spearman correlation of 0.10.",
+    "F3": "The width of the up day's high-low range grades the fade too: from the narrowest to the widest quartile it is +0.44 % (t 1.23), +0.46 % (t 1.24), +1.34 % (t 3.07) and +1.90 % (t 3.01, 141 days). The size of the up day's close-to-close gain does not grade it (Spearman 0.03), and neither does the share of the run it took back (-0.04).",
+    "F4": "The fade depends on the 60-day trend. With a proxy for agitation, it is +1.57 % (t 2.62, 65 days) in falling calm markets, +1.20 % (t 1.56) in falling agitated ones and +1.26 % (t 1.50) in choppy calm ones. It is +0.25 % (t 0.37) in rising agitated markets and -1.02 % (t -1.60, 61 days) in rising calm ones.",
+    "F5": "The deep half of runs fades more when the coin is swinging a lot: +1.77 % (t 2.88, 120 days) in the high-volatility half against +0.82 % (t 1.67) in the low-volatility half. The shallow halves give +0.63 % and +0.32 %, neither distinguishable from 0.",
+    "F6": "The fade does not reverse after the first day; it keeps building. The short excess over 1, 2 and 3 days is +1.03 % (t 3.57, 415 days), +1.09 % (t 2.63) and +1.37 % (t 2.78, 410 days).",
+    "F7": "The effect weakens over the years shown: +2.02 % (t 3.34) in 2018, +0.82 % (t 2.07) in 2019, +0.45 % (t 0.91) in 2020 and +0.64 % (t 0.84) in 2021. It is positive on all six coins, with t from 1.22 (LTC) to 3.15 (ETH)."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, an up day that ends a run of down days is followed by a fall over the next day, and that fall is larger the more the price dropped over the run, measured against the coin's daily swing over the past 30 days.",
+      "consequence": "A trader should fade the first up day of a quiet downtrend in proportion to how deep the run was against the coin's own recent swing, and should not grade it by how many days the run lasted.",
+      "name": "falling calm swing-scaled depth fade",
+      "from": "F1, F4",
+      "profile": "falling calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "An up day that ends a run of down days is followed by a fall over the next day, and that fall is larger the more the up day's volume exceeds the coin's average daily volume over the past 20 days.",
+      "consequence": "A trader should treat a heavy-volume first bounce after a down run as trapped holders selling into it, and fade it harder than a quiet bounce.",
+      "name": "heavy volume bounce fade",
+      "from": "F2",
+      "theme": "on",
+      "refs": [
+        "F2"
+      ]
+    },
+    {
+      "idea": "An up day that ends a run of down days is followed by a fall over the next day, and that fall is larger the wider the up day's high-low range is against the coin's daily swing over the past 30 days.",
+      "consequence": "A trader should fade a wide, contested first bounce after a down run more than a narrow one.",
+      "name": "wide bounce range fade",
+      "from": "F3, F5",
+      "theme": "on",
+      "refs": [
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "An up day that ends a run of down days is followed by a fall over the next three days, and that fall is larger the more the price dropped over the run of down days it ends.",
+      "consequence": "A trader can hold the fade of a deep run's first bounce for three days, so each trade's cost is spread over a larger move.",
+      "name": "three-day depth-graded bounce fade",
+      "from": "F1, F6",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "070-01.g1.d2.d1.g1_falling-calm-swing-scaled-depth-fade",
+    "070-01.g1.d2.d1.g2_heavy-volume-bounce-fade",
+    "070-01.g1.d2.d1.g3_wide-bounce-range-fade",
+    "070-01.g1.d2.d1.g4_three-day-depth-graded-bounce-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

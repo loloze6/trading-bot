@@ -2,7 +2,6 @@
 instruments: BTC, ETH, LTC, XMR, XRP, ZEC
 bar: 1d
 source: line 7.g patterns, backtest 061-01.g1.g3_calm-big-fall-rebounds_1d (idea 061-01.g1.g3_calm-big-fall-rebounds, brief 061_calm-market-big-day-continues)
-discovery: 061-01.g1.g3.g1_falling-market-rise-fades
 ---
 In a falling, calm market, a coin's one-day rise that is large against its own recent daily swing is given back over the next few days. The larger the rise in those swing units, the more is given back.
 

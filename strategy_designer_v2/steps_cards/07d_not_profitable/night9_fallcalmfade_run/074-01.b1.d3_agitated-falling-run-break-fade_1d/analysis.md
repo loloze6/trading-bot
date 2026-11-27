@@ -1,0 +1,24 @@
+---
+line: 7.d confirmed, not profitable
+backtest: 074-01.b1.d3_agitated-falling-run-break-fade_1d
+idea tested: 074-01.b1.d3_agitated-falling-run-break-fade
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5929 USD
+---
+## Findings
+- **F1:** The gain sits in the deepest runs only. In the book, positions in the shallowest quarter of run depth (run loss 0.34 to 1.01 usual daily swings, 37 cases) earned -0.004 % short next-day return, t -0.01, and summed only +0.003 of gain. The deepest quarter (2.19 to 6.60 swings, 37 cases) earned +3.15 %, t 3.85, and summed +0.78 of the 1.27 total. Across all falling-market run breaks the depth quarters give -0.33 % (t per day -0.49, 46 days), +0.45 % (t 0.43), +0.82 % (t 1.37) and +3.83 % (t per day 3.73, 33 days). The effect is convex in depth, but the book's linear sizing spends most of its trades on the part that earns nothing.
+- **F2:** The failing measure is Calmar, at 0.61 against the required 0.75. Its deepest fall is small (-1.86 %, mostly one day of -1.73 % in w14), but the yearly return is only +4.0 %, because the book is in a position on 4 % of coin-days. It is too small a book for its falls, not a book with large falls.
+- **F3:** The agitated condition throws away about two thirds of a working signal, and the brief's own theory says the effect holds "calm or agitated alike". Falling-market run breaks outside the position (the calm ones) gave +1.10 % short next-day return, t 3.02, over 165 cases. Those in the position gave +1.35 %, t 2.78, over 88 cases. In the deepest depth quarter, the calm cases gave +3.37 % (t per day 3.43, 29 days) against +5.31 % for the agitated ones (t 2.72, 10 days).
+- **F4:** The falling profile is not an effect of its own. Falling-market days with no run break gave -0.17 % short return (t -1.34, 1,649 cases). Falling-market up days that end no run gave +0.20 % (t 1.04, 649 cases). Falling run breaks gave +1.10 % to +1.35 %. Run breaks outside a falling market gave -0.03 % (t -0.08, 257 cases), and depth there does not grade the move (-0.38 %, +0.23 %, +0.07 % by thirds). So the move needs both the trapped-holder downtrend and the run break, as the theory says.
+- **F5:** Rebuilt books on the same bars show what the convex sizing does:
+- **F6:** Depth, not run length, carries the effect. Within each run length, the deeper half earned more than the shallower half:
+- **F7:** The move is spent in the first day, so the 1-day horizon is the right one. In the deepest quarter, holding 2 days gave +3.43 % (t per day 3.13), against +3.83 % for 1 day. The shallow quarters gained over 2 days (+1.17 %, t 1.24) only by the usual downtrend drift.
+
+## Ideas
+- `074-01.b1.d3.d1_deep-run-break-fade-falling` (from F1, F2, F3, F4, F5, F6, F7): In a falling market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next day, and that fall grows faster than the run's depth (the coin's return over the run's down days against its usual daily swing over the last 30 days): shallow runs are followed by almost nothing, and the deepest runs by most of the fall.
+- `074-01.b1.d3.d2_agitated-deep-run-fade` (from F1, F5, F6): In a falling, agitated market, the first up day after a run of consecutive down days is followed by a fall in the coin's close over the next day, and that fall grows faster than the run's depth (the coin's return over the run's down days against its usual daily swing over the last 30 days), concentrated after the deepest runs.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

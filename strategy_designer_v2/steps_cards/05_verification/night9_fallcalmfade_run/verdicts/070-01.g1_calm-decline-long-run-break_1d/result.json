@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean short-side next-day excess move",
+    "value": 0.006286359387281924,
+    "statistic": {
+      "name": "t of the weighted mean, clustered by day",
+      "value": 2.388677103406728
+    },
+    "threshold": "confirm: > 0 with t >= 2 over >= 30 case-days; reject: < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, breaks of 2+ down days minus breaks of 1",
+    "value": -0.009173525731162917,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 286,
+    "cases": 465,
+    "breaks of 2+ down days": 442,
+    "breaks of a single down day": 389
+  },
+  "decided_by": "Main measure positive with t >= 2 over at least 30 case-days and the supporting difference below 0.",
+  "reading": "Falling calm is taken as the detector's 'unknown' (not vetoed) regime on each bar, both for the situation check and for the supporting check's profile (the 60-bar trend and 365-bar vol percentile cannot be rebuilt inside a window), run lengths are rebuilt from window closes with single-day breaks kept only when the run's start is seen, the t clusters weighted deviations by calendar day with a G/(G-1) correction, and case-days are the distinct days with a short forecast.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.002493 on the check folds against +0.006286 on every fold",
+    "main": 0.0024930836163491094,
+    "statistic": 0.8723461017338359,
+    "counts": {
+      "case-days": 130,
+      "cases": 196,
+      "breaks of 2+ down days": 184,
+      "breaks of a single down day": 169
+    }
+  }
+}

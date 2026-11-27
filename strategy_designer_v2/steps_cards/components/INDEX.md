@@ -233,3 +233,12 @@ night7c_rangefail_run | 032-02.b1.e1.e2_unextended-breakouts-keep-rising_1d | Br
 night7c_rangefail_run | 032-01.b1.b1.e2_small-breaks-follow-through_1d | BreakProximityAboveHigh | cannot build: no answer passed the checks after 3 attempts
 night7c_rangefail_run | 032-02.b1.e1.e1.e1.e3_first-break-short-follow-through_1d | BreakoutMarginProximityComponent | built: BreakoutMarginProximityComponent {"period": 60}
 night7c_chopreversal_run | 032-03_reversal-grows-with-choppiness_1d | ChopWeightedScaledReversal | built: ChoppinessWeightedScaledReversalComponent {"er_period": 30, "period": 7, "vol_period": 30}
+night9_fallcalmfade_run | 070-01.b1.b1_calm-decline-depth-fade_1d | PriorDownRunLossOnUpClose | built: PriorDownRunLossOnUpCloseComponent {"base": "percent", "max_bars": 30, "window": 30}
+night9_fallcalmfade_run | 074-01.b1_falling-deep-run-break-fade_1d | PriorDownRunLossInUsualMoves | built: PriorDownRunLossOnUpCloseComponent {"base": "std", "window": 30}
+night9_fallcalmfade_run | 070-01.g1_calm-decline-long-run-break_1d | DownRunLengthBeyondFirstOnUpCloseComponent | built: PriorDownRunOnUpCloseComponent {"form": "beyond_first", "max_bars": 30}
+night9_fallcalmfade_run | 074-01.g1_falling-agitated-scaled-run-break-fade_1d | PriorDownRunLossInUsualMovesComponent | exists: PriorDownRunLossOnUpCloseComponent {"base": "usual_moves", "window": 30}
+night9_fallcalmfade_run | 070-01.b1.g1_calm-decline-depth-fade_1d | PriorDownRunLossInUsualMovesOnUpClose | built: PriorDownRunLossOnUpCloseComponent {"base": "usual_moves", "exclude_current": 1, "window": 20}
+night9_fallcalmfade_run | 070-01.b1.g2_falling-market-depth-fade_1d | PriorDownRunLossOnUpCloseInUsualMovesComponent | exists: PriorDownRunLossOnUpCloseComponent {"base": "usual_moves", "exclude_current": 1, "window": 20}
+night9_fallcalmfade_run | 074-01.b1.d2.g1_up-run-break-dip-rebound_1d | PriorUpRunGainOnDownCloseComponent | built: PriorDownRunLossOnUpCloseComponent {"base": "usual_moves", "exclude_current": 1, "max_bars": 30, "side": "up", "window": 30}
+night9_fallcalmfade_run | 074-01.b1.d1.g1_falling-market-rally-break-rebound_1d | PriorUpRunOnDownCloseComponent | built: PriorDownRunOnUpCloseComponent {"side": "up"}
+night9_fallcalmfade_run | 070-01.g1.d1_deep-slide-calm-run-break-fade_1d | RunBreakDepthComponent | built: ScaledFallTimesBrokenDownRunComponent {"max_bars": 30, "period": 20, "vol_period": 20}

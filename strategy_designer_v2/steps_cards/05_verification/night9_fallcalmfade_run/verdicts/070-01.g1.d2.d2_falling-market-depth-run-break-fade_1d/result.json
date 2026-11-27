@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day return minus drift, short direction",
+    "value": 0.005537488830083093,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.577949095820346
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "t of slope of next-day return on run loss",
+    "value": -7.619361328356344,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1414,
+    "distinct days": 637
+  },
+  "decided_by": "Confirm rule: mean above 0 with t >= 2 and a negative slope with t <= -2.",
+  "reading": "Cases are the short bets of the workflow (a rise of the forecast's size of at least 2 points from its lowest level since the last bet), the supporting regression uses the raw next-day return, the main t uses per-day sums of deviations, the situation's 60-day profile is computed from prices when 60 bars precede the bar in its window and read from the recorded regime otherwise, and the plan's minimum of 100 cases on 80 days yields 'not observable' when unmet.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001252 on the check folds against +0.005537 on every fold",
+    "main": 0.0012515565670292994,
+    "statistic": 0.47554991537976404,
+    "counts": {
+      "cases": 635,
+      "distinct days": 332
+    }
+  }
+}

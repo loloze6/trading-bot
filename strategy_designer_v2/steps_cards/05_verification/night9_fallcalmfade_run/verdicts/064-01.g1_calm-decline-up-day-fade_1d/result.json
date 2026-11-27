@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean position-weighted 3-bar fade beyond drift (cases summed per day)",
+    "value": 0.00030947152742279995,
+    "statistic": {
+      "name": "t of the mean (per-day sums)",
+      "value": 0.06796413048468587
+    },
+    "threshold": "confirm t >= 2 (with slope > 0); reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of -(unusual 3-bar return) on forecast size",
+    "value": 0.0009071976367216074,
+    "passed": true,
+    "t": 1.770516542766494
+  },
+  "counts": {
+    "independent cases (distinct days)": 268,
+    "cases": 534
+  },
+  "decided_by": "Inconclusive: the main t is between -2 and 2 and no reject rule is met.",
+  "reading": "Profile membership read from the recorded regime; cases are grid bars (0,3,6,... of each window) with forecast < 0 and a close 3 bars later in the same window; the main value is the mean per case and its t is the ordinary t of the per-day sums; the slope is on |forecast|, with its t from OLS; fewer than 30 distinct days is treated as not observable."
+}

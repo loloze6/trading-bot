@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 074-01_falling-market-run-break-fade_1d
+idea tested: 074-01_falling-market-run-break-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4142 USD
+---
+## Findings
+- **F1:** In falling markets the fade after an up day lives only in agitated markets. There, the next-day short-side move beyond the coin's drift is +1.25 % (t 2.66, 427 cases on 163 days). In calm falling markets it is +0.06 % (t 0.16, 546 cases on 202 days). The book's own position bars agree: +1.08 % per bar agitated (111 bars) against +0.31 % calm (167 bars). This contradicts the brief's "calm or agitated alike".
+- **F2:** Inside falling agitated markets, ending a run is what matters, not the run's length. After an up day that follows an up day (prior run 0), the next day is +0.08 % (t 0.12, 166 cases). After a run of 1 down day it is +1.88 % (t 2.32, 150 cases), after 2 it is +2.62 % (t 3.06, 58 cases), and after 3 or more it is +1.62 % (t 1.55, 53 cases). The Spearman correlation of run count with the next-day short move is -0.015, and the verdict found runs of 3 or more 0.47 % weaker than runs of 2.
+- **F3:** In falling agitated markets, the run's total fall scaled by the coin's 30-day daily swing grades the fade better than the run's count. Its Spearman correlation with the next-day short move is +0.12. By tercile the move is +1.79 % (t 2.56, 87 cases), then +0.62 % (t 0.58, 86 cases), then +3.52 % (t 4.87, 88 cases on 46 days).
+- **F4:** The size of the up day itself does not grade the fade in falling agitated markets. By tercile of up-day size the next-day move is +1.63 %, +2.41 % and +1.93 % (t 1.86, 3.19, 2.31), and the Spearman correlation is +0.05.
+- **F5:** The fade lasts one day only. Over two days after a falling-market up day, the short-side move beyond drift is +0.02 % (t 0.05, 957 cases).
+- **F6:** The falling agitated fade holds across years. It is +2.57 % in 2018 (t 2.49, 120 cases), +1.49 % in 2019 (t 2.93, 49 cases) and +1.92 % in 2020 (t 1.77, 73 cases). Only 2021 is flat, at -0.14 % (19 cases).
+- **F7:** Some patterns did not stand out against the number of angles I looked at.
+
+## Ideas
+- `074-01.g1_falling-agitated-scaled-run-break-fade` (from F1, F2, F3, F5, F6): In a falling, agitated market, the first up day after a run of down days is followed by a fall in the coin's close over the next day. The deeper the run's total fall measured against the coin's usual daily swing over the last 30 days, the larger that next-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

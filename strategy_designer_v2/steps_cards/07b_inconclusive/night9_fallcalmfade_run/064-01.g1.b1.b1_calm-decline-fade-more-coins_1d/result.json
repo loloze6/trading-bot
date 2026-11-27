@@ -1,0 +1,21 @@
+{
+  "line": "7.b",
+  "backtest": "064-01.g1.b1.b1_calm-decline-fade-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3865111,
+  "findings": {
+    "F1": "Over all four folds the effect is zero: step 5's main measure is a mean short-direction next-day unusual move of -0.04 % (t -0.19, 655 cases on 331 days). Folds B and C alone show +0.64 % (t 1.60, 237 cases on 133 days). So the 418 cases in folds A and D must average about -0.43 %: the sign flips between fold pairs.",
+    "F2": "The effect fades over time within folds B and C: +1.46 % in 2018 (t 1.74, 93 cases), +0.48 % in 2019 (t 1.00, 66 cases), -0.34 % in 2020 (t -0.37, 26 cases) and -0.13 % in 2021 (t -0.19, 52 cases). By window, w16 to w18 are -0.85 %, +0.02 % and -1.30 %.",
+    "F3": "The size of the rise does not grade the giveback. In swing units it is +0.80 % for 1 to 1.5 (t 1.59), +1.72 % for 1.5 to 2 (t 1.66), +0.35 % for 2 to 3 (t 0.40) and +2.25 % for above 3 (only 7 cases). By forecast quartile it is +0.93 %, -0.06 % and +0.84 %. Step 5's top-minus-bottom difference over all folds is only +0.056 %.",
+    "F4": "No longer horizon recovers the effect: the t falls from 1.60 at 1 day to 1.09 at 2 days, 0.59 at 3 days and 0.20 at 5 days, with the 5-day total move at -0.48 %.",
+    "F5": "The effect is carried by two coins in folds B and C. ETH shows +1.53 % (t 2.06, 31 cases) and LTC +1.44 % (t 2.42, 45 cases). BTC, XMR, XRP and LINK sit between -0.38 % and +0.01 % with |t| \u2264 0.2.",
+    "F6": "The market's next-day move drowns the per-case result. The cases' unusual move correlates 0.70 with BTC's next-day move in the short direction (beta 0.92, 216 non-BTC cases). Only after removing it does the residual reach +0.61 % with t 2.08. An idea cannot use that correction, because each coin is tested on its own bars.",
+    "F7": "No condition read from the coin's own bars isolates the effect, because the other terciles stay positive. The deepest 20-day fall tercile (mean -22 %) gives +1.58 % (t 2.01, 68 cases), but the middle and upper terciles still give +0.69 % (t 1.32) and +0.68 % (t 0.80). The 60-day return, 5-day return, close location, body and relative-volume terciles show no clear concentration either: none passes t 2.2, and none is monotone."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "The theme's effect is not in the data. Over all folds the fade is zero (F1): it appears only in 2018 and 2019 and on ETH and LTC (F2, F5), it does not grow with the rise's size (F3), and no horizon (F4) or bar-based condition (F7) shows it clearly in one part of the data and absent elsewhere."
+}

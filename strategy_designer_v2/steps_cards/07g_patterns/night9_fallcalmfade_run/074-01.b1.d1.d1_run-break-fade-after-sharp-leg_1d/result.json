@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.5158917,
+  "findings": {
+    "F1": "In falling markets the up day that ends a run of down closes is followed by a weaker next day for every run length from one day. The next-day unusual move is -0.93 % (t -3.04, 281 cases) after a 1-day run, -1.53 % (t -3.71, 142) after 2 days, -0.33 % (t -0.61, 79) after 3 days and -2.45 % (t -3.54, 54) after 4 or more. An up day after an up day does not fade: +0.16 % (t 0.63, 417). These t's are not day-pooled.",
+    "F2": "The fade belongs to falling markets, not rising ones. On up days ending a run of 2 or more down closes, the next-day unusual move is -1.59 % in falling calm markets (day-pooled t -2.75, 115 cases, 64 days) and -1.19 % in falling agitated ones (t -1.60, 160 cases, 77 days). In rising markets it is +0.89 % when calm (t 1.35) and -0.08 % when agitated (t -0.11). This matches the tested idea and its brief; the falling short side is already held by this book (074-01.b1.d1.d1 in the map).",
+    "F3": "In falling agitated markets, a day that closes in the bottom fifth of its range is followed by a rebound. The next-day unusual move is +1.91 % (day-pooled t 2.46, 258 cases, 113 days), and it grows with the day's width: narrow +1.07 %, mid +1.37 %, wide +2.71 % (t 2.29, 97 cases). In falling calm markets the same close gives -0.08 % (t -0.12). This repeats the agitated wide low-close rebound the map already holds (044-01, 045-01, 039-02), so it is not a discovery.",
+    "F4": "The book's gain comes from a few large days. On its 590 active coin-days the mean is +0.48 % with only 31 % of days positive, a 5th percentile of -1.55 % and a 95th of +4.27 %. One window, w14, carries a mean of +0.17 % a day against near 0 in most others.",
+    "F5": "No pattern stood out in these angles:"
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, an up day that follows one or more consecutive down days is followed by a fall in the coin's close over the next day, and the more down days in a row the up day ends, the larger that fall.",
+      "consequence": "A trader fades relief days in a downtrend from the first down day on, leaning harder the longer the slide they interrupt, instead of waiting for a run of two.",
+      "name": "falling market dip relief fade",
+      "from": "F1, F2",
+      "profile": "falling",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.d1.d1.g1_falling-market-dip-relief-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

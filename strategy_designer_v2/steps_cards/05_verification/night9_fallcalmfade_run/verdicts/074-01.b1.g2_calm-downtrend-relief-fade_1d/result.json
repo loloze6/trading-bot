@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed next-day return minus the coin's mean daily return, on forecast < 0 bars",
+    "value": 0.006286359387281923,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 2.388677103406728
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over at least 30 case-days; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-signed excess next-day return on depth last_history_value",
+    "value": 0.005482628249118515,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 286,
+    "cases": 465
+  },
+  "decided_by": "The main mean is positive with t >= 2 over at least 30 case-days and the supporting slope is above 0.",
+  "reading": "Situation checked from prices as an up close after at least 2 down closes inside the window, with short side (forecast < 0); the falling-calm profile is not recomputed (its 365-day volatility percentile needs history before each window) and active bars in a window's first 3 rows are left out of the check; case-days are distinct UTC dates, the t is clustered by day (deviations summed per day), the slope is OLS over all cases, and fewer than 30 case-days gives 'not observable' as the workflow's minimum-count rule requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.002493 on the check folds against +0.006286 on every fold",
+    "main": 0.0024930836163491103,
+    "statistic": 0.8723461017338361,
+    "counts": {
+      "case-days": 130,
+      "cases": 196
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 3-bar excess return on case bars",
+    "value": -0.022521920247717396,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": -1.4181975734461463
+    },
+    "threshold": "mean > 0 with t >= 2 on at least 30 cases (confirm); mean < 0 with t <= -2 on at least 30 cases (reject)"
+  },
+  "supporting_check": {
+    "name": "Pearson correlation of abs(forecast) with short-direction excess return",
+    "value": -0.24490228045136406,
+    "passed": false
+  },
+  "counts": {
+    "cases": 62,
+    "days": 46
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Situation = rise in swings >= 2 (recorded raw value, else from prices) and 60-bar price change below -10 % where the window holds 60 bars, with the detector's regime mean_reversion standing for the calm profile (365-bar vol percentile not recomputable); a case is the first bar of each 3-bar grid cell (positions 0,3,6,... per window) with regime mean_reversion and forecast < 0 whose close[t+3] lies in the same window; the normal drift is the mean of the coin's non-overlapping 3-bar grid returns over all its windows; the day-pooled t sums the cases' deviations per UTC day (standard error sqrt(sum of squared day sums)/n)."
+}

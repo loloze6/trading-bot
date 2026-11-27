@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move on short cases (short direction, minus coin mean daily return)",
+    "value": 0.0020041252116690888,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 0.9814430291354694
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "unusual move, run >= 3 minus run 1-2 (Welch t)",
+    "value": 0.0064200866438082265,
+    "passed": true,
+    "welch_t": 2.1844997320627897
+  },
+  "counts": {
+    "case-days in total": 870,
+    "case-days with run >= 3": 236,
+    "case-days with run 1-2": 634,
+    "distinct days with cases": 488
+  },
+  "decided_by": "Inconclusive rule: the main t is between -2 and 2 (or undefined) and no reject rule is met.",
+  "reading": "Cases are all coin-day bars with forecast below 0 and a next-day close in the same window, each counted as one case-day toward the minimums (100 total, 20 per run group, groups by the recorded run length: >=3 vs 1-2); the falling-calm profile in the situation check is read from the detector's recorded regime (mean_reversion = not vetoed) since its profile components are not recorded; the day-clustered t uses deviations summed per UTC day with a D/(D-1) correction."
+}

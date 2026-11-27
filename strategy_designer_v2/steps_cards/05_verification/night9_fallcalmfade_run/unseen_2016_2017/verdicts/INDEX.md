@@ -1,0 +1,6 @@
+070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: not observable (fit: exact) [main: None; cases 2]
+074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d: not observable (fit: exact) [main: 0.0130372; t of the mean, cases of one day pooled 2.00985; cases 30, distinct days 27]
+074-01.b1.d2_run-break-fade-steep-slide_1d: not observable (fit: exact) [main: 0.00850753; t of the mean, cases of the same day taken together 1.93657; cases (bars with forecast < 0) 58, days with cases 48]
+074-01.b1.d3.d1_deep-run-break-fade-falling_1d: not observable (fit: adapted) [main: 0.0145805; t of the mean, cases of one day taken together 1.74257; cases 58, top-third cases 19, top-third distinct days 18, bottom-third cases 19]
+074-01.b1.d3.d2.d1_falling-market-deep-run-fade_1d: inconclusive (fit: adapted) [main: 0.000691975; t of the mean, cases pooled by day 0.110027; cases 50, distinct case days 43]
+074-01.b1.g1_convex-deep-run-fade_1d: inconclusive (fit: adapted) [main: 0.00923147; t of weighted mean, cases of one day pooled 1.19593; case-days 82, cases 101]

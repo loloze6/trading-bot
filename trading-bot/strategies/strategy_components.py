@@ -9611,56 +9611,80 @@ class PriorLowReclaimInRangeComponent(SubStrategyComponent):
 
 class PriorDownRunOnUpCloseComponent(SubStrategyComponent):
     """
-    Length of the down run that bar t's up close has just ended:
+    Length of the run that bar t's close breaks, on every bar:
 
-        if close[t] > close[t-1]:
-            n = number of consecutive bars i = t-1, t-2, ... with close[i] < close[i-1], capped at max_bars
-            raw_value = n
-        else:
-            raw_value = 0
+        side = "down" (default): when close[t] > close[t-1],
+            n = number of consecutive bars i ending at t-1 (i = t-1, t-2, ...) with close[i] < close[i-1]
+        side = "up": when close[t] < close[t-1],
+            n = number of consecutive bars i ending at t-1 with close[i] > close[i-1]
+        m = min(n, max_bars); 0 when bar t does not close to the breaking side
+        form = "count" (default): raw_value = m
+        form = "beyond_first":    raw_value = max(0, m - 1)
 
-    Range: 0 to max_bars, integers, never negative, no direction. It is 0 on a down or flat bar t, and 0 on an
-    up bar whose previous bar was not a down bar. A flat bar (equal close) ends the down run.
+    Range: integers 0 .. max_bars ("count") or 0 .. max_bars - 1 ("beyond_first"), never negative, no direction.
+    It grows by one with each further bar in the broken run. A flat bar ends either run and is not a break.
+    side "down" (default) with either form is the original output, unchanged.
     Warm-up: max_bars + 2 rows, bar t included.
-    NaN: a NaN close in the last max_bars + 2 rows gives NaN.
-    Building the component raises for a max_bars below 1.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + 2 rows of data, which end at
-    bar t (the last row); a bar's close is known at that bar's close.
+    NaN: a NaN close anywhere in the last max_bars + 2 rows gives NaN.
+    Building the component raises for max_bars < 1, a form other than "count" or "beyond_first",
+    or a side other than "down" or "up".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + 2 rows of data, ending at
+    bar t (the last row); a close is known at that bar's close.
     """
 
-    def __init__(self, name="PriorDownRunOnUpClose", weight=1.0, parameters=None):
+    def __init__(self, name="PriorRunOnBreakClose", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.max_bars = int(self.parameters.get("max_bars", 30))
         if self.max_bars < 1:
             raise ValueError(f"PriorDownRunOnUpCloseComponent: max_bars must be >= 1, got {self.max_bars}")
+        self.form = self.parameters.get("form", "count")
+        if self.form not in ("count", "beyond_first"):
+            raise ValueError(
+                f"PriorDownRunOnUpCloseComponent: form must be 'count' or 'beyond_first', got {self.form!r}")
+        self.side = self.parameters.get("side", "down")
+        if self.side not in ("down", "up"):
+            raise ValueError(f"PriorDownRunOnUpCloseComponent: side must be 'down' or 'up', got {self.side!r}")
         self._raw_value = 0.0
 
-    def update(self, data):
+    def update(self, data: pd.DataFrame):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
         if not self.is_ready():
             return
-        c = data['close'].astype(float).to_numpy()[-self.get_required_periods():]
+        c = data['close'].astype(float).iloc[-(self.max_bars + 2):].to_numpy()
         if np.isnan(c).any():
             self._raw_value = float("nan")
             self.confidence = 1.0
+            self.debug_info = {'nan': True}
             return
+        t = len(c) - 1
+        if self.side == "down":
+            breaks = c[t] > c[t - 1]
+        else:
+            breaks = c[t] < c[t - 1]
         n = 0
-        if c[-1] > c[-2]:
-            i = len(c) - 2
-            while n < self.max_bars and c[i] < c[i - 1]:
+        if breaks:
+            i = t - 1
+            while i >= 1 and n < self.max_bars:
+                moved = (c[i] < c[i - 1]) if self.side == "down" else (c[i] > c[i - 1])
+                if not moved:
+                    break
                 n += 1
                 i -= 1
-        self._raw_value = float(n)
+        m = n
+        if self.form == "beyond_first":
+            m = max(0, m - 1)
+        self._raw_value = float(m)
         self.confidence = 1.0
-        self.debug_info = {'prior_down_run': n, 'up_close': bool(c[-1] > c[-2])}
+        self.debug_info = {'run_length': n, 'side': self.side, 'form': self.form}
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self):
+    def get_required_periods(self) -> int:
         return self.max_bars + 2
 
 
@@ -10146,3 +10170,190 @@ class ChoppinessWeightedScaledReversalComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.period, self.vol_period, self.er_period) + 1
+
+
+class PriorDownRunLossOnUpCloseComponent(SubStrategyComponent):
+    """
+    The move of the run that bar t breaks, on the breaking bar only:
+
+        side = "down" (default): when close[t] > close[t-1],
+            n = number of consecutive bars i ending at t-1 (i = t-1, t-2, ...) with close[i] < close[i-1],
+                capped at max_bars
+            M = (close[t-1-n] - close[t-1]) / close[t-1-n]          (the down run's loss)
+        side = "up": when close[t] < close[t-1],
+            n = number of consecutive bars i ending at t-1 with close[i] > close[i-1], capped at max_bars
+            M = (close[t-1] - close[t-1-n]) / close[t-1-n]          (the up run's gain)
+        base = "percent" (default): raw_value = M x 100
+        base = "usual_moves":       raw_value = M / m, m = mean(abs(close[j] / close[j-1] - 1)),
+                                    j = t-exclude_current-window+1 .. t-exclude_current
+        base = "std":               raw_value = M / s, s = std (ddof 1) of close[j] / close[j-1] - 1, same j
+        raw_value = 0 when bar t does not close to the breaking side, when n = 0, or when m = 0 / s = 0.
+
+    exclude_current 0 includes bar t's return in the base; 1 uses the window returns ending at t-1.
+    side "down" is the original output, unchanged, for every base and exclude_current.
+    Range: "down" with "percent" is 0 to below 100; "up" with "percent" is 0 and up; "usual_moves" and
+    "std" are 0 and up, unbounded. Never negative, no direction. A flat bar ends either run and is not a break.
+    Warm-up: max_bars + 2 rows with "percent"; max(max_bars + 2, window + 1 + exclude_current) otherwise.
+    NaN: a NaN close in the last (warm-up) rows gives NaN, and so does a close not above 0 there.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows of data,
+    the last of them being bar t; every close read is at or before bar t.
+    """
+
+    def __init__(self, name="PriorDownRunLossOnUpClose", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(f"PriorDownRunLossOnUpCloseComponent: max_bars must be >= 1, got {self.max_bars}")
+        self.base = self.parameters.get("base", "percent")
+        if self.base not in ("percent", "usual_moves", "std"):
+            raise ValueError(
+                f"PriorDownRunLossOnUpCloseComponent: base must be 'percent', 'usual_moves' or 'std', got {self.base!r}")
+        self.window = int(self.parameters.get("window", 30))
+        if self.window < 1:
+            raise ValueError(f"PriorDownRunLossOnUpCloseComponent: window must be >= 1, got {self.window}")
+        if self.base == "std" and self.window < 2:
+            raise ValueError("PriorDownRunLossOnUpCloseComponent: window must be >= 2 with base 'std'")
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(f"PriorDownRunLossOnUpCloseComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        self.side = self.parameters.get("side", "down")
+        if self.side not in ("down", "up"):
+            raise ValueError(f"PriorDownRunLossOnUpCloseComponent: side must be 'down' or 'up', got {self.side!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data["close"].astype(float).to_numpy()
+        need = self.get_required_periods()
+        tail = c[-need:]
+        self.confidence = 1.0
+        if np.isnan(tail).any() or (tail <= 0).any():
+            self._raw_value = float("nan")
+            return
+        t = len(c) - 1
+        up = self.side == "up"
+        breaks = (c[t] < c[t - 1]) if up else (c[t] > c[t - 1])
+        if not breaks:
+            return
+        n = 0
+        while n < self.max_bars:
+            i = t - 1 - n
+            moved = (c[i] > c[i - 1]) if up else (c[i] < c[i - 1])
+            if not moved:
+                break
+            n += 1
+        if n == 0:
+            return
+        start = c[t - 1 - n]
+        if up:
+            move = (c[t - 1] - start) / start
+        else:
+            move = (start - c[t - 1]) / start
+        if self.base == "percent":
+            value = move * 100.0
+        else:
+            end = t - self.exclude_current
+            rets = np.array([c[j] / c[j - 1] - 1.0 for j in range(end - self.window + 1, end + 1)])
+            if self.base == "usual_moves":
+                d = float(np.mean(np.abs(rets)))
+            else:
+                d = float(np.std(rets, ddof=1))
+            value = move / d if d > 0 else 0.0
+        self._raw_value = float(value)
+        self.debug_info = {"run_bars": n, "run_move": float(move), "side": self.side, "base": self.base}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        if self.base == "percent":
+            return self.max_bars + 2
+        return max(self.max_bars + 2, self.window + 1 + self.exclude_current)
+
+
+class ScaledFallTimesBrokenDownRunComponent(SubStrategyComponent):
+    """
+    The slide in usual moves times the length of the down run that bar t's up close breaks:
+
+        gate: close[t] > close[t-1], else the output is 0
+        n = number of consecutive bars i ending at t-1 (i = t-1, t-2, ...) with close[i] < close[i-1],
+            capped at max_bars; the output is 0 when n = 0
+        run = close[t-n .. t-1];  d = (close[t-1] - min(run)) / (max(run) - min(run)), 0 when max = min
+        s = std (ddof 1) of the vol_period one-bar returns close[j]/close[j-1] - 1, j = t-vol_period+1 .. t
+        F = max(0, -(close[t]/close[t-period] - 1) / (s * sqrt(period))),  F = 0 when s = 0
+        raw_value = F * (n - 1 + d)
+
+    Range: 0 and up, unbounded above, never negative, no direction. It is 0 on down and flat bars, on an up
+    bar that follows an up or flat bar, after a single down bar, and when close[t] >= close[t-period].
+    The run of lower closes is strictly falling, so min(run) = close[t-1] and d is 0 on every bar.
+    Warm-up: max(max_bars + 2, period + 1, vol_period + 1) rows, bar t included (32 at the defaults).
+    NaN: a NaN close, or a close not above 0, in the warm-up rows gives NaN, whatever the gate.
+    s = 0 gives 0. Building raises for period < 1, vol_period < 2, max_bars < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows of data,
+    the last of which is bar t; no later row exists in data.
+    """
+
+    def __init__(self, name="ScaledFallTimesBrokenDownRun", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"ScaledFallTimesBrokenDownRunComponent: period must be >= 1, got {self.period}")
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(
+                f"ScaledFallTimesBrokenDownRunComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.max_bars = int(self.parameters.get("max_bars", 30))
+        if self.max_bars < 1:
+            raise ValueError(
+                f"ScaledFallTimesBrokenDownRunComponent: max_bars must be >= 1, got {self.max_bars}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        need = self.get_required_periods()
+        w = data['close'].astype(float).to_numpy()[-need:]
+        if np.isnan(w).any() or not (w > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        t = len(w) - 1
+        value = 0.0
+        n = 0
+        d = 0.0
+        fall = 0.0
+        if w[t] > w[t - 1]:
+            i = t - 1
+            while n < self.max_bars and w[i] < w[i - 1]:
+                n += 1
+                i -= 1
+            if n > 0:
+                run = w[t - n:t]
+                hi = float(run.max())
+                lo = float(run.min())
+                d = (w[t - 1] - lo) / (hi - lo) if hi > lo else 0.0
+                rets = w[t - self.vol_period + 1:t + 1] / w[t - self.vol_period:t] - 1.0
+                s = float(np.std(rets, ddof=1))
+                if s > 0:
+                    r = w[t] / w[t - self.period] - 1.0
+                    fall = max(0.0, -r / (s * np.sqrt(self.period)))
+                value = fall * (n - 1 + d)
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'run_length': n, 'tiebreak': d, 'scaled_fall': fall}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.max_bars + 2, self.period + 1, self.vol_period + 1)

@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "070-01.b1.b1_calm-decline-depth-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43057330000000005,
+  "findings": {
+    "F1": "In falling calm markets (bars in regime mean_reversion or unknown), up closes after at least two down closes are followed by a next-day move of \u22120.94 % beyond drift (t \u22122.46, 294 cases on 161 days). Outside the profile the same days fall \u22121.14 % (t \u22122.94, 889 cases on 359 days), so a break of a down run fades in every profile, not only in falling calm.",
+    "F2": "Inside the profile, the grading lives in the deepest runs. The deepest third of run losses is followed by \u22122.60 % (t \u22124.39, 57 days) and \u22122.69 % over 2 days (t \u22122.82). The middle third gives +0.41 % (t 0.87) and the shallowest third \u22120.63 % (t \u22121.09). The run's length in days grades nothing clean: 2 days \u22120.80 %, 3 days \u22120.33 %, 4 days \u22121.34 %, 5 or more \u22122.42 % (t \u22123.39, 33 days).",
+    "F3": "When the run's fall is scaled by the coin's 30-day swing (all breaks after at least one down close), the deepest quartile falls \u22121.06 % the next day (t \u22122.51, 192 days); the other quartiles give \u22120.52 %, +0.04 % and \u22120.37 %. Within that deepest quartile the fall lives in falling markets: proxy falling calm \u22121.72 % (t \u22122.53, 71 days), falling agitated \u22121.87 % (t \u22121.99, 60 days), rising calm \u22120.04 % and rising agitated \u22120.32 %. The full-sample correlation of scaled depth with the next-day move is \u22120.09 over 2,024 cases.",
+    "F4": "The effect leans heavily on one year. The deepest scaled quartile falls \u22123.67 % in 2018 (t \u22126.02, 52 days), \u22120.48 % in 2019, \u22121.25 % in 2020 and rises +0.68 % in 2021. The book's mean per position bar shows the same tilt: 1.40 % in 2018 against 0.23 to 0.30 % in 2019 to 2021.",
+    "F5": "Two other patterns did not stand out against the number of angles looked at. A down close after the strongest 3-day rise (top quintile of 3-day return over the 30-day swing) rose +0.94 % the next day (t 2.16, 169 days). Outside the profile, the largest one-day falls (lowest quintile of the day's return over the 20-day swing) rose +0.98 % (t 2.68, 366 days), but the map's agitated long cells already hold many fall-rebound books.",
+    "F6": "Weekday (largest |t| 1.78 in profile, Saturday), close position in the day's range (|t| at most 1.85) and relative volume (|t| at most 1.74) showed no next-day pattern that stands out."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a day that closes up after an unbroken run of down days is followed by a fall over the next day, and the larger that run's total fall measured against the coin's typical daily swing over the last 30 days, the larger the next day's fall.",
+      "consequence": "Size a short on the relief day by how many usual swings the quiet decline took off, not by its raw percent or its count of days, so shallow runs relative to the coin's own volatility carry almost no position.",
+      "name": "swing scaled calm decline fade",
+      "from": "F2, F3, F1, F4",
+      "profile": "falling calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F1",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "070-01.b1.b1.g1_swing-scaled-calm-decline-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
