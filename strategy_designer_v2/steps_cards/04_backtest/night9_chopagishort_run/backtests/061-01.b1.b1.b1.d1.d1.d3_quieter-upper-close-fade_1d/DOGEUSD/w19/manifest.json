@@ -1,0 +1,177 @@
+{
+  "run_id": "20261127T041716Z_22ed17e4",
+  "created_utc": "2026-11-27T04:17:18.852936+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "trend60",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 60,
+            "scaling_factor": 1.0
+          }
+        },
+        {
+          "id": "agit",
+          "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+          "params": {
+            "vol_period": 30,
+            "lookback_period": 365,
+            "smooth_period": 1
+          }
+        },
+        {
+          "id": "loc",
+          "class": "strategies.strategy_components.CloseLocationInRangeComponent",
+          "params": {
+            "reference": "low"
+          }
+        },
+        {
+          "id": "ret5",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 5,
+            "scaling_factor": 1.0
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "trend60",
+                "op": "between",
+                "low": -10.0,
+                "high": 10.0
+              },
+              {
+                "id": "agit",
+                "op": "gt",
+                "value": 0.5
+              },
+              {
+                "id": "loc",
+                "op": "gt",
+                "value": 0.5
+              },
+              {
+                "id": "ret5",
+                "op": "lt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "calm_fall",
+              "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+              "params": {
+                "period": 5,
+                "vol_period": 20,
+                "lag": 0,
+                "vol_lookback": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 5
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "22ed17e46cd198fc28bfe1592eebe815e15ef3f3939c3c009d3cf9b7a33bbb67",
+  "data": {
+    "symbols": [
+      "DOGEUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2021-11-02 00:00:00",
+    "end": "2024-04-30 00:00:00",
+    "bar_count": 911,
+    "data_sha256": "70b4eda64e3680759672c8fa3e60f451fec71e53fa5230cad4b02e6a2ebc5bc2"
+  },
+  "git_sha": "bb52f1c396d8e29fc5717b2acdcf937a6d5fc6c5-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

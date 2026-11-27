@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move of short cases over 5 bars (short side positive)",
+    "value": 0.012424218813446016,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.2467856686027785
+    },
+    "threshold": "t of 2 or more (with supporting check above 0) confirms; t of -2 or less rejects; at least 30 distinct days of cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-short half minus smaller-short half",
+    "value": -0.009153197042109215,
+    "passed": false
+  },
+  "counts": {
+    "cases": 676,
+    "distinct days of cases": 432
+  },
+  "decided_by": "A confirm-level t with the supporting check at or below 0 is inconclusive.",
+  "reading": "Situation bars: 20-day return (recorded fall20 raw value, else from closes) at or below -10 and 60-day return from closes between -10 and +10 inclusive, short side; active bars in a window's first 60 rows, where the 60-day return cannot be computed inside the window, are left out of the agreement; a case is a short bet (forecast rising on the short side by at least 2 points from its lowest level since the last bet), the first one in each 5-bar grid cell of its window, its return from that bar's close over 5 bars; position size is the absolute postRebalance_current_allocation on the case bar, the larger-short half being the top floor(n/2) cases by size; the day-clustered t uses a G/(G-1) correction."
+}
