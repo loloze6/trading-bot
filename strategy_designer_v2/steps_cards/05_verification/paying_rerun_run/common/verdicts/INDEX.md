@@ -1,0 +1,4 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d: confirmed (fit: exact) [main: 0.000851213; t of the mean 4.64745; cases 24384]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: confirmed (fit: adapted) [main: 0.0134977; t of the mean 4.07353; non-overlapping cases with forecast above 0 2887]
+018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: confirmed (fit: adapted) [main: 0.00790131; t of the mean 5.01463; independent cases 4924, cases above median 2462, cases below median 2462]
+019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h: confirmed (fit: exact) [main: 0.00105331; OLS slope t 7.89848; grid cases with forecast > 0 5591, grid cases 11111]
