@@ -33,7 +33,7 @@ a pattern that book does not explain.
 ## The files (shared files named)
 | File | Change |
 |---|---|
-| `orchestration/select_next/helper/select_next.py` (**shared with build-b2-1**) | `DISCOVERY = "7.g discovery"`; `records()`: a tested idea of a discovery's brief counts there, not in step 2; `briefed_discoveries()`, and `discovery_of()` also reads the loop's line for a brief written before the `discovery:` field; `rank()`: a discovery's brief's own ideas get that record and that line name; `discovery_call()`: the call rule. Nothing in the candidates or the groups changed |
+| `orchestration/select_next/helper/select_next.py` (**shared with build-b2-1**) | `DISCOVERY = "7.g discovery"`; `records()`: a tested idea of a discovery's brief counts there, not in step 2; `briefed_discoveries()`, and `discovery_of()` also reads the loop's line for a brief written before the `discovery:` field; `rank()`: a discovery's brief's own ideas get that record and that line name; `discovery_call()`: the call rule. The candidates are unchanged; one effect on the groups, in finished runs only: the ideas of nights 7 and 8's discovery briefs (no `discovery:` field) now rank as the discovery's follow-ups, as night 9's do, no longer as a brief's own ideas (group 1) |
 | `orchestration/select_next/helper/test_select_next.py` (**shared with build-b2-1**) | one assertion (a discovery's brief's idea: line "7.g discovery"); two tests: the record, the call rule |
 | `orchestration/select_next/card.md` (**shared with build-b2-1**) | the record of a discovery's brief, its numbers; line 7.g's call |
 | `orchestration/run_idea/helper/run_idea.py` | `call_patterns()` (the rule, with the loop's failed ideas left out) before the step 7 lines start; `Journal.not_called()` (one line) |
@@ -156,5 +156,7 @@ the journal's 7.g line (`not called: ...` against `skipped: its output exists`),
   other tests.
 - **A starting brief written from a discovery but run as the run's theme** (night 9's 061, 064, 067, 072 once their
   `discovery:` line was removed) counts in step 2: the record follows the field and the loop's lines, as the ranking.
+- **Finished runs' queues:** with the loop's lines read, nights 7 and 8's discovery briefs' ideas leave group 1 in those
+  runs' rankings (a resumed loop there would order them as night 9 does). Not measured idea by idea.
 - **Merging with build-b2-1:** both change `select_next.py`; this build touched `records()`, `discovery_of()`, the
   record line of `rank()` and added `discovery_call()`, `briefed_discoveries()`; build-b2-1 changes the candidates.
