@@ -1,10 +1,11 @@
 # Data use: which coins and years each research step uses, how they are chosen, when they change
 
-(Shared definition, `../HOW_WE_DESIGN_A_CARD.md`. **Status: agreed design, not built** (the operator, 2026-11-26,
-next steps A4; designed in the review of night 8, from the draft in `topics/55_data-use-and-stage-moves.md`). Until
-it is built, the research runs as before: 6 coins, folds 2018 to 2025, `explore_and_check.md`, `unseen_dates.md`,
-`unseen_coins.md`. It replaces those three cards' data rules when built; topic 53 (which coins, grouped how) is
-answered here for the grouping.)
+(Shared definition, `../HOW_WE_DESIGN_A_CARD.md`. **Status: built, parts 1 to 5 joined on the working branch
+(2026-11-27, `runs/BUILD_A4_JOIN.md`); part 6 nearly done; part 7, the watched pilot, not run** (agreed by the operator,
+2026-11-26, next steps A4; designed in the review of night 8, from the draft in `topics/55_data-use-and-stage-moves.md`).
+A run uses it only when started with `run_brief --data-use 2`; every other run is unchanged: 6 coins, folds 2018 to
+2025, `explore_and_check.md`, `unseen_dates.md`, `unseen_coins.md`. Topic 53 (which coins, grouped how) is answered here
+for the grouping.)
 
 ## Business objective, one question
 **Which data may each research step use, so that a strategy is found on some data, combined on other data, and
@@ -107,9 +108,15 @@ it, each branch holds only its own candidates). No person builds a version; ever
 3. Step 4's coins and windows: the run's draw, the 2016-2026 windows, the explore and check halves (`run_brief`,
    `run_backtest`, `explore_and_check.md`), with a rerun proof on a fixed plan. **Built 2026-11-26** for a run started
    with `run_brief --data-use 2` (branch `build-a4-research`, `runs/BUILD_A4_RESEARCH.md`); a run without it is unchanged.
-4. Step 9: a candidate's common record (from `unseen_test --coins`), and its call by `run_idea`.
-5. Steps 10 to 12: `combine.py` started by the candidate list's change; step 11's bar; step 12 once.
-6. The 120 current candidates rerun for step 9 (engine time only); the next portfolio version.
+4. Step 9: a candidate's common record (from `unseen_test --coins`), and its call by `run_idea`. **Built 2026-11-26**
+   (`runs/BUILD_A4_COMMON.md`).
+5. Steps 10 to 12: `combine.py` started by the candidate list's change; step 11's bar; step 12 once. **Built 2026-11-26**
+   (`runs/BUILD_A4_PORTFOLIO.md`). Parts 3 to 5 **joined 2026-11-27** (`runs/BUILD_A4_JOIN.md`): in data use 2,
+   `run_idea` runs step 4 on the run's data, step 9 after step 6, no unseen test, step 10 after step 9; step 12 runs on
+   step 9's runner; a run without `data_use.json` gives the same files as before (the proof there).
+6. The 120 current candidates rerun for step 9 (engine time only); the next portfolio version. **118 of 120 done**
+   (2026-11-27, 6 shards); the 2 hourly 026-04 books wait for the engine fix (next steps E12); night 9's 11 new
+   candidates running (next steps A1).
 7. A watched pilot of the whole chain before the next batch (NIGHT_RULES).
 
 ## Open (for the operator)
