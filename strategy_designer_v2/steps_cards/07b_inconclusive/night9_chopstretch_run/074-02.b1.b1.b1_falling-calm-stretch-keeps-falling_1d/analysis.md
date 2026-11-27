@@ -1,0 +1,21 @@
+---
+line: 7.b inconclusive
+backtest: 074-02.b1.b1.b1_falling-calm-stretch-keeps-falling_1d
+idea tested: 074-02.b1.b1.b1_falling-calm-stretch-keeps-falling
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3876 USD
+---
+## Findings
+- **F1:** The result points the way the idea predicts, but it is uneven across periods. In folds B and C, the 276 short cases have a mean unusual 5-day move of +2.13 % (day-clustered t 2.86), and +3.00 % over 10 days (t 2.40). Yet 2020 runs against it (17 cases, −2.72 %, t −1.40), as do w17 (12 cases, −2.71 %) and w12 (48 cases, only +1.19 %, t 0.72). Over all folds, step 5 found only +0.90 % with t 1.84.
+- **F2:** The effect does not grow with the depth of the stretch, which is why the supporting check failed (deeper minus shallower −0.08 %). By quartile of the raw stretch, the 5-day unusual move is:
+- **F3:** The continuation lives where the last days have been quiet against the stretch's own 20-day swing, and it grows the quieter they are. By tercile of the 5-day over 20-day return standard deviation, the 5-day unusual short move is:
+- **F4:** Stretches that end in an agitated last stretch of days do not keep falling. The largest last-day falls (lowest tercile of the 1-day return) give only +1.93 % (t 1.50), against +3.46 % (t 3.29) for the middle tercile. Closes sitting right at their 20-day low (lowest tercile of distance from the low) give +1.97 % (t 1.65). Both fit F3: a stretch made by a sudden, swinging drop is not one that carries on.
+- **F5:** The effect is also uneven by coin. BTC shows none (31 cases, +0.08 %, t 0.05), while XRP (+2.64 %, t 2.31) and ADA (+6.03 %, t 2.66) carry it. Against the shorts, the coins' normal drift is −0.66 % per case over all folds, which drowns part of the move: the total move is only +0.24 %.
+
+## Ideas
+- `074-02.b1.b1.b1.b1_quiet-stretch-keeps-falling` (from F1, F2, F3, F4): In a falling, calm market, when a coin's close sits below its 20-day average, measured in units of the standard deviation of its daily returns over the same 20 days, it keeps falling over the next 5 days, the more the quieter its daily returns have been over the last 5 days against their 20-day standard deviation.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

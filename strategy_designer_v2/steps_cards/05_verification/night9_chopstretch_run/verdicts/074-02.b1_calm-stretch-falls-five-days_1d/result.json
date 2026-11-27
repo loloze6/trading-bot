@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar unusual return on depth -forecast",
+    "value": -0.000609615952120616,
+    "statistic": {
+      "name": "day-clustered OLS t of slope",
+      "value": -0.8463340612461576
+    },
+    "threshold": "confirm: slope < 0 with day-clustered t <= -2 and mean unusual move of shorts > 0; reject: slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of short cases, in short direction",
+    "value": 0.006085925305001486,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 903,
+    "distinct days": 322
+  },
+  "decided_by": "The slope's t lies between -2 and +2.",
+  "reading": "Both minimums are required (at least 100 grid cases and at least 60 distinct days), the coin's mean 5-bar return is the mean of its non-overlapping grid returns over all its windows, the t uses cluster-robust standard errors by UTC day of the signal bar, and the calm profile is regime other than 'chop'."
+}

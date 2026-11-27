@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-day move per case (return minus coin's normal 7-day drift)",
+    "value": 0.01466585378238664,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.8261233834071253
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 days with cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, forecast at/above median minus below median",
+    "value": 0.042114754109088715,
+    "passed": true
+  },
+  "counts": {
+    "days with cases": 64,
+    "cases": 76,
+    "active bars": 175
+  },
+  "decided_by": "The t lies between -2 and 2 (neither the confirm nor the reject rule is met).",
+  "reading": "A case is the first bar of each 7-bar grid cell (positions 0, 7, 14, ... of each window) on which the long forecast rises at least 2 points from its lowest level since the last such rise (from 0 after flat), with its 7-bar return inside the window; the t clusters deviations by UTC day with a D/(D-1) correction; the situation is the recorded vsr value (recomputed from prices if missing) at least 2.0 with forecast > 0."
+}

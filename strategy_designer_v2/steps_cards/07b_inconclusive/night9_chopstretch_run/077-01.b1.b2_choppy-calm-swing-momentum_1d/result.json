@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "077-01.b1.b2_choppy-calm-swing-momentum_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.358128,
+  "findings": {
+    "F1": "Inside the choppy-calm profile, on the 7-day grid of folds B and C, the forward excess return rises with the swing-scaled 14-day move (slope 0.042, day-clustered t 2.69, 151 cases on 65 days; on the forecast 0.0023, t 2.02). Step 5's slope over all four folds is 0.00027 with t 0.35 on 777 cases. The effect seen in B and C therefore barely survives in folds A and D. The full test's result is on the predicted side but close to zero.",
+    "F2": "The test already used every fold and every coin on daily bars. More 1d data is not available. A finer bar does not add independent 7-day cases either.",
+    "F3": "Inside the profile the carry is driven by the largest moves, and above all by the largest rises:",
+    "F4": "The falling side does not carry in a graded way:",
+    "F5": "The effect is uneven in time. Only 2021 is clearly positive (+5.4 % per case, t 2.77, n 51). Window w18 alone gives +15.9 % (t 3.41, n 13). 2019 is -0.1 % (t -0.06), and w7/w8 are slightly negative. This explains why the effect drowns in the folds not shown.",
+    "F6": "The horizon is not the cause:",
+    "F7": "Outside the profile the carry is weaker per unit of move than inside (clustered slope 0.0128, t 1.39, 994 cases, against 0.042 inside). It is still graded across |z| quartiles, from +1.0 % to +2.8 % (top quartile t 2.45). The choppy-calm profile concentrates the effect but is not its only home."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, a coin whose 14-day rise, measured against its own daily swing over the past 30 days, is large keeps rising over the next 7 days, and the larger that swing-scaled rise, the larger the further rise.",
+      "consequence": "In choppy calm markets a trader can buy coins after unusually large swing-scaled 14-day rises, sized by the rise. Following swing-scaled falls short has no support.",
+      "name": "choppy calm large rises carry",
+      "from": "F1, F3, F4, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-01.b1.b2.b1_choppy-calm-large-rises-carry"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

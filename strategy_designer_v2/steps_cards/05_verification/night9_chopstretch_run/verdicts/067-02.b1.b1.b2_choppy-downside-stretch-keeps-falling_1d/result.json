@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 5-bar move on grid cases with forecast < 0",
+    "value": 0.01030863866381163,
+    "statistic": {
+      "name": "t of the mean, cases of each day taken together",
+      "value": 1.7020036753260641
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and deeper half > shallower half; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-half mean minus shallower-half mean (split at median forecast)",
+    "value": 0.00020890612614903048,
+    "passed": true
+  },
+  "counts": {
+    "cases": 405,
+    "distinct days": 228
+  },
+  "decided_by": "The t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Choppy is read as the regime 'unknown' (the only regime with a strategy, the choppy profile) and below-average as the raw stretch < 0 (close < SMA20 from prices where it is missing); the day-clustered t sums per-day deviations from the overall mean with a G/(G-1) correction; drift is the coin's mean of 5-bar returns on the same non-overlapping grid over all its windows; the deeper half is forecast <= the median of all cases."
+}

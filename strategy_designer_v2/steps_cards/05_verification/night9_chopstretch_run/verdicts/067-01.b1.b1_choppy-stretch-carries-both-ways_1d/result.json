@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of 5-bar excess return on forecast",
+    "value": 0.00035304257650605196,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 0.910955473257763
+    },
+    "threshold": "slope t >= 2 (with both sides carrying) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "both sides carry (long mean excess > 0, short mean excess < 0)",
+    "value": -0.005324881210056093,
+    "passed": false
+  },
+  "counts": {
+    "grid cases": 819,
+    "long cases": 414,
+    "short cases": 405,
+    "days": 374
+  },
+  "decided_by": "The slope t lies between -2 and 2.",
+  "reading": "The 60-day return (percent, close[t]/close[t-60]-1) is recomputed from the prices inside each window, so active bars in a window's first 60 rows are left out of the situation check, and the choppy band is taken as inclusive of +-10 % like the config's strict vetoes; the expected side is the sign of the raw stretch; drift is the coin's mean 5-bar return on the non-overlapping grid of all its windows; the regressor is the stretch post_pipeline_value (forecast where missing), OLS with intercept, slope t with standard errors clustered by UTC day (CR1); the supporting check uses the signs of the side means only; the plan's minimum counts, though listed as inconclusive, give 'not observable' as the workflow requires."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 1-day short-direction unusual move on forecast<0 bars",
+    "value": 0.0029341958290382223,
+    "statistic": {
+      "name": "t of the mean, deviations summed per day",
+      "value": 1.2909835130106708
+    },
+    "threshold": "t >= 2 confirms (with supporting difference > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "unusual move of larger-|forecast| half minus smaller half",
+    "value": 0.002826719212370449,
+    "passed": true
+  },
+  "counts": {
+    "distinct days of cases": 827,
+    "cases": 1450
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Cases are every bar with forecast < 0 and a next bar in the same window (the 1-bar grid is every bar), the drift is the coin's mean 1-day return over all its windows, the day-clustered variance uses a D/(D-1) correction, the halves are the top and bottom floor(n/2) cases by |forecast| (middle case dropped if n is odd), and the plan's 30-day minimum maps to 'not observable'."
+}

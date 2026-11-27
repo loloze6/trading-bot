@@ -1,0 +1,52 @@
+{
+  "line": "7.b",
+  "backtest": "067-02.b1.b1_two-sided-swing-stretch-five-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.357012,
+  "findings": {
+    "F1": "In folds B and C, on the 5-day grid, the tested effect shows on one side only. Closes below the 20-day average were followed by further fall: the short side's signed excess 5-day return was +2.68 % (t 3.29, 145 cases). Closes above the average were followed by nothing: the long side's was \u22120.19 % (t \u22120.21, 142 cases). This matches step 5's failed supporting check, whose weaker side was at \u22120.53 %.",
+    "F2": "The short side's carry is concentrated in agitated markets. With the 30-day swing above the coin's median, the signed excess was +5.41 % (t 3.86, 66 cases). In calm markets it was +0.40 % (t 0.47, 79 cases). The long side was flat in both: \u22120.89 % (t \u22120.48, 42 cases) agitated and +0.11 % (t 0.10, 100 cases) calm.",
+    "F3": "By raw stretch, the deepest-below sextile (stretch \u22124.5 to \u22122.0 usual moves) had a 5-day excess of \u22124.51 % (t \u22122.44, 48 cases). The highest-above sextile (stretch +2.5 to +7.2) had only +1.47 % (t 0.72, 48 cases), and every sextile below +0.85 was negative. Below the average, the move follows the stretch in its direction; above it, the effect is not distinguishable from zero.",
+    "F4": "The grading inside the short side is not clean. By forecast size, the short side's third quartile had a signed excess of +6.15 % (t 3.28, 44 cases), but the largest quartile had \u22120.35 % (t \u22120.21, 22 cases). The strongest shorts are not the largest forecasts.",
+    "F5": "Part of the mixed result is the market's own path, by year:",
+    "F6": "The 5-day horizon is where the effect is clearest; neither shorter nor longer horizons do better. In folds B and C the forecast slope's t was:",
+    "F7": "The pooled idea is too small to pay, but its strong part is not. Its total move per case is +0.23 %, against a trade cost of 0.19 % (1.2 times), with a strength of 0.018. The short side in agitated markets carries +5.41 % per 5-day case, about 28 times the cost."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, the further a coin's close stands below its 20-day average, counted in units of its current 20-day standard deviation of daily returns, the more the coin keeps falling over the next 5 days.",
+      "consequence": "A trader in a range-bound but agitated coin should lean short on closes stretched below the 20-day average, sized by the stretch, for about a week, and not lean long on stretches above it.",
+      "name": "agitated chop downside stretch carries",
+      "from": "F1, F2, F3, F6, F7",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the further a coin's close stands below its 20-day average, counted in units of its current 20-day standard deviation of daily returns, the more the coin keeps falling over the next 5 days.",
+      "consequence": "A trader in a range-bound coin should treat a close stretched below its 20-day average as a reason to be short for about a week, and should not buy it as a dip.",
+      "name": "choppy downside stretch keeps falling",
+      "from": "F1, F3, F5, F6",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-02.b1.b1.b1_agitated-chop-downside-stretch-carries",
+    "067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

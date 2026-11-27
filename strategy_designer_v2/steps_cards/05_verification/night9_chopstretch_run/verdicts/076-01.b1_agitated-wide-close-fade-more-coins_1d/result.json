@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual next-bar move on forecast<0 bars",
+    "value": -0.005479396564085915,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": -1.8489732534969525
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passes; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean move of larger |forecast| half minus smaller half",
+    "value": 0.009796414957093913,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with a case": 866,
+    "cases": 2138
+  },
+  "decided_by": "t between -2 and 2.",
+  "reading": "Agitated profile read from the recorded regime; cases are every forecast<0 bar with a next close in its window (1-bar grid, no overlap); the day-clustered t sums deviations per UTC day with a small-sample factor d/(d-1); the larger half is |forecast| strictly above the median, the smaller half at or below it."
+}

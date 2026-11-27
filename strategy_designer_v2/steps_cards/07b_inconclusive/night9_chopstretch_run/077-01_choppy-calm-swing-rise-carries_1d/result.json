@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "077-01_choppy-calm-swing-rise-carries_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2147358,
+  "findings": {
+    "F1": "Step 5's result points the way the idea predicts but falls short of the bar: the mean unusual 7-day move is +1.42 % per case (strength 0.087, t 1.28 over 140 case-days, 162 cases), and the supporting check could not be read (None). The test lacks the evidence to decide, and its effect is not wrong-signed.",
+    "F2": "In folds B and C, the in-profile 7-day cases where the reading is at least 1 number only 26 (BTC 4, ETH 2, LTC 6, XMR 7, XRP 3, ZEC 4). No window holds more than 9 of them. On a grid of non-overlapping cases, the six coins give too few cases to tell a 0.09 strength from zero.",
+    "F3": "Inside those cases the effect is graded the way the idea says. By forecast tercile the unusual 7-day move is -2.5 % in the low third (t -0.84, 9 cases), +2.6 % in the middle (t 0.50, 8 cases) and +12.8 % in the high third (t 3.14, 9 cases, 6 days). Its correlation with the swing-scaled rise is 0.48. The strongest cases carry the move, while the bar is set by the mean over all cases.",
+    "F4": "The carry belongs to the choppy calm profile. In the profile, a swing-scaled 14-day rise above 1.5 is followed by +10.3 % over 7 days (strength 0.61, t 2.30, 13 cases). Outside the profile the same bucket gives only +2.9 % (strength 0.18, t 0.83, 85 cases). The tested profile is the right place, so the idea needs more cases rather than a different market.",
+    "F5": "The result is on the predicted side and the data offer more than the test used. The test ran six coins, but folds A and D hold 13 more coins on daily bars (ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO), and folds B and C hold part of six of them. Adding these coins raises the count of independent in-profile cases without narrowing the idea."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "swing-rise carry, more coins",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ],
+      "idea": "In a choppy, calm market, a coin whose 14-day return is large and positive against its own daily swing over the past 30 days keeps rising over the next 7 days, and the larger that swing-scaled rise, the larger the further rise.",
+      "consequence": "Volatility-sized holders keep buying for days after an upward move that is large against a small swing, so the rise carries on.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "choppy calm"
+    }
+  ],
+  "idea_ids": [
+    "077-01.b1_swing-rise-carry-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

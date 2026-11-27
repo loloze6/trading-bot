@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins_1d
+idea tested: 067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4703 USD
+---
+## Findings
+- **F1:** The test's result is on the predicted side but well short of the bar: the |forecast|-weighted short-side 5-day excess move is +0.79 % with a day-pooled t of 0.95 (797 grid cases, 288 days). The test already used every fold and all 19 coins, so no more data is available to run the same idea on.
+- **F2:** The theory's grading claim fails. Step 5's size check is negative (larger half of |forecast| minus smaller half: -0.70 %). In folds B and C the 5-day short-side excess move by |forecast| quartile is flat: 2.8 %, 1.4 %, 4.2 %, 3.4 % from smallest to largest.
+- **F3:** Weighting by the forecast weakens the effect instead of sharpening it. Over 200 active 5-day cases on 102 days, the mean is 2.9 % with t 2.26 unweighted, but t 1.65 weighted by |forecast|. At 10 days (107 cases, 49 days) it is t 1.75 unweighted and 0.92 weighted.
+- **F4:** Grading is also absent on the raw stretch.
+- **F5:** The mirror side, which the brief says must also carry, does not show. Closes above the average give a long-side 5-day excess of +2.4 % with t 0.89 (163 cases). The four quintiles nearest the average are mostly negative (-1.8 %, +1.3 %, -0.6 %, -2.6 %), and one far quintile (+15.5 %, t 1.30, 20 days) carries the mean.
+- **F6:** The effect is mixed across periods rather than confined to one part of the data.
+- **F7:** The positive "unusual move" largely comes from removing an upward drift rather than from a fall. The total move per case is +0.09 %, against a normal drift in the case's direction of -0.79 %. That total is 0.4 times the 0.22 % cost of a trade, which is why the book loses (Sharpe -0.17, -2.9 % a year).
+
+## Ideas
+- No ideas: The theme's effect is not in the data as the theory states it. The move after a stretch below the average does not grow with the stretch (F2, F4), the mirror side does not carry (F5), and the mild excess fall is spread unevenly over periods and profiles rather than living clearly in one (F6), with no more data left to test it on (F1).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

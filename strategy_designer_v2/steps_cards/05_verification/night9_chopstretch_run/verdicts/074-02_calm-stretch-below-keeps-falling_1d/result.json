@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS t of the slope of drift-removed next-10-bar return on the forecast, negative-forecast grid cells",
+    "value": 0.2914459055009941,
+    "statistic": {
+      "name": "OLS t of the slope",
+      "value": 0.2914459055009941
+    },
+    "threshold": "t >= 2 confirms (with the supporting check), t <= -2 rejects, otherwise inconclusive; at least 100 cells"
+  },
+  "supporting_check": {
+    "name": "mean drift-removed 10-bar return in the signal's direction (short) > 0",
+    "value": 0.009600610706433909,
+    "passed": true
+  },
+  "counts": {
+    "grid cells with a negative forecast": 445
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The calm market is read as the bars whose regime is 'unknown' (the detector's default, not vetoed to 'chop'), below the average as a raw stretch_below value under 0; the grid is pooled over all coins and windows, each coin's normal 10-bar drift is the mean of all its grid cells' 10-bar returns over all windows, the slope's t is the ordinary least-squares t of the pooled regression, and a count under the plan's 100-cell minimum is reported as 'not observable'."
+}

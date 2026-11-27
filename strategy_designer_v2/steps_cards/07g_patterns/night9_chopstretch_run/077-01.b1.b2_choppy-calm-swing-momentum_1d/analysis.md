@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 077-01.b1.b2_choppy-calm-swing-momentum_1d
+idea tested: 077-01.b1.b2_choppy-calm-swing-momentum
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4518 USD
+---
+## Findings
+- **F1:** Outside the choppy-calm profile (88 % of bars), the swing-scaled 14-day return still carries over the next 7 days. On non-overlapping 7-day grid bars, its lowest two quintiles are followed by excess returns of -1.95 % (t -1.93) and -2.28 % (t -2.48), and its highest quintile by +2.69 % (t 2.06), 199 cases each. Inside choppy calm the pattern looks alike but rests on 30 cases a quintile: -1.33 %, -6.07 % (t -2.77), +2.26 %, +0.26 %, +6.64 % (t 2.32). These t's do not take the cases of one day together, so they overstate how sure the pattern is.
+- **F2:** The choppy-calm carry is not stable from window to window: the correlation of the swing-scaled move with the next 7 days is negative in w7, w8 and w9 (-0.63, -0.20, -0.15) and positive in w10, w12 and w17 (+0.24, +0.22, +0.16). Only the long side paid. Long trades made +1.91 % net on average (319 trades), short trades lost -1.34 % net (286 trades). Trades on the larger entry forecasts averaged +0.10 %, against +0.91 % on the smaller ones.
+- **F3:** A day's close position in its own range grades the next day's excess return. By quintile of close position, from lowest to highest close, the next day's excess return is +0.47 % (t 3.56), +0.33 %, -0.14 %, -0.19 % and -0.35 % (t -2.66), about 1,650 days each. The top quintile, a close near the high, is a next-day fall of about 1.6 times the 0.22 % cost of a trade.
+- **F4:** A day's volume against its 30-day average grades the next day's excess return. From the quietest quintile to the busiest, it is -0.30 % (t -2.56), -0.12 %, +0.11 %, -0.08 % and +0.51 % (t 3.32), about 1,650 days each. I did not split this by the day's own direction (that round failed), so part of the effect may be the big-down-day rebound in F5.
+- **F5:** The strongest pattern is a next-day rebound after a large swing-scaled fall, already held by the research. In the lowest decile of the day's return over its 30-day swing (below -1.09 swings), the next day's excess return is +1.11 % (t 5.07, 827 days). The next decile gives +0.40 % (t 2.16). The highest deciles show no matching fall (-0.18 %, t -0.90). Day ranges in the widest quintile (over 2.07 times the swing) give +0.53 % (t 3.21), another case of a held rebound idea.
+- **F6:** Weekday returns zig-zag and stand out less than F3–F5 given how many angles I looked at. Wednesday is -0.49 % (t -2.80) and Monday -0.27 % (t -1.84); Tuesday is +0.33 % (t 2.01) and Thursday +0.33 % (t 2.19).
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `077-01.b1.b2.g1_swing-scaled-two-week-momentum` (from F1, F2): Whatever the market's profile, the larger a coin's 14-day return measured in units of its own 30-day daily swing, up or down, the further the coin moves the same way over the next 7 days.
+- `077-01.b1.b2.g2_high-close-next-day-fade` (from F3): The nearer a coin's daily close lies to the top of that day's high-low range, the lower its return over the next day.
+- `077-01.b1.b2.g3_relative-volume-next-day-drift` (from F4): The higher a coin's daily volume against its own 30-day average volume, the higher its return over the next day; a day much quieter than usual is followed by a lower next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

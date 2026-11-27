@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short-side 5-day excess move (minus drift), day-pooled t",
+    "value": 0.007923102995380226,
+    "statistic": {
+      "name": "t of the weighted mean, same-day cases pooled",
+      "value": 0.9509871464057644
+    },
+    "threshold": "mean > 0 with t >= 2 confirms (with size check > 0); t <= -2 rejects; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess, larger half minus smaller half of |forecast|",
+    "value": -0.0070193123954597775,
+    "passed": false
+  },
+  "counts": {
+    "grid cases": 797,
+    "distinct days": 288
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 (or its mean is not above 0).",
+  "reading": "The choppy profile is the bars whose regime is 'unknown' (the only regime with a strategy, the vetoes sending |60-bar trend| > 10 to the null 'chop'), below the average is a raw stretch < 0 (recomputed as close < 20-bar SMA where not recorded); the drift is each coin's mean 5-bar return on the window grids; the weighted mean's t pools per-day sums of weighted deviations (cluster SE with D/(D-1)); the size split puts |forecast| > median in the larger half and uses unweighted half means; the plan's minimum counts, if not met, give 'not observable'."
+}

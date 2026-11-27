@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling_1d
+idea tested: 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3589 USD
+---
+## Findings
+- **F1:** In the choppy profile, closes more than 2 of the 20-day swing below their 20-day average were followed by an unusual 5-day move of -6.4 %. That is against -1.1 % for stretches of 1 to 2 and -2.8 % for stretches of 0 to 1 (38, 40 and 50 cases). The day-clustered t is only -1.81 (28 days), so the tested downside carry is graded but cannot be told from chance on folds B and C, as step 5 found (t 1.70).
+- **F2:** The carry shows on the downside only. In the choppy profile, closes more than 1 swing above the average were followed by an unusual 5-day move of -0.05 % (t -0.03, 75 cases on 49 days). Closes more than 1 swing below were followed by -3.7 % (t -1.77, 78 cases on 51 days). The brief's claim that the carry holds on both sides is not in these folds.
+- **F3:** The choppy downside carry is not steady across years: -4.9 % in 2018, -3.0 % in 2019 and -7.0 % in 2020, but +1.1 % in 2021 for closes more than 1 swing below the average. Each year has only 16 to 23 cases.
+- **F4:** Outside the choppy profile, the stretch carries upward in rising markets. Closes more than 2 swings above the average were followed by +4.0 % unusual over 5 days (t 2.24, 112 cases on 46 days). This repeats the rising-market range-top and nearness-to-high continuation strategies the map already holds in rising calm and rising agitated.
+- **F5:** The next day's unusual return by weekday was -0.49 % after Wednesday bars (t -2.69), +0.47 % after Thursday bars (t 3.19) and +0.39 % after Friday bars (t 2.87), about 1,240 bars each. These t-values pool six coins that move together on the same days, and the map already holds a late-week gain (045-01, rising). The pattern is neither independent evidence nor new.
+- **F6:** Other angles showed no stand-out pattern once the number of angles looked at is counted:
+
+## Ideas
+- No ideas: The only graded effects (F1, F4) are the tested idea itself, still unproven, and a rising-market continuation the map already holds. The weekday pattern (F5) is inflated by coins moving together and already held, and nothing else stood out across the angles in F6.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

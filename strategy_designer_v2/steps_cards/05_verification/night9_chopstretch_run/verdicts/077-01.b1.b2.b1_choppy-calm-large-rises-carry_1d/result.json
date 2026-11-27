@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move of long cases (return minus coin's normal 7-bar drift)",
+    "value": 0.014665853782386641,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.8261233834071254
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and correlation > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "correlation of entry swing_rise post_pipeline_value with unusual move",
+    "value": 0.1359436315571096,
+    "passed": true
+  },
+  "counts": {
+    "cases": 76,
+    "distinct days": 64
+  },
+  "decided_by": "t between -2 and 2: inconclusive by the plan.",
+  "reading": "situation = swing_rise last_history_value (recomputed from closes where missing) >= 2 with regime 'trending' as the profile filter; a case is the first long bet (forecast rise >= 2 points from its low on the long side) in each 7-bar grid cell of a window, day-clustered t uses per-day summed deviations with a G/(G-1) correction, and the correlation is Pearson."
+}

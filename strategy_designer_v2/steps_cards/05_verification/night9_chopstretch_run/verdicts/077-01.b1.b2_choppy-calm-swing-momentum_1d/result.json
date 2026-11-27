@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar forward excess return (minus coin's normal 7-bar drift) on the forecast, grid bars with nonzero forecast",
+    "value": 0.0002663040052679866,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": 0.3525587802330385
+    },
+    "threshold": "confirm: t >= 2 with both sides passing; reject: t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess forward return: long > 0 and short < 0",
+    "value": 0.006124972951846117,
+    "passed": true,
+    "long_mean_excess": 0.004020521533355735,
+    "short_mean_excess": -0.002104451418490382
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 777,
+    "long cases": 409,
+    "short cases": 368,
+    "days (clusters)": 229
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Profile taken from the recorded regime ('unknown' = choppy-calm, the only regime with a strategy) and side from the sign of the raw swing-scaled 14-day move (recomputed from prices where unrecorded); the slope is an OLS slope with intercept whose t uses day-clustered standard errors (scores summed per UTC day, G/(G-1) correction); the normal drift is the mean of each coin's non-overlapping 7-bar grid returns over all its windows; fewer than the plan's minimum cases is reported as not observable."
+}

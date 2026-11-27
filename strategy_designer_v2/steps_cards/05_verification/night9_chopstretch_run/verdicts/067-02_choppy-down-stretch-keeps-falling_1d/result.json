@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar forward return net of drift on -forecast (grid, forecast < 0)",
+    "value": 0.0006934309148782168,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.43520793444010114
+    },
+    "threshold": "confirm if slope t <= -2 (with supporting check); reject if slope t >= +2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction (-(10-bar return - drift)) > 0",
+    "value": 0.007227726060878583,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 200
+  },
+  "decided_by": "the slope t lies between -2 and +2",
+  "reading": "Situation = raw stretch_below < 0 with forecast < 0; grid = bars 0,10,20,... of each window with a full 10-bar forward return; drift = coin's mean 10-bar return on that grid over all its windows; pooled OLS across coins and windows with the ordinary slope t; fewer than 30 cases is reported as not observable."
+}

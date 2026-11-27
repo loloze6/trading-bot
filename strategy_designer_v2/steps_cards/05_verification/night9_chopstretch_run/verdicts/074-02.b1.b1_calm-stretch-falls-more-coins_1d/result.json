@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per case, short direction",
+    "value": 0.008444689923632981,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 2.182310540913871
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half mean unusual move (split at median |forecast|)",
+    "value": -0.001620373364001373,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1888,
+    "distinct days with cases": 753,
+    "active bars": 9063
+  },
+  "decided_by": "t >= 2 but the supporting check (deeper half minus shallower half > 0) fails, which the plan calls inconclusive.",
+  "reading": "The calm profile is read as regime 'unknown' (no chop veto); a case is the first short bet (rise of short forecast size by >= 2 from its low since the last bet) in each 5-bar grid cell from the window's first row; the normal drift is the coin's mean 5-bar return on that grid over all its windows; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the deeper half is |forecast| strictly above the median, the shallower half at or below it; the plan's '<30 distinct days' rule is treated as the minimum count giving 'not observable'."
+}

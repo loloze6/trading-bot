@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move over forecast-rise cases (long)",
+    "value": 0.014228975514896224,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 1.2772900136191885
+    },
+    "threshold": "confirm: mean > 0 with day-grouped t >= 2 and supporting check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above median forecast minus below median forecast > 0",
+    "value": null,
+    "passed": false
+  },
+  "counts": {
+    "cases": 162,
+    "case-days": 140
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "Cases are the first long forecast rise of >= 2 points (from its lowest level since the last bet, reset to 0 when flat) in each 7-bar grid cell from each window's first row; the day-grouped t uses the cluster standard error of the mean with deviations summed per UTC day (small-sample factor G/(G-1)); cases equal to the median forecast are left out of both halves of the supporting check; fewer than 30 case-days is reported as not observable."
+}

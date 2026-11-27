@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean short-direction 5-day excess return over the coin's mean",
+    "value": 0.01197784374590319,
+    "statistic": {
+      "name": "t of the weighted mean, clustered by day",
+      "value": 0.645559784555573
+    },
+    "threshold": "confirm: > 0 with day-clustered t >= 2; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "size order: mean excess of larger half minus smaller half of abs(forecast)",
+    "value": -0.00427397648063442,
+    "passed": false
+  },
+  "counts": {
+    "cases": 133,
+    "distinct days": 93
+  },
+  "decided_by": "The day-clustered t lies between -2 and 2.",
+  "reading": "The profile is the regime 'unknown' and below-average a negative raw stretch; the coin's mean 5-day return is over its pooled non-overlapping grid of all windows; the larger half is abs(forecast) above the median (ties go to the smaller half), compared by unweighted means; the clustered t uses summed weighted deviations per UTC day with a G/(G-1) correction."
+}

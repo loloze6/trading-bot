@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5825222,
+  "findings": {
+    "F1": "The tested profile is too rare to judge: only 86 of 1,950 non-overlapping 5-day grid cells (4 %) were in the choppy-agitated profile. Inside it, both sides of the 20-day average fell over the next 5 days (above: \u22127.2 %, t \u22122.4, 8 cases on 7 days; below: \u221212.2 %, t \u22121.6, 18 cases on 11 days). So the profile's own fall, not the stretch, carried the short book's cases, and the book's 213 short trades lost 3.5 % on average before fees.",
+    "F2": "In choppy markets (60-day return between \u221210 % and +10 %, calm or agitated), the 5-day unusual move rises steadily across the quintiles of the stretch from the 20-day average in usual daily moves: \u221213.4 % (t \u22123.5, 19 cases), \u22124.0 % (t \u22122.7), \u22121.8 %, +1.9 %, then +6.5 % (t 2.0, 27 cases). The pattern is graded and runs on both sides, as the brief says.",
+    "F3": "Over 10 days the choppy-market grading is stronger. The slope of the unusual move on the stretch is +0.042 per usual move outside the agitated profile (t 4.65, 63 cases on 29 days, Spearman 0.47) and +0.037 inside it (t 3.1, 14 cases on 8 days).",
+    "F4": "The same 10-day slope is near 0 in falling markets (\u22120.001, t \u22120.05, 209 cases) and weaker in rising markets (+0.018, t 2.2, 188 cases). The carry belongs to the choppy trend, not to every market.",
+    "F5": "In choppy calm markets the grading comes mostly from closes above the 20-day average: 10-day slope +0.036 (t 3.4, 34 cases on 18 days), against +0.022 (t 0.7, 29 cases) below it. Over 5 days it is +0.025 (t 2.1) above against +0.006 (t 0.5) below.",
+    "F6": "The choppy-market carry is uneven across folds. The 10-day slope is +0.015 in fold B (t 0.8, 48 cases) and +0.057 in fold C (t 11.7, 29 cases on 12 days); the 5-day slope is +0.006 (t 0.8) in B and +0.038 (t 3.2) in C. Its sign is the same in both, but the strength rests mainly on one fold.",
+    "F7": "The moves at stake are far larger than a trade's cost. In choppy markets the outer stretch bins move \u221212.5 % (stretch below \u22122, 21 cases) and +6.5 % (above +2, 27 cases) over 5 days, against a cost of 0.23 % a trade. Size is not what failed this book; the side and the profile were."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, the further a coin's close stands from its 20-day average, counted in units of its 20-day standard deviation of daily returns, the further the coin keeps moving the same way over the next 10 days: up after closes above the average, down after closes below it.",
+      "consequence": "A trader in a coin that has gone nowhere over two months should lean with a large stretch from the 20-day average, long above and short below, scaled by the stretch, for about ten days rather than fading it.",
+      "name": "choppy stretch carries ten days",
+      "from": "F2, F3, F4, F6, F7",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the further a coin's close stands above its 20-day average, counted in units of its 20-day standard deviation of daily returns, the more the coin rises over the next 10 days.",
+      "consequence": "In a quiet, range-bound coin, a close well above its 20-day average is a reason to hold long for about ten days rather than sell the range top.",
+      "name": "choppy calm upside stretch continuation",
+      "from": "F5, F3, F6",
+      "profile": "choppy calm",
+      "theme": "on",
+      "refs": [
+        "F5",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-02.b1.b1.b1.b1.g1_choppy-stretch-carries-ten-days",
+    "067-02.b1.b1.b1.b1.g2_choppy-calm-upside-stretch-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

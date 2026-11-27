@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "077-02_choppy-calm-swing-fall-carries_1d",
+  "step5": "not observable",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.399086,
+  "findings": {
+    "F1": "In the choppy calm profile, the 14-day return scaled by the 30-day swing never reached -2 in folds B and C. The z-bin for -2 or lower holds 0 cases out of 117 in-profile 7-day grid cases. The tested idea's 2-sigma regime therefore left only 2 cases on 2 days in the whole record, which is why step 5 found it not observable, not because the effect is absent.",
+    "F2": "Over the full range of that measure inside choppy calm, the 7-day unusual move rises with the swing-scaled 14-day return. The slope is +0.0435 per unit, with a day-clustered t of 3.17 over 117 cases on 60 days. Outside the profile the slope is +0.0122 (t 2.45, 708 cases). This is graded continuation, about 3.5 times stronger in the brief's profile.",
+    "F3": "The same in-profile continuation holds on 30-day and 7-day horizons of the past move. The 30-day slope is +0.044 (clustered t 2.49) and the 7-day slope is +0.018 (t 1.12). It is carried mainly by the 2-to-4-week move, with 14 days the strongest.",
+    "F4": "The in-profile continuation leans to the upside. Rises give a slope of +0.050 (t 2.03, 65 cases, 35 days), while falls give +0.027 (t 0.55, 52 cases, 36 days). The swing-scaled momentum signed by the move's direction is positive on all 6 coins, from +0.1 % (XMR) to +8.1 % (ZEC) per 7 days.",
+    "F5": "Across windows, the in-profile slope is positive in w10 (+0.049, 23 cases) and w12 (+0.061, 17 cases). It is negative in w8 (-0.028, 22 cases), w14 (-0.046, 14 cases) and w17 (-0.005, 12 cases). The continuation is concentrated in a few windows and must be confirmed on folds A and D.",
+    "F6": "In the coin's own lowest fifth of 30-day swing, the 14-day continuation slope is +0.044 (t 4.34 unclustered, 2.20 clustered over 58 days, 162 cases). In the highest fifth it is -0.023 (t -1.75). The carry grows as the swing shrinks, as the brief's reasoning predicts, but outside the brief's profile it is weak (t 2.02 out of profile).",
+    "F7": "A one-day fall of 2 or more daily swings is followed by a next-day gain outside the profile: +2.18 % (t 4.07, 152 cases), and +0.73 % after falls of 1 to 2 swings (t 3.00, 504 cases). Inside choppy calm the gain is only +0.77 % (t 1.00, 19 cases). This is the falling agitated rebound family the portfolio already holds, so it is not a discovery.",
+    "F8": "Next-day returns are highest on Thursday bars (+0.57 %, t 3.86) and Friday bars (+0.53 %, t 3.88) against the rest of the week. That gap is +0.74 % (t 2.65) in 2018, +1.07 % (t 5.82) in 2019, +0.44 % (t 1.88) in 2020 and -0.02 % (t -0.08) in 2021. It fades in the last year and largely repeats the held late-week gain (045-01). It is also an on/off calendar condition with no grade, so I propose no idea from it."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, a coin's 14-day return measured against its own daily swing over the past 30 days carries on in the same direction over the next 7 days, and the larger that swing-scaled move, up or down, the larger the further move, with no minimum size.",
+      "consequence": "A trader in a choppy, calm coin leans with its recent swing-scaled two-week move, in proportion to its size, rather than waiting for an extreme move that this market almost never produces.",
+      "name": "choppy calm graded swing momentum",
+      "from": "F1, F2, F3, F5",
+      "profile": "choppy calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, a coin whose 14-day return is large and positive against its own daily swing over the past 30 days keeps rising over the next 7 days, and the larger that swing-scaled rise, the larger the further rise.",
+      "consequence": "Volatility-sized holders keep buying for days after a rise that is large against a small swing, so a trader can hold the long side of that rise.",
+      "name": "choppy calm swing rise carries",
+      "from": "F2, F4",
+      "profile": "choppy calm",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-02.g1_choppy-calm-graded-swing-momentum",
+    "077-02.g2_choppy-calm-swing-rise-carries"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

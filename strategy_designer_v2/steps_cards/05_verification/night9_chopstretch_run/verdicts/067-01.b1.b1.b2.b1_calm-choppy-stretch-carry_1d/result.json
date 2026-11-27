@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 10-bar forward return on forecast",
+    "value": 0.000985368946912395,
+    "statistic": {
+      "name": "OLS t, standard errors clustered by day",
+      "value": 1.2240319204327843
+    },
+    "threshold": "slope positive with t >= 2 (and carry on both sides) to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "carry on both sides: smaller of long mean and sign-flipped short mean drift-adjusted 10-bar return, must be > 0",
+    "value": 0.0037550521960213394,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with nonzero forecast": 514,
+    "long cases": 274,
+    "short cases": 240
+  },
+  "decided_by": "The slope has |t| < 2.",
+  "reading": "Drift is the coin's mean 10-bar return on the non-overlapping grid of all its windows; 'cases on the same day together' is read as day-clustered standard errors of the OLS slope (with intercept); the supporting check is the sign of each side's mean; a minimum count not reached gives 'not observable'."
+}

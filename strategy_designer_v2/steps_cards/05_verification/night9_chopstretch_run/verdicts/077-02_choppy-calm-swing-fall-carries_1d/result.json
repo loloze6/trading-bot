@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-signed 7-day unusual move after short signals",
+    "value": -0.028564780976865274,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -5.703931510806412
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 20 distinct case days and slope on |forecast| > 0; reject: mean < 0 with t <= -2 over >= 20 distinct case days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of short-signed unusual move on |forecast|",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "distinct case days": 2,
+    "cases": 2,
+    "active bars": 3
+  },
+  "decided_by": "Fewer than 20 distinct case days (2), the plan's minimum count, so the data cannot show the idea.",
+  "reading": "Situation checked as raw 14-day swing-scaled return (recorded scaled_fall last_history_value, else recomputed from closes) <= -2 with a short forecast, the profile vetoes not being recomputed; cases are short bets (rise of |forecast| on the short side of >= 2 points from its lowest level since the last bet, reset at flat), first per 7-bar grid cell from each window's first row; normal drift is the coin's mean non-overlapping 7-bar return over all its windows; t uses day-clustered errors with D/(D-1) correction; fewer than 20 distinct case days is 'not observable'."
+}

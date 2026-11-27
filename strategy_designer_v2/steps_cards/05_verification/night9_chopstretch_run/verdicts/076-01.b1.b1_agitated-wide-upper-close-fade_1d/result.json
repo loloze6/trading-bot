@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9829339143064634,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 1-day move",
+    "value": 0.001168915543420462,
+    "statistic": {
+      "name": "t of the mean, cases of one day clustered",
+      "value": 0.45713220586599146
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 case-days and supporting check > 0; reject: mean < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger minus smaller |forecast| half",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "case-days": 927,
+    "cases": 2245
+  },
+  "decided_by": "The t lies between -2 and 2 over at least 30 case-days.",
+  "reading": "Profile taken from the recorded regime (not 'chop', the veto's result) since the 365-bar volatility percentile cannot be rebuilt inside a window; range multiple against the prior 20 bars' mean range (from prices, or from the recorded component when the window lacks 20 prior bars); cases are short bets (rise of |forecast| >= 2) on every bar (1-bar grid); day-clustered t with deviations summed per UTC day; median split: larger half = |forecast| above the median, smaller half = at or below; fewer than 30 case-days gives 'not observable' per the workflow rule."
+}

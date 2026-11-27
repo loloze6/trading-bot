@@ -1,0 +1,22 @@
+---
+line: 7.a not observable
+backtest: 077-02_choppy-calm-swing-fall-carries_1d
+idea tested: 077-02_choppy-calm-swing-fall-carries
+step 5: not observable
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4185 USD
+---
+## Findings
+- **F1:** The idea's situation never occurred in folds B and C. Of the 68 bars where the 14-day swing-scaled return was -2 or lower, 0 % had a 60-day return between -10 % and +10 %. 95.6 % of them had a 60-day return below -10 %, with a median of -44.2 % and a 90th percentile of -22.6 %, so a fall this large almost always puts the coin in a falling market, not a choppy one.
+- **F2:** Inside the profile the swing-scaled return never got close to the plan's level of -2. Across the 1,035 choppy-calm bars its lowest value was -1.90 and its 1 % quantile -1.48. Across all choppy bars, calm or agitated, its 0.5 % quantile was -1.71 and 0 % of bars reached -2.
+- **F3:** The fall the idea needs also works against the calm half of the profile. On the 68 bars with a swing-scaled return of -2 or lower, the 30-day swing was a median 1.36 times what it had been 14 days earlier, which pushes the coin towards the agitated side.
+- **F4:** The whole test, all four folds, gave 2 cases on 2 distinct days, against the plan's minimum of 20. Folds B and C gave none of them: 0 regime bars, 0 bars with a short forecast, 0 bars in a position. The book was in a position on 0 % of the coins' days and traded 0.0002331 times a day.
+- **F5:** The profile itself is thin. It covers 14.2 % of the non-overlapping 7-day grid cells in folds B and C, ranging from 98 bars for ZEC to 259 for BTC. Some windows have almost none: w11 has 7 bars, w13 has 10 and w15 has 17.
+- **F6:** Outside the profile, the same large falls rebounded rather than carried on. On the grid, the 15 cells with a swing-scaled return of -2 or lower had a short-signed unusual 7-day move of -5.4 % (t -3.22). This is set against a usual 7-day move of 14.9 %, so the profile's condition is the only thing that makes the idea's situation distinct, and it is the thing that almost never happens.
+
+## Ideas
+- No ideas: The plan needs at least 20 distinct case days; the six default coins over all four folds gave 2. Adding every available coin (about twice the coin-folds) would give about 4. Hourly bars add no independent cases at a 7-day horizon read once per 7-day grid cell. No data available can make this idea observable without loosening its situation.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

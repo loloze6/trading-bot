@@ -242,3 +242,5 @@ night9_fallcalmfade_run | 070-01.b1.g2_falling-market-depth-fade_1d | PriorDownR
 night9_fallcalmfade_run | 074-01.b1.d2.g1_up-run-break-dip-rebound_1d | PriorUpRunGainOnDownCloseComponent | built: PriorDownRunLossOnUpCloseComponent {"base": "usual_moves", "exclude_current": 1, "max_bars": 30, "side": "up", "window": 30}
 night9_fallcalmfade_run | 074-01.b1.d1.g1_falling-market-rally-break-rebound_1d | PriorUpRunOnDownCloseComponent | built: PriorDownRunOnUpCloseComponent {"side": "up"}
 night9_fallcalmfade_run | 070-01.g1.d1_deep-slide-calm-run-break-fade_1d | RunBreakDepthComponent | built: ScaledFallTimesBrokenDownRunComponent {"max_bars": 30, "period": 20, "vol_period": 20}
+night9_chopstretch_run | 076-01_agitated-wide-high-close-fades_1d | CloseAboveLowInMeanRangesComponent | built: BreakoutInMeanRangesComponent {"base_exclude_current": 0, "base_period": 20, "extreme": "low", "high_current": 1, "period": 1, "side": "above", "source": "high"}
+night9_chopstretch_run | 076-01.b1.b1.b1_falling-agitated-wide-close-fade_1d | CloseAboveMidRangeInMeanRanges | built: CloseFromMidRangeInMeanRangesComponent {"base_period": 20}

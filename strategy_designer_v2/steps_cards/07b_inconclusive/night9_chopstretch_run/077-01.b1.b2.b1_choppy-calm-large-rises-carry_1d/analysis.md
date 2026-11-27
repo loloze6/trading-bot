@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 077-01.b1.b2.b1_choppy-calm-large-rises-carry_1d
+idea tested: 077-01.b1.b2.b1_choppy-calm-large-rises-carry
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3707 USD
+---
+## Findings
+- **F1:** In folds B and C, the 24 cases that copy step 5's reading have a mean unusual 7-day move of +3.93 % (t 0.85, 18 days), but their median is only +0.87 % and 58 % are positive. Removing the single best day leaves +0.06 % (t 0.02, 17 days), so the positive mean behind step 5's +1.47 % (t 0.83) comes from a handful of moves.
+- **F2:** The effect lives in one year only. The 14 cases in 2021 average +12.5 % (t 2.00, 8 days, 86 % positive). Every earlier year is negative: 2018 −15.4 % (2 cases), 2019 −15.7 % (2), 2020 −3.1 % (6, t −1.67). The same split shows on the plain grid with a swing-scaled rise of at least 1 inside the profile: 2021 +13.4 % (17 cases, 6 days) against negative 2018 and 2019.
+- **F3:** The coins do not agree. XMR is negative (−7.6 %, 4 cases), ETH is negative (−4.3 %, 3) and BTC is flat (+0.1 %, 5). The gains sit in single cases on XRP (+54.7 %), TRX (+22.3 %, 2) and LINK (+11.4 %, 2), so no group of coins carries the effect reliably.
+- **F4:** The grading is unreliable. The lowest forecast tercile averages −3.8 % against +8.3 % and +7.3 % for the middle and high terciles (8 cases each). The case-level correlation is only 0.14. Swing-scaled rises of at least 2 in choppy calm markets reach just 6 grid cases on 2 days at 7 days, and 5 cases on 1 day at 14 days.
+- **F5:** Other horizons and the comparison outside the profile give no cleaner answer.
+- **F6:** The test already used every coin and every fold of the daily data, so no more 1d data exists to extend it. A day-grid book with positions on 2 % of coin-days also leaves too few cases (76 over 64 days) for any narrower version to become clear.
+
+## Ideas
+- No ideas: The theme's effect is not in the data. The positive mean rests on a few days of 2021 and a few single coins (F1, F2, F3), with no reliable grading (F4) and no clearer horizon (F5). The test already used all the data available (F6), so no idea on the theme is worth testing.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
