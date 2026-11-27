@@ -18,7 +18,7 @@ can confirm or reject. Every idea:
   A condition on the coin's general state over the past weeks (which way it has been going, how much it has been
   swinging) is written as one of these profiles; what happened in the last days stays the idea's situation. An idea
   that names none acts in every profile;
-- is something a trader could act on: if confirmed, a reason to take a trade; if rejected, a reason to refuse one;
+- is something a trader could act on: if confirmed, a reason to take a trade; if the data shows no effect (`common/verdicts.md`), a reason to refuse one;
 - states its time in real time (days or hours, never bars), so it means the same on any bar size: always its horizon,
   how long after its situation the move shows ("over the next N days"), and the past period its situation uses when it
   has one ("its N-day return");
