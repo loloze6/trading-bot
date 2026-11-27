@@ -95,6 +95,17 @@ box; the spend after each brief was answered.
   Cards 182, bot 1678 passed. For the merge: step 4's index line fixed ("ran" when any coin ran a window); a component
   built (ScaledMoveSmallnessComponent, standing go); `run_idea` must not call `unseen_test` in the new mode (its dates
   overlap the research windows). **All three builds done; the night's research and the 6 shards run on.**
+- **01:20 Paris, first watch** (each branch as last pushed, 00:00 to 00:11 UTC): all 6 running, no failed turn, both
+  briefs added in C, E and F. Tested 76 ideas, spent 93.3 USD; confirmed 22, profitable 4: B 074-01.g1.d1 (falling
+  agitated, a wide close-high bounce fades: a night 8 effect again, off B's choppy box), E 074-01.b1.d2,
+  074-01.b1.d1.d1, 074-01.b1.g1 (falling, a run-break up-day fades: on target, short). A: 3 confirmed on its theme
+  (choppy agitated, a high close fades), none profitable yet; C: 4 confirmed (choppy, a weak month keeps falling); D: 0.
+  **A fault of the set-up (the designer's):** the starting briefs carry night 8's `discovery:` line, so `select_next`
+  (1n) counts their ideas as night 8 follow-ups several generations deep (F's 060 and 061: 5 and 6; C's: 7), and the
+  night's own new discoveries (generation 1) rank above them: F's 061-01 untested, its turns on two discoveries (074
+  rising calm rebound, 075 volume). Each session told to delete that line from its starting briefs' run copies (no
+  code; the `source:` line keeps where they came from); for the record: when a run starts from a brief, the brief is
+  generation 0 whatever its origin (next steps: `run_brief` drops it itself).
 
 ## Reading
 (written in the morning)
