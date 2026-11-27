@@ -146,7 +146,7 @@ def test_the_plan_is_found_in_its_own_run_first(tmp_path):
     rid = "001-01_x_1d"
     _book(tmp_path, "a_run", rid, {"k": 1})
     _book(tmp_path, "b_run", rid, {"k": 1})                         # the same config elsewhere: not looked at
-    plan, measure = C.find_plan("a_run", rid, tmp_path)
+    plan, measure, _ = C.find_plan("a_run", rid, tmp_path)
     assert plan.parts[-3] == "a_run" and measure.parts[-4] == "a_run"
 
 
@@ -156,10 +156,10 @@ def test_else_the_one_other_run_with_the_records_config(tmp_path):
     _book(tmp_path, "rerun_run", rid, {"k": 1}, plan=False)           # its own measure.py, no plan
     _book(tmp_path, "src_run", rid, {"k": 1})
     _book(tmp_path, "other_run", rid, {"k": 2})                      # another config: not this book's plan
-    plan, measure = C.find_plan("rerun_run", rid, tmp_path)
+    plan, measure, _ = C.find_plan("rerun_run", rid, tmp_path)
     assert plan.parts[-3] == "src_run" and measure.parts[-4] == "rerun_run"
     _book(tmp_path, "bare_run", rid, {"k": 1}, plan=False, measure=False)
-    plan, measure = C.find_plan("bare_run", rid, tmp_path)          # measure.py too from the matched run
+    plan, measure, _ = C.find_plan("bare_run", rid, tmp_path)          # measure.py too from the matched run
     assert plan.parts[-3] == "src_run" and measure.parts[-4] == "src_run"
 
 
@@ -171,8 +171,24 @@ def test_no_match_or_several_matches_are_refused_naming_them(tmp_path):
         C.find_plan("rerun_run", rid, tmp_path)
     _book(tmp_path, "one_run", rid, {"k": 1})
     _book(tmp_path, "two_run", rid, {"k": 1})
-    with pytest.raises(C.Refused, match=r"2 other runs with its config \(one_run, two_run\)"):
+    (tmp_path / "03_test_plan" / "two_run" / "plans" / f"{rid}.md").write_text("---\nfit: other\n---\n")
+    with pytest.raises(C.Refused, match=r"2 other runs with its config whose plan or measure.py differ \(one_run, two_run\)"):
         C.find_plan("rerun_run", rid, tmp_path)
     _book(tmp_path, "norec_run", rid, {"k": 1}, plan=False, record=False)
     with pytest.raises(C.Refused, match="no record config"):
         C.find_plan("norec_run", rid, tmp_path)
+
+
+def test_several_byte_identical_matches_are_one_plan(tmp_path):
+    """designer, 2026-11-27: 010-03.e1 of paying_rerun_run, its plan in hold2_rerun_run and hold_paying_run, the
+    same files: one plan, the first in sorted order, every match recorded."""
+    import pytest
+    rid = "001-01_x_1d"
+    _book(tmp_path, "rerun_run", rid, {"k": 1}, plan=False, measure=False)
+    _book(tmp_path, "b_run", rid, {"k": 1})
+    _book(tmp_path, "a_run", rid, {"k": 1})
+    plan, measure, matched = C.find_plan("rerun_run", rid, tmp_path)
+    assert plan.parts[-3] == "a_run" and measure.parts[-4] == "a_run" and matched == ["a_run", "b_run"]
+    (tmp_path / "05_verification" / "b_run" / "verdicts" / rid / "measure.py").write_text("def measure(bars): return 1\n")
+    with pytest.raises(C.Refused, match="differ"):                 # the measure.py differ: refused
+        C.find_plan("rerun_run", rid, tmp_path)
