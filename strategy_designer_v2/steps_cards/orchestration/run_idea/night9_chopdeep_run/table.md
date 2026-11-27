@@ -24,22 +24,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | confirmed (+2.28) | not profitable enough (failed: Calmar) | - | 7.d: 074-01.b1.b1.b1.b1.d2.d1_first-bounce-fade-after-down-day, 074-01.b1.b1.b1.b1.d2.d2_bounce-after-selloff-fades; 7.g: 074-01.b1.b1.b1.b1.d2.g1_falling-wide-bounce-second-day-rebound | 1.25 | 14.1 |
 | 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | plan | confirmed (+2.25) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: no ideas: The only patterns that clearly stand out after this many angles are the tested idea itself (F1, F3) and its depth scaled by the coin's own swing in falling markets (F2), which the map already holds as 074-01.b1.b1.b1.b1.d1.d2 in falling calm and falling agitated short; the off-theme candidates (choppy fade, big-down-day and low-close rebounds, weekdays: F5) are either indistinguishable from chance at |t| under 2 or repeat the many falling-agitated long rebound books already held. | 0.85 | 13.7 |
 | 074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | inconclusive (+2.50) | profitable enough | - | 7.b: 074-01.b1.b1.b1.b1.g1.b1_falling-wide-bounce-depth-graded, 074-01.b1.b1.b1.b1.g1.b2_falling-wide-up-day-width-fade; 7.e: 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade; 7.g: no ideas: The only patterns that stand out (F3, F4) belong to the tested falling-market wide-bounce fade, which the map already holds in the falling short cells (the 074-01 family), and they are not graded. No other angle out of the roughly sixty cells examined gives a pattern that can be told apart from chance. | 1.58 | 13.2 |
+| 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | plan | inconclusive (+1.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 074-01.b1.b1.b1.b1.d1.g2.b1_still-down-bounce-fades-next-day, 074-01.b1.b1.b1.b1.d1.g2.b2_agitated-downtrend-bounce-fade; 7.g: no ideas: Across about fifteen angles (width, close location, return size, the 5-day depth, volatility, weekday, windows and the book's extremes), the only patterns near t 2.5 are a rebound after wide or low-closing down days, which the map already holds many times in falling agitated long, and a fade after quiet still-down days in a falling market, which does not stand out from the many cells examined (F4, F5, F6). | 1.39 | 12.4 |
+| 074-01.b1.b1.b1.b1.g2_falling-heavy-volume-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | inconclusive (+1.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 074-01.b1.b1.b1.b1.g2.b1_agitated-falling-volume-bounce-fade; 7.g: 074-01.b1.b1.b1.b1.g2.g1_agitated-downtrend-wide-rally-fade, 074-01.b1.b1.b1.b1.g2.g2_falling-thin-volume-rally-fade | 1.17 | 12.0 |
+| 072-02.b1_choppy-deep-up-day-fade-more-coins | 072-02_choppy-deep-up-day-fade | plan | inconclusive (-0.82) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-02.b1.b1_choppy-deep-up-day-five-day-fade, 072-02.b1.b2_choppy-deep-close-three-day-fall; 7.g: 072-02.b1.g1_choppy-calm-deep-up-day-fade | 1.09 | 11.5 |
 
 ## Consumption
-20 ideas, 22.00 USD, 217.3 minutes in all.
+23 ideas, 25.64 USD, 253.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.01 | 12.2 |
-| step4_backtest | 0.00 | 129.9 |
-| step5_verdict | 3.92 | 14.9 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 2.29 | 14.0 |
+| step4_backtest | 0.00 | 153.5 |
+| step5_verdict | 4.50 | 16.9 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.52 | 1.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.80 | 5.7 |
-| step7_7.b | 4.07 | 12.3 |
-| step7_7.g | 9.68 | 28.0 |
+| step7_7.b | 5.27 | 15.8 |
+| step7_7.g | 11.26 | 32.7 |
 | similarity_check | 0.00 | 0.7 |
 | unseen_test | 0.00 | 10.9 |

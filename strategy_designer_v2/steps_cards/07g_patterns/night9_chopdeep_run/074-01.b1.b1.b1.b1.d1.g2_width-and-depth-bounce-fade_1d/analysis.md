@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade_1d
+idea tested: 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6764 USD
+---
+## Findings
+- **F1:** In the falling market, up days fade more the wider they are, and the grading holds. By width quintile against the 20-day mean range, the next-day unusual move is -0.14 %, -0.34 %, -0.56 %, -0.73 % and -0.74 % (t -0.41 to -1.85; 355 to 423 cases per quintile). The fade is not specific to falling markets, though: up days outside it are also negative, from -0.15 % to -0.68 % (t -0.36 to -2.48).
+- **F2:** The falling-market up-day fade is spread evenly across windows rather than carried by one. Wide up days are negative in 10 of 12 windows (w7 to w18). The day-clustered t with one window left out stays between -1.70 and -2.20. It never clearly clears 2.
+- **F3:** The idea's second quantity, the depth of the 5-day loss, carries nothing. On falling-market days, the Spearman correlation of the 5-day return z-score with the next-day unusual move is -0.004 (4178 cases). Up days in the top 5-day quintile move -0.12 % the next day (t -0.32, 565 cases).
+- **F4:** In the falling market, wide down days rebound. By width quartile the next-day unusual move is -0.08 %, -0.19 %, +0.34 % and +1.30 % (top quartile t 2.27, 552 cases, 182 days). Outside the falling market the widest down quintile also rebounds, +1.11 % (t 1.99, 656 cases). This is the wide-fall rebound the map already holds 16 times in falling agitated long.
+- **F5:** In the falling market, a close in the lowest fifth of the day's range is followed by +0.81 % (t 2.08, 799 cases, 304 days). The effect is graded down to -0.47 % for closes in the top fifth (t -1.21). This is the low-close rebound already held (039-02, 045-01).
+- **F6:** In the falling market, quiet days (|z| < 0.5) with the coin below its level of 5 days ago are followed by -0.75 % (t -2.47, 1110 cases, 422 days). The same days with the coin above that level are followed by 0.00 %. This is one cell among roughly a hundred examined, so a t of 2.5 is within what chance gives.
+- **F7:** The book is a short on the market rather than timing. Its daily returns correlate -0.39 with the coins'. Its best 2 % of days come on coin days of -7.6 %, and its worst 2 % on coin days of +7.6 %. Window w14 earns a mean of 0.22 % a day, against under 0.07 % in every other window.
+- **F8:** Weekday shows nothing, in all markets and in the falling market alone: every day's next-day unusual move has |t| < 1.3 (about 1600 cases per weekday overall).
+
+## Ideas
+- No ideas: Across about fifteen angles (width, close location, return size, the 5-day depth, volatility, weekday, windows and the book's extremes), the only patterns near t 2.5 are a rebound after wide or low-closing down days, which the map already holds many times in falling agitated long, and a fade after quiet still-down days in a falling market, which does not stand out from the many cells examined (F4, F5, F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 1-day move per case",
+    "value": 0.005976849437138259,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 1.7397471048496214
+    },
+    "threshold": "mean > 0 with day-pooled t >= 2 confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "heavier-half minus lighter-half mean unusual move (split at median |forecast|)",
+    "value": 0.004950024849375453,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1119,
+    "distinct days": 516
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed).",
+  "reading": "Cases are the short bets (forecast rising >= 2 points on the short side from its lowest level since the last bet) with a next bar in the window; the coin's mean is its mean 1-day return over all its windows; the day-pooled t uses the per-day sums of deviations without small-sample correction; the heavier half is |forecast| strictly above the median; situation conditions not computable inside a window were taken from the record (heavy_volume raw > 0, regime 'mean_reversion') and the 60-bar evolution is read in percent."
+}
