@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day return minus coin's mean daily return",
+    "value": 0.008285834832118893,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases summed",
+      "value": 1.6880566945971913
+    },
+    "threshold": "confirm: > 0 with t >= 2 and slope > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess next-day return on forecast",
+    "value": 0.0005355079144893021,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4186,
+    "distinct days": 1011,
+    "active bars": 4227
+  },
+  "decided_by": "The t lies between -2 and 2, so the result is inconclusive.",
+  "reading": "The falling agitated profile is read from the recorded regime (the only regime with a strategy, 'unknown', is the one where both profile vetoes passed). A falling day is a negative raw scaled return, or a negative close-to-close return when the raw value is missing. The coin's mean daily return is the mean of all its within-window close-to-close returns. The t of the weighted mean sums the cases' weighted deviations f*(x-m) per UTC day and uses SE = sqrt(D/(D-1) * sum of squared day sums) / sum(f). The plan's minimum counts are taken as 100 cases and 50 distinct days, and missing them gives 'not observable'."
+}
