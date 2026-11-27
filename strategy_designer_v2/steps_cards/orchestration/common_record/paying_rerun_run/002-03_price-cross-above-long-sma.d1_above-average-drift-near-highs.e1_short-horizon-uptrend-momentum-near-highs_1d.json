@@ -1,0 +1,160 @@
+{
+  "plan": "03_test_plan/validation_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d.md",
+  "measure": "05_verification/paying_rerun_run/verdicts/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d/measure.py",
+  "plan_found_in": [
+    "validation_run"
+  ],
+  "run": "paying_rerun_run",
+  "id": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d",
+  "record": "04_backtest/paying_rerun_run/common/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d",
+  "windows_file": "04_backtest/windows/research_2016.json",
+  "coins_asked": [
+    "BTCUSD",
+    "LTCUSD",
+    "XRPUSD",
+    "BCHUSD",
+    "ETHUSD",
+    "ADAUSD",
+    "ATOMUSD",
+    "ALGOUSD",
+    "TRXUSD",
+    "DOTUSD",
+    "AVAXUSD",
+    "NEARUSD",
+    "SUIUSD",
+    "ZECUSD",
+    "XMRUSD",
+    "CRVUSD",
+    "AAVEUSD",
+    "INJUSD",
+    "LDOUSD",
+    "ONDOUSD",
+    "FILUSD",
+    "GRTUSD",
+    "TAOUSD",
+    "DOGEUSD",
+    "PEPEUSD"
+  ],
+  "coins_run": [
+    "AAVEUSD",
+    "ADAUSD",
+    "ALGOUSD",
+    "ATOMUSD",
+    "AVAXUSD",
+    "BCHUSD",
+    "BTCUSD",
+    "CRVUSD",
+    "DOGEUSD",
+    "DOTUSD",
+    "ETHUSD",
+    "FILUSD",
+    "GRTUSD",
+    "INJUSD",
+    "LDOUSD",
+    "LTCUSD",
+    "NEARUSD",
+    "ONDOUSD",
+    "PEPEUSD",
+    "SUIUSD",
+    "TAOUSD",
+    "TRXUSD",
+    "XMRUSD",
+    "XRPUSD",
+    "ZECUSD"
+  ],
+  "coin_windows": {
+    "AAVEUSD": 14,
+    "ADAUSD": 21,
+    "ALGOUSD": 14,
+    "ATOMUSD": 16,
+    "AVAXUSD": 11,
+    "BCHUSD": 21,
+    "BTCUSD": 32,
+    "CRVUSD": 12,
+    "DOGEUSD": 17,
+    "DOTUSD": 12,
+    "ETHUSD": 30,
+    "FILUSD": 12,
+    "GRTUSD": 11,
+    "INJUSD": 12,
+    "LDOUSD": 7,
+    "LTCUSD": 32,
+    "NEARUSD": 9,
+    "ONDOUSD": 4,
+    "PEPEUSD": 4,
+    "SUIUSD": 7,
+    "TAOUSD": 3,
+    "TRXUSD": 16,
+    "XMRUSD": 26,
+    "XRPUSD": 25,
+    "ZECUSD": 26
+  },
+  "windows_run": 394,
+  "step5": {
+    "status": "confirmed",
+    "main": 0.03812167073942514,
+    "statistic": 4.044549055701573
+  },
+  "step6": {
+    "status": "profitable enough",
+    "measures": [
+      {
+        "measure": "sharpe_min",
+        "label": "Sharpe",
+        "value": 1.612129992217522,
+        "threshold": 0.0,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "sharpe_vs_hold_min",
+        "label": "Sharpe minus holding's Sharpe",
+        "value": 0.644036311990549,
+        "threshold": 0.0,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "avg_daily_return_min",
+        "label": "Mean daily return, on days in a position",
+        "value": 0.003468374821627885,
+        "threshold": 0.0005,
+        "comparison": "at least",
+        "passed": true
+      },
+      {
+        "measure": "leave_one_window_out_sharpe_min",
+        "label": "Lowest Sharpe, one window left out",
+        "value": 1.4321872197598915,
+        "threshold": 0.0,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "calmar_min",
+        "label": "Calmar",
+        "value": 1.9018456473763639,
+        "threshold": 0.75,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "trade_frequency_min",
+        "label": "Trades per day",
+        "value": 0.13795475867820287,
+        "threshold": 0.01,
+        "comparison": "at least",
+        "passed": true
+      }
+    ],
+    "informative": {
+      "daily_standard_deviation": 0.012524963960513216,
+      "yearly_return": 0.4301224438330975,
+      "years": 10.59,
+      "share_of_days_in_a_position": 0.3047221932659231
+    }
+  },
+  "seconds": 764.3,
+  "made_utc": "2026-11-27T04:26:07Z",
+  "commit": "fe9b5a3fc0a3c38419d67c9524c3235eec4b09c3-dirty"
+}
