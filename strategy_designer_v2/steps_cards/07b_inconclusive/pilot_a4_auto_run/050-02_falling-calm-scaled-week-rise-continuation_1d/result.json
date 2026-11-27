@@ -1,0 +1,39 @@
+{
+  "line": "7.b",
+  "backtest": "050-02_falling-calm-scaled-week-rise-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.21332829999999997,
+  "findings": {
+    "F1": "Step 5's main measure points the way the idea predicts but falls short of the bar: the mean unusual 3-day move is +0.62 % (t 1.50, cases of one day taken together, 303 days, 467 cases), with a strength of 0.067 of the coin's usual move (8.29 %). That is in the range of real ideas (about 0.05), so the effect is plausibly real but too small for 467 cases to separate it from 0.",
+    "F2": "The supporting check is also short of its bar: upper minus lower forecast half is +0.45 %, not passed. In the explore record (98 cases on BTC, DOGE and XMR), the unusual move by forecast quartile is +0.91 %, -1.97 %, +0.10 %, +1.02 % (t -1.50 to 0.77). Its correlation with the forecast is 0.057, and with the raw scaled rise 0.004. The grading is not visible at this sample size.",
+    "F3": "The effect is mixed across periods rather than absent. In the explore record, w12 shows -1.82 % (t -2.29, 25 cases) and w8 shows -2.51 % (t -1.68, 18 cases), while w13 shows +5.34 % (t 2.18, 6 cases) and w17 shows +3.75 % (t 2.44, 9 cases). Pooled, the record's mean is -0.03 % (t -0.04, 98 cases). Each window holds few cases, so single periods swing the result.",
+    "F4": "The backtest record itself ran on other coins (BTC, DOGE, XMR here) than the plan's six. Inside the falling calm profile, its coins give between 98 and 101 grid cases. At that count a +0.6 % effect with an 8 % usual move cannot show; only many more cases can.",
+    "F5": "The test likely did not measure the idea away from where it shows. Over longer horizons the record's mean total move is +1.18 % at 5 days (t 1.51, 92 cases) and +1.29 % at 7 days (t 1.38), against +0.36 % at 3 days (t 0.60). This is no clearer than the plan's 3-day horizon, so a horizon change is not supported over more data.",
+    "F6": "More data is available than the test used. Thirteen more coins have daily bars in folds A and D, and partly in B and C: ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO and ONDO. Testing the unchanged idea on all 19 coins should roughly double or triple the cases, which is what a t of 1.50 needs to reach 2 if the strength holds."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "calm-downtrend week-rise continuation, more coins",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ],
+      "idea": "In a falling, calm market, a coin that has risen over the last 7 days keeps rising over the next 3 days, and rises further the larger its 7-day rise is in units of its 30-day daily-return swing.",
+      "consequence": "An unusual weekly rise in a calm downtrend is followed by buying from holders who are slow to accept that the selling is over, so it carries on.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "falling calm"
+    }
+  ],
+  "idea_ids": [
+    "050-02.b1_calm-downtrend-week-rise-continuation-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

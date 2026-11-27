@@ -1,0 +1,35 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move after a forecast rise of >= 2 points",
+    "value": 0.006192383502854897,
+    "statistic": {
+      "name": "t of the mean, cases of the same day summed",
+      "value": 1.5010823441184389
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half (forecast median split) mean unusual move",
+    "value": 0.004525628339256438,
+    "passed": false
+  },
+  "counts": {
+    "cases": 467,
+    "upper half cases": 233,
+    "lower half cases": 234,
+    "days with cases": 303
+  },
+  "decided_by": "Neither the confirm nor the reject rule holds (a t between -2 and 2 on the main measure or the supporting check).",
+  "reading": "A case is the first long bet (forecast rise >= 2 from its lowest level since the last bet, from 0 after flat) in each 3-bar grid cell counted from each window's first row, drift is the coin's mean grid 3-bar return over all its windows, the upper half is forecast > median and the lower half forecast <= median, the day-clustered t uses a D/(D-1) correction, and the plan's 'too few cases is inconclusive' is reported as 'not observable' per the workflow.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.501 (not below 1), 233 cases (30 needed)",
+    "t_in_idea_direction": 1.5010823441184389,
+    "cases": 233
+  }
+}
