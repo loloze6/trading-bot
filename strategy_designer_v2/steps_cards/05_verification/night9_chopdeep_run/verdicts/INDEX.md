@@ -5,6 +5,7 @@
 072-02.b1_choppy-deep-up-day-fade-more-coins_1d: inconclusive (fit: exact) [main: -0.00142485; Welch t -0.81626; active bars 3358, deepest third 1120, middle third 1119, shallowest third 1119]
 072-02_choppy-deep-up-day-fade_1d: inconclusive (fit: exact) [main: 0.00285519; t of the mean over per-day sums 1.86848; cases 1691, distinct days 1028]
 072-03.b1.b1.d1_deep-bounce-in-decline-fades_1d: inconclusive (fit: exact) [main: 0.0148557; t of the mean, cases clustered by day 1.78654; cases 742, distinct days carrying cases 435]
+072-03.b1.b1.d2_raw-depth-bounce-fade-sizing_1d: inconclusive (fit: adapted) [main: 0.00928238; t clustered by day 1.37405; cases 1293, distinct days of cases 696]
 072-03.b1.b1_deep-bounce-fades-more-coins_1d: confirmed (fit: exact) [main: 0.0344493; t of the mean, cases of one day summed 2.11689; distinct case days 128, cases 306]
 072-03.b1_choppy-deep-bounce-fades_1d: inconclusive (fit: exact) [main: 0.0115932; t of the mean, cases summed per day 1.98863; cases 628, distinct days 463]
 072-03_choppy-deep-down-day-continuation_1d: inconclusive (fit: exact) [main: 3.68859e-05; t of the mean, cases of one day summed 0.0371877; cases 1885, distinct days 1108]
@@ -28,3 +29,5 @@
 074-01.g1.d1_wide-close-high-bounce-fade_1d: confirmed (fit: adapted) [main: 0.0138136; t of the mean, cases clustered by day 3.31741; cases 306, independent case days 198]
 074-01.g1_falling-agitated-wide-up-fade_1d: confirmed (fit: adapted) [main: 0.0135578; t of the mean, cases of one day pooled 3.12198; cases 318, days 210, wider half cases 159, narrower half cases 159]
 074-01_falling-wide-up-day-fade_1d: inconclusive (fit: adapted) [main: 0.00476677; t of the mean, cases of one day taken together 1.2774; cases 440, case-days 258, active bars 866]
+081-01.d1_deep-up-day-five-day-fade_1d: confirmed (fit: exact) [main: 0.00714633; t of the mean, cases clustered by day 2.23861; cases 5627, distinct days 1326]
+081-01_deep-up-day-next-day-fade_1d: confirmed (fit: adapted) [main: 0.00951687; t of the mean (daily sums) 2.94575; up-day cases 14361, distinct days 2273]

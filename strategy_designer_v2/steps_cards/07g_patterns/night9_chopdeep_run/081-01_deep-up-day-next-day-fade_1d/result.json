@@ -1,0 +1,38 @@
+{
+  "line": "7.g",
+  "backtest": "081-01_deep-up-day-next-day-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45235230000000004,
+  "findings": {
+    "F1": "On up days the next-day excess return falls steadily as the close sits deeper below the 20-day high in 20-day swings. By depth quintile it runs from \u22121.14 % (t \u22125.2, n 727) in the deepest to +0.21 % (t 1.3, n 1696) in the shallowest. On down days the same depth shows no fade: the deepest quintile is +0.48 % (t 1.4) and the shallowest +0.86 % (t 2.7), so the tested asymmetry is in folds B and C.",
+    "F2": "The up-day depth grade holds whatever the size of the up move. The deep tercile fades \u22120.81 % (t \u22123.9), \u22120.74 % (t \u22123.6) and \u22120.87 % (t \u22123.0) after small, mid and big up days. The shallow tercile is +0.19 %, +0.05 % and +0.27 %.",
+    "F3": "The fade is graded and largest in falling markets (60-day return below \u221210 %). Falling agitated runs deep \u22121.32 % (t \u22123.3, n 269), mid \u22120.85 % (t \u22121.9) and shallow \u22120.33 %. Falling calm runs deep \u22120.79 % (t \u22122.7, n 294), mid \u22120.65 % (t \u22122.5) and shallow +0.68 %. Rising markets show no clear grade: in rising agitated the deep tercile is +0.03 % (n 58), and in rising calm only the deep tercile fades (\u22120.93 %, t \u22122.2).",
+    "F4": "The size per case explains why the book does not pay. The pooled unusual move is +0.36 % against a cost of 0.22 %, and the total move of +0.20 % is below that cost. Deep up days in falling markets move \u22120.8 % to \u22121.3 % beyond drift (F3), several times the cost, and a falling coin's own drift adds to a short.",
+    "F5": "The book behaves as a short on the coins. On the book's best tenth of days the coins average \u2212599 bp and the book +242 bp; on its worst tenth the coins average +502 bp and the book \u2212181 bp. Its result depends on market direction, which matches its Sharpe trailing holding's by 0.21.",
+    "F6": "On down days, heavier volume against the 20-day mean is followed by a larger next-day rebound (Spearman rho 0.09, p 1e-11, n 5594).",
+    "F7": "Up-day volume does not grade the next day (Spearman rho 0.005, p 0.69). The low-volume up-day fade is in fold C (t_day \u22122.1) but not in fold B (t_day \u22121.1). Weekday effects (Monday \u22120.38 %, t \u22122.7) and down days closing near their high (\u22121.47 %, t \u22122.7, n 135) do not stand out against the number of angles looked at."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, a day that closes up while sitting deeper below the coin's 20-day high, measured in the coin's own usual daily swing over the last 20 days, is followed by a larger fall over the next day.",
+      "consequence": "A trader in a coin whose last 60 days are down treats an up day far below its recent high as a sale into relief, and sizes the next-day short with the depth; in rising markets the trader stays out.",
+      "name": "falling deep up-day fade",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "081-01.g1_falling-deep-up-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -34,22 +34,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 072-02.b1.b1_choppy-deep-up-day-five-day-fade | 072-02.b1_choppy-deep-up-day-fade-more-coins | plan | inconclusive (+0.94) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-02.b1.b1.b1_deepest-up-day-five-day-fade, 072-02.b1.b1.b2_deepest-up-day-next-day-fade; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.10 | 10.7 |
 | 072-03.b1.b1_deep-bounce-fades-more-coins | 072-03.b1_choppy-deep-bounce-fades | plan | confirmed (+2.12) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 072-03.b1.b1.d1_deep-bounce-in-decline-fades, 072-03.b1.b1.d2_raw-depth-bounce-fade-sizing; 7.g: 072-03.b1.b1.g2_choppy-deep-bounce-next-day | 1.21 | 11.4 |
 | 072-03.b1.b1.d1_deep-bounce-in-decline-fades | 072-03.b1.b1_deep-bounce-fades-more-coins | plan | inconclusive (+1.79) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-03.b1.b1.d1.b1_deep-bounce-fades-five-days; 7.g: 072-03.b1.b1.d1.g1_deep-bounce-five-day-fade, 072-03.b1.b1.d1.g2_convex-deep-bounce-fade | 1.14 | 11.2 |
+| 072-03.b1.b1.d2_raw-depth-bounce-fade-sizing | 072-03.b1.b1_deep-bounce-fades-more-coins | plan | inconclusive (+1.37) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-03.b1.b1.d2.b1_deepest-bounce-below-high-fades, 072-03.b1.b1.d2.b2_deep-close-below-high-continues; 7.g: 072-03.b1.b1.d2.g1_choppy-depth-graded-ten-days | 1.23 | 11.8 |
+| 081-01_deep-up-day-next-day-fade | - | plan | confirmed (+2.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 081-01.d1_deep-up-day-five-day-fade, 081-01.d2_deepest-up-days-carry-fade, 081-01.d3_deep-up-day-fade-outside-uptrends; 7.g: 081-01.g1_falling-deep-up-day-fade | 1.13 | 11.3 |
+| 081-01.d1_deep-up-day-five-day-fade | 081-01_deep-up-day-next-day-fade | plan | confirmed (+2.24) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 081-01.d1.d1_deepest-up-days-fade-steeply, 081-01.d1.d2_deep-up-day-five-day-fade-only, 081-01.d1.d3_deep-up-day-ten-day-fade, 081-01.d1.d4_relief-day-fade-after-monthly-fall; 7.g: 081-01.d1.g1_choppy-deep-up-day-fade | 1.20 | 11.5 |
 
 ## Consumption
-30 ideas, 33.34 USD, 317.6 minutes in all.
+33 ideas, 36.90 USD, 352.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.86 | 17.2 |
-| step4_backtest | 0.00 | 189.1 |
-| step5_verdict | 5.81 | 21.7 |
-| step6_check | 0.00 | 1.2 |
+| step3_plan | 3.13 | 18.7 |
+| step4_backtest | 0.00 | 211.2 |
+| step5_verdict | 6.39 | 23.7 |
+| step6_check | 0.00 | 1.3 |
 | chart_files | 0.00 | 0.6 |
 | step7_7.a | 0.00 | 0.1 |
-| step7_7.e | 0.52 | 1.3 |
+| step7_7.e | 0.52 | 1.4 |
 | step7_7.c | 0.00 | 0.1 |
-| step7_7.d | 2.25 | 7.3 |
-| step7_7.b | 7.05 | 21.4 |
-| step7_7.g | 14.85 | 43.3 |
-| similarity_check | 0.00 | 0.9 |
+| step7_7.d | 3.10 | 10.3 |
+| step7_7.b | 7.48 | 22.6 |
+| step7_7.g | 16.28 | 47.7 |
+| similarity_check | 0.00 | 1.1 |
 | unseen_test | 0.00 | 13.5 |

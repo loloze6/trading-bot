@@ -5,6 +5,7 @@
 072-02.b1_choppy-deep-up-day-fade-more-coins_1d: 1 ideas (2 explorations)
 072-02_choppy-deep-up-day-fade_1d: 1 ideas (2 explorations)
 072-03.b1.b1.d1_deep-bounce-in-decline-fades_1d: 2 ideas (2 explorations)
+072-03.b1.b1.d2_raw-depth-bounce-fade-sizing_1d: 1 ideas (2 explorations)
 072-03.b1.b1_deep-bounce-fades-more-coins_1d: 1 ideas, 1 discoveries (2 explorations)
 072-03.b1_choppy-deep-bounce-fades_1d: 1 ideas, 1 discoveries (3 explorations)
 072-03_choppy-deep-down-day-continuation_1d: 1 ideas, 1 discoveries (2 explorations)
@@ -28,3 +29,5 @@
 074-01.g1.d1_wide-close-high-bounce-fade_1d: no ideas: The only patterns that stand out are the tested fade itself (F1–F3) and the falling agitated down-day rebound (F5), which the profile map already holds 16 times; the second-day give-back (F4, t 2.23) does not stand out after this many angles, and weekdays (F6) show nothing.
 074-01.g1_falling-agitated-wide-up-fade_1d: 2 ideas (2 explorations)
 074-01_falling-wide-up-day-fade_1d: 1 ideas (2 explorations)
+081-01.d1_deep-up-day-five-day-fade_1d: 1 ideas (2 explorations)
+081-01_deep-up-day-next-day-fade_1d: 1 ideas (2 explorations)

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9999307479224376,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move of the short bets, short direction",
+    "value": 0.0071463337468028005,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 2.2386050506098387
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and the check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean unusual move (median |forecast| split)",
+    "value": 0.008869913909570195,
+    "passed": true
+  },
+  "counts": {
+    "cases": 5627,
+    "distinct days": 1326
+  },
+  "decided_by": "The mean unusual move is positive with t >= 2 and the deeper half beats the shallower half.",
+  "reading": "Ret1 is recomputed from closes inside each window (the detector's regime is used on a window's first bar) and 'below the 20-day high' is a raw depth below 0; a case is the first short bet of each 5-bar grid cell (positions 0,5,10,... of each window) with a 5-bar return inside the window, the coin's drift is the mean of its 5-bar grid returns over all its windows, the t clusters cases by UTC day (deviations summed per day, G/(G-1) correction), and the deeper half is the cases with |forecast| above the median, the shallower half those at or below it.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003554 on the check folds against +0.007146 on every fold",
+    "main": 0.0035539399698483916,
+    "statistic": 0.9057402153873294,
+    "counts": {
+      "cases": 3732,
+      "distinct days": 774
+    }
+  }
+}

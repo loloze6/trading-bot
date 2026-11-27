@@ -5,6 +5,7 @@
 072-02.b1_choppy-deep-up-day-fade-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 072-02_choppy-deep-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 072-03.b1.b1.d1_deep-bounce-in-decline-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+072-03.b1.b1.d2_raw-depth-bounce-fade-sizing_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 072-03.b1.b1_deep-bounce-fades-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 072-03.b1_choppy-deep-bounce-fades_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 072-03_choppy-deep-down-day-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
@@ -28,3 +29,5 @@
 074-01.g1.d1_wide-close-high-bounce-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 074-01.g1_falling-agitated-wide-up-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01_falling-wide-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+081-01.d1_deep-up-day-five-day-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+081-01_deep-up-day-next-day-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
