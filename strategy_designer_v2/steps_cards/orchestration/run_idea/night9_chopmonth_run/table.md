@@ -22,21 +22,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-01.b1.g1.b1.d1.g1_agitated-chop-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+0.21) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.g1.b1_agitated-chop-slide-five-days; 7.g: 067-01.b1.g1.b1.d1.g1.g1_choppy-scaled-month-continuation | 1.36 | 12.8 |
 | 067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+1.18) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.g2.b1_deep-month-slide-continues, 067-01.b1.g1.b1.d1.g2.b2_deep-slide-three-weeks; 7.g: 067-01.b1.g1.b1.d1.g2.g1_choppy-month-slide-continues, 067-01.b1.g1.b1.d1.g2.g2_choppy-agitated-slide-continues, 067-01.b1.g1.b1.d1.g2.g3_swing-scaled-month-slide-continues | 1.17 | 12.4 |
 | 067-01.b1.g1.b1.d1.g3_chop-slide-twenty-day-continuation | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+0.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.g3.b1_chop-slide-five-day-continuation; 7.g: 067-01.b1.g1.b1.d1.g3.g1_chop-slide-ten-day-continuation, 067-01.b1.g1.b1.d1.g3.g2_chop-swing-scaled-slide-continuation | 1.12 | 11.5 |
+| 067-02.b1_choppy-plain-month-fall-continues | 067-02_choppy-weak-month-fall-continues | plan | inconclusive (-1.55) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1_choppy-deep-month-fall-continues; 7.g: 067-02.b1.g1_choppy-swing-scaled-month-fall | 1.11 | 12.0 |
 
 ## Consumption
-18 ideas, 20.01 USD, 214.4 minutes in all.
+19 ideas, 21.12 USD, 226.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.49 | 8.2 |
-| step4_backtest | 0.00 | 147.5 |
-| step5_verdict | 3.51 | 12.2 |
+| step3_plan | 1.57 | 8.7 |
+| step4_backtest | 0.00 | 155.6 |
+| step5_verdict | 3.70 | 12.8 |
 | step6_check | 0.00 | 0.8 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.d | 1.89 | 6.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 4.96 | 14.6 |
-| step7_7.g | 8.16 | 24.1 |
+| step7_7.b | 5.36 | 15.9 |
+| step7_7.g | 8.60 | 25.6 |
 | similarity_check | 0.00 | 0.3 |
