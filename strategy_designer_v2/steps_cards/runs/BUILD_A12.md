@@ -170,9 +170,25 @@ pilot's journals `in_box` said true on 13 and 10 turns and false on none. See Op
   neither a box nor a data use (`prompts_before_after.txt`, last lines).
 
 ## For all three parts
-**A run without a box and without `data_use.json`: the same files.** SEEDED_RESULT
+**A run without a box and without `data_use.json`: the same files.** Night 9's 074-01.b1.g1 run through
+`run_idea` in a seeded run (`proofa12_run`: its plan, verdict and step 7 outputs copied, so no model call; steps 4 and 6,
+the chart files, the similarity check and the unseen test ran for real), once on the base commit's code (26b53af8185)
+and once on this build's (79fb0bc2cb9), each in its own checkout in a scratch folder (`build_a12/run_one.sh`,
+`compare.py`, `compare_result.txt`). Both: confirmed (+4.26), profitable enough, holds on both unseen periods.
+**1117 files on each side, none only on one: 435 byte-identical, 678 identical once times, git shas, engine run ids,
+paths and durations are masked, 4 different**, in allowed ways only: the order in which the parallel step 7 lines
+finished (`journal.jsonl`, `table.json`, `table.md`), one step's minutes (12.4 against 4.8: the test suites were
+running beside the new run), and the bot's own log `trading-bot/results/trading_bot.log` (the order in which the coins
+were read). Every bar, trade, metric, verdict, check, chart file, register entry and unseen result is identical.
+**Part 2's side line does not appear in this proof:** no model wrote an idea in it; the line is shown by the prompts'
+difference and the helpers' tests above.
 
-**Tests.** TESTS_RESULT
+**Tests.** The cards' suite: **235 passed** (234 in the full run, then the one test added from `build-a9`, run with its
+file: 12 passed). The bot's suite (`cd trading-bot && VENV -m pytest -q`): **1681 passed, 16 skipped, 1 failed and 3
+errors in the full run**: the four are 30-second timeouts (`test_d146_register_read_feeds_only.py`, 3;
+`test_gap_rule_defects_cul359.py`, 1) while three other heavy jobs shared the 4 cores; **rerun alone, the two files
+pass (28 passed)**. Nothing in `trading-bot/` is changed by this build. `topics/47_review/fold_rules_test.csv`,
+rewritten by the cards' suite, was restored after each run.
 
 ## Open (for the operator)
 1. **Half a warm-up or a whole one?** The rule built asks the whole warm-up of every coin (790 days for a plan naming
