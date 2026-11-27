@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "061-01.b1.b1_small-gain-high-close-fades_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2613516,
+  "findings": {
+    "F1": "Step 5's result is on the predicted side (mean unusual 5-day move +2.51 %, t 3.44, 140 cases on 122 days), and only the gain grading fails. The supporting check is -0.0047. In folds B\u2013C, among in-profile closes at or above 0.8 of the range, the day's gain in usual moves does not rank the 5-day fall: Spearman rho -0.01 (p 0.97). By gain bin the mean unusual 5-day move is +8.8 % for 0 to 0.5 usual moves (6 cases), +10.2 % for 0.5 to 1 (6) and +5.6 % for 1 to 2 (3). No such close fell on a down day, so the forecast's grading only ever separated small gains from moderate ones.",
+    "F2": "The brief's own grading does rank the fall: the nearer the close to the high, the larger the 5-day fall. Over all in-profile days, close location against the unusual 5-day move gives Spearman rho +0.215 (p 0.047). By close location the mean unusual 5-day move is +4.6 % at 0.6\u20130.8 (13 cases), +7.2 % at 0.8\u20130.9 (11 cases, t 1.63) and +7.1 % at 0.9\u20131.0 (10 cases, 7 days, t 2.70). Closes at or above 0.8 average +7.2 % (21 cases, 16 days, t 2.80), against +1.9 % below 0.8 (65 cases, t 0.74).",
+    "F3": "The fall shows over five days or more, not over one or two. In the 0.9\u20131.0 close-location bin the unusual move is 0.0 % over 1 day (t 0.00) and -2.6 % over 2 days (t -1.00). It is +7.1 % over 5 days (t 2.70) and +17.1 % over 10 days (7 cases, t 3.74). Over 5 and 10 days the low-close bins are flat or negative (-11.3 % at 0\u20130.2 over 10 days).",
+    "F4": "Over 5 days the near-high fall has the same sign in every year of folds B\u2013C: +5.5 % in 2019 (4 cases), +12.0 % in 2020 (5 cases) and +5.6 % in 2021 (11 cases). Over 2 days it is mixed (2019 +3.1 %, 2020 -0.1 %, 2021 +0.9 %).",
+    "F5": "The fall is uneven across coins. Over 5 days ETH averages +10.0 % (3 cases) and ZEC +3.3 % (7 cases), while XMR is flat at +0.4 % (5 cases). The per-coin counts are too small to place the effect in particular coins."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range, its price falls over the next five days, and the nearer the close is to the day's high, the larger the fall.",
+      "consequence": "In a range-bound, agitated market, a trader can short a daily close pinned at its high and hold it for about a week, sizing the short by how close the close is to the high rather than by how little the day gained.",
+      "name": "high-close location fades weekly",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1_high-close-location-fades-weekly"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

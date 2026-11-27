@@ -1,0 +1,102 @@
+## nosig r5 deep (<-0.05) vs not
+            n    u_mean  tot_short         t
+r5                                          
+False  1450.0 -0.002520  -0.011478 -0.759006
+True    477.0  0.002161  -0.006400  0.364200
+
+## nosig r20 < -0.17 vs not
+            n    u_mean  tot_short         t
+r20                                         
+False  1577.0 -0.001756  -0.010901 -0.547251
+True    350.0  0.000419  -0.007158  0.062093
+
+## nosig rngrel>1.08 vs not
+             n    u_mean  tot_short         t
+rngrel                                       
+False   1330.0  0.001142  -0.007621  0.335657
+True     597.0 -0.006938  -0.016014 -1.267168
+
+## situation any profile, by regime
+                    n    u_mean  tot_short         t
+regime                                              
+chop            317.0 -0.002618  -0.011296 -0.366621
+mean_reversion   22.0  0.120796   0.113139  3.347213
+
+## situation chop-regime by r5 deep
+           n    u_mean  tot_short         t
+r5                                         
+False  159.0 -0.009825  -0.018512 -1.215585
+True   158.0  0.004634  -0.004034  0.392797
+
+## signal r5<-0.05 & r20<-0.17
+          n    u_mean  tot_short         t
+r5                                        
+False   6.0 -0.027367  -0.034049 -0.912171
+True   17.0  0.163963   0.155712  4.098263
+
+## all signal bars by r5 quartile
+                         n    u_mean  tot_short         t
+r5                                                       
+(-0.338, -0.126]      30.0  0.079733   0.071804  2.551992
+(-0.126, -0.0642]     30.0  0.073126   0.066624  3.325365
+(-0.0642, -0.0275]    30.0  0.037977   0.027862  2.725318
+(-0.0275, -0.000486]  30.0  0.015535   0.006425  0.924211
+
+## all signal bars: first day vs rest
+n                    127.000000
+short_f1               0.016897
+short_f1to5            0.015732
+rest_if_day1_up        0.013398
+n_up                  59.000000
+rest_if_day1_down      0.017757
+
+## trades early by exit_forecast==0
+                      n        net
+early exit_forecast               
+False False           1  12.434663
+      True           91   3.158918
+True  False           4  -0.250978
+      True           47  -4.338351
+
+## trades by entry r5 sign (forecast mag)
+                              n       net
+entry_forecast                           
+(8.947000000000001, 12.655]  49 -0.388335
+(12.655, 15.195]             46  0.650176
+(15.195, 19.452]             48  1.752294
+
+## trades by exit regime
+                       n        net
+early exit_reg                     
+False chop            65   5.455315
+      mean_reversion   1  12.434663
+      unknown         26  -2.582074
+True  chop            28  -4.481680
+      mean_reversion   3  -0.209060
+      unknown         20  -3.939609
+
+## trades by entry r60
+                n        net      worst
+entry_r60                              
+(-1.0, -0.05]  14   2.348124 -12.952768
+(-0.05, 0.0]    6   3.451364  -8.023578
+(0.0, 0.05]    12  10.128111  -9.587273
+(0.05, 1.0]     7   6.375852 -10.465479
+
+## worst 8 trades
+      coin    w  days  entry_forecast exit_reg  entry_r60  net_profit_loss_percent
+0   ZECUSD  w11   7.0      -10.071801     chop        NaN               -62.842354
+1  LINKUSD  w18   1.0      -16.628725     chop        NaN               -23.662767
+2   XMRUSD  w18   5.0      -11.181735     chop        NaN               -16.557611
+3   ZECUSD  w11   5.0      -10.071801     chop        NaN               -16.412141
+4   ADAUSD  w18   5.0      -10.750557  unknown        NaN               -16.084279
+5   ZECUSD  w11   3.0      -10.701088     chop        NaN               -15.402828
+6   XMRUSD  w11   8.0      -14.321676     chop        NaN               -14.828610
+7  LINKUSD  w12   5.0      -14.479397     chop        NaN               -13.715955
+
+## pos pnl by regime held
+                  n      pnl_bp
+regime                         
+chop            186    3.951195
+mean_reversion  129  104.386950
+unknown         111   -1.938226

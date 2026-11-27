@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 061-01.b1.b1.b1.d2.d3.d2_pullback-high-close-fade_1d
+idea tested: 061-01.b1.b1.b1.d2.d3.d2_pullback-high-close-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4265 USD
+---
+## Findings
+- **F1:** In folds B and C, in choppy, agitated markets, the tested idea's full situation (an up day closing in the top quarter of its range after a 3-day fall) is followed over 5 days by a short-direction excess return of +4.71 % (t 2.81, 43 cases on 39 days, hit 67 %, strength 0.41). In choppy, calm markets the same situation gives -0.85 % (t -0.51, 38 cases), so the effect sits in the profile the idea names, as the brief's second test of the theory requires.
+- **F2:** The step-5 result (+1.46 %, t 1.47, 90 cases over all folds) is on the side the idea predicts but short of the bar. It comes from the test's graded forecast, which counted only 15 of these 43 situation cases in folds B and C. Those 15 gave +7.6 % (t 2.72), so the other folds' cases dilute it. The test already used every coin and fold on daily bars, so no more data is available for an unchanged retest.
+- **F3:** The prior three-day fall is not what carries the effect. In choppy, agitated markets, any up day closing in the top quarter of its range gives:
+- **F4:** The idea's grading by a smaller gain holds in the full situation over 5 days. Cases with the smaller half of gains against the usual daily swing fade by +6.45 % (t 2.57, 22 cases), the larger half by +2.89 % (t 1.59, 21 cases). The correlation between gain and fade is -0.15, and -0.16 over 10 days.
+- **F5:** The brief's grading by how near the close is to the high does not show. The correlation of close location with the 5-day fade is -0.01, and the lower half of locations fades by +5.48 % against +3.91 % for the half nearer the high.
+- **F6:** The effect is spread across the data rather than carried by a few cases. Over 5 days in choppy, agitated markets it is positive in every year 2018–2021 (+2.1 % to +10.9 %) and in 7 of 8 coins (LTC -2.1 % on 4 cases), and the three largest cases carry 46 % of the total.
+
+## Ideas
+- `061-01.b1.b1.b1.d2.d3.d2.b1_quiet-high-close-fades` (from F1, F2, F3, F4, F6): In a choppy, agitated market, when a coin closes near the top of that day's high-low range on an up day, its price falls over the next five days, and the smaller the day's gain against its usual daily swing, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

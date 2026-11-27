@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "061-01.b1.b1.b1.d2.d3.d2_pullback-high-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.416632,
+  "findings": {
+    "F1": "In the choppy, agitated profile, an up day closing in the top third of its range is followed by a 5-day return 7.10 % below the coin's drift (t -2.85, 26 cases on 19 days, non-overlapping 5-day grid, folds B and C). This is the brief's fade without the tested idea's prior-fall condition.",
+    "F2": "The prior three-day fall that the tested idea requires adds little. In the profile, up days closing in the top quarter of the range fade by -7.19 % over 5 days after a prior fall (13 cases, t -1.95) and by -5.48 % after a prior rise (10 cases, t -2.20). Keeping only the pullbacks roughly halves the cases, which helps explain why the book fails on 0.0046 trades per day.",
+    "F3": "In the profile, the fade grows with how near the close sits to the high. By thirds of the close's place in the range, the 5-day excess is -1.46 % (19 cases), -2.03 % (38) and -5.96 % (29 cases on 20 days, t -2.09), with a Spearman correlation of -0.215 between close location and excess return.",
+    "F4": "The tested grading, a smaller gain against the usual swing giving a larger fall, does not show. Among in-profile high closes, gains under 0.7 usual moves give -9.08 % (11 cases, t -1.77) and larger gains give -7.14 % (13 cases, t -3.02).",
+    "F5": "Outside the profile, in choppy markets (60-day return between -10 % and +10 %, mostly the calm side), an up day above one usual daily move is followed by a 5-day excess of +8.25 % (t 2.04, 28 cases on 19 days). In rising markets the same days give +2.59 % (t 1.18) and in falling markets +0.73 % (t 0.44). This is the opposite of the fade seen in the agitated profile.",
+    "F6": "Weekday, year and coin splits showed nothing that stands out once the number of angles is counted. The 5-day excess by weekday ranges from -1.74 % to +2.09 % on about 280 cases each, with no t reaching 2. Moves larger than two usual moves give +5.71 % overall (t 1.84, 49 cases), which is not distinct from chance."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, a coin whose up day closes near the top of that day's high-low range falls over the next five days, and the nearer the close is to the day's high, the larger the fall.",
+      "consequence": "A trader shorts strong closes on up days in a choppy, agitated market, whether or not a pullback came before, and sizes the short by how near the close sits to the high.",
+      "name": "choppy agitated high close fade",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, a coin's up day that is large against its usual daily swing over the last 20 days is followed by a further rise over the next five days, and the larger the day's gain against that swing, the larger the rise.",
+      "consequence": "A trader buys a large up day in a calm market that has gone nowhere for two months, instead of fading it as in agitated chop.",
+      "name": "choppy calm big day continuation",
+      "from": "F5",
+      "profile": "choppy calm",
+      "refs": [
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d2.d3.d2.g1_choppy-agitated-high-close-fade",
+    "061-01.b1.b1.b1.d2.d3.d2.g2_choppy-calm-big-day-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

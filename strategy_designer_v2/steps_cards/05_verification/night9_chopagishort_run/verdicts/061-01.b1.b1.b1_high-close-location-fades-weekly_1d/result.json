@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual 5-bar move of the bets",
+    "value": 0.017059541795280013,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 3.1277582961993557
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move at close location >= 0.9 minus 0.8 to < 0.9",
+    "value": 0.013447338317529004,
+    "passed": true
+  },
+  "counts": {
+    "cases": 349,
+    "distinct days": 248,
+    "cases at 0.9 or more": 164,
+    "cases from 0.8 to below 0.9": 185
+  },
+  "decided_by": "The mean short-side unusual move is above 0 with a t of 2 or more, and the supporting check passes.",
+  "reading": "A case is the first short bet (rise of the short forecast of >= 2 points from its lowest level since the last bet) in each 5-bar grid cell of a window, its return taken from that bar's close to 5 bars later inside the window; the normal drift is the coin's mean 5-bar return on the grid of all its windows; the day-pooled t uses summed deviations per UTC day with a D/(D-1) correction; the situation check uses close location >= 0.8 (recorded high_close value, else from prices) and a negative forecast, the profile not being recomputable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01347 on the check folds against +0.01706 on every fold",
+    "main": 0.013474028458149032,
+    "statistic": 2.2460245401819763,
+    "counts": {
+      "cases": 280,
+      "distinct days": 189,
+      "cases at 0.9 or more": 137,
+      "cases from 0.8 to below 0.9": 143
+    }
+  }
+}

@@ -3,7 +3,6 @@ instruments: BTC, ETH, LTC, XMR, XRP, ZEC
 bar: 1d
 side: short only
 source: line 7.g patterns, backtest 058-03_calm-rise-stretch-continuation_1d (idea 058-03_calm-rise-stretch-continuation, brief 058_rising-agitated-overextension-gives-back)
-discovery: 058-03.g2_choppy-agitated-strong-close-fade
 ---
 In a choppy, agitated market, a coin whose daily close sits near the top of that day's high-low range tends to fall over the next two days. The nearer the close is to the high, the larger the fall.
 

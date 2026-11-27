@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 5-bar move (minus (5-bar return - coin's normal 5-bar drift))",
+    "value": 0.024770888131019228,
+    "statistic": {
+      "name": "t of the mean, cases of the same day taken together",
+      "value": 2.727705729415963
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, top half minus bottom half at median |forecast|",
+    "value": 0.018123075849690994,
+    "passed": true
+  },
+  "counts": {
+    "cases": 271,
+    "days": 205
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 and the top |forecast| half at least the bottom half: confirm rule.",
+  "reading": "Situation bars are those the engine labelled mean_reversion, with the close-location, 5-day-return and 60-day-return conditions re-checked from prices where the window's bars allow (the 365-day swing percentile cannot be rebuilt inside a window, so the regime label stands for it); a case is the first short bet in each 5-bar grid cell of a window with its 5-bar return from that bet's close; the top half of the split is |forecast| strictly above the median; the plan's 'fewer than 30 cases' rule is applied as 'not observable' per the workflow.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01096 on the check folds against +0.02477 on every fold",
+    "main": 0.010962599738637344,
+    "statistic": 1.6632637950952147,
+    "counts": {
+      "cases": 198,
+      "days": 150
+    }
+  }
+}

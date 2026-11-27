@@ -1,0 +1,158 @@
+{
+  "core": {
+    "net_return_pct": 12.461,
+    "sharpe": 6.988,
+    "max_drawdown_pct": -0.006,
+    "trade_count": 5,
+    "win_rate": 80.0,
+    "avg_trade_net_pnl": 24.705515,
+    "fees_paid": 3.492439,
+    "gross_pnl": 127.020015,
+    "net_pnl": 123.527576,
+    "cost_drag_pct": 2.7495,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": 0.097176,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.289116,
+    "forecast_return_corr_all_bars_n_eff": 122,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 1.8,
+    "sigma_bar_bps": 356.0308,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 272.7334,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "chop": {
+      "bar_count": 106,
+      "avg_forecast": 0.0
+    },
+    "mean_reversion": {
+      "bar_count": 4,
+      "avg_forecast": -18.401743,
+      "trade_count": 5,
+      "total_net_pnl": 123.527576
+    },
+    "unknown": {
+      "bar_count": 13,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "very_negative_lt_minus_15": {
+      "total_forecasts": 5,
+      "profitable_trades": 4,
+      "success_rate_pct": 80.0,
+      "total_net_pnl_usd": 123.5276,
+      "avg_pnl_per_trade_usd": 24.7055
+    }
+  },
+  "dynamic": {
+    "debug_info.components.high_close.last_history_value": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "mean_reversion": {
+        "mean": 0.924286,
+        "std": 0.068135
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.high_close.post_pipeline_value": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "mean_reversion": {
+        "mean": -18.401743,
+        "std": 1.776737
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.high_close.weight_normalized": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.high_close.weighted_contribution": {
+      "chop": {
+        "mean": null,
+        "std": null
+      },
+      "mean_reversion": {
+        "mean": -18.401743,
+        "std": 1.776737
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "chop": {
+      "forward_return_mean": -0.00233831,
+      "forward_return_std": 0.03736112,
+      "n_bars": 105,
+      "informative": true
+    },
+    "mean_reversion": {
+      "forward_return_mean": -0.01994591,
+      "forward_return_std": 0.0203517,
+      "n_bars": 4,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00113746,
+      "forward_return_std": 0.02155206,
+      "n_bars": 13,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -0.5414,
+    "sharpe": 3.5178,
+    "sortino": 32.56,
+    "exposure_pct": 6.5041,
+    "turnover": 6.561624,
+    "n_bars_total": 123,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 122,
+    "n_downside_days": 6,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

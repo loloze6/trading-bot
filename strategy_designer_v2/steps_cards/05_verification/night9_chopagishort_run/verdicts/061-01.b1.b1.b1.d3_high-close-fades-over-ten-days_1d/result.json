@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move per short case, in the short direction",
+    "value": 0.025808319641270436,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 2.903744388251318
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 over >= 30 case-days (and check passes); reject: mean < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of stronger |forecast| half minus weaker half",
+    "value": -0.013482212916541718,
+    "passed": false
+  },
+  "counts": {
+    "case-days": 206,
+    "cases": 289
+  },
+  "decided_by": "The main measure meets the confirm rule but the supporting check (stronger minus weaker half above 0) fails.",
+  "reading": "The profile part of the situation is read from the recorded regime (mean_reversion is only reached when no chop veto of the profile fires) since the detector's components are not recorded, the close location from the raw value or else the prices; a case is the first short bet (rise of |forecast| on the short side of at least 2 from its lowest level since the last bet) in each 10-bar grid cell of a window, the t uses day-clustered deviations, the stronger half is |forecast| above the case median, and fewer than 30 case-days gives 'not observable' per the workflow's minimum-count rule."
+}

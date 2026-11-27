@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per short case, in the short direction, before costs",
+    "value": 0.022375258360522576,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.7043076696572563
+    },
+    "threshold": "t of the unusual move >= 2 (with supporting correlation > 0) confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast and next 5-bar return on grid bars with forecast < 0",
+    "value": 0.14844169583594688,
+    "passed": true
+  },
+  "counts": {
+    "cases": 279,
+    "distinct days": 210,
+    "supporting grid bars": 85
+  },
+  "decided_by": "the unusual move's t is 2 or more and the supporting correlation is above 0",
+  "reading": "the profile is read from the regime column (not 'chop'), a case is the first short bet (forecast magnitude rising >= 2 from its lowest short level since the last bet) in each 5-bar grid cell of a window, the drift is the coin's mean non-overlapping 5-bar return over all its windows, the t uses day-clustered deviations, and the plan's 'fewer than 30 cases or 20 days' is applied as the minimum counts (not observable)",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01044 on the check folds against +0.02238 on every fold",
+    "main": 0.010435784468009825,
+    "statistic": 1.6109853997994399,
+    "counts": {
+      "cases": 202,
+      "distinct days": 152,
+      "supporting grid bars": 62
+    }
+  }
+}

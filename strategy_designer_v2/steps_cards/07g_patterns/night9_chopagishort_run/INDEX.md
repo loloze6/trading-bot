@@ -1,0 +1,27 @@
+061-01.b1.b1.b1.d1.d1.d1.d1_choppy-deep-month-fall-continues_1d: 0 ideas, 1 discoveries (2 explorations)
+061-01.b1.b1.b1.d1.d1.d1.d2_upper-close-deep-fall-ten-day_1d: 0 ideas, 1 discoveries (2 explorations)
+061-01.b1.b1.b1.d1.d1.d1.d3_moderate-fall-high-close-fades_1d: 2 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d: 0 ideas, 2 discoveries (2 explorations)
+061-01.b1.b1.b1.d1.d1.d2_upper-close-after-sharp-week-fall_1d: 0 ideas, 2 discoveries (3 explorations)
+061-01.b1.b1.b1.d1.d1.d3.d1_high-pinned-close-fades_1d: no ideas: The only pattern that stands out is the tested idea's own effect, already in the brief's profile (F1, F2). The other angles were 20-day momentum, range width with close location, volatility level with the last day's sign, weekday, window, coin and trades. Each either drops below t 2 once same-day cases are pooled, changes sign across windows or years, or repeats a calm-rise momentum the profile map already holds (F5, F6, F7).
+061-01.b1.b1.b1.d1.d1.d3.d2_wide-day-upper-close-fade_1d: 2 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d1.d3_quieter-upper-close-fade_1d: 2 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: 1 ideas (3 explorations)
+061-01.b1.b1.b1.d1.d2.d1.d1_deep-fall-upper-close-fade_1d: 1 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d2.d1.d2_upper-close-fade-while-choppy_1d: 1 ideas, 1 discoveries (2 explorations)
+061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d: 1 ideas, 1 discoveries (3 explorations)
+061-01.b1.b1.b1.d1.d2.d2.d1_high-close-fall-falling-market_1d: 0 ideas, 1 discoveries (2 explorations)
+061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d: 0 ideas, 2 discoveries (3 explorations)
+061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded_1d: 2 ideas (3 explorations)
+061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d: 0 ideas, 1 discoveries (2 explorations)
+061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade_1d: 0 ideas, 1 discoveries (2 explorations)
+061-01.b1.b1.b1.d2.d2_upper-close-quiet-day-fade_1d: 0 ideas, 1 discoveries (3 explorations)
+061-01.b1.b1.b1.d2.d3.d2_pullback-high-close-fade_1d: 2 ideas (2 explorations)
+061-01.b1.b1.b1.d2.d3.d3_broad-pullback-high-close-fade_1d: no ideas: Across forecast, close location, past 5-day moves, day size, range width and its 5-day compression, weekday, profile, year and the book's extreme days, the only pattern that clears chance is the next-day rebound after a large down day (F2), which the profile map already holds many times; nothing new stands out.
+061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade_1d: 1 ideas (2 explorations)
+061-01.b1.b1.b1.d2_quiet-high-close-fades_1d: no ideas: The only patterns that stand out after many angles are the wide-range low-close rebound and its rising-market case (F1, F2), both already held by the profile map. The brief's own high-close fade does not show beyond the tested signal (F3). The rest cannot be told apart from chance (F5).
+061-01.b1.b1.b1.d3_high-close-fades-over-ten-days_1d: no ideas: Across close location, prior-day return, range size, weekday, year and profile on 1-, 2-, 5- and 10-day horizons, nothing stands out from chance given that many angles. The strongest pattern, a one-day gradient with close location (F1), is at t 1.7 on its high-close side and is already the tested situation in a wider profile. The in-profile cells rest on about ten cases each (F2, F3, F6).
+061-01.b1.b1.b1_high-close-location-fades-weekly_1d: 1 ideas (2 explorations)
+061-01.b1.b1_small-gain-high-close-fades_1d: 2 ideas (2 explorations)
+061-01.b1_high-close-fade-more-coins_1d: 1 ideas (3 explorations)
+061-01_choppy-agitated-strong-close-fade_1d: 2 ideas (2 explorations)

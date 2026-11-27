@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 061-01.b1.b1.b1_high-close-location-fades-weekly_1d
+idea tested: 061-01.b1.b1.b1_high-close-location-fades-weekly
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4524 USD
+---
+## Findings
+- **F1:** Among coins whose 20-day return was below -10 %, a daily close in the top fifth of the day's range was followed by a large 5-day fall against the coin's normal drift. Closes at 0.8 to 0.9 gave -4.71 % (day-pooled t -1.85, 48 cases, 26 days) and closes at 0.9 or more gave -4.80 % (t -2.24, 37 cases, 21 days). Lower closes gave only -1.02 % (t -0.73, 334 cases) and -0.55 % (0.6 to 0.8, t -0.28, 96 cases). All four high-close bins together gave -4.75 % (simple t -3.76, 85 non-overlapping cases).
+- **F2:** The F1 fall after high closes in a 20-day decline was negative in each of the four years seen. It was -3.2 % in 2018, -4.5 % in 2019, -9.3 % in 2020 and -3.9 % in 2021 (6 to 39 cases each). It was strongest in the calmer half of 20-day volatility, at -7.8 % (t -2.24, 43 cases) against -1.6 % (t -1.04, 42 cases) in the wilder half. So it is not an agitation effect.
+- **F3:** The tested effect does not show on the raw 5-day grid of folds B and C. Over all bars, closes at 0.8 to 0.9 and at 0.9 or more were followed by +0.51 % (t 0.52) and +0.19 % (t 0.18) unusual moves, not falls. In a 60-day choppy trend, high closes were followed by +2.25 % (t 0.71, 39 cases). In a 20-day choppy trend they were followed by +2.33 % (t 2.12, 119 cases).
+- **F4:** The book's trades paid only when held to their horizon. The 43 trades closed within 3 days lost on average -5.40 % after fees, while the 55 trades of 3 to 5 days made +1.39 %. Overall the 117 short trades averaged -1.35 %. The shorts entered at the most negative forecasts (-20 to -17.3, closes nearest the high) lost -5.20 % on average, against +1.52 % for the mildest third. This is the opposite of the grading the idea claims.
+- **F5:** A day whose range is in the top fifth against its 20-day average range and that closes near its low was followed by a 2-day rebound of +1.73 % (day-pooled t 2.58, 317 cases, 114 days). This repeats the wide-range low-close rebounds the profile map already holds (039-02.d1, 044-01, 045-01), so it is not a discovery.
+- **F6:** Weekday splits of the 5-day unusual move swung from +2.1 % (Friday, t 2.39) to -1.7 % (Thursday, t -2.54) with no pattern between neighbouring days. After the many angles looked at, I count this as noise, not a finding.
+
+## Ideas
+- `061-01.b1.b1.b1.g1_falling-coin-high-close-fade` (from F1, F2): After a coin has fallen over its last 20 days, a daily close near the top of that day's high-low range is followed by a further fall over the next five days, and the nearer the close is to the day's high, the larger the fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

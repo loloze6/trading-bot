@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9994155464640561,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 3-bar return minus the coin's normal 3-bar drift",
+    "value": 0.004374010114339312,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 0.7836448154776701
+    },
+    "threshold": "mean > 0 with day-pooled t >= 2 confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "excess return of cases with |forecast| above median minus below median",
+    "value": -0.005906396747103608,
+    "passed": false
+  },
+  "counts": {
+    "cases": 1255,
+    "cases on distinct days": 423,
+    "cases above median |forecast|": 627,
+    "cases below median |forecast|": 627
+  },
+  "decided_by": "The day-pooled t lies between -2 and 2 (or its sign disagrees with the mean's), meeting neither rule.",
+  "reading": "A case is the first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet, reset at flat) in each non-overlapping 3-bar grid cell of a window, measured from its close to the close 3 bars later within the window, drift being the coin's mean non-overlapping 3-bar return over all its windows; the t uses day-clustered deviations with a D/(D-1) correction; median ties are left out of the supporting check; and the plan's 'fewer than 30 cases on distinct days' is applied as the minimum count giving 'not observable'."
+}

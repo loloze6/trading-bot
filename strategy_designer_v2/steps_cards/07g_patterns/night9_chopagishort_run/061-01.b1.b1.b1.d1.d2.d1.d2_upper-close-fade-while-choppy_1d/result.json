@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "061-01.b1.b1.b1.d1.d2.d1.d2_upper-close-fade-while-choppy_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4857863,
+  "findings": {
+    "F1": "The book's profit comes almost entirely from one window. On days in a position, w16 sums +1.649 of daily book returns, against a total of about +1.585 over all twelve windows. Five other windows are negative, w11 the worst at \u22120.138. The best 5 % of days carry 175 % of the summed gain, and the book's daily return correlates \u22120.80 with the coin's, so what the book earns is a few large coin falls.",
+    "F2": "The situation does not need the choppy agitated profile. A close in the upper half of the day's range after a negative 5-day return falls over the next 2 days in every profile. Outside the profile the unusual 2-day move is \u22120.94 % (t \u22122.01, day-clustered, 915 cases on 325 days). Inside it the move is \u22122.61 % (t \u22121.25, 66 cases on 48 days).",
+    "F3": "The 2-day fall is graded by the depth of the 5-day fall, using all bars in the situation:",
+    "F4": "Both conditions are needed. Removing either one leaves nothing:",
+    "F5": "The bounce close is not graded by its height. Closes at 0.75\u20130.9 of the range fall \u22121.99 % over 2 days (t \u22122.97, 288 cases, 149 days), closes at 0.5\u20130.75 fall \u22120.63 % (t \u22121.03), and closes above 0.9 fall \u22120.82 % (t \u22121.06).",
+    "F6": "The fade belongs to the 2-day horizon. At 5 days, outside the profile, the same situation moves +0.26 % (t 0.21, 317 cases). In falling agitated markets it reverses: \u22122.42 % over 2 days (t \u22122.40, 128 cases, 62 days), then +7.09 % over 5 days (t 2.11, 46 cases, 22 days).",
+    "F7": "The tested 5-day short rests on very few cases in these folds. In the profile, its situation gives \u221212.1 % over 5 days, but on only 22 grid cases over 13 days (t \u22121.83). In choppy agitated bars, the 2-day move is \u22123.56 % (t \u22121.59, 34 cases, 23 days): the same sign as everywhere else, but not separable from chance alone.",
+    "F8": "No weekday pattern survives clustering by day. Sunday's 2-day move is \u22121.15 % (t \u22121.42, 111 days); every other weekday has |t| < 1.2."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes in the upper half of its daily range after its 5-day return has been negative, its price falls over the next two days, the fall growing with the depth of that 5-day fall.",
+      "consequence": "A bounce close inside a falling week is a short for two days, larger the deeper the week's fall, and a reason not to buy that bounce.",
+      "name": "dead cat bounce two-day fade",
+      "from": "F2, F3, F4, F6",
+      "theme": "discovery",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, when a coin closes in the upper half of its daily range after its 5-day return has been negative, its price falls over the next two days, the fall growing with the depth of that 5-day fall.",
+      "consequence": "In a range-bound, agitated market, a trader shorts the bounce close for two days rather than five, sized by the depth of the week's fall, catching the fade before the rebound that follows.",
+      "name": "choppy agitated bounce two-day fade",
+      "from": "F2, F3, F6, F7",
+      "profile": "choppy agitated",
+      "theme": "on",
+      "refs": [
+        "F2",
+        "F3",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d1.d2.d1.d2.g2_choppy-agitated-bounce-two-day-fade"
+  ],
+  "discovery_ids": [
+    "061-01.b1.b1.b1.d1.d2.d1.d2.g1_dead-cat-bounce-two-day-fade"
+  ],
+  "no_ideas": null
+}

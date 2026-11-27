@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per short bet, in the short direction",
+    "value": 0.02536973324058758,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 3.8048071310234675
+    },
+    "threshold": "confirm: a fall with t >= 2; reject: a rise with t <= -2; over at least 30 cases on at least 20 days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half (>= 0)",
+    "value": 0.004717805656730297,
+    "passed": true
+  },
+  "counts": {
+    "cases": 190,
+    "days": 157
+  },
+  "decided_by": "The mean unusual move is a fall with t >= 2 over at least 30 cases on 20 days, and the supporting check passes.",
+  "reading": "Profile taken from the regime column (bars not vetoed to 'chop') since its components are not recorded; the 5-day return and close location from the recorded fall5/highclose raw values, else from prices; cases are short bets only, first bet per 5-bar cell; day-clustered t with G/(G-1) correction; the |forecast| halves are the lower and upper n//2 cases by rank (middle case dropped when odd).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01582 on the check folds against +0.02537 on every fold",
+    "main": 0.015820057615218413,
+    "statistic": 2.1800089378405674,
+    "counts": {
+      "cases": 141,
+      "days": 113
+    }
+  }
+}

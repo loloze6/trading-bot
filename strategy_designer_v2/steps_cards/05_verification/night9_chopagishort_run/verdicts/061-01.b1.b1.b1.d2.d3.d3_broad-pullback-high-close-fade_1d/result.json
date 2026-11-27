@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9995471014492754,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of short cases (return minus coin drift, signed short)",
+    "value": 0.004277262817632846,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 0.9071261907322499
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, otherwise inconclusive; at least 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger half of |forecast| minus smaller half",
+    "value": 0.0003753283995461647,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 647,
+    "cases": 1333
+  },
+  "decided_by": "Main measure t between -2 and 2 (inconclusive rule).",
+  "reading": "Situation computed from prices as close location (close-low)/(high-low) >= 0.75, close above prior close, and close[t-1] < close[t-6] inside each window, with active bars whose situation cannot be computed (window start) left out of the agreement; cases are short bets (forecast falling by at least 2 points below its lowest short level since the last bet, from 0 after a flat), the first bet of each 5-bar grid cell per window; drift is the coin's mean non-overlapping 5-bar return over all its windows; the t clusters deviations by UTC day; the halves split the cases sorted by |forecast| at the signal bar into the top and bottom n//2 (the middle case dropped when n is odd); fewer than 30 case-days gives 'not observable' as the workflow requires."
+}

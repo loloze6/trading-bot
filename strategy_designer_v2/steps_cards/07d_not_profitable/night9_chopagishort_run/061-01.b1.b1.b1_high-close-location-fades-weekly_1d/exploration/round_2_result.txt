@@ -1,0 +1,70 @@
+## condition check r5<0 (signal x cond), 5d
+                 n   mean_un         t
+sig   r5neg                           
+False False  147.0 -0.013193 -1.086443
+      True   203.0  0.005967  0.572918
+True  False   48.0  0.007391  0.528130
+      True    44.0  0.056248  3.721654
+
+## condition check r1v below sig q75, 5d
+                 n   mean_un         t
+sig   r1low                           
+False False   56.0 -0.046378 -2.045485
+      True   294.0  0.006358  0.766242
+True  False   28.0 -0.012321 -0.644022
+      True    64.0  0.049604  4.145300
+
+## signal horizon 210
+                2          5          10
+n        93.000000  92.000000  89.000000
+mean_un   0.006511   0.030757   0.049335
+t         0.704584   2.920154   3.309993
+
+## signal r5neg horizons
+                2          5          10
+n        44.000000  44.000000  42.000000
+mean_un   0.022809   0.056248   0.060597
+t         1.943139   3.721654   2.841182
+
+## signal by cl bin
+                 n   mean_un         t
+cl_b                                  
+(0.79, 0.9]   58.0  0.035871  2.639162
+(0.9, 0.97]   24.0  0.011251  0.525779
+(0.97, 1.01]  10.0  0.047911  1.999297
+
+## trades short dur vs end
+                 n  mean_net
+short_d at_end              
+False   False   71  1.899715
+True    False   42 -7.107778
+        True     4  1.492379
+
+## short trades exit regime fcst
+exit_forecast     -1.118522
+entry_forecast   -17.043919
+
+## trades by entry r5p sign
+        n  mean_net      worst
+r5p                           
+False  62 -3.694928 -60.580085
+True   55  1.298329 -15.814045
+
+## worst 10 trades
+     w  dur_d  net_profit_loss_percent       r5p       r1v  at_end
+0  w16    4.0               -60.580085  0.241424  1.795312   False
+1  w16    2.0               -42.348715  0.241424  1.795312   False
+2  w16    5.0               -33.650941  0.241424  1.795312   False
+3  w18    2.0               -29.384075  0.000488  2.091733   False
+4  w12   10.0               -22.530229  0.078143 -0.100976   False
+5  w12   13.0               -18.798369  0.078143 -0.100976   False
+6  w12    5.0               -17.664846  0.025488  1.416735   False
+7  w16    9.0               -15.814045 -0.026880  1.239040   False
+8  w11    1.0               -15.510369  0.191502  0.314400   False
+9  w16    1.0               -14.557629  0.241424  1.795312   False
+
+## after 2d up vs down: remaining 3d short
+          size      mean
+adverse2                
+False       48  0.007993
+True        44  0.027711

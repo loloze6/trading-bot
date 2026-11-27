@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "061-01_choppy-agitated-strong-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2287589,
+  "findings": {
+    "F1": "Step 5's main measure is on the side the idea predicts but short of the bar: the mean unusual 2-day move of the short signals is +0.65 % (t 1.49, 233 cases on 194 days). Its strength is 0.129 of the coin's usual 6.58 % move, more than twice the usual 0.05 of real ideas, so the result is unclear because the evidence is noisy and the cases too few, not because the effect is small.",
+    "F2": "In folds B and C, the in-profile high-close bars (78 cases on 65 days) show a positive but noisy 2-day short move of +0.90 % (t 0.86), and it is mixed across coins: ETH +4.2 % (t 2.87, 12 cases) and BTC +3.1 % (t 1.17, 12) against LTC -1.5 % (t -0.97, 10), XMR -0.6 % (13) and ZEC -0.3 % (20). With about 10 to 20 cases per coin, no single coin can carry the result.",
+    "F3": "The in-profile short move grows with the horizon, but none of these readings clears t 2 except the longest, so they add no reliable evidence on their own: +1.08 % over 1 day (t 1.30, 86 cases), +0.90 % over 2 days (t 0.86, 78), +1.84 % over 3 days (t 1.43, 75) and +2.93 % over 5 days (t 2.33, 69).",
+    "F4": "The idea's grading is not clear in folds B and C: closes at 0.8 to 0.9 of the range give +2.04 % (t 1.83, 50 cases), 0.9 to 0.95 give 0.00 % (20 cases) and 0.95 and above give -1.75 % (12 cases). Over all folds, step 5's check passed with a gap of +0.39 %, so the grading also rests on too few cases near the high.",
+    "F5": "The same high closes outside the choppy-agitated profile show no 2-day fall: +0.07 % (t 0.26, 1,538 cases), against +0.90 % inside it. This is consistent with the brief's claim that the profile carries the effect, but the inside reading is too thin to show the difference reliably.",
+    "F6": "Inside the profile, high-close days with a below-median same-day return fade +3.48 % over 2 days (t 2.97, 42 cases), while those with an above-median return show -1.55 % (t -1.12, 41). The effect is mixed within the cases, which again points to too few cases rather than a clear location for it."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "high-close fade, more coins",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ],
+      "idea": "In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range, its price falls over the next two days, and the nearer the close is to the day's high, the larger the fall.",
+      "consequence": "Late, urgent buying that pins the close at the high is absorbed by liquidity providers, and with no trend followers or patient buyers to carry it, the push is given back within two days.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "choppy agitated"
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1_high-close-fade-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

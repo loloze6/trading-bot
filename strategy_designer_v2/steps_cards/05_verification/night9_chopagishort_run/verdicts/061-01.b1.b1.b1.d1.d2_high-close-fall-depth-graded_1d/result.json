@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of short cases (short direction)",
+    "value": 0.02116715133271732,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.8686068143562844
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger |forecast| half minus smaller half",
+    "value": 0.007904581352928899,
+    "passed": true
+  },
+  "counts": {
+    "cases": 161,
+    "distinct days": 130
+  },
+  "decided_by": "Confirm rule met: the mean unusual move is above 0 with t >= 2 and the larger-|forecast| half beats the smaller half.",
+  "reading": "A case is the first short bet (a rise of the short forecast of at least 2 points) in each 5-bar grid cell counted from each window's first row; the t uses deviations from the mean summed per UTC day with no small-sample correction; the median split puts |forecast| above the median in the larger half and the rest in the smaller half; the situation check takes r5 from the recorded fall5 raw value and does not re-check the profile.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01276 on the check folds against +0.02117 on every fold",
+    "main": 0.012763535505558142,
+    "statistic": 1.6319043789965881,
+    "counts": {
+      "cases": 117,
+      "distinct days": 92
+    }
+  }
+}
