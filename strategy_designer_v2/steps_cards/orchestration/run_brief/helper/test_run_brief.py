@@ -83,3 +83,21 @@ def test_a_boxed_run_refuses_a_brief_that_does_not_name_its_box(tmp_path):
         assert not (rb.STEPS / "02_ideation" / run_name).exists()
     finally:
         shutil.rmtree(rb.ORCH / "loop" / run_name, ignore_errors=True)
+
+
+def test_step_1_is_told_the_run_only_in_a_boxed_run(monkeypatch, tmp_path):
+    """B2.1: step 1 gets `--run` (so the box is in its theme) only when the run has a box: otherwise its call as before."""
+    seen = []
+
+    class J:
+        def __init__(self, *a):
+            pass
+
+        def step(self, name, cmd, *a, **k):
+            seen.append([str(c) for c in cmd])
+            return "not researchable: x\n", None
+    monkeypatch.setattr(rb, "Journal", J)
+    monkeypatch.setattr(rb.target_box, "run_box", lambda run: {"profile": "falling calm", "side": "long"} if run == "box_run" else None)
+    rb.write_brief("plain_run", theme="t")
+    rb.write_brief("box_run", theme="t")
+    assert "--run" not in seen[0] and seen[1][-2:] == ["--run", "box_run"]

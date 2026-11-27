@@ -54,7 +54,9 @@ def write_brief(run, theme=None, source=None, model=None):
     what = ["--theme", theme] if theme else ["--source", source]
     j = Journal(ORCH / "run_brief" / run, run, "step1_" + re.sub(r"\W+", "-", (theme or Path(source).stem))[:40].strip("-"))
     out, _ = j.step("step1_brief", [STEPS / "01_brief/helper/make_brief.py", *what, "--briefs-dir", BRIEFS]
-                    + (["--model", model] if model else []), [BRIEFS / "INDEX.md"])
+                    + (["--model", model] if model else [])
+                    + (["--run", run] if target_box.run_box(run) else []),     # a boxed run: the box in its theme
+                    [BRIEFS / "INDEX.md"])
     nr, ai, b = NOT_RESEARCHABLE.search(out), ALREADY_INDEXED.search(out), BRIEF_LINE.search(out)
     if nr:
         return None, f"step 1: not researchable: {nr.group(1)}"

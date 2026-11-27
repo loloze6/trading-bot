@@ -60,7 +60,8 @@ def theme_note(run, steps=STEPS):
             f"This research is about one market profile and one side: {p} markets, {s} positions. They are part of the "
             f"brief's theme. Every idea you write keeps to them: its situation is in a {p} market, and it says so in a "
             f"`profile: {p}` line; its position is {s} only. A pattern off the brief's theme is looked for in {p} markets, "
-            f"for {s} positions, only.\n")
+            f"for {s} positions, only. A brief written for this research has both in its header: `profile: {p}` and "
+            f"`side: {s} only`.\n")
 
 
 # --- the check of a boxed run's brief ---------------------------------------------------------------------------

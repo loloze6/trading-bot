@@ -93,8 +93,9 @@ map); a box in words is the operator's choice. Before step 1 (after the data use
 `orchestration/loop/<run>/target_box.json` once: the profile, the side, who chose it, and for the rule its table of the
 twelve boxes. Resumed, the file is kept (with or without the option); a call naming another box is refused.
 **The brief must name the box:** its header's `profile:` line holds the box's profile and its `side:` line includes
-the box's side; otherwise the call ends, with the reason, before step 2 (for a theme or a source, after step 1 has
-written the brief). Then the box is part of the brief's theme: step 2 and every step 7 line get it in their prompt
+the box's side; otherwise the call ends, with the reason, before step 2. For a theme or a source, step 1 is called
+with `--run` and writes the brief inside the box, header lines included (the same for a discovery's brief in the loop).
+Then the box is part of the brief's theme: steps 1 and 2 and every step 7 line get it in their prompt
 (`theme_note`); the loop records, per turn, whether the idea acts in it. Nothing is filtered. Without the option,
 nothing changes.
 

@@ -42,13 +42,16 @@ the shares came from. A resumed run keeps it; a call naming another box is refus
 ## A boxed run's brief
 **It names a profile and a side that hold the box**, in its header: a `profile:` line naming the box's profile or a
 wider one holding it ("falling", "calm" or "falling calm" for falling calm), and a `side:` line including the box's side
-("long only" or "long and short" for long). Otherwise `run_brief` refuses it, with the reason, before step 2. Why: the
+("long only" or "long and short" for long). Otherwise `run_brief` refuses it, with the reason, before step 2. A brief from a theme or a source is written by step 1
+inside the box (below), so the operator can launch a boxed run with a theme that says nothing of the box. Why: the
 brief's theme is the run's question; a theme about another market would set every line against the box.
 
 ## The box is part of the brief's theme
 In a boxed run, **the theme's situation includes the box's profile and side** (`theme.md`). One note, written by code
 from the run's `target_box.json` (`target_box.py`, `theme_note`), is pasted after the brief wherever a prompt is given
-the brief: step 2 (`02_ideation/helper/make_ideas.py`) and every step 7 line (`07_common/helper/analyse.py`, the
+the brief: step 1 when it writes the run's brief or a discovery's brief (`01_brief/helper/make_brief.py --run`, which
+`run_brief` passes only for a boxed run; the brief then has `profile:` and `side:` header lines), step 2
+(`02_ideation/helper/make_ideas.py`) and every step 7 line (`07_common/helper/analyse.py`, the
 lines 7.a to 7.g). It asks every idea to keep to the box: its situation in the box's profile, named in a `profile:`
 line, its position on the box's side; and a discovery (a pattern off the theme) to be looked for inside the box only.
 Without a box the note is empty and the prompts are byte for byte as before.

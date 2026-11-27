@@ -1,4 +1,4 @@
-"""B2.1's proof of the theme note (common/target_box.md): the prompts step 2 and line 7.g would send, captured at the
+"""B2.1's proof of the theme note (common/target_box.md): the prompts steps 1 and 2 and line 7.g would send, captured at the
 model call (no call is made), with the code before B2.1 (7b7f0e8bbd8) and with B2.1's, without a box and with one.
   python3 runs/build_b2_1/prompts_with_box.py OUT_DIR
 Inputs (read only): night 9 E's 074-01.b1.g1 (its record, plan, verdict, check, brief). The outputs go to OUT_DIR."""
@@ -43,7 +43,10 @@ def capture(m, argv):
 
 
 tmp = OUT / "scratch"; (tmp / "ideas").mkdir(parents=True, exist_ok=True)
-cases = {"step2": ("02_ideation/helper/make_ideas.py",
+cases = {"step1": ("01_brief/helper/make_brief.py",
+                   ["make_brief.py", "--theme", "a strong daily fall is followed by a rebound",
+                    "--briefs-dir", str(STEPS / "01_brief" / "briefs")]),
+         "step2": ("02_ideation/helper/make_ideas.py",
                    ["make_ideas.py", str(STEPS / "01_brief" / S / "briefs" / "074_falling-market-run-break-fade.md"),
                     "--ideas-dir", str(STEPS / "02_ideation" / S / "ideas")]),
          "7g": ("07_common/helper/analyse.py",
@@ -57,7 +60,7 @@ for name, (rel, argv) in cases.items():
     old = capture(load(rel, "old"), argv)
     new = capture(load(rel, "new"), argv)
     target_box.run_box = lambda run, steps=None: BOX if run == S else None
-    boxed = capture(load(rel, "new"), argv)
+    boxed = capture(load(rel, "new"), argv + (["--run", S] if name == "step1" else []))   # run_brief adds it for a boxed run
     for k, v in (("old", old), ("new", new), ("boxed", boxed)):
         (OUT / f"{name}_{k}.txt").write_text(v)
     print(f"{name}: without a box, new == old byte for byte: {new == old} ({len(new)} characters); "
