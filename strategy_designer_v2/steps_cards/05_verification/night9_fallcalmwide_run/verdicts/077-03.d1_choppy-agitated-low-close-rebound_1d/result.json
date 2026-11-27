@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return over cases",
+    "value": 0.0033917987218020722,
+    "statistic": {
+      "name": "t of weighted mean, cases summed per day",
+      "value": 1.1938325679665884
+    },
+    "threshold": "mean > 0 with t >= 2 (confirm, with positive slope); mean < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on forecast, forecast > 0",
+    "value": 0.0004762291368749417,
+    "passed": true
+  },
+  "counts": {
+    "cases": 770,
+    "distinct days": 465
+  },
+  "decided_by": "The t of the main mean lies between -2 and 2.",
+  "reading": "A case is a long-side forecast rise of at least 2 points from its lowest level since the last bet (reset to 0 when flat), on every bar since the horizon is 1; the excess return is the next close-to-close return minus the coin's pooled mean daily return over all its windows; the t uses the weighted mean's standard error with weighted deviations summed per UTC day (G/(G-1) factor); the plan's minimum counts map to 'not observable'; the profile is read from the recorded regime 'unknown'."
+}

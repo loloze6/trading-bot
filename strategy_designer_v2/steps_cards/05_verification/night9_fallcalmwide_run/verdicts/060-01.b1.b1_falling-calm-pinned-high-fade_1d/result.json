@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 1-bar move in the short direction, before costs",
+    "value": 0.0039919862099729525,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 0.8578489682195044
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "unusual move of cases closer to the high minus the others (split at median high_gap) >= 0",
+    "value": 0.009449823298075586,
+    "passed": true
+  },
+  "counts": {
+    "cases": 124,
+    "days": 82
+  },
+  "decided_by": "t between -2 and 2 (or not computable) over at least 30 cases.",
+  "reading": "Situation checked as width>=2.0 (range/close over the 30-bar ddof-1 std of daily returns, including the bar) and close location from the low>=0.9, on the short side, leaving the falling-calm profile to the engine and excluding active bars with under 30 in-window returns; the coin's normal drift is its mean 1-bar return over all its windows; the day-clustered t uses per-day summed deviations with a D/(D-1) correction; 'closer to the high' means high_gap at or below the median of the cases, 'the others' above it."
+}

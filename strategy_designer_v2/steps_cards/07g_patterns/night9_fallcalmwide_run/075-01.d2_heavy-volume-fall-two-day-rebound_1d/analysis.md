@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 075-01.d2_heavy-volume-fall-two-day-rebound_1d
+idea tested: 075-01.d2_heavy-volume-fall-two-day-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4409 USD
+---
+## Findings
+- **F1:** The idea's grading by volume on down days lives only in a rising market (60-day return above +10 %). There, the slope of the 2-day excess return on the log volume ratio is +1.89 % per log unit (t 1.99, 613 cases). In a falling market it is -0.002 % (t 0.00, 641 cases) and in a choppy one +0.30 % (t 0.36, 228 cases).
+- **F2:** In a rising market the lift is concentrated in the heaviest volume quartile of down days. That quartile's mean excess 2-day return is +3.08 % (t 2.39, 153 cases), against -0.20 %, +0.47 % and +0.37 % in the three lighter quartiles. The top volume tercile shows the same: +2.68 % (t 2.32, 201 cases), while the falling-market terciles run from -0.79 % to -0.05 %, all with |t| ≤ 1.11.
+- **F3:** The rising-market slope is positive in every year and every coin it could be measured on. By year it is +1.09 % in 2019 (t 1.69), +2.44 % in 2020 (t 1.34) and +1.53 % in 2021 (t 1.20). It is positive in all 10 coins with enough cases, from +0.23 % (LTC) to +5.36 % (XRP), so it is not one coin or one year.
+- **F4:** The effect is short-lived. On a 4-day horizon, the slope on rising-market down days falls to +0.55 % (t 0.29, 287 cases), and across all down days it is no clearer (falling +1.07 %, t 0.55).
+- **F5:** Up days show no grading by volume. The slope is +0.23 % (t 0.34, 1588 cases), with -0.13 % in falling markets (t -0.17) and +0.13 % in rising ones (t 0.11). The light-volume side of the brief is not separable from chance either: up days in the lowest volume quintile average -0.80 % excess (t -1.41).
+- **F6:** The book fails on Calmar because it mostly carries the coin's own swings. Its daily returns correlate 0.77 with the coins' mean daily return. On its worst 5 % of days the book loses 3.82 % while the coins lose 9.27 %. It is in a position on 83 % of coin-days, including the falling-market down days where F1 shows no edge.
+- **F7:** The other angles gave nothing that stands out after this many looks. On down days, the size of the fall scaled by recent volatility does not grade the 2-day move (slope -0.22 %, t -0.55), nor does where the day closed in its range (quartile means -0.32 % to +1.39 %, all t < 1.4). Weekday means of next-day excess returns all have |t| < 1.5.
+
+## Ideas
+- `075-01.d2.g1_rising-market-heavy-volume-dip` (from F1, F2, F3, F4, F6): In a rising market, the heavier a coin's volume on a day that closed lower, relative to its own average daily volume over the past 20 days, the larger its rise over the next two days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

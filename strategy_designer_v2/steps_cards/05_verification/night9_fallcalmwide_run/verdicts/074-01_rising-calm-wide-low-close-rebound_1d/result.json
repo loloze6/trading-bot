@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day return minus coin's mean daily return, forecast > 0 cases, before costs",
+    "value": 0.0063420171870463464,
+    "statistic": {
+      "name": "t of the mean, pooled by day",
+      "value": 1.9250635913542409
+    },
+    "threshold": "mean > 0 with t >= 2 confirms; t <= -2 rejects; |t| < 2 inconclusive"
+  },
+  "supporting_check": {
+    "name": "correlation between forecast and next-day excess return",
+    "value": 0.09990034204156321,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 225,
+    "cases": 426,
+    "active bars": 427
+  },
+  "decided_by": "Inconclusive: |t| of the mean excess next-day return is below 2.",
+  "reading": "The rising-calm profile is taken from the recorded regime (its 365-bar volatility percentile and 60-bar trend cannot be rebuilt inside the windows) while width and nearness to the low are recomputed from prices; the day-pooled t is the mean excess per case over its standard error clustered by UTC day (deviations summed per day), and the correlation's t is r*sqrt((n-2)/(1-r^2)) over all cases."
+}

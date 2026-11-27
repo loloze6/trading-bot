@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "075-01.d1_heavy-volume-down-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3965612,
+  "findings": {
+    "F1": "Over all trends together, up days are followed by a next-day excess return of \u22120.57 % in a falling market (60-day return below \u221210 %; 1296 cases, t \u22123.93) and \u22120.48 % in a choppy one (503, t \u22122.26), but +0.19 % in a rising one (1386, t +1.07), so the lower the 60-day trend, the weaker the day after an up day.",
+    "F2": "The weak day after an up day in a falling market does not depend on the day's own features: by size of the rise its quartiles give \u22120.53, \u22120.74, \u22120.36 and \u22120.63 % (slope on the scaled rise t \u22120.32, 314 days); by close position \u22120.76, \u22120.47 and \u22120.47 %; by volume \u22120.76 (light), \u22120.21 and \u22120.74 % (heavy).",
+    "F3": "The weak day after an up day in a falling market has the same sign every year: 2018 \u22120.80 % (t \u22122.53), 2019 \u22120.91 % (t \u22124.72), 2020 \u22120.15 % (t \u22120.45) and 2021 \u22120.36 % (t \u22121.49).",
+    "F4": "The brief's light-volume side is really this trend effect, not volume. On up days the slope of next-day excess return on lightness has t \u22120.40 (556 days). Light-volume up days are negative in falling (\u22120.76 %, t \u22123.67) and choppy (\u22120.61 %, t \u22122.22) markets but flat in rising ones (+0.02 %, t +0.09).",
+    "F5": "The tested idea's rebound is convex in volume. Down days in the heaviest volume fifth are followed by +1.15 % excess (955, t 4.98), against +0.34 % (t 1.83) in the fourth fifth and +0.15 to +0.19 % in the three lightest fifths. The top-fifth move per case is about five times the 0.22 % trade cost.",
+    "F6": "Heavy-volume down days rebound more when they come at the end of a 5-day fall. The lowest quartile of the 5-day return gives +1.83 % (450, t 4.18), against +0.19 % and \u22120.20 % in the middle quartiles.",
+    "F7": "The rebound after heavy-volume down days also grows with the size of the day's own fall. Days with a scaled fall in the biggest quartile give +0.96 % (866, t 4.23), and days with a low close give +1.04 % (610, t 4.40). The smallest-fall quartile gives \u22120.36 % (t \u22120.88), and high-close days give +0.21 % (t 0.65).",
+    "F8": "Heavy-volume down days rebound in a falling market (+0.58 %, 513, t 2.38) more than in rising (+0.26 %, t 0.73) or choppy (\u22120.45 %, t \u22120.80) markets. This falling-market rebound on heavy volume is already held by 064-01 (falling agitated heavy volume fall rebound). The agitation split could not be read: 30-day swings against a year did not compute inside these short windows."
+  },
+  "ideas": [
+    {
+      "idea": "The lower a coin's 60-day return, the weaker its next day after a day that closed higher. In a falling market, an up day is followed by a next day below the coin's normal drift.",
+      "consequence": "A trader does not buy, and may short, a coin the day after it rose while its 60-day trend is down, the more so the deeper that trend.",
+      "name": "up day fades in downtrend",
+      "from": "F1, F2, F3, F4",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The heavier a coin's volume on a down day, relative to its average over the past 20 days, and the deeper its fall over the past 5 days, the larger its rise over the next day.",
+      "consequence": "A trader keeps the volume rebound to down days that end a multi-day fall on extreme volume, where the move per case is several times the cost of a trade.",
+      "name": "heavy volume after fall rebound",
+      "from": "F5, F6, F7",
+      "theme": "on",
+      "refs": [
+        "F5",
+        "F6",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "075-01.d1.g2_heavy-volume-after-fall-rebound"
+  ],
+  "discovery_ids": [
+    "075-01.d1.g1_up-day-fades-in-downtrend"
+  ],
+  "no_ideas": null
+}

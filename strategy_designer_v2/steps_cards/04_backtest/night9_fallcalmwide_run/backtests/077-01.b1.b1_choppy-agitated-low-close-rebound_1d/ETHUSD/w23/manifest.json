@@ -1,0 +1,216 @@
+{
+  "run_id": "20261127T051911Z_11c4ec30",
+  "created_utc": "2026-11-27T05:19:12.929798+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "width",
+          "class": "strategies.strategy_components.MeanBarRangeRatioComponent",
+          "params": {
+            "long_period": 20,
+            "short_period": 1
+          }
+        },
+        {
+          "id": "loc",
+          "class": "strategies.strategy_components.CloseLocationInRangeComponent",
+          "params": {
+            "reference": "high"
+          }
+        },
+        {
+          "id": "profile_trend",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 60,
+            "scaling_factor": 1.0
+          }
+        },
+        {
+          "id": "profile_swing",
+          "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+          "params": {
+            "vol_period": 30,
+            "lookback_period": 365,
+            "smooth_period": 1
+          }
+        }
+      ],
+      "vetoes": [
+        {
+          "id": "profile_trend",
+          "transforms": [
+            {
+              "op": "identity"
+            }
+          ],
+          "rules": [
+            {
+              "op": "lt",
+              "value": -10
+            }
+          ],
+          "result": "chop"
+        },
+        {
+          "id": "profile_trend",
+          "transforms": [
+            {
+              "op": "identity"
+            }
+          ],
+          "rules": [
+            {
+              "op": "gt",
+              "value": 10
+            }
+          ],
+          "result": "chop"
+        },
+        {
+          "id": "profile_swing",
+          "transforms": [
+            {
+              "op": "identity"
+            }
+          ],
+          "rules": [
+            {
+              "op": "lte",
+              "value": 0.5
+            }
+          ],
+          "result": "chop"
+        }
+      ],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "width",
+                "op": "lte",
+                "value": 1.0
+              },
+              {
+                "id": "loc",
+                "op": "gt",
+                "value": 0.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "near_low",
+              "class": "strategies.strategy_components.DonchianBreakoutComponent",
+              "params": {
+                "period": 1,
+                "scaling_factor": 1.0,
+                "source": "high_low",
+                "form": "position",
+                "exclude_current": 0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      },
+      "min_holding_bars": 1
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 1,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 18.2,
+        "BTCUSD": 0.1,
+        "ETHUSD": 0.5,
+        "XRPUSD": 3.0,
+        "LTCUSD": 6.4,
+        "ZECUSD": 7.2,
+        "XMRUSD": 10.7,
+        "SOLUSD": 1.1,
+        "DOGEUSD": 3.5,
+        "SUIUSD": 2.3,
+        "TRXUSD": 5.1,
+        "AVAXUSD": 6.5,
+        "LINKUSD": 5.1,
+        "UNIUSD": 7.3,
+        "TAOUSD": 6.2,
+        "ADAUSD": 8.9,
+        "ONDOUSD": 8.1,
+        "NEARUSD": 8.4,
+        "AAVEUSD": 8.4,
+        "INJUSD": 18.2
+      }
+    }
+  },
+  "config_sha256": "11c4ec30b46de1574842096325e672d7441e8c24fe9c61dbd28506d99b7903d1",
+  "data": {
+    "symbols": [
+      "ETHUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2023-03-03 00:00:00",
+    "end": "2025-08-31 00:00:00",
+    "bar_count": 913,
+    "data_sha256": "de0a64ad81611a9221d89650e5bec216456c20233d3189f1690cc9ede92ce12f"
+  },
+  "git_sha": "b169041c6423116a016a40f211e50d2713e40742-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

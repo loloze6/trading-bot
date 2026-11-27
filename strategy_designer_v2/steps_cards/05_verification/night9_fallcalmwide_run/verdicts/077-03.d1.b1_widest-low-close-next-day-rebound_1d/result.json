@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return on long bars (minus coin's all-window mean daily return)",
+    "value": 0.004368803363365495,
+    "statistic": {
+      "name": "t of the mean over day sums",
+      "value": 0.7712445846121635
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and upper-minus-lower > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return at the median forecast (Welch t n/a)",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 96,
+    "independent days": 78
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "Cases are bars with postRebalance_current_allocation > 0 and a next close in the same window; the mean is over cases and the t over day sums of the excess; the median split puts forecasts above the median in the upper half and the rest in the lower; the profile is read from `regime` since its 365-bar inputs are not in the record, the low close and width are recomputed from prices."
+}

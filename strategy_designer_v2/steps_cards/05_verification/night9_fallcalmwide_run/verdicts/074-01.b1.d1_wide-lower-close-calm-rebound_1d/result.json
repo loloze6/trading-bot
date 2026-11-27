@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return over coin drift on bars with forecast > 0",
+    "value": 0.004738880253578405,
+    "statistic": {
+      "name": "t of the mean, same-day cases taken together",
+      "value": 1.7078458587349699
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on forecast > 0",
+    "value": 0.0010583200317265593,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 330,
+    "cases": 641
+  },
+  "decided_by": "t between -2 and 2 (inconclusive rule).",
+  "reading": "The rising-calm profile cannot be recomputed from the recorded bars (365-bar lookback), so the situation is width >= 2 and (high-close)/(high-low) > 0.5 on bars whose regime is mean_reversion (profile vetoes not hit); the same-day t uses deviations summed per UTC day with a G/(G-1) correction, the drift is each coin's mean 1-day return over all its windows, and the plan's 30-day minimum is treated as 'not observable'."
+}

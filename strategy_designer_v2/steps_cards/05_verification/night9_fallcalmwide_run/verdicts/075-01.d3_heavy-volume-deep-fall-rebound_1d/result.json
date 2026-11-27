@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.999945916711736,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return (forecast > 0)",
+    "value": 0.0032369087031240092,
+    "statistic": {
+      "name": "day-clustered t of the weighted mean",
+      "value": 1.9493191750300352
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third mean next-day excess return",
+    "value": 0.004628811128629726,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 18271,
+    "distinct days": 2413
+  },
+  "decided_by": "The t of the main measure lies between -2 and 2.",
+  "reading": "The situation is a bar whose raw component value is below 0 (the day's return sign, the prior close being used only where the raw value is missing) with a long forecast; the main measure's t is the day-clustered t of the weighted mean (per-day sums of weight x deviation from the weighted mean, variance scaled by D/(D-1)); thirds are the n//3 lowest and highest forecasts after a stable sort; the minimum counts use bars with forecast > 0 and a next-day return, and short counts give 'not observable'."
+}

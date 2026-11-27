@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return of forecast>0 cases",
+    "value": 0.003344152671068306,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 1.0077659328340771
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and upper-minus-lower > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper minus lower half (median forecast) mean excess return",
+    "value": 0.0005442555996099901,
+    "passed": true
+  },
+  "counts": {
+    "cases": 409,
+    "distinct days": 280
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Situation recomputed from prices (range over the 30-bar mean range incl. the current bar >= 1, close location < 0.5) with the choppy-agitated profile read from regime == 'unknown', on active bars where the 30-bar range mean exists; cases are bars with forecast > 0 and a next-day return in the same window; the day-clustered t uses a D/(D-1) correction; the median split puts forecast > median in the upper half and <= median in the lower half; below the plan's minimum counts the status is 'not observable'."
+}

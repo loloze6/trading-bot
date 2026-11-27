@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar return of the long bets over the coin's normal 3-bar drift",
+    "value": -0.003944429694228306,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.0742925867140827
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top half minus bottom half at the median forecast",
+    "value": 0.015557353407184945,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 419,
+    "cases": 667
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "Profile read as regime == 'unknown' (the only regime with a strategy, the vetoes send everything else to chop); one case per 3-bar grid cell = the first bet bar in the cell, return taken from that bar's close; normal drift = mean non-overlapping 3-bar grid return of the coin over all its windows; day-clustered t uses summed deviations per day with a D/(D-1) correction; median split: top = forecast above the median, bottom = at or below it; the 30-distinct-days minimum gives 'not observable' as the workflow requires."
+}

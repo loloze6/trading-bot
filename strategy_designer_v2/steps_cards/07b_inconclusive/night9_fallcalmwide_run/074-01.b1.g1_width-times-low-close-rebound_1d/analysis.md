@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 074-01.b1.g1_width-times-low-close-rebound_1d
+idea tested: 074-01.b1.g1_width-times-low-close-rebound
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3695 USD
+---
+## Findings
+- **F1:** The test could not pass its supporting check because of how the forecast was built, not because the data failed it: on all 67 active cases in folds B and C the forecast sat at its cap of 20 (one value only), so the median split behind the supporting check has nothing to split and returns None, while the main measure was on the predicted side (+0.98 %, t 2.23, 138 days).
+- **F2:** Where it fired, the rebound was large and consistent: across the 67 active cases in B and C the mean next-day excess return is +3.10 % (t 5.8, 82 % positive), positive in every year (2018 +7.2 %, 2019 +2.8 %, 2020 +3.8 %, 2021 +2.5 %) and in 8 of 9 coins, with only TRX negative (5 cases, −1.2 %).
+- **F3:** Inside the thresholded cases the grading the idea claims cannot be seen, because the cut keeps only extreme days: cases above the median width times nearness to the low minus those at or below it give +0.57 % (Welch t 0.51), width alone −0.30 % (t −0.26) and nearness alone −0.88 % (t −0.79).
+- **F4:** Without the cut, the grading is clear: over the 199 rising-calm days that closed in the lower half of their range, the next-day excess return rises across quintiles of width times nearness to the low, at −0.94 % (t −1.6), +0.27 %, +0.42 %, +0.80 % and +3.06 % (t 3.8), with a Spearman correlation of 0.26.
+- **F5:** The calm part of the profile matters: on all rising days closing in the lower half of their range, calm or agitated (823 cases), the same quintiles run only from +0.04 % to +1.27 % (t 3.3), with a Spearman correlation of 0.13, half the 0.26 of the calm subset.
+- **F6:** On rising days wide by at least 2 swings, the rebound grows with nearness to the low: by quartile of close location +0.44 %, +0.56 %, +0.64 % and +1.37 % (t 2.9), with about 130 cases each.
+- **F7:** The threshold also starved the book: 0.0068 trades per day and a position on 1 % of coin-days. The move per case is 5.4 times the 0.22 % cost of a trade, so a graded book that trades more of these days can cover costs.
+
+## Ideas
+- `074-01.b1.g1.b1_graded-wide-low-close-rebound` (from F1, F3, F4, F5, F6, F7): In a rising, calm market, a day that closes near its low is followed by a rise over the next day, and the rise is larger the wider the day is against the coin's 30-day swing of daily returns multiplied by how near its close is to the low, across all such days and not only the extreme ones.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

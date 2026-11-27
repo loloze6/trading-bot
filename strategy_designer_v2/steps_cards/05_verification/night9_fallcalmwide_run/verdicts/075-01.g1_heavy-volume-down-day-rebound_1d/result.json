@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of next-day excess return on the forecast, down days, day-pooled",
+    "value": 2.301116939202854,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 2.301116939202854
+    },
+    "threshold": "t >= 2 confirms (with top-minus-bottom > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return, top third minus bottom third of forecasts",
+    "value": 0.0036340485101233884,
+    "passed": true
+  },
+  "counts": {
+    "down-day cases": 18171,
+    "distinct days": 2398
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom difference is above 0.",
+  "reading": "Down day = close below the prior close inside the same window (a window's first bar has no prior close in the record and is left out of the check and the measure); the slope's t uses a day-clustered standard error (deviations x residuals summed per day, G/(G-1) correction) so cases on the same day across coins count as one piece of evidence; top and bottom thirds are forecasts at or above the pooled 2/3 quantile and at or below the 1/3 quantile; the minimum is unmet if either fewer than 300 cases or fewer than 150 distinct days.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +1.483 on the check folds against +2.301 on every fold",
+    "main": 1.4829729907094829,
+    "statistic": 1.4829729907094829,
+    "counts": {
+      "down-day cases": 12196,
+      "distinct days": 1279
+    }
+  }
+}

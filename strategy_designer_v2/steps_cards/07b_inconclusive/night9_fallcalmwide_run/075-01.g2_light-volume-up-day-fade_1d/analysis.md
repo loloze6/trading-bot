@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 075-01.g2_light-volume-up-day-fade_1d
+idea tested: 075-01.g2_light-volume-up-day-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3403 USD
+---
+## Findings
+- **F1:** The fade after up days is real in folds B and C, but it does not grow with how light the volume is. Among the test's cases (forecast at or below -2), the next-day unusual move in the short direction is +0.50 % (t 2.89, 889 days, 3445 cases). By quintile of |forecast| it is flat, at +0.71 %, +0.25 %, +0.53 %, +0.49 % and +0.52 %, and the correlation of forecast with the move is 0.01. This is why step 5's supporting check failed (top third minus bottom third -0.05 %).
+- **F2:** Most of the effect belongs to up days as such, not to light volume. All up days give +0.32 % (t 2.01, 1116 days) and light-volume up days +0.34 % (t 1.93). Heavy-volume up days, where the book is flat, still give +0.17 % (t 0.70). Down days mirror this at -0.32 % (t -1.60), a plain one-day reversal.
+- **F3:** A grading by volume does show in the raw ratio to the 20-day average, though it levels off on the light side. By up-day quintile from lightest to heaviest volume, the move is +0.46 % (t 1.83), +0.42 % (t 1.95), +0.28 %, +0.08 % and +0.13 %. The test's 60-day standardisation of that ratio blurred this.
+- **F4:** The effect sits mostly in falling markets (60-day return below -10 %). There the cases give +0.49 % (t 1.53, 770 cases) and light-volume up days +0.50 % (t 1.58, 864). In rising markets these are +0.14 % (t 0.42) and +0.15 % (t 0.47), and in choppy markets +0.21 % and +0.11 %.
+- **F5:** The effect is uneven across coins and windows. DOGE gives +1.59 % (t 4.14), LINK +1.01 % (t 2.44), ZEC +0.82 % (t 2.83) and ADA +0.69 % (t 2.43), against BTC +0.12 % and ETH +0.12 % (t 0.5 to 0.7). Window w18 alone gives +1.85 % (t 2.40), while w11 is -0.68 %.
+- **F6:** Over the whole test the total move per case (+0.11 %) is half the 0.22 % cost of a trade, because the coins' normal drift works against a short (-0.15 %). In a falling market that drift turns to the short's side, which is where the total move can exceed the cost.
+
+## Ideas
+- `075-01.g2.b1_falling-market-light-volume-up-day-fade` (from F1, F3, F4, F6): In a falling market, on a day a coin rises, the lighter its volume against its own average daily volume over the past 20 days, the larger its fall over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

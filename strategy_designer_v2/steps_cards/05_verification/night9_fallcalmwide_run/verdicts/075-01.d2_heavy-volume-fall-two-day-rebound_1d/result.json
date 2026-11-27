@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of excess 2-bar return on forecast, SE clustered by day",
+    "value": 2.4734363411782243,
+    "statistic": {
+      "name": "OLS slope t, day-clustered SE",
+      "value": 2.4734363411782243
+    },
+    "threshold": "confirm if t >= 2 (with top-minus-bottom third > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return, top third minus bottom third by forecast",
+    "value": 0.009055052034430262,
+    "passed": true
+  },
+  "counts": {
+    "cases": 9122,
+    "distinct days": 1236
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom-third difference is above 0 (confirm rule).",
+  "reading": "A down day is close below the previous close inside the window (the regime column on a window's first bar), cases are grid bars (positions 0,2,4,... of each window) with a down day, forecast > 0 and a 2-bar return inside the window, the coin's mean is over all its windows' grid 2-bar returns, thirds are the n//3 cases with the largest and smallest forecasts (stable sort), the cluster-robust SE uses the usual G/(G-1)*(N-1)/(N-K) correction, and too few cases or days gives 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +1.969 on the check folds against +2.473 on every fold",
+    "main": 1.9691569605230217,
+    "statistic": 1.9691569605230217,
+    "counts": {
+      "cases": 6130,
+      "distinct days": 649
+    }
+  }
+}

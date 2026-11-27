@@ -2,7 +2,6 @@
 instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO
 bar: 1d
 source: line 7.g patterns, backtest 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d (idea 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal, brief 058_choppy-calm-range-edge-reversion)
-discovery: 058-02.b1.g1.b1.b1.g1_falling-calm-wide-high-close-fade
 ---
 In a falling, calm market, a day whose range is wide against the coin's usual daily swing and that closes near its high is followed by a fall the next day. The fall is larger the wider the day and the nearer the close sits to the high. The source states the pattern but gives no reason, so the reason here is mine.
 

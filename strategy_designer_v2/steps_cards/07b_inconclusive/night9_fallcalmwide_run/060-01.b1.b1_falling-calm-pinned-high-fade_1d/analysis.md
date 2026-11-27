@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 060-01.b1.b1_falling-calm-pinned-high-fade_1d
+idea tested: 060-01.b1.b1_falling-calm-pinned-high-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3931 USD
+---
+## Findings
+- **F1:** The tested idea already sits where its effect shows. In folds B and C, the same wide, high-pinned day inside falling calm (29 situation bars) is followed by a mean unusual 1-day move of +2.13 % in the short direction (t 2.96), against −0.01 % (t −0.03) over 168 such days outside the profile, so no change of profile would sharpen it.
+- **F2:** The effect is on the predicted side but uneven across the folds. In folds B and C the 35 cases give +1.60 % per case over the next day (t 2.50, cases not grouped by day), while over all four folds step 5 measured +0.40 % with t 0.86 over 124 cases on 82 days, so folds A and D carry little or none of it.
+- **F3:** Grading by nearness to the high holds and needs no amendment. In folds B and C the unusual move rises across close-location terciles, from +0.64 % (close at 0.91 of the range) to +1.71 % (0.94) to +2.45 % (0.98), with a correlation of +0.30, and step 5's own check passed at +0.94 %.
+- **F4:** Width grades against the brief. The widest third of cases (mean width 3.34) gives +0.31 % (t 0.24), against +3.41 % (width 2.26) and +2.74 % (width 2.61), with a width-to-move correlation of −0.26, so no "wider day" case of the situation concentrates the effect.
+- **F5:** No coin, year or horizon isolates the effect on enough cases. Its strongest coins are ADA (7 cases, +2.79 %, t 2.62) and LTC (6 cases, +4.33 %, t 2.87), its weakest ZEC (7 cases, −1.39 %) and LINK (3 cases, −1.59 %). Every year from 2018 to 2021 is positive but none reaches t 2, and longer horizons are no clearer (2 days +0.68 % t 0.72, 3 days +1.08 % t 0.81, 5 days +2.65 % t 1.75).
+- **F6:** The test already used all the daily data available (all 19 coins, folds A to D), so the same idea cannot be rerun on more data.
+
+## Ideas
+- No ideas: The idea's effect is on the predicted side and already tested in its own profile, side and grading on all the available daily data (F1, F3, F6); it fails to reach t 2 because it is uneven across folds (F2), and no width, coin, year or horizon isolates it on enough cases to give a clearer test (F4, F5).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

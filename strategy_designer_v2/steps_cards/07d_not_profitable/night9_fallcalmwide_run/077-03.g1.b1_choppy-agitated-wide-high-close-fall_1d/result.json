@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6399245,
+  "findings": {
+    "F1": "The book fails because it barely holds anything, not because the effect is too small for its costs. It holds a position on 3 % of the coins' days, at a mean allocation of \u22120.30 (median \u22120.25). Its daily standard deviation is 0.126 % and its yearly return +1.3 %. The total move per case (+0.65 %) is 2.9 times the 0.22 % trade cost. Simulated at unit size with that cost, the same high-close short still fails both measures: Sharpe 0.73 against holding's 0.63, Calmar 0.53 (deepest fall \u22128.5 %).",
+    "F2": "The low-close side of the same situation carries the larger effect, and the tested idea leaves it out. In profile, days closing in the bottom quarter of their range rise over the next day by +1.82 % unusual move (82 cases, day-clustered t 2.68, 65 % hit), against +1.31 % for high-close shorts (126 cases, t 1.75). Long on low closes alone, graded by width, simulates to Sharpe 1.05 and Calmar 2.41 (fall \u22123.0 %). Trading both sides simulates to Sharpe 1.27 and Calmar 1.27, so both failing measures pass.",
+    "F3": "The profile belongs to the idea and is not an effect of its own. All in-profile bars show a next-day unusual move of \u22120.06 % (449 bars, t \u22120.11). In-profile days closing mid-range give +0.05 % in the short direction (241, t 0.07). Outside the profile the same closes are weak or wrong: choppy calm high-close short \u22120.07 % (181), choppy calm low-close long \u22120.28 % (118). This matches the brief's view that forced flow overshoots only when a trendless market is agitated.",
+    "F4": "The gain sits in days wider than the coin's own recent days, as the theory's grading says.",
+    "F5": "The tested short is not graded by how close the close sits to the high. High closes at 0.74\u20130.85 of the range give +1.82 % (60, t 2.37); those at 0.95\u20131.0 give \u22120.28 % (15). High closes after the smallest day returns (mean +1.1 %) give +2.69 % (42, t 2.26), against +0.71 % after the largest (mean +10.8 %). Losses gather in w11, w12 and w14 (summed P&L \u22120.020, \u22120.076 and \u22120.011), where narrow days dominate."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, a day closing near an end of its range moves back toward the other end over the next day: a day closing near its high falls and a day closing near its low rises, and the move is larger the wider the day's range against the coin's 30-day swing of daily returns.",
+      "consequence": "A trader in a choppy, agitated coin would fade the close of a wide day on both sides for one day, sized by the day's width against its usual swing, instead of only selling high closes.",
+      "name": "choppy agitated two-sided close fade",
+      "from": "F1, F2, F3",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, a day closing near its low rises over the next day, and the rise is larger the wider the day's range against the coin's 30-day swing of daily returns.",
+      "consequence": "A trader in a choppy, agitated coin would buy a wide day that closes near its low for one day, sized by how wide the day was against its usual swing.",
+      "name": "choppy agitated low-close rebound",
+      "from": "F2, F3, F4",
+      "profile": "choppy agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, a day closing near an end of its range moves back toward the other end over the next day, and the move is larger the more the day's range against the coin's 30-day swing exceeds that of the coin's past 60 days.",
+      "consequence": "A trader in a choppy, agitated coin would fade end-of-range closes for one day only in proportion to how much wider the day is than the coin's recent days, holding little on days of ordinary width.",
+      "name": "widening-day close fade",
+      "from": "F1, F3, F4",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-03.g1.b1.d1_choppy-agitated-two-sided-close-fade",
+    "077-03.g1.b1.d2_choppy-agitated-low-close-rebound",
+    "077-03.g1.b1.d3_widening-day-close-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

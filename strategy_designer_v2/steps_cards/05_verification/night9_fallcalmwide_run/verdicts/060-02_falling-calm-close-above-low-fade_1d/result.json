@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.5077094261643618,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted per-bar position gain before costs (1 bar)",
+    "value": null,
+    "statistic": null,
+    "threshold": "mean > 0 with t >= 2 confirms; mean < 0 with t <= -2 rejects; over >= 100 days in a position"
+  },
+  "supporting_check": null,
+  "counts": {
+    "days in a position": null,
+    "active bars": 6291
+  },
+  "decided_by": "Fewer than 90% of the bars with a nonzero forecast are falling-calm bars whose close sits above the low with a short forecast, as the plan's Fidelity requires.",
+  "reading": "Situation = regime 'unknown' (falling calm, no veto) with raw range_usual + high_drop_usual > 0 and a short forecast; bars in a position are those with nonzero postRebalance_current_allocation and a next close in the same window; main t uses a day-clustered standard error (deviations summed per day), the supporting correlation is computed on per-day mean forecast and per-day mean excess return with t = r*sqrt(D-2)/sqrt(1-r^2) over D days."
+}

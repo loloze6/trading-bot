@@ -1,0 +1,40 @@
+{
+  "line": "7.g",
+  "backtest": "060-02_falling-calm-close-above-low-fade_1d",
+  "step5": "mismatch",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5731191,
+  "findings": {
+    "F1": "In a choppy agitated market, the day's close location times its range in usual moves ((close\u2212low)/(high\u2212low) \u2212 0.5) \u00d7 (high\u2212low)/close / 30-day swing runs against the next day's excess return: r \u22120.33, t \u22124.70 over 182 days (238 coin-days, mostly XRP, ZEC, XMR, BTC). This is the strongest of all the angles looked at.",
+    "F2": "The F1 effect in choppy agitated keeps its sign in every year: r \u22120.48 in 2018 (t \u22122.52, 23 days), \u22120.31 in 2019 (t \u22122.89, 78 days), \u22120.39 in 2020 (t \u22122.58, 40 days) and \u22120.15 in 2021 (t \u22120.98, 41 days).",
+    "F3": "The F1 effect works on both halves of the day's range, more strongly on the low side. Among days closing in the lower half, r is \u22120.46 (t \u22125.02, 95 days); among days closing in the upper half, r is \u22120.20 (t \u22122.03, 99 days). All three terciles of the upper-half score are followed by a fall: \u22121.79 %, \u22122.34 % and \u22122.39 % next-day excess, at t \u22120.97 to \u22121.70.",
+    "F4": "The F1 effect sits in the next day. On a 2-day non-overlapping grid the correlation falls to r \u22120.18 (t \u22121.73, 95 days) in choppy agitated, and to r \u22120.14 (t \u22121.50, 114 days) in falling agitated.",
+    "F5": "The brief's effect is not in falling calm bars. Days in the top fifth of close location gave +0.02 % next-day excess (t 0.06, 113 days). Wide days that close high gave \u22120.51 % (t \u22121.04, 57 days). The score's correlation with the next day is r \u22120.07 (t \u22121.46, 405 days), and it is 0.00 % (t 0.00) over two days.",
+    "F6": "The same reversal exists in falling agitated, but most of it comes from one year. Overall r is \u22120.24 (t \u22123.88, 241 days), yet 2020 alone gives r \u22120.60 (t \u22124.24, 34 days), while the other years are between \u22120.12 and \u22120.18 with t under 1.6. This profile is already held: 058-02.b1.g1.b1.b1 and 060-01.g1.d2.d1 hold falling agitated shorts, and 16 books hold its longs.",
+    "F7": "Over all bars, the low-close rebound is the most reliable single cell. Wide days (top fifth of range) closing in the bottom fifth of their range gave +1.46 % next-day excess (t 3.02, 177 days), against \u22120.59 % (t \u22121.27) for wide days closing in the top fifth. The long side of this pattern is already held in the agitated profiles.",
+    "F8": "The book traded against its own idea half the time and lost. 47 % of its positions were long, only 51 % of its active bars were in the plan's situation, and it gained only on its widest-range days: +0.128 % per position-bar (t 2.24) in the top range fifth, against \u22120.043 % (t \u22122.28) in the bottom fifth. Its Sharpe was \u22120.31."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, a day's close location within its range, scaled by how wide that range is against the coin's 30-day swing of daily returns, is followed by a move the other way over the next day. The move is a rise after wide days closing near their low and a fall after wide days closing near their high, and it is larger the wider the day and the further the close sits from the middle of its range.",
+      "consequence": "In a choppy, agitated coin, a trader can fade the previous day's wide close toward the side it closed on and hold for one day; this also fills the short cell of that profile, where no strategy acts.",
+      "name": "choppy agitated wide close reversal",
+      "from": "F1, F2, F3, F4, F7",
+      "theme": "discovery",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "060-02.g1_choppy-agitated-wide-close-reversal"
+  ],
+  "no_ideas": null
+}

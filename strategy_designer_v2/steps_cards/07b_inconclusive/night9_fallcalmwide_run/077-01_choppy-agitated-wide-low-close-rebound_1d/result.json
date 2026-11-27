@@ -1,0 +1,36 @@
+{
+  "line": "7.b",
+  "backtest": "077-01_choppy-agitated-wide-low-close-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 3.6937402,
+  "findings": {
+    "F1": "The test's own result points the way the idea predicts but falls just short of the bar: the mean next-day excess return is +0.83 % with a day-clustered t of 1.96 over 213 cases on 164 days, and the slope on the forecast's size is negative (-5.3e-05). So both the t rule and the grading rule failed.",
+    "F2": "The weak t comes from too few cases, not from too small a move. The unusual move is 0.162 of a usual move, about three times the strength of the real ideas measured so far, and the total move per case is 4.4 times the 0.22 % cost of a trade. But the book is in a position on only 1 % of coin-days, with 0.006 trades a day. The test already used every fold and coin available, so there is no more data to add.",
+    "F3": "In the folds shown here (B, C), the rebound lives on the plan's own horizon and is spent after one day: the 32 cases earn +3.54 % the next day (t 2.98), +1.83 % over two days (t 1.11), +1.63 % over three (t 1.14) and -0.01 % over five (t -0.01).",
+    "F4": "Nearness to the low does not grade the rebound; it runs the other way. By the close's position among the cases, the next-day excess is +1.70 % for the closes nearest the low, +4.16 % for the middle tercile and +4.83 % for the highest. The forecast's terciles are flat (+3.73 %, +3.00 %, +3.91 %). This is why the slope failed: the forecast multiplies width by nearness to the low.",
+    "F5": "Width does grade the next-day rise after a close in the bottom quarter of the range. Over all bars of folds B and C, the next-day excess is:",
+    "F6": "The wide low-close rebound is not peculiar to choppy markets. After wide days closing in the bottom quarter, the next-day excess is +0.75 % in choppy markets (78 days), +1.40 % in falling markets (208) and +1.31 % in rising markets (156). The brief's profile keeps only a small part of the cases. A wider profile would be off the theme, though, so within the theme the change is to the grading."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, a wide day that closes in the lower part of its range is followed by a rise over the next day, larger the wider the day's range against the coin's 30-day swing.",
+      "consequence": "In a choppy, agitated market, a trader buying a low close after a wide day should size by how wide the day was against the coin's recent swing, not by how close the close sits to the low.",
+      "name": "choppy agitated width-graded rebound",
+      "from": "F1, F3, F4, F5",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-01.b1_choppy-agitated-width-graded-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

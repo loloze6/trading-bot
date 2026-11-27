@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return on forecast>0 bars",
+    "value": 0.004738880253578405,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.7078458587349699
+    },
+    "threshold": "confirm if mean > 0 with day-clustered t >= 2 and slope check passes; reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on low_close post_pipeline_value (t >= 1, positive)",
+    "value": 0.002100919929123664,
+    "passed": true
+  },
+  "counts": {
+    "distinct days with cases": 330,
+    "cases": 641
+  },
+  "decided_by": "The day-clustered t lies between -2 and 2.",
+  "reading": "The rising-calm profile is taken from the recorded regime (not 'chop', since its components are not recorded and its 365-day lookback exceeds a window), range in usual moves is rebuilt from prices with a 30-bar ddof-1 std of in-window daily returns (bars without 30 prior returns are left out of the agreement), close location uses the recorded raw value where present; the main t clusters cases by UTC day (per-day summed deviations, G/(G-1) correction); the 30-day minimum, when unmet, gives 'not observable' per the workflow rule."
+}

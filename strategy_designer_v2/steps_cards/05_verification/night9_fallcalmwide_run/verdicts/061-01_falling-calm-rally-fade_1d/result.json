@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move of short cases (drift removed, short direction)",
+    "value": -0.0009078996200316861,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": -0.5973126743241126
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 (and size split > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half",
+    "value": -0.0014264848672095067,
+    "passed": false
+  },
+  "counts": {
+    "cases": 2032,
+    "distinct days": 764
+  },
+  "reading": "Profile read from the recorded regime ('unknown' = falling calm, not vetoed to chop) and the up day from the raw scaled_rise > 0; cases are short-side bets per the holding rule (a rise of |forecast| >= 2 from its lowest short level since the last bet, reset at flat/long) on every bar (1-bar grid); drift is the coin's mean 1-bar return pooled over all its windows; t uses day-clustered standard error (deviations summed per UTC day); the larger half is |forecast| strictly above the median, the smaller half at or below it.",
+  "status": "inconclusive",
+  "decided_by": "Inconclusive rule: the t of the mean unusual move is between -2 and 2."
+}

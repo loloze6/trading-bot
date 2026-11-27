@@ -1,0 +1,49 @@
+{
+  "line": "7.b",
+  "backtest": "074-01.b1.d1.b1_wide-day-nearer-low-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3710633,
+  "findings": {
+    "F1": "The test's result is on the idea's side but short of the bar: across all four folds the mean next-day excess return is +0.47 % with a day-clustered t of 1.71 (330 days, 641 cases). The test already used every fold and every coin on daily bars, so no more data is available.",
+    "F2": "In folds B and C the same cases are clearly positive the next day: +1.44 % excess, day-clustered t 2.53 (161 cases on 85 days). All bars together average \u22120.01 % (t \u22120.09), so the rebound is not the market's own drift. Since the four-fold mean is only +0.47 %, folds A and D must carry much less of it.",
+    "F3": "The rebound sits almost entirely in the cases that close nearest their low. In folds B and C, the top quarter of close location (mean location 0.91) gains +2.73 % the next day (day-clustered t 3.95, 25 days). The lower three quarters gain +0.56 %, +1.14 % and +1.34 %, with t 0.56, 1.09 and 1.53. The slope of next-day excess return on close location is +0.060 per unit (t 2.23), and its Spearman correlation is 0.20.",
+    "F4": "The day's width does not grade the move at all. Range quartiles of 2.1, 2.4, 3.0 and 4.1 usual moves give next-day excess returns of +1.35 %, +1.42 %, +1.71 % and +1.27 %, with a Spearman correlation of \u22120.002. Close location, not width, carries the effect.",
+    "F5": "The rebound keeps building past the plan's one-day horizon. In folds B and C the 3-day excess return is +2.83 % with day-clustered t 3.31 (85 days), against +1.44 % (t 2.53) over 1 day. The 5-day return adds little (+2.95 %, t 2.16). For the cases nearest the low, the 3-day return is +5.18 % (t 3.74, 25 days).",
+    "F6": "The effect is mixed across coins and windows, which also blurs the pooled result:"
+  },
+  "ideas": [
+    {
+      "idea": "In a rising, calm market, a day whose high-to-low range is wide against the coin's 30-day swing of daily returns and that closes in the lower part of its range is followed by a rise over the next three days; the closer the close sits to the day's low, the larger the rise.",
+      "consequence": "In an orderly uptrend, a rebound buy after a wide day that closed near its low should be held for about three days rather than one, and sized by how near the low it closed.",
+      "name": "wide low-close three-day rebound",
+      "from": "F1, F3, F5",
+      "profile": "rising calm",
+      "refs": [
+        "F1",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a rising, calm market, a day whose high-to-low range is wide against the coin's 30-day swing of daily returns and that closes at the very bottom of its range, ending lower than it began, is followed by a rise over the next day; the closer the close sits to the day's low, the larger the rise.",
+      "consequence": "In an orderly uptrend, only wide down days that end pinned to their low are worth buying for a next-day rebound, and the nearer the low the close, the larger the position.",
+      "name": "wide day pinned-low rebound",
+      "from": "F2, F3, F4, F6",
+      "profile": "rising calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.d1.b1.b1_wide-low-close-three-day-rebound",
+    "074-01.b1.d1.b1.b2_wide-day-pinned-low-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
