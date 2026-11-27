@@ -1,0 +1,37 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "top-minus-bottom half (by forecast) mean forward 10-bar excess return, trending grid cases",
+    "value": 0.03812167073942514,
+    "statistic": {
+      "name": "Welch t",
+      "value": 4.044549055701573
+    },
+    "threshold": "confirm if Welch t >= 2 with supporting check passing; reject if Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean forward 10-bar excess return of cases with forecast > 0 is above 0",
+    "value": 0.017881190889941983,
+    "passed": true
+  },
+  "counts": {
+    "top half grid cases": 998,
+    "bottom half grid cases": 998,
+    "trending grid cases": 1996,
+    "cases with forecast > 0": 1433
+  },
+  "decided_by": "Welch t >= 2 for top minus bottom and cases with forecast > 0 have a positive mean excess return.",
+  "reading": "The situation is checked on the regime column (the detector's MovingAverageAgeComponent(200) >= 1 rule, labelled 'trending'), with forecast > 0 as the expected long side; the coin's mean 10-bar return uses every non-overlapping grid case of all its windows; the halves split all trending grid cases pooled across coins and windows by forecast rank. Ties are ordered stably by coin, window and bar. The bottom half takes the extra case when the count is odd.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

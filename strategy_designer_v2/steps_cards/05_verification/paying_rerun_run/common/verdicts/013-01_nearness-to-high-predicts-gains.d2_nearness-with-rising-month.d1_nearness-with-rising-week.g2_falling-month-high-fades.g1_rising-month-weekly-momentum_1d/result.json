@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9974861151710026,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of demeaned 7-bar forward return on raw 7-day return, trending bars",
+    "value": 0.00018460096726259626,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.252364965885941
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, with at least 100 independent cases"
+  },
+  "supporting_check": {
+    "name": "timing part of book's mean daily gain above 0",
+    "value": 0.0008322352864177743,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases in the regime": 3634
+  },
+  "decided_by": "The slope's t is 2 or more with at least 100 independent cases and the timing gain is above 0.",
+  "reading": "Grid bars are positions 0,7,14,... of each window kept when regime is 'trending' with a 7-bar forward return inside the window, the coin mean is the mean of all its grid 7-bar returns over all windows, the book of each coin is its postRebalance_total_value at each day's last bar averaged across coins per day, and the plan's 'fewer than 100 cases' is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
