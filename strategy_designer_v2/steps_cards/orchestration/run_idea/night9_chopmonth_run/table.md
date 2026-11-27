@@ -26,21 +26,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-02.b2_agitated-choppy-month-fall-continues | 067-02_choppy-weak-month-fall-continues | plan | inconclusive (+1.01) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b2.b1_choppy-month-fall-continues, 067-02.b2.b2_choppy-month-fall-three-days; 7.g: no ideas: Across about fifteen angles (the 30-day, 7-day and 1-day returns, range, close position, volatility, the 60-day trend, weekday, windows, coins and the book's extreme days), no pattern held across grid offsets and windows strongly enough to count after so many looks. The one consistent effect, the next-day reversal of the close position, is already held in the profile map. | 1.05 | 12.3 |
 | 067-02.b1.b1_choppy-deep-month-fall-continues | 067-02.b1_choppy-plain-month-fall-continues | plan | confirmed (+2.62) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-02.b1.b1.d1_choppy-deepest-month-falls-continue, 067-02.b1.b1.d2_agitated-choppy-month-fall-continues, 067-02.b1.b1.d3_calm-choppy-month-rise-continues; 7.g: 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls | 1.16 | 12.2 |
 | 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | confirmed (+2.60) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks, 067-02.b1.b1.d1.d2_agitated-choppy-deep-falls; 7.g: 067-02.b1.b1.d1.g1_choppy-agitated-month-falls-continue | 1.32 | 13.3 |
+| 067-02.b1.b1.d2_agitated-choppy-month-fall-continues | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+0.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The effect points the predicted way but is small (t 0.74 on the main measure, t 1.66 on the size). The test already used every coin and fold available on daily bars. No coin, period, depth, position in range or horizon shows it clearly apart from one window's episode (F1–F4), so no further test on this data would give a clearer answer.; 7.g: 067-02.b1.b1.d2.g1_calm-choppy-month-continuation | 1.03 | 12.6 |
+| 067-02.b1.b1.d3_calm-choppy-month-rise-continues | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+1.35) | not profitable enough (failed: Calmar) | - | 7.b: 067-02.b1.b1.d3.b1_large-calm-choppy-month-continues; 7.g: no ideas: Across about fifteen angles (forecast quintiles in and out of the profile, past 7-day and 1-day returns, range and relative range, close position at 1, 3 and 7 days by trend and year, volatility ratio, weekdays, trades by side, forecast and coin), no pattern holds a day-clustered t clearly above the bar such a search requires (the best are t -2.83 and 2.09). The few near it repeat ideas the profile map already holds: close near the high continuing in rising markets, next-day close-height fade, and late-week gain. | 1.10 | 12.4 |
 
 ## Consumption
-22 ideas, 24.65 USD, 264.2 minutes in all.
+24 ideas, 26.79 USD, 289.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.82 | 10.0 |
-| step4_backtest | 0.00 | 180.8 |
-| step5_verdict | 4.26 | 15.0 |
-| step6_check | 0.00 | 1.0 |
+| step3_plan | 1.96 | 10.7 |
+| step4_backtest | 0.00 | 198.9 |
+| step5_verdict | 4.65 | 16.4 |
+| step6_check | 0.00 | 1.1 |
 | chart_files | 0.00 | 0.5 |
 | step7_7.d | 2.88 | 9.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 5.71 | 17.0 |
-| step7_7.g | 9.98 | 30.1 |
+| step7_7.b | 6.45 | 19.2 |
+| step7_7.g | 10.84 | 32.6 |
 | similarity_check | 0.00 | 0.6 |

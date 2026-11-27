@@ -16,6 +16,8 @@
 067-01.b1_choppy-weak-month-keeps-falling_1d: 1 ideas (2 explorations)
 067-01_choppy-strong-month-rise-continues_1d: 2 ideas (2 explorations)
 067-02.b1.b1.d1_choppy-deepest-month-falls-continue_1d: 1 ideas (2 explorations)
+067-02.b1.b1.d2_agitated-choppy-month-fall-continues_1d: 1 ideas (2 explorations)
+067-02.b1.b1.d3_calm-choppy-month-rise-continues_1d: no ideas: Across about fifteen angles (forecast quintiles in and out of the profile, past 7-day and 1-day returns, range and relative range, close position at 1, 3 and 7 days by trend and year, volatility ratio, weekdays, trades by side, forecast and coin), no pattern holds a day-clustered t clearly above the bar such a search requires (the best are t -2.83 and 2.09). The few near it repeat ideas the profile map already holds: close near the high continuing in rising markets, next-day close-height fade, and late-week gain.
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 067-02.b1_choppy-plain-month-fall-continues_1d: 1 ideas (2 explorations)
 067-02.b2_agitated-choppy-month-fall-continues_1d: no ideas: Across about fifteen angles (the 30-day, 7-day and 1-day returns, range, close position, volatility, the 60-day trend, weekday, windows, coins and the book's extreme days), no pattern held across grid offsets and windows strongly enough to count after so many looks. The one consistent effect, the next-day reversal of the close position, is already held in the profile map.

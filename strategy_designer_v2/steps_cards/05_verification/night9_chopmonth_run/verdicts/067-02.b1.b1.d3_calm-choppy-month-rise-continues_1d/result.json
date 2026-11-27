@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 7-bar excess return on forecast",
+    "value": 0.0009440105489124157,
+    "statistic": {
+      "name": "slope t, day-clustered",
+      "value": 1.3536706320413725
+    },
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2, with at least 100 cases on at least 60 days"
+  },
+  "supporting_check": {
+    "name": "mean excess return >0 on long cases and <0 on short cases",
+    "value": 0.007876093470351606,
+    "passed": true
+  },
+  "counts": {
+    "cases": 776,
+    "days": 229,
+    "long cases": 406,
+    "short cases": 370,
+    "active bars": 5451
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The choppy calm profile is the detector's non-chop regime 'unknown' and the side is the sign of the 30-bar return. The slope's t uses OLS with an intercept and day-clustered (CR1) standard errors, clustering cases by their grid bar's UTC day. The coin's mean is over every valid non-overlapping 7-bar grid return in all its windows. The minimums (100 cases, 60 days, 30 per side) gate the result as 'not observable'. The supporting check's value is the long mean excess minus the short mean excess."
+}

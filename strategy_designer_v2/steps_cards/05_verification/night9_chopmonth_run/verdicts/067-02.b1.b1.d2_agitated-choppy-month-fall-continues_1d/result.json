@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean short-side 7-bar excess return",
+    "value": 0.010156343466532486,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day taken together",
+      "value": 0.7442395991756509
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half excess 7-bar return (below 0)",
+    "value": -0.024663233353361652,
+    "passed": true
+  },
+  "counts": {
+    "independent cases (days)": 108,
+    "cases": 215
+  },
+  "decided_by": "The t is between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The situation is the 30-bar return (month_fall raw value, recomputed from closes where missing) below 0 on bars whose regime is the profile's regime 'unknown', short side; independent cases are the distinct UTC days the grid cases fall on; the coin's mean 7-bar return is over all grid bars of all its windows; the halves are the n//2 largest and n//2 smallest |forecast| cases (the median case left out when n is odd) compared on unweighted mean unsigned excess return; a count below 30 is reported as not observable."
+}

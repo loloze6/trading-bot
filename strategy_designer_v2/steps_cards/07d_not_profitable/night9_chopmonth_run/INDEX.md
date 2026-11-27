@@ -16,6 +16,8 @@
 067-01.b1_choppy-weak-month-keeps-falling_1d: 1 ideas (2 explorations)
 067-01_choppy-strong-month-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1.d1_choppy-deepest-month-falls-continue_1d: 2 ideas (2 explorations)
+067-02.b1.b1.d2_agitated-choppy-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+067-02.b1.b1.d3_calm-choppy-month-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: 3 ideas (2 explorations)
 067-02.b1_choppy-plain-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b2_agitated-choppy-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
