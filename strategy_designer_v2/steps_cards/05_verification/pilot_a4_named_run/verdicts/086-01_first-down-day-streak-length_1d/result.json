@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 0.9907407407407407,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 3-bar move per case",
+    "value": -0.015582565326223962,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": -1.735217018130022
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 confirms (with slope check); mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on broken run length, t >= 1.5",
+    "value": 0.28673985324401985,
+    "passed": false
+  },
+  "counts": {
+    "cases": 313,
+    "distinct days": 235
+  },
+  "decided_by": "Inconclusive: the t of the mean unusual move lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -1.735 (below 1), 313 cases (30 needed).",
+  "reading": "Situation = recorded broken_run count >= 2 on a down close (first window row accepted on the count alone) in regime 'trending' (profile vetoes passed), side short; a case is the first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet, from 0 after flat) in each 3-bar grid cell of a window, its return taken from that bar's close over 3 bars inside the window; drift = mean of the coin's non-overlapping 3-bar grid returns over all its windows; day-clustered t uses a G/(G-1) correction; slope t is the ordinary OLS t; the plan's 'fewer than 30 cases on 30 distinct days' is treated as the minimum count.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -1.735 (below 1), 313 cases (30 needed)",
+    "t_in_idea_direction": -1.735217018130022,
+    "cases": 313
+  }
+}

@@ -1,0 +1,2 @@
+086-01_first-down-day-streak-length: In rising agitated markets, the first down day after an up streak starts a 3-day fall, larger after longer streaks. [side: short only, profile: rising agitated]
+086-02_first-down-day-run-size: In rising agitated markets, the first down day after an up streak starts a 3-day fall, larger after bigger volatility-scaled gains. [side: short only, profile: rising agitated]

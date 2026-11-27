@@ -1,0 +1,23 @@
+---
+line: 7.c no effect
+backtest: 086-01_first-down-day-streak-length_1d
+idea tested: 086-01_first-down-day-streak-length
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4718 USD
+---
+## Findings
+- **F1:** In rising agitated markets, the first down day after a run of 2 or more up days was followed by a 3-day short-direction unusual move of -0.64 % (t -0.46, 72 non-overlapping cases), which is no decline beyond drift. After a single up day the same move was +1.56 % (t 1.24, 91 cases), so longer runs did worse for the short than the shortest one.
+- **F2:** The decline does not grow with the run. In profile, the slope of the 3-day short-direction unusual move on run length was -0.0107 per up day (t -1.34, 162 cases). Measured on the run's size in units of the coin's 30-day swing, the slope was -0.0110 (t -2.21, 150 cases). The biggest-run tercile had the worst 3-day short move, -4.8 % (t -1.57, 24 cases), against -0.6 % and +4.5 % for the two smaller terciles. After the largest runs the dip was bought.
+- **F3:** The plan's 3-day horizon sits in the bad spot of the curve. For runs of 2 or more, the short-direction unusual move was -0.64 % at 3 days (t -0.46, 72 cases), +0.79 % at 5 days (t 0.34, 61 cases), +5.42 % at 7 days (t 1.79, 54 cases) and +0.46 % at 10 days (t 0.12, 39 cases). All first down days together reached a strength of 0.065 at 7 days against 0.021 at 3 days.
+- **F4:** The 7-day result is not graded and not stable. By the run's size in swing units, the 7-day terciles were +4.1 %, -0.3 % and +1.3 % (25 to 29 cases each). By window it ranged from -10.2 % in w16 (t -1.77, 26 cases) to +10.6 % in w17 (14 cases).
+- **F5:** The result flips by period and coin. At 3 days the short paid in 2020, +3.36 % (t 2.16, 28 cases), and lost in 2021, -3.86 % (t -1.77, 41 cases), including -2.59 % on the first day (t -2.65). BCH lost -3.25 % (t -1.48, 32 cases) while ZEC gained +0.94 % (t 0.49, 42 cases).
+- **F6:** A first down day is a worse short than an ordinary day in the profile. All rising-agitated days on a 3-day grid gave a short-direction unusual move of +1.82 % (t 1.93, 177 cases) and +3.24 % at 7 days (t 1.46, 79 cases). After the strongest prior 3-day rises (top quintile, in swing units) the 3-day short move was -1.54 % (t -0.66, 35 cases).
+- **F7:** The cost leaves no room at the tested horizon. The tested total move per case was -1.91 % against a 0.37 % cost per trade, so the short loses before any cost. Only the 7-day horizon in F3, at +5.4 % per case, would be larger than the cost.
+
+## Ideas
+- `086-01.c1_first-dip-falls-over-week` (from F3, F1, F7): In a rising, agitated market, when a coin closes down after a streak of consecutive up days, it keeps falling over the next 7 days, and the fall is larger the more up days the streak held.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
