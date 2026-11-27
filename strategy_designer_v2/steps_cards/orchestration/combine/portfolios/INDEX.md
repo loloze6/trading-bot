@@ -11,3 +11,4 @@
 | Version | Commit | Candidates | Books | Portfolio coins: Sharpe (holding) | Ready | Final test |
 |---|---|---|---|---|---|---|
 | v3 | 0f2ce199b1 | 129 | 11 | 1.914 (1.075) | ready | not made |
+| v4 | 210187f965 | 131 | 11 | 1.914 (1.075) | ready | not made |
