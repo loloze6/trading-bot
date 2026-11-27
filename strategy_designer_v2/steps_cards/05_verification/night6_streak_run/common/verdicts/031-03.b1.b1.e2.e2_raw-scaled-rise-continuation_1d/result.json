@@ -1,0 +1,31 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move per case, long direction",
+    "value": 0.025726455445554804,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 3.0460706400323776
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 distinct case days"
+  },
+  "supporting_check": null,
+  "counts": {
+    "distinct case days": 444,
+    "cases": 729
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 over at least 30 distinct case days (confirm rule).",
+  "reading": "A case is the first long bet (forecast rise >= 2 points from its lowest level since the last bet) in each 5-bar grid cell from each window's first row, its 5-bar return inside the window minus the coin's mean non-overlapping 5-bar return over all its windows, with the t's standard error clustered by the signal bar's UTC date (deviations summed per day, D/(D-1) correction), and fewer than 30 days reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

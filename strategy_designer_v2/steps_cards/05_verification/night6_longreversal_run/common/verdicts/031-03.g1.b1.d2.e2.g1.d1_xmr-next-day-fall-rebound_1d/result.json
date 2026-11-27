@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on forecast",
+    "value": 0.0004856173777330023,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.841282479067965
+    },
+    "threshold": "slope t >= 2 with positive mean excess confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess next-day return over cases > 0",
+    "value": 0.0007605083709848169,
+    "passed": true
+  },
+  "counts": {
+    "cases": 28021
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess return over the cases is positive.",
+  "reading": "The situation is a bar whose raw fall_z value (return over 30-day volatility) is below 0, falling back to the price return where the raw value is missing; the coin's mean daily return is the mean of all next-day returns pooled over all windows; with a 1-bar horizon every bar is on the grid; the slope's t is the ordinary least-squares t of the slope; fewer than 100 cases is reported as 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
