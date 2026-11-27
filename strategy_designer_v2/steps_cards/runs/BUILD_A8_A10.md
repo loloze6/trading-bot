@@ -110,3 +110,34 @@ Nothing in `trading-bot/`. `NEXT_STEPS.md` is not touched (the designer's).
 - One call takes about a minute (131 records read).
 
 ### Tests
+In a virtual environment with `trading-bot/requirements.txt` (pandas 2.3.3), on commit `897cb77612`:
+- the cards' suite: **231 passed** (7 of them new); `topics/47_review/fold_rules_test.csv`, rewritten by it, restored;
+- the bot's suite, from its folder: **1685 passed**, 16 skipped, 75 deselected.
+v3 and v4 measured again in that environment give the same figures as above (first computed with pandas 3.0.5).
+
+## The reading: which expected outcome happened
+| # | Outcome | Happened |
+|---|---|---|
+| 1 | Holding the same in every order | yes: 1.058 in three orders, and a test |
+| 2 | v3 and v4 stay ready | yes (1.914 against 1.058) |
+| 3 | The portfolio's own numbers do not move | yes |
+| 4 | Scale about 2, roughly +40 % | scale 2.12; +47.9 %, higher than the rough figure (compounding) |
+| 5 | The designer's check reproduced | yes: 87 candidates, 6 strategies, 1.88 against 1.91, +16.9 % against +21.0 % |
+| 6 | Twice, the same file | yes |
+| 7 | Both suites pass | yes |
+
+Not expected: the new holding figure is neither 1.075 nor 0.945, because the chart files' closes are rounded (above).
+
+## Open (for the operator and the designer)
+1. **The chart files round closes to 6 decimals** (`04_backtest/helper/chart_files.py`): wrong for coins priced far
+   below 1 USD (PEPE, DOGE). Nothing in the rules reads those closes any more (holding was the reader); a chart drawn
+   from them is still wrong for those coins. Not changed here (not asked): a topic for the operator.
+2. **`final_test.py` (step 12) now reads holding from the data files too**, through `measure`: the same rule, on the
+   final coins. Its tests pass; no final test has been made, so no record changes.
+3. **`NEXT_STEPS.md`'s lines A8, A10 and A11** still say RUNNING: left to the designer (A10's line quotes 1.08 and 0.94;
+   A11's "roughly +40 %" is +47.9 %).
+4. **The night readings already written** (`NIGHT7_RUN.md` to `NIGHT9_RUN.md`) do not carry the table: the rule
+   applies from the next reading; the three files are in `orchestration/combine/additions/` to quote.
+5. **A8's table has no holding column** (not asked). Holding is step 11's bar for a version, not for a run.
+6. The yearly figure of a calendar year not finished (2026: 241 days) is brought to a year, as step 6's formula does.
+7. Not merged: branch `build-a8-a10` only.
