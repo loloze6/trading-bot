@@ -1,7 +1,8 @@
 """run_brief: one trading theory researched from end to end: step 1 (theme or source only), step 2, then loop.
 
   python3 orchestration/run_brief/helper/run_brief.py --run NAME_run --python VENV_PYTHON
-      (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model M]
+      (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model M] [--data-use 2]
+      [--target-box auto | --target-box "rising agitated, long"]
 
 It adds no rule of its own: steps 1 and 2 as validated, the next idea by select_next, the stop rules of loop. Its state
 is the run's files, so a second call resumes. Visibility only: orchestration/run_brief/<run>/journal.jsonl (one line
@@ -18,6 +19,7 @@ sys.path.insert(0, str(STEPS / "common"))
 from run_idea import Journal, copy_into  # noqa: E402  (one journal for every orchestration function)
 from lib import with_header_field, write_atomic  # noqa: E402
 import coins  # noqa: E402  (the run's data use, common/coins.py and common/data_use.md)
+import target_box  # noqa: E402  (the run's target box, common/target_box.md)
 
 BRIEFS = STEPS / "01_brief" / "briefs"          # step 1's list of every brief: one number per theory
 LOOP = ORCH / "loop" / "helper" / "loop.py"
@@ -114,6 +116,8 @@ def main():
     a.add_argument("--model")
     a.add_argument("--data-use", type=int, choices=[coins.DATA_USE_VERSION], help="2: the run in the new data use "
                    "(common/data_use.md): every plan backtested on the run's 8 research coins and the research windows")
+    a.add_argument("--target-box", help="the run's target box (common/target_box.md): 'auto' (the rule on the profile "
+                   "map) or a profile and a side ('rising agitated, long'); written once, kept when resumed")
     args = a.parse_args()
     if not args.run.endswith("_run"):
         sys.exit("a run name ends in _run")
@@ -129,6 +133,9 @@ def main():
     du = start_data_use(args.run, args.data_use)
     if du:
         print(f"{args.run}: data use {du['version']}: research coins {', '.join(du['research_coins'])}; windows {du['windows']}")
+    box = target_box.start(args.run, args.target_box)
+    if box:
+        print(f"{args.run}: target box {target_box.box_name(box)} ({box['chosen_by']})")
     brief = args.brief
     if brief is None:                                   # step 1: a theme or a source becomes a brief
         brief, why = write_brief(args.run, args.theme, args.source, args.model)

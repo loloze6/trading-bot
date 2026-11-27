@@ -58,3 +58,12 @@ def test_a_run_in_the_new_data_use_gets_its_file_once(tmp_path, monkeypatch):
     import pytest
     with pytest.raises(SystemExit):                                  # ideas tested in the old data use: refused
         rb.start_data_use("b_run", 2)
+
+
+def test_a_target_box_not_one_of_twelve_is_refused_before_any_call(tmp_path):
+    """Next steps B2.1 (common/target_box.md): the option takes 'auto' or one of the twelve boxes."""
+    brief = tmp_path / "012_x.md"
+    brief.write_text("---\n---\nA theory.\n")
+    out = run(str(brief), "--run", "nosuchbox_test_run", "--python", "p", "--target-box", "rising, long")
+    assert out.returncode != 0 and "twelve boxes" in out.stderr
+    assert not rb.target_box.box_file("nosuchbox_test_run").exists()

@@ -70,7 +70,8 @@ def test_shared_files_are_pasted_where_a_prompt_names_them():
     out = a.with_common("before\n{{DATA_AVAILABLE}}\nafter")
     assert "{{" not in out and "BTC, ETH, LTC" in out
     for line in sorted(Path(a.STEPS).glob("07?_*/helper/line_prompt.md")):
-        assert "{{" not in a.with_common(line.read_text().replace("{{PROFILE_MAP}}", a.profile_map())), line
+        assert "{{" not in a.with_common(line.read_text().replace("{{PROFILE_MAP}}", a.profile_map())
+                                         .replace("{{TARGET_BOX}}", a.target_box_note("no_such_run"))), line
 
 
 def test_line_7d_runs_only_on_a_confirmed_idea_whose_book_does_not_pay():
