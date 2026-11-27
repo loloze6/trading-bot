@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-day return on forecast > 0 bars (coin's next-day return minus coin's mean daily return)",
+    "value": 0.0034471124855546156,
+    "statistic": {
+      "name": "t of the mean, same-day cases combined",
+      "value": 1.0490405669306397
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting difference > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "excess return, forecast above median minus below median (Welch)",
+    "value": 0.0029440159537142993,
+    "passed": true,
+    "welch_t": 0.557801581474725
+  },
+  "counts": {
+    "cases": 408,
+    "distinct days": 276
+  },
+  "decided_by": "The t of the mean excess next-day return lies between -2 and 2: inconclusive.",
+  "reading": "The 20-day mean range includes the current bar and is computed inside each window, so a window's first 19 bars cannot be checked and are left out of the situation check; the close is in the lower half when (close-low)/(high-low) < 0.5; the coin's mean daily return is over every within-window next-day return of all its windows; same-day cases are combined by summing their deviations per UTC day (clustered standard error); the supporting split uses the median forecast of all cases with a next-day return, strictly above versus strictly below it; the plan's 'fewer than 100 cases / 60 days' rule is reported as 'not observable'."
+}

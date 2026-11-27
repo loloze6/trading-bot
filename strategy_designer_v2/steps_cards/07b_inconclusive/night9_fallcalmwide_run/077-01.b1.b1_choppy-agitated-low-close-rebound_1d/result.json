@@ -1,0 +1,38 @@
+{
+  "line": "7.b",
+  "backtest": "077-01.b1.b1_choppy-agitated-low-close-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2422341,
+  "findings": {
+    "F1": "On the folds shown (B, C), the tested cases rebound clearly over the next day: 73 cases on 58 days with a mean excess return of +2.55 % (t 2.79). Over all four folds, 408 cases give only +0.34 % (t 1.05), so the roughly 335 cases in folds A and D must carry almost no effect.",
+    "F2": "Inside the profile, on wide days, the next-day excess return falls steadily as the close moves up the range. Closes in the lowest fifth give +3.02 % (t 3.40, 23 cases), the next fifth +2.77 % (t 1.40, 25), the middle \u22122.26 % (t \u22120.93, 19), and the top fifth \u22123.40 % (t \u22122.08, 20). The effect sits at closes near the low.",
+    "F3": "The plan's 60-bar standardised forecast lets in closes near mid-range that do not rebound. The lowest forecast quartile (mean close location 0.42) gives \u22120.75 % (t \u22120.78, 20 cases). The other three give +4.33 % (t 1.86), +4.50 % (t 2.19) and +2.49 % (t 3.14, mean location 0.07).",
+    "F4": "The rebound is largest on the widest days. The widest third (range 2.2 times its 20-day mean) gives +4.46 % (t 2.29, 16 cases), against +2.16 % (t 1.14) and +0.73 % (t 0.60) for the two narrower thirds.",
+    "F5": "The effect is spent within one day: +2.55 % (t 2.79) over the next day, but +1.08 % (t 0.79) over two days and +1.96 % (t 1.54) over three.",
+    "F6": "The effect is uneven across coins and rests mostly on down days. BTC gives +1.45 % (t 2.49, 17 cases), XMR +4.07 % (t 2.73, 9) and ZEC +5.18 % (t 1.98, 15), while ETH gives \u22120.14 % (t \u22120.10, 9). 66 of the 73 cases are down days, at +2.73 % (t 2.70).",
+    "F7": "Only 4.6 % of bars are in the choppy agitated profile. Outside it, wide days closing in the lowest fifth also rebound, by +1.06 % (t 2.24, 514 cases on 202 days). That is about a third of the in-profile move; this pattern is off the brief's profile and is noted only as context."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, a wide day that closes near its low is followed by a rise over the next day, larger the wider the day is against the coin's usual daily range of the last 20 days.",
+      "consequence": "In a choppy, agitated market, a trader buying the close of a wide day that ends at its low should size by how wide the day was, and should skip days that close nearer the middle of the range.",
+      "name": "choppy agitated widest low-close rebound",
+      "from": "F2, F3, F4, F5, F6",
+      "profile": "choppy agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-01.b1.b1.b1_choppy-agitated-widest-low-close-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

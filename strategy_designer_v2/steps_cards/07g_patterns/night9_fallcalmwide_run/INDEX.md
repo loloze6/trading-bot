@@ -15,9 +15,11 @@
 075-01.g1_heavy-volume-down-day-rebound_1d: 1 ideas (2 explorations)
 075-01.g2_light-volume-up-day-fade_1d: 2 ideas, 1 discoveries (3 explorations)
 075-01_heavy-volume-next-day-rise_1d: 2 ideas (2 explorations)
+077-01.b1.b1_choppy-agitated-low-close-rebound_1d: 1 ideas, 2 discoveries (2 explorations)
 077-01.b1_choppy-agitated-width-graded-rebound_1d: 1 ideas (3 explorations)
 077-01_choppy-agitated-wide-low-close-rebound_1d: 1 ideas (2 explorations)
 077-02_choppy-agitated-wide-high-close-fade_1d: no ideas: The only patterns that stand out are the falling-market wide high-close fade and its both-sided graded form (F1, F2, F4), and the map already holds both in the falling agitated profile (060-01.g1.d2.d1 and 058-02.b1.g1.b1.b1). The day-two give-back (F3) and the in-profile choppy agitated readings (F5) are too marginal to stand out after this many angles. I looked at close location by width inside and outside the profile, by trend, by agitation, by width tercile, by year, by coin and by weekday, at the return scaled by its 30-day swing, at 7-day and 60-day returns, at the 5-day horizon and at choppy calm and agitated proxies.
+077-03.d1.b1_widest-low-close-next-day-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
 077-03.d1_choppy-agitated-low-close-rebound_1d: 0 ideas, 2 discoveries (2 explorations)
 077-03.d2_low-close-rebound-three-days_1d: 0 ideas, 2 discoveries (2 explorations)
 077-03.g1_choppy-agitated-high-close-fall_1d: 0 ideas, 2 discoveries (2 explorations)
