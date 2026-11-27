@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9944765004685111,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of excess 10-bar return on forecast, profile bars, non-overlapping grid",
+    "value": 0.005494061274005175,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.0492537566520745
+    },
+    "threshold": "slope t >= 2 (with top-minus-bottom > 0) confirms; t <= -2 rejects; at least 300 grid cases and 100 distinct grid days"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top third minus bottom third by forecast",
+    "value": 0.04662606767099766,
+    "passed": true
+  },
+  "counts": {
+    "grid cases inside the profile": 1969,
+    "distinct grid days": 315
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom difference is positive: confirm.",
+  "reading": "The coin's mean 10-bar return is the mean over all its non-overlapping grid cases in all windows (profile or not), the profile is bars with regime 'unknown' where near_high is recorded, the thirds are the n//3 lowest and highest grid cases by forecast (stable sort), and the expected side is the sign of the forecast rebuilt from raw component values (post-pipeline values where a window lacks a full standardise history).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
