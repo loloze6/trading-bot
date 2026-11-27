@@ -1,4 +1,6 @@
+067-01.b1.b1.b1.b1_choppy-two-sided-stretch-carries_1d: 1 ideas (2 explorations)
 067-01.b1.b1.b1_choppy-downside-stretch-keeps-falling_1d: 1 ideas (2 explorations)
+067-01.b1.b1.b2.b1_calm-choppy-stretch-carry_1d: no ideas: The test already used all the daily data available (folds A–D, all 19 coins). Its positive but weak slope comes from one year, 2021 (t 3.59), while 2018–2020 show nothing or reversion (2018 t −2.55). No coin, side, stretch size or horizon carries the effect apart from that period, so no amendment of the idea would give a clearer answer.
 067-01.b1.b1.b2_choppy-stretch-carry-all-coins_1d: 1 ideas (2 explorations)
 067-01.b1.b1_choppy-stretch-carries-both-ways_1d: 2 ideas (2 explorations)
 067-01.b1_choppy-down-stretch-keeps-falling_1d: 1 ideas (2 explorations)
@@ -17,6 +19,7 @@
 076-01.b1_agitated-wide-close-fade-more-coins_1d: 1 ideas (2 explorations)
 076-01_agitated-wide-high-close-fades_1d: 1 ideas (2 explorations)
 077-01.b1.b1_graded-swing-rise-carries-on_1d: 2 ideas (2 explorations)
+077-01.b1.b2_choppy-calm-swing-momentum_1d: 1 ideas (2 explorations)
 077-01.b1_swing-rise-carry-more-coins_1d: 2 ideas (2 explorations)
 077-01_choppy-calm-swing-rise-carries_1d: 1 ideas (1 explorations)
 077-02_choppy-calm-swing-fall-carries_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)

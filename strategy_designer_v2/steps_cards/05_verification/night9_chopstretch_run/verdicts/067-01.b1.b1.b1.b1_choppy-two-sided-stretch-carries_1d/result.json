@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of the 10-bar forward return minus the coin's normal 10-bar drift on the recorded forecast",
+    "value": 0.0005667068325972074,
+    "statistic": {
+      "name": "slope t, cases of one day clustered",
+      "value": 0.7264861192876355
+    },
+    "threshold": "slope t >= 2 confirms (with both sides' mean unusual move > 0); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "smaller of the two sides' mean unusual move in the forecast's direction (long -0.0035017386616689973, short 0.007227726060878583), must be > 0",
+    "value": -0.0035017386616689973,
+    "passed": false
+  },
+  "counts": {
+    "cases in total": 408,
+    "cases with forecast > 0": 208,
+    "cases with forecast < 0": 200,
+    "days": 187
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The choppy situation is |60-bar close return| <= 10 % recomputed inside each window, falling back on the recorded regime (not 'chop') for bars without 60 prior bars in the window, and the side is the sign of the raw stretch; the drift is the coin's mean 10-bar return on the non-overlapping grid of all its windows; the slope's t uses day-clustered (CR1) standard errors on cases grouped by UTC date; the plan's 'fewer cases than the minimum' is reported as not observable."
+}

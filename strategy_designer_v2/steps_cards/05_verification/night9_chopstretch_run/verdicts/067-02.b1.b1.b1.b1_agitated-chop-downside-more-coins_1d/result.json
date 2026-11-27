@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move in the short direction (day-clustered)",
+    "value": 0.004801446182047008,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.8416092418685168
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger half of |forecast| minus smaller half",
+    "value": -0.026754992057863566,
+    "passed": false
+  },
+  "counts": {
+    "cases": 407,
+    "distinct days": 297
+  },
+  "decided_by": "The t is between -2 and 2.",
+  "reading": "A case is the first short bet (forecast magnitude rising at least 2 points above its lowest level since the last bet, from 0 after a flat) in each 5-bar grid cell of a window, needing 5 bars after it; the profile is the record's regime not 'chop'; the halves of |forecast| are its lower and upper n//2 ranked cases (the middle case dropped when n is odd); the day-clustered t uses the G/(G-1) correction."
+}
