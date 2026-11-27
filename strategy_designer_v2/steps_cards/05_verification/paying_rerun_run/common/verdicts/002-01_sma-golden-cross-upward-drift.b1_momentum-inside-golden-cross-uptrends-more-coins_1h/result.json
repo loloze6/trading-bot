@@ -1,0 +1,32 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next 240-bar excess return on forecast, trending grid bars",
+    "value": 0.0053992151061596,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 7.358215966253286
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases in trending": 1605,
+    "cases at forecast 0": 758,
+    "cases with forecast > 0": 847
+  },
+  "decided_by": "the slope is positive with t >= 2.",
+  "reading": "the 4800-bar SMA cannot be rebuilt inside windows shorter than 4800 bars, so on those bars the situation is read from the recorded regime 'trending' (SMAs recomputed from prices on 0 bars), with long (forecast > 0) as the expected side; the coin's mean 240-bar return is the mean over all its windows' non-overlapping grid bars (all regimes), the regression has an intercept, and the plan's minimum counts are applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

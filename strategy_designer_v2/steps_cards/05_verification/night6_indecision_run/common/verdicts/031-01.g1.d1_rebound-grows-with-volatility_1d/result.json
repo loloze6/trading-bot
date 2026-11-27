@@ -1,0 +1,37 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9951219512195122,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day excess return on signal bars (day-pooled)",
+    "value": 0.012345474632531519,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 3.899704227444215
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and high-minus-low > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "high-minus-low forecast excess return (Welch t 4.125)",
+    "value": 0.011576018129525474,
+    "passed": true
+  },
+  "counts": {
+    "cases (signal days)": 1932,
+    "distinct days": 659,
+    "cases above median": 966,
+    "cases below median": 966
+  },
+  "decided_by": "Mean excess return above 0 with t >= 2 and a high-minus-low difference above 0.",
+  "reading": "The plan's situation is recomputed from prices as range(t)/mean of the last 20 bar ranges including t >= 1.5 and (close-low)/(high-low) <= 0.25, and the agreement is taken over active bars where these are computable (the first 19 bars of each window lack history); 'cases (signal days)' are coin-day signal bars, the t pools a day's cases by summing their deviations (cluster-robust by day), and cases equal to the median forecast are left out of both supporting groups.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
