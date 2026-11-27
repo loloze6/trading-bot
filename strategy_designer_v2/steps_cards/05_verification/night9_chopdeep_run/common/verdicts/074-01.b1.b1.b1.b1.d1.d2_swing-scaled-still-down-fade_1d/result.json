@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9818949909474954,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day move in the short direction on case bars",
+    "value": 0.003296931452090645,
+    "statistic": {
+      "name": "t of the mean, cases of one day grouped",
+      "value": 1.6191070879467213
+    },
+    "threshold": "confirm above 0 with t >= 2 (and check above 0); reject below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half of |forecast|, mean unusual move",
+    "value": 0.007415870029302287,
+    "passed": true
+  },
+  "counts": {
+    "case days": 901,
+    "cases": 3384,
+    "active bars": 4971
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 (or its sign disagrees), which is inconclusive.",
+  "reading": "Cases are short-side forecast rises of at least 2 points from the lowest level since the last bet on every bar (1-bar grid), the coin's mean is its mean next-bar return over all its windows, the halves split the cases sorted by |forecast| at n//2 (shallower first, odd case to the deeper half), and the situation check uses r1>0 and r5<0 from closes (profile not recomputed)."
+}
