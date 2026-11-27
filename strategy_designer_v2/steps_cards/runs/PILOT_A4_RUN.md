@@ -93,3 +93,18 @@ default name and debug keys (its checks passed; no other file uses the old name,
 - Not yet seen on real data: a repair skipped by B12, a common record and a portfolio update called by `run_idea`, the
   direction check on the check half. A seeded run (a known candidate's plan and verdict, no model call) can show them
   at no model cost.
+
+## The three pieces the pilot never reached (the seeded run, `SEEDED_A4_RUN.md`, 2026-11-27 night)
+One strong and one weak known strategy through `run_idea` in data use 2, no model call (branch `seeded-a4`):
+- **The direction check:** seen. The strong strategy confirmed (t +3.48, 1,746 cases); "agrees: main measure +0.001046
+  on the check half (2022 onward) against +0.001227 on every window".
+- **Steps 9 and 10:** seen, in the card's order, no unseen test: the common record on 25 coins (458 coin-windows,
+  confirmed, profitable enough), then `update.py`. The first call of step 9 **failed** (the join's defect in
+  `common_record.backtest`, fixed since on the working branch: db0ebd2c132, then A12's rewrite); called again with the
+  fix, it ran.
+- **B12:** seen. The weak strategy, confirmed (t +5.20) and failing 3 of step 6's measures: 7.d "not run: 3 of step 6's
+  measures failed, at most 2", no model call.
+- Not seen: 7.d really called on a close strategy; a version built from a truly new candidate; a direction check that
+  disagrees.
+- Also learned: of 12 strategies confirmed in their own runs, 7 were not confirmed on this run's 8 drawn coins (4
+  unclear, 3 no effect): a confirmation depends on the coins it was found on.
