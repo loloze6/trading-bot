@@ -4,6 +4,8 @@
 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues_1d: inconclusive (fit: exact) [main: 0.0136135; t of the mean, cases of one day taken together 1.51044; cases 310, distinct days 227]
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: inconclusive (fit: exact) [main: 0.0121011; t of the mean, cases summed per day 1.21138; independent case-days 150, cases 423]
 067-01.b1.g1.b1.d1.g1_agitated-chop-slide-continues_1d: inconclusive (fit: exact) [main: 0.00388165; t of the mean, cases of one day summed 0.213153; distinct case days 70, cases 136]
+067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues_1d: inconclusive (fit: adapted) [main: 0.00897604; t of the mean, cases of one day taken together 1.17572; cases 705, distinct days 422]
+067-01.b1.g1.b1.d1.g3_chop-slide-twenty-day-continuation_1d: inconclusive (fit: adapted) [main: 0.00751602; t of the mean, cases summed per day 0.444616; cases 571, distinct days 376]
 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: confirmed (fit: adapted) [main: 0.0181959; t of the mean, cases summed per day 2.40841; distinct days with cases 425, cases 636]
 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: inconclusive (fit: adapted) [main: 0.00751602; t of the mean, same-day cases pooled 0.445208; independent case-days 376, cases 571, large cases 113, smaller cases 458]
 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue_1d: mismatch: the test does not match its plan (agreement 0.52) (fit: adapted)
@@ -13,4 +15,5 @@
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.00165791; ordinary OLS slope t 1.09368; independent grid cases with a forecast below 0 215]
 067-01.b1_choppy-weak-month-keeps-falling_1d: confirmed (fit: exact) [main: 0.0112626; day-clustered t 2.07863; cases 1024, distinct days 624, grid bars with forecast < 0 633]
 067-01_choppy-strong-month-rise-continues_1d: inconclusive (fit: adapted) [main: 0.00071782; OLS slope t 0.858863; cells 587]
+067-02.b1_choppy-plain-month-fall-continues_1d: inconclusive (fit: adapted) [main: -0.0120588; t of the mean, cases of one day taken together -1.5538; case-days 211, cells 633]
 067-02_choppy-weak-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.0155944; weighted t, cases of one day summed 1.57148; independent days with cases 211, cases 633]

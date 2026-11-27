@@ -4,6 +4,8 @@
 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues_1d: no ideas: The theme's effect is not in the data. The slide's continuation in an agitated choppy market rests on one window (w16; without it +0.42 %, t 0.20, F2), reverses in other windows and years (F3), and is not graded by the depth of the fall in any cut (F4, F5). No narrower case of the situation gives a clear answer, and no more data is available to test the idea unchanged (F1).
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: 2 ideas (2 explorations)
 067-01.b1.g1.b1.d1.g1_agitated-chop-slide-continues_1d: 1 ideas (3 explorations)
+067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues_1d: 2 ideas (2 explorations)
+067-01.b1.g1.b1.d1.g3_chop-slide-twenty-day-continuation_1d: 1 ideas (2 explorations)
 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: 2 ideas (2 explorations)
 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)

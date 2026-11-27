@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move per case, short direction",
+    "value": 0.008976035893513003,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.1757153670362952
+    },
+    "threshold": "confirm t >= 2 (day-clustered) with larger-minus-smaller half > 0; reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "larger-half minus smaller-half mean unusual move (|forecast| median split)",
+    "value": -0.018058882274785634,
+    "passed": false
+  },
+  "counts": {
+    "cases": 705,
+    "distinct days": 422
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first short bet (forecast falling >= 2 points from its lowest short level since the last bet) in each 10-bar grid cell of a window; the median split puts the top floor(n/2) cases by |forecast| (ties ordered by time and coin) in the larger half; the situation uses prices where the lookback fits in the window, else the recorded regime."
+}

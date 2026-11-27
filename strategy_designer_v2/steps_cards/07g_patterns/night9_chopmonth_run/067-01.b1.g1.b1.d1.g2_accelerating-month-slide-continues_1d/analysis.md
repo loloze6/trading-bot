@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues_1d
+idea tested: 067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4298 USD
+---
+## Findings
+- **F1:** In the choppy profile, the coin's past 30-day return grades its unusual move over the next 10 days. On the 10-day grid, the quintiles of the 30-day return run from -12.8 % (t -4.34, 32 cases on 18 days, mean 30-day return -25 %) through -4.4 %, +2.9 % and +0.4 % to +12.3 % (t 1.27, 32 cases on 18 days). The Spearman rho is 0.378 (p < 0.0001, n 157), against 0.037 (p 0.32, n 737) outside the choppy profile.
+- **F2:** The same grading shows over 5 days in the choppy profile. The quintiles run from -7.5 % (t -2.80, 62 cases on 38 days) to +8.4 % (t 1.28), with rho 0.274 (p < 0.0001, n 306).
+- **F3:** The continuation is reliable after falls and not after rises. With the 10-day move taken in the direction of the 30-day return's sign, 30-day losers give +5.3 % (t 1.97, 83 cases on 39 days) and 30-day winners +5.2 % (t 1.06, 74 cases on 32 days). Over 5 days, losers give +4.2 % (t 2.84, 160 cases on 81 days) and winners +3.3 % (t 1.10).
+- **F4:** The deepest-fall quintile in the choppy profile is negative in each of the four years seen: 2018 -12.6 %, 2019 -3.4 %, 2020 -16.6 % and 2021 -15.2 % over 10 days. Its windows are negative in 8 of the 10 that have cases.
+- **F5:** The tested situation does not carry the effect. Among 30-day losers in the choppy profile, the 5-day return quintiles give 10-day unusual moves of -4.0 %, -2.0 %, -7.7 %, -3.7 % and -3.7 %, with no grading (about 20 cases each). Step 5's larger-minus-smaller half is -1.8 %. The 30-day fall itself does the grading (F1), not the last 5 days on top of it.
+- **F6:** Scaling the 30-day return by the coin's 30-day swing keeps the grading. The two lowest quintiles give -9.3 % (t -2.66, 32 cases on 20 days) and -7.4 % (t -2.21, 31 cases on 19 days) over 10 days, and the top quintile +12.3 % (t 1.24).
+- **F7:** The fall continuation is stronger when the coin is swinging more. With the choppy 10-day cases split at the median 30-day swing, the wilder half gives -12.4 % in the deepest-fall quintile (t -4.02, 27 cases on 15 days) and -6.3 % in the next (t -1.99, 16 cases on 13 days). The calmer half has only 5 cases in the deepest quintile (-15.0 %) and -2.5 % (t -0.62) in the next. The choppy agitated short cell of the profile map is empty.
+- **F8:** The deepest-fall quintile's unusual move of -12.8 % per case over 10 days (F1) is about 58 times the 0.22 % a trade costs. Other angles I checked are not strong enough to count after this many comparisons: weekday (Monday -0.36 % t -2.59, Friday +0.39 % t 2.94 on next-day moves), the close's position in the day's range, the day's range, and moves after large one-day shocks.
+
+## Ideas
+- `067-01.b1.g1.b1.d1.g2.g1_choppy-month-slide-continues` (from F1, F3, F4, F5, F8): In a choppy market, the larger a coin's fall over the past 30 days, the more it keeps falling, beyond its usual drift, over the next 10 days.
+- `067-01.b1.g1.b1.d1.g2.g2_choppy-agitated-slide-continues` (from F1, F3, F7, F8): In a choppy, agitated market, the larger a coin's fall over the past 30 days, the more it keeps falling over the next 10 days.
+- `067-01.b1.g1.b1.d1.g2.g3_swing-scaled-month-slide-continues` (from F6, F1, F3): In a choppy market, the larger a coin's 30-day fall measured against its own daily swing over those 30 days, the more it keeps falling over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
