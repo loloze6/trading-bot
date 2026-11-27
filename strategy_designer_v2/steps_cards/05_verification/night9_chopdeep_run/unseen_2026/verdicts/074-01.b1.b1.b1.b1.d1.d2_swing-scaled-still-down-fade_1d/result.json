@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day move in the short direction on case bars",
+    "value": -0.002875819805523927,
+    "statistic": {
+      "name": "t of the mean, cases of one day grouped",
+      "value": -0.8208786116531638
+    },
+    "threshold": "confirm above 0 with t >= 2 (and check above 0); reject below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half of |forecast|, mean unusual move",
+    "value": 0.0032922468895551053,
+    "passed": true
+  },
+  "counts": {
+    "case days": 91,
+    "cases": 344,
+    "active bars": 519
+  },
+  "decided_by": "Only 91 case days, below the plan's minimum of 100 case days.",
+  "reading": "Cases are short-side forecast rises of at least 2 points from the lowest level since the last bet on every bar (1-bar grid), the coin's mean is its mean next-bar return over all its windows, the halves split the cases sorted by |forecast| at n//2 (shallower first, odd case to the deeper half), and the situation check uses r1>0 and r5<0 from closes (profile not recomputed)."
+}

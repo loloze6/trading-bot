@@ -1,0 +1,50 @@
+{
+  "line": "7.d",
+  "backtest": "074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45905989999999997,
+  "findings": {
+    "F1": "The check failed on Calmar alone (0.706 against 0.75), and the loss of that ratio comes from a few days. The book's deepest fall is -2.49 %, from w16 to w18 over 178 days. Its 10 worst days sum to -9.1 %, against -13.1 % for all its losing days and +11.9 % in total. The worst single cases are new coins in w17 and w18: ADA -17.4 %, TRX -13.9 % and DOGE -12.3 %, all of them first or later up days after a deep 20-day fall.",
+    "F2": "The fade lives on the first up day after a down day. When the day before the signal closed down, the short-side unusual next-day move is +2.30 % (t 3.20, 73 cases, 9.6 % of cases losing more than 5 %). On second or later up days it is +0.82 % (t 0.92, 34 cases). A second up day in a row is worst: -1.43 % over 16 cases, with 31 % losing more than 5 %. The condition alone does not carry the move: first up days in the falling agitated profile without the signal give -0.18 % (t -0.78, 677 cases), so it is no effect of its own. It fits the theory, because a sudden push up from a falling day is the covering burst that gets given back.",
+    "F3": "Keeping only those first up days makes the approximate book's falls shallower. Its deepest fall goes from -2.38 % to -1.49 %, and its Calmar from 1.40 to 1.92, while keeping 73 of 107 cases and a total of +11.9 % against +13.9 %.",
+    "F4": "The fade is graded by the previous day's fall. By quartiles of that fall, from deepest to smallest, the signal's unusual move is +3.20 %, +1.59 %, +1.58 % and +0.66 % (26 to 27 cases each). It is also graded by the 5 days of fall before the up day: +3.09 %, +2.40 %, -0.19 % and +1.48 %. That prior fall without the signal gives a short-side move of -1.30 % (t -2.80, 296 cases), so the coin rises after such a fall. The condition is therefore not the fade's effect; it only sharpens the signal, to +3.52 % (t 2.74, 37 cases).",
+    "F5": "The width grades the fade as the idea says. By quartiles of range over the 20-day mean, the next-day unusual move is +0.68 %, +1.07 %, +2.08 % and +2.23 %. The nearness of the close to the high does not grade it at the top. Closes in the top quartile of location (0.91 to 1.0) give +0.51 % with 22 % of cases losing more than 5 %, and closes at 0.95 or above give +0.52 % (t 0.39, 19 cases). Closes below 0.95 give +2.11 % (t 3.37, 88 cases).",
+    "F6": "The size is not the problem. The total move per case is 5.1 times the 0.22 % cost of a trade. But the book is in a position only 3 % of coin-days, with a mean allocation of -0.54, so its yearly return is only +3.1 %. Any single deep loss therefore weighs heavily on Calmar."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, an up day that follows a down day, whose high-to-low range is wide against the coin's average daily range over the past 20 days and that closes near its high, is followed by a fall over the next day. The wider that day's range and the deeper the previous day's fall, the larger the next day's fall.",
+      "consequence": "A trader should fade only the first wide rally out of a down day in an agitated downtrend, sized up the harder the day before fell, and stay out of the second up day in a row.",
+      "name": "first-bounce fade after down day",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a falling, agitated market, an up day whose high-to-low range is wide against the coin's average daily range over the past 20 days and that closes near its high is followed by a fall over the next day. The more the coin fell over the 5 days before that up day, and the wider its range, the larger the next day's fall.",
+      "consequence": "A trader should size the one-day fade of a wide rally by how sharp the selloff into it was, since the deepest prior falls give the largest give-back.",
+      "name": "bounce after selloff fades",
+      "from": "F4, F5, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "074-01.b1.b1.b1.b1.d2.d1_first-bounce-fade-after-down-day",
+    "074-01.b1.b1.b1.b1.d2.d2_bounce-after-selloff-fades"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
