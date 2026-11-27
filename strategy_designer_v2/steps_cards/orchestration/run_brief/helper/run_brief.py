@@ -17,6 +17,7 @@ sys.path.insert(0, str(ORCH / "run_idea" / "helper"))
 sys.path.insert(0, str(STEPS / "common"))
 from run_idea import Journal, copy_into  # noqa: E402  (one journal for every orchestration function)
 from lib import with_header_field, write_atomic  # noqa: E402
+import coins  # noqa: E402  (the run's data use, common/coins.py and common/data_use.md)
 
 BRIEFS = STEPS / "01_brief" / "briefs"          # step 1's list of every brief: one number per theory
 LOOP = ORCH / "loop" / "helper" / "loop.py"
@@ -82,6 +83,26 @@ def write_ideas(run, brief, model=None):
     return ideas, (None if ideas else f"step 2 wrote no idea: {why.group(1) if why else ' '.join(out.split())[-300:]}")
 
 
+def start_data_use(run, version):
+    """A run started in the new data use (--data-use 2) gets its data_use.json once (common/data_use.md): its 8 research
+    coins (drawn by the run's name) and the research windows. Resumed, the file stays as written. Refused: a run that
+    has tested ideas in the old data use (its plans would be backtested on two kinds of data), or one whose file names
+    another version. Returns the run's data use (None: the old one)."""
+    du, p = coins.data_use(run), coins.data_use_file(run)
+    if version is None:
+        return du
+    if du is not None:
+        if du.get("version") != version:
+            sys.exit(f"{run}: the run is in data use {du.get('version')}, not {version}")
+        return du
+    if (ORCH / "run_idea" / run / "table.json").exists():
+        sys.exit(f"{run}: the run has tested ideas in the old data use; start a new run for data use {version}")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    du = coins.new_data_use(run)
+    write_atomic(p, json.dumps(du, indent=1) + "\n")
+    return du
+
+
 def main():
     a = argparse.ArgumentParser()
     a.add_argument("brief", type=Path, nargs="?", help="a brief file (step 1's format)")
@@ -91,6 +112,8 @@ def main():
     a.add_argument("--python", required=True)
     a.add_argument("--budget", type=float, help="the run's total USD, steps 1 and 2 included (optional; no limit otherwise)")
     a.add_argument("--model")
+    a.add_argument("--data-use", type=int, choices=[coins.DATA_USE_VERSION], help="2: the run in the new data use "
+                   "(common/data_use.md): every plan backtested on the run's 8 research coins and the research windows")
     args = a.parse_args()
     if not args.run.endswith("_run"):
         sys.exit("a run name ends in _run")
@@ -103,6 +126,9 @@ def main():
     if args.budget is not None and args.budget <= 0:
         sys.exit("a budget is a positive number of USD")
 
+    du = start_data_use(args.run, args.data_use)
+    if du:
+        print(f"{args.run}: data use {du['version']}: research coins {', '.join(du['research_coins'])}; windows {du['windows']}")
     brief = args.brief
     if brief is None:                                   # step 1: a theme or a source becomes a brief
         brief, why = write_brief(args.run, args.theme, args.source, args.model)

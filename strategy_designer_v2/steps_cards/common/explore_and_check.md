@@ -1,4 +1,5 @@
-What "exploring and checking on different years" is (the operator, 2026-11-24; topic 31). Read by step 7
+What "exploring and checking on different years" is (the operator, 2026-11-24; topic 31). Two versions: the folds
+(below, every run in the old data use) and the halves (the last section, a run in the new data use, `data_use.md`). Read by step 7
 (`07_common/helper/analyse.py`), step 5 (`05_verification/helper/make_verdict.py`) and the operator.
 
 **An idea is chosen on some years and checked on others.** Step 7 looks at a backtest's results on the exploration
@@ -35,3 +36,18 @@ from finding the effects the portfolio already holds (they are real in every yea
 
 **Why this cannot leak.** It removes data from step 7's view and adds a check on data step 5 already reads; no decision
 reads a bar after its close.
+
+## In the new data use (`data_use.md`; built 2026-11-26, `runs/BUILD_A4_RESEARCH.md`)
+A run started with `run_brief --data-use 2` backtests every plan on its 8 research coins over the 32 research windows
+(`04_backtest/windows/research_2016.json`, named `w1` to `w32` in that file's order); the record holds the run's
+`data_use.json`. The same rule, on halves in place of folds:
+- **The explore half: the windows before 2022** (`w1` to `w18`, 2016 to 2021). Step 7 explores only these; it is told
+  that the later windows (the check half) are kept for the check. It is not told the years.
+- **The check half: the windows from 2022** (`w19` to `w32`). Step 5 judges on every window, and a confirm must point
+  its way on the check half alone: the same direction check, its three outcomes and its "not judged" cases as above
+  (`result.json`'s `direction_check` names `half` in place of `folds`).
+- A coin left out of a window (`data_use.md`, section 3) is simply absent from it: the halves are window numbers, the
+  same for every coin.
+- Where it is decided: `common/lib.py` (`check_windows`, `exploration_windows`), from the record's `data_use.json`; the
+  split date is `common/coins.py`'s `CHECK_FROM`. A record without `data_use.json` (every run before this one, and any
+  run started without the flag) keeps the folds above, unchanged.

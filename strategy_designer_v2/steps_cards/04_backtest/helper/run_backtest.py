@@ -4,7 +4,9 @@ engine's record in the backtests folder.
   python run_backtest.py path/to/PLAN.md --python path/to/venv/bin/python
 Options: --out-root (default: ../backtests next to this folder), --force (rerun even when nothing the engine reads
 has changed), --windows FILE (a JSON list of windows run in place of the plan's folds: the same plan on other dates),
---coins "ADA, DOGE" (these coins in place of the plan's: the same plan on other coins, common/unseen_coins.md).
+--coins "ADA, DOGE" (these coins in place of the plan's: the same plan on other coins, common/unseen_coins.md),
+--data-use FILE (a run's data_use.json, common/data_use.md: the run's research coins on the research windows, in place
+of the plan's coins and folds; a coin is left out of a window by data_use.md's section 3, counted in run.md).
 
 What it does, in order:
   1. Reads the plan's header: coins, bar size, fold, outcome. A plan whose outcome is untestable or missing-components
@@ -39,6 +41,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 from lib import write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+import coins as coin_rules  # noqa: E402  (the coin groups and data rules, common/coins.py)
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
@@ -198,9 +201,10 @@ def parts(python, symbol, bar, folds, windows=None):
     return out
 
 
-def run_part(python, config_path, proto, before, cdir, pdir):
-    """Runs one call's windows into cdir (windows numbered after the coin's `before` earlier ones); the call's own
-    files go in pdir. Returns (the rows of the windows run, the windows not run)."""
+def run_part(python, config_path, proto, numbers, cdir, pdir):
+    """Runs one call's windows into cdir, window i named w<numbers[i]> (the coin's windows in order, those left out by
+    the data use skipped); the call's own files go in pdir. Returns (the rows of the windows run, the windows not
+    run)."""
     windows = proto["windows"]
     rows, failed, folders = [], [], None
     # One wrapper call for the part's windows: Python and the bot load once per call. Its record is used only when
@@ -210,7 +214,7 @@ def run_part(python, config_path, proto, before, cdir, pdir):
             rc, log, out = call_protocol(python, config_path, proto, windows, Path(tmp))
             folders = coin_runs(rc, out, windows)
             if folders:
-                for k, src in enumerate(folders, before + 1):
+                for k, src in zip(numbers, folders):
                     rows.append(keep_window(src, cdir / f"w{k}", k))
                 pdir.mkdir(parents=True, exist_ok=True)
                 keep_call(out, log, pdir)
@@ -218,7 +222,7 @@ def run_part(python, config_path, proto, before, cdir, pdir):
     # when the part's call failed (the wrapper stops at the first window that fails, so the later ones would be
     # lost) or two of its windows shared one run folder. The record is then exactly that of a run made
     # this way from the start.
-    for k, window in enumerate([] if folders else windows, before + 1):
+    for k, window in ([] if folders else zip(numbers, windows)):
         with tempfile.TemporaryDirectory() as tmp:
             rc, log, out = call_protocol(python, config_path, proto, [window], Path(tmp))
             runs = list((out / "results").glob("*/metrics.json")) if (out / "results").exists() else []
@@ -248,19 +252,28 @@ def main():
                    "in place of the plan's folds (a test on other dates, the same plan and config)")
     a.add_argument("--coins", help="coins (\"ADA, DOGE\") run in place of the plan's data-instruments (a test on other "
                    "coins, the same plan, config and folds)")
+    a.add_argument("--data-use", type=Path, help="a run's data_use.json (common/data_use.md): its research coins on its "
+                   "research windows, in place of the plan's coins and folds")
     args = a.parse_args()
+    du = json.loads(args.data_use.read_text(encoding="utf-8")) if args.data_use else None
 
     plan_path = args.plan.resolve()
     plan_id, text = plan_path.stem, plan_path.read_text()
     h = plan_header(text)
     bar, period = h["data-bar"], h["data-period"]
     instruments = args.coins or h["data-instruments"]   # other coins than the plan's: the record names them
-    m = re.fullmatch(r"folds? ([A-Z](?:, [A-Z])*)", period)   # "fold A", or "folds A, B, C, D"
-    if not m:
-        sys.exit(f"unreadable data-period: {period!r}")
-    folds = m.group(1).split(", ")
-    windows = None
-    if args.windows:   # other dates than the plan's folds: the record names the windows file in place of the folds
+    folds, windows = None, None
+    if du:   # the new data use: the run's coins and windows decide, whatever the plan names (common/data_use.md)
+        instruments = ", ".join(du["research_coins"])
+        windows_file = coin_rules.STEPS / du["windows"]
+        windows = json.loads(windows_file.read_text(encoding="utf-8"))
+        period = f"windows {windows_file.stem}, data use {du['version']}"
+    else:
+        m = re.fullmatch(r"folds? ([A-Z](?:, [A-Z])*)", period)   # "fold A", or "folds A, B, C, D"
+        if not m:
+            sys.exit(f"unreadable data-period: {period!r}")
+        folds = m.group(1).split(", ")
+    if args.windows and not du:   # other dates than the plan's folds: the record names the windows file in place of the folds
         windows = json.loads(args.windows.read_text(encoding="utf-8"))
         period = f"windows {args.windows.stem}"
     out_root = args.out_root.resolve()
@@ -291,17 +304,37 @@ def main():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
     shutil.copy(config_path, dest / "config.json")
+    if du:   # the record says which data use it was run in: steps 5 and 7 read their halves from it (common/lib.py)
+        write_atomic(dest / "data_use.json", json.dumps(du, indent=1) + "\n")
     report, summary, proto = [], [], None
     symbols = [f"{base}USD" for base in coins(instruments)]
     # The calls at the same time, as many as the machine has cores: one call per coin and fold (change C, 2026-11-20:
     # 6 coins on 4 cores ran in two waves when a call held a whole coin). Each call is a separate process with its own
     # folders. The record is written in the coins' and windows' order, whichever call finishes first.
+    # The new data use: a coin is left out of a window by data_use.md's section 3 (its first 90 days, a hole of more
+    # than one day), decided from its daily file's dates before the engine runs; the windows kept keep their numbers.
+    kept = {s: list(range(1, len(windows) + 1)) for s in symbols} if windows is not None else {}
+    left = {s: [] for s in symbols}
+    for symbol, base in zip(symbols, coins(instruments)):
+        if du:
+            days = coin_rules.dates(base)
+            why = [coin_rules.left_out(base, w["test"]["start"], w["test"]["end"], days=days) for w in windows]
+            kept[symbol] = [k for k, y in enumerate(why, 1) if y is None]
+            left[symbol] = [(k, y) for k, y in enumerate(why, 1) if y is not None]
     with ThreadPoolExecutor(max_workers=max(1, min(len(symbols), cores()))) as pool:
         coin_parts = list(pool.map(lambda sym: parts(args.python, sym, bar, folds, windows), symbols))
-    calls = [(symbol, name, proto, before) for symbol, ps in zip(symbols, coin_parts) for name, proto, before in ps]
+    calls = []
+    for symbol, ps in zip(symbols, coin_parts):
+        for name, proto, before in ps:
+            numbers = list(range(before + 1, before + 1 + len(proto["windows"])))
+            if du:
+                numbers = kept[symbol]
+                proto = dict(proto, windows=[windows[k - 1] for k in numbers])
+            if numbers:
+                calls.append((symbol, name, proto, numbers))
     with ThreadPoolExecutor(max_workers=max(1, min(len(calls), cores()))) as pool:
-        runs = [pool.submit(run_part, args.python, config_path, proto, before, dest / symbol, dest / symbol / name)
-                for symbol, name, proto, before in calls]
+        runs = [pool.submit(run_part, args.python, config_path, proto, numbers, dest / symbol, dest / symbol / name)
+                for symbol, name, proto, numbers in calls]
         done = [r.result() for r in runs]
     results = []
     for symbol, ps in zip(symbols, coin_parts):
@@ -311,23 +344,31 @@ def main():
     for symbol, (proto, rows, failed) in zip(symbols, results):
         windows = proto["windows"]
         part = f"- {symbol}: {len(rows)} of {len(windows)} windows run."
+        if left[symbol]:
+            why = {}
+            for k, y in left[symbol]:
+                why.setdefault(y, []).append(f"w{k}")
+            part += f" {len(left[symbol])} left out by the data use (common/data_use.md, section 3): " + "; ".join(
+                f"{', '.join(ws)} ({y})" for y, ws in why.items()) + "."
         if rows:
             part += ("\n\n| window | trades | forecast vs next return (all bars) | net return % |\n|---|---|---|---|\n"
                      + "".join(f"| w{k} | {t} | {fc} | {nr} |\n" for k, t, fc, nr in rows))
         for k, reason, tail in failed:
             part += f"\n- w{k} not run: {reason}.\n\n```\n{tail}\n```\n"
         report.append(part)
+        lo = f" ({len(left[symbol])} left out by the data use)" if left[symbol] else ""
         if rows:
-            summary.append(f"{symbol} {len(rows)}/{len(windows)}" + (f" ({len(failed)} not run: {failed[0][1]})" if failed else ""))
+            summary.append(f"{symbol} {len(rows)}/{len(windows)}" + (f" ({len(failed)} not run: {failed[0][1]})" if failed else "") + lo)
         else:
-            summary.append(f"{symbol} not run ({failed[0][1] if failed else 'no window'})")
+            summary.append(f"{symbol} not run ({failed[0][1] if failed else 'no window'})" + lo)
     venue = proto["venue"]["label"] if proto else ""
     write_atomic(dest / "run.md", f"# Backtest of {plan_id}\n\n"
                  f"- Plan: `{os.path.relpath(plan_path, dest)}`\n- Config: `config.json` (a copy of the plan's config)\n"
                  f"- Data: {instruments} as {', '.join(f'{b}USD' for b in coins(instruments))}; {bar} bars; {period}\n"
                  f"- Venue: {venue}\n- Engine: trading-bot/backtest/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window\n\n"
                  + "\n".join(report) + "\n")
-    ran = any(" not run" not in s for s in summary)
+    # "ran" when a coin ran at least one window (a coin with a window not run, a "(1 not run: ...)" in its summary, still ran)
+    ran = any(rows for _, rows, _ in results)
     index_line(index_path, plan_id, f"{plan_id}: {'ran' if ran else 'not run'}: {'; '.join(summary)} [{bar}, {period}]")
     print(f"{plan_id}: {'; '.join(summary)}")
 

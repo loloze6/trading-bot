@@ -41,3 +41,20 @@ def test_step_1_answers_read_by_write_brief():
     out = "already indexed: 033_swing-scaled-fall-next-day-rebound\ncost: 0.06 USD, attempts: 1\n"
     assert rb.ALREADY_INDEXED.search(out).group(1) == "033_swing-scaled-fall-next-day-rebound"
     assert not rb.BRIEF_LINE.search(out) and not rb.NOT_RESEARCHABLE.search(out)
+
+
+def test_a_run_in_the_new_data_use_gets_its_file_once(tmp_path, monkeypatch):
+    monkeypatch.setattr(rb.coins, "data_use_file", lambda run: tmp_path / "loop" / run / "data_use.json")
+    monkeypatch.setattr(rb.coins, "data_use", lambda run: json.loads((tmp_path / "loop" / run / "data_use.json").read_text())
+                        if (tmp_path / "loop" / run / "data_use.json").exists() else None)
+    monkeypatch.setattr(rb, "ORCH", tmp_path)
+    assert rb.start_data_use("a_run", None) is None                  # without the flag: nothing written, the old data use
+    assert not (tmp_path / "loop" / "a_run").exists()
+    du = rb.start_data_use("a_run", 2)
+    assert json.loads((tmp_path / "loop" / "a_run" / "data_use.json").read_text()) == du == rb.coins.new_data_use("a_run")
+    assert rb.start_data_use("a_run", 2) == du and rb.start_data_use("a_run", None) == du   # resumed: kept as written
+    (tmp_path / "run_idea" / "b_run").mkdir(parents=True)
+    (tmp_path / "run_idea" / "b_run" / "table.json").write_text("[]")
+    import pytest
+    with pytest.raises(SystemExit):                                  # ideas tested in the old data use: refused
+        rb.start_data_use("b_run", 2)

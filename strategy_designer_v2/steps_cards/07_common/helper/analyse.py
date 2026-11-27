@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, EXPLORATION_FOLDS, CHECK_FOLDS, windows_of  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -103,9 +103,10 @@ def data_summary(record, only=None):
 
 
 def exploration_windows(plan_text, record):
-    """The windows step 7 explores (common/explore_and_check.md): the exploration folds' windows; every window when the
-    record did not run on its plan's folds or the plan has no exploration fold."""
-    return windows_of(plan_text, EXPLORATION_FOLDS, record) or None
+    """The windows step 7 explores (common/explore_and_check.md): the exploration folds' windows, or in the new data use
+    the explore half's; every window when the record did not run on its plan's folds or the plan has no exploration
+    fold."""
+    return explore_view(plan_text, record)[1] or None
 
 
 def run_explore(python, record, code, only=None):
@@ -319,9 +320,14 @@ def main():
     idea_file = args.idea or next(iter(sorted(HERE.parents[1].glob(f"**/{h.get('idea', '')}.md"))), None)
     idea_text = idea_fields(idea_file.read_text()) if idea_file and idea_file.exists() else "(not found)"
     only = exploration_windows(plan_text, record)
-    explore_note = (f"Your explorations see folds {', '.join(EXPLORATION_FOLDS)} of this backtest only (windows {only[0]} to {only[-1]}); "
-                    f"folds {', '.join(CHECK_FOLDS)} are kept to check the ideas you propose (common/explore_and_check.md): "
-                    "step 5 judges an idea on every fold and requires it to point the same way on those it does not show you."
+    seen = explore_view(plan_text, record)[0]
+    explore_note = ((f"Your explorations see {seen} of this backtest only (windows {only[0]} to {only[-1]}); the later "
+                     "windows (the check half) are kept to check the ideas you propose (common/explore_and_check.md): "
+                     "step 5 judges an idea on every window and requires it to point the same way on those it does not show you.")
+                    if only and record_data_use(record) else
+                    (f"Your explorations see {seen} of this backtest only (windows {only[0]} to {only[-1]}); "
+                     f"folds {', '.join(CHECK_FOLDS)} are kept to check the ideas you propose (common/explore_and_check.md): "
+                     "step 5 judges an idea on every fold and requires it to point the same way on those it does not show you.")
                     if only else "Your explorations see every window of this backtest.")
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"

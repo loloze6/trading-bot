@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted next-day return of short cases",
+    "value": -0.0015184288343451286,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": -1.2619090620993347
+    },
+    "threshold": "confirm: mean < 0 with t <= -2 (and check passes); reject: mean > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean adj. return, top half minus bottom half of |flatness|",
+    "value": -0.002704151061442148,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3689,
+    "days with cases": 1863
+  },
+  "decided_by": "The t of the mean drift-adjusted next-day return lies between -2 and +2.",
+  "reading": "Every bar with forecast < 0 is a case (the plan's own case definition), the drift is the coin's mean next-bar return over all its windows, the day-clustered t sums deviations per UTC day with a D/(D-1) correction, the halves are the n//2 cases with largest and smallest |post_pipeline_value| (middle case dropped if odd), and the plan's 'fewer than 200 cases' is treated as the minimum count giving 'not observable'."
+}

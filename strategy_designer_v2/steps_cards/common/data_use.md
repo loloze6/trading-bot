@@ -105,7 +105,8 @@ it, each branch holds only its own candidates). No person builds a version; ever
 1. The 20 coins' daily files (session `data-coins`, 2026-11-26).
 2. `common/coins.md`: the categories, their source, the final draw and its seed (written 2026-11-26).
 3. Step 4's coins and windows: the run's draw, the 2016-2026 windows, the explore and check halves (`run_brief`,
-   `run_backtest`, `explore_and_check.md`), with a rerun proof on a fixed plan.
+   `run_backtest`, `explore_and_check.md`), with a rerun proof on a fixed plan. **Built 2026-11-26** for a run started
+   with `run_brief --data-use 2` (branch `build-a4-research`, `runs/BUILD_A4_RESEARCH.md`); a run without it is unchanged.
 4. Step 9: a candidate's common record (from `unseen_test --coins`), and its call by `run_idea`.
 5. Steps 10 to 12: `combine.py` started by the candidate list's change; step 11's bar; step 12 once.
 6. The 120 current candidates rerun for step 9 (engine time only); the next portfolio version.

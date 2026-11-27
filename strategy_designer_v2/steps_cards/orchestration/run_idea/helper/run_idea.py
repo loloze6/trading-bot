@@ -15,6 +15,7 @@ HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
 from lib import header_fields, write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402  (shared helpers, common/lib.py)
+import coins  # noqa: E402  (the run's data use, common/coins.py and common/data_use.md)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 sys.path.insert(0, str(STEPS / "04_backtest" / "helper"))
@@ -238,10 +239,12 @@ def main():
         print(f"{rid}: step 3: {outcome}; the run of this idea stops here")
         return
 
-    # Step 4: the backtest (it skips a record it already holds)
+    # Step 4: the backtest (it skips a record it already holds). The one place that decides a run's backtest data: a
+    # run in the new data use (its data_use.json, common/data_use.md) runs every plan on its research coins and windows
     record = f["backtests"] / rid
+    du = ["--data-use", coins.data_use_file(args.run)] if coins.data_use(args.run) else []
     out, _ = j.step("step4_backtest", [STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python,
-                                       "--out-root", f["backtests"]], [record / "run.md"], done=(record / "run.md").exists(), required=True)
+                                       "--out-root", f["backtests"]] + du, [record / "run.md"], done=(record / "run.md").exists(), required=True)
     if not (record / "run.md").exists():
         sys.exit(f"step 4 wrote no record for {rid}:\n{out[-800:]}")
 

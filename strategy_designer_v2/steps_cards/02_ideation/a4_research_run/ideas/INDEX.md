@@ -1,0 +1,1 @@
+060-01_falling-agitated-high-close-fade: In falling agitated markets, the nearer a day's close sits to its high, the larger the coin's fall over the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: falling agitated]
