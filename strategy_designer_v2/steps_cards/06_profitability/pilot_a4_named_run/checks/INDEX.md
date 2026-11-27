@@ -4,3 +4,4 @@
 086-02.c1_first-dip-depth-continues_1d: not profitable enough [Sharpe -0.1549; Sharpe minus holding's Sharpe -0.3789; Calmar -0.04868]
 086-02.c2_deep-down-day-continues_1d: not profitable enough [Sharpe -0.07709; Sharpe minus holding's Sharpe -0.301; Calmar -0.06628]
 086-02_first-down-day-run-size_1d: not profitable enough [Sharpe -0.6754; Sharpe minus holding's Sharpe -0.8993; Calmar -0.1335]
+087-01_low-close-starts-unwinding_1d: not profitable enough [Sharpe 0.1899; Sharpe minus holding's Sharpe -0.03408; Calmar 0.05452]

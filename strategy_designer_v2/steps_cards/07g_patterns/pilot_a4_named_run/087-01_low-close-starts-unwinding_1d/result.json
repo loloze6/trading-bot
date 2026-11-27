@@ -1,0 +1,20 @@
+{
+  "line": "7.g",
+  "backtest": "087-01_low-close-starts-unwinding_1d",
+  "step5": "no effect",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.343812,
+  "findings": {
+    "F1": "Across all in-profile 3-day grid cases (202 cases on BCH, DOGE and ZEC, explore windows w7 to w18), nearness of the close to the day's low does not grade the following 3-day short move: Spearman rho is 0.061 (p 0.39), and the quintiles are not ordered (the bottom fifth of closes from the high averages -2.13 %, t -0.89; the top fifth +2.44 %, t 1.46; the middle fifth +3.59 %, t 1.78).",
+    "F2": "Over other horizons the in-profile short move cannot be told from zero either: +0.23 % over 1 day (t 0.68, 624 cases), +0.41 % over 5 days (t 0.26, 128 cases) and +1.33 % over 10 days (t 0.49, 65 cases); the close location has no rank link at any of them (rho -0.058, 0.078 and 0.075, all p above 0.14).",
+    "F3": "None of the other situations checked on the 3-day cases ranks the short move. Spearman p-values: the 1-day return 0.54, the 5-day return 0.60, the 20-day return 0.71, the day's range relative to its 20-day mean 0.37, relative volume 0.91, distance from the 20-day high 0.92, the range in percent 0.54. The single standout quintile (the flat 5-day-return bin, +4.44 %, t 3.19, 38 cases) sits between neutral bins and is one of about 40 bins tested.",
+    "F4": "The one rank link under p 0.05 is weak and isolated. A longer run of up days goes with a larger next-day decline (rho 0.101, p 0.012, 624 one-day cases), but it reverses sign at 5 days (rho -0.090, p 0.31) and at 10 days (rho -0.036, p 0.78), and it is one of about 16 rank tests run, so it does not stand out from chance.",
+    "F5": "Neither the weekday nor the coin carries a reliable effect. Wednesday shows +2.62 % with t 2.35 on 30 cases, but it is one of 7 weekdays, next to Thursday at -2.76 % (t -0.90). By coin, ZEC is +1.59 % (t 1.26, 115 cases), BCH -0.41 % (t -0.24) and DOGE -0.96 % (t -0.19).",
+    "F6": "The book's result rests on very few trades and comes mostly from not holding. It has 109 short trades with a median net result of -2.28 % and a mean of -1.14 % (std 11.5 %). Its daily return averages +0.014 % (2,416 coin-days, 75 % of them at exactly 0). By coin it is ZEC +0.028 % a day, BCH -0.0045 % and DOGE -0.015 %, consistent with an unusual move of +0.32 % (t 0.46) that does not cover a 0.37 % trade cost."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "Over the close location, recent returns, range, volume, drawdown, up-day runs, weekday, coin and window, no pattern in rising agitated markets on the short side stands out from chance given the number of angles tested (the best is p 0.012 among about 16 rank tests, and it reverses at longer horizons), so no idea is supported."
+}

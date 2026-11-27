@@ -4,3 +4,4 @@
 086-02.c1_first-dip-depth-continues_1d: 2 ideas (2 explorations)
 086-02.c2_deep-down-day-continues_1d: 1 ideas (2 explorations)
 086-02_first-down-day-run-size_1d: 2 ideas (2 explorations)
+087-01_low-close-starts-unwinding_1d: 2 ideas (3 explorations)

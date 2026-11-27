@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move of short cases (drift removed, sign flipped)",
+    "value": 0.003189776343107789,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 0.46085035202850855
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 case-days and check passes; reject: mean < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger |forecast| half minus smaller half",
+    "value": 0.020226515929106223,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 240,
+    "cases": 331
+  },
+  "decided_by": "The t lies between -2 and 2, meeting neither the confirm nor the reject rule. No effect (common/verdicts.md): t in the idea's direction +0.461 (below 1), 240 cases (30 needed).",
+  "reading": "Situation checked as close location from the high (raw component, or recomputed from prices where not recorded) >= 0.8 with a short forecast, the profile being code-added and not rebuilt; a case is the first short bet (rise of |forecast| by >= 2 from its low since the last bet) in each 3-bar grid cell of a window with a full 3-bar return in it; drift is the coin's mean non-overlapping 3-bar return over all its windows; t is clustered by signal day; the median split puts |forecast| > median in the larger half.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.461 (below 1), 240 cases (30 needed)",
+    "t_in_idea_direction": 0.46085035202850855,
+    "cases": 240
+  }
+}

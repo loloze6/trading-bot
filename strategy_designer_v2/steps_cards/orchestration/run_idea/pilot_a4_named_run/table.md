@@ -10,20 +10,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 041-01.b1_rising-agitated-rise-continues | 041-01_agitated-scaled-rise-next-day-continues | plan | inconclusive (+1.86) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 041-01.b1.b1_rise-continuation-more-coins; 7.g: no ideas: Inside the rising agitated profile, none of the angles examined shows a graded effect that stands out from chance on the short side. The angles were the day's scaled move, multi-day stretch, close location, range, wicks, volume, distance to recent highs, weekday and the book's own days. The largest t is 2.26 among about 50 tests, its sign is wrong for a short, and the profile's negative drift cannot be told from 0 (ZEC t -1.39). | 1.01 | 8.3 |
 | 086-02.c1_first-dip-depth-continues | 086-02_first-down-day-run-size | plan | no effect (-0.56) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-02.c1.c1_first-dip-falls-ten-days, 086-02.c1.c2_delayed-first-dip-continuation; 7.g: no ideas: After many angles, no pattern in rising agitated markets on the short side survives a change of sampling grid or shows a graded order: the down-run continuation (F4) and the low-close result (F6) vanish on other grid offsets. The brief's effect of a first dip after an up run continuing lower, graded by the run or by the dip, is not in these bars (F1–F3). | 1.03 | 8.7 |
 | 086-02.c2_deep-down-day-continues | 086-02_first-down-day-run-size | plan | no effect (-0.10) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-02.c2.c1_large-run-first-dip-falls; 7.g: 086-02.c2.g2_deep-down-day-five-days | 1.01 | 8.7 |
+| 087-01_low-close-starts-unwinding | - | plan | no effect (+0.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 087-01.c1_shallow-low-close-unwinds, 087-01.c2_narrow-low-close-continues; 7.g: no ideas: Over the close location, recent returns, range, volume, drawdown, up-day runs, weekday, coin and window, no pattern in rising agitated markets on the short side stands out from chance given the number of angles tested (the best is p 0.012 among about 16 rank tests, and it reverses at longer horizons), so no idea is supported. | 1.17 | 9.2 |
 
 ## Consumption
-6 ideas, 6.98 USD, 52.3 minutes in all.
+7 ideas, 8.15 USD, 61.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.49 | 4.1 |
-| step4_backtest | 0.00 | 30.9 |
-| step5_verdict | 1.13 | 4.5 |
+| step3_plan | 1.58 | 4.7 |
+| step4_backtest | 0.00 | 36.1 |
+| step5_verdict | 1.31 | 5.2 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.g | 1.89 | 5.2 |
+| step7_7.g | 2.23 | 6.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 0.43 | 1.2 |
 | step7_7.d | 0.00 | 0.0 |
-| step7_7.c | 2.03 | 6.1 |
+| step7_7.c | 2.59 | 7.8 |

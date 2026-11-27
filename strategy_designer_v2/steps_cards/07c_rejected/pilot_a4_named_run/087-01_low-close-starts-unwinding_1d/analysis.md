@@ -1,0 +1,24 @@
+---
+line: 7.c no effect
+backtest: 087-01_low-close-starts-unwinding_1d
+idea tested: 087-01_low-close-starts-unwinding
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5585 USD
+---
+## Findings
+- **F1:** The effect is near zero at the plan's measure, and the cost exceeds what a short captures. The verdict's short cases gained an unusual +0.32 % over 3 days (t 0.46, 240 case-days, strength 0.031). Their total move was −0.07 % against a 0.37 % trade cost, because the coins' normal drift ran −0.39 % against the short side.
+- **F2:** In this explore half, on the plain 3-day grid, in-profile low closes (bottom fifth of the range) did fall more than drift. Their short-signed unusual move was +4.34 % (t 2.10, 30 cases), but it did not show on the next day: −0.31 % at 1 day (t −0.33, 87 cases). The move built over 2 to 5 days: +2.20 % at 2 days (t 1.75, 45), +4.13 % at 5 days (t 1.88, 13).
+- **F3:** Close location does not grade the move inside the profile. Over all in-profile days at 3 days, the Spearman correlation of close location with the short-signed unusual move is 0.068 (p 0.35). By fifth of the range at 3 days, the move does not rise steadily toward the low: top −2.98 %, q2 +1.56 %, mid +2.07 %, q4 −1.47 %, low +4.34 %.
+- **F4:** Among in-profile low closes, a milder fall on the day itself is followed by a larger 3-day decline, the reverse of a capitulation-continues reading. Spearman of the day's own return with the short-signed unusual move is 0.49 (p 0.006). By tercile of the day's return, the short-signed move is +8.35 % (t 4.69, 10 cases) after the mildest falls and +1.18 % (t 0.58, 10) after the deepest falls.
+- **F5:** Among in-profile low closes, a narrower day carries the decline: the narrowest tercile of the range as a share of price gave +9.46 % over 3 days (t 4.48, 10 cases), against +1.52 % (t 0.30) for the mid tercile and +2.05 % (t 0.84) for the widest. Days that opened near their high, i.e. a full-range down body, gave only +1.10 % (t 0.33, 17), against +8.87 % (7) and +8.24 % (6) for opens mid-range or near the low.
+- **F6:** The in-profile continuation rests mostly on one coin and on few years. ZEC low closes gave +6.35 % over 3 days (t 3.92, 19 cases), against BCH +1.86 % (t 0.35, 10). 2021 holds 21 of the 30 cases at +2.36 % (t 0.90).
+- **F7:** Outside the rising agitated profile, low closes go the other way, toward a rebound. The short-signed unusual move was −0.68 % at 1 day (t −2.25, 305 cases) and −1.69 % at 3 days (t −1.88, 102).
+
+## Ideas
+- `087-01.c1_shallow-low-close-unwinds` (from F2, F4, F1): In a rising, agitated market, a day that closes near the low of its own high-low range after only a small fall from the previous close is followed by a decline over the next three days. The smaller that day's fall, while its close still sits at the low, the larger the decline.
+- `087-01.c2_narrow-low-close-continues` (from F5, F2, F3): In a rising, agitated market, a day that closes near the low of its own high-low range while that range is narrow against the coin's ranges of the past month is followed by a decline over the next three days. The narrower the day's range relative to its recent days, the larger the decline.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

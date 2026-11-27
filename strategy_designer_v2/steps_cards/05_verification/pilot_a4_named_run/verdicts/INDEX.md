@@ -4,3 +4,4 @@
 086-02.c1_first-dip-depth-continues_1d: no effect (fit: exact) [main: -0.00861472; t of the mean, cases grouped by day -0.56422; days carrying cases 191, cases 252, active bars 324]
 086-02.c2_deep-down-day-continues_1d: no effect (fit: exact) [main: -0.00160297; t of the mean, cases summed per day -0.0987658; cases 288, distinct case days 218]
 086-02_first-down-day-run-size_1d: no effect (fit: exact) [main: -0.00817561; t of the mean, cases summed by day -1.16518; cases 465, distinct days 341]
+087-01_low-close-starts-unwinding_1d: no effect (fit: exact) [main: 0.00318978; t of the mean, cases clustered by day 0.46085; case-days 240, cases 331]
