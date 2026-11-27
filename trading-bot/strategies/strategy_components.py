@@ -2525,34 +2525,45 @@ class LowerWickComponent(SubStrategyComponent):
 
 class CloseLocationInRangeComponent(SubStrategyComponent):
     """
-    Where the current bar's close sits inside the bar's own range, measured from one end:
+    Where the close of one bar sits inside that bar's range, read lag bars back:
 
-        reference = "low" (default): raw_value = (close[t] - low[t]) / (high[t] - low[t])
-        reference = "high":          raw_value = (high[t] - close[t]) / (high[t] - low[t])
-        high[t] == low[t] (zero range): raw_value = 0.5 with either reference
+        e = t - lag                  (lag 0, the default: e = t, bar t itself)
+        reference = "low" (default): raw_value = (close[e] - low[e]) / (high[e] - low[e])
+        reference = "high":          raw_value = (high[e] - close[e]) / (high[e] - low[e])
+        raw_value = 0.5 when high[e] == low[e] (either reference)
 
-    The default "low" is the original output: 0 when the close is at the bar's low, 1 at its high.
-    Setting "high" gives 1 minus that: 0 when the close is at the bar's high, growing to 1 as the close
-    nears the bar's low.
-    Graded. The value lies in 0 to 1 and is never negative when the close lies inside [low, high], as it does
-    on real bars. It has no sign. It is 0.5 at mid-range.
-    Warm-up: 1 row (bar t only).
+    With lag 1 and reference "low": (close[t-1] - low[t-1]) / (high[t-1] - low[t-1]), the prior bar's
+    close location. lag 0 with either reference is the original output, unchanged.
+    Range and sign: 0 to 1 when the close lies inside [low, high] (always on real bars), never negative,
+    no direction. "low": 0 at the bar's low, 1 at its high. "high": 0 at the bar's high, 1 at its low.
+    Graded and continuous in the close, high and low while the range is above 0.
+    Warm-up: lag + 1 rows, bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `high`, `low` and `close` values of the last row of data (bar t),
-    all of which are known at bar t's close; no earlier or later row is read.
+    WHY THIS CANNOT LEAK: it reads only the high, low and close of the single row e = t - lag of the data
+    (the row lag rows before the last one, the last one being bar t); no later row is read, and a bar's
+    high, low and close are known at that bar's close.
 
-    NaN: a NaN high, low or close on bar t gives NaN. A zero range gives 0.5, because there is no range to
-    place the close in. A missing column raises.
-    Building the component raises for a reference other than "low" or "high".
+    NaN: a NaN high, low or close on bar e gives NaN. A missing column raises.
+    Building the component raises for a reference other than "low" or "high", or a lag that is not an
+    integer >= 0.
     """
 
     def __init__(self, name="CloseLocation", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         ref = self.parameters.get("reference", "low")
         if ref not in ("low", "high"):
-            raise ValueError(
-                f"CloseLocationInRangeComponent: reference must be 'low' or 'high', got {ref!r}")
+            raise ValueError(f"CloseLocationInRangeComponent: reference must be 'low' or 'high', got {ref!r}")
         self.reference = ref
+        lag = self.parameters.get("lag", 0)
+        if isinstance(lag, bool):
+            raise ValueError(f"CloseLocationInRangeComponent: lag must be an integer >= 0, got {lag!r}")
+        try:
+            lag_int = int(lag)
+        except (TypeError, ValueError):
+            raise ValueError(f"CloseLocationInRangeComponent: lag must be an integer >= 0, got {lag!r}")
+        if lag_int != lag or lag_int < 0:
+            raise ValueError(f"CloseLocationInRangeComponent: lag must be an integer >= 0, got {lag!r}")
+        self.lag = lag_int
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2561,27 +2572,29 @@ class CloseLocationInRangeComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        h = float(data['high'].iloc[-1])
-        l = float(data['low'].iloc[-1])
-        c = float(data['close'].iloc[-1])
+        idx = len(data) - 1 - self.lag
+        h = float(data['high'].iloc[idx])
+        l = float(data['low'].iloc[idx])
+        c = float(data['close'].iloc[idx])
         if np.isnan(h) or np.isnan(l) or np.isnan(c):
-            self._raw_value = float("nan")
+            value = float("nan")
         else:
             rng = h - l
             if rng == 0:
-                self._raw_value = 0.5
+                value = 0.5
             elif self.reference == "high":
-                self._raw_value = float((h - c) / rng)
+                value = (h - c) / rng
             else:
-                self._raw_value = float((c - l) / rng)
+                value = (c - l) / rng
+        self._raw_value = float(value)
         self.confidence = 1.0
-        self.debug_info = {'high': h, 'low': l, 'close': c, 'reference': self.reference}
+        self.debug_info = {'high': h, 'low': l, 'close': c, 'lag': self.lag, 'reference': self.reference}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return 1
+        return self.lag + 1
 
 
 class OpenToLowDropComponent(SubStrategyComponent):
