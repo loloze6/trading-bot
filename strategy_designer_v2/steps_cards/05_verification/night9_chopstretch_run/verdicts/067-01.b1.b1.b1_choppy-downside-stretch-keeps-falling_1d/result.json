@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 5-bar return on forecast, forecast<0 grid cases",
+    "value": -0.00039160390802484723,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": -0.5554119242470908
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on cases with forecast <= -10 is below 0",
+    "value": -0.010599247888514615,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 405,
+    "cases with forecast <= -10": 157,
+    "days of the cases": 228
+  },
+  "decided_by": "Inconclusive: |t| < 2 for the slope.",
+  "reading": "The choppy profile is the strategy's regime 'unknown'; the regression is OLS with an intercept and a cluster-robust (by UTC day, CR1 small-sample corrected) slope variance; the coin's mean 5-bar return is over all its non-overlapping grid returns in all windows; and the plan's minimum counts give 'not observable' as the workflow requires."
+}

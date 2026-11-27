@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 074-02.b1.b1_calm-stretch-falls-more-coins_1d
+idea tested: 074-02.b1.b1_calm-stretch-falls-more-coins
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4171 USD
+---
+## Findings
+- **F1:** In the calm profile (regime "unknown") the 20-day stretch in usual moves predicts a continuation on both sides over 5 days, folds B and C. The lowest of six stretch groups has a mean unusual move of -3.23 % (t -3.81, 154 cases) and the highest +3.23 % (t 3.34, 173 cases). The unusual move times the stretch is positive below the average (+0.047, day-clustered t 2.05, 139 days) and above it (+0.067, t 2.19, 126 days). Its mean is positive in all 12 windows (w7 to w18). This calm continuation of a stretch, upward too, is already held on the map: 035-01.b1 (calm nearness to high, both sides) and 058-02.b1.b2.b1.b2.b2.e1 (calm range edge continuation).
+- **F2:** The brief's own effect, a rebound in agitated markets ("chop"), does not show in folds B and C. Below the average the 5-day unusual move is -0.64 % (t -0.46, 398 cases, 116 days) and its grading is -0.012 (t -0.31). Over 10 days it is -0.45 % (t -0.19). No agitated stretch group reaches |t| 2: sextiles run from -1.61 to +1.21.
+- **F3:** In calm markets the shortable side is too small to pay. Below the average the 5-day unusual move is -2.13 % (t -2.50, 438 cases), and at 10 days the grading fades (t 0.81, deep minus shallow +0.14 %). In step 6's terms the total move per case is +0.16 % against a 0.22 % trade cost, because the short fights a -0.68 % normal drift.
+- **F4:** The book earned only in falling years and lost when the coins rose. Its mean daily return was +0.146 % in 2018, when the coins averaged -0.348 %, against -0.041 % in 2020 and -0.015 % in 2021, when the coins averaged +0.452 % and +0.375 %. It was positive in 6 of 12 windows.
+- **F5:** Inside the book the size of the signal does grade the trades. Trades in the lowest quartile of |entry forecast| lost -0.82 % net on average (395 trades), against +0.35 % and +0.26 % in the two highest quartiles (393 and 392 trades). Every quartile's median is negative (-1.73 % to -2.73 %).
+- **F6:** The other angles show nothing that stands out after this many tests. Weekday means reach |t| 2.4 to 2.6 (Monday +1.83 %, Thursday -1.74 %) and the day's range quintiles stay under |t| 1.7 in both profiles. The 20-day return quintiles in calm markets repeat F1's continuation (quintile 1 -3.05 %, t -4.57; quintile 4 +2.49 %, t 2.31).
+
+## Ideas
+- No ideas: The one strong pattern is a calm continuation of the stretch on both sides (F1), and the map already holds it in calm. The brief's agitated rebound is absent (F2), the calm short does not cover its cost against the drift (F3), and the weekday and range angles do not stand out after this many tests (F6), so no new idea is supported.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

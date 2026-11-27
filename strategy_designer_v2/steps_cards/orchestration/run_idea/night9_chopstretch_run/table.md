@@ -19,20 +19,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 077-01.b1_swing-rise-carry-more-coins | 077-01_choppy-calm-swing-rise-carries | plan | inconclusive (+0.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: 077-01.b1.b1_graded-swing-rise-carries-on, 077-01.b1.b2_choppy-calm-swing-momentum; 7.g: 077-01.b1.g1_calm-chop-month-rise-carries | 1.10 | 14.2 |
 | 077-02_choppy-calm-swing-fall-carries | - | plan | not observable (-5.70) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.a: no ideas: The plan needs at least 20 distinct case days; the six default coins over all four folds gave 2. Adding every available coin (about twice the coin-folds) would give about 4. Hourly bars add no independent cases at a 7-day horizon read once per 7-day grid cell. No data available can make this idea observable without loosening its situation.; 7.g: 077-02.g1_choppy-calm-graded-swing-momentum, 077-02.g2_choppy-calm-swing-rise-carries | 1.14 | 7.6 |
 | 067-02.b1.b1_two-sided-swing-stretch-five-days | 067-02.b1_raw-swing-stretch-keeps-falling | plan | inconclusive (+0.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries, 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling; 7.g: 067-02.b1.b1.g1_agitated-chop-downside-stretch-carries, 067-02.b1.b1.g2_choppy-twenty-day-fall-continues | 1.06 | 6.7 |
+| 074-02.b1.b1_calm-stretch-falls-more-coins | 074-02.b1_calm-stretch-falls-five-days | plan | inconclusive (+2.18) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 074-02.b1.b1.b1_falling-calm-stretch-keeps-falling; 7.g: no ideas: The one strong pattern is a calm continuation of the stretch on both sides (F1), and the map already holds it in calm. The brief's agitated rebound is absent (F2), the calm short does not cover its cost against the drift (F3), and the weekday and range angles do not stand out after this many tests (F6), so no new idea is supported. | 1.03 | 13.4 |
+| 067-01.b1.b1.b1_choppy-downside-stretch-keeps-falling | 067-01.b1.b1_choppy-stretch-carries-both-ways | plan | inconclusive (-0.56) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.b1.b1.b1_choppy-two-sided-stretch-carries; 7.g: 067-01.b1.b1.b1.g1_choppy-raw-stretch-carries-both | 0.99 | 6.0 |
+| 076-01.b1.b1_agitated-wide-upper-close-fade | 076-01.b1_agitated-wide-close-fade-more-coins | plan | inconclusive (+0.46) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 076-01.b1.b1.b1_falling-agitated-wide-close-fade; 7.g: 076-01.b1.b1.g1_falling-agitated-wide-high-close-fade | 1.44 | 15.1 |
 
 ## Consumption
-15 ideas, 16.55 USD, 124.4 minutes in all.
+18 ideas, 20.01 USD, 159.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.24 | 8.5 |
-| step4_backtest | 0.00 | 69.1 |
-| step5_verdict | 2.57 | 9.2 |
-| step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 2.63 | 10.8 |
+| step4_backtest | 0.00 | 91.6 |
+| step5_verdict | 3.14 | 11.2 |
+| step6_check | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.42 | 1.1 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 4.49 | 14.2 |
-| step7_7.g | 6.83 | 21.4 |
+| step7_7.b | 5.60 | 17.5 |
+| step7_7.g | 8.23 | 25.7 |

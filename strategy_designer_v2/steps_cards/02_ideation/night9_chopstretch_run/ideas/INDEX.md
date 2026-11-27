@@ -7,3 +7,5 @@
 076-01_agitated-wide-high-close-fades: In agitated markets, a day with a wide range against its 20-day ranges that closes near its high falls the next day. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, side: short only, profile: agitated]
 077-01_choppy-calm-swing-rise-carries: In choppy calm markets, a 14-day rise large against the coin's daily swing keeps rising over 7 days, more for larger rises. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]
 077-02_choppy-calm-swing-fall-carries: In choppy calm markets, a 14-day fall large against the coin's daily swing keeps falling over 7 days, more for larger falls. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d, profile: choppy calm]
+078-01_return-swing-contraction-precedes-rise: A coin whose 20-day daily-return swing has shrunk against its 120-day swing rises over 10 days, more for deeper contractions. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]
+078-02_range-contraction-precedes-rise: A coin whose 20-day average daily range has shrunk against its 120-day average range rises over 10 days, more for deeper contractions. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, bar: 1d]

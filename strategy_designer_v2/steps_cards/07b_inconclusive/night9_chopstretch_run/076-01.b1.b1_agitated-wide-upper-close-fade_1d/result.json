@@ -1,0 +1,37 @@
+{
+  "line": "7.b",
+  "backtest": "076-01.b1.b1_agitated-wide-upper-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3732687,
+  "findings": {
+    "F1": "The tested effect is present only where the 60-day trend is falling. Among agitated wide upper-half-close days in folds B and C, the next-day short-side unusual move is +1.96 % (t 2.20, 97 cases on 45 days) when the coin's 60-day return is below -10 %. In a rising trend it is +0.03 % (t 0.04, 198 cases on 112 days). So the rising cases, the largest group with a known trend, dilute the effect to step 5's +0.12 % (t 0.46).",
+    "F2": "Inside the falling trend the effect is graded as the idea says. The cases split at the median of range multiple \u00d7 close location give +3.43 % (t 3.58, 48 cases on 22 days) for the upper half against +0.52 % (t 0.42, 49 cases on 30 days) for the lower half.",
+    "F3": "The upper-half product gap holds when the choppy cases are added. With choppy and falling together, the cases give +2.50 % (t 2.79, 121 cases on 61 days), with the upper product half at +3.64 % (t 3.99) against +1.37 % (t 1.01). The choppy cases alone are too few to read: +4.65 %, t 1.86, 24 cases.",
+    "F4": "The falling-trend effect sits on the idea's one-day horizon only. Over 2 days it is -0.09 % (t -0.10) and over 3 days -0.22 % (t -0.11), so the plan's horizon is the right one.",
+    "F5": "Across all agitated cases the forecast's grading did not hold. The plan's forecast cases in folds B and C give +0.61 % (t 1.43, 854 cases on 426 days), but by |forecast| quartile the means are +1.05 %, +0.31 %, -0.23 % and +1.33 %. That is not monotone, which matches step 5's supporting check returning no result.",
+    "F6": "In falling markets the effect points the same way on every year and coin with enough cases. By year: 2018 +2.85 % (t 1.92), 2019 +0.07 %, 2020 +1.68 %, 2021 +1.06 %. By coin, all positive, including ZEC +3.29 % (t 2.55), ETH +2.33 % and BTC +1.14 %. The upper product half's +3.43 % per case is about 15 times the 0.22 % cost of a trade.",
+    "F7": "These figures have two caveats."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, agitated market, a day whose high-low range is wide against the coin's average range over the past 20 days and which closes in the upper part of its range, near its high, is followed by a fall over the next day. The fall is larger the wider the day's range and the farther above the middle of its range it closes, the two multiplying.",
+      "consequence": "Fade wide high-closing days only while the coin has been falling and swinging more than usual, more for the widest and highest closes, and leave them alone in rising markets, where they do not fall.",
+      "name": "falling agitated wide-close fade",
+      "from": "F1, F2, F4, F6",
+      "profile": "falling agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "076-01.b1.b1.b1_falling-agitated-wide-close-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
