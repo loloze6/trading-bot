@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "074-01.b1.d3.d1_deep-run-break-fade-falling_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.5167262,
+  "findings": {
+    "F1": "The run-break fade lives in the deepest runs of a falling market. On up days ending a run of at least 2 down days, with a 60-day return below \u221210 %, the next-day unusual move by run-depth tercile is +0.23 % (73 cases, t 0.33), \u22120.85 % (95, t \u22120.99) and \u22122.90 % (107 cases on 52 days, t \u22123.62). In a rising market the same terciles give +0.71 %, \u22120.26 % and +1.05 % (all |t| < 1.2). This matches the tested idea and adds nothing new.",
+    "F2": "The book's gain sits mostly in 2018 and in falling agitated days. Its in-position days have a short-side mean of +2.93 % over 127 days in 2018, against +0.35 % (82 days) in 2019, +0.12 % (24) in 2020 and +0.67 % (33) in 2021. In-position days in falling agitated markets average +3.33 % (61 days), against +1.77 % in falling calm (105 days).",
+    "F3": "The fade is not clearly stronger in agitated than in calm falling markets. Falling agitated run-breaks give \u22122.18 % (108 cases, t \u22122.60) and falling calm ones \u22120.83 % (167 cases, t \u22121.44), a difference with a Welch t of only about 1.3. Splitting the idea by agitation is not supported.",
+    "F4": "The mirror pattern points the other way: the first down day ending a run of at least 2 up days is followed by a rise the next day, and the rise grows with the run's height (its gain in 30-day daily swings). By height tercile, lowest to highest, the next-day unusual move is:",
+    "F5": "In rising calm markets, up days ending a down run are followed by a further rise: +1.45 % (84 cases, t 2.26). This cell already holds 9 proven long strategies, so it is not a discovery.",
+    "F6": "Wide-range days closing in their lower third are followed by a rise of +0.84 % (861 cases, t 2.24). This is already held by the agitated wide-low-close rebound books.",
+    "F7": "Neither weekday nor the size of the day's own move (z quintiles by trend) gives a pattern that stands out. The weekday |t| is at most 1.54 and the largest |t| among the z quintiles is 2.22, in one choppy cell only."
+  },
+  "ideas": [
+    {
+      "idea": "The first down day after a run of consecutive up days is followed by a rise in the coin's close over the next day. The higher the run's gain (its return over the up days against its usual daily swing over the last 30 days), the larger that rise; after shallow runs it is about nothing.",
+      "consequence": "A trader buys the first down close that interrupts a strong up run, sized by how many usual daily swings the run gained, and holds for one day, instead of reading the dip as the end of the run.",
+      "name": "up run dip next day rise",
+      "from": "F4",
+      "theme": "discovery",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "074-01.b1.d3.d1.g1_up-run-dip-next-day-rise"
+  ],
+  "no_ideas": null
+}

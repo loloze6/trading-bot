@@ -1,4 +1,6 @@
 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: not profitable enough [Sharpe 0; Sharpe minus holding's Sharpe -3.19; Calmar 0]
 074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d: not profitable enough [Sharpe 0.4738; Sharpe minus holding's Sharpe -3.277; Calmar 0.742]
 074-01.b1.d2_run-break-fade-steep-slide_1d: not profitable enough [Sharpe -0.0416; Sharpe minus holding's Sharpe -3.793; Calmar -0.06319]
+074-01.b1.d3.d1_deep-run-break-fade-falling_1d: not profitable enough [Sharpe 0.1304; Sharpe minus holding's Sharpe -3.621; Calmar 0.1191]
+074-01.b1.d3.d2.d1_falling-market-deep-run-fade_1d: not profitable enough [Sharpe -0.08654; Sharpe minus holding's Sharpe -3.838; Calmar -0.08329]
 074-01.b1.g1_convex-deep-run-fade_1d: not profitable enough [Sharpe 0.05296; Sharpe minus holding's Sharpe -3.698; Calmar 0.04401]

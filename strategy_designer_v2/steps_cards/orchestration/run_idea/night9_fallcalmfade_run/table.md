@@ -34,22 +34,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 064-01.g1.b1.b1_calm-decline-fade-more-coins | 064-01.g1.b1_calm-decline-big-rise-next-day-fade | plan | inconclusive (-0.19) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. Over all folds the fade is zero (F1): it appears only in 2018 and 2019 and on ETH and LTC (F2, F5), it does not grow with the rise's size (F3), and no horizon (F4) or bar-based condition (F7) shows it clearly in one part of the data and absent elsewhere.; 7.g: no ideas: I looked at the forecast's grading, the tested regime by range-close and size, falling and choppy markets by scaled-return bucket at 1 to 5 days on every grid offset, calm against agitated, years, coins and weekdays, and the only patterns that pass t 2 either change with the grid's starting bar or are what chance gives over that many looks (F3, F5), so none stands out enough to be a finding to build an idea on. | 1.09 | 13.3 |
 | 070-01.b1.b1.b1_deep-calm-decline-relief-fade | 070-01.b1.b1_calm-decline-depth-fade | plan | confirmed (+2.81) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 070-01.b1.b1.b1.g1_deep-calm-relief-two-day-fade | 0.98 | 16.7 |
 | 070-01.g1.d1.b1_deep-slide-run-break-fade-more-coins | 070-01.g1.d1_deep-slide-calm-run-break-fade | plan | inconclusive (+1.60) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 070-01.g1.d1.b1.b1_run-break-fade-three-days, 070-01.g1.d1.b1.b2_long-run-break-fade; 7.g: 070-01.g1.d1.b1.g1_calm-decline-deep-run-fade | 1.13 | 11.9 |
+| 074-01.b1.d3.d1_deep-run-break-fade-falling | 074-01.b1.d3_agitated-falling-run-break-fade | plan | confirmed (+3.74) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: 0 ideas, 1 discoveries (2 explorations) | 0.87 | 7.6 |
+| 074-01.b1.d3.d2_agitated-deep-run-fade | 074-01.b1.d3_agitated-falling-run-break-fade | plan | confirmed (+2.50) | not profitable enough (failed: Calmar) | - | 7.d: 074-01.b1.d3.d2.d1_falling-market-deep-run-fade; 7.g: 074-01.b1.d3.d2.g1_choppy-deep-run-break-fade, 074-01.b1.d3.d2.g2_twenty-day-fall-continues | 2.04 | 8.7 |
+| 074-01.b1.d3.d2.d1_falling-market-deep-run-fade | 074-01.b1.d3.d2_agitated-deep-run-fade | plan | confirmed (+3.03) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 074-01.b1.d3.d2.d1.g1_deep-run-large-relief-fade, 074-01.b1.d3.d2.d1.g2_falling-slide-bounce-fade | 0.88 | 7.3 |
 
 ## Consumption
-30 ideas, 30.43 USD, 217.1 minutes in all.
+33 ideas, 34.21 USD, 240.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 6.62 | 26.7 |
-| step4_backtest | 0.00 | 104.8 |
-| step5_verdict | 4.54 | 17.4 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 7.89 | 29.6 |
+| step4_backtest | 0.00 | 113.3 |
+| step5_verdict | 5.09 | 19.8 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 3.77 | 11.8 |
-| step7_7.a | 0.00 | 0.0 |
+| step7_7.c | 0.00 | 0.1 |
+| step7_7.d | 4.20 | 13.3 |
+| step7_7.a | 0.00 | 0.1 |
 | step7_7.b | 4.16 | 12.7 |
-| step7_7.g | 11.33 | 34.3 |
-| similarity_check | 0.00 | 1.0 |
-| unseen_test | 0.00 | 7.0 |
+| step7_7.g | 12.87 | 39.3 |
+| similarity_check | 0.00 | 1.4 |
+| unseen_test | 0.00 | 9.8 |

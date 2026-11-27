@@ -21,6 +21,8 @@
 074-01.b1.d2.g1_up-run-break-dip-rebound_1d: untestable: The idea's position is a long on the dip day, but its brief's header limits the book to short only. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-01.b1.d2_run-break-fade-steep-slide_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-01.b1.d3.d1_deep-run-break-fade-falling_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+074-01.b1.d3.d2.d1_falling-market-deep-run-fade_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+074-01.b1.d3.d2_agitated-deep-run-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-01.b1.d3_agitated-falling-run-break-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-01.b1.g1_convex-deep-run-fade_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 074-01.b1.g2_calm-downtrend-relief-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

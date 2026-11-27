@@ -304,6 +304,9 @@ An idea's latest record counts once.
 | 074-01.b1.d1.d2_depth-graded-run-break-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:33:52 |
 | 074-01.b1.d1_run-break-fade-widening-swing_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | cf8a40630 | 2026-11-26T23:07:59 |
 | 074-01.b1.d2_run-break-fade-steep-slide_1d | paying | night9_fallcalmfade_run | 1d | 6 | cf8a40630 | 2026-11-26T23:14:02 |
+| 074-01.b1.d3.d1_deep-run-break-fade-falling_1d | paying | night9_fallcalmfade_run | 1d | 6 | 760ce963d | 2026-11-27T02:06:50 |
+| 074-01.b1.d3.d2.d1_falling-market-deep-run-fade_1d | paying | night9_fallcalmfade_run | 1d | 6 | 3d5761820 | 2026-11-27T04:25:47 |
+| 074-01.b1.d3.d2_agitated-deep-run-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 3d5761820 | 2026-11-27T04:19:15 |
 | 074-01.b1.d3_agitated-falling-run-break-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:21:02 |
 | 074-01.b1.g1_convex-deep-run-fade_1d | paying | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:39:11 |
 | 074-01.b1.g2_calm-downtrend-relief-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 0638ade9f | 2026-11-26T23:46:20 |
