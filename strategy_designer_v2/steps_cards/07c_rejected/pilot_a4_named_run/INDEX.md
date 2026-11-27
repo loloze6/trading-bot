@@ -1,4 +1,5 @@
 041-01.b1_rising-agitated-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 086-01.c1_first-dip-falls-over-week_1d: 1 ideas (2 explorations)
 086-01_first-down-day-streak-length_1d: 1 ideas (2 explorations)
+086-02.c1_first-dip-depth-continues_1d: 2 ideas (2 explorations)
 086-02_first-down-day-run-size_1d: 2 ideas (2 explorations)

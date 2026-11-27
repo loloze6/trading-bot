@@ -1,0 +1,24 @@
+---
+line: 7.c no effect
+backtest: 086-02.c1_first-dip-depth-continues_1d
+idea tested: 086-02.c1_first-dip-depth-continues
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4081 USD
+---
+## Findings
+- **F1:** Inside the rising agitated profile, the short after a first down day that ends an up streak shows its gain later than the plan's 5 days: over 77 dips the short-direction unusual move is -0.64 % over 3 days (t -0.46), +2.16 % over 5 days (t 1.03) and +5.46 % over 10 days (t 1.78); on the 10-day grid, keeping one dip per cell (56 cases), the 10-day move is +4.31 % (t 1.28).
+- **F2:** The coin first holds up and then falls. From day 3 to day 10 after the dip it moves +5.30 % in the short direction (t 1.90, 77 dips), against -0.64 % over days 0 to 3 (t -0.46).
+- **F3:** The effect comes from the deepest dips, but the grading is not smooth. The deepest third of dips, in units of the 30-day swing, gives +11.13 % over 10 days (t 2.24, 21 dips) and +9.04 % from day 3 to day 10 (t 2.21). The middle third gives -9.09 % (t -1.06, 20 dips) and the shallowest third +1.88 % (t 0.41).
+- **F4:** The run before the dip does not grade the move the way the brief says. Dips after a 2-day run give +9.94 % over 10 days in the short direction (t 2.74, 44 dips). Runs of 3 to 5 days give -2.04 % and -4.65 % over 5 days. The correlation between the run's size in swing units and the 3-day move is -0.16.
+- **F5:** Outside the profile the market did the opposite and kept rising after the dip. Over 214 dips the short-direction move is -1.46 % over 3 days (t -2.37) and -2.30 % over 10 days (t -1.83). In the approximate rising calm cases (29 dips) it is -2.58 % over 10 days (t -0.72), so agitation is what separates the two, as the brief's third test asks.
+- **F6:** The profile result is unstable across periods and coins. Window w16 gives -8.5 % over 5 days (t -2.22, 26 dips) and w17 gives +16.8 % (t 5.15, 9 dips). In 2021 the next day goes against the short by 2.77 % (t -2.83, 41 dips) while 2020 is +7.6 % over 5 days (t 2.25). BCH is -1.68 % over 5 days (t -0.44, 32 dips) and ZEC +3.94 % (t 1.66, 42 dips).
+- **F7:** At the plan's horizon the move is too small to pay for a trade. The step-5 size is -0.86 % unusual and -1.46 % total per case over 5 days (t -0.57, 191 days) against a 0.37 % cost per trade. Only the 10-day reading on deep dips (F3) is well above the cost.
+
+## Ideas
+- `086-02.c1.c1_first-dip-falls-ten-days` (from F1, F3, F5, F7): In a rising, agitated market, when a coin closes down after a streak of consecutive up days, it keeps falling over the next 10 days, and the fall is larger the deeper that down day is, measured in units of the coin's daily swing over the last 30 days.
+- `086-02.c1.c2_delayed-first-dip-continuation` (from F2, F3, F6): In a rising, agitated market, three days after a coin closes down following a streak of consecutive up days, it falls over the following 7 days, and the fall is larger the deeper that first down day was, measured in units of the coin's daily swing over the last 30 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
