@@ -300,6 +300,7 @@ An idea's latest record counts once.
 | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d | confirmed | night9_chopmonth_run | 1d | 19 | abd120135 | 2026-11-27T00:01:14 |
 | 067-01.b1.g1.b1_choppy-month-fall-continues_1d | confirmed | night9_chopmonth_run | 1d | 19 | e0f3705bc | 2026-11-26T23:05:46 |
 | 067-01.b1_choppy-weak-month-keeps-falling_1d | confirmed | night9_chopmonth_run | 1d | 19 | 690331b94 | 2026-11-26T22:33:32 |
+| 067-02.b1.b1_choppy-deep-month-fall-continues_1d | confirmed | night9_chopmonth_run | 1d | 19 | 6ffa6ccc1 | 2026-11-27T01:51:25 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | 5cec10e5f | 2026-11-18T03:17:55 |

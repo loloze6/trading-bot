@@ -23,21 +23,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+1.18) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.g2.b1_deep-month-slide-continues, 067-01.b1.g1.b1.d1.g2.b2_deep-slide-three-weeks; 7.g: 067-01.b1.g1.b1.d1.g2.g1_choppy-month-slide-continues, 067-01.b1.g1.b1.d1.g2.g2_choppy-agitated-slide-continues, 067-01.b1.g1.b1.d1.g2.g3_swing-scaled-month-slide-continues | 1.17 | 12.4 |
 | 067-01.b1.g1.b1.d1.g3_chop-slide-twenty-day-continuation | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+0.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.g3.b1_chop-slide-five-day-continuation; 7.g: 067-01.b1.g1.b1.d1.g3.g1_chop-slide-ten-day-continuation, 067-01.b1.g1.b1.d1.g3.g2_chop-swing-scaled-slide-continuation | 1.12 | 11.5 |
 | 067-02.b1_choppy-plain-month-fall-continues | 067-02_choppy-weak-month-fall-continues | plan | inconclusive (-1.55) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1_choppy-deep-month-fall-continues; 7.g: 067-02.b1.g1_choppy-swing-scaled-month-fall | 1.11 | 12.0 |
+| 067-02.b2_agitated-choppy-month-fall-continues | 067-02_choppy-weak-month-fall-continues | plan | inconclusive (+1.01) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b2.b1_choppy-month-fall-continues, 067-02.b2.b2_choppy-month-fall-three-days; 7.g: no ideas: Across about fifteen angles (the 30-day, 7-day and 1-day returns, range, close position, volatility, the 60-day trend, weekday, windows, coins and the book's extreme days), no pattern held across grid offsets and windows strongly enough to count after so many looks. The one consistent effect, the next-day reversal of the close position, is already held in the profile map. | 1.05 | 12.3 |
+| 067-02.b1.b1_choppy-deep-month-fall-continues | 067-02.b1_choppy-plain-month-fall-continues | plan | confirmed (+2.62) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-02.b1.b1.d1_choppy-deepest-month-falls-continue, 067-02.b1.b1.d2_agitated-choppy-month-fall-continues, 067-02.b1.b1.d3_calm-choppy-month-rise-continues; 7.g: 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls | 1.16 | 12.2 |
 
 ## Consumption
-19 ideas, 21.12 USD, 226.3 minutes in all.
+21 ideas, 23.33 USD, 250.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.57 | 8.7 |
-| step4_backtest | 0.00 | 155.6 |
-| step5_verdict | 3.70 | 12.8 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 1.73 | 9.5 |
+| step4_backtest | 0.00 | 172.6 |
+| step5_verdict | 4.07 | 14.0 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.4 |
-| step7_7.d | 1.89 | 6.2 |
+| step7_7.d | 2.32 | 7.6 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 5.36 | 15.9 |
-| step7_7.g | 8.60 | 25.6 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.b | 5.71 | 17.0 |
+| step7_7.g | 9.50 | 28.3 |
+| similarity_check | 0.00 | 0.4 |

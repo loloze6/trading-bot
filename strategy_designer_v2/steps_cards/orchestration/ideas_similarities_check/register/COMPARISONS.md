@@ -213,6 +213,7 @@
 | 060-02.d2.d2_volume-growth-capitulation-rebound_1d | night8_fallingcalm_run | 1d | 047-01_falling-agitated-daily-fall-rebound_1d (1d) | 0.24 | same period | +0.0016 % (0.15) | 0.22 |
 | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | intraday_1h_run | 1h | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d (1d) | 0.25 | same period | -0.1353 % (-8.45) | 0.30 |
 | 067-01.b1_choppy-weak-month-keeps-falling_1d | night9_chopmonth_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.25 | same period | +0.0136 % (1.52) | 0.33 |
+| 067-02.b1.b1_choppy-deep-month-fall-continues_1d | night9_chopmonth_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.25 | same period | +0.0136 % (1.52) | 0.33 |
 | 067-01.b1.g1.b1_choppy-month-fall-continues_1d | night9_chopmonth_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.25 | same period | +0.0154 % (1.47) | 0.36 |
 | 017-05_settlement-move-reverses-after.d2_extreme-daily-run-reverses_1h | step7ab_b_run | 1h | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.25 | same period | -0.1114 % (-3.13) | 0.02 |
 | 020-02_support-retest-bounces-up.c1_broken-support-keeps-falling.b2_broken-support-ten-day-fall.d1_broken-support-without-capitulation_1d | night3_levels_run | 1d | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h (1h) | 0.26 | same period | +0.0230 % (0.59) | 0.28 |
