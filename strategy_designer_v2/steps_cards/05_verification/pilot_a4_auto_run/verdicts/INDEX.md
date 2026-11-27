@@ -1,2 +1,3 @@
 061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: adapted) [main: -0.00163353; t of the mean, day-clustered -1.44168; distinct days with a nonzero position 607, position bars with next-day return 1164, days of position cases 607, forecast-below-0 bars in regression 1461, days in regression 722]
 064-01_falling-calm-up-day-fades_1d: no effect (fit: exact) [main: 0.000228104; OLS slope t 0.451945; grid cases with forecast < 0 483, distinct days 242]
+086-01_heavy-volume-up-day-continuation_1d: no effect (fit: adapted) [main: 0.00543097; t of the mean, cases of one day clustered 0.820502; cases 311, days 231]

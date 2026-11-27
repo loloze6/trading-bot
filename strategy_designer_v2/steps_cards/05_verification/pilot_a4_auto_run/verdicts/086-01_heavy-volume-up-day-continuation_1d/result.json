@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move per case over 5 bars (long, minus the coin's normal 5-bar drift)",
+    "value": 0.005430968633646607,
+    "statistic": {
+      "name": "t of the mean, cases of one day clustered",
+      "value": 0.8205016890829364
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and Spearman > 0; reject: mean < 0 with t <= -2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman of heavy_vol raw value vs unusual move",
+    "value": 0.09239027231455403,
+    "passed": true
+  },
+  "counts": {
+    "cases": 311,
+    "days": 231
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.821 (below 1), 311 cases (30 needed).",
+  "reading": "The situation is checked as 'close above the previous close and volume above its prior 20-bar mean' on the long side (the falling-calm profile is added by code and not recomputed), using the recorded heavy_vol raw value (ratio minus 1) where present, else the volume recomputed inside the window, else the detector's 'trending' regime on bars without a previous close; cases are bets (forecast rises of at least 2 points from its lowest level since the last bet, from 0 after a flat), the first per 5-bar grid cell of each window, equally weighted, the t clusters cases by UTC day, and fewer than 30 cases gives 'not observable' as the workflow requires.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.821 (below 1), 311 cases (30 needed)",
+    "t_in_idea_direction": 0.8205016890829364,
+    "cases": 311
+  }
+}
