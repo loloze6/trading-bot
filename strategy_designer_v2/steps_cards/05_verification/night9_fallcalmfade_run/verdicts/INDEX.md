@@ -1,5 +1,8 @@
+064-01.g1.b1.b1_calm-decline-fade-more-coins_1d: inconclusive (fit: adapted) [main: -0.000430244; t of the mean, cases of one day taken together -0.19245; cases 655, distinct days 331]
+064-01.g1.b1_calm-decline-big-rise-next-day-fade_1d: inconclusive (fit: adapted) [main: 0.00288821; t of the mean, cases of one day taken together 0.994358; cases 321, distinct days 201]
 064-01.g1_calm-decline-up-day-fade_1d: inconclusive (fit: exact) [main: 0.000309472; t of the mean (per-day sums) 0.0679641; independent cases (distinct days) 268, cases 534]
 064-01_calm-decline-big-rise-fades_1d: inconclusive (fit: adapted) [main: -0.0225219; t of the mean, cases of one day pooled -1.4182; cases 62, days 46]
+070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: confirmed (fit: exact) [main: 0.00955733; t of the mean, cases pooled by day 2.8082; cases 339, days 171]
 070-01.b1.b1_calm-decline-depth-fade_1d: inconclusive (fit: adapted) [main: 0.00341635; t of the mean, cases clustered by day 1.60191; distinct case days 391, cases 901, deeper half cases 450, shallower half cases 451]
 070-01.b1_calm-decline-fade-more-coins_1d: inconclusive (fit: adapted) [main: 0.000385327; t of the mean, cases summed per day 0.239169; cases 1667, distinct days 658, cases with runs of 3 or more 469, cases with runs of 1 to 2 1198]
 070-01.g1.d1_deep-slide-calm-run-break-fade_1d: inconclusive (fit: adapted) [main: 0.0103484; t of the mean, same-day cases summed 1.82389; case-days 82, cases 117, active bars 119]

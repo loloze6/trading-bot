@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual next-day move of short bets (short direction)",
+    "value": 0.0028882117611118345,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.994358441776458
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move, split at median scaled rise",
+    "value": 0.004969363689926703,
+    "passed": true
+  },
+  "counts": {
+    "cases": 321,
+    "distinct days": 201
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "The situation is checked as raw scaled rise (recorded last_history_value, else recomputed from closes) >= 1 on a bar whose regime is mean_reversion (the falling-calm profile vetoes send other bars to chop, and the profile's 60-day/365-day inputs cannot be rebuilt inside the ~120-bar windows), with a negative forecast; cases are bars where the short forecast deepens by at least 2 points from its shallowest level since the last bet (from 0 after flat), the drift is the coin's mean daily return over all its windows, and the median split puts cases above the median in the upper half and those at or below it in the lower half."
+}

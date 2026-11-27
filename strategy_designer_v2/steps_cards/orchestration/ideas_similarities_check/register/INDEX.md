@@ -296,6 +296,7 @@ An idea's latest record counts once.
 | 061-01.g1.d1_calm-choppy-up-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:12:23 |
 | 061-01.g1_choppy-calm-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:06:57 |
 | 061-01_calm-big-up-day-continues_1d | confirmed | night8_risingcalm_run | 1d | 6 | 75b231208 | 2026-11-25T23:38:40 |
+| 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d | paying | night9_fallcalmfade_run | 1d | 19 | 870c263c1 | 2026-11-27T01:39:07 |
 | 070-01.g1.d2.d2_falling-market-depth-run-break-fade_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | 760e8f885 | 2026-11-27T00:50:56 |
 | 070-01.g1.d2_run-break-fade-every-market_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | cff147a54 | 2026-11-27T00:38:55 |
 | 070-01.g1_calm-decline-long-run-break_1d | confirmed | night9_fallcalmfade_run | 1d | 6 | cff147a54 | 2026-11-27T00:31:35 |

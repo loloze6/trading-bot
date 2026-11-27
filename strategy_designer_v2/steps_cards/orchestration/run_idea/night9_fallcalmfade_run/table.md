@@ -24,28 +24,30 @@ One row per idea run; every status is read from the step's own result file. Each
 | 070-01.b1.b1_calm-decline-depth-fade | 070-01.b1_calm-decline-fade-more-coins | plan | inconclusive (+1.60) | not profitable enough (failed: Calmar) | - | 7.b: 070-01.b1.b1.b1_deep-calm-decline-relief-fade; 7.g: 070-01.b1.b1.g1_swing-scaled-calm-decline-fade | 1.21 | 14.8 |
 | 064-01.g1_calm-decline-up-day-fade | 064-01_calm-decline-big-rise-fades | plan | inconclusive (+0.07) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 064-01.g1.b1_calm-decline-big-rise-next-day-fade; 7.g: no ideas: I tested more than twenty angles (size of scaled moves in and out of the profile, 60-day and 20-day trend, close position, daily range, weekday, window, coin, graded continuation and 5- and 20-day momentum); the few cells near |t| 2.3–2.9 are isolated buckets with no grading, they change sign across windows and coins, and they do not stand out above what that many looks would give by chance. | 0.95 | 6.4 |
 | 070-01.g1_calm-decline-long-run-break | 070-01_calm-decline-run-break-fade | plan | confirmed (+2.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 070-01.g1.d1_deep-slide-calm-run-break-fade, 070-01.g1.d2_run-break-fade-every-market; 7.g: 070-01.g1.g1_calm-decline-deep-run-fade, 070-01.g1.g2_calm-decline-run-break-three-day-fade | 1.19 | 8.2 |
-| 070-01.g1.d1_deep-slide-calm-run-break-fade | 070-01.g1_calm-decline-long-run-break | missing-components | - | - | - | - | 0.15 | 1.1 |
 | 070-01.g1.d2_run-break-fade-every-market | 070-01.g1_calm-decline-long-run-break | plan | confirmed (+3.57) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 070-01.g1.d2.d1_depth-graded-run-break-fade, 070-01.g1.d2.d2_falling-market-depth-run-break-fade; 7.g: 0 ideas, 2 discoveries (1 explorations) | 0.99 | 6.7 |
 | 070-01.g1.d2.d1_depth-graded-run-break-fade | 070-01.g1.d2_run-break-fade-every-market | plan | inconclusive (+3.54) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 070-01.g1.d2.d1.b1_depth-graded-run-break-fade-wider, 070-01.g1.d2.d1.b2_swing-scaled-run-break-fade; 7.g: 070-01.g1.d2.d1.g1_falling-calm-swing-scaled-depth-fade, 070-01.g1.d2.d1.g2_heavy-volume-bounce-fade, 070-01.g1.d2.d1.g3_wide-bounce-range-fade, 070-01.g1.d2.d1.g4_three-day-depth-graded-bounce-fade | 1.01 | 6.7 |
 | 070-01.g1.d2.d2_falling-market-depth-run-break-fade | 070-01.g1.d2_run-break-fade-every-market | plan | confirmed (+2.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 070-01.g1.d2.d2.d1_falling-deep-run-break-fade, 070-01.g1.d2.d2.d2_deep-run-break-fade-anywhere; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.11 | 6.9 |
 | 076-01_run-break-three-day-fade | - | plan | inconclusive (+1.61) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 076-01.b1_run-break-fade-all-coins, 076-01.b2_run-break-fade-in-decline; 7.g: 076-01.g1_deep-run-break-fade, 076-01.g2_deep-run-break-next-day-fade | 0.92 | 6.3 |
 | 076-02_run-break-delayed-fade | - | plan | inconclusive (+0.33) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 076-02.b1_run-break-three-day-fade; 7.g: 076-02.g1_run-break-fade-beyond-first, 076-02.g2_run-break-fade-after-decline | 1.98 | 7.2 |
+| 070-01.g1.d1_deep-slide-calm-run-break-fade | 070-01.g1_calm-decline-long-run-break | plan | inconclusive (+1.82) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: 070-01.g1.d1.b1_deep-slide-run-break-fade-more-coins; 7.g: no ideas: The one pattern that stands out (F1–F3: up days that break a down run fade the next day in a falling market, more so when agitated) is already held by the falling short strategies on the map (074-01.b1.d1.d1 run break fade after sharp leg, 074-01.b1.g1, 060-01.g1.d2.d1), the long reversals (F5) are held many times over, and the choppy-market and weekday readings (F4, F5) do not stand out from chance after the many angles looked at (forecast, run length, 20-day depth, range, close position, weekday, trend by direction, year, book trades). | 1.08 | 8.1 |
+| 064-01.g1.b1_calm-decline-big-rise-next-day-fade | 064-01.g1_calm-decline-up-day-fade | plan | inconclusive (+0.99) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 064-01.g1.b1.b1_calm-decline-fade-more-coins; 7.g: 0 ideas, 1 discoveries (3 explorations) | 1.18 | 7.6 |
+| 064-01.g1.b1.b1_calm-decline-fade-more-coins | 064-01.g1.b1_calm-decline-big-rise-next-day-fade | plan | inconclusive (-0.19) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. Over all folds the fade is zero (F1): it appears only in 2018 and 2019 and on ETH and LTC (F2, F5), it does not grow with the rise's size (F3), and no horizon (F4) or bar-based condition (F7) shows it clearly in one part of the data and absent elsewhere.; 7.g: no ideas: I looked at the forecast's grading, the tested regime by range-close and size, falling and choppy markets by scaled-return bucket at 1 to 5 days on every grid offset, calm against agitated, years, coins and weekdays, and the only patterns that pass t 2 either change with the grid's starting bar or are what chance gives over that many looks (F3, F5), so none stands out enough to be a finding to build an idea on. | 1.09 | 13.3 |
 
 ## Consumption
-26 ideas, 25.11 USD, 160.5 minutes in all.
+28 ideas, 28.31 USD, 188.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.98 | 22.5 |
-| step4_backtest | 0.00 | 70.8 |
-| step5_verdict | 3.54 | 13.6 |
-| step6_check | 0.00 | 0.6 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 6.26 | 24.2 |
+| step4_backtest | 0.00 | 87.6 |
+| step5_verdict | 4.13 | 15.9 |
+| step6_check | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 3.77 | 11.8 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 2.98 | 9.2 |
-| step7_7.g | 8.83 | 27.0 |
+| step7_7.b | 3.81 | 11.8 |
+| step7_7.g | 10.34 | 31.4 |
 | similarity_check | 0.00 | 0.9 |
 | unseen_test | 0.00 | 3.7 |

@@ -1,7 +1,11 @@
+064-01.g1.b1.b1_calm-decline-fade-more-coins_1d: no ideas: The theme's effect is not in the data. Over all folds the fade is zero (F1): it appears only in 2018 and 2019 and on ETH and LTC (F2, F5), it does not grow with the rise's size (F3), and no horizon (F4) or bar-based condition (F7) shows it clearly in one part of the data and absent elsewhere.
+064-01.g1.b1_calm-decline-big-rise-next-day-fade_1d: 1 ideas (1 explorations)
 064-01.g1_calm-decline-up-day-fade_1d: 1 ideas (2 explorations)
 064-01_calm-decline-big-rise-fades_1d: no ideas: The fade the theme claims is not in the data: large scaled rises in falling calm markets were followed by a rise, not a fall (-2.25 % short-direction, t -1.42, 62 cases). The giveback does not grow with the rise's size (correlation +0.038, or -0.245 on the forecast). The opposite move is too unstable across sampling, coins and years (F2, F3) to support an idea on another side.
+070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 070-01.b1.b1_calm-decline-depth-fade_1d: 1 ideas (2 explorations)
 070-01.b1_calm-decline-fade-more-coins_1d: 1 ideas (2 explorations)
+070-01.g1.d1_deep-slide-calm-run-break-fade_1d: 1 ideas (1 explorations)
 070-01.g1.d2.d1_depth-graded-run-break-fade_1d: 2 ideas (2 explorations)
 070-01.g1.d2.d2_falling-market-depth-run-break-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 070-01.g1.d2_run-break-fade-every-market_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
