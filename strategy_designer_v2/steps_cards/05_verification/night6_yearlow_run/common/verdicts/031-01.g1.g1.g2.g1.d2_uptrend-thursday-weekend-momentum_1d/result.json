@@ -1,0 +1,37 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9983844911147012,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 2-bar excess return on rise14 post_pipeline_value, uptrend Thursday cases",
+    "value": 0.00121734134552967,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": 2.8715678960432744
+    },
+    "threshold": "slope t >= 2 (with forecast-weighted mean excess > 0) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean 2-bar excess return > 0",
+    "value": 0.019074515778017328,
+    "passed": true
+  },
+  "counts": {
+    "uptrend Thursday cases with forecast above 0": 2326,
+    "distinct Thursdays of those cases": 430,
+    "uptrend Thursday cases (all, incl. forecast 0)": 3706,
+    "distinct days (clusters)": 490
+  },
+  "decided_by": "Confirm rule met: the slope's t is 2 or more and the forecast-weighted mean excess return is above 0.",
+  "reading": "Thursday-close bars are the bars whose UTC start is a Thursday (next bar a Friday); the 60-day uptrend is close above the close of the bar 60 days earlier in the same window, and active bars where that bar is not in the window are left out of the agreement; the coin's mean 2-bar return uses the non-overlapping grid 0,2,4,... of every window; cases are pooled over all coins with an OLS slope (with intercept) whose t uses a cluster-by-day robust variance with the usual G/(G-1)(N-1)/(N-K) correction; the plan's minimum counts, read on cases with forecast above 0, give 'not observable' when unmet.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

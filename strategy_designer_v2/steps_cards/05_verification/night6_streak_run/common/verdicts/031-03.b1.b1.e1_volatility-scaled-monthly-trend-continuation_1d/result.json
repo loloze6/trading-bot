@@ -1,0 +1,32 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar excess return on post_pipeline_value (non-overlapping grid, before costs)",
+    "value": 0.0022502316292576023,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 2.688611900061647
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases in total": 5377,
+    "grid cases with forecast > 0": 2503,
+    "days": 409
+  },
+  "decided_by": "The slope is positive with t = 2.69 >= 2 (plan's confirm rule; no supporting check).",
+  "reading": "The coin's mean 10-bar return is the mean of its non-overlapping grid returns over all its windows; 'pooling cases of the same day' is read as a day-clustered standard error for the OLS slope (each day's sum of x-deviation times residual taken as one piece of evidence); grid cases need a forward return inside the window and a recorded post_pipeline_value.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on post_pipeline forecast (day-clustered t)",
+    "value": 0.0004017947788421852,
+    "statistic": {
+      "name": "day-clustered OLS t",
+      "value": 2.6070220493518526
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return in forecast direction, top fifth of |forecast|",
+    "value": 0.00667504087877681,
+    "passed": true
+  },
+  "counts": {
+    "non-zero-forecast bars": 7687,
+    "distinct days": 1506
+  },
+  "decided_by": "The slope is positive with t >= 2 and the supporting check passes.",
+  "reading": "Situation bars are active bars whose raw scaled move (last_history_value, recomputed from prices if missing) is non-zero with the forecast of the opposite sign; the excess return subtracts the coin's mean 1-bar return over all its windows; the t uses day-clustered standard errors with a G/(G-1) correction; the top fifth is |forecast| at or above the 80th percentile of the regression cases; the plan's minimum counts are applied to the regression cases and, per instructions, give 'not observable' when not met.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
