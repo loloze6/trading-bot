@@ -2,7 +2,6 @@
 instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO
 bar: 1d
 source: line 7.g patterns, backtest 058-02.b1.g1.b1.b2_falling-market-next-day-reversal_1d (idea 058-02.b1.g1.b1.b2_falling-market-next-day-reversal, brief 058_choppy-calm-range-edge-reversion)
-discovery: 058-02.b1.g1.b1.b2.g1_falling-calm-rally-fade
 ---
 In a falling, calm market, a coin's one-day rise is partly given back the next day. The larger the rise against the coin's usual daily swing of recent weeks, the larger the next-day fall. Falls in the same market are not repaid the same way. The next day is lopsided: sharp rises fade, sharp falls do not rebound.
 
