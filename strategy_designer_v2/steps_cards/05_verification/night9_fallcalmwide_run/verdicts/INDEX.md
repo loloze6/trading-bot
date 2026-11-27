@@ -18,4 +18,7 @@
 077-01.b1_choppy-agitated-width-graded-rebound_1d: inconclusive (fit: exact) [main: 0.00334415; day-clustered t 1.00777; cases 409, distinct days 280]
 077-01_choppy-agitated-wide-low-close-rebound_1d: inconclusive (fit: adapted) [main: 0.0083275; t of the mean, cases clustered by day 1.95992; case bars 213, distinct case days 164]
 077-02_choppy-agitated-wide-high-close-fade_1d: inconclusive (fit: exact) [main: 0.0063816; t of the mean, cases of one day taken together 1.54157; distinct case days 163, cases 220]
+077-03.d1_choppy-agitated-low-close-rebound_1d: inconclusive (fit: exact) [main: 0.0033918; t of weighted mean, cases summed per day 1.19383; cases 770, distinct days 465]
+077-03.d2_low-close-rebound-three-days_1d: inconclusive (fit: exact) [main: -0.00394443; t of the mean, cases of one day taken together -1.07429; distinct days with cases 419, cases 667]
+077-03.g1_choppy-agitated-high-close-fall_1d: inconclusive (fit: adapted) [main: 0.00792949; t of the mean, cases of one day taken together 3.26024; cases 538, distinct days 355]
 077-03_choppy-agitated-close-position-reversal_1d: confirmed (fit: exact) [main: 0.000348263; slope t, clustered by day 2.514; in-position bars 2193, distinct days 1065, bars with non-zero forecast (regression cases) 2278, top-third bars 731]

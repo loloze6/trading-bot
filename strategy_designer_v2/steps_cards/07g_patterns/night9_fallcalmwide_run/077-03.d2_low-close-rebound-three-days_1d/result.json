@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "077-03.d2_low-close-rebound-three-days_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.42896239999999997,
+  "findings": {
+    "F1": "Across all bars of folds B and C, a day closing below the middle of its range is followed by a rise the next day only when the coin has risen over its last 20 days: +0.63 % over the coin's normal one-day drift (day-clustered t 2.81, 1,675 cases on 552 days). The rise is +0.99 % over two days (t 2.15) and +1.11 % over three days (t 1.55), so most of it comes on the first day.",
+    "F2": "This up-trend rebound grows with the size of the 20-day rise: +0.22 % (t 0.87), +0.33 % (t 1.29) and +1.35 % (t 3.39) across the terciles of the 20-day return. It holds in calm markets (+0.52 %, t 2.04) and in agitated ones (+0.76 %, t 2.52), and on 9 of 10 coins. By year it is +1.23 % in 2020 and +0.76 % in 2021, but \u22120.49 % in 2018.",
+    "F3": "The mirror case also appears. After a 20-day fall, a day closing above the middle of its range is followed by a fall the next day: \u22120.61 % against drift (t 2.13, 1,974 cases on 587 days). The fall grows with how near the high the close sits: 0.41 %, 0.51 % and 0.90 % across the terciles of the close's distance from the middle (t of the top tercile 2.65).",
+    "F4": "This down-trend fade lives in calm markets, at 0.78 % (t 3.42, 378 days), against 0.47 % (t 1.10) in agitated ones. It is positive on 8 of 10 coins. By year it is 0.87 %, 0.85 % and 1.22 % in 2018 to 2020, and 0.00 % in 2021.",
+    "F5": "Without the trend condition, the close's place in the range barely predicts the next day: Spearman correlation \u22120.08 at one day and \u22120.02 at three days. Over three days, the quintiles of the close's place in the range are all within \u00b10.3 % of drift (|t| \u2264 0.76).",
+    "F6": "The tested profile, choppy agitated, held only 4.3 % of bars (74 low-close cases at one day, 22 at three days). Its lowest quintile of the close's place in the range gained +1.63 % the next day (t 2.57, not day-clustered). The book's three-day hold measured \u22120.39 % against drift (t \u22121.08), so the theme's effect is too thin there to follow up.",
+    "F7": "In the most volatile third of bars, down days are followed by a next-day rise of +0.80 % (t 2.16) and up days by a fall of 0.53 % (t 1.81). This repeats the rebound-after-a-fall books the map already holds in many cells, so I propose no idea from it.",
+    "F8": "The pullback moves in F1 and F3 are 0.6 % per case in one day, about three times the 0.22 % cost of a trade. A next-day hold could therefore pay, unlike the tested idea, whose total move was 0.1 times the cost."
+  },
+  "ideas": [
+    {
+      "idea": "After a coin has risen over its last 20 days, a day closing below the middle of its range is followed by a rise over the next day. The rise is larger the stronger the 20-day rise and the nearer the close sits to the day's low.",
+      "consequence": "A trader buys the weak close inside a 20-day uptrend for one day, rather than reading it as the start of a reversal.",
+      "name": "uptrend low close next-day rebound",
+      "from": "F1, F2, F5, F8",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In a calm market, after a coin has fallen over its last 20 days, a day closing above the middle of its range is followed by a fall over the next day. The fall is larger the nearer the close sits to the day's high and the deeper the 20-day fall.",
+      "consequence": "A trader sells the strong close inside a calm downtrend for one day, a short-side position the map holds almost nowhere.",
+      "name": "calm downtrend high close fade",
+      "from": "F3, F4, F8",
+      "profile": "calm",
+      "theme": "discovery",
+      "refs": [
+        "F3",
+        "F4",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [],
+  "discovery_ids": [
+    "077-03.d2.g1_uptrend-low-close-next-day-rebound",
+    "077-03.d2.g2_calm-downtrend-high-close-fade"
+  ],
+  "no_ideas": null
+}

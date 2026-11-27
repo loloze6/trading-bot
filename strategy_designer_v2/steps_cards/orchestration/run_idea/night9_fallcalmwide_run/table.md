@@ -25,21 +25,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 077-01.b1_choppy-agitated-width-graded-rebound | 077-01_choppy-agitated-wide-low-close-rebound | plan | inconclusive (+1.01) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 077-01.b1.b1_choppy-agitated-low-close-rebound, 077-01.b1.b2_width-vs-usual-range-rebound; 7.g: 077-01.b1.g1_choppy-agitated-width-depth-rebound | 1.34 | 14.1 |
 | 077-02_choppy-agitated-wide-high-close-fade | - | plan | inconclusive (+1.54) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: no ideas: The mean move points the idea's way but the test already used all the data, and the move does not grow with the day's width or the close's nearness to the high (F2, F3), so no graded amendment of the tested idea is supported by any part of the data.; 7.g: no ideas: The only patterns that stand out are the falling-market wide high-close fade and its both-sided graded form (F1, F2, F4), and the map already holds both in the falling agitated profile (060-01.g1.d2.d1 and 058-02.b1.g1.b1.b1). The day-two give-back (F3) and the in-profile choppy agitated readings (F5) are too marginal to stand out after this many angles. I looked at close location by width inside and outside the profile, by trend, by agitation, by width tercile, by year, by coin and by weekday, at the return scaled by its 30-day swing, at 7-day and 60-day returns, at the 5-day horizon and at choppy calm and agitated proxies. | 1.35 | 13.7 |
 | 077-03_choppy-agitated-close-position-reversal | - | plan | confirmed (+2.51) | not profitable enough (failed: Calmar) | - | 7.d: 077-03.d1_choppy-agitated-low-close-rebound, 077-03.d2_low-close-rebound-three-days; 7.g: 077-03.g1_choppy-agitated-high-close-fall | 2.02 | 13.1 |
+| 077-03.d1_choppy-agitated-low-close-rebound | 077-03_choppy-agitated-close-position-reversal | plan | inconclusive (+1.19) | not profitable enough (failed: Calmar) | - | 7.b: 077-03.d1.b1_widest-low-close-next-day-rebound; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.09 | 12.4 |
+| 077-03.d2_low-close-rebound-three-days | 077-03_choppy-agitated-close-position-reversal | plan | inconclusive (-1.07) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 077-03.d2.b1_low-close-rebound-next-day; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.92 | 11.8 |
+| 077-03.g1_choppy-agitated-high-close-fall | 077-03_choppy-agitated-close-position-reversal | plan | inconclusive (+3.26) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 077-03.g1.b1_choppy-agitated-wide-high-close-fall; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.95 | 12.3 |
 
 ## Consumption
-21 ideas, 28.51 USD, 280.5 minutes in all.
+24 ideas, 31.47 USD, 317.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.03 | 13.0 |
-| step4_backtest | 0.00 | 181.6 |
-| step5_verdict | 4.21 | 14.8 |
-| step6_check | 0.00 | 1.4 |
-| chart_files | 0.00 | 0.4 |
+| step3_plan | 3.28 | 14.3 |
+| step4_backtest | 0.00 | 208.1 |
+| step5_verdict | 4.79 | 16.8 |
+| step6_check | 0.00 | 1.6 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 2.55 | 8.2 |
-| step7_7.b | 8.81 | 30.0 |
-| step7_7.g | 9.91 | 30.4 |
+| step7_7.b | 9.63 | 32.4 |
+| step7_7.g | 11.21 | 34.4 |
 | similarity_check | 0.00 | 0.5 |

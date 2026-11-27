@@ -18,4 +18,7 @@
 077-01.b1_choppy-agitated-width-graded-rebound_1d: 2 ideas (2 explorations)
 077-01_choppy-agitated-wide-low-close-rebound_1d: 1 ideas (2 explorations)
 077-02_choppy-agitated-wide-high-close-fade_1d: no ideas: The mean move points the idea's way but the test already used all the data, and the move does not grow with the day's width or the close's nearness to the high (F2, F3), so no graded amendment of the tested idea is supported by any part of the data.
+077-03.d1_choppy-agitated-low-close-rebound_1d: 1 ideas (2 explorations)
+077-03.d2_low-close-rebound-three-days_1d: 1 ideas (1 explorations)
+077-03.g1_choppy-agitated-high-close-fall_1d: 1 ideas (1 explorations)
 077-03_choppy-agitated-close-position-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
