@@ -2,7 +2,6 @@
 instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO
 bar: 1d
 source: line 7.g patterns, backtest 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation_1d (idea 058-02.b1.b2.b1.b2.b2.e2_choppy-calm-edge-continuation, brief 058_choppy-calm-range-edge-reversion)
-discovery: 058-02.b1.b2.b1.b2.b2.e2.g1_choppy-large-up-day-continuation
 ---
 In a choppy market, a coin that has gone nowhere for weeks and then rises in one day far beyond its usual daily swing keeps rising over the following days. The larger the rise against that swing, the larger the further rise. The effect runs one way only. An equally large one-day fall in the same market is not followed by more falling.
 
