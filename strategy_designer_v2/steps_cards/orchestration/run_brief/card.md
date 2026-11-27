@@ -73,6 +73,7 @@ orchestration/run_brief/
 ```
 python3 orchestration/run_brief/helper/run_brief.py --run NAME_run --python VENV_PYTHON
     (BRIEF_FILE | --theme "TEXT" | --source FILE) [--budget USD] [--model MODEL] [--data-use 2]
+    [--target-box auto | --target-box "rising agitated, long"]
 ```
 Called again with the same brief on the same run, it resumes. Called with another brief, it adds it to the run.
 
@@ -84,9 +85,18 @@ plan of the run on those coins and windows; step 7 explores the explore half, st
 (`../../common/explore_and_check.md`). Refused: a run that has already tested ideas without it (`run_idea`'s
 `table.json` exists), or whose file names another version. Without the flag, nothing changes.
 
+**`--target-box auto` or `--target-box "rising agitated, long"`** (2026-11-27, next steps B2.1;
+`../../common/target_box.md`; `../../runs/BUILD_B2_1.md`): the run's target box, the box (a market profile and a side)
+where it searches. `auto` applies the rule (the box with the most market days per strategy whose idea names it exactly:
+share / (1 + count), from the profile map); a box in words is the operator's choice. Before step 1 (after the data use),
+it writes `orchestration/loop/<run>/target_box.json` once: the profile, the side, who chose it, and for the rule its
+table of the twelve boxes. Resumed, the file is kept (with or without the option); a call naming another box is
+refused. Then `select_next` lists the ideas not acting in the box as outside it (the loop tests only the others), and
+line 7.g is told to look there first. Without the option, nothing changes.
+
 ## Checks in code
 Refused before any call: a run name not ending in `_run`; none or more than one of brief, theme, source; a brief file
-that does not exist; a budget that is not a positive number.
+that does not exist; a budget that is not a positive number; a target box that is not `auto` or one of the twelve boxes.
 
 ## Done when
 On one brief from step 1's list, with a small budget: step 2 writes the brief's ideas in the run, the loop's first

@@ -63,6 +63,12 @@ discovery: one line in `loop.jsonl` (`"discovery"`: its file, the brief, the num
 the budget is reached; a refused model call stops the loop, and the discovery is handled when it resumes. Steps 1 and
 2 count in the run's spend.
 
+**In a run with a target box** (`../../common/target_box.md`, written by `run_brief --target-box`; next steps B2.1,
+2026-11-27): the loop tests only ideas acting in the box; `select_next` lists the others as outside it. A discovery
+outside the box still becomes a brief, as above (in step 1's list, kept for a later run); its ideas are written in the
+run and listed in the queue as outside the box, not tested. The filter is `select_next`'s, once; the loop adds none.
+An idea given as the loop's starting idea, or one resumed (its test begun), is run as before.
+
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.
@@ -96,7 +102,7 @@ the queue from these files.
 ## Visibility
 - **The queue** (`<name>_run/queue.md`, `queue.json`): every idea written in the run: its line, generation, record,
   score, rank (its parent is its id), and what happened (tested: its step 5 and step 6, a goal marked; candidate:
-  waiting; duplicate of; excluded: its call failed).
+  waiting; duplicate of; excluded: its call failed; outside the run's box).
 - **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
   USD so far; one line per call of the components step (its summary); one line per discovery turned into a brief.
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.
@@ -110,6 +116,8 @@ orchestration/loop/
   <name>_run/
     queue.md, queue.json     every idea proposed in the run and what happened to it
     loop.jsonl               one line per turn
+    data_use.json            a run in the new data use (run_brief --data-use 2)
+    target_box.json          a run with a target box (run_brief --target-box; common/target_box.md)
 (the ideas' own runs: orchestration/run_idea/<name>_run/ and the steps' <name>_run/ folders)
 ```
 
