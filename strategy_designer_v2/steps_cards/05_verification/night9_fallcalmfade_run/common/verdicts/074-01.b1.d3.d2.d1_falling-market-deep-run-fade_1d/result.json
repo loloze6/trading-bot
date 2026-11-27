@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9836065573770492,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual short gain over 1 day (next-day return minus coin mean daily return, sign flipped)",
+    "value": 0.0034561523435371754,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 1.6220856904495677
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and supporting check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual short gain, top third by |forecast| minus bottom third",
+    "value": 0.010070887975144336,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3231,
+    "distinct case days": 820
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Situation computed as raw run_depth > 0 on an up close after a down close, in a falling market read as a negative 60-bar price change inside the window (the recorded regime where 60 bars are not available), on a negative forecast; cases are bets of the short forecast rising in size by at least 2 from its lowest level since the last bet (reset at flat), every bar being a 1-bar grid cell; the t pools cases per UTC day (cluster standard error with D/(D-1) correction); thirds are floor(n/3) cases sorted by |forecast| then time; the plan's 'fewer than 30 distinct case days' is applied as a minimum count, giving 'not observable'."
+}
