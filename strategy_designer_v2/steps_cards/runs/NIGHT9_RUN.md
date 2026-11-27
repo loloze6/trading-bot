@@ -106,6 +106,12 @@ box; the spend after each brief was answered.
   rising calm rebound, 075 volume). Each session told to delete that line from its starting briefs' run copies (no
   code; the `source:` line keeps where they came from); for the record: when a run starts from a brief, the brief is
   generation 0 whatever its origin (next steps: `run_brief` drops it itself).
+  **01:25 Paris:** all 6 sessions applied it (A db19a89694, B ad6485b7dd, C 8f4e67c, D d6c7df2, E cff147a547, F
+  2daabb6488), no loop stopped; B's queue: its 072 ideas back at ranks 1 to 3 (score 0.1825 against 0.0338 next). All
+  six had their 2-hour task cut around 01:10 Paris and resumed with `--budget 42`. Noted: E counts 12 backtested ideas
+  (7 stopped at step 3, 2 untestable), 8 confirmed, 3 profitable, 074-01.b1.g1 holding on both unseen periods; C's
+  brief 075 is named "falling agitated, monthly move reverses" but its discovery is a falling-calm slide that continues
+  (a naming slip by step 1, for the reading).
 
 ## Reading
 (written in the morning)
