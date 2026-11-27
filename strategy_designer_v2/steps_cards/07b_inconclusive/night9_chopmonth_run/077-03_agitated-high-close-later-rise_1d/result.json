@@ -1,0 +1,39 @@
+{
+  "line": "7.b",
+  "backtest": "077-03_agitated-high-close-later-rise_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3730507,
+  "findings": {
+    "F1": "The test measured the high-close side, where the effect is weakest: step 5's mean unusual 6-bar move is +0.61 % with t 1.27 (1899 cases, 751 days), and in folds B and C the agitated high closes (close location 0.8 or more) give \u22120.30 % over 6 days (t \u22120.16 with the cases of one day together; 195 cases, 74 days), with a slope of the 6-day unusual move on close location in the top half of the range of \u22120.002 (t \u22120.04, 441 cases).",
+    "F2": "The mirror side carries the effect: in an agitated market, after a close in the bottom 40 % of the day's range, the coin's unusual move from the next day's close is \u22124.37 % over 6 days (t \u22122.15 with the cases of one day together; 192 cases, 75 days), \u22122.32 % over 3 days (t \u22122.03) and \u22127.05 % over 12 days (t \u22122.62), against +0.07 % over 1 day (t 0.09).",
+    "F3": "The grading with the close's place in the range lives in the bottom half of the range. Across all agitated cases the slope of the 6-day unusual move on close location is 0.067 (t 3.26, 702 cases). In the bottom half alone it is 0.141 (t 2.33, 261 cases), while in the top half it is \u22120.002. By bin, the 6-day unusual move is \u22125.05 % (t \u22122.76) for closes at 0 to 0.2, \u22123.91 % (t \u22123.73) at 0.2 to 0.4, and +0.78 % and +0.67 % at 0.4 to 0.8.",
+    "F4": "The fall after a low close is specific to agitated markets: in calm markets the same bins give \u22120.19 % (t \u22120.16, 97 cases) at 0 to 0.2 and \u22120.62 % (t \u22120.70, 148 cases) at 0.2 to 0.4 over 6 days.",
+    "F5": "The fall after an agitated low close is broad: the 6-day unusual move is negative on all 10 coins (from \u22122.10 % on BTC to \u221212.16 % on TRX). It is negative in 3 of the 4 years: \u22124.19 % in 2018, \u22122.35 % in 2019 and \u22129.62 % in 2021, against +0.46 % in 2020.",
+    "F6": "The high-close result is not just small but mixed, and the market's own moves drown it: its 6-day unusual move is \u22124.47 % in 2020 (t \u22122.81, 74 cases) and +3.64 % in 2021 (t 1.87, 79 cases), and it is +1.58 % after an up day of more than 3 % but \u22125.91 % (t \u22123.00) after a smaller up day.",
+    "F7": "The coin's own rise offsets part of the fall after a low close. Before removing the drift, the 6-day move is \u22123.24 % (t \u22121.58, 75 days), which is still 14 times a trade's 0.22 % cost. The idea is a short, so the drift works against it."
+  },
+  "ideas": [
+    {
+      "idea": "In an agitated market, a daily close near the bottom of that day's high-to-low range is followed by a fall from the end of the next day to the end of the seventh day, larger the nearer the close sits to the day's low.",
+      "consequence": "After an agitated day that closes at its low, a trader can expect the sellers who won the day to keep pushing the coin down through the rest of the week, and can refuse longs or lean short.",
+      "name": "agitated low close later fall",
+      "from": "F1, F2, F3, F4, F5, F7",
+      "profile": "agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-03.b1_agitated-low-close-later-fall"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

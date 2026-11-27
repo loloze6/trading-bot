@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar excess return on the forecast (forecast < 0 grid bars)",
+    "value": 0.001657913330775799,
+    "statistic": {
+      "name": "t, errors clustered by day",
+      "value": 1.0147378299514183
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean unusual short move > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction (minus excess return)",
+    "value": 0.005388296212677618,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a forecast below 0": 215,
+    "distinct days": 108
+  },
+  "decided_by": "the slope t lies between -2 and 2",
+  "reading": "the drift is each coin's mean 7-bar return on the non-overlapping grid of all its windows, the slope is in 7-bar excess return (fraction) per forecast point with CR1 day-clustered errors, and the plan's minimum counts lead to 'not observable' as the workflow requires"
+}

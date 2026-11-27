@@ -1,0 +1,52 @@
+{
+  "line": "7.b",
+  "backtest": "067-02.b1.b1.d1.d2_agitated-choppy-deep-falls_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36056390000000005,
+  "findings": {
+    "F1": "The test's own 21-day grid holds very few in-profile cases, so its t cannot reach 2. In folds B and C, only 6 grid cases on 3 days fall in a choppy agitated profile after a monthly fall, and only 3 of them are deep. Step 5's main measure, over all folds, has 22 deep cases on 17 days with mean +5.84 % and t 1.37. It is on the predicted side but short of the bar.",
+    "F2": "The same situation measured over shorter horizons gives more cases and a clearer effect. On a 5-day grid, the 39 in-profile falls on 25 days have a short-direction unusual move of +9.85 % (t 2.58). On a 10-day grid, 22 cases on 12 days give +10.7 % (t 2.45). On a 3-day grid, 59 cases give +3.6 % (t 1.70).",
+    "F3": "The effect is graded with depth, but roughly in proportion rather than cubic. On the 5-day grid, the terciles of the 30-day return give +5.7 % (t 2.16), +10.8 % (t 2.18) and +13.0 % (t 1.96), from shallowest to deepest. The correlation of the 30-day return with the 5-day unusual move is 0.27. Deep cases are not alone in carrying the effect: on the 5-day grid, shallow cases give +9.1 % with t 3.41.",
+    "F4": "The effect lives in the profile. Outside the choppy agitated profile, monthly falls are followed by a 5-day short-direction unusual move of only +1.0 % (t 1.13, 678 cases) and a 21-day move of +1.0 % (t 0.16, 117 cases).",
+    "F5": "It holds on the falling side only, which the idea already names. In-profile monthly rises are not followed by further rises: their 5-day short-direction move is -1.0 % (t -0.47, 14 cases).",
+    "F6": "The effect is spread across coins and periods, not carried by one of them, though each piece is small. On the 5-day grid, all 8 coins and all 4 years are positive (2019: +5.8 %, t 3.12; 2021: +4.1 %, t 1.63). Window w12 is the only negative window (-0.6 %, 7 cases).",
+    "F7": "The move per case is far above the cost of a trade. On the 5-day grid, the total short-direction move after in-profile falls is +9.0 % per case, against a trade cost of 0.22 %."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, the further a coin's close sits below its close of 30 days earlier, measured as a plain percent of that earlier close, the more it falls over the next 5 days.",
+      "consequence": "A trader shorts monthly losers in agitated chop for about a week, sized in proportion to the month's fall, rather than holding three weeks on the deepest falls only.",
+      "name": "agitated chop falls, five days",
+      "from": "F1, F2, F3, F4, F7",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, the further a coin's close sits below its close of 30 days earlier, measured as a plain percent of that earlier close, the more it falls over the next 10 days.",
+      "consequence": "A trader holds the agitated-chop short on monthly losers for about ten days, sized by the depth of the month's fall.",
+      "name": "agitated chop falls, ten days",
+      "from": "F2, F3, F4, F6",
+      "profile": "choppy agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-02.b1.b1.d1.d2.b1_agitated-chop-falls-five-days",
+    "067-02.b1.b1.d1.d2.b2_agitated-chop-falls-ten-days"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

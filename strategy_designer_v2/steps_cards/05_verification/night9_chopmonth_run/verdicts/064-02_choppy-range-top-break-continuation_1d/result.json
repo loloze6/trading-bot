@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar unusual move per case (return from signal close minus coin's normal 5-bar drift)",
+    "value": 0.02385677195015734,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 1.2682344603614568
+    },
+    "threshold": "mean > 0 with day-pooled t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "OLS slope of the 5-bar unusual move on the signal-bar forecast, t >= 2",
+    "value": 5.741814230276384,
+    "passed": true
+  },
+  "counts": {
+    "cases": 245,
+    "distinct days": 187
+  },
+  "decided_by": "The day-pooled t of the mean unusual move lies between -2 and 2.",
+  "reading": "The situation check uses the recorded brk raw value (> 0, long) and the recomputed distance where it is missing, and leaves out the code-added choppy profile; a case is the first bet of each 5-bar grid cell from each window's first row, the day-pooled t uses the per-day sums of deviations with a G/(G-1) correction, and the supporting t is the ordinary OLS slope t."
+}

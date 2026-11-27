@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 7-bar return",
+    "value": 0.002811625237729524,
+    "statistic": {
+      "name": "t of weighted mean, same-day cases together",
+      "value": 0.3008724287160283
+    },
+    "threshold": "weighted mean > 0 with t >= 2 to confirm; < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third mean excess return",
+    "value": 0.02537942641570488,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases with forecast > 0": 1138,
+    "days the cases fall on": 277
+  },
+  "decided_by": "t between -2 and 2 (or undefined): inconclusive.",
+  "reading": "Cases are grid bars (positions 0, 7, 14, ... of each window) with forecast > 0 and a full 7-bar forward return; the coin mean is over all its grid returns in all windows; t uses day-clustered deviations of the weighted mean; terciles are the n//3 highest and lowest forecasts, unweighted means; fewer than 100 cases is reported as not observable."
+}

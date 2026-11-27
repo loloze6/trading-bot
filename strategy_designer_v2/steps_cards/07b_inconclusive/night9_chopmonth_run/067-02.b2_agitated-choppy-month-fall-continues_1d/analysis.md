@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 067-02.b2_agitated-choppy-month-fall-continues_1d
+idea tested: 067-02.b2_agitated-choppy-month-fall-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3562 USD
+---
+## Findings
+- **F1:** The tested result is on the predicted side but short of the bar: the slope of the 7-day excess return on the forecast is positive at 0.00166 with t 1.01, on 215 grid cases over 108 days. On folds B and C the same cases (58) show a 7-day short unusual move of +1.7 % (t 0.90) and a slope t of 0.49, and no more data is available than the test used.
+- **F2:** Measured in the brief's wider "choppy" market (60-day return between -10 % and +10 %, calm or agitated) with the plain 30-day return, a 30-day fall is followed by a further fall over the next 7 days: 54 non-overlapping cases, short unusual move +5.7 % (t 3.24), strength 0.36, and a graded slope on the 30-day return of 0.47 (t 3.34).
+- **F3:** Inside that choppy market the effect rises with the depth of the fall. By tercile of the 30-day return, the 7-day short unusual move is +11.4 % for the deepest (t 3.54), +4.7 % for the middle (t 1.93) and +1.0 % for the shallowest (t 0.32), 18 cases each.
+- **F4:** The effect in the choppy market holds in each year with cases: the 7-day short unusual move is +3.9 % in 2019 (13 cases, t 2.02), +5.2 % in 2020 (20 cases, t 1.30) and +6.4 % in 2021 (17 cases, t 4.14).
+- **F5:** The effect is present in both halves of the choppy market. In the agitated half, 18 cases give a short unusual move of +11.6 % (t 3.38) but a slope t of only 0.93. In the calm half, 36 cases give +2.8 % (t 1.49) with a slope t of 2.31. Narrowing the test to agitated alone left too few cases to measure the grading.
+- **F6:** Outside the choppy market, deeper 30-day falls are not followed by larger falls: over 272 cases the 7-day slope on the 30-day return is -0.16 (t -2.60), against +0.47 (t 3.34) inside the choppy market. The effect lives in the choppy market only.
+- **F7:** In the choppy market the effect shows over 3 and 7 days and is gone by 14:
+- **F8:** The tested forecast, standardised over its past 60 values, grades the in-profile cases less well than the plain 30-day return: slope t 0.49 on 58 grid cases, against 1.11 for the plain return on the 30 in-profile falls measured.
+
+## Ideas
+- `067-02.b2.b1_choppy-month-fall-continues` (from F1, F2, F3, F4, F5, F6, F8): In a choppy market, the larger a coin's plain 30-day fall below zero (its close under its close of 30 days earlier), the more it falls over the next 7 days.
+- `067-02.b2.b2_choppy-month-fall-three-days` (from F2, F6, F7): In a choppy market, the larger a coin's plain 30-day fall below zero (its close under its close of 30 days earlier), the more it falls over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

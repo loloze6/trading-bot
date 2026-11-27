@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean 7-bar directional excess return (short), short grid bars",
+    "value": 0.007043963877080487,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 0.5869336567165278
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 days and supporting check passes; reject: t <= -2 over >= 30 days"
+  },
+  "supporting_check": {
+    "name": "mean excess of larger-|forecast| half minus smaller half",
+    "value": 0.013815930663871915,
+    "passed": true
+  },
+  "counts": {
+    "independent days with a short grid case": 133,
+    "short grid cases": 276
+  },
+  "decided_by": "|t| < 2 over at least 30 days: the result is inconclusive.",
+  "reading": "Days are UTC calendar days of the grid bar; the day-clustered t sums each day's weighted deviations; the larger half is the top floor(n/2) cases by |forecast| (ties in record order) with unweighted half means; 'near zero' is read as covered by the |t| < 2 rule, with no extra threshold."
+}

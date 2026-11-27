@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues_1d
+idea tested: 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3846 USD
+---
+## Findings
+- **F1:** The test's result points the way the idea predicts, but it is too weak to confirm: a short bet's unusual 10-day move is +1.36 % per case with t 1.51 on 310 cases over 227 days. The test already used all 19 coins on all four folds of daily data, so no more data is available to strengthen it.
+- **F2:** In folds B and C, one window carries the effect.
+- **F3:** The effect changes sign across periods rather than holding throughout.
+- **F4:** The idea's grading is absent, so deeper falls are not followed by larger continuations.
+- **F5:** The idea's deeper-fall grading does not reappear in other cuts.
+- **F6:** Other horizons and the recent week do not sharpen the result.
+- **F7:** Most of the unusual move comes from removing the coins' normal drift, not from the coins actually falling, and the book cannot pay.
+
+## Ideas
+- No ideas: The theme's effect is not in the data. The slide's continuation in an agitated choppy market rests on one window (w16; without it +0.42 %, t 0.20, F2), reverses in other windows and years (F3), and is not graded by the depth of the fall in any cut (F4, F5). No narrower case of the situation gives a clear answer, and no more data is available to test the idea unchanged (F1).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-adjusted 7-bar forward return on forecast (grid bars with forecast < 0)",
+    "value": 0.0027118692058623415,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 2.621655037878819
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and mean short gain > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean short gain (minus drift-adjusted 7-bar return)",
+    "value": 0.006611885127282324,
+    "passed": true
+  },
+  "counts": {
+    "cases": 633,
+    "distinct days": 211
+  },
+  "decided_by": "The slope is positive with t >= 2 and the mean short gain is above 0, with at least 100 cases on 60 days.",
+  "reading": "The choppy market is read as the detector's regime 'unknown' (the 60-bar move within +-10, the only regime with a strategy) and the fall as a negative 30-bar raw value; the normal 7-bar drift is the coin's mean 7-bar return on the non-overlapping grid of all its windows; pooling cases of the same day is done with a day-clustered standard error of the OLS slope; and the plan's 'fewer than 100 cases or 60 days' is reported as not observable.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.003125 on the check folds against +0.002712 on every fold",
+    "main": 0.0031251080891351716,
+    "statistic": 3.1000967770876677,
+    "counts": {
+      "cases": 474,
+      "distinct days": 135
+    }
+  }
+}

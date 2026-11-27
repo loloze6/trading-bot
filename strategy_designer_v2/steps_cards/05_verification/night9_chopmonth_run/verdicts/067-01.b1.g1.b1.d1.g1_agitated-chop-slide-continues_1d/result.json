@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed excess 10-bar return, weighted by -forecast/10, short side",
+    "value": 0.003881646888879231,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 0.2131531753306633
+    },
+    "threshold": "mean > 0 with t >= 2 (confirm), mean < 0 with t <= -2 (reject), on at least 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "unweighted mean signed excess, largest-|forecast| half minus smallest half",
+    "value": -0.02086601448076595,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 70,
+    "cases": 136
+  },
+  "decided_by": "The main measure's t lies between -2 and 2 (or its sign disagrees with the mean's), meeting neither confirm nor reject.",
+  "reading": "Situation bars are those with a negative 30-day return (recorded fall30 raw value, rebuilt from closes where missing) in the regime 'unknown' the profile leaves open, on the short side; grid bars are positions 0,10,20,... of each window with a close 10 bars later in the same window; the normal drift is the mean of all the coin's grid 10-bar returns over all its windows; the t sums the cases' deviations per UTC day (clustered standard error); the halves are the n//2 cases with the largest and smallest |forecast| (stable sort), the middle case left out when n is odd; the 30-distinct-day minimum gives 'not observable' when not reached."
+}

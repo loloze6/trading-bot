@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks_1d
+idea tested: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks
+step 5: not observable
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4602 USD
+---
+## Findings
+- **F1:** In a choppy market the 30-day return points the way of the next 7 days, and the effect fades at the tested 21 days. On the 7-day grid, the signed excess return (the 30-day return's direction times the excess return) is +3.47 % (t 2.55, cases of a day together, 215 cases on 85 days). At 3 days it is +0.94 % (t 2.08, 214 days). At 14 days it is +2.00 % (t 0.52) and at 21 days +2.52 % (t 0.46, 21 days only).
+- **F2:** Inside the choppy market, the 7-day effect sits on the falling side. The lowest fifth of 30-day returns (mean −26.4 %) is followed by a 7-day excess of −9.39 % (t −2.87, 43 cases, 23 days), and the second fifth by −4.40 % (t −2.01, 28 days). The two rising fifths give +2.32 % (t 1.05) and +1.82 % (t 0.59).
+- **F3:** The falling side lives in choppy agitated markets. After a 30-day fall, the 7-day short-direction excess is +9.02 % in choppy agitated bars (t 3.10, 39 cases, 25 days), against +3.03 % in choppy calm bars (t 1.66, 72 cases, 36 days). After a 30-day rise in choppy agitated bars it goes the other way, −4.87 % (t −1.49, 13 cases).
+- **F4:** Scaling the 30-day return by the coin's own 30-day swing grades the 7-day choppy-market move better than the plain percent. The correlation with the 7-day excess is 0.315 for the scaled return against 0.252 for the plain one (215 cases).
+- **F5:** The tested book is a short bet on the coins' moves, not a timing gain. On its worst 2 % of days (29 days, book −3.07 %) the coins rose +9.27 %. On its best 2 % (book +3.75 %) they fell −10.36 %. It held positions on 28 % of coin-days, mostly through the 21-day holding beyond the week where the effect lives, and its Sharpe is −0.14.
+- **F6:** Other angles do not stand out, or repeat ideas the map already holds.
+
+## Ideas
+- `067-02.b1.b1.d1.d1.g1_choppy-agitated-month-fall-continues` (from F1, F2, F3, F4): In a choppy, agitated market, the deeper a coin's 30-day fall, measured against its own 30-day swing, the more it keeps falling over the next 7 days.
+- `067-02.b1.b1.d1.d1.g2_choppy-month-fall-week` (from F1, F2, F4, F5): In a choppy market, the deeper a coin's 30-day fall, measured against its own 30-day swing, the more it falls over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

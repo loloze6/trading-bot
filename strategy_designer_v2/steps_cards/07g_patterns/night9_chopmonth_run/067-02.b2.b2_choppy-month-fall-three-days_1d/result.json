@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "067-02.b2.b2_choppy-month-fall-three-days_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39865860000000003,
+  "findings": {
+    "F1": "In the choppy market (folds B, C), the 3-day excess return falls only in the two lowest quintiles of the 30-day return: -0.33 of a usual move in the lowest (t -2.10, 104 cases, 60 days) and -0.15 in the second (t -1.90, 104 cases). The middle and upper quintiles sit near 0 (-0.003, -0.026, -0.006, all |t| < 0.4). So the tested effect lives in the deepest month-long falls, and the gradient inside the fall side is weak (slope t 1.06 at 3 days, 272 cases).",
+    "F2": "Among choppy bars with a 30-day fall, the agitated ones carry the effect. Their 3-day excess is -0.48 of a usual move (t -2.54, 71 cases), against -0.09 for the calm ones (t -1.27, 201 cases). Over 7 days it is -0.59 (t -2.09, 34 cases) against -0.18 (t -1.94, 77 cases). The map holds no strategy in the choppy agitated short cell (0).",
+    "F3": "The choppy 30-day-fall effect grows with the horizon. The excess is -0.11 of a usual move at 1 day (t -1.81, 809 cases), -0.19 at 3 days (t -2.50, 272 cases) and -0.31 at 7 days (t -2.64, 111 cases). At 7 days the graded slope on calm bars is +0.26 (t 2.59, 77 cases), the first horizon where the depth of the fall orders the move.",
+    "F4": "The brief's mirror does not appear on the rise side. Choppy bars with a 30-day rise show a 3-day excess of -0.02 (t -0.33, 248 cases) and a 7-day excess of +0.09 (t 0.70, 104 cases), and the top 30-day quintile gives -0.006 (t -0.07).",
+    "F5": "The book's gain rests on one window and a few years. Its mean daily return is +0.108 % in w16 (daily standard deviation 1.15 %), against negative means in 7 of the 12 explored windows (w8 -0.025 %, w10 -0.025 %, w17 -0.032 %). The mean gain on active bars is +0.14 % in 2020 and -0.01 % in 2021 (472 bars). This matches the failed one-window-left-out Sharpe (-0.072)."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, the larger a coin's 30-day fall below zero (its close under its close of 30 days earlier), the more it falls over the next 3 days.",
+      "consequence": "A deeper month-long fall is a stronger reason to short for a few days when a trendless coin is also swinging more than usual, and a weak one when it is calm.",
+      "name": "choppy agitated month fall",
+      "from": "F2, F1",
+      "profile": "choppy agitated",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the larger a coin's 30-day fall below zero, the more it falls over the next 7 days.",
+      "consequence": "In a trendless market, a deeper month-long fall is a reason to hold a short for a week rather than three days, so the move it captures covers a trade's cost.",
+      "name": "choppy month fall week",
+      "from": "F3, F1",
+      "profile": "choppy",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-02.b2.b2.g1_choppy-agitated-month-fall",
+    "067-02.b2.b2.g2_choppy-month-fall-week"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,46 +1,57 @@
-# CloseLocationInRangeComponent: night_run | 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next.g1_falls-closing-near-low-bounce_1d | CloseLocationComponent
+# CloseLocationInRangeComponent: night9_chopmonth_run | 077-03_agitated-high-close-later-rise_1d | LaggedCloseLocationInRangeComponent
 
 ## attempt 1
 
 answer: built
 class: CloseLocationInRangeComponent
-settings: {"reference": "high"}
-reason: `CloseLocationInRangeComponent` gives (close − low) / (high − low), and the wish is 1 minus that. Under rule 1 this is the same measure. No config step gives 1 minus a value (`negate` gives the negative, and `standardise` does not centre), so the class is written again with a `reference` setting. Its default "low" keeps today's output exactly, and "high" gives (high − close) / (high − low), which differs on every real bar whose close is not at mid-range.
+settings: {"reference": "low", "lag": 1}
+reason: `CloseLocationInRangeComponent` (`reference` "low") computes this measure, but only on bar t. No config step delays a value, so the class is written again with a `lag` setting whose default 0 keeps today's output exactly.
 
 table: Hedges and filters
-row: | `CloseLocationInRangeComponent` | `reference` ("low") | `reference` "low": (close[t] − low[t]) / (high[t] − low[t]); `reference` "high": (high[t] − close[t]) / (high[t] − low[t]); 0.5 when high[t] = low[t] (either setting) | 0 to 1, never negative; no sign. "low": 0 = close at the bar's low, 1 = at its high. "high": 0 = close at the bar's high, 1 = at its low (grows as the close nears the low). 0.5 at mid-range | graded | dimensionless (share of the bar's range) | 1 | high, low, close of bar t only. A NaN in any of the three gives NaN; a zero range gives 0.5; a missing column raises; a `reference` other than "low" or "high" raises when the component is built | stateless; the shape of the current bar only, no lookback. "high" is 1 minus "low" (no config step gives 1 minus a value, hence the setting). Bounded in [0, 1] when the close lies inside [low, high], as on real bars. Ignores the open. No `scaling_factor`: scale it with transforms |
+row: | `CloseLocationInRangeComponent` | `reference` ("low"), `lag` (0) | with e = t − `lag`: `reference` "low": (close[e] − low[e]) / (high[e] − low[e]); `reference` "high": (high[e] − close[e]) / (high[e] − low[e]); 0.5 when high[e] = low[e] (either setting). With `lag` 1 and "low": (close[t-1] − low[t-1]) / (high[t-1] − low[t-1]) | 0 to 1, never negative; no sign. "low": 0 = close at bar e's low, 1 = at its high. "high": 0 = close at bar e's high, 1 = at its low. 0.5 at mid-range | graded | dimensionless (share of the bar's range) | `lag` + 1 (1) | high, low, close of bar e = t − `lag` only. A NaN in any of the three gives NaN; a zero range gives 0.5; a missing column raises. These settings raise when the component is built: `reference` other than "low" or "high", `lag` not an integer >= 0 | stateless; the shape of one bar only, no lookback. `lag` 0 (default) is the original output, unchanged. With `lag` above 0, bars after t − `lag` are not read, so the value at t is the `lag` 0 value at bar t − `lag`. No config step delays a value, hence the setting. "high" is 1 minus "low" (no config step gives 1 minus a value, hence that setting). Bounded in [0, 1] when the close lies inside [low, high], as on real bars. Ignores the open. No `scaling_factor`: scale it with transforms |
 
 ```python class
 class CloseLocationInRangeComponent(SubStrategyComponent):
     """
-    Where the current bar's close sits inside the bar's own range, measured from one end:
+    Where the close of one bar sits inside that bar's range, read lag bars back:
 
-        reference = "low" (default): raw_value = (close[t] - low[t]) / (high[t] - low[t])
-        reference = "high":          raw_value = (high[t] - close[t]) / (high[t] - low[t])
-        high[t] == low[t] (zero range): raw_value = 0.5 with either reference
+        e = t - lag                  (lag 0, the default: e = t, bar t itself)
+        reference = "low" (default): raw_value = (close[e] - low[e]) / (high[e] - low[e])
+        reference = "high":          raw_value = (high[e] - close[e]) / (high[e] - low[e])
+        raw_value = 0.5 when high[e] == low[e] (either reference)
 
-    The default "low" is the original output: 0 when the close is at the bar's low, 1 at its high.
-    Setting "high" gives 1 minus that: 0 when the close is at the bar's high, growing to 1 as the close
-    nears the bar's low.
-    Graded. The value lies in 0 to 1 and is never negative when the close lies inside [low, high], as it does
-    on real bars. It has no sign. It is 0.5 at mid-range.
-    Warm-up: 1 row (bar t only).
+    With lag 1 and reference "low": (close[t-1] - low[t-1]) / (high[t-1] - low[t-1]), the prior bar's
+    close location. lag 0 with either reference is the original output, unchanged.
+    Range and sign: 0 to 1 when the close lies inside [low, high] (always on real bars), never negative,
+    no direction. "low": 0 at the bar's low, 1 at its high. "high": 0 at the bar's high, 1 at its low.
+    Graded and continuous in the close, high and low while the range is above 0.
+    Warm-up: lag + 1 rows, bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `high`, `low` and `close` values of the last row of data (bar t),
-    all of which are known at bar t's close; no earlier or later row is read.
+    WHY THIS CANNOT LEAK: it reads only the high, low and close of the single row e = t - lag of the data
+    (the row lag rows before the last one, the last one being bar t); no later row is read, and a bar's
+    high, low and close are known at that bar's close.
 
-    NaN: a NaN high, low or close on bar t gives NaN. A zero range gives 0.5, because there is no range to
-    place the close in. A missing column raises.
-    Building the component raises for a reference other than "low" or "high".
+    NaN: a NaN high, low or close on bar e gives NaN. A missing column raises.
+    Building the component raises for a reference other than "low" or "high", or a lag that is not an
+    integer >= 0.
     """
 
     def __init__(self, name="CloseLocation", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         ref = self.parameters.get("reference", "low")
         if ref not in ("low", "high"):
-            raise ValueError(
-                f"CloseLocationInRangeComponent: reference must be 'low' or 'high', got {ref!r}")
+            raise ValueError(f"CloseLocationInRangeComponent: reference must be 'low' or 'high', got {ref!r}")
         self.reference = ref
+        lag = self.parameters.get("lag", 0)
+        if isinstance(lag, bool):
+            raise ValueError(f"CloseLocationInRangeComponent: lag must be an integer >= 0, got {lag!r}")
+        try:
+            lag_int = int(lag)
+        except (TypeError, ValueError):
+            raise ValueError(f"CloseLocationInRangeComponent: lag must be an integer >= 0, got {lag!r}")
+        if lag_int != lag or lag_int < 0:
+            raise ValueError(f"CloseLocationInRangeComponent: lag must be an integer >= 0, got {lag!r}")
+        self.lag = lag_int
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -49,49 +60,53 @@ class CloseLocationInRangeComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        h = float(data['high'].iloc[-1])
-        l = float(data['low'].iloc[-1])
-        c = float(data['close'].iloc[-1])
+        idx = len(data) - 1 - self.lag
+        h = float(data['high'].iloc[idx])
+        l = float(data['low'].iloc[idx])
+        c = float(data['close'].iloc[idx])
         if np.isnan(h) or np.isnan(l) or np.isnan(c):
-            self._raw_value = float("nan")
+            value = float("nan")
         else:
             rng = h - l
             if rng == 0:
-                self._raw_value = 0.5
+                value = 0.5
             elif self.reference == "high":
-                self._raw_value = float((h - c) / rng)
+                value = (h - c) / rng
             else:
-                self._raw_value = float((c - l) / rng)
+                value = (c - l) / rng
+        self._raw_value = float(value)
         self.confidence = 1.0
-        self.debug_info = {'high': h, 'low': l, 'close': c, 'reference': self.reference}
+        self.debug_info = {'high': h, 'low': l, 'close': c, 'lag': self.lag, 'reference': self.reference}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return 1
+        return self.lag + 1
 ```
 
 ```python hand
 def hand(df, params):
     ref = params.get("reference", "low")
+    lag = int(params.get("lag", 0))
     highs = [float(x) for x in list(df["high"])]
     lows = [float(x) for x in list(df["low"])]
     closes = [float(x) for x in list(df["close"])]
-    h = highs[len(highs) - 1]
-    l = lows[len(lows) - 1]
-    c = closes[len(closes) - 1]
+    t = len(closes) - 1
+    e = t - lag
+    h = highs[e]
+    l = lows[e]
+    c = closes[e]
     if h != h or l != l or c != c:
         return float("nan")
-    if h == l:
+    width = h - l
+    if width == 0:
         return 0.5
     if ref == "high":
-        distance = h - c
-    else:
-        distance = c - l
-    return distance / (h - l)
+        return (h - c) / width
+    return (c - l) / width
 ```
 
 checks:
 CloseLocationInRangeComponent: every check passed
-proof: 588 files compared, identical but for run ids, times and temporary paths; the bot's suite: === 1534 passed, 8 skipped, 74 deselected, 2170 warnings in 65.68s (0:01:05) ===
+the bot's suite: == 1677 passed, 16 skipped, 75 deselected, 2244 warnings in 135.46s (0:02:15) ==

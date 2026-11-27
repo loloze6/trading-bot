@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "067-01_choppy-strong-month-rise-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.39558360000000004,
+  "findings": {
+    "F1": "In choppy markets, a coin's 30-day return predicts its next 7 days, but only on the falling side. On the offset-0 7-day grid of folds B, C, the slope of excess return on a negative 30-day return is 0.38 (t 3.93, 111 cases). The slope on a positive 30-day return is -0.07 (t -0.81, 104 cases). This explains why the tested long-only idea was inconclusive (slope t 0.86).",
+    "F2": "In choppy markets, after a negative 30-day return the coin falls 5.1 % below its normal 7-day drift on average. The t is -2.53 with the cases of one day summed, over 111 cases on 54 days. Every one of the 12 coins with cases shows a negative mean, from -1.3 % (BTC) to -10.6 % (AAVE, DOGE). Every year is negative too, from -3.1 % (2019) to -7.7 % (2021).",
+    "F3": "The graded effect holds at the ends of the choppy 30-day quintiles. The weakest-month fifth is followed by -9.4 % excess over 7 days (t -4.95, 43 cases) and the second fifth by -4.4 % (t -2.46). The three upper fifths sit between +0.5 % and +2.3 % (all t under 1.3).",
+    "F4": "The negative-side slope keeps its sign on all 7 grid offsets: t 3.93, 1.13, 0.80, 1.04, 3.36, 2.65 and 2.20, on 97 to 122 cases each. Four of the seven offsets pass t 2. It also survives leaving out 2018: slope 0.41, t 3.97, 95 cases.",
+    "F5": "In choppy markets the continuation lives in the calmer half of each coin's 30-day swing. There the full slope is 0.26 (t 3.86, 160 cases) and the negative-side slope 0.50 (t 2.64, 71 cases). In the more agitated half they are 0.007 (t 0.12, 55 cases) and 0.24 (t 1.56, 40 cases).",
+    "F6": "Scaling the 30-day return by the coin's 30-day daily swing (times \u221a30) strengthens the choppy-market slope to t 4.84 on 215 cases, against t 3.81 for the raw 30-day return.",
+    "F7": "Outside choppy markets the sign reverses: a negative 30-day return is followed by a rebound (slope -0.13, t -2.91, 471 cases). This is the falling-market rebound that the profile map already holds 16 times in falling agitated long, so it is not proposed.",
+    "F8": "The other angles showed nothing that stands out after this many looks. The past 7-day return in chop gave a largest quintile t of -1.90. The next 3 days after 1-day moves of 2 or more of their usual size gave t from 0.13 to 1.81. The coin volatility terciles were only significant in the chop high-vol tercile (t -3.05, 46 cases), which F5 already covers."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, the larger a coin's fall over the past 30 days, the more it keeps falling over the next 7 days.",
+      "consequence": "After a weak month in a trendless market, a trader takes a short sized by the month's fall, or refuses a long bought as a range bounce.",
+      "name": "choppy month fall continues",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the larger a coin's 30-day fall measured against its own daily swing over those 30 days, the more it keeps falling over the next 7 days.",
+      "consequence": "In a quiet, trendless coin, a month's fall that is large for its swing is a reason to be short for the following week.",
+      "name": "calm chop scaled fall continues",
+      "from": "F1, F5, F6",
+      "profile": "choppy calm",
+      "refs": [
+        "F1",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-01.g1_choppy-month-fall-continues",
+    "067-01.g2_calm-chop-scaled-fall-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

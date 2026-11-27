@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 20-bar move of short cases, before costs",
+    "value": 0.007516015606294053,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 0.444615666090701
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and depth check passes; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deepest third by |forecast| has a higher mean unusual move than shallowest third",
+    "value": 0.029839382181641626,
+    "passed": true
+  },
+  "counts": {
+    "cases": 571,
+    "distinct days": 376
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "Situation = recorded fall30 raw value (30-bar return, recomputed from closes where missing) below 0 with a negative forecast; a case is the first bet (short-side forecast deepening by >= 2 points from its lowest depth since the last bet, reset at flat) in each 20-bar grid cell of each window, dropped if its 20-bar return leaves the window; drift = mean of a coin's non-overlapping 20-bar returns over all its windows; t uses a day-clustered standard error with D/(D-1) correction; thirds split by rank of |forecast|; the plan's 'fewer than 30 cases or 30 distinct days' is applied as 'not observable'."
+}

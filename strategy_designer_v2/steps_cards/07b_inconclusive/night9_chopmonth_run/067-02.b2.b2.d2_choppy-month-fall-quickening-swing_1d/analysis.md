@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 067-02.b2.b2.d2_choppy-month-fall-quickening-swing_1d
+idea tested: 067-02.b2.b2.d2_choppy-month-fall-quickening-swing
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3621 USD
+---
+## Findings
+- **F1:** The test's result is on the side the idea predicts but short of the bar: the mean position-weighted excess fall is +0.0204 with t 1.14 over 78 case days (173 cases); the size is +1.44 % unusual fall per case over 10 days (t 1.54, 321 days, strength 0.088). The coins' normal drift of -1.48 % in the short's direction cancels it, leaving a total move of -0.04 %. The effect is real-sized relative to the coin's usual move but drowned by the coins' own rise.
+- **F2:** The test already used every fold (A to D) and every coin with daily data, so no more data is available for the idea unchanged. Its unclear result has to be read from where the effect shows.
+- **F3:** In the visible folds the effect is graded by the plain 30-day return. Choppy grid bars sorted into quintiles of the 30-day return go from a mean excess 10-day return of -15.2 % (30-day return -22.4 %) to +18.6 % (30-day return +26.5 %). Among falls the correlation of fall depth with the following excess fall is 0.60.
+- **F4:** The plan's standardised forecast does not order the cases the way the plain fall does: by forecast tercile the excess 10-day fall is 3.8 %, 14.0 % and 4.5 % (weak, mid, strong). The grading is blurred by the standardisation over 60 values.
+- **F5:** Within choppy falls, shallow falls go the other way: with the swing quickening (10-day over 30-day swing above 1) they show -1.0 % (7 cases, 5 days), and without it -7.4 % (t -1.16). Deep falls with quickening swing continue by 16.6 % (t 2.12, 15 cases, 8 days). The cases nearest zero dilute the graded effect.
+- **F6:** The continuation is clearest when the 60-day return is also below zero, inside the choppy band. With the swing quickening the excess fall is 17.4 % (t 2.11, 15 cases, 7 days), against 5.3 % (t 1.10, 12 cases, 9 days) when the 60-day return is at or above zero. Without quickening it is 0.7 % and -3.3 %.
+- **F7:** The plan's 10-day horizon is where the visible cases show most. The t of the excess fall is 1.13, 1.35, 1.59 and 0.94 at 3, 5, 10 and 20 days (49 cases, 25 days). The horizon is not the problem.
+
+## Ideas
+- `067-02.b2.b2.d2.b1_choppy-down-fall-quickening-continues` (from F1, F3, F5, F6): In a choppy market, the larger a coin's plain 30-day fall below zero, the more it falls over the next 10 days, only while its swing over the last 10 days is larger than its swing over the last 30 days and its 60-day return is also below zero.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

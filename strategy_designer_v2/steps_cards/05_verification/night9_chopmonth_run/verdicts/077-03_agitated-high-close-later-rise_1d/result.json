@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 6-bar move per case, long, from the signal bar's close",
+    "value": 0.006063545842353535,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.2724135289654577
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move (close location >= 0.9) minus (0.8 to 0.9), above 0",
+    "value": 0.0029033856465946316,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1899,
+    "distinct days": 751,
+    "cases with close location >= 0.9": 924,
+    "cases with close location 0.8 to 0.9": 975
+  },
+  "decided_by": "The t lies between -2 and 2 (or is undefined), meeting neither the confirm nor the reject rule.",
+  "reading": "The situation is the lagged close location >= 0.8 (recorded raw value, else from prices) on the long side, the agitated profile being the config's veto; a case is the first long-forecast rise of at least 2 points in each 6-bar grid cell of a window, its day the signal bar's UTC date, the day-clustered standard error is sqrt(sum over days of squared summed deviations)/n without small-sample correction, and an empty close-location group makes the supporting check fail."
+}

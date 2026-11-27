@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "067-01.b1.g1.b1.d1.g3_chop-slide-twenty-day-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45381360000000004,
+  "findings": {
+    "F1": "In the choppy profile, the coin's 30-day return points the way of its move over the next 10 days. On the 10-day grid the Spearman correlation of the 30-day return with the unusual move is 0.38 (157 cases, p 1e-6), and 0.27 over 5 days (306 cases, p 1e-6). Outside the choppy profile it is only 0.04 (737 cases, p 0.32), so the effect lives in the choppy market.",
+    "F2": "The effect is carried by falls and is graded. Among choppy cases with a negative 30-day return, the 10-day unusual move is +3.7 % (t 1.15, 28 cases) for the shallowest third of falls (mean -3.7 %), -5.9 % (t -1.82, 27 cases) for the middle third, and -13.8 % (t -4.58, 28 cases) for the deepest third (mean -26 %). The Spearman correlation within falls is 0.53 (83 cases, p 3e-7). Over 5 days the same thirds give -0.5 %, -4.0 % and -7.9 % (t -2.59, 54 cases).",
+    "F3": "After rises the continuation is weaker and cannot be told from chance. In the choppy profile the strongest third of rises has a 10-day unusual move of +16.1 % (t 1.26, 25 cases), and the correlation within rises is 0.10 (p 0.40).",
+    "F4": "The tested 20-day horizon is too long for this effect. At 20 days the choppy correlation drops to 0.23 (68 cases, p 0.06) and the quintiles are not ordered. This matches step 5's +0.75 % unusual move (t 0.45) at 20 days, against -13.8 % at 10 days for deep falls in F2.",
+    "F5": "Scaling the 30-day return by the coin's 30-day swing keeps the gradient. In the choppy profile the correlation is 0.33 at 10 days (157 cases, p 2e-5). The two most negative quintiles give 10-day unusual moves of -9.3 % (t -2.59, 32 cases) and -7.4 % (t -2.15, 31 cases).",
+    "F6": "The fall effect is not stable across years.",
+    "F7": "The book does not capture the move after its own shorts. Its choppy-profile shorts on negative 30-day returns were followed by a 5-day coin move of -3.0 % (151 cases). It also held 378 short cases outside the choppy profile, carried there by the 20-bar minimum holding. Of these, 86 came after positive 30-day returns and were followed by a +4.4 % 5-day rise. This is where its losses (Sharpe -0.20) sit.",
+    "F8": "Off the theme and outside the choppy profile, a strong 7-day rise scaled by the coin's swing is followed by a 10-day unusual move of +5.6 % (t 2.88, 164 cases, top quintile). With the many angles looked at, this is weak, and it repeats the rising-market continuation ideas the map already holds, so it is not proposed."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, the larger a coin's percentage fall over the past 30 days, the more it keeps falling over the next 10 days, the continuation growing with the depth of the slide.",
+      "consequence": "A short on a deep monthly slide in a flat market pays over about ten days and fades by three weeks, so it should not be held longer.",
+      "name": "chop slide ten-day continuation",
+      "from": "F1, F2, F4, F7",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the larger a coin's 30-day fall measured against its own 30-day daily swing, the more it keeps falling over the next 10 days.",
+      "consequence": "A short in a flat market should be sized by how unusual the month's fall is for that coin, not by its raw percentage.",
+      "name": "chop swing-scaled slide continuation",
+      "from": "F1, F5, F2",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-01.b1.g1.b1.d1.g3.g1_chop-slide-ten-day-continuation",
+    "067-01.b1.g1.b1.d1.g3.g2_chop-swing-scaled-slide-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move per short case over 20 bars (short-signed, minus coin drift)",
+    "value": 0.007516015606294053,
+    "statistic": {
+      "name": "t of the mean, same-day cases pooled",
+      "value": 0.4452080922909718
+    },
+    "threshold": "positive with t >= 2 to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with forecast <= -10 minus that of forecast > -10",
+    "value": 0.05939417018704926,
+    "passed": true
+  },
+  "counts": {
+    "independent case-days": 376,
+    "cases": 571,
+    "large cases": 113,
+    "smaller cases": 458
+  },
+  "decided_by": "the t lies between -2 and 2, which the plan calls inconclusive",
+  "reading": "the choppy regime is the 60-day close-to-close return in percent within [-10, +10] recomputed from the prices, using the recorded regime label on bars without 60 earlier bars in the window; the fall is the recorded fall30 raw value below 0; a case is the first short bet (forecast size up >= 2 from its lowest since the last bet) in each 20-bar grid cell of a window, its return taken from its own close, cases without 20 later bars in the window dropped, and a supporting check with an empty group counts as failed"
+}

@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted 7-bar short return, largest third of |forecast|",
+    "value": 0.026981485671941318,
+    "statistic": {
+      "name": "t of the mean, clustered by day",
+      "value": 2.5961738651134003
+    },
+    "threshold": "t >= 2 confirms (with positive convexity), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "largest-third mean minus smallest-third mean (convexity)",
+    "value": 0.03904293074842888,
+    "passed": true
+  },
+  "counts": {
+    "negative-forecast cases": 631,
+    "cases in the largest third": 210,
+    "distinct days in the largest third": 103,
+    "cases in the smallest third": 210
+  },
+  "decided_by": "The main mean has t >= 2 and the largest-minus-smallest third difference is above 0.",
+  "reading": "The 60-day choppy test is recomputed from closes inside each window (the recorded regime 'chop' is used on the first 60 bars where it cannot be); the cases of all coins are pooled and ranked by |forecast| (stable sort), the largest and smallest thirds being the top and bottom floor(n/3) cases; the coin's drift is the mean of its 7-bar returns on all its windows' non-overlapping grids; the day-clustered t sums the deviations per UTC day with a G/(G-1) correction.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01352 on the check folds against +0.02698 on every fold",
+    "main": 0.013515986302328933,
+    "statistic": 1.3256997887518427,
+    "counts": {
+      "negative-forecast cases": 472,
+      "cases in the largest third": 157,
+      "distinct days in the largest third": 72,
+      "cases in the smallest third": 157
+    }
+  }
+}

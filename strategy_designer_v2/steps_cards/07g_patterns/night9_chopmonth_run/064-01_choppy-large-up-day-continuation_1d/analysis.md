@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 064-01_choppy-large-up-day-continuation_1d
+idea tested: 064-01_choppy-large-up-day-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5794 USD
+---
+## Findings
+- **F1:** The tested situation does not hold up in folds B and C. In choppy markets, all large up days of at least 2 swings that closed in their top fifth were counted on overlapping days. Their 5-day strength was +0.056 (t 0.31, 22 cases on 17 days). On the 5-day grid, choppy up days of 2 to 3 swings were only 6 cases, with +7.5 % unusual move (t 2.3). This agrees with step 5's inconclusive verdict of -0.024 strength (t -0.20, 259 cases).
+- **F2:** The book's trades are carried by a few outliers, not by a steady effect. Its 113 trades averaged +5.54 % net, but the median was only +0.83 %. One trade of +391.8 % (DOGE, whose 8 trades average +59.9 %) and a standard deviation of 38.1 % make up most of the mean.
+- **F3:** A filter on where an up day closes looked promising on one sampling grid and vanished on the others. Up days of at least 2 swings closing in their top fifth had strength +0.59 (t 2.39, 46 cases) on grid offset 0. On offsets 1 to 4 it was +0.18, +0.07, -0.27 and +0.18 (t 1.11, 0.34, -2.22, 1.03).
+- **F4:** Grading by size and close position does not show a steady slope. Ranked by scaled return times (2 × close position − 1), all up days give a Spearman rho of 0.029 with 5-day strength (p 0.39, n 876). Only the top fifth stands out, at +0.196 (t 1.77, 68 days).
+- **F5:** Rising markets are the only place large up days closing near their high continue at t above 2. On overlapping days they show strength +0.386 (t 2.61, 108 cases on 70 days). Falling markets show -0.150 (t -1.03, 50 cases), and choppy +0.056 (t 0.31). The map already holds this rising-market continuation: 034-01.e1, 034-02, 033-03.b2 and 034-01.b1.
+- **F6:** Neither the down side nor the calendar gives a lead.
+
+## Ideas
+- No ideas: Across the forecast, the close position, the trend, the agitation, the weekday, the grid offsets and the down side, nothing beat chance robustly. The one pattern above t 2 on overlapping days is large up-day continuation in rising markets (F5), and the profile map already holds it in rising calm and rising agitated.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

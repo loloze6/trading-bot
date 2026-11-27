@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 077-03_agitated-high-close-later-rise_1d
+idea tested: 077-03_agitated-high-close-later-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6225 USD
+---
+## Findings
+- **F1:** The tested week continuation does not survive moving the sampling grid. On the 7-day grid from each window's first bar, agitated days show a positive slope of the day-1-to-day-7 unusual move on close location: 0.113, t 2.70, 648 cases, 166 days. Averaged over the 7 possible grid offsets, the slope is only 0.017 with a mean t of 0.30. Offset 5 points the other way: −0.078, t −2.25. The high-close mean is +0.50 % on average over the offsets (mean t 0.07), against +4.6 % on offset 0. So step 5's t of 1.27 reflects an effect that cannot be told from 0.
+- **F2:** In agitated markets the next day reverses the close location, and the reversal is graded. The next day's return after a close in the bottom fifth of the range is +1.27 % (t 5.1, 664 days). It falls in order through +0.46 % (t 2.1), +0.18 % and −0.23 % to −0.34 % after a close in the top fifth (t −1.66, 997). In calm markets the same spread is smaller: +0.43 % after the bottom fifth against +0.01 % after the top fifth.
+- **F3:** The reversal grows with how wide the day is against its last 20 days. In agitated markets, the slope of the next-day unusual return on (0.5 − close location) × relative width is 0.024 (t 3.40, 3,619 cases, 932 days), against 0.007 (t 1.68) in calm markets. It is positive in every year: 2018 t 1.95, 2019 t 1.55, 2020 t 2.84, 2021 t 1.57. It still shows over two days on a non-overlapping 2-day grid: beta 0.026, t 2.44, 1,774 cases, 481 days.
+- **F4:** The spread opens on wide days and is nearly gone on narrow ones. On wide agitated days, the next day returns +1.77 % after a low close (229) and −1.09 % after a high close (274). On narrow agitated days, the same two cases give +0.13 % (123) and −0.10 % (218). The wide-day spread of about 2.9 % is about 13 times the 0.22 % cost of a trade.
+- **F5:** The reversal lives where the coin is not rising.
+- **F6:** The book is thin and carries little timing. Its mean daily return is +0.015 % in 2018, 0.000 % in 2019, +0.053 % in 2020 and +0.079 % in 2021, while holding the coins returned −0.35 %, +0.05 %, +0.45 % and +0.37 %. The gain is a small part of the coins' rise, consistent with F1.
+
+## Ideas
+- `077-03.g1_agitated-wide-close-next-day-fade` (from F1, F2, F3, F4, F5): In an agitated market, the lower a day's close sits in its high-to-low range, and the wider that day is against the coin's last 20 days, the more the coin rises over the next day. The higher and wider the close, the more it falls, graded between the two ends.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

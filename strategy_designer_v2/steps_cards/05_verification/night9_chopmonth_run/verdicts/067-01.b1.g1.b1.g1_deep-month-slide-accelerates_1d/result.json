@@ -1,0 +1,42 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move in the short direction over 10 bars, top third of position size (fraction of price)",
+    "value": 0.026511700016381746,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 2.0848560917417576
+    },
+    "threshold": "confirm: positive with day-clustered t >= 2; reject: negative with t <= -2; on >= 30 cases over >= 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean unusual move > 0",
+    "value": 0.017887476277083376,
+    "passed": true
+  },
+  "counts": {
+    "top-third cases": 212,
+    "top-third distinct days": 166,
+    "bottom-third cases": 212,
+    "all cases": 636
+  },
+  "decided_by": "The top-third unusual move is positive with t >= 2 on enough cases and days, and top minus bottom > 0.",
+  "reading": "Situation = 30-day return < 0 (recorded raw value, else rebuilt from closes, else regime 'trending') and 60-day return within [-10, 10] % (rebuilt from closes, else regime not 'chop'), short side; a case is the first bet bar (forecast rise on the short side of >= 2 from its lowest level since the last bet) in each 10-bar grid cell with a full 10-bar forward return in its window, position size is |postRebalance_current_allocation| on that bar, top/bottom thirds are cases at or above the 2/3 / at or below the 1/3 quantile of all cases pooled, drift is each coin's mean non-overlapping 10-bar return over all its windows, and t clusters cases by UTC date.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01106 on the check folds against +0.02651 on every fold",
+    "main": 0.011064912007858573,
+    "statistic": 0.7268304903036774,
+    "counts": {
+      "top-third cases": 154,
+      "top-third distinct days": 119,
+      "bottom-third cases": 154,
+      "all cases": 461
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move in the short direction (return minus coin drift)",
+    "value": 0.006501690572185091,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 0.9948163922855545
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-|forecast| half minus smaller half",
+    "value": 0.007745497290779822,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1738,
+    "distinct case days": 679
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "Agitation for the situation check is the regime not being the veto's 'chop'; a case is the first short bet in each 7-bar grid cell (cases whose 7-bar return leaves the window are dropped); the halves are the n//2 cases with the largest and the n//2 with the smallest |forecast| (middle case dropped if n is odd); the t uses a day-clustered standard error; fewer than 30 case days is reported as 'not observable' per the workflow's minimum-count rule."
+}

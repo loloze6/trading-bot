@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of -(forecast/10) x (7-bar return minus normal 7-bar drift), non-overlapping grid, forecast < 0",
+    "value": -0.012058810612865288,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -1.553803306509041
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 on >= 30 case-days and check passing; reject: mean < 0 with t <= -2 on >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "deeper-fall half minus shallower half, mean short-direction excess move",
+    "value": 0.024201185720812757,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 211,
+    "cells": 633
+  },
+  "decided_by": "The t lies between -2 and 2 on at least 30 case-days, meeting neither the confirm nor the reject rule.",
+  "reading": "Choppy is recomputed as the 60-day close return in percent within [-10, +10] inside each window, falling back to the recorded regime 'mean_reversion' on bars without 60 prior bars in the window; the 30-day fall uses the recorded raw fall30 value (prices where missing); the coin's normal drift is the mean of all its non-overlapping 7-bar grid returns over all windows; the t clusters cases by UTC day (deviations summed per day, D/(D-1) correction); the deeper half is |forecast| above the median, the shallower half at or below it, compared on the unweighted short-direction excess move."
+}
