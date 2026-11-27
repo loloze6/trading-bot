@@ -52,7 +52,11 @@ Not touched, on purpose: the rest of `orchestration/combine/` (branch `build-a8-
 **A defect found on the way, fixed by part 1a:** since the join of 2026-11-27, `common_record.backtest` passed a
 number where step 4's `run_part` expects the list of window numbers, so every real call of step 9 or step 12 would
 have stopped with an error; its test replaced `run_part` with one that took the old argument, so it passed. The pilot
-never reached step 9 (no candidate). `backtest` now passes the list; the test uses step 4's own argument.
+never reached step 9 (no candidate). `backtest` now passes the list; the test uses step 4's own argument. **The designer fixed the same call on `build-a9`
+(commit db0ebd2c132; message received after this build had rewritten the function, so it was not cherry-picked):** its
+added test (`test_the_runner_calls_step4s_run_part_with_its_own_arguments`) is copied here word for word; its one-line
+fix is replaced by this build's call (the windows' numbers from the count). At the join the two branches will conflict
+on that call and on the test's fake: keep this branch's side.
 
 ## Part 1a: usable windows, one count before the engine runs
 **The warm-up asked, how it is computed.** The wrapper's number is `2 * strategy.required_bars` bars

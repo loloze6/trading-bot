@@ -142,6 +142,13 @@ def test_step4_runs_each_coin_on_its_windows_with_the_files_numbering(tmp_path, 
                            "NONEUSD not run (no window) (32 left out by the data use)")
 
 
+def test_the_runner_calls_step4s_run_part_with_its_own_arguments():
+    """The fake above stands for step 4's run_part: its arguments must be the real one's (the runner broke once when
+    step 4 changed them and the fake did not)."""
+    import inspect
+    assert list(inspect.signature(C.rb.run_part).parameters) == ["python", "config_path", "proto", "numbers", "cdir", "pdir"]
+
+
 def _book(steps, run, rid, config, plan=True, measure=True, record=True):
     if plan:
         (steps / "03_test_plan" / run / "plans").mkdir(parents=True, exist_ok=True)
