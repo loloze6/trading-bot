@@ -48,3 +48,75 @@ Readers checked and left unchanged (they test "confirmed" or "profitable enough"
 `combine/judge_unseen`. **Shared files touched with the other builds:** none of `orchestration/select_next/`,
 `orchestration/loop/`, `orchestration/run_brief/`, nor 7.g's call or prompt. Touched and shared by every line:
 `07_common/helper/analyse.py` (entry condition), `common/lib.py` (one function added), `run_idea.py` (one line).
+
+## Proofs, with counts
+**B11, part 1: the rule on every stored result** (`build_b11_b12/b11_count.py`; outputs `b11_count_night9.txt`,
+`b11_count_nights789.txt`). The rule reads only `result.json` and the plan, so it is applied, as `make_verdict.py`
+applies it, to each stored result. Not done as written: rerunning all 184 stored `measure.py` needs every record's bars,
+which are not committed; rebuilding them is night 9's step 4 again, 21.8 hours. Part 2 shows the rerun reproduces.
+
+| Night 9, 184 tested ideas | count |
+|---|---|
+| confirmed, unchanged | 58 |
+| inconclusive, unchanged | 67 |
+| **inconclusive -> no effect** | **55** |
+| mismatch, not observable, unchanged | 2, 2 |
+| rejected | 0 (none on night 9) |
+
+Against `night9_review.py`'s reading on night 9 alone: 55 unclear with the recorded t below 1, 67 at 1 or more; the
+55 that change are exactly those 55. Nights 7 to 9 (474 rows with a result): 148 unclear and the 1 rejected
+(night 8, 069-01) become no effect; 151 unclear have a recorded t below 1, and the 3 that stay unclear are plans whose
+confirm rule is `t ≤ -2` (recorded t -1.47, -2.92, -1.70: towards the idea). As expected, but for those 3.
+
+**B11, part 2: the stored measure.py rerun** (`build_b11_b12/b11_sample.sh`, `b11_sample_result.txt`): three night 9
+plans, step 4 rebuilt in a scratch folder, step 5 with the stored `measure.py` (no model call). Every number of
+`result.json` is identical to the committed one; only the new rule's fields differ.
+
+| Plan | committed -> rerun | fields that differ |
+|---|---|---|
+| 072-01 (confirm `t ≤ -2`) | inconclusive -> no effect (t in the idea's direction -0.099, 1,901 cases) | status, decided_by, effect_check |
+| 072-03 | inconclusive -> no effect (+0.037, 1,885 cases) | status, decided_by, effect_check |
+| 072-02 | inconclusive -> inconclusive (+1.868, 1,691 cases) | effect_check |
+
+**B12** (`build_b11_b12/b12_count.py`; `b12_count_night9.txt`, `b12_count_nights789.txt`): the 7.d calls of the tables
+(the line ran on the backtest), each parent's failed measures as the new entry reads them, and what its repairs and the
+ideas below them gave.
+
+| | 7.d calls (failed measures: calls) | repairs tested | ideas below them | profitable | USD |
+|---|---|---|---|---|---|
+| night 9, kept | 31 (1: 13, 2: 18) | 37 | 55 | 14 | 135.1 |
+| night 9, **skipped** | **16** (3: 7, 4: 7, 5: 2) | 29 | 11 | **0** | 54.5 |
+| nights 7 to 9, kept | 85 (1: 48, 2: 37) | 84 | 98 | 18 | 274.7 |
+| nights 7 to 9, **skipped** | **31** (3: 14, 4: 11, 5: 6) | 52 | 38 | **0** | 124.4 |
+
+As expected: 0. (The review counted 51 repairs of far parents; this script finds 52, matching by lineage code.)
+
+**Both: run_idea on one seeded idea** (`build_b11_b12/run_one.sh`, as `build_a4_join/run_one.sh`: plan, verdict and step
+7 outputs copied, no model call; "old" runs the code of `7b7f0e8`). Idea 074-01.b1.g1 (night 9, confirmed and
+profitable: neither rule changes it). `run_one_compare.txt`: 1,118 files each side; 431 identical, 676 identical once
+times, ids, paths and durations are masked, 11 different, each named:
+- the unseen-dates test (`unseen_test`) reruns step 5 on the dates no fold covers, and the new rule applies there too
+  (one rule): 2026 period unclear -> no effect (t +0.019, 80 cases); 2016-2017 stays unclear, with the effect check
+  line (t +1.196). Files: its 2 `result.json`, 2 `verdict.md`, 1 `INDEX.md`, the unseen json's `step5` field, its log
+  line. "Holds" (main measure's sign and Sharpe) is the same in both: holds, holds;
+- the order the step 7 lines are logged in (`journal.jsonl`, `table.json`, `table.md`) and one duration (6.5 against
+  6.4 minutes): the lines run at the same time, as in build A4's proof;
+- `trading-bot/results/trading_bot.log`: the order the coins were fetched.
+The idea's own plan, record, verdict, check, chart files, register and step 7 files: identical.
+
+**Tests**: the cards' tests 209 passed; the bot's tests (`cd trading-bot`) 1,682 passed, 16 skipped. `fold_rules_test.csv`
+restored. The repository is clean after every proof run.
+
+## What is not done, open
+- The full rerun of 184 stored `measure.py` (21.8 hours of step 4): replaced by parts 1 and 2 above.
+- Line 7.c's prompt changed (its first two lines: "no effect" in place of "clear evidence against it"); no model call
+  was made with it.
+- `run_viewer/runs.html` not rebuilt (it is a built page; `page.html` and `build_page.py` changed).
+- Folder names kept: `07b_inconclusive/`, `07c_rejected/` (their runs are under them). A rename is a clean-up for the
+  operator's go.
+- `common/idea_definition.md` still says "if rejected, a reason to refuse one": it is pasted into steps 2 and 7's
+  prompts, so changing it changes their requests. For the operator.
+- Old records are not rewritten: an old unclear answer with t below 1 stays "inconclusive" where it is recorded
+  (`select_next` reads only "confirmed"). An old "rejected" is read as "no effect" by 7.c's entry, `run_idea`'s row and
+  the run viewer.
+- `topics/NEXT_STEPS.md` lines B11, B12 not updated here (the designer's file). Merging is the operator's go.
