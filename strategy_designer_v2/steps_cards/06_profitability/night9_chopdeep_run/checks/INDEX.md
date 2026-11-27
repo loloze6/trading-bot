@@ -30,4 +30,6 @@
 074-01.g1_falling-agitated-wide-up-fade_1d: not profitable enough [Sharpe 0.7553; Sharpe minus holding's Sharpe 0.1857; Calmar 0.5458]
 074-01_falling-wide-up-day-fade_1d: not profitable enough [Sharpe 0.0506; Sharpe minus holding's Sharpe -0.5036; Calmar 0.01417]
 081-01.d1_deep-up-day-five-day-fade_1d: not profitable enough [Sharpe -0.002676; Sharpe minus holding's Sharpe -0.6101; Calmar -0.09384]
+081-01.d2_deepest-up-days-carry-fade_1d: not profitable enough [Sharpe 0.472; Sharpe minus holding's Sharpe -0.1355; Calmar 0.2124]
+081-01.d3_deep-up-day-fade-outside-uptrends_1d: not profitable enough [Sharpe 0.4791; Sharpe minus holding's Sharpe -0.1284; Calmar 0.2645]
 081-01_deep-up-day-next-day-fade_1d: not profitable enough [Sharpe 0.3948; Sharpe minus holding's Sharpe -0.2126; Calmar 0.1658]

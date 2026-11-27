@@ -37,22 +37,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 072-03.b1.b1.d2_raw-depth-bounce-fade-sizing | 072-03.b1.b1_deep-bounce-fades-more-coins | plan | inconclusive (+1.37) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-03.b1.b1.d2.b1_deepest-bounce-below-high-fades, 072-03.b1.b1.d2.b2_deep-close-below-high-continues; 7.g: 072-03.b1.b1.d2.g1_choppy-depth-graded-ten-days | 1.23 | 11.8 |
 | 081-01_deep-up-day-next-day-fade | - | plan | confirmed (+2.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.d: 081-01.d1_deep-up-day-five-day-fade, 081-01.d2_deepest-up-days-carry-fade, 081-01.d3_deep-up-day-fade-outside-uptrends; 7.g: 081-01.g1_falling-deep-up-day-fade | 1.13 | 11.3 |
 | 081-01.d1_deep-up-day-five-day-fade | 081-01_deep-up-day-next-day-fade | plan | confirmed (+2.24) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 081-01.d1.d1_deepest-up-days-fade-steeply, 081-01.d1.d2_deep-up-day-five-day-fade-only, 081-01.d1.d3_deep-up-day-ten-day-fade, 081-01.d1.d4_relief-day-fade-after-monthly-fall; 7.g: 081-01.d1.g1_choppy-deep-up-day-fade | 1.20 | 11.5 |
+| 081-01.d2_deepest-up-days-carry-fade | 081-01_deep-up-day-next-day-fade | plan | confirmed (+2.49) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 081-01.d2.d1_deep-up-day-fade-outside-rises, 081-01.d2.d2_deepest-up-days-fade-only, 081-01.d2.d3_deep-up-day-fade-falling-market, 081-01.d2.d4_agitated-falling-relief-fade; 7.g: 081-01.d2.g1_bounce-after-swing-scaled-drop-fades, 081-01.d2.g2_first-green-day-fade | 1.52 | 12.4 |
+| 081-01.d3_deep-up-day-fade-outside-uptrends | 081-01_deep-up-day-next-day-fade | plan | confirmed (+2.38) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 081-01.d3.d1_deep-up-day-fade-agitated, 081-01.d3.d2_unusually-deep-up-day-fade; 7.g: 081-01.d3.g1_first-relief-bounce-fade, 081-01.d3.g2_deep-up-day-two-day-fade | 1.18 | 11.6 |
 
 ## Consumption
-33 ideas, 36.90 USD, 352.2 minutes in all.
+35 ideas, 39.60 USD, 376.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.13 | 18.7 |
-| step4_backtest | 0.00 | 211.2 |
-| step5_verdict | 6.39 | 23.7 |
-| step6_check | 0.00 | 1.3 |
-| chart_files | 0.00 | 0.6 |
+| step3_plan | 3.31 | 19.7 |
+| step4_backtest | 0.00 | 225.9 |
+| step5_verdict | 6.75 | 25.0 |
+| step6_check | 0.00 | 1.4 |
+| chart_files | 0.00 | 0.7 |
 | step7_7.a | 0.00 | 0.1 |
 | step7_7.e | 0.52 | 1.4 |
 | step7_7.c | 0.00 | 0.1 |
-| step7_7.d | 3.10 | 10.3 |
+| step7_7.d | 4.18 | 13.7 |
 | step7_7.b | 7.48 | 22.6 |
-| step7_7.g | 16.28 | 47.7 |
-| similarity_check | 0.00 | 1.1 |
+| step7_7.g | 17.36 | 50.9 |
+| similarity_check | 0.00 | 1.2 |
 | unseen_test | 0.00 | 13.5 |

@@ -1,0 +1,40 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction next-day return minus coin mean daily return, days pooled",
+    "value": 0.0027200960191016018,
+    "statistic": {
+      "name": "t of the mean (day-pooled)",
+      "value": 2.378475720252094
+    },
+    "threshold": "t >= 2 over at least 100 days (with deeper-half check) to confirm; t <= -2 over at least 100 days to reject"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean unusual short return, Welch t > 0",
+    "value": 2.8951858719610666,
+    "passed": true
+  },
+  "counts": {
+    "days with cases": 1809,
+    "cases": 9189,
+    "active bars": 4502
+  },
+  "decided_by": "The main measure's t is 2 or more over at least 100 days and the deeper half fades more (Welch t > 0).",
+  "reading": "The 1-day and 60-day returns are recomputed from closes inside each window, and active bars without 60 prior bars in their window are left out of the agreement share; the 100-day minimum is treated as the plan's minimum count (not observable when unmet); cases of one day are pooled by summing their deviations per day (clustered standard error with G/(G-1) correction); the supporting check splits active bars with a next-day return into |forecast| above the median (deeper) versus at or below it (shallower).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.001543 on the check folds against +0.00272 on every fold",
+    "main": 0.0015426441920673383,
+    "statistic": 1.118413473376331,
+    "counts": {
+      "days with cases": 1077,
+      "cases": 6528,
+      "active bars": 2991
+    }
+  }
+}

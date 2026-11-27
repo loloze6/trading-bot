@@ -30,4 +30,6 @@
 074-01.g1_falling-agitated-wide-up-fade_1d: 1 ideas (2 explorations)
 074-01_falling-wide-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 081-01.d1_deep-up-day-five-day-fade_1d: 4 ideas (2 explorations)
+081-01.d2_deepest-up-days-carry-fade_1d: 4 ideas (3 explorations)
+081-01.d3_deep-up-day-fade-outside-uptrends_1d: 2 ideas (2 explorations)
 081-01_deep-up-day-next-day-fade_1d: 3 ideas (2 explorations)

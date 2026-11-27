@@ -30,4 +30,6 @@
 074-01.g1_falling-agitated-wide-up-fade_1d: confirmed (fit: adapted) [main: 0.0135578; t of the mean, cases of one day pooled 3.12198; cases 318, days 210, wider half cases 159, narrower half cases 159]
 074-01_falling-wide-up-day-fade_1d: inconclusive (fit: adapted) [main: 0.00476677; t of the mean, cases of one day taken together 1.2774; cases 440, case-days 258, active bars 866]
 081-01.d1_deep-up-day-five-day-fade_1d: confirmed (fit: exact) [main: 0.00714633; t of the mean, cases clustered by day 2.23861; cases 5627, distinct days 1326]
+081-01.d2_deepest-up-days-carry-fade_1d: confirmed (fit: exact) [main: 0.00451171; t of the mean (per-day sums) 2.49148; top-quintile cases 4222, distinct days 1132, bottom-quintile cases 4242]
+081-01.d3_deep-up-day-fade-outside-uptrends_1d: confirmed (fit: adapted) [main: 0.0027201; t of the mean (day-pooled) 2.37848; days with cases 1809, cases 9189, active bars 4502]
 081-01_deep-up-day-next-day-fade_1d: confirmed (fit: adapted) [main: 0.00951687; t of the mean (daily sums) 2.94575; up-day cases 14361, distinct days 2273]

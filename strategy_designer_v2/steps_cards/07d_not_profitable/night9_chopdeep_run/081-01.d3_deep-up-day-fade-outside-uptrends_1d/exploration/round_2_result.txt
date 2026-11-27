@@ -1,0 +1,62 @@
+## held bars: signal on vs off
+                    on  off
+n          2500.000000  0.0
+pnl%          0.255948  NaN
+abs_alloc     0.446243  NaN
+turn          0.328569  NaN
+
+## book pnl by fc quintile (0 deepest), per active bar
+      n  gross_pnl_bp  net_pnl_bp  abs_alloc      turn
+dq                                                    
+0   535     81.385057   74.873880   0.794309  0.592361
+1   534     33.885613   29.483100   0.553634  0.401532
+2   534      7.377123    4.319166   0.410328  0.279294
+3   534      0.306748   -1.737119   0.250093  0.185958
+4   535     -2.660118   -3.629009   0.079150  0.087752
+
+## book pnl on held off-signal bars
+gross_bp                    NaN
+net_bp                      NaN
+sum_share_of_total_gross    0.0
+
+## up days outside rising: depth half x agitation, unusual short
+                n     mean%         t
+deep  agit                           
+False 0.0   570.0 -0.326160 -1.727269
+      1.0   330.0  0.714082  2.824894
+True  0.0   499.0  0.653031  2.933902
+      1.0   400.0  1.498147  4.959142
+
+## all bars by agitation (condition alone, no signal)
+           n     mean%         t
+agit                            
+0.0   6530.0 -0.002634 -0.040894
+1.0   2725.0  0.094837  0.746393
+
+## down days outside rising by depth half
+            n     mean%         t
+deep                             
+False   605.0 -0.397317 -2.114266
+True   1252.0  0.066855  0.419334
+
+## active: depth tercile x agit, unusual short
+                  n     mean%         t
+deep3   agit                           
+deep    0.0   464.0  0.954848  3.591240
+        1.0   262.0  1.541511  3.808086
+mid     0.0   554.0  0.575247  3.131135
+        1.0   171.0  1.365872  4.017328
+shallow 0.0   525.0 -0.403048 -2.231223
+        1.0   203.0  0.551154  1.769235
+
+## worst 2% held bars vs rest
+           worst       rest
+fc    -17.003573 -10.498971
+depth  -5.318200  -3.131017
+r1      0.038560   0.031040
+tr60   -0.330583  -0.235206
+agit    0.567568   0.282318
+sd20    0.063322   0.051714
+
+## worst 2% share of total gross pnl
+-0.6651687725168689

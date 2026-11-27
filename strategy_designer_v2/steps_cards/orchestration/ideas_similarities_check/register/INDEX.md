@@ -307,6 +307,8 @@ An idea's latest record counts once.
 | 074-01.g1.d1_wide-close-high-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 6 | 0ae36323e | 2026-11-26T23:28:37 |
 | 074-01.g1_falling-agitated-wide-up-fade_1d | confirmed | night9_chopdeep_run | 1d | 6 | 0ae36323e | 2026-11-26T23:21:23 |
 | 081-01.d1_deep-up-day-five-day-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 17c333a82 | 2026-11-27T05:30:46 |
+| 081-01.d2_deepest-up-days-carry-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 17c333a82 | 2026-11-27T05:40:53 |
+| 081-01.d3_deep-up-day-fade-outside-uptrends_1d | confirmed | night9_chopdeep_run | 1d | 19 | e5edfa667 | 2026-11-27T05:51:31 |
 | 081-01_deep-up-day-next-day-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 17c333a82 | 2026-11-27T05:20:53 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
