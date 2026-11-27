@@ -298,6 +298,7 @@ An idea's latest record counts once.
 | 061-01_calm-big-up-day-continues_1d | confirmed | night8_risingcalm_run | 1d | 6 | 75b231208 | 2026-11-25T23:38:40 |
 | 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 19 | f98f36c69 | 2026-11-27T00:12:41 |
 | 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d | paying | night9_chopdeep_run | 1d | 19 | ad6485b7d | 2026-11-27T00:31:58 |
+| 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 19 | 2e5bdc658 | 2026-11-27T01:10:08 |
 | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 7b8d921f7 | 2026-11-26T23:59:31 |
 | 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 2e5bdc658 | 2026-11-27T00:57:46 |
 | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 7b8d921f7 | 2026-11-26T23:47:46 |

@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade_1d
+idea tested: 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.5430 USD
+---
+## Findings
+- **F1:** In falling markets, an up day that leaves the coin below its 5-day-ago close is followed by a next-day move 1.19 % below the coin's drift (t -2.66, 598 cases on 191 days). Up days with a positive 5-day return show nothing (-0.03 %, t -0.08, 698 cases), so the tested idea's effect is the clearest cell of the trend × up-day × 5-day-sign grid.
+- **F2:** The fade is graded by the depth of the 5-day loss measured against the coin's own 30-day swing. On falling and choppy up days with a negative 5-day return, the quintiles of that swing-scaled depth give -2.77 % (t -2.68, 59 days), -0.71 %, -1.58 % (t -3.07, 90 days), -0.54 % and +0.05 % (t 0.11), deepest first. In falling calm the terciles give -2.08 % (t -2.38), -1.17 % (t -2.17) and -0.10 % (t -0.20).
+- **F3:** The fade is spent in one day. The second day after the same falling-market up days is -0.41 % against drift (t -1.10, 580 cases, 187 days). In rising markets the same situation gives only -0.27 % (t -0.61, 401 cases), as the brief's theory expects.
+- **F4:** Agitation does not split the effect clearly. Falling calm gives -1.14 % (t -2.43, 515 cases, 176 days). Falling agitated gives -1.51 % (t -1.39, 83 cases, 34 days): a larger mean on too few cases to separate.
+- **F5:** The off-theme patterns seen are weak or already held:
+- **F6:** The book's gain is concentrated in a few years and windows:
+
+## Ideas
+- No ideas: The only patterns that clearly stand out after this many angles are the tested idea itself (F1, F3) and its depth scaled by the coin's own swing in falling markets (F2), which the map already holds as 074-01.b1.b1.b1.b1.d1.d2 in falling calm and falling agitated short; the off-theme candidates (choppy fade, big-down-day and low-close rebounds, weekdays: F5) are either indistinguishable from chance at |t| under 2 or repeat the many falling-agitated long rebound books already held.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

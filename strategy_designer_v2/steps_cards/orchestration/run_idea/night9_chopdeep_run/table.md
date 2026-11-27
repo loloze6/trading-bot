@@ -22,22 +22,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 072-03_choppy-deep-down-day-continuation | - | plan | inconclusive (+0.04) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-03.b1_choppy-deep-bounce-fades; 7.g: 072-03.g1_choppy-deep-up-day-fade | 1.02 | 6.4 |
 | 072-04_choppy-deep-close-multiday-fall | - | plan | inconclusive (-0.05) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-04.b1_choppy-deep-close-ten-day-fall, 072-04.b2_choppy-deep-close-five-day-fall; 7.g: 072-04.g2_choppy-calm-deep-close-fall | 1.01 | 5.9 |
 | 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | confirmed (+2.28) | not profitable enough (failed: Calmar) | - | 7.d: 074-01.b1.b1.b1.b1.d2.d1_first-bounce-fade-after-down-day, 074-01.b1.b1.b1.b1.d2.d2_bounce-after-selloff-fades; 7.g: 074-01.b1.b1.b1.b1.d2.g1_falling-wide-bounce-second-day-rebound | 1.25 | 14.1 |
+| 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | plan | confirmed (+2.25) | profitable enough | unseen_2016_2017: holds; unseen_2026: does not hold | 7.g: no ideas: The only patterns that clearly stand out after this many angles are the tested idea itself (F1, F3) and its depth scaled by the coin's own swing in falling markets (F2), which the map already holds as 074-01.b1.b1.b1.b1.d1.d2 in falling calm and falling agitated short; the off-theme candidates (choppy fade, big-down-day and low-close rebounds, weekdays: F5) are either indistinguishable from chance at |t| under 2 or repeat the many falling-agitated long rebound books already held. | 0.85 | 13.7 |
+| 074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | inconclusive (+2.50) | profitable enough | - | 7.b: 074-01.b1.b1.b1.b1.g1.b1_falling-wide-bounce-depth-graded, 074-01.b1.b1.b1.b1.g1.b2_falling-wide-up-day-width-fade; 7.e: 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade; 7.g: no ideas: The only patterns that stand out (F3, F4) belong to the tested falling-market wide-bounce fade, which the map already holds in the falling short cells (the 074-01 family), and they are not graded. No other angle out of the roughly sixty cells examined gives a pattern that can be told apart from chance. | 1.58 | 13.2 |
 
 ## Consumption
-18 ideas, 19.57 USD, 190.3 minutes in all.
+20 ideas, 22.00 USD, 217.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.80 | 11.0 |
-| step4_backtest | 0.00 | 113.8 |
-| step5_verdict | 3.48 | 13.2 |
-| step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 2.01 | 12.2 |
+| step4_backtest | 0.00 | 129.9 |
+| step5_verdict | 3.92 | 14.9 |
+| step6_check | 0.00 | 0.8 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.e | 0.00 | 0.0 |
+| step7_7.e | 0.52 | 1.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.80 | 5.7 |
-| step7_7.b | 3.81 | 11.5 |
-| step7_7.g | 8.69 | 25.3 |
+| step7_7.b | 4.07 | 12.3 |
+| step7_7.g | 9.68 | 28.0 |
 | similarity_check | 0.00 | 0.7 |
-| unseen_test | 0.00 | 8.0 |
+| unseen_test | 0.00 | 10.9 |
