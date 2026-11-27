@@ -1,0 +1,31 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 18-bar excess forward return on forecast (grid cells)",
+    "value": 0.001053308990705886,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 7.898479068298048
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cells with forecast > 0": 5591,
+    "grid cells in total": 11111
+  },
+  "decided_by": "The slope is positive with t >= 2: excess 3-day returns grow with the forecast's size.",
+  "reading": "Situation bars are those with the recorded 180-bar return (recomputed from closes where missing) above 0 and a positive forecast; the coin's normal drift is the mean of its non-overlapping 18-bar grid returns over all its windows; all grid cells with a valid forward return and forecast enter the regression (forecast 0 included); the slope's t is the ordinary OLS t; the plan's minimum counts, when not reached, give 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
