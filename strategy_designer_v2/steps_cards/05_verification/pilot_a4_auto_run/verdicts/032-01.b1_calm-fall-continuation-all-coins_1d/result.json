@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on |forecast|",
+    "value": -6.337805984142539e-06,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": -0.030572997203465895
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 and mean short-direction excess return > 0; reject: slope > 0 with t >= +2; inconclusive otherwise; minimum 300 cases on at least 100 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean short-direction next-day excess return > 0",
+    "value": -0.0007581235497825975,
+    "passed": false
+  },
+  "counts": {
+    "cases": 2502,
+    "distinct days": 1076
+  },
+  "decided_by": "The slope's |t| is below 2, meeting neither the confirm nor the reject rule. No effect (common/verdicts.md): t in the idea's direction +0.031 (below 1), 2502 cases (30 needed).",
+  "reading": "The falling calm profile is read from the recorded `regime` column (the detector's non-vetoed regime 'unknown'), the 30-day fall from fall30's raw value (recomputed from closes inside the window if missing), the coin's mean daily return is the mean of all its in-window next-day returns over all windows, and the slope's t is an OLS slope with day-clustered standard errors (CR1 factor G/(G-1)).",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.031 (below 1), 2502 cases (30 needed)",
+    "t_in_idea_direction": 0.030572997203465895,
+    "cases": 2502
+  }
+}

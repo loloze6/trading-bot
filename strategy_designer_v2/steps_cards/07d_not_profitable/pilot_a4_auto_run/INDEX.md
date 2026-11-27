@@ -1,3 +1,4 @@
+032-01.b1_calm-fall-continuation-all-coins_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 050-02_falling-calm-scaled-week-rise-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough; 2 of step 6's measures failed, at most 2)
 050-03.c1_calm-downtrend-scaled-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough; 2 of step 6's measures failed, at most 2)
 050-03_falling-calm-range-scaled-week-fall_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 4 of step 6's measures failed, at most 2)
