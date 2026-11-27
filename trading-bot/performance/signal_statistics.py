@@ -604,6 +604,7 @@ def stationary_block_bootstrap_ic_significance(
     n_resamples: int = 1000,
     seed: int = 20260707,
     expected_step_by_symbol: Optional[dict] = None,
+    ic_only: bool = False,
 ) -> dict:
     """
     Pre-registered fallback significance test for the pooled ALL-BARS rank
@@ -656,6 +657,12 @@ def stationary_block_bootstrap_ic_significance(
     `expected_step_by_symbol=None` (or a symbol absent from it) yields one
     segment spanning the series AND keeps the old uncapped block length,
     reproducing the pre-gap-aware resampling byte-for-byte.
+
+    ic_only (E12, 2026-11-27): return the method and the observed pooled IC only, without the n_resamples
+    resamples (so no p_value, significant or n_bootstrap_valid). For a caller that reads those two alone: the
+    observed IC is computed on the real bars before any resample, so it is the value the full call gives.
+    Why: the resamples cost (bars / block) segment scans each, and when nearly every bar is its own segment
+    (a gapped series, or a wrong expected step) one call runs for days.
     """
     symbol_arrays = {}
     observed_all_f, observed_all_r = [], []
@@ -678,6 +685,8 @@ def stationary_block_bootstrap_ic_significance(
     if observed_ic is None:
         return {**result_base, "pooled_ic": None, "p_value": 1.0,
                 "significant": False, "n_bootstrap_valid": 0}
+    if ic_only:
+        return {**result_base, "pooled_ic": round(observed_ic, 6)}
 
     rng = random.Random(seed)
     boot_ics = []
