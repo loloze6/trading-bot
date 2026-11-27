@@ -37,7 +37,7 @@ in order with one result per step, and the run's cost and time.**
 ## The fields of a view
 1. **Run line** (the list of runs, last updated first): name and bar size (from its backtests' ids, e.g. `_4h`; with
    more than one, how many backtests each; operator, 2026-11-21), dates, ideas, backtested ideas, cost, step time; "Is it
-   real": step 5's counts, "Does it pay": step 6's, each in one fixed order (confirmed, inconclusive, rejected,
+   real": step 5's counts, "Does it pay": step 6's, each in one fixed order (confirmed, inconclusive, no effect (an old "rejected" shown as this, `common/verdicts.md`),
    mismatch, not observable; profitable, not profitable) with the best of its key figure (step 5: t; step 6: Sharpe);
    the depth in one line (field 11).
    - For: choosing which run to open.

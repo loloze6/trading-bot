@@ -78,10 +78,38 @@ def test_line_7d_runs_only_on_a_confirmed_idea_whose_book_does_not_pay():
     import yaml
     from pathlib import Path
     entry = yaml.safe_load((Path(a.__file__).resolve().parents[2] / "07d_not_profitable/helper/line.yaml").read_text())["entry"]
-    assert a.entry_met(entry, "confirmed", "not profitable enough")
-    for s5 in ("inconclusive", "rejected", "not observable", "mismatch"):
-        assert not a.entry_met(entry, s5, "not profitable enough")
-    assert not a.entry_met(entry, "confirmed", "profitable enough")
+    assert a.entry_met(entry, "confirmed", "not profitable enough", 1)
+    for s5 in ("inconclusive", "no effect", "not observable", "mismatch"):
+        assert not a.entry_met(entry, s5, "not profitable enough", 1)
+    assert not a.entry_met(entry, "confirmed", "profitable enough", 0)
+
+
+def test_line_7d_repairs_only_a_close_book():
+    """B12, operator 2026-11-27: a repair only when the book fails at most 2 of step 6's measures."""
+    import yaml
+    entry = yaml.safe_load((Path(a.__file__).resolve().parents[2] / "07d_not_profitable/helper/line.yaml").read_text())["entry"]
+    assert a.entry_met(entry, "confirmed", "not profitable enough", 2)
+    assert not a.entry_met(entry, "confirmed", "not profitable enough", 3)
+    assert not a.entry_met(entry, "confirmed", "not profitable enough", None)     # no check: not close
+    assert a.entry_met({"step5_in": ["inconclusive"]}, "inconclusive", "none", None)   # no cap: the count is not read
+
+
+def test_failed_of_counts_the_measures_step_6_failed(tmp_path):
+    import json
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "result.json").write_text(json.dumps({"status": "not profitable enough", "measures": [
+        {"measure": "a", "passed": True}, {"measure": "b", "passed": False}, {"measure": "c", "passed": False}]}))
+    assert a.failed_of(tmp_path, "x") == 2 and a.failed_of(tmp_path, "y") is None
+
+
+def test_line_7c_reads_no_effect_and_an_old_rejected():
+    """B11, operator 2026-11-27 (common/verdicts.md): 7.c runs on "no effect"; an old "rejected" is read as it."""
+    import yaml
+    sys.path.insert(0, str(Path(a.__file__).resolve().parents[2] / "common"))
+    from lib import step5_answer
+    entry = yaml.safe_load((Path(a.__file__).resolve().parents[2] / "07c_rejected/helper/line.yaml").read_text())["entry"]
+    assert a.entry_met(entry, step5_answer("no effect"), "none") and a.entry_met(entry, step5_answer("rejected"), "none")
+    assert not a.entry_met(entry, step5_answer("inconclusive"), "none")
 
 
 def test_the_analyst_reads_how_sure_the_size_is(tmp_path):

@@ -1,12 +1,18 @@
-# Step card 7.c: Rejected (2026-11-12)
+# Step card 7.c: No effect (2026-11-12; "rejected" became "no effect" 2026-11-27, B11)
 
 ## Business objective
-**Establish why an idea was rejected, what the market did instead and where, and propose another idea that could be confirmed.**
+**Establish why the effect is not in the data, what the market did instead and where, and propose another idea on the theme that could be confirmed.**
 
 The parts every line shares (input, output, how the data is read, the model, storage, quality criteria) are in `../07_common/card.md`.
 
 ## Entry condition
-Step 5's verdict is **rejected**: clear evidence against the idea. Otherwise the line does not run, and its index line says so (`helper/line.yaml`).
+Step 5's verdict is **no effect** (`../common/verdicts.md`; B11, operator 2026-11-27): enough cases (30), and the effect
+near zero or pointing the other way (its t in the idea's direction below 1, or the plan's reject rule met: the old
+"rejected", read today as "no effect"). Otherwise the line does not run, and its index line says so (`helper/line.yaml`).
+An unclear result (inconclusive: a sign of the effect, t from 1) goes to 7.b. Why: the follow-ups of an unclear test
+with t below 1 were confirmed 10 times in 72 (2 profitable), against 17 in 56 (7) from 1 to 2 (nights 7 to 9); a
+clearer test of an absent effect pays rarely, the market's other behaviour on the theme is this line's question.
+The folder keeps its name (`07c_rejected/`): its runs' files are under it.
 
 ## Input
 The shared input: the backtest record, its plan and brief, step 5's verdict and step 6's check.

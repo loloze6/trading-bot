@@ -6,7 +6,16 @@
 The parts every line shares (input, output, how the data is read, the model, storage, quality criteria) are in `../07_common/card.md`.
 
 ## Entry condition
-Step 5's verdict is **confirmed** and step 6's check is **not profitable enough** (operator, 2026-11-22). Otherwise the line does not run, and its index line says so (`helper/line.yaml`). A book whose idea is not confirmed is read by the verdict's line (7.a, 7.b, 7.c) and by 7.g: why the idea is unclear or wrong comes before how its book could pay.
+Step 5's verdict is **confirmed**, step 6's check is **not profitable enough** (operator, 2026-11-22), and the book is
+**close**: it fails **at most 2** of step 6's 6 measures (`../06_profitability/helper/rule.yaml`; B12, operator
+2026-11-27: `step6_failed_at_most: 2`). Otherwise the line does not run, and its index line says so, with the count of
+failed measures (`helper/line.yaml`). A strategy that is not close gets no repair: its effect stays recorded
+(confirmed) for the combination, and line 7.g still runs on it.
+
+Why close (B12, nights 7 to 9, `../topics/47_review/night9_review.txt` part 4): of 135 repairs, the parent failing 1
+measure became profitable 6 times in 28; failing 2, 4 in 56; failing 3 or more, 0 in 51. A repair adds a median of 0.00
+to Calmar (one in ten adds 0.34 or more): a repair is tuning, which reaches the bar only from near it. No "large
+repair" line (the operator's question, 2026-11-27): 0 of 51 far strategies became profitable. A book whose idea is not confirmed is read by the verdict's line (7.a, 7.b, 7.c) and by 7.g: why the idea is unclear or wrong comes before how its book could pay.
 
 Why (topic 45, measured 2026-11-22): of the ideas line 7.d wrote from books not confirmed, 100 were planned and 7 paid, all momentum (6 near copies of paying books, 0.75 to 0.99 explained, and one half explained). Of the ideas written from confirmed books (lines 7.d and 7.g), those that kept the confirmed idea whole paid 4 times in 12; those that replaced it paid once in 17, and 14 of those 17 added a trend or momentum condition: the observed drift of this line toward momentum.
 

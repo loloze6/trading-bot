@@ -165,6 +165,16 @@ def with_common(text):
     return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: common_text(m.group(1).lower()), text)
 
 
+# Step 5's answers (common/verdicts.md, B11). Old records keep their words; a reader reads them through step5_answer.
+STEP5_ANSWERS = ("confirmed", "inconclusive", "no effect", "not observable", "mismatch")
+STEP5_OLD_WORDS = {"rejected": "no effect"}      # before 2026-11-27: "rejected" (the plan's reject rule met)
+
+
+def step5_answer(status):
+    """Step 5's answer as read today (common/verdicts.md): an old "rejected" is "no effect"; anything else unchanged."""
+    return STEP5_OLD_WORDS.get(status, status)
+
+
 # The market profiles (common/market_profile.md; topic 49): the six names, and when a bar is in each. The trend is the
 # coin's 60-day return in percent, the agitation the rank of its 30-day swing over the past 365 days (0 to 1).
 PROFILE_TREND = {"rising": [("gt", 10)], "choppy": [("gte", -10), ("lte", 10)], "falling": [("lt", -10)]}

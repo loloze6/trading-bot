@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 CARDS = HERE.parent.parent                      # steps_cards/
 import sys
 sys.path.insert(0, str(CARDS / "common"))
-from lib import idea_code  # noqa: E402  (the id convention, common/idea_created_from.md)
+from lib import idea_code, step5_answer  # noqa: E402  (the id convention, common/idea_created_from.md)
 IDEA_ID = re.compile(r"^\d{3}-\d{2}_[\w.-]+$")   # 011-01_weekend-rise-reverses-monday.b1_...
 BAR_SUFFIX = re.compile(r"_(\d+[smhdw])$")       # a backtest id is the idea id plus its bar: ..._1d
 FULL_DATE = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d")  # a journal "at" with its day (journals before 2026-11-17: time only)
@@ -217,7 +217,7 @@ def step5(path):
     mm = r.get("main_measure") or {}
     st = mm.get("statistic") or {}
     sc = r.get("supporting_check") or {}
-    return {"status": r.get("status"), "t": st.get("value"), "t_name": st.get("name"), "measure": mm.get("name"),
+    return {"status": step5_answer(r.get("status")), "t": st.get("value"), "t_name": st.get("name"), "measure": mm.get("name"),
             "threshold": mm.get("threshold"), "decided_by": r.get("decided_by"),
             "support": sc.get("name"), "support_passed": sc.get("passed"), "counts": r.get("counts"),
             "situation": (r.get("situation_check") or {}).get("agreement"),

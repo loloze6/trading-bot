@@ -76,7 +76,7 @@ const CHARTS = {};
 
 // the steps' own words, shown as written; the colour only groups them
 const TONE = {"plan":"good","confirmed":"good","profitable enough":"good","backtested":"good",
-  "missing-components":"bad","untestable":"bad","rejected":"bad","not profitable enough":"bad","blocked at step 3":"bad",
+  "missing-components":"bad","untestable":"bad","no effect":"bad","not profitable enough":"bad","blocked at step 3":"bad",
   "inconclusive":"mid","not observable":"mid","mismatch":"mid"};
 const chip = (text, status) => `<span class="chip ${TONE[status] || ""}">${esc(text)}</span>`;
 
@@ -99,7 +99,7 @@ const HELP = {
   fit: "'exact': the test measures the idea as stated. 'adapted': the same thing in the only form the bot allows (e.g. an on/off rule made graded, a holding period dropped).",
   book: "The book is what the strategy's money becomes, starting from 1. Each 4-month window is run separately on each coin; the window's return is averaged over the coins, and windows are chained in time order. Not the price of a coin.",
   coinsharpe: "Each coin's button shows the Sharpe of that coin's own book, as step 6 defines Sharpe: the mean of its daily returns over their standard deviation, times the square root of 365. Green above 0, red at or below 0. Step 6 measures the book of all coins together; this is one coin at a time. It is read from the backtest's chart files, so a backtest without them keeps plain buttons.",
-  s5: "Step 5 asks: is the idea real? It applies the plan's own rule, fixed before the data. 'confirmed': the market behaves as the idea says. 'rejected': it behaves the other way. 'inconclusive': enough cases, no clear answer. 'not observable': too few cases. 'mismatch': the test did not do what its plan said, so no verdict.",
+  s5: "Step 5 asks: is the idea real? It applies the plan's own rule, fixed before the data. 'confirmed': the market behaves as the idea says. 'inconclusive': a sign of the effect, not enough proof. 'no effect': enough cases, and the effect is near zero or points the other way (its t in the idea's direction below 1; an old 'rejected' is shown as this). 'not observable': too few cases. 'mismatch': the test did not do what its plan said, so no verdict.",
   t: "The t-statistic says how far the measured effect is from zero, in units of its own noise. Beyond about 2 (or below -2) it is unlikely to be chance; between -2 and 2 it could be chance.",
   measure: "The one number the plan chose, before the data, to answer the question.",
   rule: "The thresholds the plan fixed before the data: what confirms, what rejects, the minimum number of cases.",
@@ -117,8 +117,8 @@ const HELP = {
   s7: "Step 7 lines read the backtest like a practitioner: findings drawn from its data, then new ideas resting on them. Which lines run depends on steps 5 and 6; 7.g always runs.",
   "7.a": "7.a, not observable: why the idea could not be observed, and how to make it observable.",
   "7.b": "7.b, inconclusive: why the result is unclear, and what idea would give a clear answer.",
-  "7.c": "7.c, rejected: why the idea was rejected, and what other idea could be confirmed.",
-  "7.d": "7.d, not profitable: why the book does not pay, and what idea would make it pay.",
+  "7.c": "7.c, no effect: what the market did instead, and what other idea on the theme could be confirmed.",
+  "7.d": "7.d, not profitable: why the book does not pay, and what idea would make it pay; only when the book fails at most 2 of step 6's 6 measures.",
   "7.e": "7.e, profitable but not proven: what the book really earns from.",
   "7.f": "7.f, real and profitable: what could break the idea and its book.",
   "7.g": "7.g, patterns: what patterns the bars and the book show, whatever the verdict.",
@@ -160,7 +160,7 @@ function md(t){                      // a small Markdown: headings, lists, bold,
 function dur(sec){ if (sec == null) return "–"; if (sec < 60) return Math.round(sec) + " s"; const m = Math.round(sec/60); return m < 60 ? m + " min" : Math.floor(m/60) + " h " + String(m%60).padStart(2,"0"); }
 function counts(o){ return Object.entries(o || {}).map(([k,v]) => chip(v + " " + k, k)).join(""); }
 // step 5's and step 6's statuses in one fixed order (any other status after them); each with the best of its key figure
-const S5 = ["confirmed", "inconclusive", "rejected", "mismatch", "not observable"], S6 = ["profitable enough", "not profitable enough"];
+const S5 = ["confirmed", "inconclusive", "no effect", "mismatch", "not observable"], S6 = ["profitable enough", "not profitable enough"];
 const short = s => String(s).replace(/ enough$/, "");
 const fig = x => typeof x === "number" ? x.toFixed(2) : "–";          // t and Sharpe: always two decimals
 function results(o, order, best, name){ const rank = k => order.includes(k) ? order.indexOf(k) : order.length;

@@ -6,8 +6,8 @@ Step 7 is a set of analysis lines, each with its own objective and its own card:
 |---|---|---|---|
 | 7.a | `../07a_not_observable/` | step 5: not observable | why the idea could not be observed, and how to make it observable |
 | 7.b | `../07b_inconclusive/` | step 5: inconclusive | why the result is unclear, and what idea would give a clear answer |
-| 7.c | `../07c_rejected/` | step 5: rejected | why the idea was rejected, and what other idea could be confirmed |
-| 7.d | `../07d_not_profitable/` | step 6: not profitable enough | why the book does not pay, and what idea would make it pay |
+| 7.c | `../07c_rejected/` | step 5: no effect (an old "rejected" included; `../common/verdicts.md`) | what the market did instead, and what other idea on the theme could be confirmed |
+| 7.d | `../07d_not_profitable/` | step 5: confirmed, step 6: not profitable enough, at most 2 of its 6 measures failed (B12) | why the book does not pay, and what idea would make it pay |
 | 7.e | `../07e_profitable_unproven/` | step 6: profitable enough, step 5: not confirmed | what the book really earns from |
 | 7.g | `../07g_patterns/` | none | what patterns the bars and the book show |
 
