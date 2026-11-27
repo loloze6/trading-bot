@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 086-01.c1_first-dip-falls-over-week_1d
+idea tested: 086-01.c1_first-dip-falls-over-week
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3580 USD
+---
+## Findings
+- **F1:** The tested idea's 7-day fall after a first dip is absent in this book's bars as well. Across the in-profile 7-day grid cells, the mean short-direction unusual move is +1.38 % with t 0.61 (92 cases). The trades lost money: BCH lost a mean of -6.20 % net over 43 trades with 33 % winners, and ZEC lost -0.29 % over 57 trades with 33 % winners.
+- **F2:** The strongest single pattern does not survive a change of grid start. On the 7-day grid from each window's first bar, a low close inside the day's range is followed by a larger fall (Spearman rho -0.29, t -2.88, 92 cases). Moved by one to six days, the same grid gives rho from -0.18 to +0.21, with t between -1.59 and +1.94. The pattern is also split by coin: averaged over the grids, rho is +0.045 on BCH and -0.098 on ZEC.
+- **F3:** The 7-day link between the day's return and the next week's move (rho -0.22, t -2.08) also disappears on the shifted grids. There it ranges from rho -0.10 to +0.09, with t between -0.89 and +0.77.
+- **F4:** In the profile, a longer up streak at the bar's close leads to a weaker next day, but the effect is not graded. Over all streaks, rho is 0.10 with t 2.52 over 624 one-day cases, and it is positive on each coin (BCH t 1.84, DOGE t 0.78, ZEC t 1.72). By length, though, it reverses at the long end: after 1 to 3 up days the next-day short move is +1.19 %, +0.92 % and +1.40 %, while after 4 and after 5 or more days it is -3.14 % and -1.07 %. It also fades to rho 0.05 at 2 and 3 days and to -0.09 at 5 days.
+- **F5:** No calendar pattern stands out. The in-profile next-day short move by weekday has |t| no larger than 1.43 on any day.
+- **F6:** These findings come from about 33 feature-horizon pairs plus 6 shifted grids per feature. At that count, a |t| near 2.5 is what chance alone produces, and no pattern above stands out by more than that.
+
+## Ideas
+- No ideas: Across about 45 feature-horizon-grid tests in rising agitated markets, the only patterns reach |t| near 2.5 and either reverse when the 7-day grid start is moved (close position in range, day's return) or are not graded and vanish beyond one day (up-streak length), so none stands out from chance.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

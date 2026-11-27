@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 0.9907407407407407,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual 7-bar move",
+    "value": -0.015037744418908906,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.8925098562332542
+    },
+    "threshold": "mean > 0 with day-clustered t >= 2 to confirm (with slope > 0, t >= 2); mean < 0 with t <= -2 or slope < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": -0.0014939269228924025,
+    "passed": false,
+    "t": -0.488593599511271
+  },
+  "counts": {
+    "cases": 257,
+    "distinct days": 195
+  },
+  "decided_by": "Inconclusive: the mean or slope has |t| below 2, meeting neither confirm nor reject. No effect (common/verdicts.md): t in the idea's direction -0.893 (below 1), 257 cases (30 needed).",
+  "reading": "Profile on a bar is read from the detector's recorded regime (not 'chop'), since its components are not recorded and their 365-bar lookback cannot be rebuilt inside a window; the streak is the recorded raw value of broken_up_run, else recomputed from closes; the case's first bet in each 7-bar grid cell is kept; the slope's t is the ordinary OLS t; the plan's 'fewer than 40 cases or days' minimum is reported as 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.893 (below 1), 257 cases (30 needed)",
+    "t_in_idea_direction": -0.8925098562332542,
+    "cases": 257
+  }
+}
