@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 0.991044776119403,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction unusual move over 3 bars (vs coin's normal 3-bar drift)",
+    "value": -0.00817561272451952,
+    "statistic": {
+      "name": "t of the mean, cases summed by day",
+      "value": -1.1651806779418061
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": -0.0013888822038557861,
+    "passed": false,
+    "t": -1.5011420448897557
+  },
+  "counts": {
+    "cases": 465,
+    "distinct days": 341
+  },
+  "decided_by": "Inconclusive rule: the results lie between the confirm and reject rules. No effect (common/verdicts.md): t in the idea's direction -1.165 (below 1), 465 cases (30 needed).",
+  "reading": "Situation = regime 'trending' (the detector's decision, which carries the rising-agitated profile whose 365-bar volatility percentile cannot be rebuilt inside the recorded windows) on a down close with the recorded run gain > 0 (recomputed from prices where not recorded), expected side short; cases are short bets (short size up >= 2 from its lowest since the last bet), first one per 3-bar grid cell of each window; drift is the coin's mean 3-bar return on that grid over all its windows; the day-clustered t sums case deviations per UTC day; the slope t is ordinary least squares; the plan's 'fewer than 30 cases or 30 days' minimum is reported as not observable.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -1.165 (below 1), 465 cases (30 needed)",
+    "t_in_idea_direction": -1.1651806779418061,
+    "cases": 465
+  }
+}

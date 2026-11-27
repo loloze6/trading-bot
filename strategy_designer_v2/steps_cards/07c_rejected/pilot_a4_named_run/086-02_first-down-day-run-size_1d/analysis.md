@@ -1,0 +1,24 @@
+---
+line: 7.c no effect
+backtest: 086-02_first-down-day-run-size_1d
+idea tested: 086-02_first-down-day-run-size
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3933 USD
+---
+## Findings
+- **F1:** The test found no effect where the plan looked. The run's size points the wrong way. Among first down days after an up run in the rising agitated profile (explore half: BCH, DOGE, ZEC), the short-direction unusual move over 3 days regressed on the run's gain in 30-day swing units has a slope of -0.81 % per unit (t -1.44, 122 cases). The verdict's size over 3 bars is -0.82 % (t -1.17, 341 days).
+- **F2:** Longer runs are followed by rises, not falls. After 3-day runs the 3-day short-direction unusual move is -1.60 % (17 cases), and after runs of 4 days or more it is -2.75 % (11 cases). After 1-day runs it is +1.56 % (90 cases, t 1.24). The decline the brief expects is weakest exactly where it says it should be strongest.
+- **F3:** The depth of the down day itself carries the move instead. For first down days in the profile, the short-direction unusual move rises with the dip's size in swing units. The slope is +3.30 % per unit over 1 day (t 3.23, 126 cases), +2.85 % over 5 days (t 1.04) and +6.40 % over 10 days (t 1.57).
+- **F4:** The deepest tercile of first down days (below -0.77 of the 30-day swing) is followed by sustained falls. The short-direction unusual move is +2.27 % over 1 day (t_day 1.89), +6.06 % over 5 days (t_day 2.01) and +8.88 % over 10 days (t_day 2.49), on 41 cases over 32 days. The shallow tercile shows +0.09 % over 3 days and +2.46 % over 5 days, with no t above 1.1.
+- **F5:** The same depth grading holds for every down day in the profile, not only the first after a run. The 5-day slope is +4.84 % per swing unit (t 2.83, 225 cases). The deep tercile shows +4.97 % over 5 days (t_day 2.26, 76 cases, 55 days) and +6.57 % over 10 days (t_day 2.48), against -1.90 % and +0.09 % over 5 days for the mid and shallow terciles.
+- **F6:** The deep-dip move is larger than the profile's own downward lean. Up days in the profile are followed by a 5-day short-direction unusual move of only +1.90 % (t_day 1.42, 294 cases), against +4.97 % after deep down days.
+- **F7:** The deep-dip move is the same sign on both main coins and in every year with enough cases, and it is far above the cost of a trade. Over 5 days it is +9.60 % on BCH (t_day 2.35, 16 cases) and +3.79 % on ZEC (t_day 1.40, 25 cases). It is +10.4 % in 2020 (17 cases) and +3.8 % in 2021 (18 cases). One trade costs 0.37 %.
+
+## Ideas
+- `086-02.c1_first-dip-depth-continues` (from F1, F2, F3, F4, F7): In a rising, agitated market, when a coin closes down after a streak of consecutive up days, it keeps falling over the next 5 days, and the fall is larger the deeper that down day is, measured in units of the coin's daily swing over the last 30 days.
+- `086-02.c2_deep-down-day-continues` (from F5, F6, F7): In a rising, agitated market, the deeper a coin's down day, measured in units of its daily swing over the last 30 days, the more the coin falls over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

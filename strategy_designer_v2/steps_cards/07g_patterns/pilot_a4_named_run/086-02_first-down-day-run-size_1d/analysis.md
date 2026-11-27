@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 086-02_first-down-day-run-size_1d
+idea tested: 086-02_first-down-day-run-size
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4518 USD
+---
+## Findings
+- **F1:** In the rising agitated profile, on the explore windows, the 3-day grid shows no short edge. The mean short-direction unusual move is +0.69 % (t 0.69, 202 independent cases). For the brief's situation alone, the first down day after an up run, it is +1.13 % (t 0.70, 55 cases). Neither can be told from 0, which agrees with step 5's verdict (-0.82 %, t -1.17, 341 days).
+- **F2:** The other horizons show the same. On first down days in the profile, the short unusual move is -0.49 % over 1 day (t -0.77, 166 cases), +1.58 % over 5 days (t 0.69, 36 cases) and +3.42 % over 10 days (t 0.86, 22 cases). No horizon carries the theme's effect.
+- **F3:** The grading by run length points against the idea. Grouped by the length of the up streak before the dip, the short unusual move over 3 days falls from +1.56 % after a 1-day streak (t 1.24, 90 dips) to +0.26 % after 2 days (t 0.14, 44), -1.60 % after 3 days (t -0.49, 17) and -2.75 % after 4 or more (t -1.00, 11). None of these is significant.
+- **F4:** No bar feature in the profile grades the 3-day short move: the 1-, 3-, 7- and 20-day scaled returns, the close location, the upper wick, the range, the volume and the distance from the 20-day high all have Spearman rho between -0.065 and +0.10, every p-value 0.15 or higher.
+- **F5:** The few quintile or weekday cells that pass t 2 are what chance would give across about 50 cells. They are: the middle 7-day-return quintile at +4.91 % (t 3.22, 35 cases), Wednesdays at +2.62 % (t 2.35, 30 cases), and the fourth 1-day-return quintile at +2.77 % (t 2.29, 35 cases). Their neighbouring cells do not follow, so they make no graded pattern.
+- **F6:** The book's losses sit in trades and windows that look like noise rather than a missed pattern. The book made 198 trades, with a mean net result of -3.72 %, a median of -2.11 % and 32 % winners; the worst 5 trades carry 40 % of the total loss. Window w16 alone sums -0.62 of daily book returns, against +0.34 for w13 to w15 together.
+
+## Ideas
+- No ideas: Across the forecast, streak length, dip size, horizons from 1 to 10 days, nine bar features, weekdays and windows, no pattern in rising agitated markets on the short side stands out from chance. The only ordering, a weaker fall after longer runs, is the opposite of the theme's effect and not significant, so the theme's effect is not in the data.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
