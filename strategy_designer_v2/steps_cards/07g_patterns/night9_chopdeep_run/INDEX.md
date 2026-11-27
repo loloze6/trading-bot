@@ -3,7 +3,10 @@
 072-01_choppy-deep-close-continuation_1d: 0 ideas, 1 discoveries (3 explorations)
 072-02.b1_choppy-deep-up-day-fade-more-coins_1d: 1 ideas (2 explorations)
 072-02_choppy-deep-up-day-fade_1d: 1 ideas (2 explorations)
+072-03.b1_choppy-deep-bounce-fades_1d: 1 ideas, 1 discoveries (3 explorations)
 072-03_choppy-deep-down-day-continuation_1d: 1 ideas, 1 discoveries (2 explorations)
+072-04.b1_choppy-deep-close-ten-day-fall_1d: 2 ideas (2 explorations)
+072-04.b2_choppy-deep-close-five-day-fall_1d: 1 ideas, 1 discoveries (3 explorations)
 072-04_choppy-deep-close-multiday-fall_1d: 1 ideas, 1 discoveries (2 explorations)
 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d: no ideas: Outside the tested idea itself (F1 to F3), the only patterns near |t| 2 are a day-2 whipsaw after the widest bounces (F4, 40 days), which is too thin to stand out after more than 100 cells were read, and the falling agitated wide down-day rebound (F5), which the profile map already holds; the empty choppy agitated short cell shows only a lean that does not clear chance (F6).
 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d: 1 ideas (2 explorations)
@@ -11,6 +14,7 @@
 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade_1d: no ideas: Across about fifteen angles (width, close location, return size, the 5-day depth, volatility, weekday, windows and the book's extremes), the only patterns near t 2.5 are a rebound after wide or low-closing down days, which the map already holds many times in falling agitated long, and a fade after quiet still-down days in a falling market, which does not stand out from the many cells examined (F4, F5, F6).
 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d: 2 ideas (2 explorations)
 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade_1d: 1 ideas, 1 discoveries (2 explorations)
+074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade_1d: 2 ideas (2 explorations)
 074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade_1d: no ideas: The only patterns that stand out (F3, F4) belong to the tested falling-market wide-bounce fade, which the map already holds in the falling short cells (the 074-01 family), and they are not graded. No other angle out of the roughly sixty cells examined gives a pattern that can be told apart from chance.
 074-01.b1.b1.b1.b1.g2_falling-heavy-volume-bounce-fade_1d: 2 ideas (2 explorations)
 074-01.b1.b1.b1.b1_falling-wide-high-close-fade_1d: 2 ideas (2 explorations)

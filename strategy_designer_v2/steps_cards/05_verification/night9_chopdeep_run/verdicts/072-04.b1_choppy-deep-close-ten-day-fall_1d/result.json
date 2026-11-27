@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of drift-removed 10-bar return on forecast",
+    "value": -0.00023486848072356496,
+    "statistic": {
+      "name": "OLS slope t, clustered by day",
+      "value": -0.201135485313874
+    },
+    "threshold": "positive with t >= 2 confirms (with check); negative with t <= -2 rejects; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess return, forecast <= -10 minus forecast in (-10, 0)",
+    "value": -0.0003474412223289543,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a nonzero forecast": 352,
+    "days of the cases": 174,
+    "grid cases with forecast at or below -10": 187,
+    "grid cases with forecast between -10 and 0": 165
+  },
+  "decided_by": "The slope's t lies between -2 and +2.",
+  "reading": "The coin's drift is the mean of all its grid 10-bar returns over all windows (nonzero forecast or not), the slope is from an OLS with an intercept whose t uses day-clustered standard errors with the usual small-sample correction, the plan's fewer-than-100-cases rule is applied as a minimum count (not observable), and the choppy profile is read from the recorded regime 'unknown'."
+}

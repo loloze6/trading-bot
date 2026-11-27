@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9991095280498664,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move in the short direction on forecast<0 bars",
+    "value": 0.00818128991383871,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.2273676381698357
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 distinct days and upper half beats lower half; reject: mean < 0 with t <= -2 over >= 100 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper minus lower half of abs(forecast)",
+    "value": 0.013810931695508448,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 446,
+    "cases": 1122
+  },
+  "decided_by": "Mean unusual move above 0 with t >= 2 over at least 100 distinct days, and the upper half of abs(forecast) beats the lower half.",
+  "reading": "Situation computed from prices as 1-day return > 0 and high-low range above its 20-bar mean (bar t included), falling back to regime=='trending' on the first bars of a window where it cannot be computed, side short (forecast < 0); coin mean daily return is the mean of all within-window next-day returns over all its windows; t clusters cases by UTC date; the median split puts abs(forecast) > median in the upper half and <= median in the lower half.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.006848 on the check folds against +0.008181 on every fold",
+    "main": 0.006848273390437847,
+    "statistic": 1.4611624709475153,
+    "counts": {
+      "distinct case days": 286,
+      "cases": 789
+    }
+  }
+}

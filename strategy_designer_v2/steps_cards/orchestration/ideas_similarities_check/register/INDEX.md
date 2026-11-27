@@ -301,6 +301,7 @@ An idea's latest record counts once.
 | 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 19 | 2e5bdc658 | 2026-11-27T01:10:08 |
 | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 7b8d921f7 | 2026-11-26T23:59:31 |
 | 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 2e5bdc658 | 2026-11-27T00:57:46 |
+| 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 19 | 2bcc0ac55 | 2026-11-27T04:27:27 |
 | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 7b8d921f7 | 2026-11-26T23:47:46 |
 | 074-01.g1.d1_wide-close-high-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 6 | 0ae36323e | 2026-11-26T23:28:37 |
 | 074-01.g1_falling-agitated-wide-up-fade_1d | confirmed | night9_chopdeep_run | 1d | 6 | 0ae36323e | 2026-11-26T23:21:23 |

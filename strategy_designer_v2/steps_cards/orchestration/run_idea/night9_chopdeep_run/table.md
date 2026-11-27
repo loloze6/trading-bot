@@ -27,22 +27,26 @@ One row per idea run; every status is read from the step's own result file. Each
 | 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | plan | inconclusive (+1.88) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 074-01.b1.b1.b1.b1.d1.g2.b1_still-down-bounce-fades-next-day, 074-01.b1.b1.b1.b1.d1.g2.b2_agitated-downtrend-bounce-fade; 7.g: no ideas: Across about fifteen angles (width, close location, return size, the 5-day depth, volatility, weekday, windows and the book's extremes), the only patterns near t 2.5 are a rebound after wide or low-closing down days, which the map already holds many times in falling agitated long, and a fade after quiet still-down days in a falling market, which does not stand out from the many cells examined (F4, F5, F6). | 1.39 | 12.4 |
 | 074-01.b1.b1.b1.b1.g2_falling-heavy-volume-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | inconclusive (+1.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 074-01.b1.b1.b1.b1.g2.b1_agitated-falling-volume-bounce-fade; 7.g: 074-01.b1.b1.b1.b1.g2.g1_agitated-downtrend-wide-rally-fade, 074-01.b1.b1.b1.b1.g2.g2_falling-thin-volume-rally-fade | 1.17 | 12.0 |
 | 072-02.b1_choppy-deep-up-day-fade-more-coins | 072-02_choppy-deep-up-day-fade | plan | inconclusive (-0.82) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-02.b1.b1_choppy-deep-up-day-five-day-fade, 072-02.b1.b2_choppy-deep-close-three-day-fall; 7.g: 072-02.b1.g1_choppy-calm-deep-up-day-fade | 1.09 | 11.5 |
+| 072-03.b1_choppy-deep-bounce-fades | 072-03_choppy-deep-down-day-continuation | plan | inconclusive (+1.99) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-03.b1.b1_deep-bounce-fades-more-coins; 7.g: 072-03.b1.g1_choppy-calm-deep-bounce-fades | 1.19 | 6.5 |
+| 072-04.b1_choppy-deep-close-ten-day-fall | 072-04_choppy-deep-close-multiday-fall | plan | inconclusive (-0.20) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-04.b1.b1_choppy-deep-close-week-fall; 7.g: 072-04.b1.g1_choppy-raw-depth-ten-day-fall, 072-04.b1.g2_choppy-calm-deep-close-fall | 1.02 | 6.1 |
+| 072-04.b2_choppy-deep-close-five-day-fall | 072-04_choppy-deep-close-multiday-fall | plan | inconclusive (+0.04) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-04.b2.b1_choppy-deep-close-ten-day-fall, 072-04.b2.b2_choppy-deep-up-day-fade; 7.g: 072-04.b2.g1_choppy-calm-deep-close-fall | 1.18 | 6.2 |
+| 074-01.b1.b1.b1.b1.g1.e1_graded-drop-depth-bounce-fade | 074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade | plan | confirmed (+2.23) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: holds | 7.g: 074-01.b1.b1.b1.b1.g1.e1.g1_agitated-drop-depth-bounce-fade, 074-01.b1.b1.b1.b1.g1.e1.g2_agitated-range-graded-bounce-fade | 0.86 | 12.3 |
 
 ## Consumption
-23 ideas, 25.64 USD, 253.2 minutes in all.
+27 ideas, 29.90 USD, 284.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.29 | 14.0 |
-| step4_backtest | 0.00 | 153.5 |
-| step5_verdict | 4.50 | 16.9 |
-| step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.4 |
+| step3_plan | 2.62 | 15.8 |
+| step4_backtest | 0.00 | 167.4 |
+| step5_verdict | 5.22 | 19.6 |
+| step6_check | 0.00 | 1.0 |
+| chart_files | 0.00 | 0.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.52 | 1.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.80 | 5.7 |
-| step7_7.b | 5.27 | 15.8 |
-| step7_7.g | 11.26 | 32.7 |
-| similarity_check | 0.00 | 0.7 |
-| unseen_test | 0.00 | 10.9 |
+| step7_7.b | 6.22 | 19.1 |
+| step7_7.g | 13.53 | 39.3 |
+| similarity_check | 0.00 | 0.8 |
+| unseen_test | 0.00 | 13.5 |

@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 072-04.b1_choppy-deep-close-ten-day-fall_1d
+idea tested: 072-04.b1_choppy-deep-close-ten-day-fall
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3738 USD
+---
+## Findings
+- **F1:** Step 5's main measure is zero rather than short of the bar: the slope of the drift-removed 10-day return on the forecast is -0.00023, with a day-clustered t of -0.20 over 352 cases on 174 days. In folds B and C alone the same slope on the forecast is +0.0041 (clustered t 1.65, 111 cases, 59 days), so the folds kept hidden must lean the other way.
+- **F2:** The test measured the idea elsewhere than where it shows. The plan's forecast is the depth re-standardised over its own past 60 values, and it correlates only 0.88 with the depth the idea names (close below the 20-day high in 20-day swings). In folds B and C, the 10-day slope on the idea's own depth is +0.018 (clustered t 2.18), stronger than the plan's forecast (t 1.65), and +0.020 (t 2.61, 126 cases) over all choppy grid cases.
+- **F3:** The effect is carried by the deepest closes. At 10 days in choppy markets, the deepest fifth of depths is followed by a drift-removed return of -14.1 % (t -4.0, 12 cases), the next fifth by -7.7 %, and the shallower three by -0.5 %, +4.3 % and -1.2 %. At 5 days, the deepest quarter (mean depth -5.2 swings) returns -6.1 % against -0.8 % to -1.2 % for the other three quarters (about 56 cases each).
+- **F4:** Inside folds B and C the effect is on the idea's side at every horizon from 1 to 10 days: the slope on depth has a t of 2.34 at 1 day, 1.87 at 3, 3.48 at 5 and 2.49 at 10 (unclustered). It disappears at 20 days (t 0.64). The 5-day grid has twice the cases of the 10-day grid (223 against 111; clustered t 1.63 on 121 days).
+- **F5:** The effect does not depend on the day's direction, as the brief says. At 10 days the slope is +0.019 after down days (t 1.34, 28 cases) and +0.044 after up days (t 2.66, 31 cases).
+- **F6:** The effect is uneven across periods and coins, which explains the zero overall.
+- **F7:** The size is on the idea's side but cannot be told from zero, and it is too small for the book to pay.
+
+## Ideas
+- `072-04.b1.b1_choppy-deep-close-week-fall` (from F2, F3, F4, F5, F6): In a choppy market, the further a coin's close sits below its 20-day high, in units of its 20-day daily-return standard deviation (the depth itself, not compared with its own recent depths), the larger its fall over the next five days, the deepest closes being followed by the largest falls.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

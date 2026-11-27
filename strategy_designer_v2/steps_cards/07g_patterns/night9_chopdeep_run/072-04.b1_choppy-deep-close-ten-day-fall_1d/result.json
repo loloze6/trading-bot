@@ -1,0 +1,49 @@
+{
+  "line": "7.g",
+  "backtest": "072-04.b1_choppy-deep-close-ten-day-fall_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3998254,
+  "findings": {
+    "F1": "In choppy markets, the raw depth below the 20-day high in 20-day daily-return standard deviations predicts the drift-removed return in the idea's direction: over 10 days the slope is +0.0202 (t 2.64, 126 grid cases, 63 days) and over 5 days it is +0.0142 (t 2.12, 249 cases, 128 days); the book's forecast, the same depth standardised over its past 60 values, loses it (10 days slope +0.0020, t 0.76; 5 days +0.0014, t 0.86), even though the two correlate at 0.88.",
+    "F2": "In choppy markets the deepest fifth of closes (depth from -11.7 to -4.4 usual moves) is followed by a 10-day drift-removed return of -7.56 % (t -3.41, 26 cases) and the next fifth by -6.05 % (t -1.94, 27 cases), against +2.66 % for the fifth nearest the high (22 cases); the deep third is below the near third on all six coins (BTC -7.15 % vs -0.87 %, LTC -8.36 % vs -4.04 %, XRP -13.57 % vs +8.42 %, ZEC -6.98 % vs +4.02 %, XMR -4.29 % vs -3.33 %, ETH -1.07 % vs -0.51 %).",
+    "F3": "The grading sits in choppy calm markets: the 10-day drift-removed return is -7.75 % for the deep third (t -3.24, 26 cases), +0.63 % for the middle third (35 cases) and +2.84 % for the near third (33 cases); in choppy agitated markets all three thirds are negative and not graded (-5.44 %, -4.84 %, -9.57 % on 12, 14 and 6 cases).",
+    "F4": "Outside choppy markets the same continuation appears only when calm: the deep third returns -4.26 % over 10 days (t -3.95, 100 cases) and the near third +4.83 % (t 3.29, 101 cases), while in agitated non-choppy markets the deep third returns +0.40 % (t 0.21); this is already held (035-01.b1, calm market nearness to high).",
+    "F5": "At one day the effect is weak: the deepest choppy fifth is followed by -1.12 % the next day (t -1.96, 185 cases), -1.73 % after up days (t -1.92, 58 cases) and -0.84 % after down days (t -1.16, 127 cases), so the brief's \"whether up or down\" holds in sign only.",
+    "F6": "The other strong patterns are already held or do not stand out among the many angles tried: outside choppy markets a fall of more than 2 usual moves is followed by +1.41 % the next day (t 3.11, 189 cases), and a down day in the widest range fifth by +1.06 % (t 4.64, 819 cases), both covered by the held rebound books; the weekday means range from Wednesday -0.49 % (t -2.69) to Thursday +0.47 % (t 3.19), and a late-week gain is already held (045-01).",
+    "F7": "Over all profiles the deep-third continuation is not steady by year: the deep third returns -5.61 %, -4.25 % and -7.36 % over 10 days in 2018, 2019 and 2020, but +7.45 % in 2021 (49 cases); the book's mean daily return is positive in 4 of its 12 windows."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, the more of its 20-day usual daily moves a coin's close sits below its 20-day closing high, the larger its fall over the next ten days, the fall growing with that count of usual moves itself, not with how deep the coin has lately tended to sit.",
+      "consequence": "In a sideways market, a close many usual moves below the range's top is a reason to hold a short sized by that depth for about ten days.",
+      "name": "choppy raw depth ten-day fall",
+      "from": "F1, F2, F5",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy, calm market, the more of its 20-day usual daily moves a coin's close sits below its 20-day closing high, the larger its fall over the next ten days.",
+      "consequence": "A deep close below the range's top in a quiet sideways market is a reason to short it, or to refuse a long, for about ten days, more firmly the deeper it sits.",
+      "name": "choppy calm deep close fall",
+      "from": "F3, F2, F1",
+      "profile": "choppy calm",
+      "refs": [
+        "F3",
+        "F2",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "072-04.b1.g1_choppy-raw-depth-ten-day-fall",
+    "072-04.b1.g2_choppy-calm-deep-close-fall"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
