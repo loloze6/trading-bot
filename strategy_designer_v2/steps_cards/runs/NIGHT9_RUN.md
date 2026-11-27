@@ -128,6 +128,9 @@ box; the spend after each brief was answered.
   reran plans of other runs), so `common_record.py --register` stops on them (6 of shard 3's 20; 13 done, pushed). The
   part 4 session asked for one rule: a book's plan and measure found by its plan id in its own run, else in the one run
   whose plan's config equals the book's record config; then it tells the six shards to merge it and rerun.
+  **02:50 Paris:** done (`build-a4-common` 0447dc6, 3 tests): of the 120 books, 85 found in their own run, 32 in another,
+  3 refused (their config in two runs: hold2_rerun_run and hold_paying_run; one, 010-03.e1, is in portfolio v2). Asked:
+  byte-identical copies count as one plan; the shards told to merge and rerun.
 
 ## Reading
 (written in the morning)
