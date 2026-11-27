@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar forward return minus normal drift on forecast, in-profile grid bars",
+    "value": 0.0010663335020955848,
+    "statistic": {
+      "name": "slope t, deviations summed per day",
+      "value": 0.998326148691006
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting mean > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 7-bar move over grid cases with forecast > 0 above 0",
+    "value": 0.004020521533355735,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 409,
+    "distinct days": 157,
+    "in-profile grid bars": 777
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The profile is the recorded regime 'unknown' (the config's only active regime); the slope is OLS with intercept over all in-profile grid bars (forecast 0 included), its t from residual-times-deviation scores summed per UTC day with a G/(G-1) correction; the drift is the coin's mean 7-bar grid return over all its windows and bars; the plan's 'fewer cases' rule is reported as not observable."
+}

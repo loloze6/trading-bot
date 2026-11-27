@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (5-bar forward return - coin mean 5-bar return), grid cases",
+    "value": 0.00591439735690649,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 0.7941094678303344
+    },
+    "threshold": "confirm: > 0 with t >= 2 and both sides > 0; reject: < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "same mean on long and on short cases, each above 0",
+    "value": 0.004662825130852503,
+    "passed": true,
+    "long_mean": 0.004662825130852503,
+    "short_mean": 0.0072397762261531134
+  },
+  "counts": {
+    "cases": 1641,
+    "long cases": 844,
+    "short cases": 797,
+    "distinct days": 429
+  },
+  "decided_by": "The t of the main measure lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The choppy profile is read as the detector's regime 'unknown' (the regime that carries the stretch strategy; trend beyond \u00b110 is vetoed to the flat regime), the expected side as the sign of the raw stretch (close above SMA20 = long); the coin's mean 5-bar return is the mean over all its non-overlapping grid bars of all windows; the day-clustered t sums deviations per UTC day with a D/(D-1) correction; the plan's 'fewer is inconclusive' minimum is reported as 'not observable' as the workflow requires."
+}

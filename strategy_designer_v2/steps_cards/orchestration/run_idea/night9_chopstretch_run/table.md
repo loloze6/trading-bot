@@ -22,20 +22,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 074-02.b1.b1_calm-stretch-falls-more-coins | 074-02.b1_calm-stretch-falls-five-days | plan | inconclusive (+2.18) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 074-02.b1.b1.b1_falling-calm-stretch-keeps-falling; 7.g: no ideas: The one strong pattern is a calm continuation of the stretch on both sides (F1), and the map already holds it in calm. The brief's agitated rebound is absent (F2), the calm short does not cover its cost against the drift (F3), and the weekday and range angles do not stand out after this many tests (F6), so no new idea is supported. | 1.03 | 13.4 |
 | 067-01.b1.b1.b1_choppy-downside-stretch-keeps-falling | 067-01.b1.b1_choppy-stretch-carries-both-ways | plan | inconclusive (-0.56) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.b1.b1.b1_choppy-two-sided-stretch-carries; 7.g: 067-01.b1.b1.b1.g1_choppy-raw-stretch-carries-both | 0.99 | 6.0 |
 | 076-01.b1.b1_agitated-wide-upper-close-fade | 076-01.b1_agitated-wide-close-fade-more-coins | plan | inconclusive (+0.46) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 076-01.b1.b1.b1_falling-agitated-wide-close-fade; 7.g: 076-01.b1.b1.g1_falling-agitated-wide-high-close-fade | 1.44 | 15.1 |
+| 077-01.b1.b1_graded-swing-rise-carries-on | 077-01.b1_swing-rise-carry-more-coins | plan | inconclusive (+1.00) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 077-01.b1.b1.b1_extreme-swing-scaled-moves-carry, 077-01.b1.b1.b2_largest-swing-scaled-rises-carry; 7.g: 077-01.b1.b1.g1_choppy-calm-swing-fall-carries | 1.09 | 13.1 |
+| 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries | 067-02.b1.b1_two-sided-swing-stretch-five-days | plan | inconclusive (+0.65) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.b1.b1_agitated-chop-downside-more-coins, 067-02.b1.b1.b1.b2_choppy-two-sided-stretch-carry, 067-02.b1.b1.b1.b3_calm-chop-stretch-carry; 7.g: 067-02.b1.b1.b1.g1_choppy-stretch-carries-both-ways, 067-02.b1.b1.b1.g2_stretch-from-average-carries | 1.01 | 6.8 |
+| 067-01.b1.b1.b2_choppy-stretch-carry-all-coins | 067-01.b1.b1_choppy-stretch-carries-both-ways | plan | inconclusive (+0.79) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 067-01.b1.b1.b2.b1_calm-choppy-stretch-carry; 7.g: no ideas: Across stretch, range position, one-day shocks, trend and volatility regimes, weekdays and the trades, no pattern both stands out from chance with the cases of one day taken together (the best are t 2.21 on 46 days and t 2.64 on 20 days, among about 60 cells) and is graded. The one consistent effect, continuation in rising markets, is already held on the profile map. | 1.07 | 11.4 |
+| 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling | 067-02.b1.b1_two-sided-swing-stretch-five-days | plan | inconclusive (+1.70) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins; 7.g: no ideas: The only graded effects (F1, F4) are the tested idea itself, still unproven, and a rising-market continuation the map already holds. The weekday pattern (F5) is inflated by coins moving together and already held, and nothing else stood out across the angles in F6. | 0.80 | 5.2 |
 
 ## Consumption
-18 ideas, 20.01 USD, 159.0 minutes in all.
+22 ideas, 23.97 USD, 195.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.63 | 10.8 |
-| step4_backtest | 0.00 | 91.6 |
-| step5_verdict | 3.14 | 11.2 |
-| step6_check | 0.00 | 0.7 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 2.91 | 12.3 |
+| step4_backtest | 0.00 | 114.7 |
+| step5_verdict | 3.83 | 13.5 |
+| step6_check | 0.00 | 0.8 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.a | 0.42 | 1.1 |
+| step7_7.a | 0.42 | 1.2 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 5.60 | 17.5 |
-| step7_7.g | 8.23 | 25.7 |
+| step7_7.b | 6.96 | 21.7 |
+| step7_7.g | 9.86 | 30.8 |
