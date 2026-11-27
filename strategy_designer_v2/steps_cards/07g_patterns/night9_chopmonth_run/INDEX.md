@@ -4,6 +4,7 @@
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: 3 ideas (2 explorations)
 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: 2 ideas, 1 discoveries (2 explorations)
+067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d: no ideas: The only robust grading is the tested choppy month continuation itself (F1, F2). The patterns that stand out off the theme repeat strategies the map already holds in the same profile (F4, F5, F6), and the rest cannot be told from chance across the many angles examined (F7).
 067-01.b1.g1.b1_choppy-month-fall-continues_1d: 1 ideas (2 explorations)
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: 2 ideas (2 explorations)
 067-01.b1_choppy-weak-month-keeps-falling_1d: 1 ideas (2 explorations)

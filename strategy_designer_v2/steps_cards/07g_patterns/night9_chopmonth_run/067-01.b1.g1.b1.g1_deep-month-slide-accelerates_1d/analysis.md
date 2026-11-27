@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d
+idea tested: 067-01.b1.g1.b1.g1_deep-month-slide-accelerates
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4665 USD
+---
+## Findings
+- **F1:** In the choppy trend (60-day return between -10 % and +10 %), the bottom fifth of 30-day returns (mean -22.4 %) was followed by a 10-day move 15.2 % below the coin's drift (t -4.41, 20 non-overlapping cases), and the top fifth (mean +26.5 %) by +18.6 % (t 1.17, 19 cases), with the middle fifths near 0. This is the tested idea itself, on a small sample, and not a new pattern.
+- **F2:** The same grading is absent outside the choppy trend. In falling markets the deepest 30-day fifth was followed by +4.4 % (t 0.98, 51 cases), and the correlation of the 30-day return with the next 10 days' unusual move was -0.13 (agitated) and -0.04 (calm). In rising markets it was 0.00 in both. Month continuation lives only in the choppy trend, as the brief says.
+- **F3:** Inside the book, the short positions' daily gain was negative in the deepest quartile of scaled 30-day slide: mean -0.33 % of allocation per bar, summing -1.14 over 350 position-days. The shallowest quartile was +0.09 %, summing +0.33. The book's losses sit in the deep slides that the 10-day case measure credits, so its daily timing does not capture the measured move.
+- **F4:** In falling agitated markets, a day up by more than 0.3 of the 30-day swing was followed by a next-day fall that grows with the up day. The scaled move was -0.24 (t -2.46, 145 days) after a 0.3–1 swing up day, -0.22 (t -1.39, 82) after 1–2 swings, and -0.60 (t -2.52, 20) after more than 2. This is the next-day reversal the map already holds in falling agitated short (058-02.b1.g1.b1.b1, 060-01.g1.d2.d1).
+- **F5:** In rising agitated markets, a down day of 1–2 swings was followed by a scaled next-day gain of +0.37 (t 2.82, 76 days). This is a rebound already held by the ten rising-agitated long strategies on the map.
+- **F6:** Next-day returns by weekday were strongest on Thursday and Friday when pooled (+0.58 % and +0.67 %, unclustered t 4.0 and 5.0). With the cases of one day taken together, the t drops below 2.4 everywhere (rising-trend Friday 2.41) and changes sign across years (Friday t -1.64 in 2018, +2.38 in 2020). This is not a stable pattern, and the late-week gain in rising markets is already held (045-01).
+- **F7:** Other angles showed nothing graded or outside chance. These were the 5-day return quintiles (choppy bottom fifth -9.9 %, t -1.77), the close position in the day's range (choppy t 4.35 in the 0.2–0.4 bin only, with neighbours of opposite sign) and choppy agitated cells (at most 12 ten-day cases).
+
+## Ideas
+- No ideas: The only robust grading is the tested choppy month continuation itself (F1, F2). The patterns that stand out off the theme repeat strategies the map already holds in the same profile (F4, F5, F6), and the rest cannot be told from chance across the many angles examined (F7).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
