@@ -16,21 +16,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 075-01.d1_heavy-volume-down-day-rebound | 075-01_heavy-volume-next-day-rise | plan | confirmed (+5.81) | not profitable enough (failed: Calmar) | - | 7.d: 075-01.d1.d1_heavy-volume-deep-fall-rebound; 7.g: 075-01.d1.g2_heavy-volume-after-fall-rebound | 1.15 | 11.8 |
 | 075-01.d2_heavy-volume-fall-two-day-rebound | 075-01_heavy-volume-next-day-rise | plan | confirmed (+2.47) | not profitable enough (failed: Calmar) | - | 7.d: 075-01.d2.d1_extreme-volume-down-day-rebound, 075-01.d2.d2_rising-market-heavy-volume-dip-rebound, 075-01.d2.d3_heavy-volume-fall-five-day-rebound; 7.g: 075-01.d2.g1_rising-market-heavy-volume-dip | 1.12 | 12.6 |
 | 061-01_falling-calm-rally-fade | - | plan | inconclusive (-0.60) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: the theme's effect is not in the data. Inside falling calm markets a sharp rise is followed by no larger fall than a flat or small-fall day (F2), the fade does not grow with the rise (F3), and it appears only in some years and windows, with opposite signs elsewhere (F4). No condition, side or horizon isolates it (F5).; 7.g: no ideas: The tested rally fade is only the falling calm market's own next-day drift (F1, F2). The one pattern that stands out, the graded next-day rebound after scaled falls and low closes outside falling calm (F3, F4), is already held in the map's agitated and falling agitated long cells (038-01, 047-01, 051-01, 045-01, 039-02). Nothing else stands out among the angles examined (F5). | 1.06 | 12.1 |
+| 060-02_falling-calm-close-above-low-fade | - | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.g: 0 ideas, 1 discoveries (3 explorations) | 0.96 | 12.6 |
 
 ## Consumption
-12 ideas, 13.92 USD, 152.0 minutes in all.
+13 ideas, 14.88 USD, 164.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.15 | 6.7 |
-| step4_backtest | 0.00 | 103.5 |
-| step5_verdict | 2.50 | 8.9 |
-| step6_check | 0.00 | 0.6 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 1.33 | 7.8 |
+| step4_backtest | 0.00 | 112.6 |
+| step5_verdict | 2.70 | 9.7 |
+| step6_check | 0.00 | 0.7 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.71 | 5.5 |
 | step7_7.b | 3.22 | 9.4 |
-| step7_7.g | 5.35 | 16.7 |
+| step7_7.g | 5.92 | 18.2 |
 | similarity_check | 0.00 | 0.3 |

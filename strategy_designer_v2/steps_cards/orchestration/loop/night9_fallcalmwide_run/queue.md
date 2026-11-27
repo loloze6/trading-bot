@@ -1,33 +1,36 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 15.43 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 16.70 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 060-02_falling-calm-close-above-low-fade | step 2 | 0 | 0.1797 | 0.1797 | candidate |
-| 2 | 075-01.d3_heavy-volume-deep-fall-rebound | 7.d | 3 | 0.2615 | 0.0654 | candidate |
-| 3 | 075-01.g1_heavy-volume-down-day-rebound | 7.g | 3 | 0.1127 | 0.0282 | candidate |
-| 4 | 075-01.g2_light-volume-up-day-fade | 7.g | 3 | 0.1127 | 0.0282 | candidate |
-| 5 | 060-01.b1.b1_falling-calm-pinned-high-fade | 7.b | 2 | 0.2248 | 0.0749 | candidate |
-| 6 | 060-01.b1.g1_falling-calm-rise-size-fade | 7.g | 2 | 0.1127 | 0.0376 | candidate |
-| 7 | 074-02_rising-calm-close-below-high-rebound | 7.g | 2 | 0.1127 | 0.0376 | candidate |
-| 8 | 075-02_heavy-volume-down-day-rebound | 7.g | 2 | 0.1127 | 0.0376 | candidate |
-| 9 | 075-03_light-volume-next-day-drift | 7.g | 2 | 0.1127 | 0.0376 | candidate |
-| 10 | 074-01.b1.g1.b1_graded-wide-low-close-rebound | 7.b | 5 | 0.2248 | 0.0375 | candidate |
-| 11 | 074-01.b1.d1.b2_low-close-three-day-rebound | 7.b | 5 | 0.2248 | 0.0375 | candidate |
-| 12 | 074-01.b1.d1.b1.b2_wide-day-pinned-low-rebound | 7.b | 6 | 0.2248 | 0.0321 | candidate |
-| 13 | 074-01.g1_rising-calm-low-close-three-days | 7.g | 3 | 0.1127 | 0.0282 | candidate |
-| 14 | 075-01.d2.d1_extreme-volume-down-day-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
-| 15 | 075-01.d2.d2_rising-market-heavy-volume-dip-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
-| 16 | 075-01.d2.d3_heavy-volume-fall-five-day-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
-| 17 | 074-01.b2.g1_rising-calm-width-graded-rebound | 7.g | 4 | 0.1127 | 0.0225 | candidate |
-| 18 | 075-01.d1.d1_heavy-volume-deep-fall-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
-| 19 | 074-01.b1.d1.b1.g1_wide-low-close-three-day-rebound | 7.g | 6 | 0.1127 | 0.0161 | candidate |
-| 20 | 074-01.b1.d1.b1.g2_rising-calm-wide-day-continuation | 7.g | 6 | 0.1127 | 0.0161 | candidate |
-| 21 | 076-01_up-day-fades-with-downtrend-depth | 7.g | 2 | 0.1127 | 0.0376 | candidate |
-| 22 | 075-01.d1.g2_heavy-volume-after-fall-rebound | 7.g | 4 | 0.1127 | 0.0225 | candidate |
+| 1 | 075-01.d3_heavy-volume-deep-fall-rebound | 7.d | 3 | 0.2615 | 0.0654 | candidate |
+| 2 | 075-01.g1_heavy-volume-down-day-rebound | 7.g | 3 | 0.1127 | 0.0282 | candidate |
+| 3 | 075-01.g2_light-volume-up-day-fade | 7.g | 3 | 0.1127 | 0.0282 | candidate |
+| 4 | 060-01.b1.b1_falling-calm-pinned-high-fade | 7.b | 2 | 0.2248 | 0.0749 | candidate |
+| 5 | 077-01_choppy-agitated-wide-low-close-rebound | 7.g | 1 | 0.1127 | 0.0563 | candidate |
+| 6 | 077-02_choppy-agitated-wide-high-close-fade | 7.g | 1 | 0.1127 | 0.0563 | candidate |
+| 7 | 077-03_choppy-agitated-close-position-reversal | 7.g | 1 | 0.1127 | 0.0563 | candidate |
+| 8 | 060-01.b1.g1_falling-calm-rise-size-fade | 7.g | 2 | 0.1127 | 0.0376 | candidate |
+| 9 | 074-02_rising-calm-close-below-high-rebound | 7.g | 2 | 0.1127 | 0.0376 | candidate |
+| 10 | 075-02_heavy-volume-down-day-rebound | 7.g | 2 | 0.1127 | 0.0376 | candidate |
+| 11 | 075-03_light-volume-next-day-drift | 7.g | 2 | 0.1127 | 0.0376 | candidate |
+| 12 | 074-01.b1.g1.b1_graded-wide-low-close-rebound | 7.b | 5 | 0.2248 | 0.0375 | candidate |
+| 13 | 074-01.b1.d1.b2_low-close-three-day-rebound | 7.b | 5 | 0.2248 | 0.0375 | candidate |
+| 14 | 074-01.b1.d1.b1.b2_wide-day-pinned-low-rebound | 7.b | 6 | 0.2248 | 0.0321 | candidate |
+| 15 | 074-01.g1_rising-calm-low-close-three-days | 7.g | 3 | 0.1127 | 0.0282 | candidate |
+| 16 | 075-01.d2.d1_extreme-volume-down-day-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
+| 17 | 075-01.d2.d2_rising-market-heavy-volume-dip-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
+| 18 | 075-01.d2.d3_heavy-volume-fall-five-day-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
+| 19 | 074-01.b2.g1_rising-calm-width-graded-rebound | 7.g | 4 | 0.1127 | 0.0225 | candidate |
+| 20 | 075-01.d1.d1_heavy-volume-deep-fall-rebound | 7.d | 4 | 0.2615 | 0.0523 | candidate |
+| 21 | 074-01.b1.d1.b1.g1_wide-low-close-three-day-rebound | 7.g | 6 | 0.1127 | 0.0161 | candidate |
+| 22 | 074-01.b1.d1.b1.g2_rising-calm-wide-day-continuation | 7.g | 6 | 0.1127 | 0.0161 | candidate |
+| 23 | 076-01_up-day-fades-with-downtrend-depth | 7.g | 2 | 0.1127 | 0.0376 | candidate |
+| 24 | 075-01.d1.g2_heavy-volume-after-fall-rebound | 7.g | 4 | 0.1127 | 0.0225 | candidate |
 | - | 060-01_falling-calm-wide-high-close-fade | step 2 | 0 | 0.1797 | 0.1797 | tested: step 5 inconclusive (+1.00); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) |
-| - | 061-01_falling-calm-rally-fade | 7.g | 5 | 0.1127 | 0.0188 | tested: step 5 inconclusive (-0.60); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 060-02_falling-calm-close-above-low-fade | step 2 | 0 | 0.1797 | 0.1797 | tested: step 5 mismatch; step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 061-01_falling-calm-rally-fade | step 2 | 0 | 0.1797 | 0.1797 | tested: step 5 inconclusive (-0.60); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 074-01_rising-calm-wide-low-close-rebound | 7.g | 2 | 0.1127 | 0.0376 | tested: step 5 inconclusive (+1.93); step 6 not profitable enough (failed: Calmar) |
 | - | 075-01_heavy-volume-next-day-rise | 7.g | 2 | 0.1127 | 0.0376 | tested: step 5 confirmed (+3.05); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) |
 | - | 060-01.b1_falling-calm-high-close-fade | 7.b | 1 | 0.2248 | 0.1124 | tested: step 5 inconclusive (+1.00); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) |
