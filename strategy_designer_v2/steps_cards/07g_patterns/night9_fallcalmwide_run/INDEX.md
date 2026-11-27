@@ -1,3 +1,4 @@
+060-01.b1.b1_falling-calm-pinned-high-fade_1d: 1 ideas, 1 discoveries (2 explorations)
 060-01.b1_falling-calm-high-close-fade_1d: 1 ideas, 2 discoveries (3 explorations)
 060-01_falling-calm-wide-high-close-fade_1d: no ideas: The patterns that are clearly there (F2, F3, F4) repeat strategies the profile map already holds. The remaining ones (F1, F5) do not stand out from chance once one counts the roughly 150 cuts examined across width, close location, today's return, trend, agitation, weekday, year, coin and window; F1's grading also reverses under a different swing ranking.
 060-02_falling-calm-close-above-low-fade_1d: 0 ideas, 1 discoveries (3 explorations)
@@ -14,3 +15,4 @@
 075-01.g1_heavy-volume-down-day-rebound_1d: 1 ideas (2 explorations)
 075-01.g2_light-volume-up-day-fade_1d: 2 ideas, 1 discoveries (3 explorations)
 075-01_heavy-volume-next-day-rise_1d: 2 ideas (2 explorations)
+077-01_choppy-agitated-wide-low-close-rebound_1d: 1 ideas (2 explorations)

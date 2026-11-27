@@ -1,3 +1,4 @@
+060-01.b1.b1_falling-calm-pinned-high-fade_1d: not profitable enough [Sharpe 0.272; Sharpe minus holding's Sharpe -0.2808; Calmar 0.1619]
 060-01.b1_falling-calm-high-close-fade_1d: not profitable enough [Sharpe 0.4096; Sharpe minus holding's Sharpe -0.1432; Calmar 0.1403]
 060-01_falling-calm-wide-high-close-fade_1d: not profitable enough [Sharpe 0.3702; Sharpe minus holding's Sharpe -0.1825; Calmar 0.1167]
 060-02_falling-calm-close-above-low-fade_1d: not profitable enough [Sharpe -0.3109; Sharpe minus holding's Sharpe -0.8637; Calmar -0.1212]
@@ -14,3 +15,4 @@
 075-01.g1_heavy-volume-down-day-rebound_1d: not profitable enough [Sharpe 0.687; Sharpe minus holding's Sharpe 0.07955; Calmar 0.5448]
 075-01.g2_light-volume-up-day-fade_1d: not profitable enough [Sharpe -0.3875; Sharpe minus holding's Sharpe -0.9949; Calmar -0.1333]
 075-01_heavy-volume-next-day-rise_1d: not profitable enough [Sharpe 0.5045; Sharpe minus holding's Sharpe -0.103; Calmar 0.2908]
+077-01_choppy-agitated-wide-low-close-rebound_1d: not profitable enough [Sharpe 0.7858; Sharpe minus holding's Sharpe 0.233; Calmar 0.3247]

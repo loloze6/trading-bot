@@ -1,3 +1,4 @@
+060-01.b1.b1_falling-calm-pinned-high-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01.b1_falling-calm-high-close-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-01_falling-calm-wide-high-close-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 060-02_falling-calm-close-above-low-fade_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
@@ -14,3 +15,4 @@
 075-01.g1_heavy-volume-down-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 075-01.g2_light-volume-up-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 075-01_heavy-volume-next-day-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+077-01_choppy-agitated-wide-low-close-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

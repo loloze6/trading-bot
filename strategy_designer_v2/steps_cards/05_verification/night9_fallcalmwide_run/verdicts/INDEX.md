@@ -1,3 +1,4 @@
+060-01.b1.b1_falling-calm-pinned-high-fade_1d: inconclusive (fit: adapted) [main: 0.00399199; t of the mean, cases of one day together 0.857849; cases 124, days 82]
 060-01.b1_falling-calm-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00298976; t of the mean, cases grouped by day 1.00175; cases 321, distinct days 186]
 060-01_falling-calm-wide-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00298976; t of the mean, same-day cases summed 1.00175; cases 321, distinct days 186]
 060-02_falling-calm-close-above-low-fade_1d: mismatch: the test does not match its plan (agreement 0.507709) (fit: exact)
@@ -14,3 +15,4 @@
 075-01.g1_heavy-volume-down-day-rebound_1d: confirmed (fit: exact) [main: 2.30112; slope t, day-clustered 2.30112; down-day cases 18171, distinct days 2398]
 075-01.g2_light-volume-up-day-fade_1d: inconclusive (fit: adapted) [main: 0.00235372; t of the mean, cases of one day summed together 2.40911; distinct case days 1995, cases 9881]
 075-01_heavy-volume-next-day-rise_1d: confirmed (fit: exact) [main: 0.000193671; OLS slope t, clustered by day 3.05409; distinct days with recorded forecasts 2922, bars in slope 36948, day clusters 2898]
+077-01_choppy-agitated-wide-low-close-rebound_1d: inconclusive (fit: adapted) [main: 0.0083275; t of the mean, cases clustered by day 1.95992; case bars 213, distinct case days 164]

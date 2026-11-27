@@ -20,21 +20,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 075-01.d3_heavy-volume-deep-fall-rebound | 075-01_heavy-volume-next-day-rise | plan | inconclusive (+1.95) | not profitable enough (failed: Calmar) | - | 7.b: 075-01.d3.b1_heavy-volume-outsized-fall-rebound, 075-01.d3.b2_light-volume-up-day-fade; 7.g: 075-01.d3.g1_light-volume-rise-fades, 075-01.d3.g2_falling-market-thin-rally-fade | 1.07 | 12.3 |
 | 075-01.g1_heavy-volume-down-day-rebound | 075-01_heavy-volume-next-day-rise | plan | confirmed (+2.30) | not profitable enough (failed: Calmar) | - | 7.d: 075-01.g1.d1_agitated-heavy-volume-fall-rebound, 075-01.g1.d2_volume-graded-down-day-reversal; 7.g: 075-01.g1.g1_heavy-volume-fall-three-day-rebound | 1.13 | 12.3 |
 | 075-01.g2_light-volume-up-day-fade | 075-01_heavy-volume-next-day-rise | plan | inconclusive (+2.41) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 075-01.g2.b1_falling-market-light-volume-up-day-fade; 7.g: 075-01.g2.g2_falling-market-light-rise-fade, 075-01.g2.g3_heavy-volume-low-close-rebound | 1.20 | 11.7 |
+| 060-01.b1.b1_falling-calm-pinned-high-fade | 060-01.b1_falling-calm-high-close-fade | plan | inconclusive (+0.86) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar, Trades per day) | - | 7.b: no ideas: The idea's effect is on the predicted side and already tested in its own profile, side and grading on all the available daily data (F1, F3, F6); it fails to reach t 2 because it is uneven across folds (F2), and no width, coin, year or horizon isolates it on enough cases to give a clearer test (F4, F5).; 7.g: 060-01.b1.b1.g1_falling-calm-graded-high-close-fade | 1.14 | 12.6 |
+| 077-01_choppy-agitated-wide-low-close-rebound | - | plan | inconclusive (+1.96) | not profitable enough (failed: Calmar, Trades per day) | - | 7.b: 077-01.b1_choppy-agitated-width-graded-rebound; 7.g: 077-01.g1_choppy-agitated-wide-high-close-fade | 4.38 | 26.2 |
 
 ## Consumption
-16 ideas, 18.28 USD, 200.9 minutes in all.
+18 ideas, 23.81 USD, 239.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.58 | 9.3 |
-| step4_backtest | 0.00 | 137.0 |
-| step5_verdict | 3.24 | 11.4 |
-| step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.3 |
+| step3_plan | 1.79 | 10.5 |
+| step4_backtest | 0.00 | 154.6 |
+| step5_verdict | 3.62 | 12.7 |
+| step6_check | 0.00 | 1.0 |
+| chart_files | 0.00 | 0.4 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 2.16 | 7.0 |
-| step7_7.b | 3.94 | 11.6 |
-| step7_7.g | 7.36 | 22.8 |
+| step7_7.b | 8.03 | 27.6 |
+| step7_7.g | 8.20 | 25.2 |
 | similarity_check | 0.00 | 0.4 |
