@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9898341359015517,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move in the short direction on forecast<0 bars",
+    "value": 0.005099820459651862,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.6339961109932013
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 100 distinct days and upper half beats lower half; reject: mean < 0 with t <= -2 over >= 100 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper minus lower half of abs(forecast)",
+    "value": 0.012839472729784187,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 639,
+    "cases": 1866
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "Situation computed from prices as 1-day return > 0 and high-low range above its 20-bar mean (bar t included), falling back to regime=='trending' on the first bars of a window where it cannot be computed, side short (forecast < 0); coin mean daily return is the mean of all within-window next-day returns over all its windows; t clusters cases by UTC date; the median split puts abs(forecast) > median in the upper half and <= median in the lower half."
+}

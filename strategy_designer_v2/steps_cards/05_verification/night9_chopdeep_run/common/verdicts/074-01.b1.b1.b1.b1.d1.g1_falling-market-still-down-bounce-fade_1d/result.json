@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9853320118929634,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 1-day move in the short direction (next-day return minus coin's normal 1-day drift)",
+    "value": 0.0037323626344516214,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.8130231225186635
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper half minus shallower half of |forecast|, mean unusual move (Welch), above 0 (Welch t 3.297)",
+    "value": 0.005868754498417091,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3335,
+    "distinct days": 882
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation = 1-day return > 0, 5-day return < 0 and 60-day return < -10 % (the falling-profile veto), with the recorded regime used where a return cannot be computed inside the window; cases are the workflow's bets (forecast rising on its side by >= 2 points) on every bar of the 1-bar grid; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the deeper half is the top floor(n/2) cases by |forecast| (stable sort), the rest is the shallower half; the plan's 'fewer is inconclusive' is reported as 'not observable' per the workflow; values are fractions."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9851136592234963,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean drift-adjusted short-side next-day return over short bets",
+    "value": 0.0029895656009868406,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 1.597283964035608
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and slope > 0; reject: mean < 0 with t <= -2; >= 100 cases on >= 50 days"
+  },
+  "supporting_check": {
+    "name": "OLS slope of drift-adjusted short-side next-day return on |forecast|",
+    "value": 0.0013717428040291503,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3876,
+    "distinct days": 984
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation checked as 1-day return > 0 and 5-day return < 0 (depth raw value, or prices where not recorded) with a short forecast, bars whose returns cannot be computed inside the window left out, the falling profile not rechecked as its 60-day return is not computable on early recorded bars; cases are short bets (rise of -forecast by >= 2 from its lowest level on the short side since the last bet, from 0 after flat or side change) on every bar (horizon 1), drift is the coin's mean 1-bar return over all its windows, and t is the mean over a standard error with deviations summed per UTC day."
+}
