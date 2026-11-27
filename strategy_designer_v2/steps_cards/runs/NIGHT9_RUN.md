@@ -117,6 +117,11 @@ box; the spend after each brief was answered.
   072-02 ran once at generation 0, then 072-03 and 072-04 fell back to ranks 9 and 10). Each session told to remove the
   line from the list's copy of its starting briefs too (night 8's run copies keep it; `source:` keeps the origin). At
   the morning merge the list's copies of these 9 briefs therefore lose the line.
+  **01:55 Paris, a third copy (found by B again):** `run_idea`'s `find_brief` copies from the first match of
+  `01_brief/*/briefs/<id>.md`, night 8's run copy, not step 1's list. Each session told to remove the line from that
+  night 8 run copy too (night 8 is over; its discovery files stay in its 07g folders); then every copy agrees. For the
+  next-steps list: a run's starting brief is generation 0 whatever its origin, and `find_brief` reads step 1's list
+  (one source of a brief).
 
 ## Reading
 (written in the morning)
