@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9981916817359855,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move on short cases (short side, coin drift removed)",
+    "value": 0.007398583392769608,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.889026803054924
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper |forecast| half minus lower half",
+    "value": 0.010400500244488103,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 404,
+    "cases": 1099
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Profile (falling agitated) taken from the recorded regime since its 365-bar/60-bar inputs cannot be rebuilt inside windows, width = high-low range over the mean high-low range of the last 20 bars (today included, regime trusted where fewer than 20 in-window bars), loc > 0.5 from prices; clustered t uses per-day summed deviations with a G/(G-1) correction; upper half is |forecast| above the median, lower half the rest; the plan's 30 case-day minimum gives 'not observable'."
+}
