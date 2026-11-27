@@ -181,6 +181,7 @@
 | 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses.b1_settlement-reversal-more-coins_1h | retest_settlement_run | 1h | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.10 | same period | -0.0321 % (-2.00) | 0.01 |
 | 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls_1h | hold_confirmed_1h_run | 1h | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.11 | same period | -0.0295 % (-3.66) | 0.12 |
 | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h | hold_confirmed_1h_run | 1h | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.11 | same period | -0.0279 % (-3.19) | 0.14 |
+| 077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d | night9_fallcalmwide_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.11 | new one period ahead | +0.0008 % (0.38) | 0.09 |
 | 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h | hold_confirmed_1h_run | 1h | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week_4h (4h) | 0.12 | same period | -0.0043 % (-3.28) | 0.17 |
 | 026-01_weekend-rise-reverses-early-week.d2_weekend-reversal-in-turbulent-weeks.b2_calm-weekend-falls-continue_1h | night4_weekend_run | 1h | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.12 | same period | +0.0056 % (0.83) | 0.08 |
 | 058-01.g2_volume-drying-decline-continues_1d | night8_fallingcalm_run | 1d | 058-02.b1.b2.b1.b2.b2.e1_calm-range-edge-short-continuation_1d (1d) | 0.13 | same period | +0.0004 % (0.05) | 0.16 |

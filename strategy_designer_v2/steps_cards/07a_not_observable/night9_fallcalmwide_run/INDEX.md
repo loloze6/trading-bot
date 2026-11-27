@@ -22,5 +22,6 @@
 077-03.d1.b1_widest-low-close-next-day-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-03.d1_choppy-agitated-low-close-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-03.d2_low-close-rebound-three-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 077-03.g1_choppy-agitated-high-close-fall_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 077-03_choppy-agitated-close-position-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

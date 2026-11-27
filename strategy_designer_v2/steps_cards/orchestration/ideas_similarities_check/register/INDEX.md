@@ -301,6 +301,7 @@ An idea's latest record counts once.
 | 075-01.d2_heavy-volume-fall-two-day-rebound_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | e7b301945 | 2026-11-27T00:13:16 |
 | 075-01.g1_heavy-volume-down-day-rebound_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | 2fd4ef732 | 2026-11-27T00:59:47 |
 | 075-01_heavy-volume-next-day-rise_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | 95c55f380 | 2026-11-26T23:49:34 |
+| 077-03.g1.b1_choppy-agitated-wide-high-close-fall_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | b169041c6 | 2026-11-27T05:44:51 |
 | 077-03_choppy-agitated-close-position-reversal_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | edc4668b4 | 2026-11-27T04:32:01 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |
