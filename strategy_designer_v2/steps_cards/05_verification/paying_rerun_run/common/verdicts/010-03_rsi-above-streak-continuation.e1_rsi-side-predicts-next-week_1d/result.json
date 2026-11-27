@@ -1,0 +1,62 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (coin 7-bar return - coin mean 7-bar return), non-overlapping cases",
+    "value": 0.01461620930661287,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 6.181907377836226
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting difference positive; reject: negative with t <= -2 and supporting difference negative"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return forecast>0 minus forecast<0 (Welch t), same sign as main",
+    "value": 0.024059898977127875,
+    "passed": true,
+    "welch_t": 6.040534676781479
+  },
+  "counts": {
+    "independent cases": 7849,
+    "cases AAVEUSD": 272,
+    "cases ADAUSD": 391,
+    "cases ALGOUSD": 306,
+    "cases ATOMUSD": 357,
+    "cases AVAXUSD": 221,
+    "cases BCHUSD": 442,
+    "cases BTCUSD": 544,
+    "cases CRVUSD": 272,
+    "cases DOGEUSD": 323,
+    "cases DOTUSD": 289,
+    "cases ETHUSD": 543,
+    "cases FILUSD": 272,
+    "cases GRTUSD": 272,
+    "cases INJUSD": 238,
+    "cases LDOUSD": 187,
+    "cases LTCUSD": 543,
+    "cases NEARUSD": 187,
+    "cases ONDOUSD": 102,
+    "cases PEPEUSD": 136,
+    "cases SUIUSD": 153,
+    "cases TAOUSD": 85,
+    "cases TRXUSD": 306,
+    "cases XMRUSD": 475,
+    "cases XRPUSD": 458,
+    "cases ZECUSD": 475,
+    "cases forecast > 0": 3524,
+    "cases forecast < 0": 4325
+  },
+  "decided_by": "The main measure is positive with t >= 2 and the supporting difference is positive.",
+  "reading": "Non-overlapping cases are positions 0,7,14,... of each window with close[t+7] inside the window; each coin's mean 7-bar return is taken over these same cases in all its windows; cases with forecast 0 stay in the main measure (product 0) and are left out of both groups of the supporting check; the 300-case minimum counts all cases across coins.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
