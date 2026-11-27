@@ -91,6 +91,17 @@ written inside the box, its header says so (`profile: <the box's profile>`, `sid
 among the header keys). So a brief launched with no box information is written inside the run's box. Without a box the
 request is byte for byte as before.
 
+**In a run in the new data use** (`../common/data_use.md`; next steps A12, the operator 2026-11-27): the run's coins
+are drawn by rule, so **the brief's `instruments:` line is written by code from the run's research coins**
+(`data_use.json`), for the run's own brief and for its discoveries' briefs. `run_brief` calls this step with `--run`;
+the model is not asked for instruments (the `instruments` key is taken out of its header keys, and one note says the
+coins are chosen by the workflow); an instruments line it writes anyway is replaced. **No file this step writes there
+names a final-group coin** (`../common/coins.md`: they are used by no step before the final test): an answer naming one
+(as a ticker) is refused and asked again, like any answer the code cannot use; a test says so
+(`helper/test_make_brief.py`). Why: pilot A4's brief 087 named LINK, UNI and SOL as its instruments, copied from its
+source (a discovery whose "Seen on" line named the tested plan's coins, not the run's: fixed in step 7,
+`../07_common/card.md`). Without `data_use.json` the call and the files are byte for byte as before.
+
 **A source may be a discovery** (operator, 2026-11-24; topic 50): a pattern off its brief's theme that line 7.e or 7.g
 found (`../common/theme.md`). The loop calls this step with it as the source: the brief states the pattern's theory in
 its own words, without the numbers, and gets its own number. **When a source's theory is already in the index** and

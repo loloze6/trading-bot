@@ -16,10 +16,33 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 from lib import call, write_atomic, with_common  # noqa: E402  (shared helpers, common/lib.py)
 import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
+import coins  # noqa: E402  (a run's data use and the coin groups: common/data_use.md, common/coins.md)
 
 HERE = Path(__file__).resolve().parent
 KEYS = {"venue", "instruments", "bar", "period", "side", "source", "profile"}   # profile: a boxed run's brief (B2.1)
 MAX_THEORY_WORDS, MAX_INDEX_WORDS, ATTEMPTS = 900, 100, 3   # guards against a runaway answer, not length rules
+INSTRUMENTS_KEY = "- instruments: the coins or pairs\n"      # the header key step 1 is not asked for in the new data use
+
+
+def coins_note():
+    """In a run in the new data use (common/data_use.md), the run's coins are drawn by rule: the brief's instruments
+    line is written by code, and the model is told so, in place of being asked for it."""
+    return ("\n[THE COINS OF THIS RESEARCH]\nThe coins this research runs on are chosen by the workflow, not by the brief: "
+            "write no `instruments:` line (it is written for you), and name no coin in the theory.\n")
+
+
+def final_coins_named(text):
+    """The final group's coins (common/coins.md) a text names, as tickers: they are used by no step before the final
+    test, so no file step 1 writes in the new data use may name one."""
+    return [c for c in coins.FINAL if re.search(rf"\b{c}\b", text)]
+
+
+def with_research_coins(header, research_coins):
+    """The brief's header with its instruments line written by code: the run's research coins, whatever the answer
+    named."""
+    return [f"instruments: {', '.join(research_coins)}"] + [l for l in header if l.split(":", 1)[0].strip() != "instruments"]
+
+
 def slug(text, max_words=8):
     """A file-safe name: lowercase words joined by hyphens, at most max_words words."""
     words = re.sub(r"[^a-z0-9]+", " ", text.lower()).split()
@@ -61,13 +84,17 @@ def main():
     g.add_argument("--source", type=Path)
     a.add_argument("--briefs-dir", type=Path, default=HERE.parent / "briefs")
     a.add_argument("--model", default="claude-opus-5-5")
-    a.add_argument("--run", help="the run the brief is for: in a run with a target box, the box is part of its theme")
+    a.add_argument("--run", help="the run the brief is for: in a run with a target box, the box is part of its theme; "
+                   "in a run in the new data use (its data_use.json), the brief's instruments are its research coins")
     args = a.parse_args()
 
     briefs, index_path = args.briefs_dir, args.briefs_dir / "INDEX.md"
     briefs.mkdir(parents=True, exist_ok=True)
     index = index_path.read_text() if index_path.exists() else ""
     system = with_common((HERE / "system_prompt.md").read_text())
+    du = coins.data_use(args.run) if args.run else None      # the run's data use (None: the old one, step 1 as before)
+    if du:
+        system = system.replace(INSTRUMENTS_KEY, "")
     if args.theme:
         ask = f"Write one research brief on this theme, given by the operator in their own words:\n\n{args.theme}"
     elif args.source:
@@ -76,6 +103,7 @@ def main():
         ask = "Write one research brief on a trading theory of your choice."
     request = f"[INDEX OF BRIEFS ALREADY WRITTEN]\n{index.strip() or '(empty)'}\n\n{ask}"
     request += target_box.theme_note(args.run) if args.run else ""       # the run's box (empty without one)
+    request += coins_note() if du else ""
 
     cost, refusal = 0.0, ""
     for attempt in range(1, ATTEMPTS + 1):
@@ -95,6 +123,12 @@ def main():
             return
         try:
             header, body, short, summary, bracket, others = parse(text, bool(args.source))
+            if du:      # the new data use: the instruments by code; no final coin in what is written
+                header = with_research_coins(header, du["research_coins"])
+                bracket = "[" + ", ".join(header) + "]"
+                named = final_coins_named("\n".join(header + [body, short, summary]))
+                if named:
+                    raise ValueError(f"the brief names {', '.join(named)}: name no coin")
             break
         except ValueError as e:
             print(f"attempt {attempt} refused: {e}")

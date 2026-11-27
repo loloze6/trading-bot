@@ -18,6 +18,9 @@ can confirm or reject. Every idea:
   A condition on the coin's general state over the past weeks (which way it has been going, how much it has been
   swinging) is written as one of these profiles; what happened in the last days stays the idea's situation. An idea
   that names none acts in every profile;
+- states its side: what it bets when its situation occurs. `long`: the price rises after it, so a trader would buy;
+  `short`: the price falls after it, so a trader would sell; `both`: its situation goes either way and the move
+  follows it (a rise after one, a fall after the other). On its own `side:` line;
 - is something a trader could act on: if confirmed, a reason to take a trade; if the data shows no effect (`common/verdicts.md`), a reason to refuse one;
 - states its time in real time (days or hours, never bars), so it means the same on any bar size: always its horizon,
   how long after its situation the move shows ("over the next N days"), and the past period its situation uses when it

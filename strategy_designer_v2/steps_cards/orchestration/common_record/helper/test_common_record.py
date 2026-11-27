@@ -15,14 +15,17 @@ def test_the_coins_are_the_portfolio_group_and_the_windows_the_research_file():
     assert not set(C.coins.portfolio_group()) & set(C.coins.FINAL)
 
 
-def test_a_coin_window_only_after_the_coins_first_90_days_numbered_as_in_the_file():
-    late = {"NEW": "2020-01-01"}
-    usable = lambda c, start: start >= late.get(c, "0000")
+def test_a_coin_window_only_after_the_coins_first_90_days_numbered_as_in_the_file(monkeypatch):
+    import datetime as dt
+    first = {"OLD": dt.date(2010, 1, 1), "NEW": dt.date(2019, 10, 3)}          # NEW's 91st day: 2020-01-01
+    monkeypatch.setattr(C.coins, "dates", lambda c, data=None: [first[c] + dt.timedelta(days=i) for i in range(7000)])
+    usable = lambda c, start: dt.date.fromisoformat(start) >= first[c] + dt.timedelta(days=90)
     per = C.coin_windows(WINDOWS, ["OLD", "NEW"], usable)
-    assert per["OLD"] == (0, WINDOWS)                                          # w1..w32
-    before, ws = per["NEW"]
-    assert WINDOWS[before]["test"]["start"] == "2020-01-01" and ws == WINDOWS[before:]   # w13 is 2020-01 for both
-    assert C.coin_windows(WINDOWS, ["X"], lambda c, s: False) == {}            # no usable window: not run
+    assert per["OLD"] == (list(range(1, 33)), {})                              # w1..w32
+    keep, left = per["NEW"]
+    assert WINDOWS[keep[0] - 1]["test"]["start"] == "2020-01-01" and keep == list(range(13, 33))   # w13 is 2020-01 for both
+    assert left == {"the coin's first 90 days": list(range(1, 13))}
+    assert C.coin_windows(WINDOWS, ["X"], lambda c, s: False) == {"X": ([], {"the coin's first 90 days": list(range(1, 33))})}
 
 
 def test_the_final_coins_are_never_read(monkeypatch):
@@ -108,25 +111,35 @@ def test_files_index_and_resume(tmp_path, monkeypatch):
 
 
 def test_step4_runs_each_coin_on_its_windows_with_the_files_numbering(tmp_path, monkeypatch):
+    """One count before the engine runs (common/data_use.md, section 3): a coin's windows in its first 90 days, or
+    before its history covers the plan's warm-up, are left out with their reason; the others keep the file's numbers."""
+    import datetime as dt
     plan = tmp_path / "001-01_x_1d.md"
     plan.write_text("---\ndata-bar: 1d\n---\n")
     (tmp_path / "001-01_x_1d_config.json").write_text("{}")
     asked = {}
     monkeypatch.setattr(C.rb, "protocol", lambda py, sym, bar, folds, ws: {"windows": ws, "venue": {"label": "kraken"}})
+    monkeypatch.setattr(C.coins, "plan_warmup", lambda py, cfg, bar: 400 * 86400)
+    first = {"OLD": dt.date(2010, 1, 1), "NEW": dt.date(2023, 6, 1), "NONE": dt.date(2030, 1, 1)}
+    monkeypatch.setattr(C.coins, "dates", lambda c, data=None: [first[c] + dt.timedelta(days=i) for i in range(7000)])
 
-    def run_part(py, cfg, proto, before, cdir, pdir):
-        asked[cdir.name] = (before, len(proto["windows"]), pdir.name)
-        return [(k, 1, 0.1, 2.0) for k in range(before + 1, before + 1 + len(proto["windows"]))], []
+    def run_part(py, cfg, proto, numbers, cdir, pdir):        # step 4's own signature: the windows' numbers, a list
+        asked[cdir.name] = (list(numbers), [w["label"] for w in proto["windows"]] == [WINDOWS[k - 1]["label"] for k in numbers],
+                            pdir.name)
+        return [(k, 1, 0.1, 2.0) for k in numbers], []
 
     monkeypatch.setattr(C.rb, "run_part", run_part)
-    usable = lambda c, start: c == "OLD" or start >= "2025-01-01"
-    line = C.backtest(plan, "py", tmp_path / "rec", WINDOWS, ["OLD", "NEW", "NONE"],
-                      lambda c, s: c != "NONE" and usable(c, s))
-    assert asked == {"OLDUSD": (0, 32, "windows"), "NEWUSD": (27, 5, "windows")}      # NEW: w28..w32
+    usable = lambda c, start: dt.date.fromisoformat(start) >= first[c] + dt.timedelta(days=90)
+    line = C.backtest(plan, "py", tmp_path / "rec", WINDOWS, ["OLD", "NEW", "NONE"], usable)
+    # NEW's first day 2023-06-01: its 91st day falls before w24 (2023-09), its 401st before w27 (2024-09)
+    assert asked == {"OLDUSD": (list(range(1, 33)), True, "windows"), "NEWUSD": ([27, 28, 29, 30, 31, 32], True, "windows")}
     md = (tmp_path / "rec" / "run.md").read_text()
-    assert "- NEWUSD: 5 of 5 windows run. w1 to w27 not used" in md and "| w28 |" in md
-    assert "- NONEUSD: 0 of 0 windows run" in md and "; 1d bars; windows research_2016" in md
-    assert line.startswith("001-01_x_1d: ran: OLDUSD 32/32; NEWUSD 5/5; NONEUSD not run")
+    assert ("- NEWUSD: 6 of 32 windows run. 26 left out by the data use (common/data_use.md, section 3): "
+            + ", ".join(f"w{k}" for k in range(1, 24)) + " (the coin's first 90 days); w24, w25, w26 "
+            "(the coin's history is shorter than the plan's warm-up: 400 days asked).") in md and "| w27 |" in md
+    assert "- NONEUSD: 0 of 32 windows run. 32 left out by the data use" in md and "; 1d bars; windows research_2016" in md
+    assert line.startswith("001-01_x_1d: ran: OLDUSD 32/32; NEWUSD 6/32 (26 left out by the data use); "
+                           "NONEUSD not run (no window) (32 left out by the data use)")
 
 
 def _book(steps, run, rid, config, plan=True, measure=True, record=True):

@@ -36,7 +36,7 @@ The ideas the theory gives. Their number follows from the theory, not from a quo
    - For: says which theory the idea comes from.
    - Used by: the operator, and anyone who reads the idea later.
    - Without it: the idea's number gives only the brief's number, and the theory must be looked up.
-2. **The brief's header lines** (header, copied by the script, word for word): venue, instruments, bar, period, side, source, whichever the brief has.
+2. **The brief's header lines** (header, copied by the script, word for word): venue, instruments, bar, period, source, whichever the brief has. Not its `side:` line: an idea states its own (2d).
    - For: the context the idea holds in, readable without opening the brief.
    - Used by: the next steps, which check the idea where the brief says it applies.
    - Without it: the idea file looks unlimited when its brief is limited.
@@ -53,6 +53,14 @@ The ideas the theory gives. Their number follows from the theory, not from a quo
    - Used by: step 3's code, which builds it (the book holds nothing outside it); step 7, which keeps it on the same
      idea on other data.
    - Without it: the profile is only words in the idea, and the model planning it may build it, or not, its own way.
+2d. **side** (header, the idea's own, 2026-11-27; next steps A12): `side: long`, `side: short` or `side: both`: what
+   the idea bets when its situation occurs (`../common/idea_definition.md`). Mandatory: a missing or unknown value is
+   refused and asked again.
+   - For: the idea says which way it bets before its test.
+   - Used by: a boxed run (`../common/target_box.md`): `in_box`, and the ideas a later run takes from this one. Step 3
+     still enforces the brief's side, not the idea's.
+   - Without it: the side was read on the brief, and a brief without a side line counted as both (pilot A4: a long box
+     tested ideas betting short).
 3. **Idea** (body, mandatory): what we would see in the market, in one or two sentences of plain prose.
    - For: the idea itself.
    - Used by: the next steps, which confirm or reject it.
@@ -61,7 +69,7 @@ The ideas the theory gives. Their number follows from the theory, not from a quo
    - For: shows the idea follows from the theory, and whether the ideas together cover it.
    - Used by: the operator.
    - Without it: ideas drift from the brief and nobody sees it.
-5. **Index line** (in `INDEX.md`): the idea in one short sentence, with the brief's market lines in brackets (venue, instruments, bar, period, side), added by the script.
+5. **Index line** (in `INDEX.md`): the idea in one short sentence, with the brief's market lines in brackets (venue, instruments, bar, period), then the idea's profile and side, added by the script.
    - For: the list of ideas already written, read before each new call.
    - Used by: the helper.
    - Without it: close briefs give the same idea twice (005 and 001 both ask about RSI), and it is checked twice.

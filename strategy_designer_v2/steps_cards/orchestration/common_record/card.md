@@ -15,7 +15,8 @@ the same 25 coins and the same windows. It records; it decides nothing (steps 10
   `05_verification/<run>/verdicts/<id>/measure.py` (step 5's criterion, applied again unchanged).
 - The coins: `common/coins.py`, `portfolio_group()` (25 coins; the final group left out).
 - The windows: `04_backtest/windows/research_2016.json` (32 windows of 4 months, 2016 onward).
-- The 90-day rule: `coins.usable(coin, window start)`.
+- The usable windows: `common/data_use.md`, section 3 (`coins.left_out`): one count, made before the engine runs, the
+  same as step 4's.
 - A Python environment with `trading-bot/requirements.txt`.
 
 ## Output
@@ -24,12 +25,15 @@ interface: the portfolio's builders read these paths and fields.
 
 ## What a common record is
 **The candidate's plan, config unchanged, run by the bot's backtest on every portfolio coin over the research windows,
-a coin in a window only when the window starts after the coin's first 90 days; then step 5's measure on it (the plan's
+a coin in a window only when the window is usable for it (`common/data_use.md`, section 3: after the coin's first 90
+days, its history covering the warm-up the wrapper loads for the plan, no hole of more than a day); then step 5's
+measure on it (the plan's
 own `measure.py`, no model call: information) and step 6's check.**
 - **Same windows, same numbers:** `wK` is the K-th window of `research_2016.json` for every coin, so one K is one
   period (step 6's "one window left out" needs it). A coin listed later starts at a later K: SUI at w23.
-- **A coin or window the engine cannot run** (no file for the bar size, a window refused by the engine) is written in
-  `run.md` with the engine's reason, as in step 4; it is not dropped silently.
+- **A window left out** is listed in `run.md` with its reason and counted on the index line, in step 4's words
+  (`SUIUSD 3/32 (29 left out by the data use)`), before any engine call (next steps A12, 2026-11-27). **Anything else
+  the engine cannot run** (no file for the bar size) is written in `run.md` with the engine's reason, as in step 4.
 - **It decides nothing:** no step 3 to 8 reads it. It stops nothing and gates nothing.
 
 ## The fields of the result (`<id>.json`)
@@ -89,6 +93,8 @@ python3 orchestration/common_record/helper/common_record.py --register --shard i
   is not run again. So a stopped shard is resumed by calling it again.
 - Step 4 is step 4's own code (`04_backtest/helper/run_backtest.py`: `protocol` and `run_part`, unchanged), called
   once per coin on its usable windows, as many coins at once as the machine has cores.
+- `backtest(plan, python, dest, windows, coin_list, usable=...)` is also step 12's runner (`combine/helper/final_test.py`,
+  on the final coins) and the forward record's: its name and arguments are fixed.
 - Shards run at the same time on one machine: each index (step 4's, 5's, 6's, this function's) is written under a lock
   file in the system's temporary folder.
 
@@ -102,7 +108,8 @@ None: code only; step 5 is called with `--measure`, so no model call. Cost: 0 US
 record `runs/BUILD_A4_COMMON.md` for the time per candidate).
 
 ## Quality criteria
-- Every (coin, window) pair after the coin's first 90 days is run, or recorded as not run with the engine's reason.
+- Every usable (coin, window) pair is run; every other pair is listed as left out with its reason; none fails for a
+  short history.
 - `wK` is the same period for every coin.
 - A second call makes no step call.
 - No final coin is read.
@@ -123,10 +130,12 @@ The two fixed inputs have their records with every field; the tests pass; `run_i
 same files as before on a fixed plan. Status: see `runs/BUILD_A4_COMMON.md`.
 
 ## Open (for the operator)
-- **Data quality rules 3.2 and 3.4 of `data_use.md`** (a hole longer than a day leaves the coin out of that window; a
-  coin that stops trading in a window): not applied here; the engine's gap rule applies as in every backtest. They
-  belong with step 4's draw (build part 3), then here, so that the research and the common record read data the same way.
-- **The 90-day rule reads the daily file's first day**, for every bar size; an hourly plan on a coin whose hourly file
+- ~~Data quality rules 3.2 and 3.4 of `data_use.md` not applied here~~: applied since 2026-11-27 (A12: one count for
+  steps 4, 9 and 12). **The records made before** (the 118 candidates of part 6) hold the windows the engine ran then:
+  on a coin whose file is recorded from its first trade, about 3 windows more than the rule now gives (the engine
+  accepted them with half the warm-up), and XRP's window with a 2-day hole. They are not rerun; a rerun would drop
+  those windows (`runs/BUILD_A12.md`, open).
+- **The count reads the daily file's dates**, for every bar size; an hourly plan on a coin whose hourly file
   starts later gets "the dates were not fetched" in the windows before it (recorded, not dropped).
 - **The candidate of A2** (confirmed, failing step 6 on Calmar alone) is not called: A2 is not agreed.
 

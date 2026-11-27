@@ -38,11 +38,34 @@ categories are listed there.
 |---|---|---|---|
 | **Final** | the one confirmation before live | one coin per category, drawn at random among the category's coins with at least 4 years of data; the seed is written in `common/coins.md` | only after it has been used (rule 6): a new draw, the used coins join the portfolio group |
 | **Portfolio** | every candidate's common record; building and adjusting the portfolio | every coin not in the final group | when the final group changes |
-| **Research, for one run** | finding and checking strategies | 8 coins drawn at random among the portfolio group, at least one per category (the 8th among all); the seed is the run's name | at the start of every run, written in the run's header |
+| **Research, for one run** | finding and checking strategies | 8 coins drawn at random among the **drawable** coins of the portfolio group (1.3): one in each category that has a drawable coin, the rest among all the remaining drawable coins; the seed is the run's name | at the start of every run, written in the run's `data_use.json`; a run already started keeps its coins |
 
 Why 8 coins per run and not all: 25 coins in every backtest would make each idea about 6 times longer to test; a new
 draw at every run makes a strategy work on changing coins (the operator, 2026-11-26: "random in a recurrent way"),
 and step 9 then measures every candidate on all the portfolio coins.
+
+**1.3 A drawable coin (next steps A12; the operator, 2026-11-27):** a portfolio coin is drawable for research when it
+**can be tested on at least half of the check half's windows** (section 2: the windows from 2022 on in
+`04_backtest/windows/research_2016.json`; today 7 of 14). "Can be tested" is section 3's one count, made with the
+warm-up of the market-profile detector alone (`market_profile.md`: the agitation reads a year of 30-day swings, 395
+daily bars; the wrapper loads twice the bars a strategy needs before each window, so 790 days): the least any plan that
+names a full profile asks. Code: `common/coins.py` (`detector_warmup`, asked from the bot's own classes, never written
+as a number; `testable_counts`, `drawable`, `research_draw`).
+- **Why:** a run is given data that exists. Pilot A4 (`runs/PILOT_A4_RUN.md`) drew TAO (3 windows run of 32), INJ and
+  DOT (11): under half of its 256 coin-windows ran.
+- **Measured 2026-11-27 on the 25 portfolio coins: 19 are drawable, in 6 categories.** Not drawable: TAO and ONDO (no
+  usable window), SUI and PEPE (3 of 14), NEAR and LDO (6 of 14). **AI has no drawable coin** (TAO is its only
+  portfolio coin): no research run tests an AI coin until one has the history; step 9 still measures every candidate
+  on TAO's usable windows, when it has some.
+- **The run's file keeps the count** (`data_use.json`, `draw`: the warm-up's days, the check half's windows, the
+  number needed, each portfolio coin's count), so a draw can be audited.
+
+**1.4 What the measurement shows, and this card does not change (the operator's ruling is open):** with the
+detector's warm-up, 331 of the 25 coins' 800 coin-windows are usable (465 by the 90-day rule and the hole rule alone).
+**Only 9 coins have a usable window before 2022** (payments: BTC, LTC, XRP, BCH; platforms: ETH, ADA, ATOM; privacy:
+ZEC, XMR). So **the explore half, the only data the analysts read, never shows a finance, infrastructure, AI or meme
+coin**: every idea the analysts propose comes from three categories, and is checked on the others only by step 5's
+direction on the check half. The halves are not changed here.
 
 ## 2. The years
 | Use | Years |
@@ -61,10 +84,32 @@ that has ended joins the check half at the next run. The explore half never grow
 | A hole of one day | ignored | the existing rule (topic 18) |
 | A longer hole | the coin is left out of that window only; counted in the run | a window must read whole data |
 | A coin's first 90 days | never used | thin, erratic prices no strategy could trade |
+| A coin whose history is shorter than the plan's warm-up | left out of that window, before the engine runs: "the coin's history is shorter than the plan's warm-up: N days asked" | the engine cannot run it: the strategy is not ready at the window's first bar |
 | A coin that started or stopped trading during a window | left out of that window | as the engine's warm-up rule today |
 | Before 2016 | not used | the files are thin (BTC: one trade a day in 2013; LTC: 187 missing days before 2016) |
 
-**Why this cannot leak:** no rule changes how a bar is read; a day's decision uses data up to that day's close only.
+**Usable windows: one count, made before the engine runs (next steps A12; the operator, 2026-11-27).** A coin's window
+is used when all of these hold; otherwise it is **left out**, with its reason, before any engine call:
+1. it starts after the coin's first 90 days;
+2. **the coin's data covers the warm-up the wrapper will load for this plan before the window's start**: the coin's
+   first day is on or before the window's start minus the warm-up. The warm-up is the bot's own: twice the bars the
+   plan's strategy needs (`trading-bot/core/launcher.py`, `run_backtest` with `warmup_prefetch`, which the wrapper
+   always sets), the needed bars asked from the bot's strategy class on the plan's config (`common/coins.py`,
+   `plan_warmup`); no number is written in the cards' code;
+3. it has no hole of more than one day (the rule above).
+- **One rule in step 4 (`--data-use`), step 9 (`common_record`) and step 12 (through `common_record.backtest`)**: the
+  same function (`coins.left_out`), the same words in `run.md` ("N left out by the data use ...: w1, w2 (reason)") and
+  the same count on the index line ("(N left out by the data use)").
+- **Why:** in pilot A4's run 1, 109 of 256 coin-windows were left out by the rule and 28 more were refused by the
+  engine as errors ("the dates were not fetched", "the engine stopped: strategy not ready after 144 warm-up bars"): two
+  counts for one fact, the second made after the engine was called.
+- **What it leaves out that the engine would run:** a coin whose file is recorded as Kraken's complete archive
+  ("from the pair's first trade") is run by the engine as soon as it has the needed bars once (395), not twice; the
+  rule asks twice for every coin, as the engine does for a coin whose file is recorded from a date. One rule for
+  every coin: about 3 windows a coin (a year) are left out that the engine would have run (`runs/BUILD_A12.md`).
+- **The engine's own reasons stay** ("not run", with the reason) for anything else it refuses.
+
+**Why this cannot leak:** no rule changes how a bar is read (the count reads each coin's dates only, and the plan's config for its warm-up, before any bar); a day's decision uses data up to that day's close only.
 
 ## 4. The steps, in order
 | # | Step | Data | What it decides | What starts it |

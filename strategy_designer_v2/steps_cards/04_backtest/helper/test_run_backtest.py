@@ -232,9 +232,13 @@ def test_data_use_runs_the_runs_coins_on_its_windows_and_leaves_windows_out(monk
     (tmp_path / "wins.json").write_text(json.dumps(wins))
     du = {"version": 2, "research_coins": ["SOL", "ADA"], "windows": str(tmp_path / "wins.json")}
     (tmp_path / "data_use.json").write_text(json.dumps(du))
-    reasons = {("ADA", "2001-01-01"): "the coin's first 90 days", ("ADA", "2003-01-01"): "a hole of 2 days"}
+    reasons = {("ADA", "2001-01-01"): "the coin's history is shorter than the plan's warm-up: 790 days asked",
+               ("ADA", "2003-01-01"): "a hole of 2 days"}
     monkeypatch.setattr(rb.coin_rules, "dates", lambda coin: [])
-    monkeypatch.setattr(rb.coin_rules, "left_out", lambda coin, start, end, days=None: reasons.get((coin, start)))
+    asked = []
+    monkeypatch.setattr(rb.coin_rules, "plan_warmup", lambda python, config, bar: asked.append((python, bar)) or 777)
+    monkeypatch.setattr(rb.coin_rules, "left_out", lambda coin, start, end, days=None, warmup_seconds=None:
+                        reasons.get((coin, start)) if warmup_seconds == 777 else "no warm-up given")
     seen = []
     monkeypatch.setattr(rb, "protocol", lambda python, symbol, bar, folds, windows=None: {
         "symbols": [symbol], "windows": windows, "venue": {"label": "Kraken spot"}})
@@ -251,7 +255,8 @@ def test_data_use_runs_the_runs_coins_on_its_windows_and_leaves_windows_out(monk
     run_md = (rec / "run.md").read_text()
     assert "- Data: SOL, ADA as SOLUSD, ADAUSD; 1d bars; windows wins, data use 2\n" in run_md
     assert ("- ADAUSD: 2 of 4 windows run. 2 left out by the data use (common/data_use.md, section 3): "
-            "w1 (the coin's first 90 days); w3 (a hole of 2 days).") in run_md
+            "w1 (the coin's history is shorter than the plan's warm-up: 790 days asked); w3 (a hole of 2 days).") in run_md
+    assert asked == [("py", "1d")]                   # the plan's warm-up asked once, before any engine call
     assert "| w4 |" in run_md and "| w3 |" not in run_md.split("- ADAUSD:")[1]
     assert (out_root / "INDEX.md").read_text() == (
         "001-01_some-idea_1d: ran: SOLUSD 4/4; ADAUSD 2/4 (2 left out by the data use) [1d, windows wins, data use 2]\n")

@@ -186,6 +186,10 @@ def test_the_final_windows_are_step_9s_past_each_coins_first_90_days(tmp_path):
         d = pd.date_range(start, "2026-11-26", freq="D")
         pd.DataFrame({"timestamp": d.strftime("%Y-%m-%d"), "close": 1.0}).to_csv(tmp_path / f"kraken_{coin}USD_1d.csv", index=False)
     usable = lambda c, start: ft.coins.usable(c, start, data=tmp_path)
-    per = ft.cr.coin_windows(wins, ["OLD", "NEW"], usable)        # step 12 runs on step 9's runner and rule
-    assert [w["label"] for w in per["OLD"][1]] == ["2016-01", "2020-05", "2020-09"] and per["OLD"][0] == 0
-    assert [w["label"] for w in per["NEW"][1]] == ["2020-09"] and per["NEW"][0] == 2     # 91st day: 2020-08-30
+    per = ft.cr.coin_windows(wins, ["OLD", "NEW"], usable, data=tmp_path)   # step 12 runs on step 9's runner and rule
+    assert per["OLD"] == ([1, 2, 3], {})                                    # the windows' numbers in the file
+    assert per["NEW"] == ([3], {"the coin's first 90 days": [1, 2]})        # 91st day: 2020-08-30
+    year = 365 * 86400                                                      # with a plan's warm-up of a year
+    per = ft.cr.coin_windows(wins, ["OLD", "NEW"], usable, year, tmp_path)
+    assert per["OLD"][0] == [1, 2, 3] and per["NEW"][0] == []
+    assert per["NEW"][1]["the coin's history is shorter than the plan's warm-up: 365 days asked"] == [3]

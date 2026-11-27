@@ -11,12 +11,12 @@ repository, an empty working folder. This script reads no market data.
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
-from lib import with_common, call, write_atomic, profile_name  # noqa: E402  (shared helpers, common/lib.py)
+from lib import with_common, call, write_atomic, profile_name, side_name  # noqa: E402  (shared helpers, common/lib.py)
 import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
 
 HERE = Path(__file__).resolve().parent
 MAX_FIELD_WORDS, ATTEMPTS = 300, 3   # 300 words: a guard against a runaway answer, not a length rule
-MARKET_KEYS = {"venue", "instruments", "bar", "period", "side"}
+MARKET_KEYS = {"venue", "instruments", "bar", "period"}   # the brief's side is not copied: an idea states its own
 def brief_header(text):
     """The brief's header lines, word for word."""
     m = re.match(r"\s*---\n(.*?)---\n", text, re.S)
@@ -43,7 +43,7 @@ def parse(text):
     ideas = []
     for raw in re.split(r"^\s*---\s*$", body, flags=re.M):
         fields = dict((k.lower(), " ".join(v.split())) for k, v in
-                      re.findall(r"^(idea|consequence|short-name|index-line|bar|profile):\s*(.*?)(?=^(?:idea|consequence|short-name|index-line|bar|profile):|\Z)",
+                      re.findall(r"^(idea|consequence|short-name|index-line|bar|profile|side):\s*(.*?)(?=^(?:idea|consequence|short-name|index-line|bar|profile|side):|\Z)",
                                  raw, re.M | re.S | re.I))
         if not fields:
             continue
@@ -60,7 +60,11 @@ def parse(text):
         profile = profile_name(fields.get("profile"))
         if fields.get("profile") and fields["profile"].lower() != "none" and not profile:
             raise ValueError(f"the profile line names a market profile (its trend, its agitation, or both), or is left out: {fields['profile']!r}")
-        ideas.append((idea, consequence, slug(fields.get("short-name") or idea), fields.get("index-line") or idea, bar, profile))
+        # What the idea bets (common/idea_definition.md): long, short or both; a missing or unknown value is refused.
+        side = side_name(fields.get("side"))
+        if not side:
+            raise ValueError(f"every idea has a side line saying what it bets: long, short or both: {fields.get('side', '(no side line)')!r}")
+        ideas.append((idea, consequence, slug(fields.get("short-name") or idea), fields.get("index-line") or idea, bar, profile, side))
     if not ideas and not m:
         raise ValueError("the answer has no idea block and no already-indexed line")
     return ideas, already
@@ -99,19 +103,21 @@ def main():
     nnn = brief_name[:3]
     taken = [int(p.name[4:6]) for p in ideas_dir.glob(f"{nnn}-[0-9][0-9]_*.md")]
     kk = max(taken, default=0)
+    # the brief's header lines, its side aside: an idea's `side:` line is its own (what it bets), written below
+    header = [l for l in header if l.split(":", 1)[0].strip() != "side"]
     file_header = "---\n" + f"brief: {brief_name}\n" + "".join(l + "\n" for l in header) + "---\n"
     market = [l for l in header if l.split(":", 1)[0].strip() in MARKET_KEYS]
     bracket = "[" + ", ".join(market) + "]" if market else ""
     lines = []
     brief_bar = any(l.split(":", 1)[0].strip() == "bar" for l in header)
-    for idea, consequence, short, line, bar, profile in ideas:
+    for idea, consequence, short, line, bar, profile, side in ideas:
         kk += 1
         name = f"{nnn}-{kk:02d}_{short}"
         own = bar if bar and not brief_bar else None              # the brief's bar size, when it has one, wins
-        extra = (f"bar: {own}\n" if own else "") + (f"profile: {profile}\n" if profile else "")
+        extra = (f"bar: {own}\n" if own else "") + (f"profile: {profile}\n" if profile else "") + f"side: {side}\n"
         head = file_header[:-4] + extra + "---\n"
         write_atomic(ideas_dir / f"{name}.md", head + f"Idea: {idea}\nConsequence: {consequence}\n")
-        mk = market + ([f"bar: {own}"] if own else []) + ([f"profile: {profile}"] if profile else [])
+        mk = market + ([f"bar: {own}"] if own else []) + ([f"profile: {profile}"] if profile else []) + [f"side: {side}"]
         lines.append(f"{name}: {line} {'[' + ', '.join(mk) + ']' if mk else ''}".rstrip())
         print(f"idea: {ideas_dir / (name + '.md')}")
     write_atomic(index_path, index + "".join(l + "\n" for l in lines))

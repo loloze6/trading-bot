@@ -63,33 +63,47 @@ def lock(name):
             fcntl.flock(fh, fcntl.LOCK_UN)
 
 
-def coin_windows(windows, coin_list, usable=coins.usable):
-    """{coin: (K before its first window, its windows)}: each coin's windows that start after its first 90 days. A
-    coin's first usable day is fixed, so its usable windows are the last ones of the file: K continues the file's
-    numbering (w1 = the file's first window for every coin)."""
+def coin_windows(windows, coin_list, usable=coins.usable, warmup_seconds=None, data=None):
+    """{coin: ([K of each window it is used in], {reason: [K left out]})}: one count for every coin, made before the
+    engine runs (common/data_use.md, section 3). A window is used when it starts after the coin's first 90 days
+    (`usable`), the coin's history covers the warm-up the wrapper loads for the plan (`warmup_seconds`,
+    coins.plan_warmup), and it has no hole of more than one day; K is the window's number in the file (w1 = its first
+    window for every coin). `data`: the folder of the coins' daily files (default: coins.DATA)."""
     out = {}
     for c in coin_list:
-        keep = [k for k, w in enumerate(windows) if usable(c, w["test"]["start"])]
-        if keep:
-            out[c] = (keep[0], windows[keep[0]:])
+        d, keep, left = None, [], {}
+        for k, w in enumerate(windows, 1):
+            start, end = w["test"]["start"], w["test"]["end"]
+            if not usable(c, start):
+                why = coins.FIRST_DAYS
+            else:
+                d = coins.dates(c, data or coins.DATA) if d is None else d
+                why = coins.left_out(c, start, end, days=d, warmup_seconds=warmup_seconds)
+            if why is None:
+                keep.append(k)
+            else:
+                left.setdefault(why, []).append(k)
+        out[c] = (keep, left)
     return out
 
 
-def backtest(plan, python, dest, windows, coin_list, usable=coins.usable):
-    """Step 4 on the common data: one wrapper call per coin on its usable windows, the calls at the same time, with
-    step 4's own run_part (each window its own run_backtest call, warm-up and holdout guard). Writes run.md in step 4's
-    shape and returns the index line."""
+def backtest(plan, python, dest, windows, coin_list, usable=coins.usable, data=None):
+    """Step 4 on the common data: one wrapper call per coin on the windows it is used in (coin_windows: one count,
+    before the engine runs), the calls at the same time, with step 4's own run_part (each window its own run_backtest
+    call, warm-up and holdout guard). Writes run.md in step 4's shape, every window left out with its reason, and
+    returns the index line. `data` (optional, last): the folder of the coins' daily files the count reads."""
     plan_id, h = plan.stem, header_fields(plan.read_text(encoding="utf-8"))
     bar = h["data-bar"]
-    per = coin_windows(windows, coin_list, usable)
     config_path = plan.with_name(plan_id + "_config.json")
+    per = coin_windows(windows, coin_list, usable, coins.plan_warmup(python, config_path, bar), data)
     if dest.exists():
         import shutil
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
     (dest / "config.json").write_bytes(config_path.read_bytes())
     syms = {c: f"{c}USD" for c in coin_list}
-    protos = {c: rb.protocol(python, syms[c], bar, None, ws) for c, (_, ws) in per.items()}
+    protos = {c: rb.protocol(python, syms[c], bar, None, [windows[k - 1] for k in keep])
+              for c, (keep, _) in per.items() if keep}
     with ThreadPoolExecutor(max_workers=max(1, min(len(protos), rb.cores()))) as pool:
         futs = {c: pool.submit(rb.run_part, python, config_path, protos[c], per[c][0], dest / syms[c],
                                dest / syms[c] / "windows") for c in protos}
@@ -97,32 +111,33 @@ def backtest(plan, python, dest, windows, coin_list, usable=coins.usable):
     report, summary = [], []
     for c in coin_list:
         sym = syms[c]
-        if c not in per:
-            report.append(f"- {sym}: 0 of 0 windows run (every window starts before the coin's 91st day).")
-            summary.append(f"{sym} not run (every window before its 91st day)")
-            continue
-        before, ws = per[c]
-        rows, failed = done[c]
-        part = f"- {sym}: {len(rows)} of {len(ws)} windows run."
-        if before:
-            part += f" w1 to w{before} not used: they start before the coin's 91st day (common/data_use.md)."
+        keep, left = per[c]
+        rows, failed = done.get(c, ([], []))
+        n_left = sum(len(ks) for ks in left.values())
+        part = f"- {sym}: {len(rows)} of {len(windows)} windows run."
+        if left:
+            part += f" {n_left} left out by the data use (common/data_use.md, section 3): " + "; ".join(
+                f"{', '.join(f'w{k}' for k in ks)} ({why})" for why, ks in left.items()) + "."
         if rows:
             part += ("\n\n| window | trades | forecast vs next return (all bars) | net return % |\n|---|---|---|---|\n"
                      + "".join(f"| w{k} | {t} | {fc} | {nr} |\n" for k, t, fc, nr in rows))
         for k, reason, tail in failed:
             part += f"\n- w{k} not run: {reason}.\n\n```\n{tail}\n```\n"
         report.append(part)
-        summary.append(f"{sym} {len(rows)}/{len(ws)}" + (f" ({len(failed)} not run: {failed[0][1]})" if failed else "")
-                       if rows else f"{sym} not run ({failed[0][1] if failed else 'no window'})")
+        lo = f" ({n_left} left out by the data use)" if left else ""
+        if rows:
+            summary.append(f"{sym} {len(rows)}/{len(windows)}" + (f" ({len(failed)} not run: {failed[0][1]})" if failed else "") + lo)
+        else:
+            summary.append(f"{sym} not run ({failed[0][1] if failed else 'no window'})" + lo)
     venue = next(iter(protos.values()))["venue"]["label"] if protos else ""
     instruments = ", ".join(coin_list)
     write_atomic(dest / "run.md", f"# Backtest of {plan_id}\n\n"
                  f"- Plan: `{os.path.relpath(plan, dest)}`\n- Config: `config.json` (a copy of the plan's config)\n"
                  f"- Data: {instruments} as {', '.join(syms[c] for c in coin_list)}; {bar} bars; windows {WINDOWS.stem}"
-                 f" (the common record: every portfolio coin, each window after the coin's first 90 days)\n"
+                 f" (the common record: every coin asked, each window the coin is used in by common/data_use.md, section 3)\n"
                  f"- Venue: {venue}\n- Engine: trading-bot/backtest/run_protocol.py around trading-bot's run_backtest, "
                  f"unchanged; warm-up loaded before each window\n\n" + "\n".join(report) + "\n")
-    ran = any(" not run" not in s for s in summary)
+    ran = any(done.get(c, ([], []))[0] for c in coin_list)
     return f"{plan_id}: {'ran' if ran else 'not run'}: {'; '.join(summary)} [{bar}, windows {WINDOWS.stem}]"
 
 

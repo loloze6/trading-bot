@@ -82,8 +82,12 @@ Called again with the same brief on the same run, it resumes. Called with anothe
 
 **`--data-use 2`** (2026-11-26, `../../runs/BUILD_A4_RESEARCH.md`; `../../common/data_use.md`): the run in the new data
 use. Before step 1, it writes `orchestration/loop/<run>/data_use.json` once: `{"version": 2, "research_coins": the run's
-8 coins (common/coins.py, research_draw: seeded by the run's name), "windows": "04_backtest/windows/research_2016.json"}`
-(the file other helpers read; resumed, it is kept as written, with or without the flag). `run_idea` then backtests every
+8 coins (common/coins.py, research_draw: seeded by the run's name, among the drawable coins of `data_use.md` 1.3,
+counted with the bot's own warm-up through `--python`), "windows": "04_backtest/windows/research_2016.json", "draw": the
+count the coins were drawn from}` (the file other helpers read; resumed, it is kept as written, with or without the
+flag: a run already started keeps its coins). **The brief's instruments are those coins, written by code** (next steps
+A12, 2026-11-27): step 1 is called with `--run` for the run's brief and for its discoveries' briefs, is not asked for
+instruments, and names no final-group coin (`../../01_brief/card.md`). `run_idea` then backtests every
 plan of the run on those coins and windows; step 7 explores the explore half, step 5 checks on the check half
 (`../../common/explore_and_check.md`). Refused: a run that has already tested ideas without it (`run_idea`'s
 `table.json` exists), or whose file names another version. Without the flag, nothing changes.

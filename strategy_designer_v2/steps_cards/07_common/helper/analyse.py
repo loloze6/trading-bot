@@ -25,7 +25,7 @@ HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
 import target_box  # noqa: E402  (a run's target box, part of the brief's theme: common/target_box.md)
-from lib import step5_answer, call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
+from lib import step5_answer, call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, side_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -225,7 +225,7 @@ def parse_ideas(text, findings):
     blocks = re.split(r"(?m)^(?=idea:|same-idea-on:)", text[start.start():]) if start else []
     ideas = []
     for b in blocks:
-        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data|profile|theme):\s*(.+)$", b, re.M)}
+        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data|profile|side|theme):\s*(.+)$", b, re.M)}
         if not g:
             continue
         if "same-idea-on" in g:   # the tested idea unchanged, on other data: code copies its text
@@ -242,6 +242,8 @@ def parse_ideas(text, findings):
             continue
         if g.get("profile") and g["profile"].lower() != "none" and not profile_name(g["profile"]):
             raise ValueError(f"the profile line names a market profile (its trend, its agitation, or both), or is left out: {g['profile']!r}")
+        if not side_name(g.get("side")):      # what the idea bets (common/idea_definition.md): refused when missing or unknown
+            raise ValueError(f"every idea has a side line saying what it bets: long, short or both: {g.get('side', '(no side line)')!r}")
         for k in ("idea", "consequence", "from"):
             if not g.get(k):
                 raise ValueError(f"an idea block has no '{k}' line")
@@ -391,6 +393,11 @@ def main():
     names, found = [], []
     tested = {f: (re.search(rf"^{f}:\s*(.+)$", idea_text, re.M) or [None, ""])[1].strip() for f in ("Idea", "Consequence")}
     tested_profile = profile_name(header(idea_text).get("profile"))
+    # the tested idea's own side, for the same idea on other data (None for an idea written before the side line)
+    tested_side = side_name(header(idea_file.read_text()).get("side")) if idea_file and idea_file.exists() else None
+    du = record_data_use(record)
+    if du:      # the new data use: the backtest ran on the run's research coins, whatever the plan names (common/data_use.md)
+        market["instruments"] = ", ".join(du["research_coins"])
     # the run's other analyses by this line: numbering goes on after their ideas of the same parent (topic 46)
     others = [f.stem for f in out_dir.glob("*/*/*.md") if f.parent.name in ("ideas", "discoveries")
               and f.parent.parent != d and f.name != "INDEX.md"]
@@ -400,11 +407,14 @@ def main():
             g["idea"], g["consequence"], g["data"] = tested["Idea"], tested["Consequence"], g["same-idea-on"]
             g.setdefault("name", "same idea on other data")
             g["profile"] = tested_profile             # the tested idea's profile, unchanged
+            g["side"] = tested_side                   # and its side
         mk = dict(market)
         for k, v in re.findall(r"(instruments|bar|period)\s*:\s*([^;]+)", g.get("data", "")):
             mk[k] = v.strip()
         if profile_name(g.get("profile")):
             mk["profile"] = profile_name(g["profile"])
+        if side_name(g.get("side")):
+            mk["side"] = side_name(g["side"])
         iid = child_id(h.get('idea', rid), letter, i, slug(g.get('name') or g['idea']))   # topic 46
         why = "".join(f"\n- {r}: {findings[r]}" for r in g["refs"])
         if is_discovery(g):          # off the brief's theme: a theory of its own, for step 1 (common/theme.md)

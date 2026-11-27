@@ -53,15 +53,16 @@ the brief: step 1 when it writes the run's brief or a discovery's brief (`01_bri
 `run_brief` passes only for a boxed run; the brief then has `profile:` and `side:` header lines), step 2
 (`02_ideation/helper/make_ideas.py`) and every step 7 line (`07_common/helper/analyse.py`, the
 lines 7.a to 7.g). It asks every idea to keep to the box: its situation in the box's profile, named in a `profile:`
-line, its position on the box's side; and a discovery (a pattern off the theme) to be looked for inside the box only.
+line, its position on the box's side, named in its `side:` line; and a discovery (a pattern off the theme) to be looked for inside the box only.
 Without a box the note is empty and the prompts are byte for byte as before.
 
 ## A boxed run starts from the ideas already written in its box (next steps B13; the operator, 2026-11-27)
 **Before its first turn, a boxed run takes the untested ideas of every other run that name its box exactly**; they are
 ranked with the run's own ideas by `select_next`'s one score, then the loop goes on as usual.
 - **Named exactly:** the idea file's `profile:` line is the box's profile word for word (as `profile_name` reads it): an
-  idea naming only "falling" or only "calm", or no profile, is not taken. **Its side:** its brief's `side:` line (the
-  brief its header names, as step 3 reads it) includes the box's side; a brief with no side line allows both.
+  idea naming only "falling" or only "calm", or no profile, is not taken. **Its side is known and is the box's side**
+  (next steps A12; the operator, 2026-11-27): the idea's side below. An idea whose side is unknown, or is `both`, is
+  not taken.
 - **Untested:** no step 5 answer in any run (the `step5` field of every run's `orchestration/run_idea/*/table.json`).
 - **Kept as written:** the idea keeps its id and its brief. The loop copies the idea file into the run's step 2 folder
   (`02_ideation/<run>/ideas/`, where `run_idea` copies every idea it tests) with one header line added,
@@ -77,8 +78,23 @@ ranked with the run's own ideas by `select_next`'s one score, then the loop goes
 ## Visibility, not control
 An idea written outside the box anyway is neither refused nor filtered: it is tested like any other. **Each turn of a
 boxed run says whether its idea acts in the box** (`loop.jsonl`, field `in_box`), so the reading can count them. An
-idea acts in the box when its `profile:` line holds the box's profile and its brief's side includes the box's side
-(the brief's `side:` line as step 3 reads it; no line: both sides). An idea naming no profile is counted outside.
+idea acts in the box when its `profile:` line holds the box's profile and **its own side is the box's side** (the
+idea's side below). An idea naming no profile, or whose side is unknown, is counted outside.
+
+## The idea's side (next steps A12; the operator, 2026-11-27)
+**An idea's side is what the idea bets** (`idea_definition.md`): `long`, `short` or `both`, on its own `side:` header
+line, written by step 2 and by every step 7 line for every run, boxed or not, and checked by code when the idea file is
+written (a missing or unknown value is refused and asked again, as an unknown `profile:` is).
+- **One reading for `in_box` and for the ideas taken (B13)** (`target_box.py`, `idea_side`): the idea's own `side:`
+  line; else, for an idea written before the line existed, its brief's "long only" or "short only"; else unknown. A
+  brief saying "long and short", or with no side line, tells nothing of what one of its ideas bets.
+- **Why:** before, both read the brief, and a brief without a side line counted as both sides. In pilot A4 a long box
+  took ideas that bet short (032-01.b1 and 032-02.b1, measured in the short direction by step 5) and the short box
+  took a "rise continues" idea; `in_box` said true for all of them.
+- **The side the book may trade stays the brief's** (step 3, `add_side`: a brief's "long only" or "short only" caps
+  every component's forecast, by code). One rule, unchanged: the brief limits what is traded; the idea says what it
+  bets; neither is enforced on the other. An idea betting short under a "long only" brief gives a flat book, and its
+  turn says `in_box: false` in a long box: visible, not refused.
 
 **Why this cannot leak:** the choice reads finished records (the map, the last portfolio's box reading) before the run
 starts; the note, the brief's check and the field read header lines. No bar of the run's data is read.

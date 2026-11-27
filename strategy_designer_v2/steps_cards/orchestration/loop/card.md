@@ -67,13 +67,15 @@ the budget is reached; a refused model call stops the loop, and the discovery is
 the operator 2026-11-27): the box is part of the brief's theme, so the steps that write ideas keep to it (their prompt
 says so); the loop adds no filter. Visibility, not control: each turn's line in `loop.jsonl` (the starting idea, a
 resumed idea, a ranked idea) carries `in_box` (true or false: the idea's `profile:` line holds the box's profile and its
-brief's side includes the box's side), so the reading counts the ideas written outside the box. Without a box, the
+own side is the box's side: the idea's `side:` line, else its brief's "long only" or "short only", else unknown and
+counted outside; next steps A12), so the reading counts the ideas written outside the box. Without a box, the
 lines are as before.
 
 **A boxed run starts from the ideas already written in its box** (next steps B13, the operator 2026-11-27;
 `../../common/target_box.md`): before its first turn (and again on resume, for ideas not yet in the run), the loop takes
 the untested ideas (no step 5 answer in any run) of every other run whose `profile:` line is the box's profile word for
-word and whose brief allows the box's side. Each is copied into the run's step 2 folder with `taken-from: <its run>`
+word and whose own side is known and is the box's side (the same reading as `in_box`; before 2026-11-27 the brief's side
+was read, and a brief without a side line counted as both: pilot A4's long box took ideas betting short). Each is copied into the run's step 2 folder with `taken-from: <its run>`
 (its id and brief kept; its brief copied into the run's briefs), one line in `loop.jsonl` each (`"taken"`, `"from"`);
 `select_next` then ranks them with the run's own ideas by its one score, unchanged; each of their turns carries
 `taken_from`.
