@@ -1,4 +1,5 @@
 064-01_choppy-large-up-day-continuation_1d: not profitable enough [Sharpe 0.5447; Sharpe minus holding's Sharpe -0.0628; Calmar 0.255]
+064-02_choppy-range-top-break-continuation_1d: not profitable enough [Sharpe 0.6753; Sharpe minus holding's Sharpe 0.06787; Calmar 0.4483]
 067-01.b1.d1_agitated-chop-weak-month-falls_1d: not profitable enough [Sharpe 0.03262; Sharpe minus holding's Sharpe -0.5202; Calmar -0.0004352]
 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues_1d: not profitable enough [Sharpe -0.1505; Sharpe minus holding's Sharpe -0.7033; Calmar -0.07053]
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: not profitable enough [Sharpe 0.0626; Sharpe minus holding's Sharpe -0.5449; Calmar 0.0004179]

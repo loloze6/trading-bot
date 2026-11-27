@@ -1,0 +1,36 @@
+{
+  "line": "7.g",
+  "backtest": "064-02_choppy-range-top-break-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43580149999999995,
+  "findings": {
+    "F1": "In choppy markets (60-day return between \u221210 % and +10 %), the 10-day return scaled by the 30-day swing sorts the next 5 days on its down side, not its up side. The bottom quartile (z10 from \u22121.97 to \u22120.45) has a mean unusual move of \u22127.16 % (t \u22123.27, 48 non-overlapping cases, strength \u22120.55). The two middle quartiles sit at \u22121.60 % (t \u22121.18) and \u22121.19 % (t \u22121.04). The top quartile is +11.3 % but not sure (t 1.34). These t's are ordinary, not day-pooled.",
+    "F2": "The choppy down-side continuation holds across the shown data, where z10 < 0. It is negative in every year: 2018 \u22127.6 % (t \u22122.06, n 9), 2019 \u22123.8 % (t \u22123.24, n 28), 2020 \u22123.7 % (t \u22121.05, n 28) and 2021 \u22127.3 % (t \u22123.46, n 24). It is negative on all 12 coins, from \u22121.3 % to \u221211.7 %. It is negative in 9 of 12 windows, with w12 at \u22129.5 % (t \u22124.56, n 20) and w16 at \u221232.9 % (n 6). Three windows go against it: w10 +7.3 %, w17 +1.3 % and w18 +7.6 %. Without w16 the effect is smaller but still negative.",
+    "F3": "The 5-day and 1-day falls tell the same story in choppy markets. A 5-day fall scaled between \u22121.5 and \u22120.5 swings is followed by \u22125.2 % (t \u22123.00, n 31). Below \u22121.5 swings it is \u221216.0 % (t \u22122.43, n 10). A 1-day fall of 1 to 2 swings is followed by \u22125.8 % (t \u22122.35, n 9). The brief's claim that falls in a choppy market are not followed by more falling is contradicted.",
+    "F4": "The grading on the past move is strongest in choppy markets. The slope of the 5-day unusual move on z10 is 0.069 (t 2.52, n 189) in choppy markets, against 0.010 (t 2.07, n 527) in falling and 0.011 (t 1.96, n 484) in rising. On z1 the choppy slope is 0.098 (t 3.99). The choppy slope on z10 holds both when the 30-day swing is above its 90-day median (0.044, t 2.03, n 56) and when it is below (0.066, t 1.78, n 133).",
+    "F5": "The tested breakout's up side rests on a few outsized cases. In choppy markets, closes 1 to 2 swings above the 30-day high are followed by +9.9 % (t 1.90, n 15), and closes above 2 swings by +78 % (t 1.02, n 5). Closes far below the 30-day high (dhi below \u22123) are followed by \u22125.1 % (t \u22123.69, n 85). The steep dhi slope (t 4.21) comes from both tails, and only the low tail is steady. This matches the step-5 mean of +2.39 % with a day-pooled t of 1.27.",
+    "F6": "One calendar pattern stood out. 5-day windows starting on a Wednesday close have a mean unusual move of \u22123.6 % (t \u22123.94, n 176), negative in each year from 2018 to 2021 (\u22124.9 %, \u22123.6 %, \u22127.4 %, \u22120.9 %). It is one of many angles looked at and has no theory, so no idea is drawn from it."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, a coin whose 10-day return is negative keeps falling over the next 5 days. The larger that 10-day fall in units of its 30-day daily swing, the larger the further fall.",
+      "consequence": "In a trendless coin, a slide over the last two weeks is a reason to stay short or out rather than buy the dip, more so the deeper the slide against its usual swing.",
+      "name": "choppy scaled slide continues down",
+      "from": "F1, F2, F3, F4",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "064-02.g1_choppy-scaled-slide-continues-down"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -1,4 +1,5 @@
 064-01_choppy-large-up-day-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+064-02_choppy-range-top-break-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-01.b1.d1_agitated-chop-weak-month-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

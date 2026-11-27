@@ -1,4 +1,5 @@
 064-01_choppy-large-up-day-continuation_1d: inconclusive (fit: adapted) [main: -0.02397; t of the mean, cases grouped by day -0.201982; cases 259, distinct days 174]
+064-02_choppy-range-top-break-continuation_1d: inconclusive (fit: exact) [main: 0.0238568; t of the mean, cases of one day pooled 1.26823; cases 245, distinct days 187]
 067-01.b1.d1_agitated-chop-weak-month-falls_1d: inconclusive (fit: adapted) [main: 0.00165791; OLS slope t 1.09368; non-overlapping cases 215, distinct days 108]
 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues_1d: inconclusive (fit: exact) [main: 0.0136135; t of the mean, cases of one day taken together 1.51044; cases 310, distinct days 227]
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: inconclusive (fit: exact) [main: 0.0121011; t of the mean, cases summed per day 1.21138; independent case-days 150, cases 423]

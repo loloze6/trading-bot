@@ -15,21 +15,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The slide's continuation in an agitated choppy market rests on one window (w16; without it +0.42 %, t 0.20, F2), reverses in other windows and years (F3), and is not graded by the depth of the fall in any cut (F4, F5). No narrower case of the situation gives a clear answer, and no more data is available to test the idea unchanged (F1).; 7.g: no ideas: Across about fifty profile-by-pattern cells, nothing new reaches the bar that many looks require. The only clustered t values above 2.5 repeat strategies the map already holds (falling-agitated rebounds, low-close rebounds, the rising late-week gain). The rest are marginal (rising-calm fall rebound t 2.61, choppy-calm late week t 2.50) or rest on fewer than 10 independent days (choppy deep-slide continuation, F2). | 1.09 | 12.4 |
 | 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+1.21) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.d2.b1_swing-scaled-month-slide-continues, 067-01.b1.g1.b1.d1.d2.b2_scaled-slide-five-day-continuation; 7.g: 067-01.b1.g1.b1.d1.d2.g1_choppy-calm-month-continuation | 1.14 | 11.9 |
 | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | 067-01.b1.g1.b1_choppy-month-fall-continues | plan | confirmed (+2.08) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue, 067-01.b1.g1.b1.g1.d2_slide-continues-while-month-negative; 7.g: no ideas: The only robust grading is the tested choppy month continuation itself (F1, F2). The patterns that stand out off the theme repeat strategies the map already holds in the same profile (F4, F5, F6), and the rest cannot be told from chance across the many angles examined (F7). | 1.26 | 12.5 |
+| 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.g: 067-01.b1.g1.b1.g1.d1.g1_choppy-scaled-month-continues, 067-01.b1.g1.b1.g1.d1.g2_calm-choppy-slides-keep-falling | 0.77 | 11.9 |
+| 064-02_choppy-range-top-break-continuation | - | plan | inconclusive (+1.27) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The positive mean comes from a handful of extreme cases (F1), shows no grading by the size of the breakout (F2), and holds in no coin, period, agitation or horizon with a t of 2 (F4, F5, F6). The test already covered all the daily data there is (F7).; 7.g: 064-02.g1_choppy-scaled-slide-continues-down | 1.15 | 11.4 |
 
 ## Consumption
-11 ideas, 12.30 USD, 130.9 minutes in all.
+13 ideas, 14.22 USD, 154.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.88 | 4.6 |
-| step4_backtest | 0.00 | 89.7 |
-| step5_verdict | 2.15 | 7.5 |
+| step3_plan | 1.11 | 6.2 |
+| step4_backtest | 0.00 | 106.1 |
+| step5_verdict | 2.57 | 9.0 |
 | step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.2 |
-| step7_7.d | 1.89 | 6.1 |
+| chart_files | 0.00 | 0.3 |
+| step7_7.d | 1.89 | 6.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 2.42 | 7.3 |
-| step7_7.g | 4.97 | 14.7 |
+| step7_7.b | 2.85 | 8.4 |
+| step7_7.g | 5.81 | 17.1 |
 | similarity_check | 0.00 | 0.3 |
