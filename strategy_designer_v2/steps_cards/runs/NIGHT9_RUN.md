@@ -170,9 +170,12 @@ Everywhere else N2 (effects real, not profitable) or N3; **the choppy boxes stay
 (a bounce in a falling market fades), one of them holding on both unseen periods (074-01.g1.d1, falling agitated
 short 99 %), explained 0.65 by night 8's short specialist: the same effect again.
 
-**Why the choppy boxes stay empty (topic 47, `47_review/why_by_profile.txt`, 477 ideas of nights 7 to 9):** the
-effects found there are about as large as the trading costs (choppy, any agitation: costs 85 % of the gross profit;
-Sharpe 0.07 to 0.51, below holding the coins), 144 choppy ideas tested, 0 profitable. In every profile the
+**Why the choppy boxes stay empty (topic 47, `47_review/why_by_profile.txt`, 477 ideas of nights 7 to 9):** 144
+choppy ideas tested, 0 profitable; their Sharpe 0.07 to 0.51, below holding the coins. Costs are not the cause in
+choppy calm and choppy agitated (5 and 8 % of the gross profit); only the 6 ideas naming "choppy" alone are at the
+cost level (85 %) (corrected 2026-11-27: the first reading said "about as large as the costs" for every choppy idea).
+47 repairs moved the Sharpe by a median of -0.03, all 144 on daily bars; next steps C3 measures whether the exit is
+the lever. In every profile the
 confirmed ideas that do not pay fail on Calmar, which in practice asks a Sharpe of about 0.8 or more; one trade's
 swing is 6 to 8 times its mean gain; rising markets pass most (Sharpe about 1.05), falling agitated comes close
 (0.77), ideas naming no profile are the most diluted (0.08 % a day in a position, costs 22 %).
