@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-bar excess return on forecast (forecast < 0 grid cases)",
+    "value": 0.0002281043589045079,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.4519449233679472
+    },
+    "threshold": "slope > 0 with t >= 2 confirms; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in short direction, day-clustered t (t = -1.448)",
+    "value": -0.006931959240493826,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast < 0": 483,
+    "distinct days": 242
+  },
+  "decided_by": "Neither the confirm nor the reject rule is met (t values between -2 and 2), so it is inconclusive. No effect (common/verdicts.md): t in the idea's direction +0.452 (below 1), 483 cases (30 needed).",
+  "reading": "The falling-calm profile is read from the recorded regime ('unknown' = no veto, since the detector's components are not recorded), an up day is a positive raw scaled return (or a positive close-to-close return where it is not recorded), all coins in the record are used, the coin's mean 3-bar return is the mean over the non-overlapping grids of all its windows, the day-clustered t sums each day's deviations from the mean, and the plan's 'below the minimum counts it is inconclusive' is reported as 'not observable' as the workflow requires.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.452 (below 1), 483 cases (30 needed)",
+    "t_in_idea_direction": 0.4519449233679472,
+    "cases": 483
+  }
+}
