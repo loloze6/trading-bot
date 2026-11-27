@@ -114,9 +114,10 @@ def test_step4_runs_each_coin_on_its_windows_with_the_files_numbering(tmp_path, 
     asked = {}
     monkeypatch.setattr(C.rb, "protocol", lambda py, sym, bar, folds, ws: {"windows": ws, "venue": {"label": "kraken"}})
 
-    def run_part(py, cfg, proto, before, cdir, pdir):
-        asked[cdir.name] = (before, len(proto["windows"]), pdir.name)
-        return [(k, 1, 0.1, 2.0) for k in range(before + 1, before + 1 + len(proto["windows"]))], []
+    def run_part(py, cfg, proto, numbers, cdir, pdir):       # step 4's arguments: the windows' numbers, as a list
+        assert len(numbers) == len(proto["windows"])
+        asked[cdir.name] = (numbers[0] - 1, len(proto["windows"]), pdir.name)
+        return [(k, 1, 0.1, 2.0) for k, _ in zip(numbers, proto["windows"])], []
 
     monkeypatch.setattr(C.rb, "run_part", run_part)
     usable = lambda c, start: c == "OLD" or start >= "2025-01-01"
@@ -127,6 +128,13 @@ def test_step4_runs_each_coin_on_its_windows_with_the_files_numbering(tmp_path, 
     assert "- NEWUSD: 5 of 5 windows run. w1 to w27 not used" in md and "| w28 |" in md
     assert "- NONEUSD: 0 of 0 windows run" in md and "; 1d bars; windows research_2016" in md
     assert line.startswith("001-01_x_1d: ran: OLDUSD 32/32; NEWUSD 5/5; NONEUSD not run")
+
+
+def test_the_runner_calls_step4s_run_part_with_its_own_arguments():
+    """The fake above stands for step 4's run_part: its arguments must be the real one's (the runner broke once when
+    step 4 changed them and the fake did not)."""
+    import inspect
+    assert list(inspect.signature(C.rb.run_part).parameters) == ["python", "config_path", "proto", "numbers", "cdir", "pdir"]
 
 
 def _book(steps, run, rid, config, plan=True, measure=True, record=True):
