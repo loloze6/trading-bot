@@ -1,0 +1,2 @@
+086-01_heavy-volume-up-day-continuation: In falling calm markets, an up day on volume heavy against its 20-day average rises further over 5 days, more with heavier volume. [side: long only, profile: falling calm]
+086-02_volume-weighted-up-move-continuation: In falling calm markets, a day's up move times its relative volume against the 20-day average predicts a larger 5-day rise. [side: long only, profile: falling calm]
