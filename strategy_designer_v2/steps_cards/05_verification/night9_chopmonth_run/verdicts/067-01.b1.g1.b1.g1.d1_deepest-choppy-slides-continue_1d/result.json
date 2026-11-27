@@ -1,0 +1,21 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.52,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean short-direction 10-day excess return",
+    "value": null,
+    "statistic": null,
+    "threshold": "above 0 with day-clustered t >= 2 (reject: below 0 with t <= -2)"
+  },
+  "supporting_check": null,
+  "counts": {
+    "cases": 0,
+    "distinct case days": 0,
+    "active bars": 25
+  },
+  "decided_by": "Fewer than 90 % of the active bars are short bars in the plan's situation (60-day return within -10 %..+10 % and 30-day depth <= -2 usual moves).",
+  "reading": "The 60-day return is recomputed from closes inside each window, and on bars where 60 earlier bars are not in the window the detector's regime stands in for it; depth is the recorded raw value of the 'depth' component; any nonzero forecast that is not negative counts as disagreement."
+}

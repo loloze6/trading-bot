@@ -4,6 +4,7 @@
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: not profitable enough [Sharpe 0.0626; Sharpe minus holding's Sharpe -0.5449; Calmar 0.0004179]
 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: not profitable enough [Sharpe 0.02633; Sharpe minus holding's Sharpe -0.5811; Calmar -0.01762]
 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: not profitable enough [Sharpe -0.1984; Sharpe minus holding's Sharpe -0.8058; Calmar -0.0881]
+067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue_1d: not profitable enough [Sharpe -0.2236; Sharpe minus holding's Sharpe -0.7713; Calmar -0.0682]
 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d: not profitable enough [Sharpe 0.02633; Sharpe minus holding's Sharpe -0.5811; Calmar -0.01762]
 067-01.b1.g1.b1_choppy-month-fall-continues_1d: not profitable enough [Sharpe 0.0626; Sharpe minus holding's Sharpe -0.5449; Calmar 0.0004179]
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: not profitable enough [Sharpe 0.03262; Sharpe minus holding's Sharpe -0.5202; Calmar -0.0004352]

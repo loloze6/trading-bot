@@ -4,6 +4,7 @@
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-01.b1.g1.b1_choppy-month-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

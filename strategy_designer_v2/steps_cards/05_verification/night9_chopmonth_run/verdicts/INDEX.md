@@ -4,6 +4,7 @@
 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues_1d: inconclusive (fit: exact) [main: 0.0121011; t of the mean, cases summed per day 1.21138; independent case-days 150, cases 423]
 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d: confirmed (fit: adapted) [main: 0.0181959; t of the mean, cases summed per day 2.40841; distinct days with cases 425, cases 636]
 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days_1d: inconclusive (fit: adapted) [main: 0.00751602; t of the mean, same-day cases pooled 0.445208; independent case-days 376, cases 571, large cases 113, smaller cases 458]
+067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue_1d: mismatch: the test does not match its plan (agreement 0.52) (fit: adapted)
 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d: confirmed (fit: adapted) [main: 0.0265117; t of the mean, cases of one day taken together 2.08486; top-third cases 212, top-third distinct days 166, bottom-third cases 212, all cases 636]
 067-01.b1.g1.b1_choppy-month-fall-continues_1d: confirmed (fit: adapted) [main: 0.0139983; t clustered by day 2.07387; cases 850, distinct days 522]
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.00165791; ordinary OLS slope t 1.09368; independent grid cases with a forecast below 0 215]
