@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9999783230729212,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 18-bar excess return on forecast (pooled, grid bars with forecast > 0)",
+    "value": 0.0012058273214542196,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.143341983051196
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "mean of forecast x excess return > 0",
+    "value": 0.06630007215730924,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases with forecast > 0": 4984
+  },
+  "decided_by": "The slope's t is 2 or more, the supporting check passes, with at least 100 cases.",
+  "reading": "The 42-bar return is close[t]/close[t-42]-1 inside the window, with the recorded regime used on the first 42 bars of a window where prices cannot give it; the pullback depth is the recorded raw value, recomputed from prices where missing; the coin's normal drift is the mean 18-bar return over all grid bars of all its windows; the slope's t is the ordinary OLS t of the pooled regression of excess return on forecast with an intercept, and a case is a grid bar with forecast > 0 and a full 18-bar forward return.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
