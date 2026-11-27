@@ -1,0 +1,37 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9966960352422908,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move after the cases (return minus the coin's normal 3-bar drift)",
+    "value": 0.01447112241738378,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 4.168494420915439
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and upper half beats lower half; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (split at median forecast)",
+    "value": 0.012357398677290373,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3024,
+    "distinct days": 1266,
+    "upper half cases": 1512,
+    "lower half cases": 1512
+  },
+  "decided_by": "The mean unusual move is above 0 with t >= 2 and the upper half beats the lower half.",
+  "reading": "The situation is a bar whose high-low range is at least 1.5 times the mean range of the last 20 bars (today included) within the window, with the regime column used where 20 recorded bars are not yet available, and a positive raw 20-day rise where recorded, on the long side; a case is the first bet (forecast rise of at least 2 points from its lowest long level since the last bet, from 0 after a flat) in each 3-bar grid cell of a window, with a full 3-bar return inside the window; the drift is the mean non-overlapping 3-bar return of the coin over all its windows; the t sums the deviations per UTC day; the upper half is the cases with forecast above the median, the lower half the rest.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
