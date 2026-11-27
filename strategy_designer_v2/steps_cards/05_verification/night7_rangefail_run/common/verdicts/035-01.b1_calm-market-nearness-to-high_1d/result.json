@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9706750563194283,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered slope of 5-bar excess return on forecast",
+    "value": 0.002277726786467138,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 2.537327502359299
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with tercile difference > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom forecast tercile mean excess 5-bar return",
+    "value": 0.015244403555150225,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 5017,
+    "distinct days": 675
+  },
+  "decided_by": "the slope is positive with t >= 2 and the top-minus-bottom tercile difference is above 0",
+  "reading": "Cases are the non-overlapping 5-bar grid bars (positions 0, 5, 10, ... of each window) with near_high recorded, excess return = 5-bar return minus the coin's mean 5-bar grid return over all its windows; 'cases of one day summed together' is read as an OLS slope with standard errors clustered by day; terciles are three equal-count groups of the pooled cases ranked by forecast (ties by order).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
