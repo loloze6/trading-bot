@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 5-bar excess return over drift per case",
+    "value": 0.014622580748493347,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 1.4678918941076973
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases (and supporting check); reject: t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "larger-half minus smaller-half mean excess (by forecast size)",
+    "value": 0.01716082473447784,
+    "passed": true
+  },
+  "counts": {
+    "cases": 90,
+    "distinct days": 81
+  },
+  "decided_by": "The t lies between -2 and 2.",
+  "reading": "A case is the first short bet (forecast deepening by >= 2 points from its shallowest short level since the last bet, reset at flat) in each 5-bar grid cell of a window with 5 bars ahead in that window; the minimum requires both 30 cases and 30 distinct days; the halves are by |forecast| on the case bar, the middle case dropped when the count is odd; the day-clustered t uses a G/(G-1) correction."
+}

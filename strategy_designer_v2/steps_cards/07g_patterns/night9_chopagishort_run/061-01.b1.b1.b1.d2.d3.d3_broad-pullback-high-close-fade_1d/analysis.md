@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 061-01.b1.b1.b1.d2.d3.d3_broad-pullback-high-close-fade_1d
+idea tested: 061-01.b1.b1.b1.d2.d3.d3_broad-pullback-high-close-fade
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4135 USD
+---
+## Findings
+- **F1:** The tested idea does not show in these folds, and the book mostly earns or loses by being short the market. The cases' unusual 5-day move was +0.43 % (t 0.91, 647 days). The book's daily returns correlate -0.56 with the coins' daily return. On the book's worst 2 % of days the coins rose +8.1 %, and on its best 2 % they fell -9.3 %.
+- **F2:** After the largest down days (bottom seventh of the day's return in 20-day mean absolute moves), the next day's unusual move was +1.13 % (t 2.31 with cases of one day together, 364 days, 1472 cases). The other six sevenths ranged from -0.38 % to +0.23 %, all with |t| under 1.8. This one-day rebound is already held many times in the profile map (falling agitated long: 16 strategies, plus agitated rebound books).
+- **F3:** Days whose high-low range is wide against its 20-day average were followed by an unusual 2-day move of +1.15 % (top fifth, t 1.88, 326 days). Narrow days were followed by -0.65 % (bottom fifth, t -1.53, 310 days). The rank correlation over all cases is only 0.065, and the 3-day horizon shows no order (top fifth +0.99 %, t 1.07). The pattern does not stand out from chance.
+- **F4:** Small up days (z-septiles 3 to 4) were followed by a next-day unusual move of -0.32 % and -0.38 % (t -1.58 and -1.75). In choppy agitated markets it was -0.88 % (t -1.24, 50 days). This is the tested idea's direction, but too weak to tell from 0.
+- **F5:** The brief's own situation is not visible. Closes in the top quarter of the range in choppy agitated markets were followed by -0.76 % over 2 days (t -0.90, n 35, unclustered). Across all markets, the top-fifth close location gave -0.39 % (t -1.57, unclustered) and +0.21 % over 5 days (t 0.32).
+- **F6:** The weekday and profile splits give some unclustered t-values above 2 (Monday next day -0.36 %, t -2.59; Friday +0.39 %, t 2.94; choppy calm narrow days -1.81 % over 2 days, t -2.21 on 36 days). Over more than 60 cells across about 20 angles, a few such values are expected by chance. None of these is a finding.
+
+## Ideas
+- No ideas: Across forecast, close location, past 5-day moves, day size, range width and its 5-day compression, weekday, profile, year and the book's extreme days, the only pattern that clears chance is the next-day rebound after a large down day (F2), which the profile map already holds many times; nothing new stands out.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

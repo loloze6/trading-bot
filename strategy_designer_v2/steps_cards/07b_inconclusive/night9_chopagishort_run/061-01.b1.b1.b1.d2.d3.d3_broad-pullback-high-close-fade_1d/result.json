@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "061-01.b1.b1.b1.d2.d3.d3_broad-pullback-high-close-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43153169999999996,
+  "findings": {
+    "F1": "The test's own result points the predicted way but is too weak (unusual move +0.43 %, t 0.91, 647 case-days). In folds B and C, the effect comes almost entirely from the deepest prior falls. Measured in usual daily moves, the deepest fifth of five-day falls is followed by a 5-day unusual move of +4.83 % for the short (t 3.85, 207 cases, 83 days). The other four fifths give +1.32 %, -0.21 %, -0.05 % and +0.23 % (t 1.29, -0.25, -0.05, 0.27). The Spearman correlation between fall size and unusual move is -0.13 (n 1009).",
+    "F2": "The plan graded the bet on the wrong measure. Ranked by how small the day's gain is against its usual swing, the quartiles give +1.91 %, +0.72 %, +1.16 % and +1.17 % (t 1.89, 0.86, 1.38, 0.98), with no clear gradient. The test's own supporting check found the same: the larger half of |forecast| beats the smaller half by only +0.04 %.",
+    "F3": "The high close matters only after a deep fall. Among up days in the deepest fifth of prior falls, a close in the top quarter of the range gives +5.88 % (t 4.17, 164 cases). A lower close gives -0.20 % (t -0.15, 128 cases). In the shallower fifths the high close adds nothing (q3 -0.71 %, q5 +0.35 %).",
+    "F4": "The prior-fall condition carries the effect. With it, the situation's 5-day unusual move is +1.35 % (t 2.35, 1137 cases, 386 days) on folds B and C. Without it, the move is +0.56 % (t 1.11, 1868 cases).",
+    "F5": "The effect is clearest at short horizons:",
+    "F6": "The deep-fall half holds across most periods and coins, so it is not one regime's artefact:"
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes near the top of that day's high-low range on an up day that follows a fall over the previous five days, its price falls over the next five days, and the deeper that five-day fall against the coin's usual daily swing, the larger the fall.",
+      "consequence": "A trader fades the high-close bounce after a pullback and sizes the short by how deep the pullback was, taking little or no short after a shallow dip.",
+      "name": "deep-pullback high-close fade",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin closes near the top of that day's high-low range on an up day that follows a fall over the previous five days, its price falls over the next two days, and the deeper that five-day fall against the coin's usual daily swing, the larger the fall.",
+      "consequence": "A trader takes a short, quick fade of the high-close bounce after a pullback, larger after deeper pullbacks, and holds it two days rather than five.",
+      "name": "deep-pullback two-day fade",
+      "from": "F1, F3, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d2.d3.d3.b1_deep-pullback-high-close-fade",
+    "061-01.b1.b1.b1.d2.d3.d3.b2_deep-pullback-two-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

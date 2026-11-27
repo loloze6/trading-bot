@@ -1,0 +1,75 @@
+## inprof all: excess by closeloc thirds (clustered)
+                 mean     n  days       t
+cl                                       
+(-0.01, 0.33] -0.0146  19.0  18.0 -0.8204
+(0.33, 0.67]  -0.0203  38.0  28.0 -0.4759
+(0.67, 1.01]  -0.0596  29.0  20.0 -2.0919
+
+## inprof cl>=0.67 by up/down day
+         mean     n  days       t
+r1                               
+False  0.0393   3.0   2.0  0.5170
+True  -0.0710  26.0  19.0 -2.8513
+
+## inprof cl>=0.67 by z sign/size
+                mean     n  days       t
+z                                       
+(-99.0, 0.0]  0.0962   2.0   1.0     NaN
+(0.0, 0.7]   -0.0908  11.0   9.0 -1.7742
+(0.7, 99.0]  -0.0714  13.0  11.0 -3.0197
+
+## inprof cl>=0.67 by coin
+           mean  count
+coin                  
+ADAUSD  -0.0747      1
+BTCUSD  -0.1560      5
+ETHUSD  -0.1002      3
+LINKUSD -0.1714      1
+LTCUSD  -0.0159      3
+XMRUSD  -0.0096      6
+XRPUSD  -0.0712      2
+ZECUSD  -0.0192      8
+
+## inprof corr cl vs ex (spearman)
+-0.21528373979904714
+
+## outprof z>1 by trend (clustered)
+           mean     n  days       t
+trend                              
+choppy   0.0825  28.0  19.0  2.0414
+falling  0.0073  44.0  26.0  0.4397
+rising   0.0259  86.0  35.0  1.1791
+
+## outprof z by bucket, choppy only
+                 mean     n  days       t
+z                                        
+(-99.0, -1.0] -0.0208  15.0  11.0 -0.9435
+(-1.0, -0.3]   0.0019  28.0  15.0  0.1019
+(-0.3, 0.3]   -0.0076  33.0  21.0 -0.3885
+(0.3, 1.0]    -0.0640  22.0  16.0 -2.5973
+(1.0, 2.0]     0.0928  21.0  16.0  1.8343
+(2.0, 99.0]    0.0515   7.0   6.0  1.8190
+
+## outprof z bucket, all trends
+                 mean      n  days       t
+z                                         
+(-99.0, -1.0] -0.0096  194.0  53.0 -0.6652
+(-1.0, -0.3]  -0.0152  217.0  83.0 -1.2965
+(-0.3, 0.3]    0.0159  209.0  90.0  1.1605
+(0.3, 1.0]    -0.0074  162.0  72.0 -0.6353
+(1.0, 2.0]     0.0189  109.0  53.0  1.0295
+(2.0, 99.0]    0.0571   49.0  27.0  1.8361
+
+## all z>2 by coin
+           mean  count
+coin                  
+ADAUSD   0.0977      7
+BTCUSD  -0.0055     13
+DOGEUSD  0.1490      1
+ETHUSD   0.0893     14
+LINKUSD -0.0328      2
+LTCUSD   0.0263     16
+TRXUSD   0.1059      1
+XMRUSD   0.0312      8
+XRPUSD   0.1033     13
+ZECUSD   0.0350     15
