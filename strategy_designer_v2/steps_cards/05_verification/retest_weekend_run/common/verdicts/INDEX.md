@@ -1,0 +1,2 @@
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h: confirmed (fit: exact) [main: 0.0142214; t of the mean 3.1031; cases 600]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue_1h: confirmed (fit: exact) [main: 0.0165699; ordinary t of the mean 5.1638; cases over all coins and windows 316]

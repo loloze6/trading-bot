@@ -1,0 +1,166 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "wd",
+        "class": "strategies.strategy_components.WeekdayComponent",
+        "params": {}
+      },
+      {
+        "id": "hr",
+        "class": "strategies.strategy_components.HourOfDayComponent",
+        "params": {}
+      },
+      {
+        "id": "wk",
+        "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+        "params": {
+          "comparison_period": 48
+        }
+      },
+      {
+        "id": "prior",
+        "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+        "params": {
+          "period": 120,
+          "vol_period": 20,
+          "lag": 48
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VolumeRatioComponent",
+        "params": {
+          "period": 120,
+          "exclude_current": 48,
+          "short_period": 48
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "wd",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            },
+            {
+              "id": "hr",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            },
+            {
+              "id": "wk",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "prior",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "vr",
+              "op": "gt",
+              "value": 1.0
+            }
+          ],
+          [
+            {
+              "id": "wd",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            },
+            {
+              "id": "hr",
+              "op": "between",
+              "low": -0.5,
+              "high": 0.5
+            },
+            {
+              "id": "wk",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "prior",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "vr",
+              "op": "gt",
+              "value": 1.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "weekend_vol_move",
+            "class": "strategies.strategy_components.RecentToPriorVolumeScaledReturnComponent",
+            "params": {
+              "period": 48,
+              "window": 720,
+              "base_period": 120
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              }
+            ]
+          },
+          {
+            "id": "prior_week_move",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 120,
+              "vol_period": 20,
+              "lag": 48
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 48
+  }
+}
