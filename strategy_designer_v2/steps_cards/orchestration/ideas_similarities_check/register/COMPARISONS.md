@@ -204,6 +204,7 @@
 | 013-04_heavy-volume-below-high-breakout_1d | volume_run | 1d | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d (1d) | 0.20 | same period | +0.0009 % (0.23) | 0.03 |
 | 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d | night6_yearlow_run | 1d | 031-01.g1_weekly-gains-carry-into-saturday_1d (1d) | 0.20 | same period | +0.0143 % (1.32) | 0.00 |
 | 025-03_bounce-falling-versus-rising-regime.b1_falling-regime-bounce-all-coins_1d | night4_fallingbounce_run | 1d | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h (1h) | 0.21 | same period | +0.0261 % (1.05) | 0.01 |
+| 067-02.b1.b1.d1_choppy-deepest-month-falls-continue_1d | night9_chopmonth_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.21 | same period | +0.0151 % (1.34) | 0.25 |
 | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d | night9_chopmonth_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.21 | same period | +0.0152 % (1.20) | 0.28 |
 | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d | night9_chopmonth_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.21 | same period | +0.0152 % (1.20) | 0.28 |
 | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around.g1_range-expansion-precedes-rises.d2_wide-range-days-lead-rises.b1_range-versus-norm-both-sides.g1_wide-falling-days-rebound_1d | retest_learned_run | 1d | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d (1d) | 0.21 | same period | +0.0042 % (0.64) | 0.02 |
