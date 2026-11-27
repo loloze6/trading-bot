@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return after long bets (return minus coin's mean 5-bar return)",
+    "value": 0.009971958114735849,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.9764249736434785
+    },
+    "threshold": "confirm: positive with t >= 2 over at least 30 cases; reject: negative with t <= -2 over at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean excess return (median split of entry forecast)",
+    "value": 0.015876421388717674,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3859,
+    "upper half cases": 1929,
+    "lower half cases": 1930
+  },
+  "decided_by": "Mean excess return positive with t >= 2 over at least 30 cases, and the upper-half-minus-lower-half difference is above 0.",
+  "reading": "A case is the first long bet (forecast rise >= 2 points from its lowest level since the last bet, from 0 after flat) in each 5-bar grid cell counted from the window's first row, entered at that bar's close, with cases whose 5 bars run past the window dropped; the coin's mean 5-bar return uses the same grid pooled over its windows; the median split puts ties at the median in the lower half.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

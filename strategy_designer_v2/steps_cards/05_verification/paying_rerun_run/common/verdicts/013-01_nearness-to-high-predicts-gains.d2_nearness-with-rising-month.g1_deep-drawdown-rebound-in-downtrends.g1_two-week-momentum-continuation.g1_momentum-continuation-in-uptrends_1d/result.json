@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9990889766170665,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of demeaned 7-bar forward return on forecast (trending, non-overlapping)",
+    "value": 5.857754519737309,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.857754519737309
+    },
+    "threshold": "positive slope with t >= 2 (and positive timing gain) confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "timing gain: book mean daily return before costs minus market-rise part",
+    "value": 0.0009875717737434166,
+    "passed": true
+  },
+  "counts": {
+    "independent 7-bar cases in trending regime": 3641,
+    "trending cases with forecast above 0": 2280
+  },
+  "decided_by": "The slope is positive with t of 2 or more and the timing gain is positive (confirm rule).",
+  "reading": "The plan's situation is taken as a positive 60-bar return (recomputed from closes inside the window, falling back to the recorded regime where 60 prior bars are missing) with the graded 14-bar rise recorded and a long position, not requiring the 14-bar rise itself to be positive; the coin's mean 7-bar return is the mean over all its 7-bar grid samples in all windows; the timing gain is computed on the book's daily returns before fees (value before the day's trade over the previous value after rebalance).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

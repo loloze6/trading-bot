@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9997279334602978,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 5-bar drift-adjusted forward return on mom28 forecast, trending grid bars",
+    "value": 0.0014890890708102568,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 6.5808672532110695
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check > 0); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus market-rise gain, before costs",
+    "value": 0.0010820164674482586,
+    "passed": true
+  },
+  "counts": {
+    "grid cases on trending bars": 5027,
+    "book days": 3864
+  },
+  "decided_by": "The slope is positive with t >= 2, and the book's mean daily return minus its gain from the market's rise is above 0.",
+  "reading": "Before costs, the book's daily return is the position held after the previous bar times the coin's close-to-close return, averaged over coins per day; the drift is the mean of each coin's non-overlapping 5-bar grid returns over all its windows; the fewer-than-200-cases rule is applied as a minimum count (not observable).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
