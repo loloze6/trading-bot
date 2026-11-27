@@ -115,3 +115,8 @@ config; none or several: refused with a message naming them, and the shard goes 
 run first; the one other run, measure.py from the book's run or else the matched run; none, several, no record
 config). On the 120 books: 85 in their own run, 32 in another run, **3 refused** (002-01.b1 more-coins 1h, 010-03.e1
 1d, 013-01.d2.d2.b1 1d: the same config in `hold2_rerun_run` and `hold_paying_run`). The result file gains `measure`.
+
+**Refinement (designer, 2026-11-27):** several matches whose plan files and `measure.py` are byte-identical are one plan:
+the first in sorted order is used, and the result records every match (`plan_found_in`). Only matches that differ are
+refused. 1 test. Now all 120 books resolve: 85 in their own run, 32 in one other run, 3 in two identical runs (the 3
+above, `hold2_rerun_run` used; shards 4, 4 and 6).

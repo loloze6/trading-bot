@@ -74,9 +74,10 @@ worth a chart), so the record is read on any machine (`orchestration/combine/hel
   `orchestration/ideas_similarities_check/register/books.json` (120 on 2026-11-26). **Its plan and `measure.py`**
   (designer, 2026-11-27): each found by the plan id in the book's own run first; else in the one other run whose
   plan's config equals the book's record config (`04_backtest/<run>/backtests/<id>/config.json`); none or several:
-  refused, the message naming them, and the shard goes on. Why: a run that reran other runs' plans
-  (`paying_rerun_run`) holds only steps 4 and 6. On 2026-11-27: 85 books in their own run, 32 in another, 3 refused
-  (two runs, `hold2_rerun_run` and `hold_paying_run`, hold the same config). The result's `plan` and `measure` say
+  refused, the message naming them, and the shard goes on; several matches whose plan and `measure.py` are
+  byte-identical are one plan (the first in sorted order; the result's `plan_found_in` lists them). Why: a run that reran other runs' plans
+  (`paying_rerun_run`) holds only steps 4 and 6. On 2026-11-27: 85 books in their own run, 32 in one other, 3 in two
+  identical runs (`hold2_rerun_run` and `hold_paying_run`). The result's `plan` and `measure` say
   which files were used.
 
 ## How to call it
