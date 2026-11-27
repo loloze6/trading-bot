@@ -1,3 +1,5 @@
+061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d: 3 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d1.d2_upper-close-after-sharp-week-fall_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: 3 ideas (2 explorations)
 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d: 3 ideas (2 explorations)
 061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d: 3 ideas (2 explorations)

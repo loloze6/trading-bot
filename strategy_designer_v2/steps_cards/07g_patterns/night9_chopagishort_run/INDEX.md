@@ -1,3 +1,5 @@
+061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d: 0 ideas, 2 discoveries (2 explorations)
+061-01.b1.b1.b1.d1.d1.d2_upper-close-after-sharp-week-fall_1d: 0 ideas, 2 discoveries (3 explorations)
 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: 1 ideas (3 explorations)
 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d: 1 ideas, 1 discoveries (3 explorations)
 061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d: 0 ideas, 2 discoveries (3 explorations)
