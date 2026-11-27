@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "070-01.g1_calm-decline-long-run-break_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.43973310000000004,
+  "findings": {
+    "F1": "In falling calm bars, the next-day fade after a break grows with run length, but only at the long end and not steadily. Breaks of runs of 4 or more down days were followed by an excess move of \u22121.80 % (t \u22123.04, 58 cases on 44 days). Breaks of a single down day gave \u22120.24 % (t \u22120.57, 226 cases on 133 days). Runs of 2 gave \u22120.91 % (t \u22121.48) and runs of 3 gave \u22120.26 % (t \u22120.46).",
+    "F2": "The fade keeps growing past the one-day horizon the book holds.",
+    "F3": "In falling calm, the fade is graded more cleanly by how deep the run fell than by how many days it lasted. Depth here is the run's fall divided by the coin's 20-day daily swing, cut into thirds.",
+    "F4": "In falling calm, the fade belongs to up days that break a down run, not to up days in general. Up days that broke no run and closed near their high were followed by +0.73 % (t 1.14, 130 cases). Breaks closing near their high were followed by \u22121.01 % (t \u22122.66, 160 cases on 106 days).",
+    "F5": "The effect and the book's gain sit mostly in 2018.",
+    "F6": "Outside falling calm, run breaks also fade in falling (agitated) bars but not in rising ones.",
+    "F7": "Among the many angles examined, falling calm days showed a weekday pattern: after Saturdays +0.57 % (t 3.12, 269 cases), after Mondays \u22120.84 % (t \u22122.67, 265 cases). It is not graded and stands out only modestly given how many groupings were looked at, so no idea is drawn from it."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, an up day that ends a run of down days is followed by a fall over the next day. The fall is larger the deeper the run's fall was, measured as the run's total return against the coin's typical daily swing over the past 20 days.",
+      "consequence": "A trader fading relief days in a quiet decline should weight each break by how far the run fell relative to the coin's usual daily swing, not by its count of days, and expect little after a shallow run.",
+      "name": "calm decline deep run fade",
+      "from": "F3, F1, F4",
+      "profile": "falling calm",
+      "refs": [
+        "F3",
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, an up day that ends a run of down days is followed by a fall over the next three days. The fall is larger the more down days that run held beyond the first.",
+      "consequence": "A trader fading the end of a long quiet decline should hold the short for about three days rather than one, since the giveback keeps building after the first day.",
+      "name": "calm decline run break three-day fade",
+      "from": "F2, F1",
+      "profile": "falling calm",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "070-01.g1.g1_calm-decline-deep-run-fade",
+    "070-01.g1.g2_calm-decline-run-break-three-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

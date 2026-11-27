@@ -3,6 +3,7 @@ instruments: BTC, ETH, LTC, XMR, XRP, ZEC
 bar: 1d
 side: short only
 source: line 7.g patterns, backtest 068-02_falling-agitated-run-break-fade_1d (idea 068-02_falling-agitated-run-break-fade, brief 068_falling-agitated-first-bounce-fades)
+discovery: 068-02.g2_falling-calm-run-break-fade
 ---
 In a falling, calm market, a day that closes up after an unbroken run of down days tends to be followed by a fall the next day. The longer the run of down days before it, the larger that fall.
 

@@ -1,5 +1,9 @@
+064-01.g1_calm-decline-up-day-fade_1d: no ideas: I tested more than twenty angles (size of scaled moves in and out of the profile, 60-day and 20-day trend, close position, daily range, weekday, window, coin, graded continuation and 5- and 20-day momentum); the few cells near |t| 2.3–2.9 are isolated buckets with no grading, they change sign across windows and coins, and they do not stand out above what that many looks would give by chance.
 064-01_calm-decline-big-rise-fades_1d: 1 ideas (2 explorations)
+070-01.b1.b1_calm-decline-depth-fade_1d: 1 ideas (2 explorations)
 070-01.b1_calm-decline-fade-more-coins_1d: 2 ideas (2 explorations)
+070-01.g1.d2_run-break-fade-every-market_1d: 0 ideas, 2 discoveries (1 explorations)
+070-01.g1_calm-decline-long-run-break_1d: 2 ideas (2 explorations)
 070-01_calm-decline-run-break-fade_1d: 1 ideas, 1 discoveries (2 explorations)
 074-01.b1.d1.d1_run-break-fade-after-sharp-leg_1d: 1 ideas (2 explorations)
 074-01.b1.d1.d2_depth-graded-run-break-fade_1d: 1 ideas (2 explorations)

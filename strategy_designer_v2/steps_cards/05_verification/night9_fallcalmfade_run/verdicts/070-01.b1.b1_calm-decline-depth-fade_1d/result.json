@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-side unusual next-day move on cases",
+    "value": 0.003416351588812362,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 1.601914500962931
+    },
+    "threshold": "positive with t >= 2 (confirm), negative with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "deeper-minus-shallower mean unusual move (split at median |forecast|)",
+    "value": 0.007121556916074768,
+    "passed": true,
+    "welch_t": 2.7312765311595015
+  },
+  "counts": {
+    "distinct case days": 391,
+    "cases": 901,
+    "deeper half cases": 450,
+    "shallower half cases": 451
+  },
+  "decided_by": "The main measure's t is between -2 and 2, or the main confirm comes with a deeper-minus-shallower difference at or below 0 with Welch t above -2.",
+  "reading": "Situation recomputed from closes (an up close after at least two lower closes, the run_loss raw value standing in on the first three bars of a window) and the falling calm profile read from regime == mean_reversion since the profile components are not recorded and need more history than a window; cases are short-side forecast rises of at least 2 points per the holding-period bet definition; t clusters cases by UTC day with a D/(D-1) factor; deeper half is |forecast| strictly above the median, shallower at or below; fewer than 30 case days is reported as not observable per the workflow."
+}
