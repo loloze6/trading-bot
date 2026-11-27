@@ -5,6 +5,7 @@
 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: confirmed (fit: exact) [main: 0.00955733; t of the mean, cases pooled by day 2.8082; cases 339, days 171]
 070-01.b1.b1_calm-decline-depth-fade_1d: inconclusive (fit: adapted) [main: 0.00341635; t of the mean, cases clustered by day 1.60191; distinct case days 391, cases 901, deeper half cases 450, shallower half cases 451]
 070-01.b1_calm-decline-fade-more-coins_1d: inconclusive (fit: adapted) [main: 0.000385327; t of the mean, cases summed per day 0.239169; cases 1667, distinct days 658, cases with runs of 3 or more 469, cases with runs of 1 to 2 1198]
+070-01.g1.d1.b1_deep-slide-run-break-fade-more-coins_1d: inconclusive (fit: exact) [main: 0.00499848; t of the mean, cases clustered by day 1.60454; cases 405, distinct days 218]
 070-01.g1.d1_deep-slide-calm-run-break-fade_1d: inconclusive (fit: adapted) [main: 0.0103484; t of the mean, same-day cases summed 1.82389; case-days 82, cases 117, active bars 119]
 070-01.g1.d2.d1_depth-graded-run-break-fade_1d: inconclusive (fit: exact) [main: 0.0059314; t of the mean (per-day sums) 3.53562; event bars 2126, distinct days 922]
 070-01.g1.d2.d2_falling-market-depth-run-break-fade_1d: confirmed (fit: exact) [main: 0.00553749; t of the mean, cases summed per day 2.57795; cases 1414, distinct days 637]

@@ -2,8 +2,10 @@
 064-01.g1.b1_calm-decline-big-rise-next-day-fade_1d: 0 ideas, 1 discoveries (3 explorations)
 064-01.g1_calm-decline-up-day-fade_1d: no ideas: I tested more than twenty angles (size of scaled moves in and out of the profile, 60-day and 20-day trend, close position, daily range, weekday, window, coin, graded continuation and 5- and 20-day momentum); the few cells near |t| 2.3–2.9 are isolated buckets with no grading, they change sign across windows and coins, and they do not stand out above what that many looks would give by chance.
 064-01_calm-decline-big-rise-fades_1d: 1 ideas (2 explorations)
+070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: 1 ideas, 1 discoveries (2 explorations)
 070-01.b1.b1_calm-decline-depth-fade_1d: 1 ideas (2 explorations)
 070-01.b1_calm-decline-fade-more-coins_1d: 2 ideas (2 explorations)
+070-01.g1.d1.b1_deep-slide-run-break-fade-more-coins_1d: 1 ideas, 1 discoveries (2 explorations)
 070-01.g1.d1_deep-slide-calm-run-break-fade_1d: no ideas: The one pattern that stands out (F1–F3: up days that break a down run fade the next day in a falling market, more so when agitated) is already held by the falling short strategies on the map (074-01.b1.d1.d1 run break fade after sharp leg, 074-01.b1.g1, 060-01.g1.d2.d1), the long reversals (F5) are held many times over, and the choppy-market and weekday readings (F4, F5) do not stand out from chance after the many angles looked at (forecast, run length, 20-day depth, range, close position, weekday, trend by direction, year, book trades).
 070-01.g1.d2.d1_depth-graded-run-break-fade_1d: 4 ideas (2 explorations)
 070-01.g1.d2.d2_falling-market-depth-run-break-fade_1d: 0 ideas, 1 discoveries (2 explorations)

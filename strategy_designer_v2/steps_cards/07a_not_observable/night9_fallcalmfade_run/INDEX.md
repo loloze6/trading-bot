@@ -5,6 +5,7 @@
 070-01.b1.b1.b1_deep-calm-decline-relief-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 070-01.b1.b1_calm-decline-depth-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 070-01.b1_calm-decline-fade-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+070-01.g1.d1.b1_deep-slide-run-break-fade-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 070-01.g1.d1_deep-slide-calm-run-break-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 070-01.g1.d2.d1_depth-graded-run-break-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 070-01.g1.d2.d2_falling-market-depth-run-break-fade_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
