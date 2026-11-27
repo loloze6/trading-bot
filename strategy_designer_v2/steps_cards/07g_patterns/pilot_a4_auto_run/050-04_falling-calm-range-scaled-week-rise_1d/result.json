@@ -1,0 +1,20 @@
+{
+  "line": "7.g",
+  "backtest": "050-04_falling-calm-range-scaled-week-rise_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38131170000000003,
+  "findings": {
+    "F1": "The tested idea's 7-day rise does not grade the next 3 days in falling calm markets. Across the 197 grid cases of the explore windows, the mean 3-day excess return is +0.14 % (t 0.29), and its rank correlation with the 7-day return is 0.06 (p 0.41). The top quintile of 7-day return gains only +0.78 % (t 0.83, 36 cases).",
+    "F2": "The 14-day return grades the next days more clearly than the 7-day return does, but on few cases. Its rank correlation with the excess return is 0.17 at 3 days (p 0.028, 175 cases), 0.20 at 5 days (p 0.044, 104 cases) and 0.30 at 7 days (p 0.010, 74 cases); scaled by the 30-day swing it is 0.31 at 7 days (p 0.008, 71 cases).",
+    "F3": "The gap in F2 comes mostly from the falling side, which a long-only book cannot trade. For the 7-day horizon the top tercile of 14-day return minus the bottom tercile is +10.2 % (t 3.22). On rises only, the weighted mean is +6.2 % with t 1.90 (24 cases, 20 days), and +5.5 % with t 2.05 for the scaled rise (23 cases, 19 days).",
+    "F4": "The rising side's gain sits in a single window. Among 3-day cases after a 14-day rise, w17 averages +5.7 % (9 cases), while the two windows with the most cases are negative: w8 -0.56 % (12 cases) and w12 -0.79 % (14 cases).",
+    "F5": "The book's gain rests on a few days. Its 10 largest days add up to 167 % of the sum of its 345 active days' returns. Only 42 % of active days are up, and the book's mean of +0.12 % a day trails the coins' +0.60 % on the same days.",
+    "F6": "No other angle survives the number of tests run. Same-day range, close location, volume, 30-day drawdown, swing ratio and weekday each produced at most one isolated quintile with |t| of about 2, and no monotone grading (for example volume rank correlation -0.13, p 0.10; weekday means alternating in sign from -1.9 % to +2.0 %)."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "The only graded pattern is the 14-day rise carrying on over the next week in falling calm markets, and on the long side it rests on 23 cases and 19 days, with t near 2, mostly from one window; after about forty angles tested, it does not stand out from chance."
+}

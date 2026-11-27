@@ -1,5 +1,6 @@
 050-02_falling-calm-scaled-week-rise-continuation_1d: not profitable enough [Sharpe 0.4449; Sharpe minus holding's Sharpe -0.3506; Calmar 0.2613]
 050-03_falling-calm-range-scaled-week-fall_1d: not profitable enough [Sharpe 0.04544; Sharpe minus holding's Sharpe -0.7501; Calmar -0.013]
+050-04_falling-calm-range-scaled-week-rise_1d: not profitable enough [Sharpe 0.4393; Sharpe minus holding's Sharpe -0.3562; Calmar 0.2535]
 061-01_falling-calm-scaled-rise-fade_1d: not profitable enough [Sharpe -0.7266; Sharpe minus holding's Sharpe -1.522; Calmar -0.1232]
 064-01_falling-calm-up-day-fades_1d: not profitable enough [Sharpe -0.6103; Sharpe minus holding's Sharpe -1.406; Calmar -0.1293]
 086-01_heavy-volume-up-day-continuation_1d: not profitable enough [Sharpe 0.6053; Sharpe minus holding's Sharpe -0.1902; Calmar 0.2468]

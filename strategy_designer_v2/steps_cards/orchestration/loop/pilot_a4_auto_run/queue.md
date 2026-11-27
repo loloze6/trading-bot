@@ -1,25 +1,25 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 4.18 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 5.01 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 050-04_falling-calm-range-scaled-week-rise | step 2 | 0 | 0.0896 | 0.0896 | candidate |
-| 2 | 077-01_falling-calm-deep-close-drift | 7.g discovery | 1 | 0.2143 | 0.1071 | candidate |
-| 3 | 050-03.c1_calm-downtrend-scaled-rise-continues | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 4 | 061-01.c1_falling-calm-scaled-fall-rebound | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 5 | 064-01.c1_calm-decline-big-rise-follows-through | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 6 | 086-02.c1_calm-decline-five-day-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 7 | 050-03.c2_weekly-scaled-rise-longer-carry | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 8 | 061-01.c2_falling-calm-rise-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 9 | 064-01.c2_calm-decline-bounce-extends-week | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 10 | 086-02.c2_calm-decline-ten-day-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 11 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 12 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 13 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 14 | 040-02.b1_calm-downtrend-falls-continue-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 15 | 050-01.b1_calm-downtrend-fall-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 16 | 050-02.b1_calm-downtrend-week-rise-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 1 | 077-01_falling-calm-deep-close-drift | 7.g discovery | 1 | 0.2143 | 0.1071 | candidate |
+| 2 | 050-03.c1_calm-downtrend-scaled-rise-continues | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 3 | 061-01.c1_falling-calm-scaled-fall-rebound | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 4 | 064-01.c1_calm-decline-big-rise-follows-through | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 5 | 086-02.c1_calm-decline-five-day-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 6 | 050-03.c2_weekly-scaled-rise-longer-carry | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 7 | 061-01.c2_falling-calm-rise-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 8 | 064-01.c2_calm-decline-bounce-extends-week | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 9 | 086-02.c2_calm-decline-ten-day-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 10 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 11 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 12 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 13 | 040-02.b1_calm-downtrend-falls-continue-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 14 | 050-01.b1_calm-downtrend-fall-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 15 | 050-02.b1_calm-downtrend-week-rise-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 16 | 050-04.b1_range-scaled-week-rise-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
 | 17 | 064-01_falling-calm-stretch-keeps-falling | 7.g discovery | 2 | 0.2143 | 0.0714 | candidate |
 | 18 | 075-01_falling-calm-up-stretch-rises | 7.g discovery | 2 | 0.2143 | 0.0714 | candidate |
 | 19 | 075-02_falling-calm-down-stretch-falls | 7.g discovery | 2 | 0.2143 | 0.0714 | candidate |
@@ -59,6 +59,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | 53 | 058-01.g2.b1.d2.b1.d2.d2.g2_calm-slide-bounce-fades | 7.g | 7 | 0.1218 | 0.0152 | candidate |
 | - | 050-02_falling-calm-scaled-week-rise-continuation | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 inconclusive (+1.50); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 050-03_falling-calm-range-scaled-week-fall | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (+0.19); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
+| - | 050-04_falling-calm-range-scaled-week-rise | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 inconclusive (+1.26); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) |
 | - | 060-02_falling-calm-low-to-close-fade | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 -; step 6 - |
 | - | 061-01_falling-calm-scaled-rise-fade | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (-1.44); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 064-01_falling-calm-up-day-fades | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 no effect (+0.45); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |

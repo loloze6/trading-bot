@@ -1,0 +1,1 @@
+050-04_falling-calm-range-scaled-week-rise_1d: no ideas: The only graded pattern is the 14-day rise carrying on over the next week in falling calm markets, and on the long side it rests on 23 cases and 19 days, with t near 2, mostly from one window; after about forty angles tested, it does not stand out from chance.

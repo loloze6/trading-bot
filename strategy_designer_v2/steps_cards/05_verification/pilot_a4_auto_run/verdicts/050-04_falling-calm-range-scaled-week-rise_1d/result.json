@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 3-day excess return (forward return minus coin's mean 3-day return)",
+    "value": 0.006971674611877249,
+    "statistic": {
+      "name": "t of weighted mean, cases of one day summed",
+      "value": 1.261735692910182
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting check passes; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess above median forecast minus below median",
+    "value": 0.005827489657352882,
+    "passed": true
+  },
+  "counts": {
+    "cases": 389,
+    "days": 204
+  },
+  "decided_by": "The t of the main measure lies between -2 and 2.",
+  "reading": "The falling-calm profile is read from the recorded regime ('unknown' = no veto fired) and the 7-day rise from the sign of the raw component (7-day close return where missing); all coins in the record are used; the t of the weighted mean uses per-day sums of weighted deviations (clustered standard error with G/(G-1) correction); the median split drops cases exactly at the median and compares unweighted mean excess returns.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.262 (not below 1), 389 cases (30 needed)",
+    "t_in_idea_direction": 1.261735692910182,
+    "cases": 389
+  }
+}
