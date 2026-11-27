@@ -185,3 +185,60 @@ def test_with_header_field():
     t = with_header_field("---\nbar: 1d\nsource: x\n---\nBody.\n", "discovery", "003-01.g1_p")
     assert header_fields(t) == {"bar": "1d", "source": "x", "discovery": "003-01.g1_p"} and t.endswith("---\nBody.\n")
     assert header_fields(with_header_field(t, "discovery", "z"))["discovery"] == "z"
+
+
+def test_a_discovery_s_brief_counts_as_its_own_line(tmp_path):
+    """Next steps B10 (the operator, 2026-11-27): a tested idea of a brief written from a discovery counts as an analysis
+    of "7.g discovery", one per brief in a run, not of step 2; a brief written before the field (night 8) is known by the
+    loop's line that wrote it from the discovery; a follow-up keeps its own line's record."""
+    run = "e_run"
+    briefs = tmp_path / "01_brief" / run / "briefs"; briefs.mkdir(parents=True)
+    (briefs / "004_found.md").write_text("---\nbar: 1d\ndiscovery: 003-01.g1_a-pattern\n---\nA theory.\n")
+    (briefs / "005_older.md").write_text("---\nbar: 1d\nsource: line 7.g patterns, backtest 003-01.g1_x_1d\n---\nA theory.\n")
+    (briefs / "003_b.md").write_text("---\nbar: 1d\n---\nThe run's own theory.\n")
+    loop = tmp_path / "orchestration" / "loop" / run; loop.mkdir(parents=True)
+    (loop / "loop.jsonl").write_text(json.dumps({"discovery": f"07g_patterns/{run}/003-01.g1_x_1d/discoveries/003-01.g1.g1_older.md",
+                                                 "brief": "005_older", "ideas": 1, "outcome": "ok"}) + "\n")
+    for iid, brief, s5, s6 in (("004-01_a", "004_found", "confirmed", "profitable enough"),
+                               ("004-02_b", "004_found", "inconclusive", "not profitable enough"),   # same analysis
+                               ("005-01_c", "005_older", "inconclusive", "not profitable enough"),
+                               ("003-01_d", "003_b", "inconclusive", "not profitable enough"),
+                               ("004-01.b1_e", "004_found", "confirmed", "profitable enough")):       # a follow-up: 7.b
+        mark_tested(tmp_path, run, iid, s5, s6)
+        p = tmp_path / "03_test_plan" / run / "plans" / f"{iid}_1d.md"
+        p.write_text(p.read_text().replace("outcome: plan", f"brief: {brief}\noutcome: plan"))
+    r = s.records(tmp_path)
+    assert r[s.DISCOVERY] == (1, 2, 0.5) and r["step 2"] == (0, 1, 1 / 3) and r["7.b"] == (1, 1, 2 / 3)
+    # the ranking scores the brief's own ideas with that record, and names it
+    ideas = tmp_path / "02_ideation" / run / "ideas"
+    (ideas).mkdir(parents=True)
+    (ideas / "004-03_f.md").write_text("---\nbrief: 004_found\ninstruments: BTC\nbar: 1d\nperiod: folds A, B, C, D\n---\n"
+                                       "Idea: six\nConsequence: c.\n")
+    row = next(x for x in s.rank(run, tmp_path) if x["idea"] == "004-03_f")
+    assert (row["line"], row["record"], row["generation"]) == (s.DISCOVERY, 0.5, 1)
+
+
+def test_line_7g_is_called_only_when_its_idea_would_rank_first(tmp_path):
+    """Next steps B10: after a test, 7.g's idea scores the higher of the records "7.g" and "7.g discovery" over 1 plus its
+    generation; called when that is at least the best waiting idea's priority, or when nothing waits; never while a
+    brief's own idea waits."""
+    run = "f_run"; ideas = tmp_path / "02_ideation" / run / "ideas"
+    idea(ideas, "003-01_x", "one")
+    mark_tested(tmp_path, run, "003-01_x", "inconclusive", "not profitable enough")
+    call, why = s.discovery_call(run, "003-01_x", tmp_path)
+    assert call and "nothing waits" in why and "score 0.25" in why          # (0 + 1) / (0 + 2) / (1 + 1)
+    idea(ideas, "003-02_y", "two")                                          # a brief's own idea waits: it goes first
+    call, why = s.discovery_call(run, "003-01_x", tmp_path)
+    assert not call and "brief's own idea" in why
+    mark_tested(tmp_path, run, "003-02_y", "inconclusive", "not profitable enough")
+    idea(tmp_path / "07b_inconclusive" / run / "003-01_x_1d" / "ideas", "003-01_x.b1_p", "three")
+    call, why = s.discovery_call(run, "003-02_y", tmp_path)                 # 7.b's idea: 0.5 / 2 x w 0.5 = 0.125
+    assert call and "priority 0.125" in why
+    for k in range(1, 5):                                                   # 7.b succeeds in 4 other runs
+        mark_tested(tmp_path, f"g{k}_run", f"009-0{k}_z.b1_q", "confirmed", "profitable enough")
+    idea(tmp_path / "07b_inconclusive" / run / "003-01_x_1d" / "ideas", "003-01_x.b2_r", "four")
+    mark_tested(tmp_path, run, "003-01_x.b1_p", "inconclusive", "not profitable enough")
+    # 7.b: 4 of 5 analyses, (4 + 1) / (5 + 2) = 0.7143; its waiting 003-01_x.b2_r: 0.7143 / 2 = 0.3571, x 0.5 = 0.1785; 7.g's idea
+    # after 003-01_x.b1_p, a generation deeper: 0.5 / 3 = 0.1667: not called
+    call, why = s.discovery_call(run, "003-01_x.b1_p", tmp_path)
+    assert not call and "score 0.1667" in why and "priority 0.1785" in why

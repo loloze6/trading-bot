@@ -2,7 +2,7 @@
 # One run of run_idea on a seeded run (no model call), then the files it wrote copied to $P/out_<label> and the checkout
 # restored (build_a4_join/run_one.sh, adapted for B10).
 #   PROOF_DIR=... VENV_PYTHON=... run_one.sh LABEL CODE SEED_G [RUN_FROM BACKTEST]
-#   CODE: "new" (this branch's run_idea.py and select_next.py) or "old" (those of ccr-6624e33e-aakrpv, put back for the
+#   CODE: "new" (this branch's run_idea.py and select_next.py) or "old" (those of this build's base, 7b7f0e8bbd8, put back for the
 #   run, then restored); SEED_G: 1 seeds line 7.g's index line and outputs with the others (no line is called), 0 leaves
 #   them out (line 7.g's call rule is then decided). Default: night 9's 074-01.b1.g1, as build A4's proof.
 set -e
@@ -14,7 +14,7 @@ S=${4:-night9_fallcalmfade_run}; R=${5:-074-01.b1.g1_convex-deep-run-fade_1d}; R
 I=${R%_*}
 CODEFILES="strategy_designer_v2/steps_cards/orchestration/run_idea/helper/run_idea.py strategy_designer_v2/steps_cards/orchestration/select_next/helper/select_next.py"
 cd $REPO
-if [ "$CODE" = old ]; then for f in $CODEFILES; do cp $f $P/keep_$(basename $f); git show ccr-6624e33e-aakrpv:$f > $f; done; fi
+if [ "$CODE" = old ]; then for f in $CODEFILES; do cp $f $P/keep_$(basename $f); git show 7b7f0e8bbd8:$f > $f; done; fi
 cd $SC
 # seed: the plan, the verdict, step 7's index lines and outputs (7.g's only if SEED_G=1)
 mkdir -p 03_test_plan/$RUN/plans 05_verification/$RUN/verdicts
