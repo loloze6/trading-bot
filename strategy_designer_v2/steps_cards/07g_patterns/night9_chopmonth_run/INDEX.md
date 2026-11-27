@@ -15,6 +15,7 @@
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: 2 ideas (2 explorations)
 067-01.b1_choppy-weak-month-keeps-falling_1d: 1 ideas (2 explorations)
 067-01_choppy-strong-month-rise-continues_1d: 2 ideas (2 explorations)
+067-02.b1.b1.d1_choppy-deepest-month-falls-continue_1d: 1 ideas (2 explorations)
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 067-02.b1_choppy-plain-month-fall-continues_1d: 1 ideas (2 explorations)
 067-02.b2_agitated-choppy-month-fall-continues_1d: no ideas: Across about fifteen angles (the 30-day, 7-day and 1-day returns, range, close position, volatility, the 60-day trend, weekday, windows, coins and the book's extreme days), no pattern held across grid offsets and windows strongly enough to count after so many looks. The one consistent effect, the next-day reversal of the close position, is already held in the profile map.

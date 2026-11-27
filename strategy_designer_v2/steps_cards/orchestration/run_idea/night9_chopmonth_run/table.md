@@ -25,21 +25,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-02.b1_choppy-plain-month-fall-continues | 067-02_choppy-weak-month-fall-continues | plan | inconclusive (-1.55) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1_choppy-deep-month-fall-continues; 7.g: 067-02.b1.g1_choppy-swing-scaled-month-fall | 1.11 | 12.0 |
 | 067-02.b2_agitated-choppy-month-fall-continues | 067-02_choppy-weak-month-fall-continues | plan | inconclusive (+1.01) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b2.b1_choppy-month-fall-continues, 067-02.b2.b2_choppy-month-fall-three-days; 7.g: no ideas: Across about fifteen angles (the 30-day, 7-day and 1-day returns, range, close position, volatility, the 60-day trend, weekday, windows, coins and the book's extreme days), no pattern held across grid offsets and windows strongly enough to count after so many looks. The one consistent effect, the next-day reversal of the close position, is already held in the profile map. | 1.05 | 12.3 |
 | 067-02.b1.b1_choppy-deep-month-fall-continues | 067-02.b1_choppy-plain-month-fall-continues | plan | confirmed (+2.62) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-02.b1.b1.d1_choppy-deepest-month-falls-continue, 067-02.b1.b1.d2_agitated-choppy-month-fall-continues, 067-02.b1.b1.d3_calm-choppy-month-rise-continues; 7.g: 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls | 1.16 | 12.2 |
+| 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | confirmed (+2.60) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks, 067-02.b1.b1.d1.d2_agitated-choppy-deep-falls; 7.g: 067-02.b1.b1.d1.g1_choppy-agitated-month-falls-continue | 1.32 | 13.3 |
 
 ## Consumption
-21 ideas, 23.33 USD, 250.9 minutes in all.
+22 ideas, 24.65 USD, 264.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.73 | 9.5 |
-| step4_backtest | 0.00 | 172.6 |
-| step5_verdict | 4.07 | 14.0 |
-| step6_check | 0.00 | 0.9 |
-| chart_files | 0.00 | 0.4 |
-| step7_7.d | 2.32 | 7.6 |
+| step3_plan | 1.82 | 10.0 |
+| step4_backtest | 0.00 | 180.8 |
+| step5_verdict | 4.26 | 15.0 |
+| step6_check | 0.00 | 1.0 |
+| chart_files | 0.00 | 0.5 |
+| step7_7.d | 2.88 | 9.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 5.71 | 17.0 |
-| step7_7.g | 9.50 | 28.3 |
-| similarity_check | 0.00 | 0.4 |
+| step7_7.g | 9.98 | 30.1 |
+| similarity_check | 0.00 | 0.6 |
