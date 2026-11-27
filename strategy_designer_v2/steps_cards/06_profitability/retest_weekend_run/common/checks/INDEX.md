@@ -1,0 +1,2 @@
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d1_heavy-weekend-extends-week_1h: not profitable enough [Sharpe 0.9664; Sharpe minus holding's Sharpe -0.1332; Calmar 0.9637]
+026-04_thinner-weekend-larger-reversal.b2_heavy-weekend-moves-continue.d1_heavy-weekend-continuation-calm-coins.d2_heavy-weekend-monday-morning-continuation.d2_heavy-weekend-falls-continue_1h: not profitable enough [Sharpe 0.4604; Sharpe minus holding's Sharpe -0.6392; Calmar 0.3978]

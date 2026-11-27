@@ -1400,8 +1400,12 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
         {symbol: expected_step}
         if (all_have_timestamp and expected_step is not None) else None
     )
+    # E12 (2026-11-27): only the observed pooled IC and the method label are read here; the resamples' p-value
+    # was computed and dropped. ic_only returns the same two values without the n_resamples resamples, which
+    # on a gapped hourly symbol pooled over 32 windows ran for more than a day (BTC: 93,205 bars in 1-2 bar
+    # segments, the expected step being read from a first pair that spans a hole).
     boot = stationary_block_bootstrap_ic_significance(
-        {symbol: records}, expected_step_by_symbol=expected_step_by_symbol,
+        {symbol: records}, expected_step_by_symbol=expected_step_by_symbol, ic_only=True,
     )
     return boot.get('pooled_ic'), boot['method']
 
