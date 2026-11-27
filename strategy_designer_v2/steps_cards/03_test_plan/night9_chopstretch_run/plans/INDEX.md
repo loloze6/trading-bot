@@ -24,6 +24,7 @@
 076-01_agitated-wide-high-close-fades_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 077-01.b1.b1.b1_extreme-swing-scaled-moves-carry_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 077-01.b1.b1_graded-swing-rise-carries-on_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
+077-01.b1.b2.b1_choppy-calm-large-rises-carry_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 077-01.b1.b2_choppy-calm-swing-momentum_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 077-01.b1_swing-rise-carry-more-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 077-01_choppy-calm-swing-rise-carries_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

@@ -22,7 +22,9 @@
 076-01.b1.b1_agitated-wide-upper-close-fade_1d: 1 ideas (3 explorations)
 076-01.b1_agitated-wide-close-fade-more-coins_1d: no ideas: The brief's fade of wide high-closing agitated days is absent in rising markets and too small to cover costs (F1, F5). Its one strong cell (falling agitated, F6) rests on two windows and repeats a close-height fade the map already holds. The clear pattern in the book, the rebound after wide low-closing days (F2–F4, F8), is a family the map already holds, and the choppy calm cell is ungraded and indistinguishable from chance across the many angles examined (F7).
 076-01_agitated-wide-high-close-fades_1d: no ideas: Across the many angles examined (close location by width, the day's and the 5-day scaled return by trend and agitation, weekday, year, coin, forecast quarters), only the falling-agitated next-day reversal (F1, F2) stands out. It is already held by 058-02.b1.g1.b1.b1 and the falling-agitated rebound family. The candidate for the empty choppy-agitated short cell (F4, t −1.94) and the tested wide-high-close fade (F3, t −1.88) do not clear the bar that this many looks require.
+077-01.b1.b1.b1_extreme-swing-scaled-moves-carry_1d: 2 ideas (2 explorations)
 077-01.b1.b1_graded-swing-rise-carries-on_1d: 1 ideas, 2 discoveries (2 explorations)
+077-01.b1.b2.b1_choppy-calm-large-rises-carry_1d: no ideas: The patterns that are measured with enough cases (F3, F4) repeat effects the profile map already holds. The ones specific to choppy calm (F1's large rises, F5's fade of large up days, F6's weekdays) rest on 2 to 32 days at t near 2 after about 60 cells were examined, so none stands out from chance enough to found an idea.
 077-01.b1.b2_choppy-calm-swing-momentum_1d: 0 ideas, 3 discoveries (2 explorations)
 077-01.b1_swing-rise-carry-more-coins_1d: 1 ideas (2 explorations)
 077-01_choppy-calm-swing-rise-carries_1d: 2 ideas (2 explorations)

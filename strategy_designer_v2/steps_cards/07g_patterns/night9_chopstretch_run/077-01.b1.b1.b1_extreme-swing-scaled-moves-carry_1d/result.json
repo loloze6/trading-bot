@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "077-01.b1.b1.b1_extreme-swing-scaled-moves-carry_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38982870000000003,
+  "findings": {
+    "F1": "On the non-overlapping 7-day grid, the swing-scaled 14-day move (14-day return over the 30-day daily swing \u00d7 \u221a14) carries forward only when the coin is calm. With calm meaning a 30-day swing at or below the median of its last 120 days, the mean of z \u00d7 the unusual 7-day move is +0.057 (t 4.13, 215 cases); with the coin agitated it is \u22120.016 (t \u22121.28, 192 cases).",
+    "F2": "The calm carry is not limited to the choppy market the brief names. For calm cases with |z| > 1, the signed unusual 7-day move is +5.6 % in falling markets (t 3.11, 61 cases), +11.0 % in choppy markets (t 3.14, 22 cases) and +5.8 % in rising markets (t 2.22, 73 cases). In agitated markets it is negative in all three trends (\u22123.6 %, \u22127.6 %, \u22123.0 %; t \u22121.1 to \u22121.4).",
+    "F3": "The calm carry is roughly graded by size but not cleanly monotonic. By |z| bin, the signed unusual 7-day move is +0.8 % for |z| \u2264 0.5 (t 0.37, 62 cases), +3.9 % for 0.5\u20131 (t 2.37), +3.3 % for 1\u20131.5 (t 1.87), +14.2 % for 1.5\u20132 (t 3.37, 19 cases) and +4.7 % above 2 (t 1.71, 32 cases). The agitated bins fall from +3.6 % to about \u22123 % as |z| grows.",
+    "F4": "The calm carry for |z| > 1 holds when cases of the same day are counted together: +5.8 %, day-clustered t 2.47, 102 cases, using an expanding calm rank. It is stronger after rises (+8.1 %, day t 2.28, 60 cases) than after falls (+2.4 %, day t 1.13, 42 cases).",
+    "F5": "The calm carry is not steady across time or coins, which weakens F1 to F4. By year it is +7.1 % in 2018, \u22120.7 % in 2019 (t \u22120.40), +11.0 % in 2020 and +7.6 % in 2021 (t 3.15). Eight of the nine windows with at least 5 cases are positive (w9 is \u22122.7 %). By coin, ETH is +8.1 % (t 2.79) and BTC is \u22120.6 % (t \u22120.30).",
+    "F6": "The standardised version of the move, the tested forecast's input, predicts the calm unusual 7-day move a little better than the raw swing-scaled move. Its correlation with the outcome is 0.286, against 0.232 for the raw move (215 calm cases).",
+    "F7": "Across all bars, the 3-day reversal after a coin's largest one-day falls against its swing is small. The bottom quintile of the one-day move is followed by a +1.0 % unusual 3-day move (t 2.27, 519 cases), and the other quintiles are near 0. The profile map already holds many one-day-fall rebound books, so this is not new.",
+    "F8": "The tested book cannot pay at this size. Its unusual move is +0.20 % per case (t 0.31) against a 0.22 % trade cost, and the plan's own top-third versus bottom-third growth check fails (Welch t 0.17). The carry in F1 and F2 is far larger per case but comes from only about 100 to 215 grid cases in folds B and C."
+  },
+  "ideas": [
+    {
+      "idea": "In a calm market, a coin's 14-day return measured in units of its own 30-day daily swing keeps moving the same way over the next 7 days, and the larger the move in swing units, the further it carries.",
+      "consequence": "When a coin's swing is low against its recent past, a trader leans with its two-week move in proportion to its size in swing units, up or down, and stops leaning once the coin turns agitated.",
+      "name": "calm swing-scaled move carry",
+      "from": "F1, F2, F3, F4, F6",
+      "profile": "calm",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a calm market, a coin whose 14-day rise is large against its 30-day daily swing keeps rising over the next 7 days, the more so the larger the rise in swing units.",
+      "consequence": "A trader in a low-swing market adds to a coin after a two-week rise that is large in swing units, with the size of the position growing with the rise.",
+      "name": "calm swing-scaled rise continues",
+      "from": "F2, F3, F4",
+      "profile": "calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "077-01.b1.b1.b1.g1_calm-swing-scaled-move-carry",
+    "077-01.b1.b1.b1.g2_calm-swing-scaled-rise-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

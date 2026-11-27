@@ -22,7 +22,9 @@
 076-01.b1.b1_agitated-wide-upper-close-fade_1d: 1 ideas (2 explorations)
 076-01.b1_agitated-wide-close-fade-more-coins_1d: 1 ideas (2 explorations)
 076-01_agitated-wide-high-close-fades_1d: 1 ideas (2 explorations)
+077-01.b1.b1.b1_extreme-swing-scaled-moves-carry_1d: 1 ideas (2 explorations)
 077-01.b1.b1_graded-swing-rise-carries-on_1d: 2 ideas (2 explorations)
+077-01.b1.b2.b1_choppy-calm-large-rises-carry_1d: no ideas: The theme's effect is not in the data. The positive mean rests on a few days of 2021 and a few single coins (F1, F2, F3), with no reliable grading (F4) and no clearer horizon (F5). The test already used all the data available (F6), so no idea on the theme is worth testing.
 077-01.b1.b2_choppy-calm-swing-momentum_1d: 1 ideas (2 explorations)
 077-01.b1_swing-rise-carry-more-coins_1d: 2 ideas (2 explorations)
 077-01_choppy-calm-swing-rise-carries_1d: 1 ideas (1 explorations)

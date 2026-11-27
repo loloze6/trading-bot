@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean signed unusual 7-day move",
+    "value": 0.008323677930770199,
+    "statistic": {
+      "name": "t, cases of one day together",
+      "value": 0.5245817156491388
+    },
+    "threshold": "above 0 with day-clustered t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third of |forecast|: mean signed unusual move (Welch t >= 1)",
+    "value": 0.17009256178946372,
+    "passed": false
+  },
+  "counts": {
+    "grid cases": 773,
+    "distinct days": 228,
+    "top third cases": 257,
+    "bottom third cases": 257
+  },
+  "decided_by": "The day-clustered t of the weighted mean signed unusual move lies between -2 and 2.",
+  "reading": "The choppy calm profile is read from the recorded `regime` column (regime 'unknown' = no veto fired = the profile, since the detector's 365-day components cannot be rebuilt inside the windows), the situation's side is the sign of the raw swing-scaled 14-day move, the coin's mean 7-day return is taken over every window's non-overlapping 7-bar grid, the day-clustered t sums |forecast|-weighted deviations per UTC day with a D/(D-1) correction, and the thirds are the floor(n/3) cases with the largest and smallest |forecast|."
+}

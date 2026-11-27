@@ -33,20 +33,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-02.b1.b1.b2.b1_choppy-downside-stretch-more-coins | 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling | plan | inconclusive (+0.95) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data as the theory states it. The move after a stretch below the average does not grow with the stretch (F2, F4), the mirror side does not carry (F5), and the mild excess fall is spread unevenly over periods and profiles rather than living clearly in one (F6), with no more data left to test it on (F1).; 7.g: 067-02.b1.b1.b2.b1.g1_choppy-downside-stretch-ten-days | 1.78 | 14.4 |
 | 074-02.b1.b1.b1_falling-calm-stretch-keeps-falling | 074-02.b1.b1_calm-stretch-falls-more-coins | plan | inconclusive (+1.84) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 074-02.b1.b1.b1.b1_quiet-stretch-keeps-falling; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.89 | 12.0 |
 | 076-01.b1.b1.b1_falling-agitated-wide-close-fade | 076-01.b1.b1_agitated-wide-upper-close-fade | plan | inconclusive (+1.76) | not profitable enough (failed: Calmar) | - | 7.b: 076-01.b1.b1.b1.b1_falling-agitated-wide-up-day-fade; 7.g: 076-01.b1.b1.b1.g1_choppy-agitated-wide-close-fade | 2.23 | 13.6 |
+| 077-01.b1.b1.b1_extreme-swing-scaled-moves-carry | 077-01.b1.b1_graded-swing-rise-carries-on | plan | inconclusive (+0.52) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 077-01.b1.b1.b1.b1_swing-scaled-move-carries-proportionally; 7.g: 077-01.b1.b1.b1.g1_calm-swing-scaled-move-carry, 077-01.b1.b1.b1.g2_calm-swing-scaled-rise-continues | 1.05 | 11.4 |
+| 077-01.b1.b2.b1_choppy-calm-large-rises-carry | 077-01.b1.b2_choppy-calm-swing-momentum | plan | inconclusive (+0.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: no ideas: The theme's effect is not in the data. The positive mean rests on a few days of 2021 and a few single coins (F1, F2, F3), with no reliable grading (F4) and no clearer horizon (F5). The test already used all the data available (F6), so no idea on the theme is worth testing.; 7.g: no ideas: The patterns that are measured with enough cases (F3, F4) repeat effects the profile map already holds. The ones specific to choppy calm (F1's large rises, F5's fade of large up days, F6's weekdays) rest on 2 to 32 days at t near 2 after about 60 cells were examined, so none stands out from chance enough to found an idea. | 1.18 | 12.4 |
 
 ## Consumption
-29 ideas, 34.30 USD, 278.8 minutes in all.
+31 ideas, 36.54 USD, 302.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 5.24 | 16.2 |
-| step4_backtest | 0.00 | 168.0 |
-| step5_verdict | 5.18 | 18.2 |
-| step6_check | 0.00 | 1.2 |
-| chart_files | 0.00 | 0.5 |
+| step3_plan | 5.47 | 17.7 |
+| step4_backtest | 0.00 | 184.2 |
+| step5_verdict | 5.58 | 19.6 |
+| step6_check | 0.00 | 1.3 |
+| chart_files | 0.00 | 0.6 |
 | step7_7.e | 0.00 | 0.1 |
 | step7_7.a | 0.42 | 1.2 |
 | step7_7.d | 0.00 | 0.1 |
 | step7_7.c | 0.00 | 0.1 |
-| step7_7.b | 9.98 | 31.1 |
-| step7_7.g | 13.49 | 42.3 |
+| step7_7.b | 10.75 | 33.2 |
+| step7_7.g | 14.33 | 44.8 |
