@@ -13,22 +13,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 074-01.b1.b1.b2_agitated-downtrend-wide-day-fade | 074-01.b1.b1_falling-wide-up-day-high-close-fade | plan | inconclusive (+1.97) | not profitable enough (failed: Calmar) | - | 7.b: 074-01.b1.b1.b2.b1_agitated-downtrend-range-multiple-fade; 7.g: no ideas: The tested fade shows its sign only in falling agitated markets (F1, F4) and has no width grading (F2). The only strong graded pattern, the wide-down-day rebound in falling agitated markets (F5), is already held by many proven strategies in that cell. The other angles (weekday, choppy agitated up days, close position) did not stand out beyond chance after testing this many angles (F6). | 1.33 | 15.9 |
 | 074-01.g1_falling-agitated-wide-up-fade | 074-01_falling-wide-up-day-fade | plan | confirmed (+3.12) | not profitable enough (failed: Calmar) | - | 7.d: 074-01.g1.d1_wide-close-high-bounce-fade; 7.g: 074-01.g1.g1_falling-wide-up-day-fade, 074-01.g1.g2_recent-fall-wide-bounce-fade | 1.17 | 8.2 |
 | 074-01.g1.d1_wide-close-high-bounce-fade | 074-01.g1_falling-agitated-wide-up-fade | plan | confirmed (+3.32) | profitable enough | unseen_2016_2017: holds; unseen_2026: holds | 7.g: no ideas: The only patterns that stand out are the tested fade itself (F1–F3) and the falling agitated down-day rebound (F5), which the profile map already holds 16 times; the second-day give-back (F4, t 2.23) does not stand out after this many angles, and weekdays (F6) show nothing. | 0.77 | 8.3 |
+| 072-01.b1.b1_choppy-deep-close-more-coins | 072-01.b1_choppy-deep-close-five-day | plan | inconclusive (+0.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-01.b1.b1.b1_choppy-deep-close-falling-week; 7.g: 072-01.b1.b1.g1_choppy-convex-deep-close-fall, 072-01.b1.b1.g2_choppy-deep-up-day-fade | 1.15 | 12.8 |
+| 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | 074-01.b1.b1.b1_falling-widest-up-day-fade | plan | confirmed (+2.20) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade, 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade; 7.g: 074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade, 074-01.b1.b1.b1.b1.g2_falling-heavy-volume-bounce-fade | 1.22 | 13.0 |
+| 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | confirmed (+2.48) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade, 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade; 7.g: 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade, 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade | 1.27 | 13.4 |
 
 ## Consumption
-9 ideas, 10.06 USD, 90.1 minutes in all.
+12 ideas, 13.69 USD, 129.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.96 | 6.2 |
-| step4_backtest | 0.00 | 53.4 |
-| step5_verdict | 1.72 | 6.6 |
-| step6_check | 0.00 | 0.3 |
+| step3_plan | 1.26 | 7.9 |
+| step4_backtest | 0.00 | 79.7 |
+| step5_verdict | 2.36 | 9.1 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 0.42 | 1.4 |
-| step7_7.b | 2.35 | 6.9 |
-| step7_7.g | 4.61 | 13.3 |
-| similarity_check | 0.00 | 0.2 |
+| step7_7.d | 1.34 | 4.3 |
+| step7_7.b | 2.75 | 8.2 |
+| step7_7.g | 5.99 | 17.5 |
+| similarity_check | 0.00 | 0.4 |
 | unseen_test | 0.00 | 1.6 |

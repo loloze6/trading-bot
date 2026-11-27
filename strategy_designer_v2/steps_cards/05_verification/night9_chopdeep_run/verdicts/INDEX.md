@@ -1,5 +1,8 @@
+072-01.b1.b1_choppy-deep-close-more-coins_1d: inconclusive (fit: adapted) [main: 0.000587973; OLS slope t, clustered by day 0.693735; grid cases 1640, distinct days 429, deepest third cases 547, shallowest third cases 547]
 072-01.b1_choppy-deep-close-five-day_1d: inconclusive (fit: exact) [main: 0.000569626; OLS slope t 1.08172; grid cases with a nonzero forecast 819, distinct days 374]
 072-01_choppy-deep-close-continuation_1d: inconclusive (fit: adapted) [main: 1.66576e-05; OLS t, SE clustered by day 0.0985735; in-profile bars 4219, distinct days 1901, up-day bars 2184, down-day bars 2029]
+074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d: confirmed (fit: exact) [main: 0.0246476; t of the mean, cases of a day summed 2.47702; cases 126, distinct case days 52]
+074-01.b1.b1.b1.b1_falling-wide-high-close-fade_1d: confirmed (fit: adapted) [main: 0.00697724; t of the mean, cases grouped by day 2.19778; case days 471, cases 1143]
 074-01.b1.b1.b1_falling-widest-up-day-fade_1d: inconclusive (fit: adapted) [main: 0.00472924; t of the mean, cases summed per day 1.17784; cases 893, distinct days 416]
 074-01.b1.b1.b2_agitated-downtrend-wide-day-fade_1d: inconclusive (fit: adapted) [main: 0.0147446; t of the mean, deviations summed per day 1.97422; distinct days with cases 160, cases 313]
 074-01.b1.b1_falling-wide-up-day-high-close-fade_1d: inconclusive (fit: exact) [main: 0.00633067; day-clustered t of the mean 1.37331; distinct days with cases 341, cases 656, larger-forecast half cases 328, smaller-forecast half cases 328]

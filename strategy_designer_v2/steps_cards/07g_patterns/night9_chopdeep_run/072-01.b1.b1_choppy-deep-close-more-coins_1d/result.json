@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "072-01.b1.b1_choppy-deep-close-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4504367,
+  "findings": {
+    "F1": "In the choppy profile, on the non-overlapping 5-day grid, the deepest fifth of closes below the 20-day high (mean depth -6.4 vol units) was followed by an excess 5-day return of -6.46 % (t -2.30 with one day's cases taken together, 70 cases on 43 days). The next three fifths were near zero: -0.21 % (t -0.17), -1.16 % (t -1.28) and -1.83 % (t -1.44). The shallowest fifth was +6.55 % (t 1.10). The fall is therefore concentrated in the deepest closes rather than rising evenly with depth, which fits the tested linear slope's weak t of 0.69.",
+    "F2": "The deepest choppy fifth's 5-day excess return was negative in every year seen: 2018 -5.4 % (t -1.83), 2019 -4.3 % (t -1.92), 2020 -13.6 % (t -1.35) and 2021 -4.7 % (t -1.16). It was also negative on all seven coins with enough cases, for example XRP -10.5 % (t -3.14, 9 cases) and BTC -6.4 % (t -2.00, 16 cases).",
+    "F3": "Outside the choppy profile the same depth has no such tail. The deepest fifth gave -1.13 % over 5 days (t -0.75, 334 cases), and the fifth nearest the high gave +3.05 % (t 2.47, 114 days). That near-high continuation in trending markets is already held on the map (\"nearness to high\", \"breakout distance continuation\").",
+    "F4": "Over one day, choppy up days in the deepest fifth of depth (mean -5.9 vol units) were followed by an excess return of -1.07 % (t -2.25, 178 cases on 121 days). The other up-day fifths ranged from -0.09 % to -0.20 % (|t| \u2264 0.5). Choppy down days in the deepest fifth gave -0.53 % (t -0.83). The one-day fall after a deep close shows only after up days.",
+    "F5": "The tested book lost money (Sharpe -0.21, -4.8 % a year). Its daily returns had a correlation of -0.58 with its coins. It earned only in 2018 (+0.059 % a day while the coins fell 0.35 % a day) and lost in 2020 and 2021 (-0.03 % and -0.06 % a day while the coins rose 0.47 % and 0.64 % a day). The linear short over all depths mostly carried the market's direction rather than the deep-close tail.",
+    "F6": "Across all profiles, the lowest fifth of the day's return measured against its 20-day swing was followed by +0.75 % the next day (t 1.96, 483 days); in the high-volatility half this was +1.03 % (t 2.17). This is the agitated down-day rebound the map already holds in 10 to 16 strategies, so it is not a discovery."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, a coin's fall over the next five days grows faster than the depth of its close below its 20-day high, measured in units of its 20-day daily-return standard deviation. Closes far below the high are followed by much larger falls than closes moderately below it.",
+      "consequence": "In a sideways market, a trader shorts only lightly on ordinary closes below the range top and much more heavily on the rare very deep closes, holding about a week, where the move (about 6 % beyond normal drift) far exceeds the 0.22 % trade cost.",
+      "name": "choppy convex deep close fall",
+      "from": "F1, F2, F5",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the further an up day closes below its 20-day high, measured in units of its 20-day daily-return standard deviation, the larger the coin's fall over the next day.",
+      "consequence": "In a sideways market, a bounce day that still closes deep below the range top is a reason to short for one day, since holders use the bounce to sell.",
+      "name": "choppy deep up day fade",
+      "from": "F4",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "072-01.b1.b1.g1_choppy-convex-deep-close-fall",
+    "072-01.b1.b1.g2_choppy-deep-up-day-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

@@ -296,6 +296,8 @@ An idea's latest record counts once.
 | 061-01.g1.d1_calm-choppy-up-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:12:23 |
 | 061-01.g1_choppy-calm-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:06:57 |
 | 061-01_calm-big-up-day-continues_1d | confirmed | night8_risingcalm_run | 1d | 6 | 75b231208 | 2026-11-25T23:38:40 |
+| 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 7b8d921f7 | 2026-11-26T23:59:31 |
+| 074-01.b1.b1.b1.b1_falling-wide-high-close-fade_1d | confirmed | night9_chopdeep_run | 1d | 19 | 7b8d921f7 | 2026-11-26T23:47:46 |
 | 074-01.g1.d1_wide-close-high-bounce-fade_1d | paying | night9_chopdeep_run | 1d | 6 | 0ae36323e | 2026-11-26T23:28:37 |
 | 074-01.g1_falling-agitated-wide-up-fade_1d | confirmed | night9_chopdeep_run | 1d | 6 | 0ae36323e | 2026-11-26T23:21:23 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |

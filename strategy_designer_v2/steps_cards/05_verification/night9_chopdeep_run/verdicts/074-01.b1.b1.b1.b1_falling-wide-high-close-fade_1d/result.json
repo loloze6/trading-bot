@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day short-direction return beyond drift on case bars",
+    "value": 0.006977235205724038,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 2.1977807370131064
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and positive slope; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of next-day excess return on forecast",
+    "value": 0.0009910730230579265,
+    "passed": true
+  },
+  "counts": {
+    "case days": 471,
+    "cases": 1143
+  },
+  "decided_by": "The mean short-direction excess return is above 0 with t >= 2 and the supporting slope is positive.",
+  "reading": "Situation computed per window from prices and the recorded raw width/loc values: up = close above prior close, width > 1, close location >= 0.75, falling = 60-bar price change below -10 % (the veto's threshold read in percent), active bars whose conditions cannot be computed inside the window (first bar, first 60 bars) are left out of the share; the horizon grid is every bar (h = 1), drift is the coin's mean 1-bar return over all its windows, t clusters cases by UTC day (deviations summed per day, D/(D-1) correction), the slope is OLS of next-day excess return on forecast, and the plan's 'fewer than 30 case days' is treated as the minimum count (not observable).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.005343 on the check folds against +0.006977 on every fold",
+    "main": 0.005342971647390563,
+    "statistic": 1.2913910825493735,
+    "counts": {
+      "case days": 293,
+      "cases": 770
+    }
+  }
+}
