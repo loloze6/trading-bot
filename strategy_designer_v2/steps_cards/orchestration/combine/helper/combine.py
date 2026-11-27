@@ -87,9 +87,10 @@ def coin_returns(r, records=""):
     return b.set_index(["day", "coin"])[["ret", "position"]]
 
 
-def portfolio(weights, rows, records=""):
-    """Rule 6: coin by coin, the weighted sum of the books' returns; then the mean over the coins of that day. Also how
-    often, coin-day by coin-day, the weighted positions add up to more than one full position."""
+def per_coin(weights, rows, records=""):
+    """Rule 6, coin by coin: the weighted sum of the books' returns on each of the portfolio's coin-days (a coin and a
+    day for which at least one book has a return). Also how often, coin-day by coin-day, the weighted positions add up
+    to more than one full position."""
     ret, pos = [], []
     for k, w in weights.items():
         cr = coin_returns(rows[k], records)
@@ -98,10 +99,14 @@ def portfolio(weights, rows, records=""):
         cr = cr[~cr.index.duplicated()]
         ret.append(cr.ret.rename(k) * w); pos.append(cr.position.abs().rename(k) * w)
     R = pd.concat(ret, axis=1); P = pd.concat(pos, axis=1)
-    per_coin = R.sum(axis=1, min_count=1)
-    day = per_coin.groupby(level="day").mean().dropna()
-    over = (P.sum(axis=1) > 1 + 1e-9).mean()
-    return day, over
+    return R.sum(axis=1, min_count=1).dropna(), (P.sum(axis=1) > 1 + 1e-9).mean()
+
+
+def portfolio(weights, rows, records=""):
+    """Rule 6: coin by coin, the weighted sum of the books' returns; then the mean over the coins of that day. Also the
+    overlap share (per_coin)."""
+    coin_day, over = per_coin(weights, rows, records)
+    return coin_day.groupby(level="day").mean().dropna(), over
 
 
 def stats(r):

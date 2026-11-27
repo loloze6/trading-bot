@@ -127,6 +127,75 @@ def test_holding_is_the_equal_weight_mean_of_the_coins_returns(world):
     assert np.allclose(h.values, expect.values) and len(h) == N - 1
 
 
+def test_holding_is_read_from_the_data_files_whatever_the_order_of_the_books(world):
+    """A10: a second book whose record has one coin, fewer days and other closes moves neither holding nor its days."""
+    a = add_book(world, 1)
+    b = add_book(world, 2, common=False)
+    d = world["root"] / "04_backtest" / "x_run" / "common" / "backtests" / "002-01_book-2_1d"; d.mkdir(parents=True)
+    short = 400
+    pd.DataFrame({"coin": "AUSD", "window": "w1", "timestamp": world["days"][:short].strftime("%Y-%m-%d"),
+                  "close": np.round(world["close"]["AUSD"][:short], 0) + 7, "forecast": 0.0, "position": 0.5,
+                  "value": 1000 * np.cumprod(1 + 0.001 + 0.01 * np.random.default_rng(5).standard_normal(short))}
+                 ).to_csv(d / "chart_bars.csv.gz", index=False)
+    rows = {r["key"]: r for r in json.loads((world["reg"] / "books.json").read_text())}
+    one, other = up.holding({a: 0.5, b: 0.5}, rows), up.holding({b: 0.5, a: 0.5}, rows)
+    assert one.equals(other)
+    expect = pd.concat([pd.Series(world["close"][c], index=world["days"]).pct_change() for c in COINS], axis=1).mean(axis=1).dropna()
+    assert np.allclose(one.values, expect.values) and len(one) == N - 1
+    m1, m2 = up.measure({a: 0.5, b: 0.5}, rows), up.measure({b: 0.5, a: 0.5}, rows)
+    assert m1[up.HOLDING] == m2[up.HOLDING] and m1["this version"] == m2["this version"]
+
+
+def test_holding_has_no_return_on_a_day_whose_previous_day_is_missing(world):
+    k = add_book(world, 1)
+    f = world["data"] / "kraken_AUSD_1d.csv"
+    d = pd.read_csv(f); d.drop(index=[700]).to_csv(f, index=False)             # a hole of one day in AUSD's file
+    rows = {r["key"]: r for r in json.loads((world["reg"] / "books.json").read_text())}
+    by_coin = up.holding_coin_days({k: 1.0}, rows)
+    gone = by_coin[by_coin.isna()].index.tolist()
+    assert gone == [(world["days"][700], "AUSD"), (world["days"][701], "AUSD")]
+    h = up.holding({k: 1.0}, rows)
+    b = pd.Series(world["close"]["BUSD"], index=world["days"]).pct_change()
+    assert np.isclose(h.loc[world["days"][701]], b.loc[world["days"][701]])    # that day: the other coin alone
+    assert up.measure({k: 1.0}, rows)[up.HOLDING]["coin_days_without_a_close_to_close"] == 2
+
+
+def test_the_return_at_a_worst_fall_of_20_percent_on_a_series_whose_answer_is_known():
+    """A11: ten days of +1 %, one day of -5 %, ten days of +1 %: the only fall is the -5 % day, so the scale is 4."""
+    r = pd.Series([0.01] * 10 + [-0.05] + [0.01] * 10)
+    a = up.at_fall(r)
+    assert a["scale"] == 4.0
+    assert np.isclose(a["yearly"], round((1.04 ** 20 * 0.80) ** (365 / 21) - 1, 4))
+    assert np.isclose(up.worst_fall(a["scale"] * r), 0.20)
+    assert up.at_fall(pd.Series([0.01] * 30)) is None                          # never falls: no scale
+    assert up.at_fall(r, fall=0.10)["scale"] == 2.0
+    assert up.at_fall(pd.Series([0.01] * 10 + [-0.5] + [0.01] * 10))["scale"] == 0.4     # a deep fall: a scale under 1
+
+
+def test_a_version_shows_its_return_at_a_20_percent_fall_and_ready_does_not_read_it(world):
+    add_book(world, 1); add_book(world, 2)
+    name, m = up.update(world["data"])
+    v = m["portfolio_coins"]["this version"]
+    day, _ = cb.portfolio({b["key"]: b["weight"] for b in json.loads(
+        (world["func"] / "portfolios" / name / "portfolio.json").read_text())["books"]},
+        {r["key"]: r for r in json.loads((world["reg"] / "books.json").read_text())}, up.COMMON)
+    assert np.isclose(up.worst_fall(v[up.AT_FALL]["scale"] * day), 0.20, atol=2e-3)       # the scale is stored rounded
+    assert m["ready"] == (v["sharpe"] > m["portfolio_coins"][up.HOLDING]["sharpe"])
+    line = next(l for l in (world["func"] / "portfolios" / "INDEX.md").read_text().splitlines() if l.startswith(f"| {name} |"))
+    assert f"(x {v[up.AT_FALL]['scale']})" in line and line.count("|") == up.HEADER[0].count("|")
+
+
+def test_measure_again_adds_a_file_and_leaves_the_version_as_built(world):
+    add_book(world, 1); add_book(world, 2)
+    name, m = up.update(world["data"])
+    folder = world["func"] / "portfolios" / name
+    before = {f.name: f.read_bytes() for f in folder.iterdir()}
+    again = up.measure_again(name)
+    assert {f.name: f.read_bytes() for f in folder.iterdir() if f.name != "measured_again.json"} == before
+    assert again["portfolio_coins"]["this version"]["sharpe"] == m["portfolio_coins"]["this version"]["sharpe"]
+    assert json.loads((folder / "measured_again.json").read_text())["ready"] == m["ready"]
+
+
 def fake_run_book(w, seen):
     """In place of step 4: the book's chart file on the final coins, after checking the record was written first."""
     def run(r, python):
