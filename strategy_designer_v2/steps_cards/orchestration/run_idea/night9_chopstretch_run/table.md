@@ -16,20 +16,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 076-01_agitated-wide-high-close-fades | - | plan | inconclusive (+1.29) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 076-01.b1_agitated-wide-close-fade-more-coins; 7.g: no ideas: Across the many angles examined (close location by width, the day's and the 5-day scaled return by trend and agitation, weekday, year, coin, forecast quarters), only the falling-agitated next-day reversal (F1, F2) stands out. It is already held by 058-02.b1.g1.b1.b1 and the falling-agitated rebound family. The candidate for the empty choppy-agitated short cell (F4, t −1.94) and the tested wide-high-close fade (F3, t −1.88) do not clear the bar that this many looks require. | 1.94 | 8.1 |
 | 076-01.b1_agitated-wide-close-fade-more-coins | 076-01_agitated-wide-high-close-fades | plan | inconclusive (-1.85) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 076-01.b1.b1_agitated-wide-upper-close-fade; 7.g: no ideas: The brief's fade of wide high-closing agitated days is absent in rising markets and too small to cover costs (F1, F5). Its one strong cell (falling agitated, F6) rests on two windows and repeats a close-height fade the map already holds. The clear pattern in the book, the rebound after wide low-closing days (F2–F4, F8), is a family the map already holds, and the choppy calm cell is ungraded and indistinguishable from chance across the many angles examined (F7). | 1.23 | 14.6 |
 | 077-01_choppy-calm-swing-rise-carries | - | plan | inconclusive (+1.28) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 077-01.b1_swing-rise-carry-more-coins; 7.g: 077-01.g1_choppy-calm-swing-fall-carries, 077-01.g2_choppy-calm-two-sided-swing-carry | 0.90 | 6.9 |
+| 077-01.b1_swing-rise-carry-more-coins | 077-01_choppy-calm-swing-rise-carries | plan | inconclusive (+0.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: 077-01.b1.b1_graded-swing-rise-carries-on, 077-01.b1.b2_choppy-calm-swing-momentum; 7.g: 077-01.b1.g1_calm-chop-month-rise-carries | 1.10 | 14.2 |
+| 077-02_choppy-calm-swing-fall-carries | - | plan | not observable (-5.70) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.a: no ideas: The plan needs at least 20 distinct case days; the six default coins over all four folds gave 2. Adding every available coin (about twice the coin-folds) would give about 4. Hourly bars add no independent cases at a 7-day horizon read once per 7-day grid cell. No data available can make this idea observable without loosening its situation.; 7.g: 077-02.g1_choppy-calm-graded-swing-momentum, 077-02.g2_choppy-calm-swing-rise-carries | 1.14 | 7.6 |
+| 067-02.b1.b1_two-sided-swing-stretch-five-days | 067-02.b1_raw-swing-stretch-keeps-falling | plan | inconclusive (+0.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.b: 067-02.b1.b1.b1_agitated-chop-downside-stretch-carries, 067-02.b1.b1.b2_choppy-downside-stretch-keeps-falling; 7.g: 067-02.b1.b1.g1_agitated-chop-downside-stretch-carries, 067-02.b1.b1.g2_choppy-twenty-day-fall-continues | 1.06 | 6.7 |
 
 ## Consumption
-12 ideas, 13.25 USD, 95.8 minutes in all.
+15 ideas, 16.55 USD, 124.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.92 | 6.4 |
-| step4_backtest | 0.00 | 52.5 |
-| step5_verdict | 2.01 | 7.1 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 2.24 | 8.5 |
+| step4_backtest | 0.00 | 69.1 |
+| step5_verdict | 2.57 | 9.2 |
+| step6_check | 0.00 | 0.5 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.a | 0.00 | 0.0 |
+| step7_7.a | 0.42 | 1.1 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.77 | 11.8 |
-| step7_7.g | 5.56 | 17.3 |
+| step7_7.b | 4.49 | 14.2 |
+| step7_7.g | 6.83 | 21.4 |
