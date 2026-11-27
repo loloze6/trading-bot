@@ -1,0 +1,59 @@
+{
+  "line": "7.d",
+  "backtest": "075-01.d2_heavy-volume-fall-two-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4161268,
+  "findings": {
+    "F1": "The Calmar fails because the book is long on almost every down day whatever its volume: it is in a position on 83 % of coin-days and its daily returns correlate 0.77 with the coins'. On its 40 worst days it lost 5.0 % on average while the coins fell 11.4 %, and its chained deepest fall is -23.9 %. The four windows where the coins collapsed (w7, w9, w14, w16: coin falls of -43 % to -61 %) gave book falls of -20 % to -24 %.",
+    "F2": "The effect lives almost entirely in the strongest case. Down days with a forecast of 15 or more have a mean excess 2-day return of +1.95 % (t 4.36, 488 cases) and a total move of +2.40 %, about 11 times the 0.22 % round-trip cost. Down days with a forecast under 7 give -0.20 % (t -0.45, 1316 cases), and forecasts of 7 to 15 give +0.18 % to +0.56 % with t under 1 (1168 cases).",
+    "F3": "An unsized 2-day hold, after the 0.22 % cost, shows the same split:",
+    "F4": "Inside a rising 60-day trend (above +10 %), heavy-volume down days (forecast 12 or more) are followed by an excess 2-day return of +3.43 % (145 cases). Down days without heavy volume in the same rising trend give only +0.23 % (468 cases), so the rising condition alone is not the effect. In a falling trend the two groups give +0.18 % against -0.44 %, and in a choppy trend -1.83 % against -0.74 %. This fits the brief's theory: in a rising market a heavy-volume down day is mostly forced liquidation of crowded longs, which is absorbed and repaid.",
+    "F5": "Heavy-volume down days have a positive mean excess 2-day return in 8 of the 12 explored windows. Ordinary-volume down days are positive in only 5 of 12, and they make up most of the book's losing exposure in w7, w9 and w14 (-1.97 %, -1.44 %, -2.42 %).",
+    "F6": "The edge holds over a longer hold. After down days in each coin's top volume third, the coin rose +1.97 % over 2 days and +2.83 % over 5 days. After down days in the bottom third it rose +0.56 % and +1.64 %."
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's volume on a day that closed lower, relative to its own average daily volume over the past 20 days, the larger its rise over the next two days. The rise comes from the days whose volume stands far above that average, while down days of ordinary volume are followed by no rise.",
+      "consequence": "A trader buys only the heaviest-volume down days and stays out after ordinary ones, which removes most of the exposure that made the book's falls deep.",
+      "name": "extreme-volume down-day rebound",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a rising market, the heavier a coin's volume on a day that closed lower, relative to its own average daily volume over the past 20 days, the larger its rise over the next two days.",
+      "consequence": "A trader buys heavy-volume down days only while the coin has been rising over the past two months, where the rebound is largest, and skips them in falling and choppy markets.",
+      "name": "rising-market heavy-volume dip rebound",
+      "from": "F4, F1, F2",
+      "profile": "rising",
+      "refs": [
+        "F4",
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The heavier a coin's volume on a day that closed lower, relative to its own average daily volume over the past 20 days, the larger its rise over the next five days.",
+      "consequence": "Holding the heaviest-volume down-day rebounds for five days instead of two captures a larger move per trade against the same round-trip cost.",
+      "name": "heavy-volume fall five-day rebound",
+      "from": "F6, F2",
+      "refs": [
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "075-01.d2.d1_extreme-volume-down-day-rebound",
+    "075-01.d2.d2_rising-market-heavy-volume-dip-rebound",
+    "075-01.d2.d3_heavy-volume-fall-five-day-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

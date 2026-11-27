@@ -1,5 +1,7 @@
 060-01.b1_falling-calm-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00298976; t of the mean, cases grouped by day 1.00175; cases 321, distinct days 186]
 060-01_falling-calm-wide-high-close-fade_1d: inconclusive (fit: adapted) [main: 0.00298976; t of the mean, same-day cases summed 1.00175; cases 321, distinct days 186]
+060-02_falling-calm-close-above-low-fade_1d: mismatch: the test does not match its plan (agreement 0.507709) (fit: exact)
+061-01_falling-calm-rally-fade_1d: inconclusive (fit: exact) [main: -0.0009079; t of the mean, cases of one day pooled -0.597313; cases 2032, distinct days 764]
 074-01.b1.d1.b1_wide-day-nearer-low-rebounds_1d: inconclusive (fit: exact) [main: 0.00473888; t of the mean, cases of one day summed 1.70785; distinct days with cases 330, cases 641]
 074-01.b1.d1_wide-lower-close-calm-rebound_1d: inconclusive (fit: exact) [main: 0.00473888; t of the mean, same-day cases taken together 1.70785; distinct days with cases 330, cases 641]
 074-01.b1.g1_width-times-low-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00979202; t of the mean, cases grouped by day 2.2342; distinct days with cases 138, cases 231]
@@ -7,4 +9,5 @@
 074-01.b2_three-day-low-close-rebound_1d: inconclusive (fit: exact) [main: 0.00733984; t of the mean, cases summed per day 1.14138; cases 290, distinct days 164]
 074-01_rising-calm-wide-low-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00634202; t of the mean, pooled by day 1.92506; distinct case days 225, cases 426, active bars 427]
 075-01.d1_heavy-volume-down-day-rebound_1d: confirmed (fit: adapted) [main: 0.000739396; OLS slope t 5.80686; distinct case days 1676, case bars 6801]
+075-01.d2_heavy-volume-fall-two-day-rebound_1d: confirmed (fit: exact) [main: 2.47344; OLS slope t, day-clustered SE 2.47344; cases 9122, distinct days 1236]
 075-01_heavy-volume-next-day-rise_1d: confirmed (fit: exact) [main: 0.000193671; OLS slope t, clustered by day 3.05409; distinct days with recorded forecasts 2922, bars in slope 36948, day clusters 2898]

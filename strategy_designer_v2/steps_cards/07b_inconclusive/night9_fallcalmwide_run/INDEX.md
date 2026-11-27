@@ -1,5 +1,7 @@
 060-01.b1_falling-calm-high-close-fade_1d: 1 ideas (2 explorations)
 060-01_falling-calm-wide-high-close-fade_1d: 1 ideas (2 explorations)
+060-02_falling-calm-close-above-low-fade_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+061-01_falling-calm-rally-fade_1d: no ideas: the theme's effect is not in the data. Inside falling calm markets a sharp rise is followed by no larger fall than a flat or small-fall day (F2), the fade does not grow with the rise (F3), and it appears only in some years and windows, with opposite signs elsewhere (F4). No condition, side or horizon isolates it (F5).
 074-01.b1.d1.b1_wide-day-nearer-low-rebounds_1d: 2 ideas (2 explorations)
 074-01.b1.d1_wide-lower-close-calm-rebound_1d: 2 ideas (2 explorations)
 074-01.b1.g1_width-times-low-close-rebound_1d: 1 ideas (2 explorations)
@@ -7,4 +9,5 @@
 074-01.b2_three-day-low-close-rebound_1d: no ideas: The rebound is strong and present on every coin, year and sub-regime visible in folds B and C (F1, F2), yet it nets to about zero over all four folds. No condition read from a coin's bars at the close separates where it holds from where it reverses (F2, F4, F5), and the test already used all the data available (F6), so neither a narrower idea nor more data would give a clearer answer.
 074-01_rising-calm-wide-low-close-rebound_1d: 2 ideas (2 explorations)
 075-01.d1_heavy-volume-down-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+075-01.d2_heavy-volume-fall-two-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 075-01_heavy-volume-next-day-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

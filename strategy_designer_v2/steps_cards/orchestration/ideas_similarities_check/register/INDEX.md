@@ -298,6 +298,7 @@ An idea's latest record counts once.
 | 061-01_calm-big-up-day-continues_1d | confirmed | night8_risingcalm_run | 1d | 6 | 75b231208 | 2026-11-25T23:38:40 |
 | 074-01.b1_low-close-nearness-rebound_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | aefd7e84d | 2026-11-26T22:51:10 |
 | 075-01.d1_heavy-volume-down-day-rebound_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | 95c55f380 | 2026-11-27T00:00:09 |
+| 075-01.d2_heavy-volume-fall-two-day-rebound_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | e7b301945 | 2026-11-27T00:13:16 |
 | 075-01_heavy-volume-next-day-rise_1d | confirmed | night9_fallcalmwide_run | 1d | 19 | 95c55f380 | 2026-11-26T23:49:34 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d | confirmed | night_005_run | 1d | 2 | e3282aacc | 2026-11-18T02:37:49 |

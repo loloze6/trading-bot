@@ -1,0 +1,20 @@
+{
+  "line": "7.b",
+  "backtest": "061-01_falling-calm-rally-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36453480000000005,
+  "findings": {
+    "F1": "Step 5's result is on the wrong side and close to zero. Over all folds the short cases' next-day unusual move is -0.09 % (t -0.60, 2032 cases on 764 days, larger-half minus smaller-half -0.14 %). In folds B and C it is only +0.30 % (t 1.13, 656 cases on 312 days), so folds A and D must lean against the fade.",
+    "F2": "Inside the falling calm profile the next day falls whatever the day before did. The mean unusual move over all profile days is -0.30 % (t -1.6, 1939 days). Days with a small fall (scaled return -0.5 to 0) fall next day by -0.69 % (t -3.3, 449 days). Rises above one usual move fall next day by -0.96 % (t -2.8, 165 days). The fade after a big rise is mostly the decline's own drift: measured against the profile's mean it is -0.67 % with t -1.5 (200 days), which is the brief's own first test of failure.",
+    "F3": "The effect is not graded. On up days in the profile the slope of the next-day move on the scaled rise is -0.0044 per usual move, with a correlation of -0.06. The test's cases by size of forecast are not ordered: quartiles give +0.64 %, -0.24 %, +0.34 % and +0.48 %, all with t under 1.6.",
+    "F4": "Where the effect shows, it shows only in some years. After rises above one usual move the next day moved -1.6 % (t -2.8) in 2018 and -1.2 % (t -3.6) in 2019, but -0.2 % in 2020 and +0.2 % in 2021. By window, up days give -1.7 % in w14 (t -2.7) but +1.35 % in w18 (t 3.5). By coin, every t is between -1.6 and +1.6.",
+    "F5": "Longer horizons do not separate the rises from the rest. Over 2 days, rises of 1 to 2 usual moves give -1.55 % (t -2.7), but small falls give -1.39 % (t -3.0). Over 5 days, rises above 0.5 usual moves are positive: +2.1 % (36 cases) and +3.4 % (6 cases).",
+    "F6": "The asymmetry the brief describes appears outside the profile, not inside it. Outside, falls of more than two usual moves rebound +3.3 % the next day (t 5.2). Inside, the same falls give -0.55 % (t -0.8, 75 days)."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "the theme's effect is not in the data. Inside falling calm markets a sharp rise is followed by no larger fall than a flat or small-fall day (F2), the fade does not grow with the rise (F3), and it appears only in some years and windows, with opposite signs elsewhere (F4). No condition, side or horizon isolates it (F5)."
+}

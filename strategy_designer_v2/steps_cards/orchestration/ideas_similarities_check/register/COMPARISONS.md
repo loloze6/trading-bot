@@ -382,6 +382,7 @@
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week_1d | night_013_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.74 | same period | +0.0019 % (0.28) | 0.09 |
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d | night_run | 1d | 044-01_agitated-wide-range-fall-rebound_1d (1d) | 0.74 | same period | +0.0049 % (0.53) | 0.29 |
 | 058-03.b1_calm-rise-continuation-all-coins_1d | night8_risingagitated_run | 1d | 058-03.e1_calm-rise-stretch-ten-days_1d (1d) | 0.74 | same period | +0.0022 % (0.26) | 0.17 |
+| 075-01.d2_heavy-volume-fall-two-day-rebound_1d | night9_fallcalmwide_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.74 | same period | +0.0091 % (0.63) | 0.61 |
 | 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d | night_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.74 | same period | +0.0041 % (0.37) | 0.22 |
 | 031-01.b2.b1_long-up-streaks-ten-day-continuation_1d | night6_streak_run | 1d | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds.e2_monthly-rise-carries-for-weeks_1h (1h) | 0.75 | same period | -0.0372 % (-1.98) | 0.80 |
 | 031-02.b1.d2_rebound-graded-by-turbulence_1d | night6_streak_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.75 | same period | +0.0123 % (0.60) | 0.62 |
