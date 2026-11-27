@@ -1,0 +1,37 @@
+{
+  "line": "7.g",
+  "backtest": "067-01.b1.g1.b1.g1.d2_slide-continues-while-month-negative_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4166607,
+  "findings": {
+    "F1": "In choppy bars (60-day return within \u00b110 %), the 10-day return minus the coin's drift rises steadily across the quintiles of the 30-day return. On the 10-day grid it is -21.2 % (t -5.3, 8 cases), -9.6 % (t -2.9, 21), -0.8 % (31), +4.8 % (28) and +36.4 % (8) from the weakest month to the strongest.",
+    "F2": "In choppy bars, the 30-day return divided by the coin's 30-day swing (daily standard deviation \u00d7 \u221a30) predicts the coin's 10-day excess return with slope 0.137 (t 2.83, 96 grid cases). The same regression in falling bars gives t -0.16 (253 cases) and in rising bars t 1.15 (239), so the month-continuation lives only in the choppy market.",
+    "F3": "Inside the choppy market, the scaled slope is t 3.85 after negative months (48 cases) and t 1.19 after positive months (48). The tested falls-only book, with its forecast standardised over 60 past values, reached only t 1.83 on 423 short cases.",
+    "F4": "The tested book does not pay. Its trades are short only, and the coins' drift works against them: the drift in the short direction is -1.50 % per 10 days and the total move is -0.10 % per case, against 0.22 % per trade. Its 535 trades average -2.13 % after fees with 38 % winners, and its windows' mean daily return ranges from -8.6 to +9.2 bp.",
+    "F5": "Month-continuation measured in the month's direction is not even across windows in choppy bars. It is positive in 7 of 12 windows, with w12 at +9.5 % (19 cases) and w18 at +19.1 % (10), against w10 at -6.6 % (10) and w17 at -3.8 % (10).",
+    "F6": "The other angles show nothing new that stands out:"
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy market, a coin's 30-day return measured against its own daily swing over the same 30 days points the way of its move over the next 10 days. The larger the month's move in units of the coin's usual swing, the larger the move that follows in the same direction, after rises and falls alike.",
+      "consequence": "A trader in a trendless market should lean long on coins whose month was unusually strong for their volatility and short on those whose month was unusually weak, sized by how unusual the month was, rather than shorting slides alone against the coins' upward drift.",
+      "name": "choppy swing-scaled month continuation",
+      "from": "F1, F2, F3, F4, F5",
+      "profile": "choppy",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-01.b1.g1.b1.g1.d2.g1_choppy-swing-scaled-month-continuation"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

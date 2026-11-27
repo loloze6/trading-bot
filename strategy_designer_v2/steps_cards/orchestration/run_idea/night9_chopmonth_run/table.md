@@ -18,21 +18,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.g: 067-01.b1.g1.b1.g1.d1.g1_choppy-scaled-month-continues, 067-01.b1.g1.b1.g1.d1.g2_calm-choppy-slides-keep-falling | 0.77 | 11.9 |
 | 064-02_choppy-range-top-break-continuation | - | plan | inconclusive (+1.27) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The positive mean comes from a handful of extreme cases (F1), shows no grading by the size of the breakout (F2), and holds in no coin, period, agitation or horizon with a t of 2 (F4, F5, F6). The test already covered all the daily data there is (F7).; 7.g: 064-02.g1_choppy-scaled-slide-continues-down | 1.15 | 11.4 |
 | 067-02_choppy-weak-month-fall-continues | - | plan | inconclusive (+1.57) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1_choppy-plain-month-fall-continues, 067-02.b2_agitated-choppy-month-fall-continues; 7.g: 067-02.g1_choppy-calm-month-continuation, 067-02.g2_choppy-scaled-month-fall-continues | 1.08 | 11.9 |
+| 067-01.b1.g1.b1.g1.d2_slide-continues-while-month-negative | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | plan | inconclusive (+1.83) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.g1.d2.b1_plain-monthly-fall-depth-continues; 7.g: 067-01.b1.g1.b1.g1.d2.g1_choppy-swing-scaled-month-continuation | 1.05 | 11.5 |
+| 067-01.b1.g1.b1.d1.g1_agitated-chop-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+0.21) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.g1.b1_agitated-chop-slide-five-days; 7.g: 067-01.b1.g1.b1.d1.g1.g1_choppy-scaled-month-continuation | 1.36 | 12.8 |
 
 ## Consumption
-14 ideas, 15.30 USD, 166.1 minutes in all.
+16 ideas, 17.72 USD, 190.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.18 | 6.6 |
-| step4_backtest | 0.00 | 114.4 |
-| step5_verdict | 2.74 | 9.6 |
-| step6_check | 0.00 | 0.6 |
+| step3_plan | 1.34 | 7.4 |
+| step4_backtest | 0.00 | 131.2 |
+| step5_verdict | 3.10 | 10.8 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.d | 1.89 | 6.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.24 | 9.6 |
-| step7_7.g | 6.25 | 18.5 |
+| step7_7.b | 4.12 | 12.1 |
+| step7_7.g | 7.27 | 21.5 |
 | similarity_check | 0.00 | 0.3 |

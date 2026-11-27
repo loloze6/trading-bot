@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 10-bar return on forecast (short grid bars)",
+    "value": 0.0024017129989312622,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.8315352765397255
+    },
+    "threshold": "slope > 0 with t >= 2 confirms (with mean excess < 0); slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return on short grid bars below 0",
+    "value": -0.007932579271043624,
+    "passed": true
+  },
+  "counts": {
+    "short grid cases": 423
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "60-bar return recomputed in percent from each window's closes (bounds inclusive), with the recorded regime used where fewer than 60 earlier bars exist in the window; 30-bar return taken from month_fall's raw value; grid at positions 0,10,20,... of each window, coin mean 10-bar return over all grid bars of all its windows; the fewer-than-100 rule treated as a minimum count (not observable); short grid cases counted only where the 10-bar return exists."
+}
