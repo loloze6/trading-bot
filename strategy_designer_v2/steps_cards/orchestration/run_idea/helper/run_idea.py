@@ -14,7 +14,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import header_fields, write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402  (shared helpers, common/lib.py)
+from lib import step5_answer, header_fields, write_atomic, utc_now, SERVICE_REFUSED  # noqa: E402  (shared helpers, common/lib.py)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 sys.path.insert(0, str(STEPS / "04_backtest" / "helper"))
@@ -160,7 +160,7 @@ def verdict_label(rv):
     if not rv:
         return "no verdict"
     st = (rv.get("main_measure") or {}).get("statistic") or {}
-    return f"{rv['status']}" + (f" ({st.get('value'):+.2f})" if isinstance(st.get("value"), (int, float)) else "")
+    return f"{step5_answer(rv['status'])}" + (f" ({st.get('value'):+.2f})" if isinstance(st.get("value"), (int, float)) else "")
 
 
 def index_says(index, rid):

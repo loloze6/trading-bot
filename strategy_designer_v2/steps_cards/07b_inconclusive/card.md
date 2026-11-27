@@ -7,6 +7,7 @@ The parts every line shares (input, output, how the data is read, the model, sto
 
 ## Entry condition
 Step 5's verdict is **inconclusive**: enough cases, but neither the confirm nor the reject rule is met. Otherwise the line does not run, and its index line says so (`helper/line.yaml`).
+Since B11 (operator, 2026-11-27; `../common/verdicts.md`), inconclusive means unclear: a sign of the effect, not enough proof (its t in the idea's direction at 1 or more, or too few cases to say the effect is absent). An unclear result with 30 cases or more and a t below 1 is **no effect** and goes to 7.c. This line's prompt is unchanged: what it receives still met neither the confirm nor the reject rule.
 
 ## Input
 The shared input: the backtest record, its plan and brief, step 5's verdict and step 6's check.
@@ -37,7 +38,7 @@ The full-data run's 002-01 (a weak result, t 0.37), 002-03 (close to a confirm, 
 One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the new idea gets a clear answer (confirmed or rejected) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercises 3 to 5 (`validation/reading.md`): its "more data" idea on 002-03 was confirmed. Its route (narrower idea, more data, no ideas) varies from run to run. Earlier: exercises 1 and 2 ran (`../07_common/validation/reading.md`).
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the new idea gets a clear answer (confirmed, or rejected: since 2026-11-27, no effect) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercises 3 to 5 (`validation/reading.md`): its "more data" idea on 002-03 was confirmed. Its route (narrower idea, more data, no ideas) varies from run to run. Earlier: exercises 1 and 2 ran (`../07_common/validation/reading.md`).
 
 ## What this line does not do
 It does not test its ideas, write a test plan, or look beyond its objective.

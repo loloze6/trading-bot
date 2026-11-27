@@ -22,7 +22,9 @@ from lib import common_text, call, write_atomic, check_windows, record_data_use 
 from idea_size import size as idea_size  # noqa: E402  (the size of an idea, common/measures.md)
 
 ATTEMPTS = 3
-STATUSES = ("confirmed", "rejected", "inconclusive", "not observable", "mismatch")
+STATUSES = ("confirmed", "rejected", "inconclusive", "not observable", "mismatch")   # what measure(bars) may return: the plan's rules
+NO_EFFECT_CASES, NO_EFFECT_T = 30, 1.0   # common/verdicts.md: "no effect" needs 30 cases and a t below 1 in the idea's direction
+CONFIRM_T = re.compile(r"\bt\b[^0-9.;]{0,40}?([+\-−]?)\s*\d+(?:\.\d+)?")   # the first t threshold of a Confirm rule
 
 RUNNER = r'''
 import glob, json, os, sys
@@ -148,6 +150,34 @@ def direction_check(out, sub):
     return (w > 0) == (v > 0), f"main measure {w:+.4g} on the check folds against {v:+.4g} on every fold"
 
 
+def idea_direction(plan_text):
+    """common/verdicts.md: the side of the plan's confirm rule, from the sign of the first t threshold in its "Confirm:"
+    line: +1 (t ≥ 2), -1 (t ≤ -2), None when the line or its t threshold is not found."""
+    m = re.search(r"^- Confirm:(.*?)(?=^- Reject:|\Z)", plan_text, re.M | re.S)
+    k = CONFIRM_T.search(m.group(1)) if m else None
+    return None if not k else (-1 if k.group(1) in ("-", "−") else 1)
+
+
+def effect_check(out, plan_text):
+    """common/verdicts.md, the rule of "no effect", on an inconclusive or rejected result `out` of the plan's criterion.
+    Returns the check's record (None for any other status): no_effect True or False, and why."""
+    if out["status"] == "rejected":
+        return {"no_effect": True, "why": "the plan's reject rule is met"}
+    if out["status"] != "inconclusive":
+        return None
+    st = (out.get("main_measure") or {}).get("statistic")
+    t, side = (st.get("value") if isinstance(st, dict) else None), idea_direction(plan_text)
+    cases = count_of(out.get("counts") or {}, "case")
+    if not isinstance(t, (int, float)) or side is None or cases is None:
+        return {"no_effect": False, "why": "no t, no t threshold in the plan's confirm rule, or no count: absence is not shown",
+                "t_in_idea_direction": None, "cases": cases}
+    tt = side * t
+    ok = cases >= NO_EFFECT_CASES and tt < NO_EFFECT_T
+    why = (f"t in the idea's direction {tt:+.3f} ({'below' if tt < NO_EFFECT_T else 'not below'} {NO_EFFECT_T:g}), "
+           f"{fmt(cases)} cases ({NO_EFFECT_CASES} needed)")
+    return {"no_effect": ok, "why": why, "t_in_idea_direction": tt, "cases": cases}
+
+
 def pct(v):
     return f"{100 * v:.0f} %" if isinstance(v, (int, float)) else str(v)
 
@@ -189,7 +219,9 @@ def render(d, plan_id, h, out, plan_path, record, size=None):
              "- Counts: " + ", ".join(f"{k}: {fmt(v)}" for k, v in out["counts"].items()),
              f"- Decided by: {out['decided_by']}",
              f"- Reading: {out['reading']}",
-             size_line(size)] + ([check_line(out["direction_check"])] if out.get("direction_check") else []) + [
+             size_line(size)] + ([check_line(out["direction_check"])] if out.get("direction_check") else []) + (
+             [f"- Effect check (common/verdicts.md): {'no effect' if out['effect_check']['no_effect'] else 'unclear'}: "
+              f"{out['effect_check']['why']}"] if out.get("effect_check") else []) + [
 
              f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`",
              f"Record: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`",
@@ -285,6 +317,15 @@ def main():
                                   f"years step 7 does not explore: {why}.") if new else
                                  ("Confirmed on every fold, but the main measure points the other way on the check folds "
                                   f"({on[len('folds '):]}), the years step 7 does not explore: {why}."))
+
+    # No effect (common/verdicts.md): the plan's reject rule met, or an unclear result with enough cases whose t in the
+    # idea's direction is below 1. Applied here, in code, after the plan's criterion and the direction check.
+    ec = effect_check(out, plan_text)
+    if ec is not None:
+        out["effect_check"] = ec
+        if ec["no_effect"]:
+            out["status"] = "no effect"
+            out["decided_by"] = f"{out['decided_by']} No effect (common/verdicts.md): {ec['why']}."
 
     d = args.verdicts_dir / plan_id
     d.mkdir(parents=True, exist_ok=True)

@@ -3,24 +3,34 @@
 ## Business objective, one question
 Is this idea real?
 
-**Establish, on evidence fixed before the data was seen, whether the market confirms or rejects the idea, and what that result means for a trader's decisions.**
+**Establish, on evidence fixed before the data was seen, whether the market confirms the idea, shows no effect, or does not yet say, and what that result means for a trader's decisions.**
 
 ## Input
 One test plan whose outcome is `plan`, and its backtest record. One idea has one plan, so this is one input per idea.
 
 ## Output
-One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough cases, no clear result; or confirmed on
-every fold but pointing the other way on the check folds) or **not observable** (fewer cases than the plan's minimum: the data could not show the idea), with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3.
+One verdict per plan: **confirmed**, **inconclusive** (unclear: a sign of the effect, not enough proof; or confirmed on
+every fold but pointing the other way on the check folds), **no effect** (enough cases, and the effect near zero or
+pointing the other way: the data shows it absent; B11, operator 2026-11-27) or **not observable** (fewer cases than the plan's minimum: the data could not show the idea), with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3. The five answers are defined once, in `../common/verdicts.md`.
 
 ## What a verdict is
 **A verdict is the plan's own criterion, applied unchanged to the backtest record: the numbers measured, and which of the plan's rules (confirm, reject, inconclusive) they meet.**
 
 - **First, the test must match its plan.** From the plan's Fidelity lines (the situation, and the side the outcome expects) and the record's raw indicator values, the function checks that the config's forecast is active on the bars of that situation, on that side. Below 90 % agreement, the status is "mismatch" and the criterion is not applied. The check reads the Fidelity, not the plan's Forecast line or its config, because those two are what may be wrong. Found by exercise 6's review: the down-cross plan (002-02) went short in up-trends, and nothing in steps 3 to 5 saw it.
 - **The criterion was fixed before the data.** The verdict applies it and never adjusts it: no new measure, no other threshold, no other horizon.
+- **No effect, one rule for every plan** (B11, operator 2026-11-27; `../common/verdicts.md`). The plan's criterion has
+  three rules (confirm, reject, inconclusive). Its reject rule met ("rejected", t at most -2) is **no effect**; and an
+  inconclusive result is **no effect** when the measure counts at least 30 cases (the confirmation's minimum) and the main
+  measure's t, counted in the idea's direction (the side of the plan's confirm rule), is below 1. Otherwise it stays
+  inconclusive: a sign of the effect, which a clearer test may confirm (line 7.b). Why: on nights 7 to 9, 308 of 477
+  results were unclear and 1 rejected; the follow-ups of an unclear test with t below 1 were confirmed 10 times in 72
+  (14 %, 2 profitable), with t from 1 to 2, 17 in 56 (30 %, 7 profitable). The rule is applied by code
+  (`make_verdict.py`, `effect_check`), after the criterion and the direction check: the model applies the plan's
+  three rules and is not told of it. Records before 2026-11-27 keep their words; an old "rejected" is read as "no effect".
 - **When the criterion leaves a detail open,** the workflow's measuring definitions apply (`../common/measures.md`); what the record holds is `../common/backtest_record.md` (shared with steps 3 and 7). Otherwise the most literal reading of the plan is taken, chosen from its words alone, and stated.
 - **What it means for a trader** follows from the status and the plan's forecast:
   - confirmed: the action the forecast describes is supported;
-  - rejected: a reason to refuse it;
+  - no effect: no reason to take it (the effect is absent, or the other way);
   - inconclusive: no action yet.
 
   It is not written out again.
@@ -42,7 +52,7 @@ every fold but pointing the other way on the check folds) or **not observable** 
 
 ## The fields of a verdict
 **In `verdict.md`:**
-1. **status** (header): confirmed, rejected, inconclusive, not observable or mismatch. A plan's minimum counts are applied first: below one, the status is "not observable", whatever the other numbers.
+1. **status** (header): confirmed, inconclusive, no effect, not observable or mismatch (before 2026-11-27: "rejected" in place of "no effect"). A plan's minimum counts are applied first: below one, the status is "not observable", whatever the other numbers.
    - For: the answer.
    - Used by: the operator, and whatever decides what to do with the idea.
    - Without it: no answer.
@@ -56,7 +66,9 @@ every fold but pointing the other way on the check folds) or **not observable** 
    - the counts: every count the plan's minimums refer to, each one named;
    - the rule the numbers meet ("decided by");
    - the literal reading taken ("reading");
-   - the direction check, for a confirmed verdict (one line: agrees, disagrees or not judged, and why).
+   - the direction check, for a confirmed verdict (one line: agrees, disagrees or not judged, and why);
+   - the effect check, for an inconclusive or rejected result of the criterion (one line: no effect or unclear, the t in
+     the idea's direction and the cases).
    - For: the status can be checked and challenged.
    - Used by: the operator, and anyone who disputes the status.
    - Without it: a bare word nobody can verify.
@@ -77,6 +89,8 @@ every fold but pointing the other way on the check folds) or **not observable** 
    - For: auditing the check, and the status it changed.
    - Used by: the operator, and the reading of each run (how many confirms the check turned to inconclusive).
    - Without it: a status changed by code with no trace of why.
+   For an inconclusive or rejected result of the criterion, with `effect_check` added by code (no_effect: true or
+   false, why, the t in the idea's direction, the cases): the trace of a "no effect".
 6b. **`size.json`:** the idea's size (cases, unusual move and how sure it is (its t by day, and the days), normal drift, total move, the coin's usual move, strength),
    with one line in `verdict.md` ("Size: ..."). Not for a mismatch.
    - For: telling a real but small idea from a real and large one.
@@ -121,7 +135,8 @@ Aligned with the other steps.
 - no situation check, or a status that does not agree with it (mismatch exactly when the check fails);
 - the function fails on the record;
 - a result that is not a dict;
-- a status that is not one of the five;
+- a status that is not one of the plan's five (confirmed, rejected, inconclusive, not observable, mismatch: the
+  function applies the plan's rules; "no effect" is then decided by code);
 - no main measure value; a statistic that is not a dict with a value; no named counts;
 - no "decided by", no "reading".
 
@@ -131,6 +146,12 @@ main measure has the sign of the main measure on every fold; it disagrees otherw
 under 100 cases or 30 days (read from the measure's own counts: the smallest count named "case", else the smallest
 count; a count named "day"), when the measure cannot run on them alone, when the plan has no check fold, or when the
 record did not run on the plan's folds (an unseen-dates record: no `fold_` folder).
+
+**The effect check in code** (`effect_check`, `../common/verdicts.md`): the plan's reject rule met gives "no effect";
+an inconclusive result gives "no effect" when its counts hold at least 30 cases (read as the direction check reads
+them) and its t, times the side of the plan's confirm rule (the sign of the first t threshold in its "Confirm:" line:
+-1 for `t ≤ -2`), is below 1. Without a t or a t threshold the result stays inconclusive. Recorded in `result.json`
+(`effect_check`) and in one line of `verdict.md`.
 
 **The same criterion on another record** (`--measure FILE`, 2026-11-18, `runs/UNSEEN_RUN.md`): an earlier verdict's
 `measure.py` is applied as it is to another record of the same plan (other dates, other coins). No model call, one
@@ -164,6 +185,8 @@ The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a b
   agree, 3 not judged (77 to 90 cases on the check folds), 1 disagrees and becomes inconclusive (019-03, a large
   breakout in a rising market: +0.43 % a case on every fold, -0.007 % on folds A and D). A first pass read only counts
   named "cases" or "days" and left 48 not judged: fixed to read the measures' own count names.
+- **No effect (B11, 2026-11-27):** night 9's tested ideas rerun with their own `measure.py` (no model call):
+  `../runs/BUILD_B11_B12.md`.
 - **The full-data run:** 5 "rejected" verdicts came from the plans' per-window holding reference, a bias fixed in step 3; rerun, 6 of 6 inconclusive (`../runs/FULL_DATA_RUN.md`).
 
 ## Who judges the output

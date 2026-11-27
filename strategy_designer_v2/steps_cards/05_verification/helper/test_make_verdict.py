@@ -91,3 +91,29 @@ def test_the_new_data_use_checks_on_the_check_half(tmp_path):
     (old / "BTCUSD" / "fold_A").mkdir(parents=True)
     assert lib.check_windows(plan, old) == ("folds A, D", lib.windows_of(plan, lib.CHECK_FOLDS, old))
     assert lib.exploration_windows(plan, old) == ("folds B, C", lib.windows_of(plan, lib.EXPLORATION_FOLDS, old))
+
+
+PLAN_UP = "- Confirm: The mean unusual move is above 0 with t ≥ 2, and the supporting check passes.\n- Reject: below 0 with t ≤ -2.\n"
+PLAN_DOWN = "- Confirm: The slope is negative with t ≤ −2, and the check passes.\n- Reject: The slope is positive with t ≥ 2.\n"
+
+
+def test_the_idea_direction_is_the_side_of_the_confirm_rule():
+    assert m.idea_direction(PLAN_UP) == 1 and m.idea_direction(PLAN_DOWN) == -1
+    assert m.idea_direction("- Confirm: The slope's t is -2 or less.\n- Reject: x\n") == -1
+    assert m.idea_direction("- Confirm: The slope's t is 2 or more.\n- Reject: t of -2 or less\n") == 1
+    assert m.idea_direction("no criterion") is None
+
+
+def test_no_effect_rule():
+    """common/verdicts.md (B11): rejected, or unclear with 30 cases and a t below 1 in the idea's direction."""
+    u = lambda t, n: dict(BASE, status="inconclusive", main_measure={"value": t, "statistic": {"name": "t", "value": t}},
+                          counts={"cases": n})
+    assert m.effect_check(dict(BASE, status="rejected"), PLAN_UP)["no_effect"]
+    assert m.effect_check(u(0.99, 30), PLAN_UP)["no_effect"]
+    assert m.effect_check(u(-3.0, 30), PLAN_UP)["no_effect"]
+    assert not m.effect_check(u(1.0, 30), PLAN_UP)["no_effect"]            # a sign of the effect: unclear
+    assert not m.effect_check(u(0.2, 29), PLAN_UP)["no_effect"]            # too few cases to show absence
+    assert not m.effect_check(u(-1.8, 500), PLAN_DOWN)["no_effect"]        # a falling slope: t -1.8 is a sign of it
+    assert m.effect_check(u(0.10, 500), PLAN_DOWN)["no_effect"]
+    assert not m.effect_check(dict(u(0.1, 500), main_measure={"value": 0.1, "statistic": None}), PLAN_UP)["no_effect"]
+    assert m.effect_check(BASE, PLAN_UP) is None                          # a confirm: the rule does not apply

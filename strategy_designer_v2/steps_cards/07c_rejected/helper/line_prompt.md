@@ -1,6 +1,7 @@
-Your line: the idea was rejected. Its test found clear evidence against it.
+Your line: the test shows no effect: enough cases, and the effect near zero or pointing the other way (the plan's reject
+rule met, or an unclear result whose t in the idea's direction is below 1).
 
-Objective: find why the idea was rejected, what the market did instead and where, and what other idea could be
+Objective: find why the effect is not there, what the market did instead and where, and what other idea could be
 confirmed.
 
 Look at two things.

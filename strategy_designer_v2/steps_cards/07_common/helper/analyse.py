@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
+from lib import step5_answer, call, child_id, first_child_number, write_atomic, header_fields as header, idea_fields, with_common, profile_name, CHECK_FOLDS, record_data_use, exploration_windows as explore_view  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -76,10 +76,20 @@ def status_of(folder, rid):
     return json.loads(f.read_text())["status"] if f and f.exists() else "none"
 
 
-def entry_met(entry, s5, s6):
+def failed_of(folder, rid):
+    """How many of step 6's measures the check failed (its result.json; None without a check)."""
+    f = folder / rid / "result.json" if folder else None
+    return sum(m.get("passed") is False for m in json.loads(f.read_text()).get("measures", [])) if f and f.exists() else None
+
+
+def entry_met(entry, s5, s6, failed=None):
+    """A line's entry condition (its line.yaml): step 5's answer in step5_in and not in step5_not_in, step 6's status in
+    step6_in, and at most step6_failed_at_most of step 6's measures failed (B12: a repair only when it is close)."""
     entry = entry or {}
+    cap = entry.get("step6_failed_at_most")
     return ((not entry.get("step5_in") or s5 in entry["step5_in"]) and (s5 not in entry.get("step5_not_in", []))
-            and (not entry.get("step6_in") or s6 in entry["step6_in"]))
+            and (not entry.get("step6_in") or s6 in entry["step6_in"])
+            and (cap is None or (failed is not None and failed <= cap)))
 
 
 def data_summary(record, only=None):
@@ -303,10 +313,14 @@ def main():
         lines = [l for l in (index_path.read_text().splitlines() if index_path.exists() else []) if not l.startswith(rid + ":")]
         write_atomic(index_path, "".join(l + "\n" for l in sorted(lines + [text])))
 
-    s5, s6 = status_of(args.verdicts_dir.resolve(), rid), status_of(args.checks_dir.resolve(), rid)
-    if not entry_met(line.get("entry"), s5, s6):
-        index_line(f"{rid}: not run: entry condition not met (step 5: {s5}; step 6: {s6})")
-        print(f"{line['id']} {rid}: not run (step 5: {s5}; step 6: {s6})")
+    # step 5's answer as read today (common/verdicts.md: an old "rejected" is "no effect")
+    s5, s6 = step5_answer(status_of(args.verdicts_dir.resolve(), rid)), status_of(args.checks_dir.resolve(), rid)
+    failed = failed_of(args.checks_dir.resolve(), rid)
+    if not entry_met(line.get("entry"), s5, s6, failed):
+        cap = (line.get("entry") or {}).get("step6_failed_at_most")
+        more = f"; {failed} of step 6's measures failed, at most {cap}" if cap is not None else ""
+        index_line(f"{rid}: not run: entry condition not met (step 5: {s5}; step 6: {s6}{more})")
+        print(f"{line['id']} {rid}: not run (step 5: {s5}; step 6: {s6}{more})")
         return
 
     plan_text = args.plan.read_text()
