@@ -112,6 +112,11 @@ box; the spend after each brief was answered.
   (7 stopped at step 3, 2 untestable), 8 confirmed, 3 profitable, 074-01.b1.g1 holding on both unseen periods; C's
   brief 075 is named "falling agitated, monthly move reverses" but its discovery is a falling-calm slide that continues
   (a naming slip by step 1, for the reading).
+- **01:50 Paris, the correction did not hold (found by B):** `run_idea` copies a brief from step 1's list
+  (`01_brief/briefs/`) into the run copy before each of its ideas, so the line came back from the list's copy (B's
+  072-02 ran once at generation 0, then 072-03 and 072-04 fell back to ranks 9 and 10). Each session told to remove the
+  line from the list's copy of its starting briefs too (night 8's run copies keep it; `source:` keeps the origin). At
+  the morning merge the list's copies of these 9 briefs therefore lose the line.
 
 ## Reading
 (written in the morning)
