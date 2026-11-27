@@ -9,15 +9,16 @@ One row per idea run; every status is read from the step's own result file. Each
 | 086-01_heavy-volume-up-day-continuation | - | plan | no effect (+0.82) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: no ideas: The theme's effect is not in the data. In falling calm markets, heavy-volume up days are followed by no more rise than light-volume ones at 1 to 10 days (F1, F6), and volume does not grade the later move (F2). The only positive result comes from DOGE in two 2021 windows, while BTC and XMR kept falling after up days of every kind (F3, F4, F5). That leaves no long-side variation on this theme a trader could act on. | 0.66 | 8.1 |
 | 050-02_falling-calm-scaled-week-rise-continuation | - | plan | inconclusive (+1.50) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-02.b1_calm-downtrend-week-rise-continuation-more-coins | 0.48 | 7.5 |
 | 060-02_falling-calm-low-to-close-fade | - | missing-components | - | - | - | - | 0.10 | 0.6 |
+| 086-02_volume-weighted-up-move-continuation | - | plan | no effect (+0.51) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 086-02.c1_calm-decline-five-day-continuation, 086-02.c2_calm-decline-ten-day-continuation | 0.68 | 7.9 |
 
 ## Consumption
-5 ideas, 2.50 USD, 32.2 minutes in all.
+6 ideas, 3.18 USD, 40.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.49 | 3.0 |
-| step4_backtest | 0.00 | 22.3 |
-| step5_verdict | 0.73 | 2.8 |
+| step3_plan | 0.56 | 3.4 |
+| step4_backtest | 0.00 | 27.7 |
+| step5_verdict | 0.90 | 3.5 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.g | 0.00 | 0.0 |
@@ -25,4 +26,4 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.21 | 0.8 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 1.07 | 3.1 |
+| step7_7.c | 1.50 | 4.4 |

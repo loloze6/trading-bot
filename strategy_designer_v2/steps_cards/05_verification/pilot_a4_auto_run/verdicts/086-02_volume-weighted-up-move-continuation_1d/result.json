@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of the signals (return minus normal 5-bar drift)",
+    "value": 0.002716634421822756,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 0.506652373841392
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting difference > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above-median forecast minus below-median",
+    "value": 0.0003605128478192769,
+    "passed": true
+  },
+  "counts": {
+    "cases": 578,
+    "distinct days": 360
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.507 (below 1), 578 cases (30 needed).",
+  "reading": "The falling-calm profile is read from the recorded regime ('unknown' = no veto fired), since its components are not recorded and their 365-bar lookback cannot be rebuilt in a window, and an up day as a positive raw value; cases are the first long bet (forecast rise >= 2 points from its lowest level since the last bet, reset to 0 after a flat) in each 5-bar grid cell of each window with a 5-bar return inside the window, on every coin of the record; the day-clustered t sums the deviations per UTC day with a D/(D-1) correction; the median split excludes cases equal to the median; the plan's minimum of 30 cases on 30 days, when not reached, gives 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.507 (below 1), 578 cases (30 needed)",
+    "t_in_idea_direction": 0.506652373841392,
+    "cases": 578
+  }
+}
