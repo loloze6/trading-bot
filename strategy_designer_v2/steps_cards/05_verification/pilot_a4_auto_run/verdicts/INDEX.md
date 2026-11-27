@@ -1,4 +1,5 @@
 032-01.b1_calm-fall-continuation-all-coins_1d: no effect (fit: adapted) [main: -6.33781e-06; day-clustered OLS slope t -0.030573; cases 2502, distinct days 1076]
+032-02.b1_calm-fall-depth-more-coins_1d: no effect (fit: exact) [main: -0.00024276; slope t, clustered by day -0.441122; grid cases 1016, distinct days 425]
 050-02_falling-calm-scaled-week-rise-continuation_1d: inconclusive (fit: exact) [main: 0.00619238; t of the mean, cases of the same day summed 1.50108; cases 467, upper half cases 233, lower half cases 234, days with cases 303]
 050-03.c1_calm-downtrend-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.0208186; t of the mean, cases of one day pooled (day-clustered) 1.697; independent cases (days) 78, cases 148]
 050-03_falling-calm-range-scaled-week-fall_1d: no effect (fit: exact) [main: 0.000743912; t of the mean (per-day summed deviations) 0.189268; distinct case days 414, cases 649]

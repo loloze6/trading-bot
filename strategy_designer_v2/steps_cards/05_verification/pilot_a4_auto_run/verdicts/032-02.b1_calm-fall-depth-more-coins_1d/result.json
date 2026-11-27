@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "clustered-by-day LS slope of coin excess 3-bar return on post_pipeline_value",
+    "value": -0.00024276016015699334,
+    "statistic": {
+      "name": "slope t, clustered by day",
+      "value": -0.441122336740773
+    },
+    "threshold": "confirm if slope t >= 2 and mean short-direction unusual move > 0; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean short-direction unusual 3-bar move",
+    "value": -0.00379492626671841,
+    "passed": false
+  },
+  "counts": {
+    "grid cases": 1016,
+    "distinct days": 425
+  },
+  "decided_by": "The slope t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -0.441 (below 1), 1016 cases (30 needed).",
+  "reading": "Grid bars are positions 0,3,6,... of each window with a full 3-bar return inside the window; the coin's mean 3-bar return (the drift) is taken over all its grid bars in all windows; the slope t uses a day-clustered (UTC date) sandwich standard error with a G/(G-1) correction; the profile is read from the recorded regime and the depth from last_history_value.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.441 (below 1), 1016 cases (30 needed)",
+    "t_in_idea_direction": -0.441122336740773,
+    "cases": 1016
+  }
+}

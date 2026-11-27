@@ -1,4 +1,5 @@
 032-01.b1_calm-fall-continuation-all-coins_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
+032-02.b1_calm-fall-depth-more-coins_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 050-02_falling-calm-scaled-week-rise-continuation_1d: 1 ideas (1 explorations)
 050-03.c1_calm-downtrend-scaled-rise-continues_1d: 1 ideas (3 explorations)
 050-03_falling-calm-range-scaled-week-fall_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)

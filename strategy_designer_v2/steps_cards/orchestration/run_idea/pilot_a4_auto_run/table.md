@@ -15,20 +15,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 050-03.c1_calm-downtrend-scaled-rise-continues | 050-03_falling-calm-range-scaled-week-fall | plan | inconclusive (+1.70) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-03.c1.b1_calm-downtrend-rise-continues-all-coins; 7.g: 050-03.c1.g1_calm-downtrend-rise-continues | 1.05 | 8.6 |
 | 060-02_falling-calm-low-to-close-fade | - | plan | no effect (+0.28) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 060-02.c1_falling-calm-surge-continuation; 7.g: no ideas: In falling calm markets on these coins, no angle I looked at (the forecast's quartiles, the trades by coin, the book's best and worst days, the range, the close location, the high-to-close and low-to-close distances, the 5- and 20-day returns, volume and weekday, at 1, 3 and 5 days) shows a graded effect that stands out from the chance expected over about 100 tests, and the few marginal cells point short, outside the long-only box. | 1.98 | 10.0 |
 | 032-01.b1_calm-fall-continuation-all-coins | 032-01_calm-fall-depth-continues | plan | no effect (-0.03) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 032-01.b1.c1_calm-decline-bounce-follow-through, 032-01.b1.c2_lift-off-monthly-low, 032-01.b1.c3_two-week-recovery-continues; 7.g: no ideas: Across the forecast, the past 5- to 60-day returns, the place in the 30-day range, the day's shape, range and volume, weekdays, years and windows, no pattern in falling calm markets is graded or stands out beyond what about 100 looks would give by chance (best |t| about 2.7 on a non-monotonic bucket, F4 and F5). No pattern supports a long idea, and the tested move per case (-0.22 %) is below the 0.33 % a trade costs. | 0.94 | 8.1 |
+| 032-02.b1_calm-fall-depth-more-coins | 032-02_calm-fall-below-high-continues | plan | no effect (-0.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 032-02.b1.c1_calm-fall-rise-off-low, 032-02.b1.c2_calm-fall-nearness-to-high; 7.g: 0 ideas, 2 discoveries (2 explorations) | 0.95 | 8.4 |
 
 ## Consumption
-11 ideas, 9.62 USD, 90.7 minutes in all.
+12 ideas, 10.57 USD, 99.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.89 | 6.0 |
-| step4_backtest | 0.00 | 60.1 |
-| step5_verdict | 1.90 | 7.1 |
+| step3_plan | 1.97 | 6.4 |
+| step4_backtest | 0.00 | 65.5 |
+| step5_verdict | 2.06 | 7.6 |
 | step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.g | 1.81 | 4.9 |
+| step7_7.g | 2.15 | 6.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.89 | 2.8 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 3.13 | 9.4 |
+| step7_7.c | 3.50 | 10.4 |
