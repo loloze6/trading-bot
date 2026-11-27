@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of next-day excess return on forecast",
+    "value": 0.0011144698242454118,
+    "statistic": {
+      "name": "OLS slope t, residuals summed per day",
+      "value": 2.599113625874078
+    },
+    "threshold": "slope > 0 with t >= 2 confirms; slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-third mean next-day excess return",
+    "value": 0.013085036819307562,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 4265,
+    "days": 1257,
+    "top third bars": 1422
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-third mean excess return is above 0 (confirm rule).",
+  "reading": "The regime part of the situation is read from the recorded `regime` column (the volatility-rank detector is not recorded and 365 days of history are not in the windows), the down day from the fall component's raw value < 0 (the bar's close-to-close return when the raw value is missing); the coin's mean daily return is the mean of all its 1-bar returns over all windows; the slope's t uses day-clustered errors (x-deviation times residual summed per day, with G/(G-1) correction); the top third is the ceil(n/3) bars with the largest forecast; the 100-bar minimum counts bars with forecast > 0 and a next-day return in the same window.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

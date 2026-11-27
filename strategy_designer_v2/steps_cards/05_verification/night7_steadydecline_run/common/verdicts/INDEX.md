@@ -1,0 +1,1 @@
+039-02_agitated-range-fall-low-close-rebound_1d: inconclusive (fit: exact) [main: 0.00335371; t of weighted mean, same-day cases summed (day-clustered) 1.88293; distinct days with forecast > 0 2227, cases (coin-bars with forecast > 0) 10011]
