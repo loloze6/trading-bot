@@ -1,0 +1,30 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9967448247800214,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of demeaned 3-bar forward return on volratio, trending grid bars",
+    "value": 0.008110516972566931,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 5.41614635344165
+    },
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; at least 100 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "trending-regime grid cases": 8565
+  },
+  "decided_by": "The slope is positive with t = 5.42 >= 2 from 8565 grid cases (confirm rule).",
+  "reading": "The situation is a 30-bar close-to-close return above 0 recomputed inside each window (active bars in a window's first 30 bars, where it cannot be computed, are left out unless no other active bar exists, then the recorded regime is used), the expected side is long; the main sample is bars with recorded regime 'trending' on each window's 0,3,6,... grid, and the coin's mean 3-bar return is taken over the same grid on all bars of all its windows.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

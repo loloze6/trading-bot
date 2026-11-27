@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 336-bar forward return minus coin drift on forecast (grid bars with forecast > 0)",
+    "value": 0.0032743199365407195,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.7449019540059125
+    },
+    "threshold": "confirm if slope t >= 2 (with top-tercile mean excess > 0 and >= 100 cases); reject if t <= -2 (>= 100 cases)"
+  },
+  "supporting_check": {
+    "name": "top-tercile (by forecast) mean 336-bar excess return over drift > 0",
+    "value": 0.03674569420966962,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 970,
+    "top tercile cases": 324
+  },
+  "decided_by": "Slope t is 2 or more, the top-tercile mean excess return is above 0, with at least 100 cases.",
+  "reading": "The regression pools all coins' grid bars with forecast > 0 (grid from each window's first row, returns inside the window), the drift is each coin's mean 336-bar return over all its windows' grid bars, and the top tercile is the top third of those bars ranked by forecast (ties broken by order).",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
