@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 077-01_agitated-high-close-week-rise_1d
+idea tested: 077-01_agitated-high-close-week-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4060 USD
+---
+## Findings
+- **F1:** In agitated bars (folds B, C), the 7-day excess return over the coin's mean is concentrated in the top fifth of closes by place in the day's range: +5.82 % (t 2.53, same-day cases together, 130 cases on 55 days). The next three fifths give -2.61 %, -0.93 % and +0.19 % (t -1.13, -0.45, 0.08). The effect is therefore not graded across the upper half of the range, which is where the tested forecast was positive. On the same B, C cases, that forecast earned only +1.11 % (t 0.68, 370 cases), and +0.28 % (t 0.30) on all folds.
+- **F2:** The top-fifth effect is not the first day. From day 2 to day 7 the top fifth still gains +5.83 % excess (t 2.45, 55 days). Meanwhile, the next day the top fifth falls -0.64 % (t -2.97, 898 cases) and the bottom fifth rises +0.84 % (t 3.89). This is the brief's sequence: a one-day payback, then a week following the side that won.
+- **F3:** The top-minus-bottom gap over 7 days is consistent across subsets. The top fifth is positive in every year shown: 2018 +5.6 %, 2019 +2.1 %, 2020 +5.7 %, 2021 +7.6 %. It is positive on 9 of 10 coins, from BTC +5.8 % to ADA +15.5 %, with TRX -2.4 % the exception. It is positive in every 20-day trend: down +3.8 %, flat +5.9 %, up +7.2 % (t 2.36).
+- **F4:** The same top fifth in calm bars gives +2.82 % (t 1.21, 62 days), about half the agitated move and not distinguishable from 0. The agitated profile the brief names carries the effect.
+- **F5:** The signal is one day's close, not a run of them. The 3-day mean of close location shows no ordering over 7 days: top fifth +0.59 % (t 0.24), bottom fifth +0.18 % (t 0.09).
+- **F6:** The other patterns seen are already held or stand out too little among the angles looked at:
+- **F7:** The book moves with the coins. Its daily returns correlate 0.81 with the coins' mean. On its worst 2 % of days the coins fell -12.7 %, and on its best 2 % they rose +11.6 %, so its gain is mostly the market's.
+
+## Ideas
+- `077-01.g1_agitated-top-close-week-rise` (from F1, F2, F3, F4, F5): In an agitated market, a daily close at the very top of that day's high-to-low range is followed, from the next day, by a rise over the following 6 days. The rise grows steeply the smaller the gap between the close and the day's high, as a share of the day's range, and is largest when the close sits at the high itself.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

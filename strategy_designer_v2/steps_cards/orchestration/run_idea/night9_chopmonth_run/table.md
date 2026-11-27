@@ -30,21 +30,25 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-02.b1.b1.d3_calm-choppy-month-rise-continues | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+1.35) | not profitable enough (failed: Calmar) | - | 7.b: 067-02.b1.b1.d3.b1_large-calm-choppy-month-continues; 7.g: no ideas: Across about fifteen angles (forecast quintiles in and out of the profile, past 7-day and 1-day returns, range and relative range, close position at 1, 3 and 7 days by trend and year, volatility ratio, weekdays, trades by side, forecast and coin), no pattern holds a day-clustered t clearly above the bar such a search requires (the best are t -2.83 and 2.09). The few near it repeat ideas the profile map already holds: close near the high continuing in rising markets, next-day close-height fade, and late-week gain. | 1.10 | 12.4 |
 | 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks | 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | plan | not observable (+1.25) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.a: no ideas: The plan needs 30 distinct days among the deepest-fifth cases, but the full available data (all 19 coins, all four folds) gives only 22. A 21-day horizon defined in real time yields the same number of cases on any bar size, so no available data can reach the minimum.; 7.g: 067-02.b1.b1.d1.d1.g1_choppy-agitated-month-fall-continues, 067-02.b1.b1.d1.d1.g2_choppy-month-fall-week | 1.19 | 12.0 |
 | 067-02.b1.b1.d1.d2_agitated-choppy-deep-falls | 067-02.b1.b1.d1_choppy-deepest-month-falls-continue | plan | inconclusive (+1.37) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.d1.d2.b1_agitated-chop-falls-five-days, 067-02.b1.b1.d1.d2.b2_agitated-chop-falls-ten-days; 7.g: 067-02.b1.b1.d1.d2.g1_choppy-scaled-month-week-continuation | 1.24 | 12.5 |
+| 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls | 067-02.b1.b1_choppy-deep-month-fall-continues | plan | inconclusive (+0.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1.b1.g1.b1_agitated-chop-monthly-fall-continues; 7.g: no ideas: Across about twenty tables of forecast buckets, profiles, prior moves, volatility, range, weekday and the book, no pattern stood out beyond what that many looks produce by chance. The best candidates (choppy-calm continuation, F3, and the Saturday gain, F5) rest on 6 days or on a single t of 2.4. The tested short already fails on cost, because its total move per case is a tenth of a trade's cost (F1). | 1.10 | 12.6 |
+| 077-01_agitated-high-close-week-rise | - | plan | inconclusive (+0.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 077-01.b1_agitated-low-close-rebounds; 7.g: 077-01.g1_agitated-top-close-week-rise | 1.21 | 13.4 |
+| 077-02_agitated-low-close-week-fall | - | plan | inconclusive (+0.99) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 077-02.b1_agitated-low-close-delayed-fall; 7.g: no ideas: The week continuation the brief claims flips sign with the choice of 7-day grid (F1), the only robust pattern is a next-day reversal the profile map already holds in falling agitated markets (F3, F4), and the one candidate in an empty cell, choppy agitated shorts, has a t under 2 on 25 days after many angles were looked at (F5). | 1.25 | 12.9 |
+| 077-03_agitated-high-close-later-rise | - | missing-components | - | - | - | - | 0.06 | 0.2 |
 
 ## Consumption
-26 ideas, 29.22 USD, 313.8 minutes in all.
+30 ideas, 32.84 USD, 352.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.13 | 11.7 |
-| step4_backtest | 0.00 | 215.8 |
-| step5_verdict | 5.04 | 17.6 |
-| step6_check | 0.00 | 1.1 |
-| chart_files | 0.00 | 0.5 |
+| step3_plan | 2.47 | 13.5 |
+| step4_backtest | 0.00 | 242.9 |
+| step5_verdict | 5.60 | 19.6 |
+| step6_check | 0.00 | 1.3 |
+| chart_files | 0.00 | 0.6 |
 | step7_7.d | 2.88 | 9.2 |
 | step7_7.a | 0.44 | 1.3 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 6.81 | 20.1 |
-| step7_7.g | 11.92 | 35.6 |
+| step7_7.c | 0.00 | 0.1 |
+| step7_7.b | 8.11 | 24.1 |
+| step7_7.g | 13.33 | 39.7 |
 | similarity_check | 0.00 | 0.6 |

@@ -25,3 +25,5 @@
 067-02.b1_choppy-plain-month-fall-continues_1d: inconclusive (fit: adapted) [main: -0.0120588; t of the mean, cases of one day taken together -1.5538; case-days 211, cells 633]
 067-02.b2_agitated-choppy-month-fall-continues_1d: inconclusive (fit: adapted) [main: 0.00165791; t, errors clustered by day 1.01474; grid cases with a forecast below 0 215, distinct days 108]
 067-02_choppy-weak-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.0155944; weighted t, cases of one day summed 1.57148; independent days with cases 211, cases 633]
+077-01_agitated-high-close-week-rise_1d: inconclusive (fit: adapted) [main: 0.00281163; t of weighted mean, same-day cases together 0.300872; independent grid cases with forecast > 0 1138, days the cases fall on 277]
+077-02_agitated-low-close-week-fall_1d: inconclusive (fit: exact) [main: 0.00650169; t of the mean, cases of one day summed 0.994816; cases 1738, distinct case days 679]
