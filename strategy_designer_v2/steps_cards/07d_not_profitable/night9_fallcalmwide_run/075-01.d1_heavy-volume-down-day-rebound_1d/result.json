@@ -1,0 +1,39 @@
+{
+  "line": "7.d",
+  "backtest": "075-01.d1_heavy-volume-down-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4879666,
+  "findings": {
+    "F1": "The check failed on Calmar alone (0.67 against 0.75); the book's deepest fall is -13.9 % over 15 days inside w14, where the book's daily returns summed to -13.9 % while its coins' summed -37.8 %, and its worst day (-9.3 %) is also in w14.",
+    "F2": "The w14 fall came from being long after capitulation days that kept falling, and from being long after heavy-volume days that had barely closed lower. In the first group: BTC after -14.7 % (volume 5.1x its 20-day average) fell a further 8.0 %, ETH after -17.2 % fell 12.2 %, and ZEC after -14.0 % fell 13.3 %. In the second group: BTC after -1.1 % fell 10.5 %, ETH after -1.7 % fell 8.8 %, and LTC after -0.3 % fell 6.9 %, with allocations of 0.46 to 1.01.",
+    "F3": "Inside the cases, the next-day unusual move rises with the size of the day's fall: from -0.50 % (t -2.0, 360 cases) on the smallest falls (under 1.6 %) to +0.48 %, +0.79 % and +2.59 % (t 5.8, 360 cases) on the largest (beyond 8.5 %). The book still held a mean allocation of 0.37 on the losing small-fall cases.",
+    "F4": "Fall size and volume each add to the other. On the largest third of falls, the unusual move is +1.19 % on the lightest third of volume (t 1.5, 110 cases) and +1.94 % on the heaviest (t 3.9, 300 cases). On the smallest third of falls it is -0.43 % on light volume (t -1.7, 281 cases) and +0.37 % on heavy volume.",
+    "F5": "The fall alone does not carry the effect. Down days with volume at or below average show nothing on the four smaller fifths of falls (unusual moves from -0.18 % to 0.00 %). Their largest fifth (beyond 4.5 %) shows +1.03 % with t 1.6 (645 cases), against +2.59 % with t 5.8 for heavy-volume cases with falls beyond 8.5 %. So the fall's size is the strength of the idea's own forced-selling situation, not a separate effect.",
+    "F6": "Leaving out the cases whose fall is under 1.6 % improves the falls the check judges. In a rebuilt book with 0.11 % per side, the deepest fall goes from -14.0 % to -11.5 %, Calmar from 1.59 to 2.07, Sharpe from 1.26 to 1.40, and the yearly return from 22.2 % to 23.8 %, while the share of coin-days held goes from 14.8 % to 12.0 %.",
+    "F7": "Holding a second day adds little: after cases whose fall exceeds 1.5 of the coin's own 20-day swing (504 cases), the mean return is +1.39 % over one day and +1.56 % over two. A longer holding is not the repair.",
+    "F8": "The cases are weak or negative in a calm stretch, but that is its own effect and is left out. In the quarter of cases with the calmest 20-day swing against the 60-day swing, the unusual move is -0.53 % (t -2.0). On non-case days in the same calm quarter it is about as low (-0.40 %, t -3.1, 1682 days)."
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's volume on a day that closed lower, relative to its own average daily volume over the past 20 days, and the larger that day's fall, the larger its rise over the next day. Days that closed only slightly lower and up days are left aside.",
+      "consequence": "A trader buys a coin after a down day on heavy volume, sized by both the depth of the fall and the weight of the volume, and stays out after heavy-volume days that barely closed lower, which carried the book's losses.",
+      "name": "heavy-volume deep-fall rebound",
+      "from": "F1, F2, F3, F4, F5, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "075-01.d1.d1_heavy-volume-deep-fall-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

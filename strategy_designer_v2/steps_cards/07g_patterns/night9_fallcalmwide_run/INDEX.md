@@ -6,3 +6,5 @@
 074-01.b1_low-close-nearness-rebound_1d: 1 ideas (2 explorations)
 074-01.b2_three-day-low-close-rebound_1d: 1 ideas (2 explorations)
 074-01_rising-calm-wide-low-close-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
+075-01.d1_heavy-volume-down-day-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
+075-01_heavy-volume-next-day-rise_1d: 2 ideas (2 explorations)

@@ -6,3 +6,5 @@
 074-01.b1_low-close-nearness-rebound_1d: confirmed (fit: adapted) [main: 0.00841435; t of the mean, cases of one day pooled 2.30515; cases 300, days 169]
 074-01.b2_three-day-low-close-rebound_1d: inconclusive (fit: exact) [main: 0.00733984; t of the mean, cases summed per day 1.14138; cases 290, distinct days 164]
 074-01_rising-calm-wide-low-close-rebound_1d: inconclusive (fit: adapted) [main: 0.00634202; t of the mean, pooled by day 1.92506; distinct case days 225, cases 426, active bars 427]
+075-01.d1_heavy-volume-down-day-rebound_1d: confirmed (fit: adapted) [main: 0.000739396; OLS slope t 5.80686; distinct case days 1676, case bars 6801]
+075-01_heavy-volume-next-day-rise_1d: confirmed (fit: exact) [main: 0.000193671; OLS slope t, clustered by day 3.05409; distinct days with recorded forecasts 2922, bars in slope 36948, day clusters 2898]

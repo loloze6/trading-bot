@@ -6,3 +6,5 @@
 074-01.b1_low-close-nearness-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 074-01.b2_three-day-low-close-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 074-01_rising-calm-wide-low-close-rebound_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+075-01.d1_heavy-volume-down-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+075-01_heavy-volume-next-day-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

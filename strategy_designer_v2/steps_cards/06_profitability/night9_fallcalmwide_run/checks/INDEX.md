@@ -6,3 +6,5 @@
 074-01.b1_low-close-nearness-rebound_1d: not profitable enough [Sharpe 1.049; Sharpe minus holding's Sharpe 0.4958; Calmar 1.156]
 074-01.b2_three-day-low-close-rebound_1d: not profitable enough [Sharpe 0.8518; Sharpe minus holding's Sharpe 0.299; Calmar 0.4783]
 074-01_rising-calm-wide-low-close-rebound_1d: not profitable enough [Sharpe 0.7463; Sharpe minus holding's Sharpe 0.1935; Calmar 0.3956]
+075-01.d1_heavy-volume-down-day-rebound_1d: not profitable enough [Sharpe 0.8618; Sharpe minus holding's Sharpe 0.2543; Calmar 0.6715]
+075-01_heavy-volume-next-day-rise_1d: not profitable enough [Sharpe 0.5045; Sharpe minus holding's Sharpe -0.103; Calmar 0.2908]
