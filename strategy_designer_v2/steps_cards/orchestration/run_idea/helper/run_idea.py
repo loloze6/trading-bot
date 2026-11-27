@@ -5,7 +5,8 @@
 It calls the steps' own helpers in order (step 3's plan, step 4's backtest, step 5's verdict, step 6's check, every
 active step 7 line), skips a step whose output for the idea already exists in the run, stops where a step stops (a
 plan that is not testable), and writes the idea's row in orchestration/run_idea/<run>/table.md and table.json.
-It decides nothing: each step's own rules, entry conditions included, are the steps'.
+It decides nothing: each step's own rules, entry conditions included, are the steps', but one: whether line 7.g is
+called after this test, by select_next's score (07g_patterns/card.md, "Entry condition"; next steps B10).
 """
 import argparse, json, re, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
@@ -19,6 +20,8 @@ sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 sys.path.insert(0, str(STEPS / "04_backtest" / "helper"))
 import chart_files  # noqa: E402  (step 4's chart files, for the run viewer)
+sys.path.insert(0, str(STEPS / "orchestration" / "select_next" / "helper"))
+import select_next  # noqa: E402  (line 7.g's call rule: whether an idea it writes would rank first)
 
 import yaml  # noqa: E402
 
@@ -142,6 +145,22 @@ class Journal:
         if code and required:
             sys.exit(f"{self.rid}: {name}: its helper failed (exit {code}): {(out.strip().splitlines() or [''])[-1][:300]}")
         return out, cost
+
+    def not_called(self, name, why):
+        """A step not called by a rule: one line saying why, at no cost."""
+        self.use.setdefault(name, {"usd": 0.0, "seconds": 0.0})
+        entry = {"at": utc_now(), "run": self.run, "backtest": self.rid, "step": name, "action": f"not called: {why}",
+                 "usd": 0.0, "seconds": 0.0, "model_calls": 0, "longest_call_seconds": 0.0, "outputs": [], "log": None}
+        with open(self.dir / "journal.jsonl", "a") as fh:
+            fh.write(json.dumps(entry) + "\n")
+
+
+def call_patterns(run, idea_id):
+    """Line 7.g's call rule (next steps B10; 07g_patterns/card.md): called after a test only when an idea it would write
+    would rank first in the run's queue, as the loop ranks it (its failed ideas left out). Returns (call, why)."""
+    sys.path.insert(0, str(STEPS / "orchestration" / "loop" / "helper"))
+    import loop  # noqa: E402  (the ideas the loop does not pick again: loop.failed)
+    return select_next.discovery_call(run, idea_id, exclude=loop.failed(run))
 
 
 def copy_into(src, dst):
@@ -302,10 +321,18 @@ def main():
         j.step("similarity_check", [isc / "helper/ideas_similarities_check.py", record, "--run", args.run],
                [isc / "register" / "comparisons" / f"{args.run}__{rid}.json"])
 
-    # Step 7: every active line, in parallel; each line's own entry condition decides whether it runs
+    # Step 7: every active line, in parallel; each line's own entry condition decides whether it runs, and line 7.g
+    # runs only when an idea it would write would rank first in the queue (B10), decided before the lines start
+    lines = active_lines()
+    patterns = {lid for lid, ldir in lines if lid == "7.g" and index_says(ldir / args.run / "INDEX.md", rid) is None}
+    call_g, why_g = call_patterns(args.run, idea_id) if patterns else (True, None)
+
     def run_line(line):
         lid, ldir = line
         out_dir = ldir / args.run
+        if lid in patterns and not call_g:
+            j.not_called(f"step7_{lid}", why_g)
+            return lid, None, 0.0
         _, c = j.step(f"step7_{lid}", [STEPS / "07_common/helper/analyse.py", ldir, record, "--plan", plan,
                                        "--briefs-dir", f["briefs"], "--verdicts-dir", f["verdicts"], "--checks-dir", f["checks"],
                                        "--python", args.python, "--out-dir", out_dir, "--idea", idea_file] + model,
@@ -318,7 +345,7 @@ def main():
         return lid, (", ".join(r["idea_ids"]) if r and r.get("idea_ids") else said), c
 
     with ThreadPoolExecutor() as ex:
-        done = list(ex.map(run_line, active_lines()))
+        done = list(ex.map(run_line, lines))
     row["step7"] = {lid: what for lid, what, _ in done if what is not None}
     row["cost"] += sum(c for _, _, c in done)
 

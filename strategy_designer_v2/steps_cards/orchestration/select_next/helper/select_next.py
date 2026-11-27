@@ -21,6 +21,8 @@ w = the parent's difference = 1 - the share of the parent's book its nearest hel
 the portfolio's books, register/held.json, 2026-11-24; the similarity
 register, orchestration/ideas_similarities_check/: common/measures.md), when the parent is confirmed and in the
 register; 0.5 (no evidence) otherwise, as a line with no record has 0.5.
+a brief written from a discovery: its ideas' record is "7.g discovery", one analysis per brief in a run, not step 2's
+(next steps B10); discovery_call: whether line 7.g, after a test, would write the next idea tested (run_idea calls it).
 record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
 read by a line in two runs is two analyses); s the analyses with a
 success (at least one tested idea with a profitable book: step 6's "profitable enough"; operator, 2026-11-19). Words and id convention:
@@ -55,17 +57,28 @@ def id_parts(idea_id):
     return None, None, 0, 0
 
 
+DISCOVERY = "7.g discovery"     # the record of the briefs written from line 7.g's discoveries (next steps B10)
+
+
 def records(root=STEPS):
-    """Every line's record, from every named run: {line: (successes, analyses, record)}."""
-    analyses = {}
+    """Every line's record, from every named run: {line: (successes, analyses, record)}. A tested idea of a brief
+    written from a discovery (the brief's `discovery:` field) counts as an analysis of "7.g discovery", one per brief
+    in a run, not of step 2 (the operator, 2026-11-27, next steps B10): its ideas are ranked as 7.g's (topic 50, 1n),
+    and its result is the discovery's; 7.g's on-theme follow-ups keep the record "7.g"."""
+    analyses, briefed = {}, {}
     for plan in sorted(root.glob("03_test_plan/*_run/plans/*.md")):
         if plan.name in ("INDEX.md", "COMPONENT_WISHLIST.md"):
             continue
         run, rid = plan.parents[1].name, plan.stem
-        idea = header_fields(plan.read_text()).get("idea") or BAR.sub("", rid)
+        text = plan.read_text()
+        idea = header_fields(text).get("idea") or BAR.sub("", rid)
         line, created_from, _, _ = id_parts(idea)
         if line is None:
             continue
+        if run not in briefed:
+            briefed[run] = briefed_discoveries(run, root)
+        if line == "step 2" and discovery_of(run, text, root, briefed[run]):
+            line = DISCOVERY            # a discovery's brief: an analysis of the discovery, not of step 2 (B10)
         v = root / "05_verification" / run / "verdicts" / rid / "result.json"
         c = root / "06_profitability" / run / "checks" / rid / "result.json"
         if not v.exists():
@@ -102,12 +115,28 @@ def parent_evidence(root=STEPS):
     return out
 
 
-def discovery_of(run, idea_text, root=STEPS):
+def briefed_discoveries(run, root=STEPS):
+    """{brief: the discovery (its id) the loop turned into it} in the run, from the loop's lines (loop.jsonl)."""
+    p = root / "orchestration" / "loop" / run / "loop.jsonl"
+    out = {}
+    for l in (p.read_text().splitlines() if p.exists() else []):
+        x = json.loads(l) if l.strip() else {}
+        if x.get("brief") and x.get("discovery"):
+            out[x["brief"]] = Path(x["discovery"]).stem
+    return out
+
+
+def discovery_of(run, idea_text, root=STEPS, briefed=None):
     """The discovery (its id) whose brief an idea of step 2 was written from, or None: the `discovery:` field run_brief
-    writes in such a brief (the run's copy, 01_brief/<run>/briefs/)."""
+    writes in such a brief (the run's copy, 01_brief/<run>/briefs/); for a brief written before the field (night 8,
+    2026-11-25), the loop's line that wrote it from the discovery (loop.jsonl; next steps B10). `briefed`, the run's
+    briefed_discoveries, saves reading the loop's lines again for every idea."""
     b = header_fields(idea_text).get("brief")
     f = root / "01_brief" / run / "briefs" / f"{b}.md" if b else None
-    return header_fields(f.read_text()).get("discovery") if f and f.exists() else None
+    d = header_fields(f.read_text()).get("discovery") if f and f.exists() else None
+    if d or not b:
+        return d
+    return (briefed if briefed is not None else briefed_discoveries(run, root)).get(b)
 
 
 def parent_confirmed(run, created_from, root=STEPS):
@@ -169,7 +198,7 @@ def tested_in(run, root=STEPS):
 def rank(run, root=STEPS, exclude=()):
     """The run's ideas: candidates ranked by score, then the others (tested, duplicate, unreadable, excluded)."""
     recs, tested = records(root), tested_in(run, root)
-    evidence = parent_evidence(root)
+    evidence, briefed = parent_evidence(root), briefed_discoveries(run, root)
     seen, rows = {}, []
     files = written_in(run, root)
     # an idea tested in the run is seen first, so a later idea with the same text and data is its duplicate
@@ -185,11 +214,11 @@ def rank(run, root=STEPS, exclude=()):
         line, created_from, number, gen = id_parts(iid)
         # the idea it was written from, as its file names it (the id holds only its lineage code since topic 46)
         created_from = header_fields(text).get("source-idea") or created_from
-        disc = discovery_of(run, text, root)
+        disc = discovery_of(run, text, root, briefed)
         if disc:                       # a discovery's brief: its ideas rank as the discovery, a level below its source
-            d_line, d_from, _, d_gen = id_parts(disc)
-            if gen == 0:
-                line, created_from = d_line, d_from
+            _, d_from, _, d_gen = id_parts(disc)
+            if gen == 0:               # with the discovery's own record (B10); their follow-ups keep their line's
+                line, created_from = DISCOVERY, d_from
             gen += d_gen
         rec = record_of(line, recs)
         row = {"idea": iid, "path": str(f), "line": line or "?", "generation": gen, "number": number,
@@ -225,6 +254,34 @@ def rank(run, root=STEPS, exclude=()):
     cands = sorted((r for r in rows if r["status"] == "candidate"),
                    key=lambda r: (r["group"], -r["priority"], r["number"], r["idea"]))
     return cands + [r for r in rows if r["status"] != "candidate"]
+
+
+def discovery_call(run, idea_id, root=STEPS, exclude=()):
+    """Line 7.g's call rule after a test (the operator, 2026-11-27, next steps B10): call 7.g only when an idea it would
+    write would be the next idea tested. Its score is this function's own formula: the higher of the records "7.g" (its
+    follow-ups) and "7.g discovery" (a discovery's brief), over 1 plus the generation it would have (the tested idea's,
+    as ranked, plus one). It is compared with the priority of the best waiting candidate, as `rank` orders the queue: a
+    brief's own idea waiting goes first, so the line is not called; otherwise it is called when its score is at least that
+    priority, or when nothing waits. The tested book's difference w is not applied: what the line finds is a pattern that
+    book does not explain (a discovery is off its theme). Returns (call, why)."""
+    ranking = rank(run, root, exclude)
+    recs = records(root)
+    me = next((r for r in ranking if r["idea"] == idea_id), None)
+    gen = (me["generation"] if me else id_parts(idea_id)[3]) + 1
+    line = max(("7.g", DISCOVERY), key=lambda l: record_of(l, recs))
+    rec = record_of(line, recs)
+    score = round(rec / (1 + gen), 4)
+    mine = f"an idea of 7.g would score {score} = record {round(rec, 4)} ({line}) / (1 + generation {gen})"
+    cands = [r for r in ranking if r["status"] == "candidate"]
+    if not cands:
+        return True, f"{mine}; nothing waits"
+    best = cands[0]
+    theirs = f"the best waiting idea, {best['idea']}, has priority {best['priority']}"
+    if best["group"] == 1:
+        return False, f"{mine}; {theirs} and is a brief's own idea: it goes first"
+    if score >= best["priority"]:
+        return True, f"{mine}; {theirs}: it would rank first"
+    return False, f"{mine}; {theirs}: it would not rank first"
 
 
 def main():
