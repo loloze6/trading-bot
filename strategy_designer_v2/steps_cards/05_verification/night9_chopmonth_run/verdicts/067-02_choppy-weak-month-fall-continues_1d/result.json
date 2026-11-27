@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean short-side unusual 7-bar move",
+    "value": 0.015594428878539375,
+    "statistic": {
+      "name": "weighted t, cases of one day summed",
+      "value": 1.5714777303376342
+    },
+    "threshold": "confirm: above 0 with t >= 2 and supporting check passing; reject: below 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean short-side unusual move, larger half of abs(forecast) minus smaller half",
+    "value": 0.024201185720812746,
+    "passed": true
+  },
+  "counts": {
+    "independent days with cases": 211,
+    "cases": 633
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Cases are bars at positions 0,7,14,... of each window with forecast < 0 and a close 7 bars later in the same window, the coin's mean 7-bar return is the mean over that grid in all its windows, the halves split the cases sorted by abs(forecast) with the odd middle case in the smaller half and unweighted means, and the plan's 'fewer than 100 independent days' is treated as the minimum count giving 'not observable'."
+}

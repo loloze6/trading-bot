@@ -11,3 +11,4 @@
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: 2 ideas (2 explorations)
 067-01.b1_choppy-weak-month-keeps-falling_1d: 1 ideas (2 explorations)
 067-01_choppy-strong-month-rise-continues_1d: 2 ideas (2 explorations)
+067-02_choppy-weak-month-fall-continues_1d: 2 ideas, 1 discoveries (2 explorations)

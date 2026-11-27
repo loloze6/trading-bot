@@ -3,6 +3,7 @@ instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX
 bar: 1d
 side: long and short
 source: line 7.g patterns, backtest 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up_1d (idea 059-01.b1.b1.d1.b1.b2.d2_choppy-calm-rise-month-up, brief 059_choppy-calm-weekly-rise-continues)
+discovery: 059-01.b1.b1.d1.b1.b2.d2.g1_choppy-month-move-continues
 ---
 In a choppy market, a coin's plain return over the past month points the way of its move over the following week. After a strong month it keeps rising, and after a weak month it keeps falling. The bigger the month's move, the bigger the move that follows. This holds after rises and after falls alike. It is the opposite of what range trading in a trendless market would expect.
 

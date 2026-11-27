@@ -17,21 +17,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | 067-01.b1.g1.b1_choppy-month-fall-continues | plan | confirmed (+2.08) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue, 067-01.b1.g1.b1.g1.d2_slide-continues-while-month-negative; 7.g: no ideas: The only robust grading is the tested choppy month continuation itself (F1, F2). The patterns that stand out off the theme repeat strategies the map already holds in the same profile (F4, F5, F6), and the rest cannot be told from chance across the many angles examined (F7). | 1.26 | 12.5 |
 | 067-01.b1.g1.b1.g1.d1_deepest-choppy-slides-continue | 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.g: 067-01.b1.g1.b1.g1.d1.g1_choppy-scaled-month-continues, 067-01.b1.g1.b1.g1.d1.g2_calm-choppy-slides-keep-falling | 0.77 | 11.9 |
 | 064-02_choppy-range-top-break-continuation | - | plan | inconclusive (+1.27) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The positive mean comes from a handful of extreme cases (F1), shows no grading by the size of the breakout (F2), and holds in no coin, period, agitation or horizon with a t of 2 (F4, F5, F6). The test already covered all the daily data there is (F7).; 7.g: 064-02.g1_choppy-scaled-slide-continues-down | 1.15 | 11.4 |
+| 067-02_choppy-weak-month-fall-continues | - | plan | inconclusive (+1.57) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-02.b1_choppy-plain-month-fall-continues, 067-02.b2_agitated-choppy-month-fall-continues; 7.g: 067-02.g1_choppy-calm-month-continuation, 067-02.g2_choppy-scaled-month-fall-continues | 1.08 | 11.9 |
 
 ## Consumption
-13 ideas, 14.22 USD, 154.2 minutes in all.
+14 ideas, 15.30 USD, 166.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.11 | 6.2 |
-| step4_backtest | 0.00 | 106.1 |
-| step5_verdict | 2.57 | 9.0 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 1.18 | 6.6 |
+| step4_backtest | 0.00 | 114.4 |
+| step5_verdict | 2.74 | 9.6 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.d | 1.89 | 6.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 2.85 | 8.4 |
-| step7_7.g | 5.81 | 17.1 |
+| step7_7.b | 3.24 | 9.6 |
+| step7_7.g | 6.25 | 18.5 |
 | similarity_check | 0.00 | 0.3 |

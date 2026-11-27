@@ -1,0 +1,64 @@
+{
+  "line": "7.g",
+  "backtest": "067-02_choppy-weak-month-fall-continues_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44016369999999994,
+  "findings": {
+    "F1": "Inside the choppy profile, a coin's 30-day return scaled by its 30-day daily swing ranks its next 7-day unusual move with a Spearman of 0.276 (215 non-overlapping cases), against 0.028 outside the choppy profile (1004 cases). In choppy, the quintiles of the scaled 30-day return run from -8.9 % (lowest, 18 days) and -4.5 % (second, t -3.57, 35 days) through -0.4 % to +2.5 % and +1.6 % (top two).",
+    "F2": "In choppy, the continuation is stronger after falls than after rises. After a negative 30-day return the 7-day unusual move in the month's direction is +5.1 % (t 2.67, 54 days; graded t 2.12). After a positive one it is +1.7 % (t 0.78, 48 days; graded t 1.08). The ranking inside each side is about the same (Spearman 0.189 after falls, 0.180 after rises).",
+    "F3": "Within choppy, the graded continuation (scaled 30-day return \u00d7 unusual 7-day move) sits in calm markets: 0.030 with t 2.25 and Spearman 0.28 (159 cases, 61 days). Agitated choppy markets give t 1.10 and Spearman 0.16 (56 cases).",
+    "F4": "The graded continuation in choppy grows from 2018 to 2021: Spearman -0.27 (25 cases), 0.07 (59), 0.33 (60), 0.47 (71; t 1.99). Among the windows with enough cases, w12, w15 and w18 are the most positive (graded t 1.71, 2.01, 1.61), and w8 and w14 are negative.",
+    "F5": "The same continuation holds with a 14-day lookback: graded t 2.05, Spearman 0.24, 215 cases. It is weaker over a 3-day horizon: graded t 1.55, Spearman 0.10, 520 cases on 214 days. The move builds over the week rather than the next days.",
+    "F6": "The book is short only: 594 SHORT trades with a mean net result of -2.40 %. Most of the losses come from three coins: ZEC -371 % summed, DOGE -297 % and LINK -219 %. Book returns by window swing from -7.3 to +10.1 bp a day. Shorting gives back the coin's normal drift: unusual move +1.13 % against drift -1.13 %, so the total move is -0.01 % per case against a 0.22 % trade cost.",
+    "F7": "Next-day reversal of a day's close location within its range is clearest in choppy agitated markets: graded (0.5 - close location) \u00d7 next-day unusual move is 27.2 bp, t 2.81, 435 bars. The other profile pairs give 2.8 to 8.5 bp with t at most 1.64. Across all bars, the next-day unusual move falls from +0.54 % in the lowest-close quintile to -0.39 % in the highest (t 1.62 / -1.74)."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, calm market, the larger a coin's 30-day return relative to its own daily swing over the past 30 days, the further it moves the same way over the next 7 days, up after a strong month and down after a weak one.",
+      "consequence": "In a trendless, quiet coin, a trader leans with the month's move for a week, sized by how large that move is against the coin's usual swing, instead of fading it as range trading would.",
+      "name": "choppy calm month continuation",
+      "from": "F1, F3, F5",
+      "profile": "choppy calm",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a choppy market, the larger a coin's 30-day fall relative to its own daily swing over the past 30 days, the more it falls over the next 7 days.",
+      "consequence": "After a weak month in a trendless coin, a trader refuses longs for the next week and shorts more the deeper the scaled fall, because that move is large enough to outweigh the coin's normal upward drift.",
+      "name": "choppy scaled month fall continues",
+      "from": "F1, F2, F6",
+      "profile": "choppy",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, the higher a coin closes within its daily range, the more it falls over the next day, and the lower it closes, the more it rises.",
+      "consequence": "In a trendless but swinging coin, a trader fades the day's close location for one day, shorting high closes, which no held strategy does in this market.",
+      "name": "choppy agitated close fade",
+      "from": "F7",
+      "profile": "choppy agitated",
+      "theme": "discovery",
+      "refs": [
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "067-02.g1_choppy-calm-month-continuation",
+    "067-02.g2_choppy-scaled-month-fall-continues"
+  ],
+  "discovery_ids": [
+    "067-02.g3_choppy-agitated-close-fade"
+  ],
+  "no_ideas": null
+}

@@ -11,3 +11,4 @@
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.00165791; ordinary OLS slope t 1.09368; independent grid cases with a forecast below 0 215]
 067-01.b1_choppy-weak-month-keeps-falling_1d: confirmed (fit: exact) [main: 0.0112626; day-clustered t 2.07863; cases 1024, distinct days 624, grid bars with forecast < 0 633]
 067-01_choppy-strong-month-rise-continues_1d: inconclusive (fit: adapted) [main: 0.00071782; OLS slope t 0.858863; cells 587]
+067-02_choppy-weak-month-fall-continues_1d: inconclusive (fit: exact) [main: 0.0155944; weighted t, cases of one day summed 1.57148; independent days with cases 211, cases 633]

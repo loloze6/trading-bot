@@ -11,3 +11,4 @@
 067-01.b1.g1_choppy-agitated-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-01.b1_choppy-weak-month-keeps-falling_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-01_choppy-strong-month-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+067-02_choppy-weak-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
