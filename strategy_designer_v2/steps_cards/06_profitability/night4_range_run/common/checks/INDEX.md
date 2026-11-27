@@ -1,0 +1,1 @@
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d: profitable enough [Sharpe 1.438; Sharpe minus holding's Sharpe 0.3633; Calmar 1.281]

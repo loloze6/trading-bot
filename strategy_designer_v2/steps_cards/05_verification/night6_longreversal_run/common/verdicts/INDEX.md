@@ -1,0 +1,1 @@
+031-03.g1.b1.g2_swelling-volume-after-rises_1d: confirmed (fit: adapted) [main: 0.00425612; slope t, clustered by day 2.29165; grid cases in the regime 1797, grid cases with forecast above 0 977, days of the regime grid cases 231]

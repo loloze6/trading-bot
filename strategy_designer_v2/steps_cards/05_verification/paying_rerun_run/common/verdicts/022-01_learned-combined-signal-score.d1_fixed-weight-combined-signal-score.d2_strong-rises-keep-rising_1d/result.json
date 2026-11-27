@@ -1,0 +1,37 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Mean 5-day excess return, top fifth of positive forecasts minus all other grid bars",
+    "value": 0.020461437263864058,
+    "statistic": {
+      "name": "Welch t",
+      "value": 4.81834821130745
+    },
+    "threshold": "Welch t >= 2 confirms (with supporting check); Welch t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "Top-fifth mean excess minus remaining positive-forecast mean excess",
+    "value": 0.017211346338551932,
+    "passed": true
+  },
+  "counts": {
+    "top-fifth grid cases": 1747,
+    "other grid cases": 9220,
+    "remaining positive-forecast grid cases": 3371,
+    "positive-forecast grid cases": 5118
+  },
+  "decided_by": "Welch t >= 2 (top fifth minus the rest) and the supporting check passes.",
+  "reading": "The top fifth is the positive-forecast grid bars whose forecast is at or above the 80th percentile of positive grid forecasts (ties at the cut kept in the top group), the coin's mean 5-day return is taken over its non-overlapping grid in all windows, and the plan's minimum of 30 top-fifth cases gives 'not observable' when unmet.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

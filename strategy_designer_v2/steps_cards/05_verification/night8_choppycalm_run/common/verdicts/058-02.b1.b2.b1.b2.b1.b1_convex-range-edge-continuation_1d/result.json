@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 10-bar forward return minus coin mean 10-bar return on forecast (non-overlapping grid, non-zero forecast, pooled)",
+    "value": 0.0016457737788005554,
+    "statistic": {
+      "name": "t of slope (day-clustered)",
+      "value": 2.477505665365026
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and supporting check passed; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean directional excess return, top third of |forecast| minus bottom third",
+    "value": 0.016432597010830177,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping grid cases with a non-zero forecast": 692,
+    "days": 188
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top third of |forecast| earns more in its direction than the bottom third.",
+  "reading": "The situation is the regime column equal to the profile regime 'unknown' (rising calm, not vetoed) with the forecast's sign equal to the sign of the raw range position; the slope is an OLS fit with intercept and a day-clustered standard error (G/(G-1) correction); the coin's mean 10-bar return is taken on the non-overlapping grid of all its windows; thirds of |forecast| are equal-count splits of the cases sorted by |forecast|; the plan's minimum of 100 cases, if not reached, gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

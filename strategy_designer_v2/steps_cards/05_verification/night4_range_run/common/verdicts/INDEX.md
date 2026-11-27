@@ -1,0 +1,1 @@
+023-01_flat-range-top-reverts-down.d2_30-day-trend-continues-five-days.b1_trend-continuation-more-coins.e2_clean-rises-extend-ten-days_1d: confirmed (fit: adapted) [main: 0.0225831; t of the mean 3.45501; cases 1544]

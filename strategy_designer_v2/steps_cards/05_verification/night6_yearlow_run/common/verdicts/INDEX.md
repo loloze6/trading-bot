@@ -1,0 +1,1 @@
+031-01.g1.g1.g1.g3_volatile-down-day-next-day-rebound_1d: confirmed (fit: adapted) [main: 0.00111447; OLS slope t, residuals summed per day 2.59911; bars with forecast > 0 4265, days 1257, top third bars 1422]

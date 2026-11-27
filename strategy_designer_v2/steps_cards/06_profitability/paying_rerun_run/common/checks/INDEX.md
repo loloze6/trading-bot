@@ -1,0 +1,5 @@
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_one-day-reversal-against-trend_1d: not profitable enough [Sharpe 0.2284; Sharpe minus holding's Sharpe -0.8468; Calmar 0.0466]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: profitable enough [Sharpe 1.643; Sharpe minus holding's Sharpe 0.6975; Calmar 2.044]
+018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: profitable enough [Sharpe 1.276; Sharpe minus holding's Sharpe 0.1761; Calmar 1.135]
+019-03_upward-breakout-quiet-continuation.b1_upward-breakout-on-more-coins.b2_thirty-day-trend-continues_4h: profitable enough [Sharpe 1.888; Sharpe minus holding's Sharpe 0.6021; Calmar 2.196]
+022-01_learned-combined-signal-score.d1_fixed-weight-combined-signal-score.d2_strong-rises-keep-rising_1d: profitable enough [Sharpe 1.597; Sharpe minus holding's Sharpe 0.5216; Calmar 1.674]
