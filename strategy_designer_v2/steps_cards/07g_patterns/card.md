@@ -11,10 +11,15 @@ operator, 2026-11-27, next steps B10). When we want an idea from a discovery rat
 being tested: when the discovery would be the next idea tested.
 - **The rule:** after a test, before the step 7 lines start, an idea this line would write gets select_next's own
   score: the higher of the records "7.g" (its follow-ups) and "7.g discovery" (a discovery's brief), over 1 plus the
-  generation it would have (the tested idea's, as ranked, plus one), with the group and the priority of any follow-up of
-  the tested idea (its parent's difference w). It is compared with the best waiting idea as select_next ranks the queue
-  (the loop's failed ideas left out): a brief's own idea waiting goes first; otherwise by group, then priority. The line
-  is called when its idea would rank first (ties included), or when nothing waits.
+  generation it would have (the tested idea's, as ranked, plus one). It is compared with the priority of the best
+  waiting idea, as select_next ranks the queue (the loop's failed ideas left out). While a brief's own idea waits, it
+  goes first: the line is not called. Otherwise the line is called when its score is at least that priority (ties
+  included), or when nothing waits.
+- **Why the score, not a priority with w:** w is the tested book's difference from the held books; what this line finds
+  is a pattern that book does not explain (a discovery is off its theme), so the book's w says nothing about it. Tried
+  and rejected (2026-11-27): the idea given the tested idea's w and group, compared by group then priority. On night 9's
+  replay it skips 156 of 184 calls instead of 52, and 6 of the night's 11 profitable strategies have a skipped call on
+  their path, against none with the rule (`../runs/BUILD_B10.md`).
 - **Where:** in the one place `run_idea` calls the lines (`../orchestration/run_idea/helper/run_idea.py`,
   `call_patterns`; the score: `../orchestration/select_next/helper/select_next.py`, `discovery_call`). A call not made
   is one line in the run's journal, `not called:` and the two priorities compared; no analysis, no index line. An

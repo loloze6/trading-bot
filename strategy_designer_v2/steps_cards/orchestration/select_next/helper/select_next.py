@@ -21,6 +21,8 @@ w = the parent's difference = 1 - the share of the parent's book its nearest hel
 the portfolio's books, register/held.json, 2026-11-24; the similarity
 register, orchestration/ideas_similarities_check/: common/measures.md), when the parent is confirmed and in the
 register; 0.5 (no evidence) otherwise, as a line with no record has 0.5.
+a brief written from a discovery: its ideas' record is "7.g discovery", one analysis per brief in a run, not step 2's
+(next steps B10); discovery_call: whether line 7.g, after a test, would write the next idea tested (run_idea calls it).
 record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
 read by a line in two runs is two analyses); s the analyses with a
 success (at least one tested idea with a profitable book: step 6's "profitable enough"; operator, 2026-11-19). Words and id convention:
@@ -256,11 +258,12 @@ def rank(run, root=STEPS, exclude=()):
 
 def discovery_call(run, idea_id, root=STEPS, exclude=()):
     """Line 7.g's call rule after a test (the operator, 2026-11-27, next steps B10): call 7.g only when an idea it would
-    write would rank first in the run's queue. Its score is this function's own formula: the higher of the records "7.g"
-    (its follow-ups) and "7.g discovery" (a discovery's brief), over 1 plus the generation it would have (the tested
-    idea's, as ranked, plus one); its group and priority as for any follow-up of the tested idea (its difference w).
-    It is compared with the best waiting candidate as `rank` orders the queue (a brief's own idea goes first); nothing
-    waiting, it is called. Returns (call, why)."""
+    write would be the next idea tested. Its score is this function's own formula: the higher of the records "7.g" (its
+    follow-ups) and "7.g discovery" (a discovery's brief), over 1 plus the generation it would have (the tested idea's,
+    as ranked, plus one). It is compared with the priority of the best waiting candidate, as `rank` orders the queue: a
+    brief's own idea waiting goes first, so the line is not called; otherwise it is called when its score is at least that
+    priority, or when nothing waits. The tested book's difference w is not applied: what the line finds is a pattern that
+    book does not explain (a discovery is off its theme). Returns (call, why)."""
     ranking = rank(run, root, exclude)
     recs = records(root)
     me = next((r for r in ranking if r["idea"] == idea_id), None)
@@ -268,27 +271,17 @@ def discovery_call(run, idea_id, root=STEPS, exclude=()):
     line = max(("7.g", DISCOVERY), key=lambda l: record_of(l, recs))
     rec = record_of(line, recs)
     score = round(rec / (1 + gen), 4)
-    d = evidence_of(run, idea_id, root)
-    w = d if d is not None else 0.5
-    group, priority = (2 if w > 0.5 else 3), round(score * w, 4)
-    mine = (f"an idea of 7.g would have group {group}, priority {priority} = score {score} (record {round(rec, 4)} "
-            f"({line}) / (1 + generation {gen})) x w {round(w, 4)}")
+    mine = f"an idea of 7.g would score {score} = record {round(rec, 4)} ({line}) / (1 + generation {gen})"
     cands = [r for r in ranking if r["status"] == "candidate"]
     if not cands:
         return True, f"{mine}; nothing waits"
     best = cands[0]
-    theirs = f"the best waiting idea, {best['idea']}, has group {best['group']}, priority {best['priority']}"
-    if (group, -priority) <= (best["group"], -best["priority"]):
+    theirs = f"the best waiting idea, {best['idea']}, has priority {best['priority']}"
+    if best["group"] == 1:
+        return False, f"{mine}; {theirs} and is a brief's own idea: it goes first"
+    if score >= best["priority"]:
         return True, f"{mine}; {theirs}: it would rank first"
     return False, f"{mine}; {theirs}: it would not rank first"
-
-
-def evidence_of(run, idea_id, root=STEPS):
-    """The difference w a follow-up of this idea would get: its book's, if it is confirmed and in the register; else None."""
-    if not parent_confirmed(run, idea_id, root):
-        return None
-    ev = parent_evidence(root)
-    return ev.get((run, idea_id), ev.get((run, idea_code(idea_id)), (None, None)))[1]
 
 
 def main():

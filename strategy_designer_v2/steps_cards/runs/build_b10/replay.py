@@ -97,13 +97,13 @@ def dated_files():
 def git_versions(rel):
     """[(commit time, content)] of a file in git, oldest first."""
     path = f"strategy_designer_v2/steps_cards/{rel}"
-    log = subprocess.run(["git", "log", "--format=%H %cI", "--", path], cwd=STEPS, capture_output=True, text=True).stdout
+    log = subprocess.run(["git", "log", "--format=%H %cI", "--", path], cwd=STEPS.parents[1], capture_output=True, text=True).stdout
     out = []
     for l in reversed(log.split("\n")):
         if l.strip():
             h, t = l.split()
             when = datetime.strptime(t[:19], "%Y-%m-%dT%H:%M:%S")
-            out.append((when, subprocess.run(["git", "show", f"{h}:{path}"], cwd=STEPS, capture_output=True, text=True).stdout))
+            out.append((when, subprocess.run(["git", "show", f"{h}:{path}"], cwd=STEPS.parents[1], capture_output=True, text=True).stdout))
     return out
 
 
@@ -127,6 +127,7 @@ class Tree:
         self.loops = [p.parent.name for p in STEPS.glob("orchestration/loop/*_run/loop.jsonl")]
         self.versioned = {f.relative_to(STEPS): git_versions(f.relative_to(STEPS))
                           for run in RUNS for f in (STEPS / "01_brief" / run / "briefs").glob("*.md")}
+        assert all(self.versioned.values()), "a brief of night 9 with no version in git"
 
     def at(self, T):
         while self.i < len(self.files) and self.files[self.i][0] <= T:
@@ -194,6 +195,25 @@ def what_it_gave(run, rid):
     return disc, on
 
 
+def full_rank(run, idea, root, failed):
+    """The variant first built and rejected (2026-11-27): 7.g's idea given the group and the priority of any follow-up of
+    the tested idea (its difference w), compared by (group, priority) with the best waiting idea. (call, its, the best's)."""
+    ranking = sn.rank(run, root, failed)
+    recs = sn.records(root)
+    me = next((r for r in ranking if r["idea"] == idea), None)
+    gen = (me["generation"] if me else sn.id_parts(idea)[3]) + 1
+    score = round(max(sn.record_of("7.g", recs), sn.record_of(sn.DISCOVERY, recs)) / (1 + gen), 4)
+    ev = sn.parent_evidence(root)
+    d = ev.get((run, idea), ev.get((run, idea_code(idea)), (None, None)))[1] if sn.parent_confirmed(run, idea, root) else None
+    w = d if d is not None else 0.5
+    mine = (2 if w > 0.5 else 3, round(score * w, 4))
+    cands = [r for r in ranking if r["status"] == "candidate"]
+    if not cands:
+        return True, mine, None
+    best = (cands[0]["group"], cands[0]["priority"])
+    return (mine[0], -mine[1]) <= (best[0], -best[1]), mine, best
+
+
 def main():
     out_dir = Path(sys.argv[1]).resolve()
     tree = Tree(out_dir / "tree")
@@ -202,23 +222,14 @@ def main():
         tree.at(T)
         failed = loop.failed(run, tree.root / "orchestration")
         call, why = sn.discovery_call(run, idea, tree.root, exclude=failed)
-        # the literal reading: the score alone (no w, no group 2 or 3) against the best waiting idea's priority, a brief's
-        # own idea waiting first
-        ranking = sn.rank(run, tree.root, failed)
-        cands = [r for r in ranking if r["status"] == "candidate"]
-        m = re.search(r"score ([0-9.]+)", why)
-        score = float(m.group(1))
-        literal = not cands or (cands[0]["group"] != 1 and score >= cands[0]["priority"])
-        mine = float(re.search(r"priority ([0-9.]+)", why).group(1))
-        top = max((r["priority"] for r in cands), default=None)             # groups left aside: priority alone
+        full, mine, best = full_rank(run, idea, tree.root, failed)
         row = {"at": T.strftime("%Y-%m-%dT%H:%M:%SZ"), "run": run, "idea": idea, "backtest": rid, "action": action,
-               "usd": usd, "call": call, "call_score_only": literal, "priority": mine, "best_priority_any_group": top,
-               "call_priority_only": top is None or mine >= top, "best_group": cands[0]["group"] if cands else None, "why": why, "waiting": len(cands)}
+               "usd": usd, "call": call, "why": why, "call_full_rank": full, "full_rank_new": mine, "full_rank_best": best}
         if action.startswith("called"):
             row["discoveries"], row["on_theme"] = what_it_gave(run, rid)
         rows.append(row)
         print(f"{row['at']} {run[7:]} {idea[:40]:40} {action[:16]:16} {usd:5.2f} rule={'call' if call else 'skip'} "
-              f"score-only={'call' if literal else 'skip'} waiting={len(cands)}", flush=True)
+              f"full-rank={'call' if full else 'skip'}", flush=True)
     (out_dir / "replay.json").write_text(json.dumps(rows, indent=1) + "\n")
 
 

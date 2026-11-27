@@ -68,8 +68,9 @@ The designer's 23 of 81 (0.29) counted a brief's success down its whole lineage 
 left in step 2), 2 of 29.
 
 **Line 7.g's call (B10):** `discovery_call(run, idea)` scores the idea line 7.g would write after a test (the higher of
-"7.g" and "7.g discovery", over 1 plus its generation, with its group and w) against the best waiting candidate;
-`run_idea` calls the line only when it would rank first (`../../07g_patterns/card.md`, "Entry condition").
+"7.g" and "7.g discovery", over 1 plus its generation) against the priority of the best waiting candidate (a brief's
+own idea waiting goes first); `run_idea` calls the line only when it would rank first (`../../07g_patterns/card.md`,
+"Entry condition").
 
 **Real ideas unlike what we hold next (operator, 2026-11-22; topic 45; the held books, 2026-11-24, P9).** After a brief's own ideas, the order has two
 more groups, each ranked by **priority = score x w**:
