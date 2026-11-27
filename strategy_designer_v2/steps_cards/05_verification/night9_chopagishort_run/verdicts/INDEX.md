@@ -1,5 +1,7 @@
 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d: confirmed (fit: exact) [main: 0.0253697; t of the mean, cases grouped by day 3.80481; cases 190, days 157]
 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade_1d: inconclusive (fit: exact) [main: 0.029998; t of the mean, same-day cases pooled 3.15752; cases 225, distinct days 176]
+061-01.b1.b1.b1.d2.d2_upper-close-quiet-day-fade_1d: inconclusive (fit: adapted) [main: 0.0139877; day-clustered t 1.67972; cases 325, distinct days 254]
+061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade_1d: confirmed (fit: adapted) [main: 0.0190216; t of the mean, cases pooled by day 2.45323; cases on distinct days 105, cases 120]
 061-01.b1.b1.b1.d2_quiet-high-close-fades_1d: confirmed (fit: adapted) [main: 0.0190216; t of the mean, cases of one day taken together 2.45323; distinct days with cases 105, cases 120]
 061-01.b1.b1.b1.d3_high-close-fades-over-ten-days_1d: inconclusive (fit: exact) [main: 0.0258083; t of the mean, cases of one day pooled 2.90374; case-days 206, cases 289]
 061-01.b1.b1.b1_high-close-location-fades-weekly_1d: confirmed (fit: exact) [main: 0.0170595; t of the mean, cases of one day pooled 3.12776; cases 349, distinct days 248, cases at 0.9 or more 164, cases from 0.8 to below 0.9 185]

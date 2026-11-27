@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4789145,
+  "findings": {
+    "F1": "The book trades too rarely because its situation is rare. The choppy agitated profile covers 4.6 % of the coins' bars, a close in the top fifth of the range on an up day occurs on 20 % of those bars, and so the book made 49 trades in folds B and C (0.006 trades per day against the 0.01 required) and was in a position on 2 % of coin-days.",
+    "F2": "The effect sits almost entirely in the smaller gains, which is the idea's own grading. Signals whose gain was under one usual daily swing gave an unusual 5-day fall of +5.5 % (t 3.84, 39 cases on 37 days), against +0.8 % for gains of one usual swing or more (t 0.46, 36 cases). The book's 44 trades on smaller gains averaged +1.92 % net (sum +84.6 %), while its 5 trades on larger gains averaged -3.08 % (sum -15.4 %).",
+    "F3": "The fall keeps growing well past five days, while the book's trades end early. The unusual move of the tested signal is +0.5 % over 2 days (t 0.47), +3.0 % over 5 days (t 2.43, 75 cases) and +6.0 % over 10 days (t 2.88, 64 cases). On smaller gains it reaches +10.7 % over 10 days (t 4.88, 33 cases on 31 days). Yet the median trade lasted 5 days, and the two worst trades (-23.7 % and -15.5 %) were closed after 1 day.",
+    "F4": "A strong close after a short pullback is a stronger case of the same situation, and the pullback alone does not earn. In the profile, signals after a 3-day fall gave +7.8 % over 5 days (t 4.16, 29 cases), while 3-day falls without the signal gave +0.9 % (t 0.50, 126 cases). Signals after a 5-day fall gave +6.1 % (t 3.64), against +1.0 % after a 5-day rise (t 1.00), and 5-day falls without the signal gave +0.5 % (t 0.27).",
+    "F5": "Agitation carries the effect, as the brief's theory says. The same signal in choppy calm markets gave -1.4 % over 5 days (t -0.99, 105 cases), and outside the profile it gave +0.1 % (t 0.45, 1265 cases). Outside the profile, only the subset after a 5-day fall with a gain under one usual swing still shows +1.9 % (t 2.17, 286 cases on 163 days).",
+    "F6": "The Calmar failure comes from a book too small and too briefly held for its occasional losing trade. Its mean absolute allocation was 0.155, giving a deepest fall of 0.8 % against a yearly return of 0.9 %. Windows w10 and w12 lost (-0.11 % each) on trades averaging -3.1 % and -1.9 %, and the signal's year 2020 averaged -0.7 %."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits near the top of that day's high-low range on an up day, its price falls over the next ten days, and the smaller the day's gain against its usual daily swing, the larger the fall.",
+      "consequence": "A trader shorts quiet high closes on up days in a choppy, agitated market and holds the short for about ten days rather than closing it within a few.",
+      "name": "high-close fade held longer",
+      "from": "F2, F3, F6",
+      "profile": "choppy agitated",
+      "refs": [
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, when a coin closes near the top of that day's high-low range on an up day that follows a fall over the previous three days, its price falls over the next five days, and the smaller the day's gain against its usual daily swing, the larger the fall.",
+      "consequence": "A trader shorts a quiet strong close that comes after a short pullback in a choppy, agitated market, where the fade is largest.",
+      "name": "pullback high-close fade",
+      "from": "F4, F2, F5",
+      "profile": "choppy agitated",
+      "refs": [
+        "F4",
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin closes near the top of that day's high-low range on an up day that follows a fall over the previous five days, its price falls over the next five days, and the smaller the day's gain against its usual daily swing, the larger the fall.",
+      "consequence": "A trader takes the quiet late-buying fade after a pullback in every market, which gives the short many more occasions to trade.",
+      "name": "broad pullback high-close fade",
+      "from": "F5, F4, F1",
+      "refs": [
+        "F5",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d2.d3.d1_high-close-fade-held-longer",
+    "061-01.b1.b1.b1.d2.d3.d2_pullback-high-close-fade",
+    "061-01.b1.b1.b1.d2.d3.d3_broad-pullback-high-close-fade"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
