@@ -3,9 +3,11 @@
 061-01.b1.b1.b1.d1.d1.d1.d3_moderate-fall-high-close-fades_1d: 2 ideas (2 explorations)
 061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d: 0 ideas, 2 discoveries (2 explorations)
 061-01.b1.b1.b1.d1.d1.d2_upper-close-after-sharp-week-fall_1d: 0 ideas, 2 discoveries (3 explorations)
+061-01.b1.b1.b1.d1.d1.d3.d1_high-pinned-close-fades_1d: no ideas: The only pattern that stands out is the tested idea's own effect, already in the brief's profile (F1, F2). The other angles were 20-day momentum, range width with close location, volatility level with the last day's sign, weekday, window, coin and trades. Each either drops below t 2 once same-day cases are pooled, changes sign across windows or years, or repeats a calm-rise momentum the profile map already holds (F5, F6, F7).
 061-01.b1.b1.b1.d1.d1.d3_quieter-upper-close-fade_1d: 2 ideas (2 explorations)
 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: 1 ideas (3 explorations)
 061-01.b1.b1.b1.d1.d2.d1.d1_deep-fall-upper-close-fade_1d: 1 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d2.d1.d2_upper-close-fade-while-choppy_1d: 1 ideas, 1 discoveries (2 explorations)
 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d: 1 ideas, 1 discoveries (3 explorations)
 061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d: 0 ideas, 2 discoveries (3 explorations)
 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded_1d: 2 ideas (3 explorations)

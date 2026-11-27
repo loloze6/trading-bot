@@ -207,6 +207,7 @@
 | 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.20 | new one period ahead | +0.0008 % (0.19) | 0.13 |
 | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d | night_005_run | 1d | 041-02_wide-down-day-next-day-rebound_1d (1d) | 0.20 | same period | +0.0309 % (1.03) | 0.00 |
 | 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week_1d | night_run | 1d | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.b1_weekend-fall-three-day-rebound.d3_large-weekend-fall-rebound.b1_turbulent-weekend-fall-rebound_1d (1d) | 0.20 | same period | -0.0024 % (-0.29) | 0.08 |
+| 061-01.b1.b1.b1.d1.d1.d3.d1_high-pinned-close-fades_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.20 | new one period ahead | -0.0010 % (-0.16) | 0.15 |
 | 013-04_heavy-volume-below-high-breakout_1d | volume_run | 1d | 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d (1d) | 0.20 | same period | +0.0009 % (0.23) | 0.03 |
 | 031-01.g1.g1.g2_volatile-weekends-follow-trend_1d | night6_yearlow_run | 1d | 031-01.g1_weekly-gains-carry-into-saturday_1d (1d) | 0.20 | same period | +0.0143 % (1.32) | 0.00 |
 | 025-03_bounce-falling-versus-rising-regime.b1_falling-regime-bounce-all-coins_1d | night4_fallingbounce_run | 1d | 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h (1h) | 0.21 | same period | +0.0261 % (1.05) | 0.01 |
@@ -218,6 +219,7 @@
 | 061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.24 | new one period ahead | -0.0039 % (-0.65) | 0.08 |
 | 060-02.d2.d2_volume-growth-capitulation-rebound_1d | night8_fallingcalm_run | 1d | 047-01_falling-agitated-daily-fall-rebound_1d (1d) | 0.24 | same period | +0.0016 % (0.15) | 0.22 |
 | 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.24 | new one period ahead | -0.0063 % (-0.76) | 0.09 |
+| 061-01.b1.b1.b1.d1.d2.d1.d2_upper-close-fade-while-choppy_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.24 | new one period ahead | -0.0063 % (-0.76) | 0.09 |
 | 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.24 | new one period ahead | -0.0063 % (-0.76) | 0.09 |
 | 061-01.b1.b1.b1.d1.d1.d3_quieter-upper-close-fade_1d | night9_chopagishort_run | 1d | 064-01_falling-agitated-heavy-volume-fall-rebound_1d (1d) | 0.25 | new one period ahead | -0.0065 % (-0.79) | 0.09 |
 | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | intraday_1h_run | 1h | 031-02.b1.d1_sharp-fall-rebounds-in-turbulence_1d (1d) | 0.25 | same period | -0.1353 % (-8.45) | 0.30 |
