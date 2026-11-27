@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (-forecast/10) x negated excess 3-bar return",
+    "value": 0.007142305549119589,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": 2.2637584597907496
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return, deepest third minus shallowest third",
+    "value": -0.013090170379223519,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 1414,
+    "distinct days": 503
+  },
+  "decided_by": "The main measure is above 0 with t >= 2 and the supporting check passes.",
+  "reading": "The deepest third is the n//3 cases with the most negative forecast and the shallowest the n//3 nearest 0; the coin's mean 3-bar return is over all its grid bars in all windows; the t sums each day's deviations from the mean (clustered standard error with G/(G-1) correction); fewer than the minimum cases is 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.005313 on the check folds against +0.007142 on every fold",
+    "main": 0.005312532476642063,
+    "statistic": 1.4712592797920936,
+    "counts": {
+      "grid cases": 1064,
+      "distinct days": 322
+    }
+  }
+}

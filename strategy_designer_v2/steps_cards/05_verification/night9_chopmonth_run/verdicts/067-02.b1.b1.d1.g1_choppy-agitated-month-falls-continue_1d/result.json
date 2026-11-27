@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual move per case, short direction, 7 bars",
+    "value": 0.005388296212677618,
+    "statistic": {
+      "name": "t of the mean, cases clustered by day",
+      "value": 0.43018857508059566
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and deeper-minus-shallower > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half mean unusual move",
+    "value": 0.023573658141084423,
+    "passed": true
+  },
+  "counts": {
+    "cases": 215,
+    "days": 108
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Choppy agitated is read as the detector's 'unknown' regime (the only regime with a strategy) and the month fall as the raw 30-bar return < 0 (from prices where not recorded); the coin's mean 7-bar return is taken on the same non-overlapping grid over all its windows; t clusters cases by UTC day (deviations summed per day); the median split puts forecasts <= median in the deeper half and > median in the shallower half."
+}

@@ -17,12 +17,14 @@
 067-01_choppy-strong-month-rise-continues_1d: 1 ideas (2 explorations)
 067-02.b1.b1.d1.d1_deepest-choppy-falls-three-weeks_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 067-02.b1.b1.d1.d2_agitated-choppy-deep-falls_1d: 2 ideas (2 explorations)
+067-02.b1.b1.d1.g1_choppy-agitated-month-falls-continue_1d: no ideas: The tested result is on the idea's side but near zero (t 0.43) on all the data available, and nowhere in the data do deeper monthly falls lead to larger falls over the next week (correlation 0.013, F2, F5); the only fall seen follows the choppy agitated profile whatever the month's sign (F3) and rests on one episode (F4), so the theme's graded effect is not in the data.
 067-02.b1.b1.d1_choppy-deepest-month-falls-continue_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b1.b1.d2_agitated-choppy-month-fall-continues_1d: no ideas: The effect points the predicted way but is small (t 0.74 on the main measure, t 1.66 on the size). The test already used every coin and fold available on daily bars. No coin, period, depth, position in range or horizon shows it clearly apart from one window's episode (F1–F4), so no further test on this data would give a clearer answer.
 067-02.b1.b1.d3_calm-choppy-month-rise-continues_1d: 1 ideas (2 explorations)
 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls_1d: 1 ideas (2 explorations)
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b1_choppy-plain-month-fall-continues_1d: 1 ideas (2 explorations)
+067-02.b2.b2_choppy-month-fall-three-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b2_agitated-choppy-month-fall-continues_1d: 2 ideas (2 explorations)
 067-02_choppy-weak-month-fall-continues_1d: 2 ideas (2 explorations)
 077-01_agitated-high-close-week-rise_1d: 1 ideas (3 explorations)
