@@ -1,0 +1,1 @@
+023-01_flat-range-top-reverts-down.d1_flat-top-reverts-after-rise.b1_range-top-continues-in-risers_1d: confirmed (fit: exact) [main: 0.00111498; OLS slope t 5.37066; independent trending-regime grid cases 5027]
