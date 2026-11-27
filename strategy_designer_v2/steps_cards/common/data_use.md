@@ -5,7 +5,8 @@
 2026-11-26, next steps A4; designed in the review of night 8, from the draft in `topics/55_data-use-and-stage-moves.md`).
 A run uses it only when started with `run_brief --data-use 2`; every other run is unchanged: 6 coins, folds 2018 to
 2025, `explore_and_check.md`, `unseen_dates.md`, `unseen_coins.md`. Topic 53 (which coins, grouped how) is answered here
-for the grouping.)
+for the grouping. **Next steps A12 (2026-11-27, after the pilot): the draw among drawable coins (1.3), the limit measured
+(1.4) and the one count of usable windows (section 3); built on branch `build-pilot-fixes`, `runs/BUILD_A12.md`.**)
 
 ## Business objective, one question
 **Which data may each research step use, so that a strategy is found on some data, combined on other data, and

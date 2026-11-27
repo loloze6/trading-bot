@@ -37,7 +37,8 @@ operator, under "Open"):
 | `common/target_box.md`, `common/target_box.py` | "The idea's side"; `idea_side`, `brief_file`; `in_box` and `box_ideas` read it; the theme note asks for the `side:` line. `brief_side` (the old reading) is removed |
 | `common/lib.py` | `side_name`, `IDEA_SIDES` |
 | `04_backtest/helper/run_backtest.py`, `card.md` | `--data-use`: the plan's warm-up asked once, passed to `left_out` |
-| `orchestration/common_record/helper/common_record.py`, `card.md` | `coin_windows` and `backtest`: the same count, step 4's words in `run.md` and on the index line. **`backtest`'s name and arguments are unchanged** (`backtest(plan, python, dest, windows, coin_list, usable=coins.usable)`), for step 12 and `forward_record` |
+| `orchestration/common_record/helper/common_record.py`, `card.md` | `coin_windows` and `backtest`: the same count, step 4's words in `run.md` and on the index line. **`backtest`'s name and arguments are kept** (`backtest(plan, python, dest, windows, coin_list, usable=coins.usable)`), for step 12 and `forward_record`; one optional argument is added last (`data=None`: the folder of the daily files the count reads) |
+| `orchestration/combine/helper/final_test.py`, `test_update.py` | step 12: one line passes its data folder to `backtest` (`data=data`), so the whole count reads the folder its 90-day rule reads; one test follows `coin_windows`' new answer (the windows' numbers and the reasons). `build-a8-a10` does not change `final_test.py`; it does change `test_update.py` (other tests): a conflict there is possible at the join |
 | `orchestration/run_brief/helper/run_brief.py`, `card.md` | the draw gets `--python`; step 1 is called with `--run` in a run with `data_use.json` too |
 | `orchestration/loop/card.md` | `in_box` and B13 as now read (the code is in `target_box.py`; `loop.py` is unchanged) |
 | `01_brief/helper/make_brief.py`, `card.md` | in a run with `data_use.json`: instruments by code, the model not asked for them, a final coin refused |
@@ -45,7 +46,7 @@ operator, under "Open"):
 | `07_common/helper/analyse.py`, `output_one_call.md`, `card.md` | the `side:` line asked, checked, written; in a record with `data_use.json`, an idea's instruments and a discovery's "Seen on" are the record's research coins |
 | tests | `common/test_coins.py`, `common/test_target_box.py`, and the helpers' tests of steps 1, 2, 4, 7, `common_record`, `run_brief`, `loop` |
 
-Not touched, on purpose: `orchestration/combine/` (branch `build-a8-a10`), `topics/NEXT_STEPS.md` and
+Not touched, on purpose: the rest of `orchestration/combine/` (branch `build-a8-a10`), `topics/NEXT_STEPS.md` and
 `PILOT_A4_RUN.md` (the designer's), `loop.py`, `run_idea.py`, step 3.
 
 **A defect found on the way, fixed by part 1a:** since the join of 2026-11-27, `common_record.backtest` passed a
@@ -187,11 +188,10 @@ pilot's journals `in_box` said true on 13 and 10 turns and false on none. See Op
 5. **Final coins are still named in older files a model reads:** 65 of the 211 lines of step 1's index (pasted into
    every step 1 call) and `common/data_available.md` (step 7's "same idea on other data": SOL, UNI, LINK) come from
    the old data use. New briefs in a data-use run name none. A clean-up list, if wanted.
-6. **The final test's data folder:** `final_test.run_book` passes its own `data` folder inside `usable`; the warm-up
-   and hole counts read the default folder (`trading-bot/local_data`). Today they are the same folder. Left for the
-   join with `build-a8-a10`, which holds `orchestration/combine/`.
-7. **The count reads the daily file's dates** for every bar size (as the 90-day rule did): an hourly plan on a coin
+6. **The count reads the daily file's dates** for every bar size (as the 90-day rule did): an hourly plan on a coin
    whose hourly file starts later than its daily file can still be refused by the engine. No hourly run is in the
    new data use yet.
+7. **A brief given as a file** (`run_brief BRIEF_FILE --data-use 2`) keeps the instruments line its author wrote: only
+   step 1's briefs are written by code. The backtests run on the run's coins all the same.
 8. **Untested on real data:** no model call was made in this build. The `side:` line as steps 2 and 7 will write it,
    and a boxed run's brief with instruments by code, are first seen in the next run.
