@@ -16,22 +16,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 072-01.b1.b1_choppy-deep-close-more-coins | 072-01.b1_choppy-deep-close-five-day | plan | inconclusive (+0.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-01.b1.b1.b1_choppy-deep-close-falling-week; 7.g: 072-01.b1.b1.g1_choppy-convex-deep-close-fall, 072-01.b1.b1.g2_choppy-deep-up-day-fade | 1.15 | 12.8 |
 | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | 074-01.b1.b1.b1_falling-widest-up-day-fade | plan | confirmed (+2.20) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade, 074-01.b1.b1.b1.b1.d2_agitated-downtrend-bounce-fade; 7.g: 074-01.b1.b1.b1.b1.g1_falling-drop-bounce-fade, 074-01.b1.b1.b1.b1.g2_falling-heavy-volume-bounce-fade | 1.22 | 13.0 |
 | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | 074-01.b1.b1.b1.b1_falling-wide-high-close-fade | plan | confirmed (+2.48) | not profitable enough (failed: Calmar, Trades per day) | - | 7.d: 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade, 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade; 7.g: 074-01.b1.b1.b1.b1.d1.g1_falling-market-still-down-bounce-fade, 074-01.b1.b1.b1.b1.d1.g2_width-and-depth-bounce-fade | 1.27 | 13.4 |
+| 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade | 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade | plan | confirmed (+2.07) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: no ideas: Outside the tested idea itself (F1 to F3), the only patterns near |t| 2 are a day-2 whipsaw after the widest bounces (F4, 40 days), which is too thin to stand out after more than 100 cells were read, and the falling agitated wide down-day rebound (F5), which the profile map already holds; the empty choppy agitated short cell shows only a lean that does not clear chance (F6). | 0.81 | 14.6 |
+| 072-02_choppy-deep-up-day-fade | - | plan | inconclusive (+1.87) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 072-02.b1_choppy-deep-up-day-fade-more-coins; 7.g: 072-02.g1_choppy-deep-close-three-days | 1.00 | 6.0 |
 
 ## Consumption
-12 ideas, 13.69 USD, 129.3 minutes in all.
+14 ideas, 15.50 USD, 150.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.26 | 7.9 |
-| step4_backtest | 0.00 | 79.7 |
-| step5_verdict | 2.36 | 9.1 |
-| step6_check | 0.00 | 0.5 |
-| chart_files | 0.00 | 0.2 |
+| step3_plan | 1.45 | 9.0 |
+| step4_backtest | 0.00 | 90.9 |
+| step5_verdict | 2.74 | 10.6 |
+| step6_check | 0.00 | 0.6 |
+| chart_files | 0.00 | 0.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.d | 1.34 | 4.3 |
-| step7_7.b | 2.75 | 8.2 |
-| step7_7.g | 5.99 | 17.5 |
-| similarity_check | 0.00 | 0.4 |
-| unseen_test | 0.00 | 1.6 |
+| step7_7.b | 3.09 | 9.2 |
+| step7_7.g | 6.88 | 20.0 |
+| similarity_check | 0.00 | 0.5 |
+| unseen_test | 0.00 | 4.7 |

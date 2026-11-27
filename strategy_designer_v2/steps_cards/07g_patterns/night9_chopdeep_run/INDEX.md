@@ -1,6 +1,9 @@
 072-01.b1.b1_choppy-deep-close-more-coins_1d: 2 ideas (2 explorations)
 072-01.b1_choppy-deep-close-five-day_1d: 2 ideas (2 explorations)
 072-01_choppy-deep-close-continuation_1d: 0 ideas, 1 discoveries (3 explorations)
+072-02_choppy-deep-up-day-fade_1d: 1 ideas (2 explorations)
+074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d: no ideas: Outside the tested idea itself (F1 to F3), the only patterns near |t| 2 are a day-2 whipsaw after the widest bounces (F4, 40 days), which is too thin to stand out after more than 100 cells were read, and the falling agitated wide down-day rebound (F5), which the profile map already holds; the empty choppy agitated short cell shows only a lean that does not clear chance (F6).
+074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d: 1 ideas (2 explorations)
 074-01.b1.b1.b1.b1.d1_still-down-wide-bounce-fade_1d: 2 ideas (2 explorations)
 074-01.b1.b1.b1.b1_falling-wide-high-close-fade_1d: 2 ideas (2 explorations)
 074-01.b1.b1.b1_falling-widest-up-day-fade_1d: 1 ideas, 1 discoveries (3 explorations)

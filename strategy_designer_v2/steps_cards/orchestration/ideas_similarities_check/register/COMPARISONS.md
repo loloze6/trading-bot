@@ -82,6 +82,8 @@
 | 066-02_falling-agitated-year-scaled-fall-rebound_1d | night8_choppycalm_run | 1d | 047-01_falling-agitated-daily-fall-rebound_1d (1d) | 0.91 | same period | +0.0013 % (0.41) | 0.12 |
 | 058-03.e1_calm-rise-stretch-ten-days_1d | night8_risingagitated_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.70 | same period | +0.0091 % (0.78) | 0.21 |
 | 060-01.g1.d2.d1_own-range-close-height-fade_1d | night8_risingagitated_run | 1d | 058-02.b1.g1.b1.b1_falling-agitated-next-day-reversal_1d (1d) | 0.10 | same period | +0.0051 % (1.06) | 0.03 |
+| 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d | night9_chopdeep_run | 1d | 074-01.g1.d1_wide-close-high-bounce-fade_1d (1d) | 0.17 | same period | +0.0098 % (1.21) | 0.11 |
+| 074-01.b1.b1.b1.b1.d1.d2_swing-scaled-still-down-fade_1d | night9_chopdeep_run | 1d | 074-01.b1.b1.b1.b1.d1.d1_graded-still-down-bounce-fade_1d (1d) | 0.94 | same period | +0.0051 % (2.03) | 0.09 |
 | 074-01.g1.d1_wide-close-high-bounce-fade_1d | night9_chopdeep_run | 1d | 060-01.g1.d2.d1_own-range-close-height-fade_1d (1d) | 0.65 | same period | +0.0030 % (1.25) | 0.02 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d (1d) | 0.94 | same period | +0.0003 % (0.05) | 0.33 |
 | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d | paying_rerun_run | 1d | 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d (1d) | 0.94 | same period | +0.0043 % (0.70) | 0.28 |
