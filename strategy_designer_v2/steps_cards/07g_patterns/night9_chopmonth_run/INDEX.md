@@ -24,6 +24,8 @@
 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls_1d: no ideas: Across about twenty tables of forecast buckets, profiles, prior moves, volatility, range, weekday and the book, no pattern stood out beyond what that many looks produce by chance. The best candidates (choppy-calm continuation, F3, and the Saturday gain, F5) rest on 6 days or on a single t of 2.4. The tested short already fails on cost, because its total move per case is a tenth of a trade's cost (F1).
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: 1 ideas, 1 discoveries (2 explorations)
 067-02.b1_choppy-plain-month-fall-continues_1d: 1 ideas (2 explorations)
+067-02.b2.b2.d1_choppy-month-fall-week-hold_1d: no ideas: The only effect that stands out is the tested idea's own falls-only continuation in a choppy market (F1, F2), which is already being tested. Across 30-day, 60-day, 14-day, 7-day and 1-day returns, range, volatility, weekday, year, window, trade length and the book's extreme days, no other pattern clears chance given how many angles were examined (F3 to F6).
+067-02.b2.b2.d2_choppy-month-fall-quickening-swing_1d: 0 ideas, 2 discoveries (2 explorations)
 067-02.b2.b2_choppy-month-fall-three-days_1d: 2 ideas (2 explorations)
 067-02.b2_agitated-choppy-month-fall-continues_1d: no ideas: Across about fifteen angles (the 30-day, 7-day and 1-day returns, range, close position, volatility, the 60-day trend, weekday, windows, coins and the book's extreme days), no pattern held across grid offsets and windows strongly enough to count after so many looks. The one consistent effect, the next-day reversal of the close position, is already held in the profile map.
 067-02_choppy-weak-month-fall-continues_1d: 2 ideas, 1 discoveries (2 explorations)

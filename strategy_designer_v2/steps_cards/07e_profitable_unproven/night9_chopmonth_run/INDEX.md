@@ -24,6 +24,8 @@
 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b1_choppy-plain-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+067-02.b2.b2.d1_choppy-month-fall-week-hold_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+067-02.b2.b2.d2_choppy-month-fall-quickening-swing_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02.b2.b2_choppy-month-fall-three-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b2_agitated-choppy-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 067-02_choppy-weak-month-fall-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

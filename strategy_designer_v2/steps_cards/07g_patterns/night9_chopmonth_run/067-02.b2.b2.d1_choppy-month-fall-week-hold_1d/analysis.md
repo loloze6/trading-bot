@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 067-02.b2.b2.d1_choppy-month-fall-week-hold_1d
+idea tested: 067-02.b2.b2.d1_choppy-month-fall-week-hold
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3930 USD
+---
+## Findings
+- **F1:** In the choppy profile, a larger 30-day fall is followed by a larger 7-day fall: the slope of the 7-day unusual move on the 30-day return, in standard units, is 0.145 (t 2.04, 111 cases on 54 days). After 30-day rises the slope is -0.004 (t -0.04, 104 cases on 48 days). This is the tested idea's own falls-only effect. It is not a new pattern, and the brief's claim that the effect is symmetric does not hold.
+- **F2:** Outside the choppy profile, the 30-day return does not order the next 7 days (slope -0.009, t -0.15, 1004 cases on 154 days). The 60-day return does not order them in the choppy profile either (slope 0.038, t 0.60, 135 cases). The month effect is confined to the brief's own situation.
+- **F3:** Inside the choppy profile, the 30-day slope is not steady from year to year. It is -0.16 in 2018 (t -0.81), 0.07 in 2019 (t 0.88), 0.52 in 2020 (t 2.26) and 0.28 in 2021 (t 2.38). No window with at least 7 case days reaches t 1.5 (w18: 0.29, t 1.40).
+- **F4:** The book's largest days come from big moves against the coin, not from a separate pattern. On the 62 best coin-days the book made +6.8 % while the coin fell 11.8 %. On the 62 worst it lost 6.5 % while the coin rose 15.1 %. Its losses are short squeezes.
+- **F5:** Trades are unprofitable whatever their length, with no clean shape:
+- **F6:** The other angles show nothing that stands out once about 60 groupings are counted:
+
+## Ideas
+- No ideas: The only effect that stands out is the tested idea's own falls-only continuation in a choppy market (F1, F2), which is already being tested. Across 30-day, 60-day, 14-day, 7-day and 1-day returns, range, volatility, weekday, year, window, trade length and the book's extreme days, no other pattern clears chance given how many angles were examined (F3 to F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

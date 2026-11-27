@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean 7-bar unusual move in the short direction",
+    "value": 0.015594428878539375,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day summed (day-clustered)",
+      "value": 1.5714777303376342
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; over at least 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "mean gain before costs on bars held short with forecast 0",
+    "value": -0.00022065136346249156,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 211,
+    "cases": 633,
+    "held-recovered bars": 3444
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), meeting neither confirm nor reject.",
+  "reading": "Situation bars are those with the month_fall component recorded (choppy regime active) and raw 30-day return < 0 with a negative forecast; the drift is each coin's mean 7-bar return on the same non-overlapping grid of all its windows; the t uses per-day sums of w*(x - weighted mean) as cluster deviations, SE = sqrt(G/(G-1)*sum u_d^2)/sum w; held-recovered bars are bars with forecast exactly 0 and a negative post-rebalance allocation; and both stated minimums (30 days, 20 held bars) are treated as minimum counts giving 'not observable' when unmet."
+}

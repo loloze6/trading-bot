@@ -24,6 +24,8 @@
 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls_1d: not profitable enough [Sharpe 0.05422; Sharpe minus holding's Sharpe -0.4986; Calmar 0.01105]
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: not profitable enough [Sharpe 0.08259; Sharpe minus holding's Sharpe -0.5249; Calmar 0.01401]
 067-02.b1_choppy-plain-month-fall-continues_1d: not profitable enough [Sharpe 0.08259; Sharpe minus holding's Sharpe -0.5249; Calmar 0.01401]
+067-02.b2.b2.d1_choppy-month-fall-week-hold_1d: not profitable enough [Sharpe 0.08259; Sharpe minus holding's Sharpe -0.5249; Calmar 0.01401]
+067-02.b2.b2.d2_choppy-month-fall-quickening-swing_1d: not profitable enough [Sharpe 0.1141; Sharpe minus holding's Sharpe -0.4933; Calmar 0.02588]
 067-02.b2.b2_choppy-month-fall-three-days_1d: not profitable enough [Sharpe 0.1486; Sharpe minus holding's Sharpe -0.4589; Calmar 0.06224]
 067-02.b2_agitated-choppy-month-fall-continues_1d: not profitable enough [Sharpe 0.03262; Sharpe minus holding's Sharpe -0.5202; Calmar -0.0004352]
 067-02_choppy-weak-month-fall-continues_1d: not profitable enough [Sharpe 0.08259; Sharpe minus holding's Sharpe -0.5249; Calmar 0.01401]

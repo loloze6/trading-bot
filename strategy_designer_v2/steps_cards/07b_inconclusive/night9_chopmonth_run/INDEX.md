@@ -24,6 +24,8 @@
 067-02.b1.b1.g1_choppy-agitated-month-weakness-falls_1d: 1 ideas (2 explorations)
 067-02.b1.b1_choppy-deep-month-fall-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b1_choppy-plain-month-fall-continues_1d: 1 ideas (2 explorations)
+067-02.b2.b2.d1_choppy-month-fall-week-hold_1d: no ideas: The tested fall effect is on its side but already measured on all the data (F1), and no part of it shows the effect clearly. It is not graded by depth (F2), its recovery clause loses (F3), no horizon clears the bar (F4), and the brief's rise side is absent (F5). It also fades by year and splits across coins and windows (F6), so the theme's effect is not in the data.
+067-02.b2.b2.d2_choppy-month-fall-quickening-swing_1d: 1 ideas (2 explorations)
 067-02.b2.b2_choppy-month-fall-three-days_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 067-02.b2_agitated-choppy-month-fall-continues_1d: 2 ideas (2 explorations)
 067-02_choppy-weak-month-fall-continues_1d: 2 ideas (2 explorations)
