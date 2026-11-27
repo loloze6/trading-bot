@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of short cases, short-signed (signal-bar return minus coin's normal 5-bar drift)",
+    "value": 0.02237525836052258,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 2.7043076696572568
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2; minimum 30 distinct case days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half, > 0",
+    "value": 0.02374839748074036,
+    "passed": true
+  },
+  "counts": {
+    "distinct case days": 210,
+    "cases": 279
+  },
+  "decided_by": "mean unusual move positive with t >= 2 and the larger-|forecast| half beating the smaller half: the confirm rule.",
+  "reading": "situation recomputed from prices (fall5's recorded value fills the 5-day return at window starts); a case is the first short bet (rise of |forecast| on the short side of >= 2 from its lowest level since the last bet, reset on flat/long) in each 5-bar grid cell from each window's first row; t clusters cases by UTC day of the signal bar; the larger half is |forecast| strictly above the median, the smaller half at or below it; the 30-day minimum, per the workflow, gives 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": true,
+    "why": "main measure +0.01044 on the check folds against +0.02238 on every fold",
+    "main": 0.010435784468009824,
+    "statistic": 1.6109853997994399,
+    "counts": {
+      "distinct case days": 152,
+      "cases": 202
+    }
+  }
+}

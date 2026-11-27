@@ -296,7 +296,10 @@ An idea's latest record counts once.
 | 061-01.g1.d1_calm-choppy-up-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:12:23 |
 | 061-01.g1_choppy-calm-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:06:57 |
 | 061-01_calm-big-up-day-continues_1d | confirmed | night8_risingcalm_run | 1d | 6 | 75b231208 | 2026-11-25T23:38:40 |
+| 061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d | confirmed | night9_chopagishort_run | 1d | 19 | 1a4a54c51 | 2026-11-27T01:42:49 |
 | 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d | confirmed | night9_chopagishort_run | 1d | 19 | db19a8969 | 2026-11-27T00:27:29 |
+| 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d | confirmed | night9_chopagishort_run | 1d | 19 | ea03d4b14 | 2026-11-27T01:17:52 |
+| 061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d | confirmed | night9_chopagishort_run | 1d | 19 | 1a4a54c51 | 2026-11-27T01:30:11 |
 | 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded_1d | confirmed | night9_chopagishort_run | 1d | 19 | db19a8969 | 2026-11-27T00:40:23 |
 | 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d | confirmed | night9_chopagishort_run | 1d | 19 | 3f0be0e38 | 2026-11-26T22:56:01 |
 | 061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade_1d | confirmed | night9_chopagishort_run | 1d | 19 | 185c506c6 | 2026-11-26T23:59:43 |

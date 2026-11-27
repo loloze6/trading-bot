@@ -1,0 +1,59 @@
+{
+  "line": "7.d",
+  "backtest": "061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4929177,
+  "findings": {
+    "F1": "The book's losses come from shorts held after the situation and the profile had ended, not from the signal itself. Held bars in the `mean_reversion` regime earned +1.64 % a bar (121 bars, summed about +1.99). Held bars in `chop` (172 bars, \u22120.12 % a bar) and `unknown` (95 bars, \u22120.15 % a bar) gave back about \u22120.35 of that.",
+    "F2": "The deepest falls behind the failed Calmar (0.43) and the Sharpe below holding's (\u22120.25) are rebound days after crashes. The worst book days were \u22125.5 % in w16 (coins +18.4 % that day), \u22124.1 % in w15 (coins +8.3 %) and \u22122.2 % in w18 (coins +22.7 %). The worst held bars were mostly `chop` bars 1 to 3 days into a short, after a 5-day fall of 42 to 53 %, a 20-day fall of 50 to 60 %, a day's fall of 14 to 41 % and a close near the low (location 0.02 to 0.54). The next day the coin rose 16 to 31 %: by then the coin had left the choppy market for a falling one, yet the 5-bar minimum holding kept the short open.",
+    "F3": "Held bars on the day after a one-day fall of more than 5 % lost \u22120.86 % a bar (65 bars). Held bars after a day between \u22125 % and 0 earned +0.78 % (126), and after a rise +0.36 % to +1.54 %. Once the push has been given back sharply, the rest of the short loses. This condition was not measured on bars without the signal.",
+    "F4": "The signal's move comes from the deeper 5-day falls. On non-overlapping in-profile bars of the situation, short-signed 5-day moves were about +16.8 %, +17.2 % and +14.5 % in the three deepest 5-day-return quartiles, but \u22121.8 % in the shallowest (5-day return about \u22122 %; 5 to 6 cases each). On all situation bars it was +7.9 % below a \u221215 % 5-day return (25), +8.2 % from \u221215 % to \u22128 % (29), +2.1 % from \u22128 % to \u22124 % (30) and +1.0 % from \u22124 % to 0 (40). By trade, entries in the shallowest tercile (5-day return \u22124.2 %) netted \u22120.45 %, against +5.0 % and +4.7 % for the deeper two.",
+    "F5": "The deep fall is not an effect of its own. In-profile bars with a 5-day return below \u22128 % but a close in the lower half of the range rose afterwards: short-signed \u22124.1 % over 5 days (65 bars). With the upper-half close the same bars fell: +8.1 % (54). The other in-profile bars without the signal were also flat to rising: \u22120.6 %, t \u22120.46, 63 grid cases. The upper-half close after a deep fall, the idea's own situation, carries the move.",
+    "F6": "Cost is not why the book fails. The total move is 7.1 times the 0.22 % cost of a trade, and trades netted +0.62 % on average (139 trades, 36 % winners). The book fails because it is rarely in the market and its falls are deep. It was in a position on 5 % of coin-days at about 0.35 allocation, making +2.6 % a year. Trades shorter than 4.5 days lost \u22123.66 % net (46), against +2.58 % for 5-day trades (61)."
+  },
+  "ideas": [
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits in the upper half of that day's high-low range after its 5-day return has been negative, its price falls over the next five days, and the fall grows steeply with the depth of that 5-day fall measured against the coin's usual 5-day swing, the deepest falls carrying most of the move.",
+      "consequence": "A trader shorts the upper-half closes that follow the deepest 5-day falls, sized much more heavily as the fall deepens, so that most of the book's risk sits in the cases that carry the move.",
+      "name": "deep-fall upper-close fade",
+      "from": "F4, F5, F6",
+      "profile": "choppy agitated",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits in the upper half of that day's high-low range after its 5-day return has been negative, its price falls over the next five days for as long as its 60-day trend stays choppy, the fall growing with the depth of that 5-day fall.",
+      "consequence": "A trader holds the short only while the coin stays in a choppy market and covers once its two-month trend turns to falling, avoiding the post-crash rebounds that made the book's deepest falls.",
+      "name": "upper-close fade while choppy",
+      "from": "F1, F2",
+      "profile": "choppy agitated",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a choppy, agitated market, when a coin's daily close sits in the upper half of that day's high-low range after its 5-day return has been negative, its price falls over the next five days until it gives back the push in one sharp down day, and the fall grows with the depth of that 5-day fall.",
+      "consequence": "A trader covers the short after the first sharp one-day fall inside the five days, taking the given-back push and leaving the rebound that follows.",
+      "name": "upper-close fade until giveback",
+      "from": "F2, F3",
+      "profile": "choppy agitated",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.b1.b1.b1.d1.d2.d1.d1_deep-fall-upper-close-fade",
+    "061-01.b1.b1.b1.d1.d2.d1.d2_upper-close-fade-while-choppy",
+    "061-01.b1.b1.b1.d1.d2.d1.d3_upper-close-fade-until-giveback"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

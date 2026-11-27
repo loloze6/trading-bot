@@ -1,4 +1,7 @@
+061-01.b1.b1.b1.d1.d1.d1_upper-close-after-deep-month-fall_1d: confirmed (fit: adapted) [main: 0.0367019; day-clustered t of the mean 2.87123; cases 145, distinct days 116]
 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: confirmed (fit: adapted) [main: 0.0223753; day-clustered t of the mean 2.70431; cases 279, distinct days 210]
+061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d: confirmed (fit: adapted) [main: 0.0223753; t of the mean, cases summed per day 2.70431; distinct case days 210, cases 279]
+061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d: confirmed (fit: adapted) [main: 0.0104129; t of the mean, cases of one day pooled 2.29702; distinct days with cases 640, cases 1853]
 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded_1d: confirmed (fit: exact) [main: 0.0211672; t of the mean, cases summed per day 2.86861; cases 161, distinct days 130]
 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d: confirmed (fit: exact) [main: 0.0253697; t of the mean, cases grouped by day 3.80481; cases 190, days 157]
 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade_1d: inconclusive (fit: exact) [main: 0.029998; t of the mean, same-day cases pooled 3.15752; cases 225, distinct days 176]

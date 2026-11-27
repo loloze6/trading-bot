@@ -1,4 +1,6 @@
 061-01.b1.b1.b1.d1.d1_upper-close-after-deep-fall_1d: 3 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded_1d: 3 ideas (2 explorations)
+061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall_1d: 3 ideas (2 explorations)
 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded_1d: 2 ideas (2 explorations)
 061-01.b1.b1.b1.d1_high-close-after-fall-fades_1d: 2 ideas (2 explorations)
 061-01.b1.b1.b1.d2.d1_quiet-high-close-ten-day-fade_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

@@ -18,21 +18,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded | 061-01.b1.b1.b1.d1_high-close-after-fall-fades | plan | confirmed (+2.87) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.d: 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded, 061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall; 7.g: 061-01.b1.b1.b1.d1.d2.g1_choppy-market-twenty-day-continuation, 061-01.b1.b1.b1.d1.d2.g2_choppy-market-five-day-continuation | 1.36 | 14.7 |
 | 061-01.b1.b1.b1.d2.d3.d2_pullback-high-close-fade | 061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade | plan | inconclusive (+1.47) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar, Trades per day) | - | 7.b: 061-01.b1.b1.b1.d2.d3.d2.b1_quiet-high-close-fades; 7.g: 061-01.b1.b1.b1.d2.d3.d2.g1_choppy-agitated-high-close-fade, 061-01.b1.b1.b1.d2.d3.d2.g2_choppy-calm-big-day-continuation | 1.18 | 13.8 |
 | 061-01.b1.b1.b1.d2.d3.d3_broad-pullback-high-close-fade | 061-01.b1.b1.b1.d2.d3_high-close-graded-gain-fade | plan | inconclusive (+0.91) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 061-01.b1.b1.b1.d2.d3.d3.b1_deep-pullback-high-close-fade, 061-01.b1.b1.b1.d2.d3.d3.b2_deep-pullback-two-day-fade; 7.g: no ideas: Across forecast, close location, past 5-day moves, day size, range width and its 5-day compression, weekday, profile, year and the book's extreme days, the only pattern that clears chance is the next-day rebound after a large down day (F2), which the profile map already holds many times; nothing new stands out. | 1.19 | 12.8 |
+| 061-01.b1.b1.b1.d1.d2.d1_upper-half-close-fall-graded | 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded | plan | confirmed (+2.70) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 061-01.b1.b1.b1.d1.d2.d1.d1_deep-fall-upper-close-fade, 061-01.b1.b1.b1.d1.d2.d1.d2_upper-close-fade-while-choppy, 061-01.b1.b1.b1.d1.d2.d1.d3_upper-close-fade-until-giveback; 7.g: 061-01.b1.b1.b1.d1.d2.d1.g2_choppy-agitated-two-day-fade | 1.41 | 14.0 |
+| 061-01.b1.b1.b1.d1.d2.d2_high-close-after-deep-fall | 061-01.b1.b1.b1.d1.d2_high-close-fall-depth-graded | plan | confirmed (+2.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.d: 061-01.b1.b1.b1.d1.d2.d2.d1_high-close-fall-falling-market, 061-01.b1.b1.b1.d1.d2.d2.d2_high-close-fall-choppy-market, 061-01.b1.b1.b1.d1.d2.d2.d3_high-close-fade-two-days; 7.g: 0 ideas, 2 discoveries (3 explorations) | 1.37 | 12.8 |
 
 ## Consumption
-14 ideas, 21.17 USD, 198.8 minutes in all.
+16 ideas, 23.95 USD, 225.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.27 | 8.9 |
-| step4_backtest | 0.00 | 127.0 |
-| step5_verdict | 2.85 | 10.3 |
-| step6_check | 0.00 | 0.5 |
+| step3_plan | 2.44 | 9.8 |
+| step4_backtest | 0.00 | 144.8 |
+| step5_verdict | 3.25 | 11.7 |
+| step6_check | 0.00 | 0.6 |
 | chart_files | 0.00 | 0.3 |
-| step7_7.d | 2.79 | 8.8 |
+| step7_7.d | 3.70 | 11.7 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 2.95 | 8.9 |
-| step7_7.g | 10.30 | 33.4 |
-| similarity_check | 0.00 | 0.6 |
+| step7_7.g | 11.60 | 36.8 |
+| similarity_check | 0.00 | 0.8 |
