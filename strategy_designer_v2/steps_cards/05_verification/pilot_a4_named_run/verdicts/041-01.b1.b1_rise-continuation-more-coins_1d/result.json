@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-day excess return (over coin's all-window mean daily return)",
+    "value": 0.0025481831965462835,
+    "statistic": {
+      "name": "t of weighted mean, cases of one day summed",
+      "value": 0.8116418074702407
+    },
+    "threshold": "confirm: positive with t >= 2 and slope > 0; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of next-day excess return on forecast",
+    "value": 0.0006374767841030341,
+    "passed": true
+  },
+  "counts": {
+    "cases": 1273,
+    "distinct days": 758
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive. No effect (common/verdicts.md): t in the idea's direction +0.812 (below 1), 1273 cases (30 needed).",
+  "reading": "The coin's mean daily return is the mean of all its within-window daily returns, the t uses day-clustered deviations of the weighted mean (forecast-weighted, summed per UTC day), the profile is read from the recorded regime (not chop), and the plan's minimum of 100 cases and 100 days is applied as 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.812 (below 1), 1273 cases (30 needed)",
+    "t_in_idea_direction": 0.8116418074702407,
+    "cases": 1273
+  }
+}

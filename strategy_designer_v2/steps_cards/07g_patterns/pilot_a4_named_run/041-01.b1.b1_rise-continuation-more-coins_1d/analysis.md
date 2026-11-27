@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 041-01.b1.b1_rise-continuation-more-coins_1d
+idea tested: 041-01.b1.b1_rise-continuation-more-coins
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5283 USD
+---
+## Findings
+- **F1:** In the rising agitated profile (26 % of bars on BCH, DOGE and ZEC, explore windows), the coin's next-day excess return over its all-window mean is -0.23 % (t -0.68, 624 non-overlapping cases), its 3-day excess return -0.74 % (t -0.74, 202 cases), its 5-day -0.57 % (t -0.36, 128 cases) and its 10-day -1.74 % (t -0.64, 65 cases): no move a short could take, and none told apart from 0.
+- **F2:** Across the profile, the one-day scaled move does not grade the next day either way: its quintiles give -0.56 %, +0.18 %, -0.76 %, -0.61 % and +0.56 % next-day excess returns with every |t| at 1.22 or under, so the tested rise continuation is not there and there is no giveback for a short to fade.
+- **F3:** The up-day streak is the strongest pattern found in the profile, and it does not stand out: its Spearman correlation with the next-day excess return is -0.10 (p 0.012, 624 cases), but no bucket's day-clustered t passes 2 (one up day -1.19 %, t -1.58; two -0.92 %, t -0.97; three -1.40 %, t -0.80), the four-plus bucket turns positive (+2.19 %, t 1.11), and the scaled return over the run gives rho -0.061 (p 0.15, 557 cases).
+- **F4:** The few |t| above 2 in the profile sit in middle quintiles that do not grade: the 3rd quintile of the one-day scaled move at 5 days (-4.78 %, t -2.85, 20 cases), the 3rd quintile of the 5-day scaled move at 3 days (-4.63 %, t -2.99, 31 cases) and the 3rd quintile of the 20-day drawdown at 1 day (-1.60 %, t -2.33, 113 cases); with the extreme quintiles near 0, about 100 groupings tested, and so few cases, they read as chance.
+- **F5:** The remaining angles show nothing in the profile, each with every |t| under 1.7 and no Spearman correlation with p under 0.1: close location, scaled range, upper wick, volume against its 30-day median (alone or on up days), stretch from the 20-day mean, the 10-day and 60-day returns, the 30-day against 120-day volatility ratio, weekday, coin and year.
+- **F6:** The book's 255 long trades gain +0.55 % before fees and +0.45 % after, but its 457 active days average -0.02 % (25 % positive, total -9.4 %), with its ten best days summing +119 % against -86 % for its ten worst: a few large days carry the book, not a steady effect.
+- **F7:** The size cannot pay a cost: per case the total move is +0.23 % and the unusual move +0.12 % (t 0.44, strength 0.030), against a cost of 0.37 % per trade.
+
+## Ideas
+- No ideas: Across the forecast, the positions, the trades, the regimes and the bars (the scaled one-, three-, five- and ten-day moves, close location, range, wick, volume, stretch, drawdown, up-day streaks, volatility ratio, weekday, coin and year, at horizons of 1 to 10 days), no pattern in rising agitated markets that a short could act on stands apart from chance (F1–F5), and the explore half holds only three coins and 65 to 624 cases per horizon in the profile.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

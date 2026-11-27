@@ -1,3 +1,4 @@
+041-01.b1.b1_rise-continuation-more-coins_1d: no effect (fit: adapted) [main: 0.00254818; t of weighted mean, cases of one day summed 0.811642; cases 1273, distinct days 758]
 041-01.b1_rising-agitated-rise-continues_1d: inconclusive (fit: adapted) [main: 0.000637477; day-clustered slope t 1.86062; cases 1273, distinct days 758]
 064-02_rising-agitated-volume-growth-stalls_1d: no effect (fit: exact) [main: -0.000636049; t of the slope, day-clustered -0.625783; grid cases 484, distinct days 252]
 086-01.c1_first-dip-falls-over-week_1d: no effect (fit: adapted) [main: -0.0150377; t of the mean, cases of one day taken together -0.89251; cases 257, distinct days 195]

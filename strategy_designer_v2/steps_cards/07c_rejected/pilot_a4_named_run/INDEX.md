@@ -1,3 +1,4 @@
+041-01.b1.b1_rise-continuation-more-coins_1d: 2 ideas (2 explorations)
 041-01.b1_rising-agitated-rise-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 064-02_rising-agitated-volume-growth-stalls_1d: 2 ideas (2 explorations)
 086-01.c1_first-dip-falls-over-week_1d: 1 ideas (2 explorations)
