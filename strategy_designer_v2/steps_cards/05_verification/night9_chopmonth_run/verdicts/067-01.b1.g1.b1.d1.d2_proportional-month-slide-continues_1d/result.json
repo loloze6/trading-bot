@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (10-bar return - coin drift) over chop short cases",
+    "value": 0.012101066618109746,
+    "statistic": {
+      "name": "t of the mean, cases summed per day",
+      "value": 1.2113771283130739
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and both halves positive); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "min of mean short gain over drift in moderate and deep |forecast| halves (moderate -0.007464077229047727, deep 0.02325661003292701)",
+    "value": -0.007464077229047727,
+    "passed": false
+  },
+  "counts": {
+    "independent case-days": 150,
+    "cases": 423
+  },
+  "decided_by": "The t of the main mean lies between -2 and 2.",
+  "reading": "Chop is recomputed as the 60-day percent return from closes in [-10, +10] where 60 bars of the window exist, else taken from the recorded regime; the fall is fall30's raw value < 0; the drift is the coin's mean 10-bar return on the non-overlapping grid of all its windows; the t is the clustered t with deviations summed per UTC day; the halves are |forecast| below the median (moderate) and at or above it (deep)."
+}

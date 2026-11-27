@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-bar move of short bets, before costs, in the short direction",
+    "value": 0.01361348628268724,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.5104426913041387
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "deeper-fall half minus shallower half, mean unusual move",
+    "value": 0.0007104782246570279,
+    "passed": true
+  },
+  "counts": {
+    "cases": 310,
+    "distinct days": 227
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The profile is read from the recorded regime ('unknown' = the choppy agitated profile, the only regime with a strategy) since its 365-bar volatility percentile cannot be rebuilt from the windows, the 30-day fall from last_history_value (or close/close[-30]-1 where missing); a case is the first short bet in each 10-bar grid cell of a window, the deeper half is |forecast| strictly above the median, the day-clustered t uses a G/(G-1) correction, and 'fewer than 30 cases on fewer than 20 distinct days' is read as two minimums (30 cases and 20 distinct days), either one unmet giving 'not observable'."
+}

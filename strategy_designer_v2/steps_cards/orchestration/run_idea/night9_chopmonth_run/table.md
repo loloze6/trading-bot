@@ -12,21 +12,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 067-01.b1.g1.b1_choppy-month-fall-continues | 067-01.b1.g1_choppy-agitated-month-fall-continues | plan | confirmed (+2.07) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues, 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days; 7.g: 067-01.b1.g1.b1.g1_deep-month-slide-accelerates | 1.20 | 12.5 |
 | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | 067-01.b1.g1.b1_choppy-month-fall-continues | plan | confirmed (+2.41) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues, 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues; 7.g: 067-01.b1.g1.b1.d1.g1_agitated-chop-slide-continues, 067-01.b1.g1.b1.d1.g2_accelerating-month-slide-continues, 067-01.b1.g1.b1.d1.g3_chop-slide-twenty-day-continuation | 1.13 | 11.9 |
 | 067-01.b1.g1.b1.d2_choppy-month-fall-twenty-days | 067-01.b1.g1.b1_choppy-month-fall-continues | plan | inconclusive (+0.45) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d2.b1_agitated-choppy-month-fall-continues, 067-01.b1.g1.b1.d2.b2_choppy-month-fall-ten-days; 7.g: 067-01.b1.g1.b1.d2.g1_choppy-swing-scaled-month-continuation, 067-01.b1.g1.b1.d2.g2_choppy-month-fall-week | 1.13 | 11.4 |
+| 067-01.b1.g1.b1.d1.d1_agitated-chop-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The theme's effect is not in the data. The slide's continuation in an agitated choppy market rests on one window (w16; without it +0.42 %, t 0.20, F2), reverses in other windows and years (F3), and is not graded by the depth of the fall in any cut (F4, F5). No narrower case of the situation gives a clear answer, and no more data is available to test the idea unchanged (F1).; 7.g: no ideas: Across about fifty profile-by-pattern cells, nothing new reaches the bar that many looks require. The only clustered t values above 2.5 repeat strategies the map already holds (falling-agitated rebounds, low-close rebounds, the rising late-week gain). The rest are marginal (rising-calm fall rebound t 2.61, choppy-calm late week t 2.50) or rest on fewer than 10 independent days (choppy deep-slide continuation, F2). | 1.09 | 12.4 |
+| 067-01.b1.g1.b1.d1.d2_proportional-month-slide-continues | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues | plan | inconclusive (+1.21) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 067-01.b1.g1.b1.d1.d2.b1_swing-scaled-month-slide-continues, 067-01.b1.g1.b1.d1.d2.b2_scaled-slide-five-day-continuation; 7.g: 067-01.b1.g1.b1.d1.d2.g1_choppy-calm-month-continuation | 1.14 | 11.9 |
 
 ## Consumption
-8 ideas, 8.80 USD, 94.1 minutes in all.
+10 ideas, 11.04 USD, 118.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.63 | 3.3 |
-| step4_backtest | 0.00 | 64.6 |
-| step5_verdict | 1.54 | 5.3 |
-| step6_check | 0.00 | 0.3 |
+| step3_plan | 0.78 | 4.1 |
+| step4_backtest | 0.00 | 81.7 |
+| step5_verdict | 1.92 | 6.6 |
+| step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
 | step7_7.d | 1.41 | 4.5 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 1.66 | 5.2 |
-| step7_7.g | 3.57 | 10.6 |
+| step7_7.b | 2.42 | 7.3 |
+| step7_7.g | 4.50 | 13.4 |
 | similarity_check | 0.00 | 0.3 |

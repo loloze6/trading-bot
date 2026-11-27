@@ -297,6 +297,7 @@ An idea's latest record counts once.
 | 061-01.g1_choppy-calm-day-follow-through_1d | confirmed | night8_risingcalm_run | 1d | 6 | fe24e9ea9 | 2026-11-26T00:06:57 |
 | 061-01_calm-big-up-day-continues_1d | confirmed | night8_risingcalm_run | 1d | 6 | 75b231208 | 2026-11-25T23:38:40 |
 | 067-01.b1.g1.b1.d1_choppy-deep-month-slide-continues_1d | confirmed | night9_chopmonth_run | 1d | 19 | 9138d1bbc | 2026-11-26T23:17:01 |
+| 067-01.b1.g1.b1.g1_deep-month-slide-accelerates_1d | confirmed | night9_chopmonth_run | 1d | 19 | abd120135 | 2026-11-27T00:01:14 |
 | 067-01.b1.g1.b1_choppy-month-fall-continues_1d | confirmed | night9_chopmonth_run | 1d | 19 | e0f3705bc | 2026-11-26T23:05:46 |
 | 067-01.b1_choppy-weak-month-keeps-falling_1d | confirmed | night9_chopmonth_run | 1d | 19 | 690331b94 | 2026-11-26T22:33:32 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d | confirmed | night_005_run | 1d | 2 | a548b53bb | 2026-11-18T03:11:44 |
