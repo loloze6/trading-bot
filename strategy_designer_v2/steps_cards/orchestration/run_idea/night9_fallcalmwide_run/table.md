@@ -17,21 +17,24 @@ One row per idea run; every status is read from the step's own result file. Each
 | 075-01.d2_heavy-volume-fall-two-day-rebound | 075-01_heavy-volume-next-day-rise | plan | confirmed (+2.47) | not profitable enough (failed: Calmar) | - | 7.d: 075-01.d2.d1_extreme-volume-down-day-rebound, 075-01.d2.d2_rising-market-heavy-volume-dip-rebound, 075-01.d2.d3_heavy-volume-fall-five-day-rebound; 7.g: 075-01.d2.g1_rising-market-heavy-volume-dip | 1.12 | 12.6 |
 | 061-01_falling-calm-rally-fade | - | plan | inconclusive (-0.60) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: the theme's effect is not in the data. Inside falling calm markets a sharp rise is followed by no larger fall than a flat or small-fall day (F2), the fade does not grow with the rise (F3), and it appears only in some years and windows, with opposite signs elsewhere (F4). No condition, side or horizon isolates it (F5).; 7.g: no ideas: The tested rally fade is only the falling calm market's own next-day drift (F1, F2). The one pattern that stands out, the graded next-day rebound after scaled falls and low closes outside falling calm (F3, F4), is already held in the map's agitated and falling agitated long cells (038-01, 047-01, 051-01, 045-01, 039-02). Nothing else stands out among the angles examined (F5). | 1.06 | 12.1 |
 | 060-02_falling-calm-close-above-low-fade | - | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.g: 0 ideas, 1 discoveries (3 explorations) | 0.96 | 12.6 |
+| 075-01.d3_heavy-volume-deep-fall-rebound | 075-01_heavy-volume-next-day-rise | plan | inconclusive (+1.95) | not profitable enough (failed: Calmar) | - | 7.b: 075-01.d3.b1_heavy-volume-outsized-fall-rebound, 075-01.d3.b2_light-volume-up-day-fade; 7.g: 075-01.d3.g1_light-volume-rise-fades, 075-01.d3.g2_falling-market-thin-rally-fade | 1.07 | 12.3 |
+| 075-01.g1_heavy-volume-down-day-rebound | 075-01_heavy-volume-next-day-rise | plan | confirmed (+2.30) | not profitable enough (failed: Calmar) | - | 7.d: 075-01.g1.d1_agitated-heavy-volume-fall-rebound, 075-01.g1.d2_volume-graded-down-day-reversal; 7.g: 075-01.g1.g1_heavy-volume-fall-three-day-rebound | 1.13 | 12.3 |
+| 075-01.g2_light-volume-up-day-fade | 075-01_heavy-volume-next-day-rise | plan | inconclusive (+2.41) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 075-01.g2.b1_falling-market-light-volume-up-day-fade; 7.g: 075-01.g2.g2_falling-market-light-rise-fade, 075-01.g2.g3_heavy-volume-low-close-rebound | 1.20 | 11.7 |
 
 ## Consumption
-13 ideas, 14.88 USD, 164.6 minutes in all.
+16 ideas, 18.28 USD, 200.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.33 | 7.8 |
-| step4_backtest | 0.00 | 112.6 |
-| step5_verdict | 2.70 | 9.7 |
-| step6_check | 0.00 | 0.7 |
+| step3_plan | 1.58 | 9.3 |
+| step4_backtest | 0.00 | 137.0 |
+| step5_verdict | 3.24 | 11.4 |
+| step6_check | 0.00 | 0.9 |
 | chart_files | 0.00 | 0.3 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 1.71 | 5.5 |
-| step7_7.b | 3.22 | 9.4 |
-| step7_7.g | 5.92 | 18.2 |
-| similarity_check | 0.00 | 0.3 |
+| step7_7.d | 2.16 | 7.0 |
+| step7_7.b | 3.94 | 11.6 |
+| step7_7.g | 7.36 | 22.8 |
+| similarity_check | 0.00 | 0.4 |

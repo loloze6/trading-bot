@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 075-01.g1_heavy-volume-down-day-rebound_1d
+idea tested: 075-01.g1_heavy-volume-down-day-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4072 USD
+---
+## Findings
+- **F1:** The tested lean is graded but small at one day. On down days, the mean next-day excess return rises across the five volume-ratio quintiles: -0.03 % (t -0.08), +0.04 %, +0.06 %, +0.21 % (t 0.84) and +0.54 % (t 1.59, 363 days). That is consistent with the verdict's slope, but no single quintile can be told from 0. It also sits beside a measured unusual move of +0.08 % per case against a trade cost of 0.22 %.
+- **F2:** The lean is concentrated in the largest falls. In the bottom quartile of down days by the fall scaled to 20-day swing, the next-day excess return is +3.94 %, +0.97 % (day-pooled t 2.09) and +0.93 % (t 1.26) across the light, middle and heavy volume terciles. In the two smallest-fall quartiles it is between -0.43 % and +1.28 % with no consistent order by volume. So the volume measure partly stands in for the size of the fall.
+- **F3:** The rebound after down days is larger over three days than over one, which bears on cost. On all days, the mean 3-day return after a scaled fall of -2 to -1 swings is +1.95 % (t 3.12, 320 cases) and after a fall of 0 to -1 swings +1.20 % (t 2.97, 1223 cases). After a rise of 0 to 1 swing it is +0.30 % (t 1.21) and after 1 to 2 swings +0.15 % (t 0.34). These are raw returns on a grid of every third row, not per-window excess returns. The 1-day excess returns for the same buckets are smaller: +0.61 % and -0.12 %.
+- **F4:** Up days show the brief's light-volume drift but no heavy-volume rise. The next-day excess return is -0.30 % (t -1.42) in the lightest-volume quintile and +0.06 % (t 0.21) in the heaviest, so neither end can be told from 0.
+- **F5:** No profile pattern stands out against the number of cells looked at. Of about 60 trend × direction × volume cells, the most extreme was heavy-volume up days in a choppy market, at -1.31 % (t -2.35, 116 days). The heavy-volume down-day lean is absent inside the trend regimes: it is -0.05 % when falling, -0.12 % when choppy and +0.06 % when rising.
+- **F6:** The book's daily returns move with the coins rather than against them. On the book's worst decile of days the coins average -7.05 % and the book -2.10 %; on its best decile the coins average +6.77 % and the book +2.45 %. The book's mean gain per bar is negative in 2 of the 12 windows (w9 -0.06 %, w14 -0.01 %). Weekdays show nothing: no day's |t| exceeds 1.24.
+
+## Ideas
+- `075-01.g1.g1_heavy-volume-fall-three-day-rebound` (from F1, F2, F3): On a day a coin falls, the heavier its volume against its own average daily volume over the past 20 days, the larger its rise over the next three days, in any market.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

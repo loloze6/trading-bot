@@ -10,4 +10,7 @@
 074-01_rising-calm-wide-low-close-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
 075-01.d1_heavy-volume-down-day-rebound_1d: 1 ideas, 1 discoveries (2 explorations)
 075-01.d2_heavy-volume-fall-two-day-rebound_1d: 1 ideas (2 explorations)
+075-01.d3_heavy-volume-deep-fall-rebound_1d: 2 ideas, 1 discoveries (2 explorations)
+075-01.g1_heavy-volume-down-day-rebound_1d: 1 ideas (2 explorations)
+075-01.g2_light-volume-up-day-fade_1d: 2 ideas, 1 discoveries (3 explorations)
 075-01_heavy-volume-next-day-rise_1d: 2 ideas (2 explorations)

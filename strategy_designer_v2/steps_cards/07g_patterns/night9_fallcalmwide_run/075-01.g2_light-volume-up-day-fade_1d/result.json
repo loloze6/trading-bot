@@ -1,0 +1,63 @@
+{
+  "line": "7.g",
+  "backtest": "075-01.g2_light-volume-up-day-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6003354,
+  "findings": {
+    "F1": "Up days in a falling market fall the next day at every volume level, so volume does not drive the move. With the trend read as the 30-day return below \u221210 %, up days in volume quintiles 0 to 4 have next-day unusual moves of \u22121.27 % (t \u22122.78, n 351), \u22120.84 % (t \u22122.17), \u22120.65 % (t \u22121.70), \u22120.84 % (t \u22121.67) and \u22121.40 % (t \u22122.09, n 220). In a rising 30-day trend the same quintiles give +0.16, \u22120.49, +0.03, \u22120.04 and +0.59 %, and in a choppy one \u22120.09 to \u22120.23 %, all with |t| \u2264 1.37.",
+    "F2": "Light-volume up days fall only outside rising markets. Over all trends, up days in volume quintiles 0 and 1 have unusual moves of \u22120.44 % (t \u22121.75) and \u22120.48 % (t \u22122.22), against \u22120.17 % and \u22120.07 % in quintiles 3 and 4. With the 60-day trend, the light half falls \u22120.63 % in falling markets (t \u22121.80, n 560) and \u22120.52 % in choppy ones (t \u22121.53), but \u22120.004 % in rising ones (t \u22120.01, n 486). Within up days, the covariance of volume with the next-day move is +11.0e-4 with t 1.02, so there is no smooth gradient; this matches the verdict's failed thirds check (top minus bottom \u22120.05 %).",
+    "F3": "The fade sits on small rises: up days in the lowest tercile of the day's return over its 20-day standard deviation have unusual moves of \u22120.60 % (t \u22121.83), \u22120.55 % (t \u22122.03) and \u22120.05 % to \u22120.52 % across volume quintiles, while the largest-rise tercile sits near 0 in every volume quintile (\u22120.61 % with n 93, then +0.03, \u22120.12, +0.03, +0.03 %).",
+    "F4": "Heavy-volume down days rebound, and the rebound grows with volume. Down days in volume quintiles 0 to 4 have next-day unusual moves of +0.15 %, +0.16 %, +0.19 %, +0.34 % and +1.15 % (t 2.59, n 955). The quintile-4 mean is positive in all 12 windows shown, ranging from +0.14 % to +2.84 %.",
+    "F5": "Among heavy-volume down days (quintile 4), the lower the close in the day's range, the larger the rebound: the bottom close tercile gives +1.75 % (t 2.77, n 319), the middle +1.18 % (t 1.99) and the top +0.52 % (t 0.61). Over all days, the close-location quintiles also fall in order, from +0.60 % (t 1.78) to \u22120.35 % (t \u22121.52).",
+    "F6": "The book lost because its short fought the coins' drift. Its total move per case is +0.11 %, against an unusual move of +0.26 %, after a normal drift of \u22120.15 % in the short direction. That total is half the 0.22 % cost of a trade, giving a Sharpe of \u22120.39 and \u22124.2 % a year. The falling-market up days in F1 move \u22120.65 % to \u22121.40 % per case, three to six times that cost."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling market, the smaller a day's rise against the coin's usual daily move over the past 20 days, the larger its fall over the next day.",
+      "consequence": "A trader leans short the day after a weak, small bounce in a coin that has been falling for weeks, a side the profile map holds thinly, and does not fade the large bounces.",
+      "name": "falling market small bounce fade",
+      "from": "F1, F3, F6",
+      "profile": "falling",
+      "theme": "discovery",
+      "refs": [
+        "F1",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a falling market, on a day a coin rises, the lighter its volume against its average daily volume over the past 20 days, the larger its fall over the next day.",
+      "consequence": "A trader keeps the thin-volume fade only where the coin has been falling for 60 days, where the move per case is several times the cost, and drops it in rising markets.",
+      "name": "falling market light rise fade",
+      "from": "F1, F2, F6",
+      "profile": "falling",
+      "theme": "on",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "On a day a coin falls and closes in the lower part of its range, the heavier its volume against its average daily volume over the past 20 days, the larger its rise over the next day.",
+      "consequence": "A trader buys the day after a heavy-volume fall that closed near its low. This sits close to the held low-close and heavy-volume-fall rebound family (064-01, 045-01), so it should be checked against those books before it is counted as new.",
+      "name": "heavy volume low close rebound",
+      "from": "F4, F5",
+      "theme": "on",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "075-01.g2.g2_falling-market-light-rise-fade",
+    "075-01.g2.g3_heavy-volume-low-close-rebound"
+  ],
+  "discovery_ids": [
+    "075-01.g2.g1_falling-market-small-bounce-fade"
+  ],
+  "no_ideas": null
+}
