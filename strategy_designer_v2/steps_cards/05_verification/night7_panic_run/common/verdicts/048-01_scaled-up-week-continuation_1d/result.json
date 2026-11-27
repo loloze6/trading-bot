@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess next-3-bar return on forecast (forecast > 0 grid cases, pooled)",
+    "value": 0.001026488086528854,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 3.630037377067151
+    },
+    "threshold": "confirm: slope t >= 2 with mean excess return > 0; reject: slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return (long) on the same cases",
+    "value": 0.00289567711494884,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 9088,
+    "distinct days": 1175
+  },
+  "decided_by": "Slope t of 2 or more and a mean excess 3-bar return above 0: the plan's confirm rule.",
+  "reading": "The slope is from an OLS of excess return on forecast with an intercept, its t from a day-clustered (CR1) sandwich variance, the normal drift is each coin's mean non-overlapping 3-bar grid return over all its windows, and grid bars without a full 3-bar return inside their window are left out.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

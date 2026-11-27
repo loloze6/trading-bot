@@ -1,0 +1,35 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the demeaned 3-bar forward return on the forecast (non-overlapping grid, pooled)",
+    "value": 6.021462109509273,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 6.021462109509273
+    },
+    "threshold": "confirm if slope t >= 2 with a positive supporting check; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 3-bar move of grid bars with forecast > 0",
+    "value": 0.0022540009715446255,
+    "passed": true
+  },
+  "counts": {
+    "grid bars with forecast > 0": 9076,
+    "grid bars in total": 18359
+  },
+  "decided_by": "Confirm rule met: slope t >= 2 and the mean unusual move of forecast > 0 grid bars is above 0.",
+  "reading": "The coin's mean 3-bar return is taken on the same non-overlapping grid pooled over all its windows, grid bars without a full 3-bar forward return in their window are dropped, the slope t is the ordinary OLS t on the pooled grid, and the plan's 'inconclusive with too few bars' is reported as 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

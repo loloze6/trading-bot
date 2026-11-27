@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 5-day excess return on the mom28 post-pipeline forecast, pooled",
+    "value": 0.0005697456924988618,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.017361136687665
+    },
+    "threshold": "confirm if t >= 2 (with top-minus-bottom fifth > 0); reject if t <= -2; otherwise inconclusive; at least 300 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-day return, top fifth minus bottom fifth of forecasts",
+    "value": 0.017749116866700883,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a recorded forecast": 10967,
+    "top fifth cases": 2193,
+    "bottom fifth cases": 2193
+  },
+  "decided_by": "The slope's t is 2 or more and the top-minus-bottom-fifth excess return difference is above 0.",
+  "reading": "Grid cases are window rows 0, 5, 10, ... with a full in-window 5-bar forward return; the coin's mean is taken over all its grid cases in all windows; the top and bottom fifths are the floor(n/5) highest and lowest forecasts after a stable sort; the plan's 'fewer than 300 is inconclusive' is reported as 'not observable' as the workflow requires.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

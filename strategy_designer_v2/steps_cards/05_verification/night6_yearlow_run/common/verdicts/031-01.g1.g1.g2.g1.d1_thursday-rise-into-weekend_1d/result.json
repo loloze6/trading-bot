@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 2-bar return on forecast, Thursday-close bars with forecast > 0",
+    "value": 0.0011044052167632399,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.8303921582697225
+    },
+    "threshold": "slope t >= 2 with positive forecast-weighted mean excess confirms; t <= -2 rejects; at least 200 cases"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 2-bar return > 0",
+    "value": 0.01516725490909054,
+    "passed": true
+  },
+  "counts": {
+    "cases": 3807
+  },
+  "decided_by": "The slope has t >= 2 and the forecast-weighted mean excess return is above 0 (confirm rule).",
+  "reading": "Thursday-close bars are those whose next bar (timestamp + 1 day, UTC) is a Friday; the coin's normal 2-bar drift is the mean of non-overlapping 2-bar returns on a grid from each window's first row, pooled over all its windows; cases need close[t+2] inside the same window; the 14-day return is the recorded raw value or, where missing, recomputed from closes; the plan's 200-case minimum is applied as 'not observable'.",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}

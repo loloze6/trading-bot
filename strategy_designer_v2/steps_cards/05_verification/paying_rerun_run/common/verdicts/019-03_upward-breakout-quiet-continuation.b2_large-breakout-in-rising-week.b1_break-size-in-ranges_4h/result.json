@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 18-bar excess return over coin drift per case, before costs",
+    "value": 0.006633252290594667,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.6122603457889046
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess of breaks >= 1 range minus breaks < 1 range",
+    "value": 0.025056937237911994,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 4588,
+    "large-break cases": 992,
+    "small-break cases": 3596
+  },
+  "decided_by": "mean excess return above 0 with t >= 2 and large-minus-small break difference above 0",
+  "reading": "situation = close above the prior-12-bar high (raw break > 0, or from prices where not recorded) and 42-bar close-to-close return > 0 inside the window, side long; active bars whose 42-bar return cannot be computed inside the window are left out of the agreement; a case is the first bet (forecast rise >= 2 from its lowest long level since the last bet, reset after flat) in each 18-bar grid cell from the window's first row, with its 18-bar return inside the window minus the coin's mean non-overlapping 18-bar return over all windows, and the break size is the raw last_history_value on the signal bar",
+  "direction_check": {
+    "folds": "A, D",
+    "agrees": null,
+    "why": "no check fold (the plan has none, or the backtest did not run on its folds)",
+    "main": null,
+    "statistic": null,
+    "counts": null
+  }
+}
