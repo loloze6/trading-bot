@@ -1,4 +1,5 @@
 050-02_falling-calm-scaled-week-rise-continuation_1d: inconclusive (fit: exact) [main: 0.00619238; t of the mean, cases of the same day summed 1.50108; cases 467, upper half cases 233, lower half cases 234, days with cases 303]
+050-03.c1_calm-downtrend-scaled-rise-continues_1d: inconclusive (fit: exact) [main: 0.0208186; t of the mean, cases of one day pooled (day-clustered) 1.697; independent cases (days) 78, cases 148]
 050-03_falling-calm-range-scaled-week-fall_1d: no effect (fit: exact) [main: 0.000743912; t of the mean (per-day summed deviations) 0.189268; distinct case days 414, cases 649]
 050-04_falling-calm-range-scaled-week-rise_1d: inconclusive (fit: exact) [main: 0.00697167; t of weighted mean, cases of one day summed 1.26174; cases 389, days 204]
 061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: adapted) [main: -0.00163353; t of the mean, day-clustered -1.44168; distinct days with a nonzero position 607, position bars with next-day return 1164, days of position cases 607, forecast-below-0 bars in regression 1461, days in regression 722]
