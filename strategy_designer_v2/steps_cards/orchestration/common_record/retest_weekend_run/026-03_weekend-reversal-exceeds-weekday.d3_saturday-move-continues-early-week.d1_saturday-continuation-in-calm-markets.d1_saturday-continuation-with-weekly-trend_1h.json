@@ -1,0 +1,139 @@
+{
+  "plan": "03_test_plan/retest_weekend_run/plans/026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h.md",
+  "measure": "05_verification/retest_weekend_run/verdicts/026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h/measure.py",
+  "run": "retest_weekend_run",
+  "id": "026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h",
+  "record": "04_backtest/retest_weekend_run/common/backtests/026-03_weekend-reversal-exceeds-weekday.d3_saturday-move-continues-early-week.d1_saturday-continuation-in-calm-markets.d1_saturday-continuation-with-weekly-trend_1h",
+  "windows_file": "04_backtest/windows/research_2016.json",
+  "coins_asked": [
+    "BTCUSD",
+    "LTCUSD",
+    "XRPUSD",
+    "BCHUSD",
+    "ETHUSD",
+    "ADAUSD",
+    "ATOMUSD",
+    "ALGOUSD",
+    "TRXUSD",
+    "DOTUSD",
+    "AVAXUSD",
+    "NEARUSD",
+    "SUIUSD",
+    "ZECUSD",
+    "XMRUSD",
+    "CRVUSD",
+    "AAVEUSD",
+    "INJUSD",
+    "LDOUSD",
+    "ONDOUSD",
+    "FILUSD",
+    "GRTUSD",
+    "TAOUSD",
+    "DOGEUSD",
+    "PEPEUSD"
+  ],
+  "coins_run": [
+    "AAVEUSD",
+    "ADAUSD",
+    "AVAXUSD",
+    "BTCUSD",
+    "DOGEUSD",
+    "ETHUSD",
+    "INJUSD",
+    "LTCUSD",
+    "NEARUSD",
+    "ONDOUSD",
+    "SUIUSD",
+    "TAOUSD",
+    "TRXUSD",
+    "XMRUSD",
+    "XRPUSD",
+    "ZECUSD"
+  ],
+  "coin_windows": {
+    "AAVEUSD": 11,
+    "ADAUSD": 18,
+    "AVAXUSD": 8,
+    "BTCUSD": 30,
+    "DOGEUSD": 13,
+    "ETHUSD": 28,
+    "INJUSD": 9,
+    "LTCUSD": 26,
+    "NEARUSD": 7,
+    "ONDOUSD": 1,
+    "SUIUSD": 4,
+    "TAOUSD": 1,
+    "TRXUSD": 13,
+    "XMRUSD": 25,
+    "XRPUSD": 24,
+    "ZECUSD": 25
+  },
+  "windows_run": 243,
+  "step5": {
+    "status": "confirmed",
+    "main": 0.0009127733735130317,
+    "statistic": 5.859361807692017
+  },
+  "step6": {
+    "status": "not profitable enough",
+    "measures": [
+      {
+        "measure": "sharpe_min",
+        "label": "Sharpe",
+        "value": 1.0303933954012727,
+        "threshold": 0.0,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "sharpe_vs_hold_min",
+        "label": "Sharpe minus holding's Sharpe",
+        "value": 0.07070358327903692,
+        "threshold": 0.0,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "avg_daily_return_min",
+        "label": "Mean daily return, on days in a position",
+        "value": 0.0020371926173999807,
+        "threshold": 0.0005,
+        "comparison": "at least",
+        "passed": true
+      },
+      {
+        "measure": "leave_one_window_out_sharpe_min",
+        "label": "Lowest Sharpe, one window left out",
+        "value": 0.9434134204968884,
+        "threshold": 0.0,
+        "comparison": "above",
+        "passed": true
+      },
+      {
+        "measure": "calmar_min",
+        "label": "Calmar",
+        "value": 0.7034009155726322,
+        "threshold": 0.75,
+        "comparison": "above",
+        "passed": false
+      },
+      {
+        "measure": "trade_frequency_min",
+        "label": "Trades per day",
+        "value": 0.08252788104089219,
+        "threshold": 0.01,
+        "comparison": "at least",
+        "passed": true
+      }
+    ],
+    "informative": {
+      "daily_standard_deviation": 0.005042287331839719,
+      "yearly_return": 0.09936161161557422,
+      "years": 9.92,
+      "share_of_days_in_a_position": 0.1334910442717134
+    }
+  },
+  "seconds": 4087.7,
+  "made_utc": "2026-11-27T07:22:58Z",
+  "commit": "305ea6f3c186b678a6fa581c4b51cff446c043bd-dirty"
+}
