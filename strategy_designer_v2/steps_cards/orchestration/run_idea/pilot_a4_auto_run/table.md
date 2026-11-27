@@ -14,20 +14,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 077-01_falling-calm-deep-close-drift | - | plan | no effect (+0.61) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 077-01.c1_falling-calm-recovery-continues; 7.g: 077-01.g1_falling-calm-rebound-continuation, 077-01.g2_calm-decline-five-day-momentum | 1.13 | 8.9 |
 | 050-03.c1_calm-downtrend-scaled-rise-continues | 050-03_falling-calm-range-scaled-week-fall | plan | inconclusive (+1.70) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.b: 050-03.c1.b1_calm-downtrend-rise-continues-all-coins; 7.g: 050-03.c1.g1_calm-downtrend-rise-continues | 1.05 | 8.6 |
 | 060-02_falling-calm-low-to-close-fade | - | plan | no effect (+0.28) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 060-02.c1_falling-calm-surge-continuation; 7.g: no ideas: In falling calm markets on these coins, no angle I looked at (the forecast's quartiles, the trades by coin, the book's best and worst days, the range, the close location, the high-to-close and low-to-close distances, the 5- and 20-day returns, volume and weekday, at 1, 3 and 5 days) shows a graded effect that stands out from the chance expected over about 100 tests, and the few marginal cells point short, outside the long-only box. | 1.98 | 10.0 |
+| 032-01.b1_calm-fall-continuation-all-coins | 032-01_calm-fall-depth-continues | plan | no effect (-0.03) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 032-01.b1.c1_calm-decline-bounce-follow-through, 032-01.b1.c2_lift-off-monthly-low, 032-01.b1.c3_two-week-recovery-continues; 7.g: no ideas: Across the forecast, the past 5- to 60-day returns, the place in the 30-day range, the day's shape, range and volume, weekdays, years and windows, no pattern in falling calm markets is graded or stands out beyond what about 100 looks would give by chance (best |t| about 2.7 on a non-monotonic bucket, F4 and F5). No pattern supports a long idea, and the tested move per case (-0.22 %) is below the 0.33 % a trade costs. | 0.94 | 8.1 |
 
 ## Consumption
-10 ideas, 8.68 USD, 82.6 minutes in all.
+11 ideas, 9.62 USD, 90.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.82 | 5.6 |
-| step4_backtest | 0.00 | 55.0 |
-| step5_verdict | 1.74 | 6.5 |
-| step6_check | 0.00 | 0.2 |
+| step3_plan | 1.89 | 6.0 |
+| step4_backtest | 0.00 | 60.1 |
+| step5_verdict | 1.90 | 7.1 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.g | 1.46 | 4.0 |
+| step7_7.g | 1.81 | 4.9 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.89 | 2.8 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.c | 2.77 | 8.3 |
+| step7_7.c | 3.13 | 9.4 |
