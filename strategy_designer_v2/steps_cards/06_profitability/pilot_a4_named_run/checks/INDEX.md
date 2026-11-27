@@ -1,4 +1,5 @@
 041-01.b1_rising-agitated-rise-continues_1d: not profitable enough [Sharpe 0.05712; Sharpe minus holding's Sharpe -0.1668; Calmar -0.002486]
+064-02_rising-agitated-volume-growth-stalls_1d: not profitable enough [Sharpe -0.2194; Sharpe minus holding's Sharpe -0.4433; Calmar -0.1015]
 086-01.c1_first-dip-falls-over-week_1d: not profitable enough [Sharpe -0.425; Sharpe minus holding's Sharpe -0.6489; Calmar -0.1092]
 086-01_first-down-day-streak-length_1d: not profitable enough [Sharpe -0.817; Sharpe minus holding's Sharpe -1.041; Calmar -0.1377]
 086-02.c1_first-dip-depth-continues_1d: not profitable enough [Sharpe -0.1549; Sharpe minus holding's Sharpe -0.3789; Calmar -0.04868]

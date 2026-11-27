@@ -1,0 +1,29 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar forward return minus normal drift on the forecast",
+    "value": -0.0006360494388853716,
+    "statistic": {
+      "name": "t of the slope, day-clustered",
+      "value": -0.6257827499866683
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases": 484,
+    "distinct days": 252
+  },
+  "decided_by": "The t of the slope (-0.63) lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -0.626 (below 1), 484 cases (30 needed).",
+  "reading": "The profile (rising agitated) is read from the recorded regime 'unknown' (the only regime with a strategy, the detector's vetoes sending the rest to 'chop'); the expected side is graded, i.e. the forecast's sign opposite to the raw log volume ratio (long on shrinkage, short on growth); the slope is the OLS slope (with intercept) of the excess 5-bar return on the forecast over the active grid cases, and its t uses standard errors clustered by UTC day, so cases on the same day are summed into one piece of evidence; the normal drift is each coin's mean 5-bar return over the non-overlapping grids of all its windows.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.626 (below 1), 484 cases (30 needed)",
+    "t_in_idea_direction": -0.6257827499866683,
+    "cases": 484
+  }
+}
