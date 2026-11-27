@@ -131,6 +131,14 @@ box; the spend after each brief was answered.
   **02:50 Paris:** done (`build-a4-common` 0447dc6, 3 tests): of the 120 books, 85 found in their own run, 32 in another,
   3 refused (their config in two runs: hold2_rerun_run and hold_paying_run; one, 010-03.e1, is in portfolio v2). Asked:
   byte-identical copies count as one plan; the shards told to merge and rerun.
+  **02:51 Paris:** done (3d06a77): all 120 books resolve (85 in their own run, 32 in one other, 3 in two identical
+  runs); shards 4 and 6 told to rerun those 3.
+- **About 03:00 to 05:00 Paris, the usage limit:** the research sessions' last pushes 02:38 to 02:56 Paris (tested 126
+  ideas, spent 165.9 USD: A 16 ideas 25.7, B 20 23.8, C 19 22.1, D 25 32.0, E 28 35.8, F 18 26.5; confirmed 36;
+  confirmed and profitable 7: B 4, all "a bounce in a falling market fades" (074 lineage, off its choppy box), E 3, "a
+  run-break up-day fades in a falling market" (on target)); shards 1 and 2 went on (20 and 19 records), shards 3 to 6
+  stopped near 03:00 (14 to 16 records each). The designer's 03:30 watch did not run (its worker restarted).
+  **05:10 Paris:** all 6 research sessions and shards 3 to 6 told to resume after the reset (`--budget 42`).
 
 ## Reading
 (written in the morning)
