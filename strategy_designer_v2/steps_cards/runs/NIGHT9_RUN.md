@@ -146,4 +146,44 @@ box; the spend after each brief was answered.
   watcher (NIGHT_RULES 3f's risk, accepted for this one job).
 
 ## Reading
-(written in the morning)
+(2026-11-27 morning; counts from the merged files: `orchestration/run_idea/night9_*_run/table.json`, the boxes by
+`orchestration/combine/helper/boxes.py`, the nearest held strategies from the rebuilt register (507 strategies))
+
+**Outcome: N1 once, by session E: a new short specialist family in falling calm markets.** The run-break fade ("in
+a falling market, an up-day that breaks a run of down days fades the next day, the more the deeper the run"): 6
+strategies confirmed and profitable, 51 to 64 % of their days in "falling calm, short" (about 3 times the market) and
+the rest in "falling agitated, short"; the strategies held before the night explain them 0.18 to 0.21 (the nearest,
+night 8's 060-01.g1.d2.d1); 2 of them hold on both unseen periods (074-01.b1.g1, +4.26; 074-01.b1.d3.d1, +3.74).
+Everywhere else N2 (effects real, not profitable) or N3; **the choppy boxes stay empty: 0 profitable in 4 sessions**.
+
+| Session (target box) | Spent / 42 USD | Tested | Confirmed | Confirmed and profitable | Starting brief's answer |
+|---|---|---|---|---|---|
+| A choppy agitated, short | 42.71 | 27 | 14 | 0 | real (a high close fades), none pays (Calmar, Sharpe against holding) |
+| B choppy, short | 42.72 | 35 | 14 | 5, a discovery's family in falling markets | real (turn 29), none pays |
+| C choppy, both | 42.74 | 35 | 7 | 0 | real (a weak month keeps falling, short), none pays |
+| D choppy, both | 42.54 | 31 | 0 | 0 | open (0 of 31 confirmed) |
+| E falling calm, short | 42.52 | 28 | 15 | **6, on target, new** | 070 real; 064 not real |
+| F falling calm, short | 42.87 | 28 | 8 | 0 | both open |
+| All | 256.10 | 184 | 58 | 11 | |
+
+**The 11 confirmed and profitable**, all short in falling markets: E's 6 (above, new); B's 5 from its discovery 074
+(a bounce in a falling market fades), one of them holding on both unseen periods (074-01.g1.d1, falling agitated
+short 99 %), explained 0.65 by night 8's short specialist: the same effect again.
+
+**Why the choppy boxes stay empty (topic 47, `47_review/why_by_profile.txt`, 477 ideas of nights 7 to 9):** the
+effects found there are about as large as the trading costs (choppy, any agitation: costs 85 % of the gross profit;
+Sharpe 0.07 to 0.51, below holding the coins), 144 choppy ideas tested, 0 profitable. In every profile the
+confirmed ideas that do not pay fail on Calmar, which in practice asks a Sharpe of about 0.8 or more; one trade's
+swing is 6 to 8 times its mean gain; rising markets pass most (Sharpe about 1.05), falling agitated comes close
+(0.77), ideas naming no profile are the most diluted (0.08 % a day in a position, costs 22 %).
+
+**Machinery:** the setup fault (the starting briefs' `discovery:` line, three copies, 01:20 to 02:00 Paris, found
+and fixed with the sessions); the usage limit, about 03:00 to 05:10 Paris (about 2 hours of every loop; B's and the
+designer's workers restarted); every resume with `--budget 42`; components built and committed (E 2 new and 1
+changed, D 2, C 1 changed, F 1). For the next-steps list: a run's starting brief counts as generation 0; `find_brief`
+reads step 1's list; the ranking spent most turns on repairs of one unprofitable effect (A 23 of 28, C 29 of 35);
+the engine's bootstrap on gapped hourly bars (shard 5: more than a day for one book).
+
+**The build of `common/data_use.md` (parts 1, 3, 4, 5 built; the common records of the 120 candidates):** see the
+lines above; the three build branches and the six shards are not merged yet: they change `run_idea` in three
+places, to join by hand with a proof, then a watched pilot of the new design.
