@@ -111,3 +111,53 @@ def test_a_failed_step_stops_the_run_and_a_refused_call_says_so(tmp_path, monkey
     assert cost == 0.0
     lines = (tmp_path / "t" / "journal.jsonl").read_text().splitlines()
     assert all("its helper failed" in l for l in lines)
+
+
+def _fake_run(tmp_path, monkeypatch, data_use=None):
+    """run_idea.main on one idea with every step replaced by a fake that writes its result file: the idea is confirmed
+    and profitable enough. Returns the names of the helpers called."""
+    tmp_path.mkdir(parents=True)
+    monkeypatch.setattr(r, "STEPS", tmp_path)
+    monkeypatch.setattr(r, "HERE", tmp_path / "orchestration" / "run_idea" / "helper")
+    run, rid = "demo_run", "001-01_x_1d"
+    if data_use is not None:
+        (tmp_path / "orchestration" / "loop" / run).mkdir(parents=True)
+        (tmp_path / "orchestration" / "loop" / run / "data_use.json").write_text(json.dumps(data_use))
+    idea, brief = tmp_path / "001-01_x.md", tmp_path / "001_b.md"
+    idea.write_text("---\nbrief: 001_b\n---\nIdea: a.\nConsequence: b.\n")
+    brief.write_text("b")
+    f = r.folders(run)
+    called = []
+
+    def fake(cmd):
+        name = Path(str(cmd[0])).name
+        called.append(name)
+        if name == "make_test_plan.py":
+            f["plans"].mkdir(parents=True, exist_ok=True)
+            (f["plans"] / f"{rid}.md").write_text("---\noutcome: plan\n---\n")
+        elif name == "run_backtest.py":
+            (f["backtests"] / rid).mkdir(parents=True, exist_ok=True)
+            (f["backtests"] / rid / "run.md").write_text("x")
+        elif name == "make_verdict.py":
+            (f["verdicts"] / rid).mkdir(parents=True, exist_ok=True)
+            (f["verdicts"] / rid / "result.json").write_text(json.dumps({"status": "confirmed", "main_measure": None}))
+        elif name == "check_profitability.py":
+            (f["checks"] / rid).mkdir(parents=True, exist_ok=True)
+            (f["checks"] / rid / "result.json").write_text(json.dumps({"status": "profitable enough", "measures": []}))
+        return "", 0.0, 0
+
+    monkeypatch.setattr(r, "call", fake)
+    monkeypatch.setattr(r.wishes, "unblocked", lambda plan: False)
+    monkeypatch.setattr(sys, "argv", ["run_idea.py", str(idea), "--run", run, "--python", "py", "--brief", str(brief)])
+    r.main()
+    return called
+
+
+def test_the_common_record_only_in_the_data_use_mode(tmp_path, monkeypatch):
+    """Step 9 (orchestration/common_record): called after step 6 for a candidate only when the loop's data_use.json
+    says version 2; without the file (every run today) or with another version, nothing changes."""
+    assert "common_record.py" not in _fake_run(tmp_path / "a", monkeypatch)
+    assert "common_record.py" not in _fake_run(tmp_path / "b", monkeypatch, {"version": 1})
+    called = _fake_run(tmp_path / "c", monkeypatch, {"version": 2})
+    assert called.index("common_record.py") == called.index("chart_files.py") + 1     # right after step 6's files
+    assert r.data_use_version("nothing_run") is None
