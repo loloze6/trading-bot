@@ -17,6 +17,35 @@ no person picks the coins?**
 Left out on 2026-11-26 by rule 3: STORJ (14k USD a day), OCEAN (18k), YFI (23k), SNX (33k), COMP (57k), ETC (70k), XTZ
 (82k). **32 coins remain.**
 
+## The universe's rule from 2026-11-28 (next steps A13; the operator's go, "Go for all", then "Ok, continue")
+**Decided; applied in `coins.py`, the common records and the portfolio once the two coins' files are fetched and the
+records' rerun has the operator's go (after B15's answer).** Until then the code and the lists below are those of
+2026-11-26.
+
+Why: the universe was "the coins we have a file for" (39, of which 20 asked for by the designer). The coins the work
+may use are every coin that passes the rules, measured on every pair Kraken trades against USD
+(`universe_measure_2026-11-28.csv`, 664 pairs; `runs/MEASURE_UNIVERSE_RUN.md`).
+
+**A coin enters the universe when:**
+1. **Kraken trades it against USD and it is a coin:** not a currency (EUR, GBP, AUD), a stablecoin or tokenised gold.
+2. **Liquid enough to trade:** rule 3 above, unchanged (median daily traded value of the last 12 months at least
+   100,000 USD).
+3. **It can be tested:** on at least half of the check half's windows, counted as the research draw counts
+   (`data_use.md`, 1.3: 7 of 14 today). This replaces "at least 3 years of daily data", which let in coins with no
+   usable window (TAO, ONDO) and would let in 9 more with at most 6 (APT, ARB, CVX, ICP, JASMY, OP, QNT, SEI, TIA).
+4. **A Kraken perpetual future exists** for it (the bot's venue for the short side). All 32 coins of 2026-11-26 have
+   one; AKT and LUNA pass rules 1 to 3 and have none: they stay out.
+
+**The rule decides who enters; a coin already in stays** until the next final draw (the universe is fixed between
+draws). So TAO, ONDO, SUI, PEPE, NEAR, LDO (portfolio) and FET (final), which do not pass rule 3 today, stay.
+
+**On 2026-11-28 two coins enter, both in the portfolio group: BAT and MANA** (BAT: on Kraken since 2019-08-22, 102,000
+USD a day, 14 of 14 check-half windows; MANA: since 2020-12-15, 111,000 USD, 10 of 14). The final group does not
+change. **Their category is an eighth one, "Applications"** (a token used inside one consumer application: BAT
+advertising in a browser, MANA a game world); none of the seven fits, and every coin has one category. Consequence:
+the research draw takes one coin per category, so every run draws BAT or MANA; the final group has no Applications
+coin until the next final draw.
+
 ## The categories (one category per coin; the coin's main use, as public category lists such as CoinGecko's describe it; read once on 2026-11-26, fixed until the next draw)
 | Category | Coins in the universe |
 |---|---|
