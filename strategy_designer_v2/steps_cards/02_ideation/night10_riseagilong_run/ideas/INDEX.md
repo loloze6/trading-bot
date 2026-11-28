@@ -1,0 +1,2 @@
+086-01_first-up-after-long-down-run: In rising agitated markets, the first up day after consecutive down days precedes a 5-day rise that grows with the run's length. [instruments: LTC, ETH, XMR, INJ, GRT, DOGE, XRP, TRX, profile: rising agitated, side: long]
+086-02_first-up-after-deep-down-run: In rising agitated markets, the first up day after a down run precedes a 5-day rise that grows with the run's swing-scaled depth. [instruments: LTC, ETH, XMR, INJ, GRT, DOGE, XRP, TRX, profile: rising agitated, side: long]
