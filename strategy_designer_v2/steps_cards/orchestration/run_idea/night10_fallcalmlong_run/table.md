@@ -19,21 +19,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 089-03_calm-decline-thinning-down-volume | - | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 089-04_calm-decline-up-volume-lasting | - | plan | no effect (-1.08) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.c: 089-04.c1_heavy-up-day-volume-rebounds, 089-04.c2_swelling-volume-in-calm-decline; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.03 | 7.0 |
 | 050-02.b2_calm-downtrend-week-rise-five-days | 050-02_falling-calm-scaled-week-rise-continuation | plan | no effect (-0.21) | not profitable enough (failed: Calmar) | - | 7.c: 050-02.b2.c1_calm-downtrend-fortnight-rise-carries; 7.g: 050-02.b2.g1_calm-downtrend-climb-off-low | 1.27 | 7.1 |
+| 086-02.c1_light-volume-up-day-follow-through | 086-02_repeated-heavy-volume-buying-days | plan | no effect (+0.41) | not profitable enough (failed: Calmar) | - | 7.c: 086-02.c1.c1_light-up-day-shallow-fall, 086-02.c1.c2_up-day-after-shallow-fall; 7.g: no ideas: I looked at the forecast, volume on up and down days, prior 5- and 10-day returns, range, close position, weekday, coin and window. Every long-side pattern in falling calm markets (F2–F4) changes sign or vanishes when the 5-day grid is shifted or all bars are used, so none can be told from chance across this many angles. | 1.04 | 7.2 |
 
 ## Consumption
-15 ideas, 12.94 USD, 86.9 minutes in all.
+16 ideas, 13.98 USD, 94.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.16 | 7.0 |
-| step4_backtest | 0.00 | 46.4 |
-| step5_verdict | 2.34 | 8.7 |
+| step3_plan | 2.25 | 7.5 |
+| step4_backtest | 0.00 | 50.1 |
+| step5_verdict | 2.53 | 9.5 |
 | step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.2 |
-| step7_7.g | 3.21 | 9.1 |
+| step7_7.g | 3.57 | 10.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.67 | 1.8 |
 | step7_7.b | 1.67 | 4.9 |
-| step7_7.c | 2.89 | 8.4 |
+| step7_7.c | 3.29 | 9.7 |
 | similarity_check | 0.00 | 0.1 |

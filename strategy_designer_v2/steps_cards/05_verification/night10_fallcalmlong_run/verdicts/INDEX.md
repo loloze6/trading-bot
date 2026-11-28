@@ -8,6 +8,7 @@
 050-04_falling-calm-range-scaled-week-rise_1d: inconclusive (fit: adapted) [main: 0.00630669; t of the mean, cases of one day pooled 1.83431; distinct days with cases 342, cases 496]
 086-01.c1_heavy-volume-off-low-absorption_1d: no effect (fit: adapted) [main: -0.00412288; t of the mean, cases of one day clustered -0.709158; cases 340, distinct days 268]
 086-01_heavy-volume-up-day-continuation_1d: no effect (fit: adapted) [main: 0.00287386; t of the mean, cases of one day together 0.415547; cases 220, distinct days 186]
+086-02.c1_light-volume-up-day-follow-through_1d: no effect (fit: adapted) [main: 0.00184283; t of the mean, cases of one day pooled 0.409461; cases 568, distinct days with cases 408]
 086-02_repeated-heavy-volume-buying-days_1d: no effect (fit: adapted) [main: -0.0100191; t of the weighted mean, cases of one day grouped -0.942332; cases 118, days 75, active bars 595]
 089-01_calm-decline-up-volume-share_1d: no effect (fit: adapted) [main: -0.000682988; OLS t of slope -1.14311; in-profile grid bars 699, in-profile grid bars with forecast above 0 272, cases 377, case days 306]
 089-04_calm-decline-up-volume-lasting_1d: no effect (fit: adapted) [main: -0.00172577; t of the OLS slope, day-clustered -1.0793; cases 138, distinct days 84]

@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move of the cases",
+    "value": 0.0018428265809669218,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 0.4094612363580934
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and check > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half (by forecast) mean unusual move",
+    "value": 0.001320686208356728,
+    "passed": true,
+    "welch_t": 0.17368053718692084
+  },
+  "counts": {
+    "cases": 568,
+    "distinct days with cases": 408
+  },
+  "decided_by": "The main t lies between -2 and 2 and no reject rule is met. No effect (common/verdicts.md): t in the idea's direction +0.409 (below 1), 408 cases (30 needed).",
+  "reading": "The falling-calm profile is read from the detector's regime ('mean_reversion', since the profile components are not recorded), the up day from close above the prior close, light volume from the lightness raw value below 0 (recomputed from volume when missing), active bars whose up day or ratio cannot be computed are left out; a case is the first bet (forecast rise of >= 2 from its low since the last bet) in each 5-bar grid cell with its 5-bar return from that bar's close, the day t is cluster-robust by signal date with G/(G-1) correction, the halves are strictly above/below the median case forecast, and the plan's 'fewer than 30 distinct days' minimum is reported as 'not observable' per the workflow.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.409 (below 1), 408 cases (30 needed)",
+    "t_in_idea_direction": 0.4094612363580934,
+    "cases": 408
+  }
+}
