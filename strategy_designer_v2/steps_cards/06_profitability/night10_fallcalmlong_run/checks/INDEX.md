@@ -2,6 +2,7 @@
 050-02.b1.d2_scaled-rise-strong-case_1d: not profitable enough [Sharpe 0.5601; Sharpe minus holding's Sharpe 0.1529; Calmar 0.2787]
 050-02.b1.d3_rise-with-room-below-high_1d: not profitable enough [Sharpe 0.1969; Sharpe minus holding's Sharpe -0.2103; Calmar 0.04144]
 050-02.b1_calm-downtrend-week-rise-more-coins_1d: not profitable enough [Sharpe 0.4633; Sharpe minus holding's Sharpe 0.05607; Calmar 0.2046]
+050-02.b2_calm-downtrend-week-rise-five-days_1d: not profitable enough [Sharpe 0.4314; Sharpe minus holding's Sharpe 0.02421; Calmar 0.1577]
 050-02_falling-calm-scaled-week-rise-continuation_1d: not profitable enough [Sharpe 0.4633; Sharpe minus holding's Sharpe 0.05607; Calmar 0.2046]
 050-04.b1_range-scaled-week-rise-more-coins_1d: not profitable enough [Sharpe 0.5008; Sharpe minus holding's Sharpe 0.0936; Calmar 0.2361]
 050-04_falling-calm-range-scaled-week-rise_1d: not profitable enough [Sharpe 0.5008; Sharpe minus holding's Sharpe 0.0936; Calmar 0.2361]

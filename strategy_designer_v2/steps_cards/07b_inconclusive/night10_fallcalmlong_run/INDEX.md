@@ -2,6 +2,7 @@
 050-02.b1.d2_scaled-rise-strong-case_1d: 2 ideas (2 explorations)
 050-02.b1.d3_rise-with-room-below-high_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 050-02.b1_calm-downtrend-week-rise-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+050-02.b2_calm-downtrend-week-rise-five-days_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 050-02_falling-calm-scaled-week-rise-continuation_1d: 2 ideas (2 explorations)
 050-04.b1_range-scaled-week-rise-more-coins_1d: no ideas: The small positive carry-on after a calm-downtrend weekly rise is already measured on all the data available (F1). It does not grow with the size of the rise (F2, F3), and it is not concentrated in a horizon, coin, year or kind of signal day (F4, F5), so no amendment would give a clear answer.
 050-04_falling-calm-range-scaled-week-rise_1d: 1 ideas (1 explorations)
