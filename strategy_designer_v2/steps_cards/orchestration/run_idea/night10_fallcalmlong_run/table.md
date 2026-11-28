@@ -6,15 +6,16 @@ One row per idea run; every status is read from the step's own result file. Each
 |---|---|---|---|---|---|---|---|---|
 | 086-01_heavy-volume-up-day-continuation | - | plan | no effect (+0.42) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-01.c1_heavy-volume-off-low-absorption, 086-01.c2_heavy-up-day-extends-rebound | 0.74 | 6.6 |
 | 050-02_falling-calm-scaled-week-rise-continuation | - | plan | inconclusive (+1.89) | not profitable enough (failed: Calmar) | - | 7.b: 050-02.b1_calm-downtrend-week-rise-more-coins, 050-02.b2_calm-downtrend-week-rise-five-days | 0.68 | 5.8 |
+| 086-02_repeated-heavy-volume-buying-days | - | plan | no effect (-0.94) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-02.c1_light-volume-up-day-follow-through, 086-02.c2_quiet-three-day-rise-continuation | 0.74 | 6.4 |
 
 ## Consumption
-2 ideas, 1.41 USD, 12.4 minutes in all.
+3 ideas, 2.15 USD, 18.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.17 | 0.9 |
-| step4_backtest | 0.00 | 7.5 |
-| step5_verdict | 0.39 | 1.6 |
+| step3_plan | 0.32 | 1.8 |
+| step4_backtest | 0.00 | 11.1 |
+| step5_verdict | 0.57 | 2.2 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.0 |
 | step7_7.g | 0.00 | 0.0 |
@@ -22,4 +23,4 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
 | step7_7.b | 0.41 | 1.0 |
-| step7_7.c | 0.44 | 1.3 |
+| step7_7.c | 0.85 | 2.5 |

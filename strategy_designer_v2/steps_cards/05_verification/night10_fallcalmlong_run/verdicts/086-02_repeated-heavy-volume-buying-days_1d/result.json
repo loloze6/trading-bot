@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 5-day return of forecast>0 grid bars",
+    "value": -0.010019138655896041,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day grouped",
+      "value": -0.942331834038611
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2; fewer than 30 cases inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-day return, upper minus lower half at median forecast",
+    "value": 0.011406671632725452,
+    "passed": true
+  },
+  "counts": {
+    "cases": 118,
+    "days": 75,
+    "active bars": 595
+  },
+  "decided_by": "The t of the weighted mean excess return lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -0.942 (below 1), 118 cases (30 needed).",
+  "reading": "Heavy volume is the mean of bars t-2..t over the mean of bars t-22..t-3 recomputed from the window's volumes (the recorded regime where fewer bars exist), the rise is close[t]/close[t-3]-1>0, and the falling-calm profile (60-bar fall, 365-bar volatility percentile) is read from the regime being 'trending' since it cannot be rebuilt from the recorded bars; the median split puts cases above the median forecast in the upper half and the rest in the lower half, halves compared unweighted; the t is the forecast-weighted mean over its day-clustered standard error.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.942 (below 1), 118 cases (30 needed)",
+    "t_in_idea_direction": -0.942331834038611,
+    "cases": 118
+  }
+}
