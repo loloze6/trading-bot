@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 050-04_falling-calm-range-scaled-week-rise_1d
+idea tested: 050-04_falling-calm-range-scaled-week-rise
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2207 USD
+---
+## Findings
+- **F1:** The test's result points the way the idea predicts but falls short of the bar. The main measure is +0.63 % per case over 3 days, with t 1.84 on 342 days and 496 cases (strength 0.077 of a usual 8.43 % move). In the explore half, the 117 cases are positive at every horizon from 1 to 10 days: +0.17 % (t 0.48), +1.18 % (t 1.83), +1.80 % (t 1.91), +1.78 % (t 1.35) and +2.82 % (t 1.56).
+- **F2:** The effect is mixed across periods. Over 3 days, cases in 2020 gain +2.39 % (t 1.63, 25 cases) and in 2021 +3.19 % (t 2.55, 30 cases), but 2018 gives only +0.60 % (t 0.34, 19 cases) and 2019 gives −0.64 % (t −0.83, 43 cases). Most of the unclear t is a few periods diluting the others, not an effect pointing the wrong way.
+- **F3:** Every coin's 3-day unusual move is on the idea's side: BCH +2.47 % (t 1.85, 21 cases), ETH +1.40 % (t 1.23, 36), XMR +1.16 % (t 1.05, 30) and ZEC +0.04 % (t 0.04, 30). No single coin carries the effect, but no single coin's case count can show it either.
+- **F4:** The grading is not monotone, which is why the supporting check failed (−0.51 % on all windows). By forecast quartile, the 3-day moves are q1 +0.34 %, q2 +1.11 %, q3 +2.28 % (t 1.78) and q4 +1.06 %. The top quartile is still above the bottom one, so the halves comparison is noisy rather than reversed.
+- **F5:** Inside the falling calm profile, on the 3-day grid, bars after a 7-day rise gain +1.24 % unusual over 3 days and +1.90 % over 7 days (106 bars). Bars with no 7-day rise lose −1.37 % and −2.44 % (149 bars). The situation separates future moves in the predicted direction.
+- **F6:** Per case, the total move of +0.97 % is 3.1 times the 0.31 % cost of a trade, and the unusual move is 2.0 times it. The size is large enough to matter if confirmed; the test only lacked the cases to tell it from 0.
+- **F7:** The test used only the six default coins. The 13 other coins with data in folds A and D, and partly in B and C, were not used, so more data is available for the same idea.
+
+## Ideas
+- `050-04.b1_range-scaled-week-rise-more-coins` (from F1, F3, F5, F6, F7): In a falling, calm market, a coin that has risen over the last 7 days keeps rising over the next 3 days, and rises further the larger its 7-day rise is in units of its 30-day average daily range.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
