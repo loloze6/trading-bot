@@ -1,3 +1,4 @@
+050-02.b1.d1_large-scaled-rise-longer-hold_1d: 1 ideas (2 explorations)
 050-02.b1_calm-downtrend-week-rise-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 050-02_falling-calm-scaled-week-rise-continuation_1d: 2 ideas (2 explorations)
 050-04_falling-calm-range-scaled-week-rise_1d: 1 ideas (1 explorations)
