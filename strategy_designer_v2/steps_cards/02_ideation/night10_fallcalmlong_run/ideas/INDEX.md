@@ -1,0 +1,2 @@
+086-01_heavy-volume-up-day-continuation: In falling calm markets, an up day's volume relative to its 20-day average predicts a proportionally larger rise over the next 5 days. [instruments: BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, profile: falling calm, side: long]
+086-02_repeated-heavy-volume-buying-days: In falling calm markets, summed relative volume on up days over the last 3 days predicts a larger rise over the next 5 days. [instruments: BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, profile: falling calm, side: long]
