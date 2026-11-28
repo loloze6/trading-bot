@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on forecast, trending grid cases",
+    "value": 4.261141845291861e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.04910260611891274
+    },
+    "threshold": "slope t >= 2 (with >= 30 cases forecast > 0 and check passing) confirms; <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return of grid cases with forecast > 0 above 0",
+    "value": -0.002006609756844451,
+    "passed": false
+  },
+  "counts": {
+    "grid cases in the regime": 302,
+    "grid cases with forecast > 0": 184,
+    "active bars": 973
+  },
+  "decided_by": "Slope t is between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.049 (below 1), 184 cases (30 needed).",
+  "reading": "Cases are the regime-'trending' bars at grid positions 0,5,10,... of each window with a 5-bar forward return inside the window, the regression includes their zero forecasts, the coin's mean 5-bar return is taken on the same grid over all bars of all its windows, the profile is read from the recorded regime, and the plan's 'too few cases' rule is reported as 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.049 (below 1), 184 cases (30 needed)",
+    "t_in_idea_direction": 0.04910260611891274,
+    "cases": 184
+  }
+}

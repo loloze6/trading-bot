@@ -23,21 +23,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 089-01.c1_calm-decline-down-volume-exhaustion | 089-01_calm-decline-up-volume-share | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 089-04.c1_heavy-up-day-volume-rebounds | 089-04_calm-decline-up-volume-lasting | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 086-01.c2_heavy-up-day-extends-rebound | 086-01_heavy-volume-up-day-continuation | plan | no effect (+0.68) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 086-01.c2.c1_quiet-up-day-extends-rebound, 086-01.c2.c2_strong-rebound-up-day-continues; 7.g: no ideas: In falling calm markets the brief's heavy-volume effect is absent, and at 3 to 5 days it points the wrong way (F2, F3). The only graded pattern, prior 5-day momentum at 3 to 5 days (F4), flips at 10 days and does not survive the roughly 36 feature-and-horizon angles examined (F5). No pattern stands out enough to justify a new long idea in this box. | 1.04 | 7.1 |
+| 086-02.c2_quiet-three-day-rise-continuation | 086-02_repeated-heavy-volume-buying-days | plan | no effect (+0.05) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-02.c2.c1_quiet-up-day-continuation, 086-02.c2.c2_heavy-volume-down-day-absorption; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.06 | 7.0 |
 
 ## Consumption
-19 ideas, 15.15 USD, 101.9 minutes in all.
+20 ideas, 16.20 USD, 108.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.48 | 8.7 |
-| step4_backtest | 0.00 | 53.8 |
-| step5_verdict | 2.70 | 10.1 |
-| step6_check | 0.00 | 0.3 |
+| step3_plan | 2.57 | 9.3 |
+| step4_backtest | 0.00 | 57.3 |
+| step5_verdict | 2.86 | 10.6 |
+| step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
-| step7_7.g | 3.92 | 11.0 |
+| step7_7.g | 4.32 | 12.2 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.67 | 1.8 |
 | step7_7.b | 1.67 | 4.9 |
-| step7_7.c | 3.70 | 10.8 |
+| step7_7.c | 4.11 | 12.0 |
 | similarity_check | 0.00 | 0.1 |

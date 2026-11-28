@@ -10,6 +10,7 @@
 086-01.c2_heavy-up-day-extends-rebound_1d: no effect (fit: adapted) [main: 0.011277; t of the mean, cases of one day as one 0.684099; cases 96, days 82]
 086-01_heavy-volume-up-day-continuation_1d: no effect (fit: adapted) [main: 0.00287386; t of the mean, cases of one day together 0.415547; cases 220, distinct days 186]
 086-02.c1_light-volume-up-day-follow-through_1d: no effect (fit: adapted) [main: 0.00184283; t of the mean, cases of one day pooled 0.409461; cases 568, distinct days with cases 408]
+086-02.c2_quiet-three-day-rise-continuation_1d: no effect (fit: exact) [main: 4.26114e-05; OLS slope t 0.0491026; grid cases in the regime 302, grid cases with forecast > 0 184, active bars 973]
 086-02_repeated-heavy-volume-buying-days_1d: no effect (fit: adapted) [main: -0.0100191; t of the weighted mean, cases of one day grouped -0.942332; cases 118, days 75, active bars 595]
 089-01_calm-decline-up-volume-share_1d: no effect (fit: adapted) [main: -0.000682988; OLS t of slope -1.14311; in-profile grid bars 699, in-profile grid bars with forecast above 0 272, cases 377, case days 306]
 089-04_calm-decline-up-volume-lasting_1d: no effect (fit: adapted) [main: -0.00172577; t of the OLS slope, day-clustered -1.0793; cases 138, distinct days 84]

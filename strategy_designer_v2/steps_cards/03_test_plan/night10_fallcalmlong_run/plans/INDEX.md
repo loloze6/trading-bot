@@ -10,6 +10,7 @@
 086-01.c2_heavy-up-day-extends-rebound_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 086-01_heavy-volume-up-day-continuation_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 086-02.c1_light-volume-up-day-follow-through_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
+086-02.c2_quiet-three-day-rise-continuation_1d: plan (fit: exact) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 086-02_repeated-heavy-volume-buying-days_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 089-01.c1_calm-decline-down-volume-exhaustion_1d: missing-components: The idea compares mean volume per down day with mean volume per up day over 20 days, and the catalogue [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 089-01_calm-decline-up-volume-share_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
