@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day move after scaled weekly rises",
+    "value": 0.009554829117826095,
+    "statistic": {
+      "name": "t of the mean, cases pooled by day",
+      "value": 2.387659702769121
+    },
+    "threshold": "mean > 0 with t >= 2 (and Spearman > 0) to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast at signal, unusual move) > 0",
+    "value": -0.021796748064880415,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 297,
+    "cases": 410
+  },
+  "decided_by": "t >= 2 but the Spearman correlation is not above 0.",
+  "reading": "A case is the first long bet (forecast rise >= 2 points from its lowest level since the last bet, from 0 after flat) in each non-overlapping 3-bar cell counted from each window's first row, the falling calm profile is the recorded regime 'unknown', the day-pooled t uses cluster-robust standard errors with per-day summed deviations (G/(G-1) correction), and fewer than 30 case days is reported as not observable.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +2.388 (not below 1), 297 cases (30 needed)",
+    "t_in_idea_direction": 2.387659702769121,
+    "cases": 297
+  }
+}

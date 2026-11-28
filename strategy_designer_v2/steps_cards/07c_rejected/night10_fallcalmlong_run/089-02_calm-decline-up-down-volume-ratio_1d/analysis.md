@@ -1,0 +1,24 @@
+---
+line: 7.c no effect
+backtest: 089-02_calm-decline-up-down-volume-ratio_1d
+idea tested: 089-02_calm-decline-up-down-volume-ratio
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3668 USD
+---
+## Findings
+- **F1:** In falling calm markets, a lean toward up-day volume was followed by weaker days, not stronger ones. When the 20-day log ratio was positive, the 5-day excess return was -3.27 % (t -2.67, 59 non-overlapping cases) and the 10-day excess return was -6.44 % (t -3.45, 32 cases). When the ratio was zero or below, the 5-day excess return was +0.03 % (t 0.02, 62 cases).
+- **F2:** The relation runs against the idea across the range of the lean. Over 5 days in falling calm, the two lowest quintiles of the lean returned +0.72 % and +1.00 % in excess, against -3.83 %, -3.35 % and -2.54 % for the three highest. The Spearman correlation of the lean with the 5-day excess return was -0.159 (clustered slope t -1.66, 121 cases on 83 days), and it was -0.149 over 10 days and -0.296 over 20 days.
+- **F3:** The negative relation belongs to the falling calm profile. Outside it, the same lean has a correlation of +0.069 with the 5-day excess return (572 cases) and +0.148 over 10 days (286 cases). Inside it, the sign is negative on ETH (-0.39) and ZEC (-0.27) and positive on BCH (+0.30) and XMR (+0.13).
+- **F4:** Down-day volume measured against the coin's own 60-day average volume predicts the rise. Its correlation with the 5-day excess return was +0.234 (p 0.028, clustered t 2.16, 88 cases on 57 days), and +0.287 over 10 days and +0.388 over 20 days. Sorted into quartiles, the lightest down days (-0.47 log) were followed by -7.17 % in excess over 5 days and -11.2 % over 10 days. The heaviest (+0.37 log) were followed by +1.81 % and +2.83 %. Outside the profile the correlation is -0.085.
+- **F5:** Overall volume tells the same story. In falling calm, the 20-day mean volume against the 60-day mean has a correlation of +0.213 with the 5-day excess return (clustered t 1.95) and +0.315 over 10 days (p 0.042). The quartile with the most dried-up volume (-0.63 log, 10-day mean volume against the 60-day mean) lost 7.35 % in excess over 5 days and 13.8 % over 10 days. The correlation is positive on all four coins (0.08 to 0.32) but not in every year: +0.56 in 2019 and -0.03 in 2021.
+- **F6:** Compared with trading costs, the tested idea's own move is negative. The unusual move is -0.56 % per 5 days (t -1.04, 403 cases) and the total move is +0.08 %, against a cost of 0.31 % per trade. The edge in F4 and F5 sits in the tails: about 7 % over 5 days between the extreme quartiles, which is several times that cost.
+
+## Ideas
+- `089-02.c1_calm-decline-down-day-volume-flush` (from F4, F3, F6): In a falling, calm market, the heavier a coin's average down-day volume over the last 20 days compared with its average daily volume over the last 60 days, the more the coin rises over the next 10 days.
+- `089-02.c2_calm-decline-rising-volume` (from F5, F4): In a falling, calm market, the higher a coin's average daily volume over the last 20 days compared with its average over the last 60 days, the more the coin rises over the next 10 days.
+- `089-02.c3_down-day-volume-lean-rebound` (from F1, F2, F3): In a falling, calm market, the heavier a coin's average down-day volume over the last 20 days compared with its average up-day volume over the same days, the more the coin rises over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

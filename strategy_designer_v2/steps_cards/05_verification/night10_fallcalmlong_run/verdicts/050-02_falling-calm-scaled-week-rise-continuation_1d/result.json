@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of the cases, taken long",
+    "value": 0.006430566860685428,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": 1.8874599568684383
+    },
+    "threshold": "t >= 2 confirms (with positive size difference), t <= -2 rejects, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of cases with forecast >= median minus those below (Welch t) [Welch t = -0.375]",
+    "value": -0.0022179173082930133,
+    "passed": false
+  },
+  "counts": {
+    "cases": 503,
+    "distinct days": 341
+  },
+  "decided_by": "The t of the unusual move is between -2 and 2.",
+  "reading": "The falling calm profile is the recorded regime 'unknown'; a case is the first bar in each 3-bar grid cell (from each window's first row) where the forecast rose by at least 2 points from its lowest level since its last bet (from 0 after a flat), the drift is the mean 3-bar return on that grid over all the coin's windows, and the day-clustered standard error uses the per-day summed deviations with a D/(D-1) correction.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.887 (not below 1), 503 cases (30 needed)",
+    "t_in_idea_direction": 1.8874599568684383,
+    "cases": 503
+  }
+}

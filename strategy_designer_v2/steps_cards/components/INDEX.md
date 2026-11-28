@@ -247,3 +247,9 @@ night9_chopstretch_run | 076-01.b1.b1.b1_falling-agitated-wide-close-fade_1d | C
 night9_fallcalmwide_run | 077-03_choppy-agitated-close-position-reversal_1d | ScaledCloseOffMidRange | built: CloseOffMidRangeInUsualMovesComponent {"vol_period": 30}
 night9_chopmonth_run | 077-03_agitated-high-close-later-rise_1d | LaggedCloseLocationInRangeComponent | built: CloseLocationInRangeComponent {"lag": 1, "reference": "low"}
 a4_research_run | 060-01.b1.g1_quiet-day-next-fade_1d | ScaledMoveSmallnessComponent | built: ScaledMoveSmallnessComponent {"vol_period": 20}
+night10_fallcalmlong_run | 089-01_calm-decline-up-volume-share_1d | UpDayVolumeShare | built: UpDayVolumeShareComponent {"form": "share", "period": 20}
+night10_fallcalmlong_run | 089-02_calm-decline-up-down-volume-ratio_1d | UpDownDayMeanVolumeRatio | built: UpDownMeanVolumeRatioComponent {"form": "ratio", "period": 20}
+night10_fallcalmlong_run | 089-03_calm-decline-thinning-down-volume_1d | DownDayVolumeFadeRatio | built: DownBarVolumeFadeComponent {"base_period": 20, "short_period": 10}
+night10_fallcalmlong_run | 089-03_calm-decline-thinning-down-volume_1d | DownDayVolumeFadeRatio (the same component; its base window B is the comparison) | measures | exists: DownBarVolumeFadeComponent {"base_period": 20, "short_period": 10}
+night10_fallcalmlong_run | 089-01.c1_calm-decline-down-volume-exhaustion_1d | DownToUpDayMeanVolumeRatio | exists: UpDownMeanVolumeRatioComponent {"form": "log", "period": 20}
+night10_fallcalmlong_run | 089-04.c1_heavy-up-day-volume-rebounds_1d | UpDayVolumeToUsualVolumeComponent | built: UpDayVolumeShareComponent {"base": "mean_volume", "base_period": 60, "period": 20}

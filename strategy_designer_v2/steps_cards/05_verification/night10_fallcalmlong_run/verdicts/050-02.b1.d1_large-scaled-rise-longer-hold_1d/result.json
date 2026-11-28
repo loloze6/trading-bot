@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean excess 10-bar return",
+    "value": 0.02091577056896483,
+    "statistic": {
+      "name": "t of the weighted mean, cases of one day pooled",
+      "value": 1.19957096306806
+    },
+    "threshold": "above 0 with t >= 2 confirms; below 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean excess (by forecast)",
+    "value": 0.015069502097401023,
+    "passed": true
+  },
+  "counts": {
+    "independent cases (grid bars with forecast > 0)": 132,
+    "days the cases fall on": 73
+  },
+  "decided_by": "The t of the forecast-weighted mean excess lies between -2 and 2.",
+  "reading": "The falling calm profile is read from the recorded regime ('unknown' = neither veto fired); grid bars without a 10-bar forward close in the window are dropped and drift is each coin's mean 10-bar grid return over all its windows; the weighted mean's t is a day-clustered standard error (per-day sums of f*(excess-mean), scaled by G/(G-1)); the thirds are floor(n/3) cases by forecast with unweighted mean excess.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.200 (not below 1), 73 cases (30 needed)",
+    "t_in_idea_direction": 1.19957096306806,
+    "cases": 73
+  }
+}

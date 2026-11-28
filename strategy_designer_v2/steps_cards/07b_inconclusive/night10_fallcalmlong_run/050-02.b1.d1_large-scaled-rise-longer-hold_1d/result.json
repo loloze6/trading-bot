@@ -1,0 +1,40 @@
+{
+  "line": "7.b",
+  "backtest": "050-02.b1.d1_large-scaled-rise-longer-hold_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.365128,
+  "findings": {
+    "F1": "The effect points the way the idea predicts but is too thinly sampled to clear the bar: the verdict's forecast-weighted mean excess 10-day return is +2.09 % with t 1.20 on 132 cases falling on only 73 days, and in the explore half the plan's grid gives +3.03 % weighted with a day-clustered t of 0.92 on just 29 cases over 21 days.",
+    "F2": "The sign does not depend on which 10-day grid is used, only the size does: averaged over the ten possible starting offsets of the 10-day grid, the weighted mean excess is +6.29 %, the mean t is 1.38, and the t is positive on 90 % of the offsets (minimum weighted mean \u22120.89 %), with only about 26 cases per grid.",
+    "F3": "The 10-day gain rests on a few large outcomes. The unweighted mean excess is \u22120.21 % with a hit rate of 41 % and a median of \u22120.73 %. Dropping the 5 best cases turns the mean to \u22124.92 %, while the single cases range from \u221239.4 % to +27.7 %.",
+    "F4": "The same forecast shows a clearer carry over shorter horizons, which have more cases. At 3 days the weighted excess is +2.23 % (clustered t 2.26, 106 cases, 71 days, hit 58 %). At 4 days it is +2.61 % (t 2.29, 78 cases). At 5 days it is +2.77 % (t 1.75, 61 cases).",
+    "F5": "The grading is present but noisy. At 10 days the top third by forecast earns +4.01 % excess against +0.73 % for the bottom third, and the Spearman correlation between forecast and excess is 0.21. At 5 days the top third earns +3.37 % (t 2.13) against \u22120.78 % for the bottom third.",
+    "F6": "The effect varies by period and coin, which a small sample cannot average out:",
+    "F7": "The idea's size is positive but uncertain, and the cost of a trade does not block it: the unusual move is +1.86 % per case (t 1.58 over 202 days), a strength of 0.107. The total move of +2.96 % is 9.5 times the 0.31 % cost of a trade. The book fails only on Calmar (0.18), being in a position on 18 % of the coins' days."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "scaled rise carry, more coins",
+      "from": "F1, F2, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F7"
+      ],
+      "idea": "In a falling, calm market, a coin that has risen over the last 7 days keeps rising over the next 10 days, and rises further the larger its 7-day rise is in units of its 30-day daily-return swing, the carry growing most steeply among the largest scaled rises.",
+      "consequence": "A trader buys the large scaled weekly rises in a calm downtrend and holds them for about ten days, instead of trading every small rise for three days.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "profile": "falling calm",
+      "side": "long"
+    }
+  ],
+  "idea_ids": [
+    "050-02.b1.d1.b1_scaled-rise-carry-more-coins"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

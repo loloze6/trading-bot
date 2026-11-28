@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move per case (long), cases of one day together",
+    "value": 0.0028738566016598016,
+    "statistic": {
+      "name": "t of the mean, cases of one day together",
+      "value": 0.4155466062353957
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, heavier half minus lighter half (median volume ratio)",
+    "value": 0.01462441352903083,
+    "passed": true
+  },
+  "counts": {
+    "cases": 220,
+    "distinct days": 186
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive. No effect (common/verdicts.md): t in the idea's direction +0.416 (below 1), 220 cases (30 needed).",
+  "reading": "A case is the first long bet (forecast rise >= 2 points from its low since the last bet) in each 5-bar grid cell from each window's first row; the t clusters deviations by UTC day with a G/(G-1) correction; the heavier half is volume ratio above the median, the lighter half at or below it; the plan's 'fewer than 30 cases or 20 days' is reported as not observable; calm is read from the detector's regime.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.416 (below 1), 220 cases (30 needed)",
+    "t_in_idea_direction": 0.4155466062353957,
+    "cases": 220
+  }
+}

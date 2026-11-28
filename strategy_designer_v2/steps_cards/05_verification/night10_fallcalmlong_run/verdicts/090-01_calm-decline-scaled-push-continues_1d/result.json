@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-day forward return minus coin mean 5-day return on raw push",
+    "value": 0.004183193002207575,
+    "statistic": {
+      "name": "t of OLS slope, day-clustered SE",
+      "value": 0.8887555894681554
+    },
+    "threshold": "t of slope >= 2 (with check and >= 100 samples) confirms; <= -2 (>= 100 samples) rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-day move of cases (forecast rises >= 2) above 0",
+    "value": 0.005269074520733871,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping in-profile samples": 699,
+    "cases": 458,
+    "days of samples": 294
+  },
+  "decided_by": "The slope's t is between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.889 (below 1), 458 cases (30 needed).",
+  "reading": "The falling calm profile is the recorded regime 'unknown' (detector inputs are not recorded and need 365-day history), the drift is the coin's mean non-overlapping 5-day return over all its windows, 'cases on the same day taken together' is a pooled OLS slope with day-clustered standard errors, and cases are the first long bet per 5-bar grid cell of each window.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.889 (below 1), 458 cases (30 needed)",
+    "t_in_idea_direction": 0.8887555894681554,
+    "cases": 458
+  }
+}

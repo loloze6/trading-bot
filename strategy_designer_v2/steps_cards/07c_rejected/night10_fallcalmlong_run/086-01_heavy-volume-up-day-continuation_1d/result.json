@@ -1,0 +1,51 @@
+{
+  "line": "7.c",
+  "backtest": "086-01_heavy-volume-up-day-continuation_1d",
+  "step5": "no effect",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.44196369999999996,
+  "findings": {
+    "F1": "In falling calm markets, heavy-volume up days were followed by a fall, not a rise. Over 5 days the unusual move was \u22121.8 % for a volume ratio of 1.5\u20132 (t \u22121.07, 22 cases, 20 days) and \u22122.0 % for a ratio of 2 or more (t \u22120.88, 22 cases, 20 days). Light-volume up days moved only \u22120.34 % (t \u22120.34, 117 cases, 102 days), so heavier volume brought a worse outcome.",
+    "F2": "The move does not grow with volume. Among up days in the profile, the Spearman correlation between volume ratio and the 5-day unusual move was \u22120.194 (54 cases). Within the heavy up days it was \u22120.11 for a ratio of 1.5\u20132 and +0.08 for 2 or more. By volume quintile, the q4 up days moved \u22125.2 % over 5 days (t \u22121.92, 13 cases).",
+    "F3": "Heavy up days split by the prior 5-day path. After a 5-day fall they were given back: \u22124.2 % over 5 days (t \u22121.44, 18 cases) and \u22128.3 % over 10 days (t \u22122.11, 16 cases, 13 days). After a 5-day rise they were flat over 5 days (+0.1 %, t 0.06, 20 cases) and rose over 10 days (+3.4 %, t 1.17, 16 cases, 16 days; volume correlation +0.08).",
+    "F4": "Heavy-volume down days split by where the day closed in its range. Those closing off their low rose +5.5 % over 5 days (t 2.41, 9 cases, 9 days), and those with the smaller falls rose +2.5 % (t 1.28, 18 cases). Those closing near their low fell \u22123.7 % (t \u22121.83, 28 cases), and those with the bigger falls fell \u22125.1 % over 5 days (t \u22122.06, 19 cases) and \u221210.1 % over 10 days (t \u22123.30, 15 cases).",
+    "F5": "What the market did instead was keep falling. Light-volume down days in the profile were followed by \u22120.89 % the next day (t \u22122.67, 226 cases, 190 days) and \u22122.6 % over 5 days (t \u22122.41, 113 cases, 99 days). That is the short side, outside this research's box.",
+    "F6": "The failure is broad. Heavy up days had a negative 1-day unusual move on BCH (\u22121.0 %, 7 cases), ETH (\u22121.1 %, 17) and ZEC (\u22121.0 %, 19). Only XMR was positive (+1.8 %, t 1.90, 12 cases). The 1-day move was negative in 2018 (\u22121.9 %, 11 cases) and 2019 (\u22120.7 %, 25 cases).",
+    "F7": "The moves in F3 and F4 are 2.5\u20135.5 % per case. That is about 8\u201318 times the 0.31 % cost of a trade, against the 0.29 % unusual move of the tested idea."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a day on volume heavy against the coin's 20-day average that closes well up from its low is followed by a rise over the next 5 days. The higher the close sits in the day's range, the larger the rise.",
+      "consequence": "In a calm decline, a trader would buy a heavy-volume day that recovers from its low even if it closes down, and refuse one that closes at its low.",
+      "name": "heavy volume off-low absorption",
+      "from": "F4, F1, F7",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F4",
+        "F1",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, a day that closes up on volume heavy against the coin's 20-day average is followed by a rise over the next 10 days, only while the coin's 5-day return before that day is positive. The heavier that day's volume relative to its 20-day average, the larger the 10-day rise.",
+      "consequence": "In a calm decline, a trader would buy a heavy-volume up day only when it extends a short rebound, and not when it interrupts a fall.",
+      "name": "heavy up day extends rebound",
+      "from": "F3, F2, F7",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F3",
+        "F2",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "086-01.c1_heavy-volume-off-low-absorption",
+    "086-01.c2_heavy-up-day-extends-rebound"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

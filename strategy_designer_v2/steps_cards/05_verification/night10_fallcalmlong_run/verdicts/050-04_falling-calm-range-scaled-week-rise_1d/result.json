@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of the cases",
+    "value": 0.006306692285718885,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": 1.8343079230238073
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "larger-forecast half minus smaller-forecast half mean unusual move",
+    "value": -0.0050965031659134866,
+    "passed": false
+  },
+  "counts": {
+    "distinct days with cases": 342,
+    "cases": 496
+  },
+  "decided_by": "The main t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is the first bar in each non-overlapping 3-bar grid cell (from each window's first row) where the forecast rises by at least 2 points above its lowest positive level since the last bet (from 0 after a flat), its return taken from that bar's close over 3 bars inside the window; the t is the mean over its day-clustered standard error (deviations summed per day); the halves are the top and bottom floor(n/2) cases by forecast at the signal, the middle case dropped when n is odd.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.834 (not below 1), 342 cases (30 needed)",
+    "t_in_idea_direction": 1.8343079230238073,
+    "cases": 342
+  }
+}

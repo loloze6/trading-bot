@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 7-bar move after long bets",
+    "value": 0.004763930235121558,
+    "statistic": {
+      "name": "t of the mean, cases grouped by day",
+      "value": 0.6694364699708119
+    },
+    "threshold": "mean > 0 with t >= 2 (and the supporting check) to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above-median forecast minus below-median, grid bars with forecast > 0",
+    "value": 0.028804891471800962,
+    "passed": true
+  },
+  "counts": {
+    "cases": 390,
+    "independent days": 278,
+    "grid bars with forecast above 0": 184
+  },
+  "decided_by": "The t lies between -2 and 2 (or cannot be computed), which the plan calls inconclusive. No effect (common/verdicts.md): t in the idea's direction +0.669 (below 1), 390 cases (30 needed).",
+  "reading": "One case per 7-bar grid cell (the cell's first long bet, a forecast rise of at least 2 from its lowest level since the last bet), its return taken from that bet's close over 7 bars inside the window minus the coin's mean grid 7-bar return over all windows; the day-grouped t is the clustered t of the mean; the supporting check uses the grid bars themselves with ties at the median left out; the 30-case minimum is counted in independent days and, per the workflow, gives 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.669 (below 1), 390 cases (30 needed)",
+    "t_in_idea_direction": 0.6694364699708119,
+    "cases": 390
+  }
+}

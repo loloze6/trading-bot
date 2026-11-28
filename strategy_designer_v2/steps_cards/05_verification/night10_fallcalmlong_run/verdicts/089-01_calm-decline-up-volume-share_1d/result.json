@@ -1,0 +1,35 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 5-bar forward return on forecast (in-profile grid bars)",
+    "value": -0.000682988050153351,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": -1.143113822883033
+    },
+    "threshold": "confirm if slope t >= 2 and cases' mean unusual move > 0; reject if slope t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move over long-side cases (day-clustered t -1.31)",
+    "value": -0.006577267339889106,
+    "passed": false
+  },
+  "counts": {
+    "in-profile grid bars": 699,
+    "in-profile grid bars with forecast above 0": 272,
+    "cases": 377,
+    "case days": 306
+  },
+  "decided_by": "Inconclusive: slope t -1.14 lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -1.143 (below 1), 306 cases (30 needed).",
+  "reading": "In-profile means regime 'unknown' (not vetoed to chop); grid bars count only where the 5-bar forward return exists inside the window; the drift is the coin's mean 5-bar return on the grid of all its windows; cases are long-side forecast rises of >= 2 points from the lowest level since the last bet (reset at flat), first per grid cell; the plan's 'too few -> inconclusive' is reported as 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -1.143 (below 1), 306 cases (30 needed)",
+    "t_in_idea_direction": -1.143113822883033,
+    "cases": 306
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return over holding the coin, cases forecast > 0",
+    "value": -0.0016245550022460534,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.20907456714402747
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and slope > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 5-bar return on forecast",
+    "value": -0.0008048606859976584,
+    "passed": false
+  },
+  "counts": {
+    "cases": 264,
+    "distinct days": 146
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive. No effect (common/verdicts.md): t in the idea's direction -0.209 (below 1), 264 cases (30 needed).",
+  "reading": "Cases are grid bars (positions 0,5,10,... per window with a full 5-bar forward return) with forecast > 0; the coin's mean is over all its windows' grid 5-bar returns; the profile is the recorded regime 'unknown'; the plan's 'fewer cases' rule is applied as 'not observable' as the workflow requires.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.209 (below 1), 264 cases (30 needed)",
+    "t_in_idea_direction": -0.20907456714402747,
+    "cases": 264
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 10-day move of bets (return minus coin's normal 10-day drift)",
+    "value": 0.011276966109445202,
+    "statistic": {
+      "name": "t of the mean, cases of one day as one",
+      "value": 0.6840991259799343
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(heavy_volume raw ratio, unusual move) > 0",
+    "value": 0.030100379815518177,
+    "passed": true
+  },
+  "counts": {
+    "cases": 96,
+    "days": 82
+  },
+  "decided_by": "t lies between -2 and 2 (or is not computable): neither confirmed nor rejected. No effect (common/verdicts.md): t in the idea's direction +0.684 (below 1), 96 cases (30 needed).",
+  "reading": "The situation is checked on its three day conditions (1-day return > 0, volume ratio >= 1.5 from the recorded heavy_volume raw value or the prices, close[t-1]/close[t-6]-1 > 0) with a long side, the profile being added by code and not recomputable within a window, and active bars whose conditions cannot be computed inside their window are left out; a case is the first bet (forecast rise >= 2 from its lowest positive level since its last bet, from 0 after a flat) in each 10-bar grid cell of a window with a full 10-bar return ahead; the day-clustered t is mean / (sqrt(sum of per-day summed deviations^2) / n) with a D/(D-1) correction.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.684 (below 1), 96 cases (30 needed)",
+    "t_in_idea_direction": 0.6840991259799343,
+    "cases": 96
+  }
+}
