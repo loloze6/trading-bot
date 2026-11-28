@@ -6,15 +6,16 @@ One row per idea run; every status is read from the step's own result file. Each
 |---|---|---|---|---|---|---|---|---|
 | 061-01_falling-calm-scaled-rise-fade | - | plan | no effect (-0.28) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) | - | 7.c: 061-01.c1_falling-calm-decline-continues, 061-01.c2_low-close-keeps-sliding | 0.84 | 7.2 |
 | 064-01_falling-calm-up-day-fades | - | plan | no effect (-0.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 064-01.c1_feeble-bounces-fail-in-calm-declines | 0.62 | 6.5 |
+| 070-01_falling-calm-run-break-fade | - | plan | no effect (-0.18) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 070-01.c1_deep-run-bounce-fades, 070-01.c2_weak-bounce-gives-back | 0.66 | 6.8 |
 
 ## Consumption
-2 ideas, 1.46 USD, 13.7 minutes in all.
+3 ideas, 2.12 USD, 20.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.19 | 1.2 |
-| step4_backtest | 0.00 | 8.2 |
-| step5_verdict | 0.36 | 1.4 |
+| step3_plan | 0.30 | 1.9 |
+| step4_backtest | 0.00 | 12.2 |
+| step5_verdict | 0.55 | 2.2 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.0 |
 | step7_7.g | 0.00 | 0.0 |
@@ -22,4 +23,4 @@ One row per idea run; every status is read from the step's own result file. Each
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
-| step7_7.c | 0.91 | 2.8 |
+| step7_7.c | 1.27 | 4.1 |

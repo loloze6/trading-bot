@@ -1,0 +1,35 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day return beyond the coin's mean daily return, short direction",
+    "value": -0.0003450371273444489,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed",
+      "value": -0.18173858669338588
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess return of runs >= 3 days minus runs of 2 days (Welch t -0.340)",
+    "value": -0.0010580042279415133,
+    "passed": true
+  },
+  "counts": {
+    "cases": 412,
+    "distinct days": 275,
+    "cases run >= 3": 216,
+    "cases run == 2": 196
+  },
+  "decided_by": "Inconclusive: the main t lies between -2 and 2 and no reject rule is met. No effect (common/verdicts.md): t in the idea's direction -0.182 (below 1), 196 cases (30 needed).",
+  "reading": "Falling calm profile read from regime == 'mean_reversion' (the detector's profile vetoes are not recorded), run length from run_len's last_history_value (prices as fallback), cases are all bars with forecast < 0 and a next close in the window, the day-clustered t uses per-day sums of deviations with a D/(D-1) correction, the supporting excess is unsigned (return minus coin mean), and the plan's minimum counts lead to 'not observable' as the workflow requires.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.182 (below 1), 196 cases (30 needed)",
+    "t_in_idea_direction": -0.18173858669338588,
+    "cases": 196
+  }
+}

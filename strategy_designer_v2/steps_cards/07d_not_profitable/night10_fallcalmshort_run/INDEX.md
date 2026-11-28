@@ -1,2 +1,3 @@
 061-01_falling-calm-scaled-rise-fade_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 6 of step 6's measures failed, at most 2)
 064-01_falling-calm-up-day-fades_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
+070-01_falling-calm-run-break-fade_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 3 of step 6's measures failed, at most 2)
