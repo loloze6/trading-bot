@@ -1,3 +1,4 @@
+032-01.b1_calm-fall-continuation-all-coins_1d: no effect (fit: adapted) [main: 0.00101714; t of the mean over days 0.557904; days in a position 979, bars in a position 2062, deeper half bars 1031, shallower half bars 1031]
 050-03.c1_calm-downtrend-3-day-fall-continues_1d: no effect (fit: exact) [main: 0.00194295; day-clustered t 0.58162; cases 659, distinct days 415]
 050-03_falling-calm-range-scaled-week-fall_1d: no effect (fit: adapted) [main: -0.004176; t of the mean, cases of one day taken together -0.983357; grid cases 585, distinct days 291]
 061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: exact) [main: -0.00194073; t of the mean, cases' deviations summed per day -0.282845; case-days 44, cases 61]

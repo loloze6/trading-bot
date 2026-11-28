@@ -1,3 +1,4 @@
+032-01.b1_calm-fall-continuation-all-coins_1d: not profitable enough [Sharpe 0.1143; Sharpe minus holding's Sharpe -0.7778; Calmar 0.01685]
 050-03.c1_calm-downtrend-3-day-fall-continues_1d: not profitable enough [Sharpe -0.09997; Sharpe minus holding's Sharpe -0.992; Calmar -0.05833]
 050-03_falling-calm-range-scaled-week-fall_1d: not profitable enough [Sharpe 0.03627; Sharpe minus holding's Sharpe -0.8558; Calmar -0.0181]
 061-01_falling-calm-scaled-rise-fade_1d: not profitable enough [Sharpe -0.34; Sharpe minus holding's Sharpe -1.232; Calmar -0.09822]
