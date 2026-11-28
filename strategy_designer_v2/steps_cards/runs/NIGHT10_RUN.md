@@ -42,3 +42,18 @@ still untested.
 Also counted: per run, tested, confirmed, profitable, "no effect", repairs skipped, 7.g not called, earlier ideas taken
 and tested and what they gave against the run's own ideas, ideas outside the box, usable coin-windows; the spend in
 research calls per step; **each session's own token cost** (the operator's question).
+
+## During the night (the designer's watch)
+- **About 03:10 Paris, runs C and D ended, 03:14 run A** (their sessions' final reports):
+  | Run | Box | Spent | Tested | Confirmed | Profitable | "No effect" / unclear | Stopped at step 3 (a measure missing) |
+  |---|---|---|---|---|---|---|---|
+  | A | falling calm, long | 10.02 | 10 | 1 (050-02.b1, fails Calmar alone; 7.d called on it) | 0 | 4 / 5 | 0 |
+  | C | falling agitated, short | 10.19 | 7 | 0 | 0 | 6 / 1 | 3 (the components step answered 3 wishes, 2.59 USD) |
+  | D | rising agitated, long | 11.23 | 6 | 0 | 0 | 5 / 1 | 1 (one 7.c call of 21 minutes, 4.45 USD for one idea) |
+- **The rest of the budget, first choice (written before it starts, 03:20 Paris):** spent so far 33.26 USD (the side
+  pass 1.82, A, C, D), run B still running (10). **Run A is resumed with its budget raised from 10 to 25 USD**, by the
+  rule written above: it is the only run with a confirmed idea (050-02.b1, "a week's rise in a calm downtrend
+  continues", t +2.15, failing step 6 on Calmar alone, its repairs written) and it has 5 unclear ideas (a sign of an
+  effect) against 1 or none in C and D. Expected: (R1) a repair or a clearer test gives a confirmed and profitable
+  strategy, its common record and a portfolio update follow; (R2) more confirmed, none profitable; (R3) nothing more
+  confirmed. C and D are not continued: nothing confirmed, 1 unclear each.
