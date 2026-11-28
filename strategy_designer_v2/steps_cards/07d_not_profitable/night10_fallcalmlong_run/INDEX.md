@@ -1,3 +1,4 @@
+050-02.b1_calm-downtrend-week-rise-more-coins_1d: 3 ideas (3 explorations)
 050-02_falling-calm-scaled-week-rise-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough; 1 of step 6's measures failed, at most 2)
 050-04_falling-calm-range-scaled-week-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough; 1 of step 6's measures failed, at most 2)
 086-01.c1_heavy-volume-off-low-absorption_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)

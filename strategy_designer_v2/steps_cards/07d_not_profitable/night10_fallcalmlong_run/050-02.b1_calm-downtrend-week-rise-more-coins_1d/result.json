@@ -1,0 +1,69 @@
+{
+  "line": "7.d",
+  "backtest": "050-02.b1_calm-downtrend-week-rise-more-coins_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6716325999999999,
+  "findings": {
+    "F1": "The Calmar failure (0.20 against 0.75) comes from one long, slow fall: the book's deepest drop was -19.9 %, lasting 612 days from a peak in w7 to a trough in w13, through w8 (book -11.0 % summed, while the coins summed -73.8 %), w9 (-0.8 %), w11 (-0.3 %) and w12 (-0.8 %); w8's trades summed -38.6 % net, and its worst single trade lost -14.2 %.",
+    "F2": "The fall is made of short, weak trades. The 110 trades held up to 3.5 days lost -0.41 % net on average (-44.7 % summed), and the 60 held 3.5 to 7 days earned only +0.34 %. The 30 trades held 7 to 14 days earned +14.4 % each, and the 5 held over 14 days earned +41.6 % each. A trade lasts as long as the 7-day rise persists, so the gain sits in the rises that keep going.",
+    "F3": "The weakest scaled rises lose. On the 3-day grid in profile, signal cases in the lowest third of the scaled 7-day rise (0.00 to 0.34 usual moves) had an unusual move of -1.1 % (27 cases). The middle third had +1.8 % (27) and the top third +2.2 % (28). In the book, held bars with a scaled rise of 0 to 0.4 summed -0.070 (66 bars, -0.11 % a bar), while those above 1.0 summed +0.319 (77 bars, +0.41 % a bar).",
+    "F4": "The signal is the effect, not the profile. In the falling calm profile, grid bars with no signal had an unusual 3-day move of -1.37 % (149 cases), against +1.24 % with the signal (106 cases, strength 0.134, t 1.96). So staying in the profile without the rise loses.",
+    "F5": "The strong half carries over a longer horizon. At 10 days, the upper half of the scaled rise had an unusual move of +4.0 % and the lower half -3.4 % (29 cases in all). At 3 days the halves were +1.85 % and +0.14 %. Bars in profile with no signal had -4.4 % at 10 days (41 cases).",
+    "F6": "A rise that leaves the coin still well below its 30-day high carries further. Over 7 days, signal cases more than 5 % below the high had an unusual move of +3.2 % (22 cases), against -4.5 % for those within 5 % of the high (9 cases), Welch t 2.10. Trades entered near the high averaged -0.58 % net (52 trades), against +5.63 % for those entered furthest below it (52 trades).",
+    "F7": "The distance from the high is not an effect on its own. Without the signal, bars more than 15 % below the high had an unusual 3-day move of -2.5 % (91 cases), and bars 5 to 15 % below had +0.1 % (32). With the signal, the same middle bucket had +2.1 % (24). Signal cases both far below the high and with a scaled rise above 0.4 had +3.3 % (t 2.56, 26 cases).",
+    "F8": "Removing the entries near the high does not lift Calmar. In the rebuilt book, Calmar went from 0.44 to 0.42 and the deepest fall from -18.6 % to -19.1 %. That filter does not repair the failing measure. What changes the fall is dropping the weak, short trades of F2 and F3."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a coin that has risen over the last 7 days keeps rising over the next 10 days, and rises further the larger its 7-day rise is in units of its 30-day daily-return swing, the carry growing most steeply among the largest scaled rises.",
+      "consequence": "A trader buys the large scaled weekly rises in a calm downtrend and holds them for about ten days, instead of trading every small rise for three days.",
+      "name": "large scaled rise, longer hold",
+      "from": "F2, F3, F4, F5, F1",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, a coin that has risen over the last 7 days keeps rising over the next 3 days, and rises further the larger its 7-day rise is in units of its 30-day daily-return swing, so that the largest scaled rises carry the most.",
+      "consequence": "A trader sizes the long by the scaled weekly rise, so that the many small rises carry little weight in the book.",
+      "name": "scaled rise, strong case",
+      "from": "F3, F4, F1, F2",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F3",
+        "F4",
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, a coin that has risen over the last 7 days while still below its 30-day high keeps rising over the next 7 days, and rises further the larger its scaled 7-day rise and the further below its 30-day high it still stands.",
+      "consequence": "A trader buys the weekly rises that still leave room below the month's high, and gives the least weight to those that have already reached it.",
+      "name": "rise with room below high",
+      "from": "F6, F7, F4",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F6",
+        "F7",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "050-02.b1.d1_large-scaled-rise-longer-hold",
+    "050-02.b1.d2_scaled-rise-strong-case",
+    "050-02.b1.d3_rise-with-room-below-high"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
