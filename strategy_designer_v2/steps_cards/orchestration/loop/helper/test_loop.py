@@ -225,3 +225,17 @@ def test_a_boxed_run_takes_the_untested_ideas_that_name_its_box_exactly(tmp_path
     assert [(l["taken"], l["from"]) for l in lines] == [("010-01_exact", "a_run")]
     box.write_text(json.dumps({"profile": "falling calm", "side": "short"}))
     assert loop.take_box_ideas("new_run", tmp_path, tmp_path / "orchestration") == 2          # 010-06 and 011-01: short
+
+
+def test_a_run_without_a_box_ignores_the_earlier_ideas_sides_file(tmp_path):
+    """The sides file only acts in a boxed run (common/target_box.md): no box, no field, no idea taken."""
+    (tmp_path / "common").mkdir()
+    (tmp_path / "common" / "earlier_idea_sides.json").write_text(json.dumps({"ideas": {"003-01_a": {"side": "long"}}}))
+    f = tmp_path / "003-01_a.md"
+    f.write_text("---\nbrief: 003_b\nprofile: falling calm\n---\nIdea: a.\n")
+    assert loop.box_field("a_run", f, tmp_path) == {}
+    assert loop.take_box_ideas("a_run", tmp_path, tmp_path) == 0
+    box = tmp_path / "orchestration" / "loop" / "a_run" / "target_box.json"          # the same idea in a boxed run
+    box.parent.mkdir(parents=True)
+    box.write_text(json.dumps({"profile": "falling calm", "side": "long"}))
+    assert loop.box_field("a_run", f, tmp_path) == {"in_box": True}

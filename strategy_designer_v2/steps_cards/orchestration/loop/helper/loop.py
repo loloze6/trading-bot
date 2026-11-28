@@ -196,7 +196,7 @@ def box_field(run, idea_path, steps=STEPS):
         return {}
     text = Path(idea_path).read_text()
     taken = header_fields(text).get("taken-from")
-    return {"in_box": target_box.in_box(text, run, box, steps), **({"taken_from": taken} if taken else {})}
+    return {"in_box": target_box.in_box(text, run, box, steps, Path(idea_path).stem), **({"taken_from": taken} if taken else {})}
 
 
 def take_box_ideas(run, steps=STEPS, root=ORCH):

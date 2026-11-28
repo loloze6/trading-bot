@@ -6,7 +6,7 @@ into the prompts, the check of a boxed run's brief, and whether an idea acts in 
 Why this cannot leak: the choice reads finished records (the register, the last portfolio's box reading) before a run
 starts; the note, the brief's check and the field read header lines. No bar of a run's data is read.
 """
-import json, re, sys
+import functools, json, re, sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -92,24 +92,40 @@ def brief_file(brief_id, run, steps=STEPS):
     return next((h for h in hits if h.exists()), None)
 
 
-def idea_side(text, run, steps=STEPS):
-    """What an idea (its file's text) bets (common/target_box.md, "The idea's side"): its own `side:` line (long, short
-    or both); else, for an idea written before that line existed, its brief's "long only" or "short only"; else None
-    (unknown). A brief's "long and short", or no side line, tells nothing of one idea's bet."""
+def earlier_sides(steps=STEPS):
+    """The earlier ideas' sides file (common/earlier_idea_sides.json): {idea id: its record}; empty when there is none."""
+    f = steps / "common" / "earlier_idea_sides.json"
+    return _read_sides(f, f.stat().st_mtime_ns) if f.exists() else {}
+
+
+@functools.lru_cache(maxsize=4)
+def _read_sides(path, mtime):
+    return json.loads(path.read_text())["ideas"]
+
+
+def idea_side(text, run, steps=STEPS, idea_id=None, use_file=True):
+    """What an idea (its file's text) bets (common/target_box.md, "The idea's side"), read in this order: (1) its own
+    `side:` line (long, short or both); (2) for an idea written before that line existed, its brief's "long only" or
+    "short only"; (3) the earlier ideas' sides file, by the idea's id; else None (unknown, and `unknown` in the file stays
+    unknown). A brief's "long and short", or no side line, tells nothing of one idea's bet."""
     h = header_fields(text)
     own = side_name(h.get("side"))
     if own:
         return own
     f = brief_file(h.get("brief", ""), run, steps)
     sides = brief_sides(f.read_text()) if f else ()
-    return sides[0] if len(sides) == 1 else None
+    if len(sides) == 1:
+        return sides[0]
+    if use_file and idea_id:
+        return side_name(earlier_sides(steps).get(idea_id, {}).get("side"))
+    return None
 
 
-def in_box(text, run, box, steps=STEPS):
+def in_box(text, run, box, steps=STEPS, idea_id=None):
     """Whether an idea (its file's text) acts in the box: its `profile:` line holds the box's profile, and its own side
     is the box's side. Recorded, never used to refuse or filter (the operator, 2026-11-27)."""
     return (holds(profile_name(header_fields(text).get("profile")), box["profile"])
-            and idea_side(text, run, steps) == box["side"])
+            and idea_side(text, run, steps, idea_id) == box["side"])
 
 
 # --- the ideas already written in the box (next steps B13) ------------------------------------------------------
@@ -138,7 +154,7 @@ def box_ideas(run, box, steps=STEPS):
             if f.stem in done or f.stem in have or f.stem in out:
                 continue
             text = f.read_text()
-            if profile_name(header_fields(text).get("profile")) == box["profile"] and idea_side(text, r, steps) == box["side"]:
+            if profile_name(header_fields(text).get("profile")) == box["profile"] and idea_side(text, r, steps, f.stem) == box["side"]:
                 out[f.stem] = (r, f)
     return list(out.values())
 

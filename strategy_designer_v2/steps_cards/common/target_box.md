@@ -85,9 +85,10 @@ idea's side below). An idea naming no profile, or whose side is unknown, is coun
 **An idea's side is what the idea bets** (`idea_definition.md`): `long`, `short` or `both`, on its own `side:` header
 line, written by step 2 and by every step 7 line for every run, boxed or not, and checked by code when the idea file is
 written (a missing or unknown value is refused and asked again, as an unknown `profile:` is).
-- **One reading for `in_box` and for the ideas taken (B13)** (`target_box.py`, `idea_side`): the idea's own `side:`
-  line; else, for an idea written before the line existed, its brief's "long only" or "short only"; else unknown. A
-  brief saying "long and short", or with no side line, tells nothing of what one of its ideas bets.
+- **One reading for `in_box` and for the ideas taken (B13)** (`target_box.py`, `idea_side`), in this order: (1) the
+  idea's own `side:` line; (2) for an idea written before the line existed, its brief's "long only" or "short only";
+  (3) the earlier ideas' sides file (below); else unknown. A brief saying "long and short", or with no side line, tells
+  nothing of what one of its ideas bets. **Unknown stays unknown, and such an idea is not taken.**
 - **Why:** before, both read the brief, and a brief without a side line counted as both sides. In pilot A4 a long box
   took ideas that bet short (032-01.b1 and 032-02.b1, measured in the short direction by step 5) and the short box
   took a "rise continues" idea; `in_box` said true for all of them.
@@ -95,6 +96,19 @@ written (a missing or unknown value is refused and asked again, as an unknown `p
   every component's forecast, by code). One rule, unchanged: the brief limits what is traded; the idea says what it
   bets; neither is enforced on the other. An idea betting short under a "long only" brief gives a flat book, and its
   turn says `in_box: false` in a long box: visible, not refused.
+
+## The earlier ideas' sides (next steps B13 and A12; the operator, 2026-11-28)
+**The fact:** no earlier idea has a known side (they were written before the `side:` line, and their briefs name none),
+so B13 took 0 ideas. **The pass** (`common/earlier_idea_sides.py`) reads each earlier **untested** idea (no step 5 answer
+in any run) whose `profile:` line names a market profile **exactly** (two words: rising, falling or choppy, with calm or
+agitated) and writes the side the idea bets, as the idea states it: `long`, `short` or `both`; `unknown` when the text
+does not say. One model call per idea, closed book, a short fixed prompt, the idea's text only; the answer is one word
+plus the sentence of the idea that shows it, checked by code (an answer outside the four words is refused and recorded
+as `unknown`).
+- **Where:** one file, `common/earlier_idea_sides.json`: for each idea its run, id, side, the sentence that shows it,
+  the model, the date. **The earlier runs' idea files are not rewritten** (a run's files are its record).
+- **Resumable:** an idea already in the file is not asked again.
+- **Why this cannot leak:** the pass reads an idea's text only, never a result.
 
 **Why this cannot leak:** the choice reads finished records (the map, the last portfolio's box reading) before the run
 starts; the note, the brief's check and the field read header lines. No bar of the run's data is read.

@@ -87,6 +87,28 @@ def test_an_idea_s_side_is_its_own_line_else_its_brief_s_only(tmp_path):
     assert tb.idea_side(idea("009_missing"), "b_run", tmp_path) is None                # no brief found: unknown
 
 
+def test_the_earlier_ideas_sides_file_is_read_third_and_unknown_stays_unknown(tmp_path):
+    d = tmp_path / "01_brief" / "b_run" / "briefs"
+    d.mkdir(parents=True)
+    (d / "003_short.md").write_text("---\nside: short only\n---\nA theory.\n")
+    (d / "004_both.md").write_text("---\nside: long and short\n---\nA theory.\n")
+    (tmp_path / "common").mkdir()
+    rec = lambda side: {"side": side}
+    (tmp_path / "common" / "earlier_idea_sides.json").write_text(json.dumps({"ideas": {
+        "i1": rec("long"), "i2": rec("long"), "i3": rec("unknown"), "i4": rec("long"), "i5": rec("maybe")}}))
+    idea = lambda brief, side=None: f"---\nbrief: {brief}\n" + (f"side: {side}\n" if side else "") + "---\nIdea: x.\n"
+    s = lambda text, i: tb.idea_side(text, "b_run", tmp_path, i)
+    assert s(idea("004_both"), "i1") == "long"                        # 3. the file, when the line and the brief say nothing
+    assert s(idea("004_both", "short"), "i1") == "short"              # 1. the idea's own line beats the file
+    assert s(idea("003_short"), "i2") == "short"                      # 2. the brief's "only" beats the file
+    assert s(idea("004_both"), "i3") is None                          # unknown stays unknown
+    assert s(idea("004_both"), "i5") is None                          # a word outside the three: unknown
+    assert s(idea("004_both"), "i9") is None and s(idea("004_both"), None) is None   # not in the file / no id
+    box = {"profile": "falling calm", "side": "long"}
+    text = "---\nbrief: 004_both\nprofile: falling calm\n---\nIdea: x.\n"
+    assert tb.in_box(text, "b_run", box, tmp_path, "i4") is True and tb.in_box(text, "b_run", box, tmp_path, "i3") is False
+
+
 def test_the_run_s_box_is_written_once_and_kept(tmp_path, monkeypatch):
     assert tb.start("a_run", None, tmp_path) is None and not tb.box_file("a_run", tmp_path).exists()
     b = tb.start("a_run", "rising agitated, long", tmp_path)
