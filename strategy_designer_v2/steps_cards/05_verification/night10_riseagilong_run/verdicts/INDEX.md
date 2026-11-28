@@ -1,3 +1,4 @@
+041-01.b1_rising-agitated-rise-continues_1d: no effect (fit: exact) [main: 4.3815e-06; day-clustered OLS slope t 0.0154832; bars with forecast > 0 1852, days 1033]
 086-01.c1_forceful-turn-day-continues_1d: no effect (fit: exact) [main: -0.00176964; t of the mean, cases clustered by day -0.279885; cases 370, distinct days 245]
 086-01_first-up-after-long-down-run_1d: no effect (fit: adapted) [main: -0.00131417; t of the mean, cases of one day taken together -0.15649; cases 390, distinct days 262]
 086-02_first-up-after-deep-down-run_1d: no effect (fit: adapted) [main: -0.00131417; t of the mean, same-day cases summed -0.15649; independent case-days 262, cases 390]
