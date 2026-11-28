@@ -1,0 +1,1 @@
+048-01_falling-agitated-wide-rise-giveback_1d: missing-components: The idea needs the day's rise in 30-day return standard deviations multiplied by the day's range in 30-day mean ranges, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

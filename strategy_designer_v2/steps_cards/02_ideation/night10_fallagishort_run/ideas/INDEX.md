@@ -1,0 +1,2 @@
+086-01_upper-shadow-further-fall: In falling agitated markets, a longer upper shadow relative to the 30-day usual range brings a larger fall over the next 3 days. [instruments: BCH, AVAX, XMR, INJ, GRT, DOGE, FIL, LTC, profile: falling agitated, side: short]
+086-02_rejected-rise-share-fall: In falling agitated markets, the larger the share of the day's rise above its open given back by the close, the larger the 3-day fall. [instruments: BCH, AVAX, XMR, INJ, GRT, DOGE, FIL, LTC, profile: falling agitated, side: short]

@@ -1,0 +1,10 @@
+---
+brief: 047_agitated-downtrend-scaled-days-reverse
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC
+bar: 1d
+source: line 7.g patterns, backtest 032-02_monthly-low-exhaustion-rebound_1d (idea 032-02_monthly-low-exhaustion-rebound, brief 032_monthly-low-in-falling-agitated)
+profile: falling agitated
+taken-from: night7_panic_run
+---
+Idea: In a falling, agitated market, an up day is followed by a fall over the next 3 days, and the larger the day's rise in units of its 30-day average daily range, the larger that fall.
+Consequence: In this profile, an unusually large rise against the coin's usual swing, here measured by its daily range, is partly undone, and more so the more unusual it was.
