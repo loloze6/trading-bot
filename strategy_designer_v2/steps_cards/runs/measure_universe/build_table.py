@@ -19,7 +19,7 @@ OUR7 = {"payments": ["payment-solutions"], "platforms": ["smart-contract-platfor
         "privacy": ["privacy-coins"], "finance": ["decentralized-finance-defi"],
         "infrastructure": ["infrastructure", "oracle", "storage", "depin"], "ai": ["artificial-intelligence"],
         "meme": ["meme-token"]}
-STABLE, WRAPPED, TOKENIZED = ["stablecoins"], ["wrapped-tokens", "liquid-staking-tokens", "liquid-staking"], \
+STABLE, WRAPPED, TOKENIZED = ["stablecoins"], ["wrapped-tokens", "liquid-staking-tokens"], \
     ["tokenized-gold", "tokenized-commodities", "tokenized-stock", "real-world-assets-rwa"]
 OTHERS = ["gaming", "metaverse", "non-fungible-tokens-nft", "exchange-based-tokens", "layer-2", "interoperability",
           "bitcoin-layer-2"]
