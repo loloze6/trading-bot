@@ -1,0 +1,20 @@
+---
+line: 7.g patterns
+backtest: 050-03_falling-calm-range-scaled-week-fall_1d
+idea tested: 050-03_falling-calm-range-scaled-week-fall
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3629 USD
+---
+## Findings
+- **F1:** In the falling calm profile the tested situation carries nothing. On the 3-bar grid, the 189 in-profile cases have a short-direction unusual move of -0.19 % (t -0.42). The 7-day fall scaled by the mean daily range does not grade it either: the most-scaled-fall quintile gives +1.37 % (t 1.00, n 30) and the Spearman rho is -0.07 (p 0.42). This matches step 5's +0.07 % size (t 0.18, 410 days), 0.2 times the 0.29 % cost of a trade.
+- **F2:** The strongest grading in the profile is the 3-day return. Its rho with the next-3-day short-direction unusual move is -0.167 (p 0.024, 182 cases), and its slope t averaged over the three grid offsets is -1.48 at 3 days and -1.54 at 5 days. Its short side does not hold up:
+- **F3:** No other angle stood out above chance across about 12 features × 5 quintiles plus weekdays:
+- **F4:** The in-profile evidence is thin and concentrated. 189 grid cases over three coins, and w12 alone holds 70 of them (37 %). The coins disagree in sign: BTC +0.30 %, XMR -0.61 %, XRP -0.39 %. The book's days in a position average -0.09 % (472 days), with 5 % tails of +3.78 % and -4.10 %.
+
+## Ideas
+- No ideas: In falling calm markets on these coins, no pattern on the short side stands out from chance after the many angles examined. The scaled weekly fall, 3-day falls, close location, range, volume, distance to recent extremes, volatility level and weekday all fail to grade the next days' fall consistently across windows and coins. The only gradient found (F2) is a long-side continuation of 3-day rises, which lies outside this research's short box.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,54 @@
+{
+  "line": "7.c",
+  "backtest": "061-01_falling-calm-scaled-rise-fade_1d",
+  "step5": "no effect",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5332419,
+  "findings": {
+    "F1": "In falling calm markets the tested fade is absent at every size of rise: the next-day unusual move after scaled rises of 2 or more is +0.02 % (9 cases, t 0.02), after rises of 1 to 2 it is +0.11 % (38 cases, t 0.25), and the Spearman correlation of the scaled one-day return with the next day's unusual move is -0.03 over 563 bars, so a larger rise is not followed by a larger fall.",
+    "F2": "What the market did instead is continue its last few days in either direction over the next 3 days, not reverse them: on the 3-day grid, after a negative 5-day scaled return the unusual 3-day move is -1.68 % (89 cases, t -2.74), and after a positive one it is +1.21 % (73 cases, t 1.65).",
+    "F3": "The continuation after a decline shows at the 3 to 5 day horizon, not at the plan's 1 day: after a negative 3-day scaled return the unusual move is -0.36 % over 2 days (t -0.80), -1.45 % over 3 days (95 cases, t -2.45) and -2.63 % over 5 days (49 cases, t -2.34).",
+    "F4": "The continuation is graded over the whole range: on the 3-day grid, from the lowest to the highest tercile of the 5-day scaled return the unusual 3-day move goes from -1.98 % to +0.96 % (high minus low t 2.50, Spearman 0.19, 162 cases), but the very largest declines below -1.5 scaled do not continue (-0.37 %, 16 cases, t -0.19).",
+    "F5": "The continuation after a decline holds on every coin and in most years: over 3 days the unusual move is -1.25 % on BTC (34 cases), -1.82 % on XMR (26) and -2.05 % on XRP (29, t -2.14); by year it is -3.35 % in 2018 (15), -1.66 % in 2019 (42) and -1.53 % in 2021 (23), with only 2020 positive (+0.75 %, 7 cases).",
+    "F6": "Its size is larger than a trade's cost: the -1.68 % unusual 3-day move after a 5-day decline is about 5.8 times the 0.29 % cost of a trade and about 0.26 of the 3-day move's spread in this profile (6.2 %), whereas the tested 1-day idea's total move was -1.0 times the cost.",
+    "F7": "Where a day closes inside its range also carries a continuation over 5 days in falling calm markets, though not on every coin: the unusual 5-day move is -1.88 % after the third of days that close nearest their low and +2.18 % after the third that close nearest their high (110 cases, t 2.02), driven by XMR (-4.39 % after low closes) and XRP (-2.41 %), not by BTC (+0.47 %).",
+    "F8": "Outside the falling calm profile, large one-day falls rebound the next day (+2.01 % unusual, 62 cases, t 2.35), while inside the profile falls of the same size do not rebound (-0.27 %, 17 cases). The brief's claim that falls are not repaid in this market fits that difference, but the rise fade that the brief pairs with it is not in the data."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, a coin whose return over the last 5 days is negative against the standard deviation of its daily returns over the last 30 days keeps falling over the next 3 days, and the larger that scaled 5-day decline, the larger the fall that follows.",
+      "consequence": "In a calm slide, a trader would sell after a few down days rather than wait for the rebound that usually follows such days in other markets, since in this market the decline carries on for several days.",
+      "name": "falling calm decline continues",
+      "from": "F2, F3, F4, F5, F6",
+      "side": "short",
+      "profile": "falling calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, a down day that closes near its low is followed by a further fall over the next 5 days, and the nearer the close sits to the day's low, the larger that fall.",
+      "consequence": "In a calm slide, a down day that closes at its low is a reason to sell for the next several days, not to buy the dip.",
+      "name": "low close keeps sliding",
+      "from": "F7, F8, F3",
+      "side": "short",
+      "profile": "falling calm",
+      "refs": [
+        "F7",
+        "F8",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "061-01.c1_falling-calm-decline-continues",
+    "061-01.c2_low-close-keeps-sliding"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

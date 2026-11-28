@@ -1,0 +1,35 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean daily timing gain on bars in a position (position x (next-day return - coin drift), summed per day)",
+    "value": 0.0010171393120876335,
+    "statistic": {
+      "name": "t of the mean over days",
+      "value": 0.5579039274780768
+    },
+    "threshold": "t >= 2 confirm, t <= -2 reject, over at least 100 days in a position"
+  },
+  "supporting_check": {
+    "name": "deeper-half minus shallower-half next-day excess return",
+    "value": -0.0006564925645224878,
+    "passed": true
+  },
+  "counts": {
+    "days in a position": 979,
+    "bars in a position": 2062,
+    "deeper half bars": 1031,
+    "shallower half bars": 1031
+  },
+  "decided_by": "Timing gain t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.558 (below 1), 979 cases (30 needed).",
+  "reading": "The falling calm profile is read from the recorded regime ('unknown' = no veto fired, since the detector's components are not recorded and the 365-bar volatility percentile cannot be rebuilt inside a window), the situation is that profile with the 30-day change below 0 on the short side; bars in a position are those with a nonzero position after the trade; the drift is the coin's mean one-bar return over all its windows; the supporting split uses position bars with a negative forecast, deeper half = forecast at or below the median; fewer than 100 days in a position is treated as the plan's minimum count, so 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.558 (below 1), 979 cases (30 needed)",
+    "t_in_idea_direction": 0.5579039274780768,
+    "cases": 979
+  }
+}

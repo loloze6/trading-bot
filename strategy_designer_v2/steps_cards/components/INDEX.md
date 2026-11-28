@@ -253,3 +253,6 @@ night10_fallcalmlong_run | 089-03_calm-decline-thinning-down-volume_1d | DownDay
 night10_fallcalmlong_run | 089-03_calm-decline-thinning-down-volume_1d | DownDayVolumeFadeRatio (the same component; its base window B is the comparison) | measures | exists: DownBarVolumeFadeComponent {"base_period": 20, "short_period": 10}
 night10_fallcalmlong_run | 089-01.c1_calm-decline-down-volume-exhaustion_1d | DownToUpDayMeanVolumeRatio | exists: UpDownMeanVolumeRatioComponent {"form": "log", "period": 20}
 night10_fallcalmlong_run | 089-04.c1_heavy-up-day-volume-rebounds_1d | UpDayVolumeToUsualVolumeComponent | built: UpDayVolumeShareComponent {"base": "mean_volume", "base_period": 60, "period": 20}
+night10_fallcalmshort_run | 086-01_down-day-volume-share-drift_1d | DownDayVolumeShareComponent | built: DownDayVolumeShareComponent {"form": "share", "period": 10}
+night10_fallcalmshort_run | 060-02_falling-calm-low-to-close-fade_1d | CloseAboveLowInUsualMovesComponent | built: VolatilityScaledDistanceFromHighComponent {"base": "close", "exclude_current": 0, "extreme": "low", "period": 1, "source": "high", "vol_period": 30}
+night10_fallcalmshort_run | 086-02_down-up-volume-ratio-drift_1d | DownUpVolumeSkewComponent | built: DownUpVolumeSkewComponent {"form": "centred", "period": 20}

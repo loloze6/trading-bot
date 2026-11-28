@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-day unusual move of short bets (drift removed, short direction)",
+    "value": -0.0019407284325284539,
+    "statistic": {
+      "name": "t of the mean, cases' deviations summed per day",
+      "value": -0.2828453397189071
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 case-days and supporting check passing; reject: mean < 0 with t <= -2 over >= 30 case-days"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of larger-|forecast| half minus smaller half",
+    "value": 0.01313712034774501,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 44,
+    "cases": 61
+  },
+  "decided_by": "The t lies between -2 and 2, which the plan calls inconclusive. No effect (common/verdicts.md): t in the idea's direction -0.283 (below 1), 44 cases (30 needed).",
+  "reading": "Cases are short bets (a rise of the short forecast of at least 2 points from its low since the last bet) on every bar, the mean is over cases and its t sums the cases' deviations per UTC day, the drift is the coin's mean 1-day return over all its windows, and the supporting split puts |forecast| above the median in the larger half and at or below it in the smaller half.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.283 (below 1), 44 cases (30 needed)",
+    "t_in_idea_direction": -0.2828453397189071,
+    "cases": 44
+  }
+}

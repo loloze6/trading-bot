@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-day return on post_pipeline_value",
+    "value": 0.00011363344267500904,
+    "statistic": {
+      "name": "OLS slope t, day-clustered",
+      "value": 0.22746968263909606
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and supporting check passes); reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily return minus position x coin mean daily return, before costs",
+    "value": 0.00015155462863667357,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 961,
+    "distinct days": 415
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule). No effect (common/verdicts.md): t in the idea's direction +0.227 (below 1), 961 cases (30 needed).",
+  "reading": "The falling calm profile is read from the recorded regime ('unknown' = no veto fired, since the detector's 365-bar components cannot be rebuilt inside 120-bar windows) and the situation as a close below its 20-day high (raw depth < 0) with a short forecast; the slope's t pools cases of one day by a day-clustered OLS standard error (with G/(G-1) correction); the supporting check uses the position's gain before costs per bar (each 1d bar is one day), averaged over the coins present each day; minimum counts not reached give 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.227 (below 1), 961 cases (30 needed)",
+    "t_in_idea_direction": 0.22746968263909606,
+    "cases": 961
+  }
+}

@@ -1,0 +1,8 @@
+032-01.b1_calm-fall-continuation-all-coins_1d: 2 ideas (2 explorations)
+050-03.c1_calm-downtrend-3-day-fall-continues_1d: 1 ideas (2 explorations)
+050-03_falling-calm-range-scaled-week-fall_1d: 2 ideas (2 explorations)
+061-01_falling-calm-scaled-rise-fade_1d: 2 ideas (3 explorations)
+064-01_falling-calm-up-day-fades_1d: 1 ideas (2 explorations)
+070-01_falling-calm-run-break-fade_1d: 2 ideas (2 explorations)
+077-01_falling-calm-deep-close-drift_1d: 2 ideas (3 explorations)
+086-01_down-day-volume-share-drift_1d: 1 ideas (2 explorations)

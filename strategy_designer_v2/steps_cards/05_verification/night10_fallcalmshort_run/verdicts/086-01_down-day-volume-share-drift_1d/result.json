@@ -1,0 +1,34 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar forward return minus coin mean 5-bar return on the raw centred down-day volume share",
+    "value": -0.007532255152591197,
+    "statistic": {
+      "name": "OLS slope t, cells of the same day clustered",
+      "value": -0.26720843013751006
+    },
+    "threshold": "confirm: slope < 0 with t <= -2 (and check passes); reject: slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean unusual 5-bar move in the short direction over grid cells with forecast < 0",
+    "value": -0.0017762762228244417,
+    "passed": false
+  },
+  "counts": {
+    "in-profile grid cells": 567,
+    "in-profile grid cells with forecast < 0": 361,
+    "days of the in-profile grid cells": 246
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and +2. No effect (common/verdicts.md): t in the idea's direction +0.267 (below 1), 246 cases (30 needed).",
+  "reading": "In-profile means regime 'unknown' (the falling calm profile not vetoed, as the detector's components are not recorded); grid cells are positions 0,5,10,... of each window with a 5-bar return inside the window, the coin's mean is over all its grid cells in all windows, the slope is OLS with an intercept and a day-clustered (CR1, G/(G-1)) standard error, and the plan's 'too few cells' case is reported as not observable.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.267 (below 1), 246 cases (30 needed)",
+    "t_in_idea_direction": 0.26720843013751006,
+    "cases": 246
+  }
+}

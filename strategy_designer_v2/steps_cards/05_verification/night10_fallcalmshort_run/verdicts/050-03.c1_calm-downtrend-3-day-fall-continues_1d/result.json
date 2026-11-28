@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of short bets, short direction",
+    "value": 0.0019429541459146452,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": 0.5816195061012268
+    },
+    "threshold": "day-clustered t >= 2 confirms (with supporting difference > 0); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "large-|forecast| half mean unusual move minus small half",
+    "value": -0.0011220028580838709,
+    "passed": false
+  },
+  "counts": {
+    "cases": 659,
+    "distinct days": 415
+  },
+  "decided_by": "The main measure's t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.582 (below 1), 659 cases (30 needed).",
+  "reading": "A case is the first short bet (forecast magnitude rising >= 2 points from its lowest level since the last bet, reset at flat) in each 3-bar grid cell of a window, with its 3-bar return inside the window; drift is the coin's mean non-overlapping 3-bar return over all its windows; the t clusters by UTC day with a G/(G-1) correction; the large half is |forecast| above the median, the small half at or below it; the 30-case minimum counts distinct days and, as a minimum count, gives 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.582 (below 1), 659 cases (30 needed)",
+    "t_in_idea_direction": 0.5816195061012268,
+    "cases": 659
+  }
+}

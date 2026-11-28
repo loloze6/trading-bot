@@ -1,0 +1,24 @@
+---
+line: 7.c no effect
+backtest: 032-01.b1_calm-fall-continuation-all-coins_1d
+idea tested: 032-01.b1_calm-fall-continuation-all-coins
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3749 USD
+---
+## Findings
+- **F1:** The tested grading by the 30-day fall is not there at any horizon: in falling calm bars after a 30-day fall, the next-day excess return is -0.23 % (t -1.07, 339 cases) and its Spearman correlation with the 30-day return is +0.019 (p 0.73). The deepest 30-day tercile (mean r30 -25 %) is followed by +0.32 %, +0.50 % and +1.38 % excess over 3, 5 and 10 days, so deeper 30-day falls do not fall more.
+- **F2:** At 1 day no recent fall predicts anything in the profile. The Spearman correlation of the 1-, 2-, 3-, 5- and 7-day past return with the next-day excess return lies between -0.027 and +0.036 (all p > 0.39). The idea's size of +0.01 % per case against a 0.29 % trade cost confirms that the plan's 1-day horizon is too short to measure a move.
+- **F3:** What the market does instead in the profile: the size of the last few days' fall grades the move over the next 3 to 5 days. The Spearman correlation of the past return with the 5-day excess return is 0.255 for the 2-day return (p 0.009) and 0.251 for the 3-day return (p 0.010, 103 cases); over 3 days it is 0.167 for the 3-day return (p 0.024).
+- **F4:** This continuation belongs to the falling calm profile. Outside it, the 3-day return's correlation with the 3- and 5-day excess return is only 0.034 and 0.063 (p 0.26 and 0.11), and the 1-day return reverses the next day (rho -0.094, p 0.000).
+- **F5:** Over 5 days the move is graded by the 3-day fall, on bars with a 3-day fall in the profile:
+- **F6:** The 5-day short after a 3-day fall gains on each coin: BTC +1.3 % (23 cases), XMR +3.8 % (17), XRP +2.6 % (17). It gains in each year: 2018 +2.9 %, 2019 +2.8 %, 2020 +1.1 %, 2021 +1.6 %. The 3-day past-return correlation over 3 days is positive on every coin (BTC 0.09, XMR 0.14, XRP 0.33).
+- **F7:** The deep tercile's 5-day move of about 4.8 % is about 16 times the 0.29 % cost of a trade. On the 1-day horizon the total move was -0.3 times that cost, so this horizon can pay where the plan's could not.
+
+## Ideas
+- `032-01.b1.c1_calm-decline-short-burst-continuation` (from F3, F4, F5, F6, F7): In a falling, calm market, the more a coin has fallen over the past 3 days, the more it falls over the next 5 days.
+- `032-01.b1.c2_two-day-drop-keeps-falling` (from F3, F4, F5): In a falling, calm market, the more a coin has fallen over the past 2 days, the more it falls over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
