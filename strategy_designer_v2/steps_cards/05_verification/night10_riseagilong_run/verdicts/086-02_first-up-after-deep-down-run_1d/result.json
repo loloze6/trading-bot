@@ -1,0 +1,31 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-day excess return of trending cases with forecast > 0 (vs coin's mean 5-day return)",
+    "value": -0.001314167605240719,
+    "statistic": {
+      "name": "t of the mean, same-day cases summed",
+      "value": -0.15648963631968302
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (day-clustered); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 5-day excess return on depth last_history_value (t)",
+    "value": -2.161658995340948,
+    "passed": false
+  },
+  "counts": {
+    "independent case-days": 262,
+    "cases": 390
+  },
+  "decided_by": "Reject rule: the mean excess 5-day return has t <= -2 or the depth slope has t <= -2. No effect (common/verdicts.md): the plan's reject rule is met.",
+  "reading": "Situation rebuilt from closes (up close after >= 2 lower closes) on bars with regime 'trending' (the profile vetoes cannot be recomputed in-window, so their pass is read from the regime, and the first 3 bars of a window use depth > 0); a case is the first trending bar with forecast > 0 in each 5-bar grid cell of its window, its return taken from that bar's close over 5 bars inside the window; the coin's mean is over all its windows' non-overlapping grid returns; the plan's '< 30 case-days' minimum is reported as 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "the plan's reject rule is met"
+  }
+}
