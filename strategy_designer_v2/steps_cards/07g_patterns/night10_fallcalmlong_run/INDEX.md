@@ -1,1 +1,2 @@
 050-04_falling-calm-range-scaled-week-rise_1d: no ideas: In falling calm markets the only graded pattern (F1, F4) separates down weeks from up weeks rather than growing with the rise, and it has no fifth with t ≥ 2 and flips sign between 2018–2019 and 2020–2021 (F2, F5). Its nearness-to-high form is already held (035-01.b1), and no other angle looked at (F6) stands out from chance, so no long idea rests on these findings.
+086-01.c1_heavy-volume-off-low-absorption_1d: 0 ideas, 2 discoveries (2 explorations)

@@ -1,0 +1,47 @@
+{
+  "line": "7.c",
+  "backtest": "086-01.c1_heavy-volume-off-low-absorption_1d",
+  "step5": "no effect",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4013792,
+  "findings": {
+    "F1": "The tested situation shows no rise. On the 5-day grid of the explore half, falling calm days with volume at least 1.5 times the prior 20-day mean were followed by an unusual move of -0.13 % (t -0.07, 21 cases), and heavy-volume up days by -2.32 % (t -0.78, 11 cases). The step 5 verdict on all windows agrees: -0.41 %, t -0.71, 340 cases on 268 days, a total move of only +0.19 % against a 0.31 % trade cost.",
+    "F2": "The market did the opposite of the brief on up days: the lighter the volume, the larger the later rise. Among falling calm up days, the rank correlation of the volume ratio with the 5-day unusual move is -0.194 (54 cases). By volume tercile, up days returned +3.71 % on the lightest volume, -2.63 % on middle volume and -1.92 % on the heaviest. Up days in the lightest volume quartile returned +5.36 % over 5 days (t 1.73, 12 cases; total +6.52 %) and +1.19 % over 2 days (t 1.48, 36 cases). Up days on volume under the 20-day mean returned +2.27 % over 5 days (t 1.38, 29 cases).",
+    "F3": "On down days in a falling calm market, heavier volume is followed by a larger later move up, not down. The rank correlation of the volume ratio with the 5-day unusual move is +0.303 (67 cases). Down days in the heaviest volume quartile returned +2.18 % (t 1.24, 15 cases; total +3.33 %), against -4.07 % (t -2.86, 19 cases) in the lightest quartile. Heavy-volume days in the lowest third of day returns returned +4.31 % (7 cases), against -5.34 % for the middle third.",
+    "F4": "The rest of the falling calm market kept falling, and that is where the losses sit. All falling calm days returned -1.58 % over 5 days (t -1.77, 121 cases) and -4.03 % over 10 days (t -2.16, 57 cases). Light-volume down days returned -4.74 % over 5 days (t -3.21, 48 cases) and -7.25 % over 10 days (t -3.31). The weakest third by 5-day past return returned -3.91 %, against +0.04 % for the strongest third. That continuation is a short-side effect, outside this research's long box.",
+    "F5": "Close location carried little. The tested idea's own grading split heavy-volume days only weakly: closes in the upper half of the range returned -1.33 % over 5 days (12 cases) and closes in the lower half +1.47 % (9 cases). Over all falling calm days the close-location terciles rose from -3.11 % (low) to -0.19 % (high), but all three stay below zero."
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, an up day made on volume light against the coin's 20-day average is followed by a further rise over the next 5 days, and the lighter that day's volume, the larger the rise.",
+      "consequence": "In a calm decline, a trader would buy a quiet up day rather than a heavy-volume one, and would refuse a heavy-volume up day as one that tends to be given back.",
+      "name": "light-volume up day continues",
+      "from": "F2, F1",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, a down day made on volume heavy against the coin's 20-day average is followed by a rebound over the next 5 days, and the heavier that day's volume, the larger the rebound.",
+      "consequence": "In a calm decline, a trader would buy after a heavy-volume selling day, read as supply being absorbed, and stay out after a light-volume down day, which tends to keep falling.",
+      "name": "heavy-volume down day rebounds",
+      "from": "F3, F4",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "086-01.c1.c1_light-volume-up-day-continues",
+    "086-01.c1.c2_heavy-volume-down-day-rebounds"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

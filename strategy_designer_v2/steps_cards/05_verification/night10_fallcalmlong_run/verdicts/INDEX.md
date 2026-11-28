@@ -1,4 +1,5 @@
 050-02_falling-calm-scaled-week-rise-continuation_1d: inconclusive (fit: exact) [main: 0.00643057; t of the mean, cases of one day taken together 1.88746; cases 503, distinct days 341]
 050-04_falling-calm-range-scaled-week-rise_1d: inconclusive (fit: adapted) [main: 0.00630669; t of the mean, cases of one day pooled 1.83431; distinct days with cases 342, cases 496]
+086-01.c1_heavy-volume-off-low-absorption_1d: no effect (fit: adapted) [main: -0.00412288; t of the mean, cases of one day clustered -0.709158; cases 340, distinct days 268]
 086-01_heavy-volume-up-day-continuation_1d: no effect (fit: adapted) [main: 0.00287386; t of the mean, cases of one day together 0.415547; cases 220, distinct days 186]
 086-02_repeated-heavy-volume-buying-days_1d: no effect (fit: adapted) [main: -0.0100191; t of the weighted mean, cases of one day grouped -0.942332; cases 118, days 75, active bars 595]

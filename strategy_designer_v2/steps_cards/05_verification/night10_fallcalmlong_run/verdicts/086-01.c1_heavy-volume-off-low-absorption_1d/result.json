@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-bar move after each case, long, before costs",
+    "value": -0.004122875015506613,
+    "statistic": {
+      "name": "t of the mean, cases of one day clustered",
+      "value": -0.709158101744527
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper half minus lower half of entry forecast (> 0)",
+    "value": 0.0072076514097339376,
+    "passed": true
+  },
+  "counts": {
+    "cases": 340,
+    "distinct days": 268
+  },
+  "decided_by": "Inconclusive rule: the t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -0.709 (below 1), 340 cases (30 needed).",
+  "reading": "Situation = volume >= 1.5x the mean of the prior 20 bars of the window and close above the low, long side, with the recorded regime used where 20 prior bars are not in the window; a case is the first bet bar (long forecast rise >= 2 points from its low since the last bet) in each 5-bar cell of a window's grid; the minimum counts are read as at least 30 cases and at least 20 distinct days, either short giving not observable; the day-clustered t uses a D/(D-1) factor; the upper half is forecasts strictly above the median, the lower half the rest.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.709 (below 1), 340 cases (30 needed)",
+    "t_in_idea_direction": -0.709158101744527,
+    "cases": 340
+  }
+}
