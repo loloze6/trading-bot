@@ -1,0 +1,50 @@
+{
+  "line": "7.c",
+  "backtest": "086-01.c2_heavy-up-day-extends-rebound_1d",
+  "step5": "no effect",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.404077,
+  "findings": {
+    "F1": "The tested situation shows no effect. Falling-calm up days on volume at least 1.5x the 20-day average lost against drift at every horizon: 1.5-2.5x gave \u22123.0 % over 5 days (t \u22121.96, 29 cases) and \u22123.6 % over 10 days, and above 2.5x gave \u22121.8 % and \u22121.2 % (16 cases). The Spearman of volume ratio against the move after up days was negative at every horizon (\u22120.08 at 5 days, \u22120.03 at 10 days).",
+    "F2": "Inside the plan's own condition, a positive 5-day return before the day, the market did the opposite of the brief. Up days on light volume (under 1x the 20-day average) rose +2.9 % against drift over the next 5 days (t 2.11 with one day's cases taken together, 47 cases, 41 days). Heavier up days (1x or more) rose only +1.1 % (t 0.67, 31 cases).",
+    "F3": "That light-volume follow-through is graded the wrong way for the brief. In a positive 5-day rebound, the 5-day unusual move after an up day falls step by step as volume rises:",
+    "F4": "Without the rebound condition, falling-calm up days lose. With a negative prior 5-day return, they lost at every volume level; at 1.5-2.5x the loss was \u22126.6 % over 10 days (t \u22122.19, 20 cases). The plan's rebound condition is what separates the paying from the losing up days, not the volume.",
+    "F5": "Across all falling-calm days, the move over the next days grows with the strength of the 5-day return, scaled by volatility. The Spearman is 0.20 at 5 days and 0.25 at 10 days. The weakest fifth lost \u22124.0 % over 5 days (t \u22122.71, 58 cases) and the strongest fifth gained +1.3 % (t 0.87, 61 cases). On the long side the gain is small; most of the grading comes from avoiding the weakest rebounds.",
+    "F6": "The rebound follow-through is not stable across periods or coins. After a positive 5-day return, the 5-day move was:"
+  },
+  "ideas": [
+    {
+      "idea": "In a falling, calm market, an up day that extends a positive 5-day return is followed by a further rise over the next 5 days, and the lighter that day's volume against its 20-day average, the larger the rise.",
+      "consequence": "In a calm decline, a trader would buy a quiet up day that continues a short rebound rather than a heavy-volume one, which is more likely to be the rebound's selling climax.",
+      "name": "quiet up day extends rebound",
+      "from": "F2, F3, F1",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a falling, calm market, an up day is followed by a rise over the next 10 days that is larger the stronger the coin's 5-day return ending that day, measured against its recent daily swings.",
+      "consequence": "In a calm decline, a trader would favour up days that come at the end of a strong short rebound and skip up days that interrupt a fall.",
+      "name": "strong rebound up day continues",
+      "from": "F5, F4, F6",
+      "side": "long",
+      "profile": "falling calm",
+      "refs": [
+        "F5",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "086-01.c2.c1_quiet-up-day-extends-rebound",
+    "086-01.c2.c2_strong-rebound-up-day-continues"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}

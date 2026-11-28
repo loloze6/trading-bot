@@ -7,6 +7,7 @@
 050-04.b1_range-scaled-week-rise-more-coins_1d: inconclusive (fit: exact) [main: 0.00630669; t of the mean, cases of one day taken together 1.83431; cases 496, distinct days 342]
 050-04_falling-calm-range-scaled-week-rise_1d: inconclusive (fit: adapted) [main: 0.00630669; t of the mean, cases of one day pooled 1.83431; distinct days with cases 342, cases 496]
 086-01.c1_heavy-volume-off-low-absorption_1d: no effect (fit: adapted) [main: -0.00412288; t of the mean, cases of one day clustered -0.709158; cases 340, distinct days 268]
+086-01.c2_heavy-up-day-extends-rebound_1d: no effect (fit: adapted) [main: 0.011277; t of the mean, cases of one day as one 0.684099; cases 96, days 82]
 086-01_heavy-volume-up-day-continuation_1d: no effect (fit: adapted) [main: 0.00287386; t of the mean, cases of one day together 0.415547; cases 220, distinct days 186]
 086-02.c1_light-volume-up-day-follow-through_1d: no effect (fit: adapted) [main: 0.00184283; t of the mean, cases of one day pooled 0.409461; cases 568, distinct days with cases 408]
 086-02_repeated-heavy-volume-buying-days_1d: no effect (fit: adapted) [main: -0.0100191; t of the weighted mean, cases of one day grouped -0.942332; cases 118, days 75, active bars 595]

@@ -7,6 +7,7 @@
 050-04.b1_range-scaled-week-rise-more-coins_1d: not profitable enough [Sharpe 0.5008; Sharpe minus holding's Sharpe 0.0936; Calmar 0.2361]
 050-04_falling-calm-range-scaled-week-rise_1d: not profitable enough [Sharpe 0.5008; Sharpe minus holding's Sharpe 0.0936; Calmar 0.2361]
 086-01.c1_heavy-volume-off-low-absorption_1d: not profitable enough [Sharpe -0.2058; Sharpe minus holding's Sharpe -0.613; Calmar -0.08888]
+086-01.c2_heavy-up-day-extends-rebound_1d: not profitable enough [Sharpe 0.2537; Sharpe minus holding's Sharpe -0.1535; Calmar 0.09094]
 086-01_heavy-volume-up-day-continuation_1d: not profitable enough [Sharpe -0.0975; Sharpe minus holding's Sharpe -0.5047; Calmar -0.04838]
 086-02.c1_light-volume-up-day-follow-through_1d: not profitable enough [Sharpe 0.446; Sharpe minus holding's Sharpe 0.03876; Calmar 0.164]
 086-02_repeated-heavy-volume-buying-days_1d: not profitable enough [Sharpe -0.03408; Sharpe minus holding's Sharpe -0.4413; Calmar -0.038]
