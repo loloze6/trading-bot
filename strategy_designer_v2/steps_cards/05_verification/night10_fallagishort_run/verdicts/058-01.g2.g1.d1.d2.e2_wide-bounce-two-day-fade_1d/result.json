@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 2-day move on the short side",
+    "value": -0.005959931482286231,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.7863698640191005
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, upper half minus lower half of |forecast|",
+    "value": 0.002308093713134168,
+    "passed": true
+  },
+  "counts": {
+    "cases": 361,
+    "distinct days": 199
+  },
+  "decided_by": "t between -2 and 2: neither the confirm nor the reject rule is met (inconclusive rule). No effect (common/verdicts.md): t in the idea's direction -0.786 (below 1), 361 cases (30 needed).",
+  "reading": "A case is the first short bet (forecast rising in size by at least 2 points from its lowest short level since the last bet) in each 2-bar grid cell from each window's first row, its 2-bar return taken from that bar's close inside the window; the drift is the coin's mean non-overlapping 2-bar return over all its windows; the t clusters cases by UTC day of the signal bar (with D/(D-1) correction); the upper half is |forecast| strictly above the median, the lower half at or below it.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.786 (below 1), 361 cases (30 needed)",
+    "t_in_idea_direction": -0.7863698640191005,
+    "cases": 361
+  }
+}

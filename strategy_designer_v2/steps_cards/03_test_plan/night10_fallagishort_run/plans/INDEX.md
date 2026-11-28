@@ -1,5 +1,6 @@
 033-02.d1_high-close-fades-in-selloffs_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 047-02_falling-agitated-scaled-rise-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+047-03.c1_rally-near-30-day-high-fades_1d: plan (fit: exact) [BCH, AVAX, XMR, INJ, GRT, DOGE, FIL, LTC, 1d, folds A, B, C, D]
 047-03_falling-agitated-scaled-rise-giveback_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 047-04_falling-agitated-range-scaled-fade_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 048-01_falling-agitated-wide-rise-giveback_1d: missing-components: The idea needs the day's rise in 30-day return standard deviations multiplied by the day's range in 30-day mean ranges, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

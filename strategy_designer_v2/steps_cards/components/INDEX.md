@@ -247,3 +247,6 @@ night9_chopstretch_run | 076-01.b1.b1.b1_falling-agitated-wide-close-fade_1d | C
 night9_fallcalmwide_run | 077-03_choppy-agitated-close-position-reversal_1d | ScaledCloseOffMidRange | built: CloseOffMidRangeInUsualMovesComponent {"vol_period": 30}
 night9_chopmonth_run | 077-03_agitated-high-close-later-rise_1d | LaggedCloseLocationInRangeComponent | built: CloseLocationInRangeComponent {"lag": 1, "reference": "low"}
 a4_research_run | 060-01.b1.g1_quiet-day-next-fade_1d | ScaledMoveSmallnessComponent | built: ScaledMoveSmallnessComponent {"vol_period": 20}
+night10_fallagishort_run | 048-01_falling-agitated-wide-rise-giveback_1d | ScaledRiseRangeMultiple | built: ScaledFallRangeMultipleComponent {"lag": 0, "period": 1, "scale": "std", "side": "up", "window": 30}
+night10_fallagishort_run | 086-01_upper-shadow-further-fall_1d | UpperWickInMeanRangesComponent | built: UpperWickComponent {"base_period": 30, "exclude_current": 0, "relative_to": "mean_range"}
+night10_fallagishort_run | 086-02_rejected-rise-share-fall_1d | OpenRiseGivebackShare | built: OpenRiseGivebackShareComponent {}

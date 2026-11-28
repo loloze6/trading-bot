@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of drift-adjusted 3-day return on abs forecast, over the cases",
+    "value": -0.0008148502626713834,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.1818244586962456
+    },
+    "threshold": "slope t <= -2 confirms (with supporting check and >=30 cases on >=30 days); t >= +2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean unusual move in the short direction > 0",
+    "value": 0.00027410757840463094,
+    "passed": true
+  },
+  "counts": {
+    "cases": 562,
+    "distinct days": 288
+  },
+  "decided_by": "The slope's t lies between -2 and +2.",
+  "reading": "Up day recomputed from closes and the falling-agitated profile read from the recorded regime (the detector's components are not recorded); a case is the first short bet (forecast rising in size by >= 2 points from its lowest level on the short side since the last bet) in each 3-bar grid cell of each window, and the slope's t is the ordinary OLS t pooled over all coins.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.182 (not below 1), 562 cases (30 needed)",
+    "t_in_idea_direction": 1.1818244586962456,
+    "cases": 562
+  }
+}
