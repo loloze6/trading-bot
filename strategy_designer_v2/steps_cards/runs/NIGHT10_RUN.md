@@ -57,3 +57,57 @@ research calls per step; **each session's own token cost** (the operator's quest
   effect) against 1 or none in C and D. Expected: (R1) a repair or a clearer test gives a confirmed and profitable
   strategy, its common record and a portfolio update follow; (R2) more confirmed, none profitable; (R3) nothing more
   confirmed. C and D are not continued: nothing confirmed, 1 unclear each.
+- **About 03:22 Paris, run B ended; about 04:20, run A's continuation ended** (budget 25): nothing more confirmed.
+- **The rest of the budget (41.55 USD) is not spent** (decided 04:30 Paris): no run has a line worth following (A's
+  three repairs did not pay, its clearer tests did not confirm), and the account's weekly usage shows a warning.
+
+## Reading
+(2026-11-28, about 04:40 Paris; from the sessions' final reports; the four branches `night10-*` are **not merged**:
+their records, and the measures the components step built on them, wait for the morning merge)
+
+**Outcome: N3, nothing confirmed and profitable.** No candidate, so no common record, no portfolio update: the
+portfolio is v4, unchanged; `addition.py` has nothing to measure (what the night adds: nothing).
+
+| Run | Box | Spent (USD) | Tested | Confirmed | Profitable | "No effect" | Unclear | Stopped at step 3 (a measure missing) | Earlier ideas taken / tested |
+|---|---|---|---|---|---|---|---|---|---|
+| A | falling calm, long | 25.00 | 18 | 1 | 0 | 12 | 5 | 3 | 8 / 2 |
+| B | falling calm, short | 10.21 | 8 | 0 | 0 | 8 | 0 | 2 | 62 / 5 |
+| C | falling agitated, short | 10.19 | 7 | 0 | 0 | 6 | 1 | 3 | 97 / 6 |
+| D | rising agitated, long | 11.23 | 6 | 0 | 0 | 5 | 1 | 1 | 7 / 1 |
+| All | | 56.63 | 39 | 1 | 0 | 31 | 7 | 9 | 174 / 14 |
+With the side pass (1.82): **58.45 USD of the night's 100.**
+
+- **The one confirmation:** A's 050-02.b1 ("a week's rise in a calm downtrend continues", t +2.15), a clearer test of an
+  earlier idea; it fails step 6 on Calmar alone; its three repairs (7.d, called for real for the first time): 2 unclear
+  failing Calmar, 1 "no effect". Two ideas of that line read outside the box (no `side:` line: written by 7.b from an
+  earlier idea without one): visibility worked.
+- **The earlier ideas:** 14 tested of the 174 taken, 0 confirmed (13 "no effect" or unclear; the confirmation is a
+  child of one). The operator's question (could they give specialists?): on these 14, no.
+- **Machinery:** no failed step, no refusal; every idea in its box by the journal but A's two. 9 ideas stopped at step
+  3 for a missing measure; the components step built for them (at least 6.9 USD of the 56.6, in A, B, C), and with
+  10 USD a run most were not tested after the build. One 7.c call ran 21 minutes (D: 4.45 USD for one idea; topic 29).
+  The sessions did not report the usable coin-windows (not asked of the files: to add to the run's table).
+
+**The cost in tokens (the operator's question):**
+| Session (all on Sonnet) | Its own cost (USD) |
+|---|---|
+| Run A (with its continuation) | 2.03 |
+| Run B | 1.42 |
+| Run C | 0.60 |
+| Run D | 1.27 |
+| The earlier ideas' sides (build and pass) | 1.31 |
+| The universe's measurement | 1.53 |
+| The six | **8.16** |
+The designer's own session is the large one: its context holds 774,000 tokens (of 1,000,000), read again at every
+turn, and every message from a session is a turn. The account's 7-day usage shows "warning".
+
+**Step back: what does it show, and what one change would a practitioner make?**
+- In the new data use, 61 ideas tested (the pilot's 22, the night's 39): **1 confirmed, 0 profitable.** In the old one
+  (nights 7 to 9): 157 confirmed of 477, 1 in 3. The seeded run: of 12 strategies confirmed in their own runs, 7 not
+  confirmed on a run's 8 drawn coins.
+- So either the old confirmations leaned on the 6 research coins, or a test on 8 drawn coins (about 115 usable
+  coin-windows, BTC-heavy, half of them young coins) is too weak to confirm a real effect. The night cannot tell which,
+  and more runs of the same kind would not either.
+- **The one change: measure the test before searching more.** 101 strategies are confirmed on the 25 coins' common
+  records: how often does each confirm on 8 drawn coins, and on 12 or 16? No model call. If a real effect confirms
+  rarely on 8 coins, a run needs more coins; if it confirms as on 25, the boxes are the cause.
