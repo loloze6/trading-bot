@@ -1,54 +1,52 @@
 """Spec of ScaledFallRangeMultipleComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'ScaledFallRangeMultipleComponent'
-SETTINGS = [{}, {"period": 6, "lag": 6, "window": 180}, {"period": 1, "lag": 0, "window": 30, "scale": "std"}]
+SETTINGS = [{}, {"period": 6, "lag": 6, "window": 180}, {"period": 1, "lag": 0, "window": 30, "scale": "std"}, {"period": 1, "lag": 0, "window": 30, "scale": "std", "side": "up"}]
 
 
 def hand(df, params):
     import math
-    period = int(params.get("period", 6))
+    p = int(params.get("period", 6))
     lag = int(params.get("lag", 6))
-    window = int(params.get("window", 180))
+    w = int(params.get("window", 180))
     scale = params.get("scale", "mean_abs")
+    side = params.get("side", "down")
     c = [float(x) for x in list(df["close"])]
     h = [float(x) for x in list(df["high"])]
-    lo = [float(x) for x in list(df["low"])]
-    t = len(c) - 1
-    e = t - lag
-    # closes read: e-window-period+1 .. e ; highs/lows read: e-window-period+2 .. e
-    for k in range(e - window - period + 1, e + 1):
-        if c[k] != c[k]:
+    l = [float(x) for x in list(df["low"])]
+    e = len(c) - 1 - lag
+    # rows read: closes e-w-p+1 .. e, highs/lows e-w-p+2 .. e
+    for j in range(e - w - p + 1, e + 1):
+        if c[j] != c[j] or not c[j] > 0:
             return float("nan")
-    for k in range(e - window - period + 2, e + 1):
-        if h[k] != h[k] or lo[k] != lo[k]:
-            return float("nan")
-    for k in range(e - window - period + 1, e + 1):
-        if not c[k] > 0:
+    for j in range(e - w - p + 2, e + 1):
+        if h[j] != h[j] or l[j] != l[j]:
             return float("nan")
     rets = []
-    rngs = []
-    for i in range(e - window + 1, e + 1):
-        rets.append(c[i] / c[i - period] - 1.0)
-        top = h[i - period + 1]
-        bot = lo[i - period + 1]
-        for k in range(i - period + 1, i + 1):
-            if h[k] > top:
-                top = h[k]
-            if lo[k] < bot:
-                bot = lo[k]
-        rngs.append(top - bot)
-    count = len(rets)
+    ranges = []
+    for i in range(e - w + 1, e + 1):
+        rets.append(c[i] / c[i - p] - 1.0)
+        hi = h[i - p + 1]
+        lo = l[i - p + 1]
+        for j in range(i - p + 1, i + 1):
+            if h[j] > hi:
+                hi = h[j]
+            if l[j] < lo:
+                lo = l[j]
+        ranges.append(hi - lo)
+    n = len(rets)
     if scale == "std":
-        mu = sum(rets) / count
+        mu = sum(rets) / n
         ss = 0.0
         for x in rets:
-            ss += (x - mu) * (x - mu)
-        m = math.sqrt(ss / (count - 1))
+            ss += (x - mu) ** 2
+        m = math.sqrt(ss / (n - 1))
     else:
-        m = sum(abs(x) for x in rets) / count
-    b = sum(rngs) / len(rngs)
-    if m == 0 or b == 0:
+        m = sum(abs(x) for x in rets) / n
+    B = sum(ranges) / len(ranges)
+    if not m > 0 or not B > 0:
         return 0.0
-    fall = -(c[e] / c[e - period] - 1.0)
-    if fall < 0:
-        fall = 0.0
-    return fall / m * rngs[-1] / b
+    R = c[e] / c[e - p] - 1.0
+    move = -R if side == "down" else R
+    if move <= 0:
+        return 0.0
+    return (move / m) * (ranges[-1] / B)
