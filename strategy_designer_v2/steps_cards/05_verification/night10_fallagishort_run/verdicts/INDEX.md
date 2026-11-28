@@ -1,0 +1,5 @@
+033-02.d1_high-close-fades-in-selloffs_1d: no effect (fit: exact) [main: 0.000694519; day-clustered t of weighted mean 0.334811; independent days with a nonzero forecast 902, cases 2457]
+047-02_falling-agitated-scaled-rise-fade_1d: no effect (fit: exact) [main: -0.000734573; day-clustered t -0.143119; days with cases 316, cases 617, cases forecast <= -10 247, cases 0 > forecast > -10 370]
+047-03_falling-agitated-scaled-rise-giveback_1d: no effect (fit: exact) [main: -0.000313915; slope t (day-clustered) -0.744697; short bars 1118, distinct days 492]
+047-04_falling-agitated-range-scaled-fade_1d: no effect (fit: exact) [main: -0.00218047; t of the mean, cases of one day pooled -0.441303; case-days 325, cases 652]
+048-05_falling-agitated-up-week-reversal_1d: no effect (fit: adapted) [main: -0.927907; OLS slope t -0.927907; active bars 908, cases (grid bars with forecast < 0) 301]

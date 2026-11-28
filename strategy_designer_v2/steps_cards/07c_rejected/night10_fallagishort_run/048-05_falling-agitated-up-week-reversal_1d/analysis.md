@@ -1,0 +1,23 @@
+---
+line: 7.c no effect
+backtest: 048-05_falling-agitated-up-week-reversal_1d
+idea tested: 048-05_falling-agitated-up-week-reversal
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3437 USD
+---
+## Findings
+- **F1:** In the falling agitated profile the scaled 7-day return does forecast the next 3 days, but as a reversal on both sides together, not only on up weeks. Over all in-profile cases the slope of the 3-day move above drift on the scaled week is -0.030 (t -2.52, 107 non-overlapping cases), and at 1 day it is -0.012 (t -2.99, 327 cases). Outside the profile the sign is the opposite, continuation: +0.008 at 3 days (t +2.53, 847 cases).
+- **F2:** Much of that in-profile reversal comes from down weeks bouncing, which is the long side and outside this research's box. The most negative third of down weeks (scaled -1.45) gains +4.5 % above drift over 3 days, against -1.0 % for the mildest third (-0.16). At 1 day the down-week slope has t -3.41 (176 cases).
+- **F3:** On the tested side, up weeks alone, the 3-day slope is in the idea's direction but too uncertain to count. It is -0.029 with t -0.92 over 53 cases, so the 60-bar standardised forecast (correlation -0.96 with the raw scaled week) cannot show it.
+- **F4:** The up-week effect is concentrated in the largest scaled weeks. The top third of up weeks (scaled 1.01) gives -4.9 % above drift and -3.95 % in total over 3 days, against -0.3 % and -0.7 % for the lowest and middle thirds. The coin drifts up meanwhile (LTC +1.17 %, BCH +0.83 %, XMR +0.76 % per 3 days), which a short works against.
+- **F5:** In the same profile, a single up day measured in 30-day swing units forecasts the next 3 days' fall more clearly than the week does. The 3-day slope on the 1-day scaled return, up days only, is -0.058 with t -3.26 over 57 cases, and the mean move above drift is -1.2 %. For comparison, the 3-day scaled return on up cases gives t -1.68 (45 cases) and the 7-day return gives t -0.92 (53 cases).
+- **F6:** The reversal shows in every coin and in both windows with enough cases, but each piece is small. The all-case 3-day slope is negative for BCH (t -2.22, 22 cases), LTC (t -1.18, 55 cases) and XMR (t -1.42, 30 cases), and in windows w13 (t -2.44, 39 cases) and w17 (t -2.65, 34 cases).
+
+## Ideas
+- `048-05.c1_falling-agitated-up-day-reversal` (from F5, F1, F6): In a falling, agitated market, after a day on which a coin rose, it falls over the next 3 days, more so the larger that day's return in units of its 30-day standard deviation of daily returns.
+- `048-05.c2_falling-agitated-short-rally-reversal` (from F5, F3, F4, F1): In a falling, agitated market, after 3 days in which a coin rose, it falls over the next 3 days, more so the larger its 3-day return in units of its 30-day standard deviation of daily returns.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

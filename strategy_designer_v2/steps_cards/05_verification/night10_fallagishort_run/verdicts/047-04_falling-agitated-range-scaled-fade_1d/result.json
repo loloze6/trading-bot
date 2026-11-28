@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-day fall after new short bets vs coin's falling-agitated grid mean",
+    "value": -0.0021804672374190273,
+    "statistic": {
+      "name": "t of the mean, cases of one day pooled",
+      "value": -0.44130286467823937
+    },
+    "threshold": "above 0 with t >= 2 to confirm; below 0 with t <= -2 to reject; at least 30 case-days"
+  },
+  "supporting_check": {
+    "name": "unusual move of upper |forecast| half minus lower half",
+    "value": 0.014451879003802516,
+    "passed": true
+  },
+  "counts": {
+    "case-days": 325,
+    "cases": 652
+  },
+  "decided_by": "t between -2 and 2 (neither confirm nor reject rule met) No effect (common/verdicts.md): t in the idea's direction -0.441 (below 1), 325 cases (30 needed).",
+  "reading": "the profile is regime 'unknown'; a case is the first new short bet (short forecast magnitude rising >= 2 from its lowest since the last bet) in each 3-bar grid cell from each window's first row, with a 3-bar return inside the window; the baseline pools each coin's profile grid bars over all its windows; the day-pooled t uses a clustered standard error with G/(G-1) correction; the median split puts |forecast| above the median in the upper half and the rest in the lower; fewer than 30 case-days is reported as not observable",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.441 (below 1), 325 cases (30 needed)",
+    "t_in_idea_direction": -0.44130286467823937,
+    "cases": 325
+  }
+}

@@ -1,0 +1,2 @@
+033-02.d1_high-close-fades-in-selloffs_1d: 1 ideas (2 explorations)
+048-05_falling-agitated-up-week-reversal_1d: no ideas: Across the scaled week, the scaled day and two-day moves, horizons of 1 to 5 days, grid offsets, close location, range, volume, distance from recent highs and lows, 60-day depth, weekday, year and coin, no short-side graded pattern in falling agitated markets stands out from chance. The only robust pattern is the rebound after scaled down moves, which is long and already held in the profile map.

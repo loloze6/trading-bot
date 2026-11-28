@@ -1,0 +1,5 @@
+033-02.d1_high-close-fades-in-selloffs_1d: not profitable enough [Sharpe -0.2719; Sharpe minus holding's Sharpe -0.9817; Calmar -0.1044]
+047-02_falling-agitated-scaled-rise-fade_1d: not profitable enough [Sharpe -0.1196; Sharpe minus holding's Sharpe -0.8294; Calmar -0.05596]
+047-03_falling-agitated-scaled-rise-giveback_1d: not profitable enough [Sharpe 0.04377; Sharpe minus holding's Sharpe -0.666; Calmar 0.003495]
+047-04_falling-agitated-range-scaled-fade_1d: not profitable enough [Sharpe -0.1138; Sharpe minus holding's Sharpe -0.8236; Calmar -0.07056]
+048-05_falling-agitated-up-week-reversal_1d: not profitable enough [Sharpe -0.08523; Sharpe minus holding's Sharpe -0.795; Calmar -0.03959]

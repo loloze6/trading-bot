@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of y (3-day return minus coin mean) on |forecast|, grid bars with forecast < 0",
+    "value": -0.9279065189274179,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.9279065189274179
+    },
+    "threshold": "confirm: t <= -2 and mean y < 0; reject: t >= +2 and mean y > 0; fewer than 50 cases: not decidable"
+  },
+  "supporting_check": {
+    "name": "mean y below 0",
+    "value": -0.004514180375030287,
+    "passed": true
+  },
+  "counts": {
+    "active bars": 908,
+    "cases (grid bars with forecast < 0)": 301
+  },
+  "decided_by": "With at least 50 cases, the slope's t and the mean y meet neither the confirm nor the reject rule. No effect (common/verdicts.md): t in the idea's direction +0.928 (below 1), 301 cases (30 needed).",
+  "reading": "Profile on each bar is read from the recorded regime (the 365-bar volatility percentile cannot be rebuilt inside a window) plus the 7-day return > 0 and the 60-day percent move < -10 where computable; the coin's mean 3-day return is the mean over the same non-overlapping grid of all its windows; fewer than 50 cases is reported as not observable.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.928 (below 1), 301 cases (30 needed)",
+    "t_in_idea_direction": 0.9279065189274179,
+    "cases": 301
+  }
+}

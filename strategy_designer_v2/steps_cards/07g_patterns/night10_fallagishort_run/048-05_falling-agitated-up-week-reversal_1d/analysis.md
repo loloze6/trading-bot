@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 048-05_falling-agitated-up-week-reversal_1d
+idea tested: 048-05_falling-agitated-up-week-reversal
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3921 USD
+---
+## Findings
+- **F1:** The tested short-side grading is absent in the bars as well as in the verdict: within up weeks in the profile, the slope t of the 3-day return beyond drift on the scaled week is -0.92, -0.97 and +0.61 on the three 3-day grid offsets (56, 50 and 55 cases), and +0.14 to -1.26 at 1, 2 and 5 days, so a larger scaled up week is not followed by a larger fall.
+- **F2:** Over both sides, the profile's scaled-week slope is negative on every grid (3-day t -2.39, -2.75 and -2.11 on about 115 cases each; 1-day t -3.23 on 352). That reversal comes from down weeks, not up weeks: the two lowest scaled-week quintiles are followed by +3.7 % and +3.3 % beyond drift over 3 days (t 1.78 and 1.80, 23 and 22 cases), and the top quintile by only -2.0 % (t -0.85). This is a long-side rebound, outside this run's short box and already held by the map's 16 falling-agitated long strategies.
+- **F3:** The one-day scaled move shows the same split. Over both sides the slope t is -6.09 at 1 day (352 cases), but on up days alone it is +0.18 (177 cases). On the 3-day grid, the up-day slope t is -3.35 on offset 0 (60 cases) but +1.06 and +0.58 on offsets 1 and 2, so the short-side grading after up days depends on which grid is used.
+- **F4:** Apparent short-side splits do not hold up once days are pooled or sliced differently:
+- **F5:** Outside the profile, up days show no grading either: the slope t is +0.81 on 498 cases and the mean beyond drift is +0.32 %. So there is no short-side effect that lives specifically in falling agitated markets.
+
+## Ideas
+- No ideas: Across the scaled week, the scaled day and two-day moves, horizons of 1 to 5 days, grid offsets, close location, range, volume, distance from recent highs and lows, 60-day depth, weekday, year and coin, no short-side graded pattern in falling agitated markets stands out from chance. The only robust pattern is the rebound after scaled down moves, which is long and already held in the profile map.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
