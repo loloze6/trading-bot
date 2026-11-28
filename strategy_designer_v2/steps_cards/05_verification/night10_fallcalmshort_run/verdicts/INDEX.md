@@ -2,3 +2,4 @@
 061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: exact) [main: -0.00194073; t of the mean, cases' deviations summed per day -0.282845; case-days 44, cases 61]
 064-01_falling-calm-up-day-fades_1d: no effect (fit: adapted) [main: -0.00230752; t of the mean, cases of one day summed together -0.688372; distinct case days 443, cases 746]
 070-01_falling-calm-run-break-fade_1d: no effect (fit: adapted) [main: -0.000345037; t of the mean, cases of one day summed -0.181739; cases 412, distinct days 275, cases run >= 3 216, cases run == 2 196]
+077-01_falling-calm-deep-close-drift_1d: no effect (fit: adapted) [main: 0.000113633; OLS slope t, day-clustered 0.22747; independent cases 961, distinct days 415]
