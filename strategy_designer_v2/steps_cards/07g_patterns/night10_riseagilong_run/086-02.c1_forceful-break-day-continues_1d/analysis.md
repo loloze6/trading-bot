@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 086-02.c1_forceful-break-day-continues_1d
+idea tested: 086-02.c1_forceful-break-day-continues
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3763 USD
+---
+## Findings
+- **F1:** Inside the rising agitated profile, the 5-day returns on the non-overlapping grid show no edge over the coin's normal drift: the mean unusual move is +0.15 % with t 0.14 over 280 cases, against -0.05 % outside the profile. Turning days have a mean of -0.12 % with t -0.13 over 228 days (step 5).
+- **F2:** The force of the turning day does not grade what follows. Within the profile, the day's return in 30-day standard deviations has a Spearman rho of -0.003 (p 0.96, 213 cases) with the next 5 days' unusual move. Its top tercile minus its bottom tercile is +1.9 points, Welch t 0.93.
+- **F3:** The brief's own grading runs the wrong way on turning bars, though not significantly. Counted on overlapping bars, the 5-day unusual move after a break falls as the down run lengthens: +0.25 % after 2 down days (91 bars), -1.4 % after 3 (52), -2.2 % after 4 (14) and -7.5 % after 5 or more (9, t -1.53).
+- **F4:** The depth of the run does not grade the rise either. In profile, the run's depth in 30-day standard deviations has rho -0.06 (p 0.38) and the run's length has rho 0.05 (p 0.39), each tercile difference with |t| under 0.5.
+- **F5:** The only feature near significance in profile is the distance below the 20-day high in 30-day standard deviations, and it does not hold up. Its top-minus-bottom tercile t is 2.16 at 5 days, 1.89 at 3 days and 1.63 at 10 days (rho 0.20, p 0.04, 106 cases). Its per-coin rho changes sign (ETH -0.10, XMR +0.30), and with about 50 tests run this is not distinguishable from chance. It also repeats the held 034-01.b1 "nearness to high 10 days", which already covers the rising profiles.
+- **F6:** Outside the profile, the same nearness to the 20-day high predicts the next 5 days clearly (rho 0.136, p 0.0004, 678 cases), and so does the 20-day return (rho 0.119, p 0.002). That is momentum in other profiles, which the map already holds and which is off this research's box.
+- **F7:** No weekday and no coin stands out in profile. Weekday means range from -2.3 % to +1.8 % with every |t| under 0.9, and coin means range from -2.4 % (XRP, 40 cases) to +1.3 % (LTC, 118 cases).
+- **F8:** The book's gain rests on a few days. Its 20 best days sum to +1.96 and its 20 worst to -1.44, against +0.81 over all 839 active coin-days. The total move of +0.54 % per case is 2.0 times the 0.26 % cost of a trade and comes entirely from drift.
+
+## Ideas
+- No ideas: In rising agitated markets, neither the turning day's force nor the run's length or depth grades the following rise, and longer runs even point the other way (F2–F4). The only pattern near significance, nearness to the 20-day high, does not stand out after the angles searched and is already held (F5). The rest looks like chance or is off the box (F6, F7). We looked at the forecast's terciles, run length and depth, close location, 5- and 20-day returns, distance to the 20- and 60-day highs and the 20-day low, volume, day range, 60-day return, weekday, coin, year, the 3-, 5- and 10-day horizons, and the book's extreme days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

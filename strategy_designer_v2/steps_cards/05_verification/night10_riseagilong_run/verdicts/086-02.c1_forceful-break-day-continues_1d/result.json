@@ -1,0 +1,35 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 5-day move of the bets",
+    "value": -0.0011878869415700058,
+    "statistic": {
+      "name": "t clustered by day",
+      "value": -0.12712679793762907
+    },
+    "threshold": "positive with t >= 2 to confirm; t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "unusual move above-median forecast minus at-or-below (Welch t 0.217)",
+    "value": 0.0035635736155232647,
+    "passed": true
+  },
+  "counts": {
+    "cases": 338,
+    "distinct days": 228,
+    "cases above median": 169,
+    "cases at or below median": 169
+  },
+  "decided_by": "Inconclusive: the numbers meet neither the confirm nor the reject rule. No effect (common/verdicts.md): t in the idea's direction -0.127 (below 1), 169 cases (30 needed).",
+  "reading": "A case is the first bet (forecast rise of at least 2 from its low since the last bet) in each 5-bar grid cell from each window's first row, the day t uses the day-clustered standard error with a G/(G-1) correction, the plan's minimum of 30 cases on 30 days gives 'not observable' when not met, and active bars in a window's first 3 bars are left out of the situation check.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.127 (below 1), 169 cases (30 needed)",
+    "t_in_idea_direction": -0.12712679793762907,
+    "cases": 169
+  }
+}

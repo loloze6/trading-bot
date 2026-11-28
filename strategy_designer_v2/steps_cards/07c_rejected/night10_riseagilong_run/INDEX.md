@@ -1,5 +1,6 @@
 041-01.b1_rising-agitated-rise-continues_1d: 2 ideas (3 explorations)
 086-01.c1_forceful-turn-day-continues_1d: 1 ideas (2 explorations)
 086-01_first-up-after-long-down-run_1d: 2 ideas (2 explorations)
+086-02.c1_forceful-break-day-continues_1d: 1 ideas (2 explorations)
 086-02_first-up-after-deep-down-run_1d: 1 ideas (2 explorations)
 087-01_agitated-rise-scaled-burst-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
