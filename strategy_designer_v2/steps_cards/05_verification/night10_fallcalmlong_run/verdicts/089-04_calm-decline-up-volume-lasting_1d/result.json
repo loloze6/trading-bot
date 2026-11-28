@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of the 10-bar excess return on the forecast (cases forecast > 0, day-clustered)",
+    "value": -0.0017257664397591663,
+    "statistic": {
+      "name": "t of the OLS slope, day-clustered",
+      "value": -1.0793039517278362
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and second-half check passes; reject: slope < 0 with t <= -2; at least 30 cases on at least 30 distinct days"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess return over t+5 to t+10 > 0",
+    "value": -0.0055744519362704486,
+    "passed": false
+  },
+  "counts": {
+    "cases": 138,
+    "distinct days": 84
+  },
+  "decided_by": "The slope has |t| < 2 (inconclusive rule). No effect (common/verdicts.md): t in the idea's direction -1.079 (below 1), 138 cases (30 needed).",
+  "reading": "The falling calm profile is read from the recorded regime (the detector's 'unknown' regime, the one left when neither the trend veto nor the volatility veto fires) and the up side of the situation as the raw centred share > 0; the slope is the OLS slope of excess return on forecast with a day-clustered standard error; the coin's mean 10-bar return is the mean over the non-overlapping 10-bar grids of all its windows, and the second-half excess return is close[t+10]/close[t+5]-1 minus the coin's mean 5-bar return over the non-overlapping 5-bar grids of all its windows.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -1.079 (below 1), 138 cases (30 needed)",
+    "t_in_idea_direction": -1.0793039517278362,
+    "cases": 138
+  }
+}

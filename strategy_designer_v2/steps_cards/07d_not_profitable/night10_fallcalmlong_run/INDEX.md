@@ -9,3 +9,4 @@
 086-01_heavy-volume-up-day-continuation_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 086-02_repeated-heavy-volume-buying-days_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 089-01_calm-decline-up-volume-share_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 4 of step 6's measures failed, at most 2)
+089-04_calm-decline-up-volume-lasting_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 3 of step 6's measures failed, at most 2)

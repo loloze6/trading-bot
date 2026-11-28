@@ -9,3 +9,4 @@
 086-01_heavy-volume-up-day-continuation_1d: not profitable enough [Sharpe -0.0975; Sharpe minus holding's Sharpe -0.5047; Calmar -0.04838]
 086-02_repeated-heavy-volume-buying-days_1d: not profitable enough [Sharpe -0.03408; Sharpe minus holding's Sharpe -0.4413; Calmar -0.038]
 089-01_calm-decline-up-volume-share_1d: not profitable enough [Sharpe 0.1349; Sharpe minus holding's Sharpe -0.2723; Calmar 0.03917]
+089-04_calm-decline-up-volume-lasting_1d: not profitable enough [Sharpe 0.1438; Sharpe minus holding's Sharpe -0.2634; Calmar 0.04243]

@@ -9,3 +9,6 @@
 086-01_heavy-volume-up-day-continuation_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 086-02_repeated-heavy-volume-buying-days_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 089-01_calm-decline-up-volume-share_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
+089-02_calm-decline-up-down-volume-ratio_1d: missing-components: The idea compares average volume per up day with average volume per down day. No component computes per-side averages or [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
+089-03_calm-decline-thinning-down-volume_1d: missing-components: The idea needs the mean volume of down days (close below the prior close) in the last 10 bars, set [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
+089-04_calm-decline-up-volume-lasting_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
