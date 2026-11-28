@@ -112,7 +112,7 @@ turn, and every message from a session is a turn. The account's 7-day usage show
   records: how often does each confirm on 8 drawn coins, and on 12 or 16? No model call. If a real effect confirms
   rarely on 8 coins, a run needs more coins; if it confirms as on 25, the boxes are the cause.
 
-## The morning merge (2026-11-28, about 12:30 Paris; the operator's go, "Go for all")
+## The morning merge (2026-11-28, about 09:40 Paris; the operator's go, "Go for all")
 `night_merge` on the four branches, in the night's order (A, B, C, D), onto `ccr-6624e33e-aakrpv` at `d040bf5374`:
 | Branch | Conflicts resolved by rule |
 |---|---|
