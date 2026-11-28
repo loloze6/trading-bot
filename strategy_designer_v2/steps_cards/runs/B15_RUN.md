@@ -38,5 +38,12 @@ A limit known before the run: these 108 were confirmed on the 25 coins, of which
 were first found on the old 6 research coins; the shares say what the test sees of effects already selected this way,
 not of new ideas.
 
+## During the run
+- About 12:15 Paris: two defects of the tool, found by shard 1 on its second strategy and fixed (no result affected):
+  17 of the 30 stored records have no `measure` field (made before it existed: their own run's `measure.py`, as
+  `common_record` does); the result folder was named `results/`, which git ignores here (now `draws/`). The three
+  shards stop, pull and resume (a finished step 4 is not run again).
+- An hourly strategy runs on the coins that have an hourly file (19 of our coins): as in its stored record.
+
 ## Reading
 (after the run)

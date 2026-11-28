@@ -8,7 +8,7 @@ For each sampled strategy (confirmed by step 5 on its common record):
    as the common record did (no data_use.json), on the 25 coins as a run does (data_use.json: the direction check on
    the check half), then on DRAWS draws of 8, 12 and 16 coins (the research draw's rule, coins.research_draw, the
    size its only change; the seed is the draw's name), each as a run does;
-3. one small result file per strategy is written in results/ (committed).
+3. one small result file per strategy is written in draws/ (committed).
 
 WHY THIS CANNOT LEAK: nothing changes how a bar is read. Step 4 and step 5 are called unchanged; a draw is a folder of
 links to some of the record's coins. The coins come from portfolio_group(): no final coin is read.
@@ -29,7 +29,7 @@ import common_record as cr  # noqa: E402
 
 SEED, SAMPLE_SIZE = "B15", 30
 SIZES, DRAWS = (8, 12, 16), 40
-RESULTS, SAMPLE = HERE / "results", HERE / "sample.json"
+RESULTS, SAMPLE = HERE / "draws", HERE / "sample.json"     # not "results": git ignores that name here
 
 
 def confirmed_records():
@@ -96,7 +96,9 @@ def one(key, python, work):
     if out.exists():
         return
     stored = json.loads((STEPS / "orchestration" / "common_record" / run / f"{rid}.json").read_text())
-    plan, measure = STEPS / stored["plan"], STEPS / stored["measure"]
+    plan = STEPS / stored["plan"]
+    # the record's measure.py; a record made before the field existed used its own run's (common_record's default)
+    measure = STEPS / stored.get("measure", f"05_verification/{run}/verdicts/{rid}/measure.py")
     windows = json.loads(cr.WINDOWS.read_text())
     group = coins.portfolio_group()
     record = work / "records" / run / rid
