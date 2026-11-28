@@ -8,3 +8,4 @@
 086-01.c1_heavy-volume-off-low-absorption_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 086-01_heavy-volume-up-day-continuation_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 086-02_repeated-heavy-volume-buying-days_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
+089-01_calm-decline-up-volume-share_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
