@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "day-clustered t of the slope of next-day excess return on forecast (forecast > 0 bars, pooled)",
+    "value": 4.3815005937744924e-06,
+    "statistic": {
+      "name": "day-clustered OLS slope t",
+      "value": 0.015483228670200693
+    },
+    "threshold": "t >= 2 with positive mean excess return confirms; t <= -2 rejects; otherwise inconclusive; min 100 bars"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return over forecast > 0 bars",
+    "value": -0.0011406763794976856,
+    "passed": false
+  },
+  "counts": {
+    "bars with forecast > 0": 1852,
+    "days": 1033
+  },
+  "decided_by": "The slope's t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction +0.015 (below 1), 1033 cases (30 needed).",
+  "reading": "The situation is a positive raw scaled one-day rise (recorded last_history_value, recomputed from closes inside the window where missing) with a long forecast; the slope's t uses OLS with standard errors clustered by UTC day (scores summed per day, G/(G-1) correction); the coin's mean daily return is over all its bars' next-day returns in all windows; the 100-bar minimum counts forecast > 0 bars with a next-day return.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.015 (below 1), 1033 cases (30 needed)",
+    "t_in_idea_direction": 0.015483228670200693,
+    "cases": 1033
+  }
+}

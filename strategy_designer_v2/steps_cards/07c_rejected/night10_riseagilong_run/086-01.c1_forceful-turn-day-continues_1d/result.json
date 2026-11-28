@@ -1,0 +1,36 @@
+{
+  "line": "7.c",
+  "backtest": "086-01.c1_forceful-turn-day-continues_1d",
+  "step5": "no effect",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.45126279999999996,
+  "findings": {
+    "F1": "The tested situation shows no rise. On the first up day after 2 or more down closes, inside the rising agitated profile, the next 3 days' unusual move is -0.80 % (t -0.74, 172 cases on 118 days). It is also negative over 1 day (-0.71 %, t -1.05), 5 days (-0.81 %, t -0.50) and 10 days (-0.33 %, t -0.11). The step-5 measure agrees: -0.18 %, t -0.28, 370 cases.",
+    "F2": "The market did the opposite of the brief's grading. The longer the down run, the weaker the days after the turn:",
+    "F3": "The rebound comes during the down run, not after the first up day. Bought at the close of the 3rd or later consecutive down day inside the profile, the coin's unusual move is +1.61 % over the next day (t 1.92, 129 cases, 106 days) and +2.26 % over 3 days (t 1.42, 100 cases). After the 2nd or later down day it is a weaker +0.39 % over 1 day and +0.42 % over 3 days. The slope on the run's length so far is positive over 1 day (t 1.26, 685 cases) and 3 days (t 1.24, 432 cases).",
+    "F4": "Grading by how forceful the up day is gives only a weak, unconfirmed tilt. On break days the slope on the up day's size in 30-day swings is positive over 3 days (t 1.57) and 5 days (t 1.54). The highest tercile shows +1.87 % over 3 days (t 0.82, 45 cases), the lowest +0.04 %.",
+    "F5": "The failure is not one coin or one period. Over 3 days, break-day unusual moves are:",
+    "F6": "The profile's strongest move is continuation after strength, which is off the theme:"
+  },
+  "ideas": [
+    {
+      "idea": "In a rising, agitated market, while a coin is in a run of consecutive down days, the coin rises over the next 1 to 3 days, and the longer that run has lasted so far, the larger that rise.",
+      "consequence": "A trader long in a rising agitated market would buy into the third or later down day rather than wait for the first up day, whose rebound is already spent by its close.",
+      "name": "buy within long down run",
+      "from": "F3, F1, F2",
+      "side": "long",
+      "profile": "rising agitated",
+      "refs": [
+        "F3",
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "086-01.c1.c1_buy-within-long-down-run"
+  ],
+  "discovery_ids": [],
+  "no_ideas": null
+}
