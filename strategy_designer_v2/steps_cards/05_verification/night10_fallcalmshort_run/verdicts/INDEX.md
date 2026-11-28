@@ -1,3 +1,4 @@
+050-03.c1_calm-downtrend-3-day-fall-continues_1d: no effect (fit: exact) [main: 0.00194295; day-clustered t 0.58162; cases 659, distinct days 415]
 050-03_falling-calm-range-scaled-week-fall_1d: no effect (fit: adapted) [main: -0.004176; t of the mean, cases of one day taken together -0.983357; grid cases 585, distinct days 291]
 061-01_falling-calm-scaled-rise-fade_1d: no effect (fit: exact) [main: -0.00194073; t of the mean, cases' deviations summed per day -0.282845; case-days 44, cases 61]
 064-01_falling-calm-up-day-fades_1d: no effect (fit: adapted) [main: -0.00230752; t of the mean, cases of one day summed together -0.688372; distinct case days 443, cases 746]

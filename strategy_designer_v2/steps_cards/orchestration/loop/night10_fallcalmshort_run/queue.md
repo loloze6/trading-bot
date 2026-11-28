@@ -1,30 +1,30 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 4.90 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 5.96 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 050-03.c1_calm-downtrend-3-day-fall-continues | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 2 | 061-01.c1_falling-calm-decline-continues | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 3 | 064-01.c1_feeble-bounces-fail-in-calm-declines | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 4 | 070-01.c1_deep-run-bounce-fades | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 5 | 050-03.c2_calm-downtrend-near-low-continuation | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 6 | 061-01.c2_low-close-keeps-sliding | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 7 | 070-01.c2_weak-bounce-gives-back | 7.c | 1 | 0.2 | 0.1 | candidate |
-| 8 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 9 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 10 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 11 | 040-02.b1_calm-downtrend-falls-continue-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 12 | 050-01.b1_calm-downtrend-fall-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
-| 13 | 064-01_falling-calm-stretch-keeps-falling | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
-| 14 | 081-01_falling-calm-high-close-fade | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
-| 15 | 075-02_falling-calm-down-stretch-falls | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
-| 16 | 081-02_falling-calm-decline-depth-high-close-fade | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
-| 17 | 081-03_falling-calm-depth-times-high-close-fade | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
-| 18 | 077-01.c1_short-window-peak-depth-continuation | 7.c | 2 | 0.2 | 0.0667 | candidate |
-| 19 | 077-01.c2_calm-downtrend-fall-continuation | 7.c | 2 | 0.2 | 0.0667 | candidate |
-| 20 | 032-02.g1_calm-decline-fourteen-day-continuation | 7.g | 1 | 0.1218 | 0.0609 | candidate |
-| 21 | 040-02.g1_calm-downtrend-falls-persist | 7.g | 1 | 0.1218 | 0.0609 | candidate |
+| 1 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 2 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 3 | 040-01.b1_calm-downtrend-falls-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 4 | 040-02.b1_calm-downtrend-falls-continue-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 5 | 050-01.b1_calm-downtrend-fall-continuation-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
+| 6 | 061-01.c1_falling-calm-decline-continues | 7.c | 1 | 0.1818 | 0.0909 | candidate |
+| 7 | 064-01.c1_feeble-bounces-fail-in-calm-declines | 7.c | 1 | 0.1818 | 0.0909 | candidate |
+| 8 | 070-01.c1_deep-run-bounce-fades | 7.c | 1 | 0.1818 | 0.0909 | candidate |
+| 9 | 050-03.c2_calm-downtrend-near-low-continuation | 7.c | 1 | 0.1818 | 0.0909 | candidate |
+| 10 | 061-01.c2_low-close-keeps-sliding | 7.c | 1 | 0.1818 | 0.0909 | candidate |
+| 11 | 070-01.c2_weak-bounce-gives-back | 7.c | 1 | 0.1818 | 0.0909 | candidate |
+| 12 | 064-01_falling-calm-stretch-keeps-falling | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
+| 13 | 081-01_falling-calm-high-close-fade | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
+| 14 | 075-02_falling-calm-down-stretch-falls | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
+| 15 | 081-02_falling-calm-decline-depth-high-close-fade | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
+| 16 | 081-03_falling-calm-depth-times-high-close-fade | 7.g discovery | 2 | 0.2118 | 0.0706 | candidate |
+| 17 | 032-02.g1_calm-decline-fourteen-day-continuation | 7.g | 1 | 0.1218 | 0.0609 | candidate |
+| 18 | 040-02.g1_calm-downtrend-falls-persist | 7.g | 1 | 0.1218 | 0.0609 | candidate |
+| 19 | 050-03.c1.c1_calm-downtrend-fall-continues-5-days | 7.c | 2 | 0.1818 | 0.0606 | candidate |
+| 20 | 077-01.c1_short-window-peak-depth-continuation | 7.c | 2 | 0.1818 | 0.0606 | candidate |
+| 21 | 077-01.c2_calm-downtrend-fall-continuation | 7.c | 2 | 0.1818 | 0.0606 | candidate |
 | 22 | 059-02_calm-decline-drop-continues | 7.g discovery | 3 | 0.2118 | 0.0529 | candidate |
 | 23 | 059-04_calm-decline-drop-late-buildup | 7.g discovery | 3 | 0.2118 | 0.0529 | candidate |
 | 24 | 061-04_falling-calm-scaled-fall-continues | 7.g discovery | 3 | 0.2118 | 0.0529 | candidate |
@@ -74,6 +74,7 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | - | 077-01_falling-calm-deep-close-drift | 7.g discovery | 1 | 0.2118 | 0.1059 | tested: step 5 no effect (+0.23); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 086-01_down-day-volume-share-drift | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 -; step 6 - |
 | - | 086-02_down-up-volume-ratio-drift | step 2 | 0 | 0.0896 | 0.0896 | tested: step 5 -; step 6 - |
+| - | 050-03.c1_calm-downtrend-3-day-fall-continues | 7.c | 1 | 0.1818 | 0.0909 | tested: step 5 no effect (+0.58); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 060-02.g2_calm-fall-volume-dry-up | 7.g | 3 | 0.1218 | 0.0304 | duplicate of 060-01.g2_calm-fall-volume-dry-up |
 | - | 060-02.d2.d2.g1_calm-falling-volume-dry-up | 7.g | 5 | 0.1218 | 0.0203 | duplicate of 060-01.g2_calm-fall-volume-dry-up |
 | - | 058-02.b1.b2.b1.b2.g1_falling-calm-range-low-continuation | 7.g | 5 | 0.1218 | 0.0203 | duplicate of 058-02.b1.b2.b1.g2_falling-calm-range-low-continuation |
