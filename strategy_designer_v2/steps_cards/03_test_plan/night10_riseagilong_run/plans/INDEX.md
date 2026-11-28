@@ -1,3 +1,4 @@
+041-01.b1_rising-agitated-rise-continues_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 086-01.c1_forceful-turn-day-continues_1d: plan (fit: exact) [LTC, ETH, XMR, INJ, GRT, DOGE, XRP, TRX, 1d, folds A, B, C, D]
 086-01_first-up-after-long-down-run_1d: plan (fit: adapted) [LTC, ETH, XMR, INJ, GRT, DOGE, XRP, TRX, 1d, folds A, B, C, D]
 086-02_first-up-after-deep-down-run_1d: plan (fit: adapted) [LTC, ETH, XMR, INJ, GRT, DOGE, XRP, TRX, 1d, folds A, B, C, D]
