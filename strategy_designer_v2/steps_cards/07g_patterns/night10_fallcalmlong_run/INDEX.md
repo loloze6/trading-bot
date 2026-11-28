@@ -7,4 +7,5 @@
 086-01.c2_heavy-up-day-extends-rebound_1d: no ideas: In falling calm markets the brief's heavy-volume effect is absent, and at 3 to 5 days it points the wrong way (F2, F3). The only graded pattern, prior 5-day momentum at 3 to 5 days (F4), flips at 10 days and does not survive the roughly 36 feature-and-horizon angles examined (F5). No pattern stands out enough to justify a new long idea in this box.
 086-02.c1_light-volume-up-day-follow-through_1d: no ideas: I looked at the forecast, volume on up and down days, prior 5- and 10-day returns, range, close position, weekday, coin and window. Every long-side pattern in falling calm markets (F2–F4) changes sign or vanishes when the 5-day grid is shifted or all bars are used, so none can be told from chance across this many angles.
 086-02.c2_quiet-three-day-rise-continuation_1d: 0 ideas, 2 discoveries (2 explorations)
+089-02_calm-decline-up-down-volume-ratio_1d: 0 ideas, 2 discoveries (2 explorations)
 089-04_calm-decline-up-volume-lasting_1d: 0 ideas, 1 discoveries (2 explorations)

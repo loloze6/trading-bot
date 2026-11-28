@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 5-bar excess return (forecast > 0, non-overlapping grid)",
+    "value": -0.00650193140793224,
+    "statistic": {
+      "name": "t of the weighted mean, clustered by day",
+      "value": -0.9391431929163366
+    },
+    "threshold": "confirm: above 0 with t >= 2 (and Spearman > 0); reject: below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation forecast vs 5-bar excess return",
+    "value": 0.037528887731259064,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast > 0": 347,
+    "distinct days": 203
+  },
+  "decided_by": "The t lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive. No effect (common/verdicts.md): t in the idea's direction -0.939 (below 1), 347 cases (30 needed).",
+  "reading": "The falling calm profile is read from the recorded regime ('unknown' = neither veto fired, since the 365-bar volatility percentile cannot be rebuilt from the windows' bars) and the lean from the raw log ratio being above 0 with a long forecast; the coin's mean 5-bar return is the mean over all its non-overlapping grid returns of all its windows; the clustered t uses the weighted-mean deviations summed per UTC day with a G/(G-1) correction; the plan's minimum counts lead to 'not observable' as the workflow requires.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.939 (below 1), 347 cases (30 needed)",
+    "t_in_idea_direction": -0.9391431929163366,
+    "cases": 347
+  }
+}

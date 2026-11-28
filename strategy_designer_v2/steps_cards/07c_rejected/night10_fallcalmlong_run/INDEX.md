@@ -13,4 +13,5 @@
 086-02.c2_quiet-three-day-rise-continuation_1d: 2 ideas (2 explorations)
 086-02_repeated-heavy-volume-buying-days_1d: 2 ideas (2 explorations)
 089-01_calm-decline-up-volume-share_1d: 1 ideas (3 explorations)
+089-02_calm-decline-up-down-volume-ratio_1d: 3 ideas (2 explorations)
 089-04_calm-decline-up-volume-lasting_1d: 2 ideas (2 explorations)

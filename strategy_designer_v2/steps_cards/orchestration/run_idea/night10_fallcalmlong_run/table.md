@@ -15,7 +15,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | 050-02.b1.d3_rise-with-room-below-high | 050-02.b1_calm-downtrend-week-rise-more-coins | plan | no effect (+0.67) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 050-02.b1.d3.c1_scaled-weekly-rise-short-carry, 050-02.b1.d3.c2_scaled-three-day-rise-carries; 7.g: 050-02.b1.d3.g1_calm-downtrend-two-week-scaled-rise | 1.07 | 7.1 |
 | 050-04.b1_range-scaled-week-rise-more-coins | 050-04_falling-calm-range-scaled-week-rise | plan | inconclusive (+1.83) | not profitable enough (failed: Calmar) | - | 7.b: no ideas: The small positive carry-on after a calm-downtrend weekly rise is already measured on all the data available (F1). It does not grow with the size of the rise (F2, F3), and it is not concentrated in a horizon, coin, year or kind of signal day (F4, F5), so no amendment would give a clear answer.; 7.g: no ideas: In falling calm markets the long side shows no graded carry-on from the scaled weekly rise (F2, F3). The one long pattern that stands out, nearness to the recent high, is not separable from the tested measure, is unstable by year and coin, and is already held by 035-01.b1 (F4, F5). Nothing else among the angles examined stands out from chance (F6). | 1.20 | 7.3 |
 | 089-01_calm-decline-up-volume-share | - | plan | no effect (-1.14) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 089-01.c1_calm-decline-down-volume-exhaustion | 1.68 | 6.3 |
-| 089-02_calm-decline-up-down-volume-ratio | - | missing-components | - | - | - | - | 0.05 | 0.3 |
 | 089-03_calm-decline-thinning-down-volume | - | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 089-04_calm-decline-up-volume-lasting | - | plan | no effect (-1.08) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Calmar) | - | 7.c: 089-04.c1_heavy-up-day-volume-rebounds, 089-04.c2_swelling-volume-in-calm-decline; 7.g: 0 ideas, 1 discoveries (2 explorations) | 1.03 | 7.0 |
 | 050-02.b2_calm-downtrend-week-rise-five-days | 050-02_falling-calm-scaled-week-rise-continuation | plan | no effect (-0.21) | not profitable enough (failed: Calmar) | - | 7.c: 050-02.b2.c1_calm-downtrend-fortnight-rise-carries; 7.g: 050-02.b2.g1_calm-downtrend-climb-off-low | 1.27 | 7.1 |
@@ -24,21 +23,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 089-04.c1_heavy-up-day-volume-rebounds | 089-04_calm-decline-up-volume-lasting | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 086-01.c2_heavy-up-day-extends-rebound | 086-01_heavy-volume-up-day-continuation | plan | no effect (+0.68) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 086-01.c2.c1_quiet-up-day-extends-rebound, 086-01.c2.c2_strong-rebound-up-day-continues; 7.g: no ideas: In falling calm markets the brief's heavy-volume effect is absent, and at 3 to 5 days it points the wrong way (F2, F3). The only graded pattern, prior 5-day momentum at 3 to 5 days (F4), flips at 10 days and does not survive the roughly 36 feature-and-horizon angles examined (F5). No pattern stands out enough to justify a new long idea in this box. | 1.04 | 7.1 |
 | 086-02.c2_quiet-three-day-rise-continuation | 086-02_repeated-heavy-volume-buying-days | plan | no effect (+0.05) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-02.c2.c1_quiet-up-day-continuation, 086-02.c2.c2_heavy-volume-down-day-absorption; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.06 | 7.0 |
+| 089-02_calm-decline-up-down-volume-ratio | - | plan | no effect (-0.94) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 089-02.c1_calm-decline-down-day-volume-flush, 089-02.c2_calm-decline-rising-volume, 089-02.c3_down-day-volume-lean-rebound; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.91 | 7.2 |
 
 ## Consumption
-20 ideas, 16.20 USD, 108.9 minutes in all.
+20 ideas, 18.06 USD, 115.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.57 | 9.3 |
-| step4_backtest | 0.00 | 57.3 |
-| step5_verdict | 2.86 | 10.6 |
+| step3_plan | 3.51 | 9.6 |
+| step4_backtest | 0.00 | 60.9 |
+| step5_verdict | 3.03 | 11.2 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
-| step7_7.g | 4.32 | 12.2 |
+| step7_7.g | 4.70 | 13.5 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.67 | 1.8 |
 | step7_7.b | 1.67 | 4.9 |
-| step7_7.c | 4.11 | 12.0 |
+| step7_7.c | 4.47 | 13.2 |
 | similarity_check | 0.00 | 0.1 |

@@ -1,36 +1,40 @@
-# UpDayVolumeShareComponent: night10_fallcalmlong_run | 089-01_calm-decline-up-volume-share_1d | UpDayVolumeShare
+# UpDayVolumeShareComponent: night10_fallcalmlong_run | 089-04.c1_heavy-up-day-volume-rebounds_1d | UpDayVolumeToUsualVolumeComponent
 
 ## attempt 1
 
 answer: built
 class: UpDayVolumeShareComponent
-settings: {"period": 20, "form": "share"}
-reason: No component of the catalogue splits a window's volume by the direction of each bar's close-to-close move. `TopVolumesShareComponent` ranks volumes by size and `VolumeRatioComponent` compares volume levels, so a new class computes the up-day volume share. The "centred" form (share − 0.5) needs its own setting because no config step adds a constant (`standardise` does not centre).
+settings: {"period": 20, "base": "mean_volume", "base_period": 60}
+reason: `UpDayVolumeShareComponent` already sums the volume of the up bars among the last `period` bars, but it divides that sum by the same window's total volume. The wish divides the same sum by the mean volume of the last `base_period` bars. That is the same measure against another base, so the base becomes a setting. Its default ("window") keeps today's output unchanged.
 
 table: Regime measures
-row: | `UpDayVolumeShareComponent` | `period` (20), `form` ("share") | U / V, where U = sum of volume[i] over i = t-`period`+1 .. t with close[i] > close[i-1], and V = sum of volume[t-`period`+1 .. t], bar t included. `form` "share": U / V. `form` "centred": U / V − 0.5 | "share": 0 to 1, never negative, no direction. It is 0 when no bar of the window closed up and 1 when every bar did, rising as more of the window's volume falls on up bars. "centred": −0.5 to +0.5, signed; positive when more than half the window's volume fell on up bars, negative when less | regime measure | dimensionless (share of the window's volume; "centred": minus 0.5) | `period` + 1 (21) | close (last `period` + 1 rows), volume (last `period` rows). A NaN close or NaN volume among them gives NaN. V not above 0 gives NaN (never on real bars). These settings raise when the component is built: `period` < 1, `form` other than "share" or "centred" | stateless. A flat bar (equal close) counts as not up, and its volume stays in V. The value is continuous in the volumes. It steps when a bar's close crosses its prior close, because that bar's volume moves in or out of U. `form` "share" (default) is the plain share. "centred" subtracts 0.5, which no config step gives, hence the setting. Not `TopVolumesShareComponent`. On 1d bars the defaults give the share of the last 20 days' volume traded on up days. No `scaling_factor`: scale it with transforms |
+row: | `UpDayVolumeShareComponent` | `period` (20), `form` ("share"), `base` ("window"), `base_period` (60) | U / D, where U = sum of volume[i] over i = t-`period`+1 .. t with close[i] > close[i-1]. `base` "window": D = sum of volume[t-`period`+1 .. t], bar t included. `form` "share": U / D. `form` "centred": U / D − 0.5. `base` "mean_volume": D = mean(volume[t-`base_period`+1 .. t]), bar t included, and the output is U / D. With `period` 20, "mean_volume" and `base_period` 60: (sum of the up days' volume over days t-19 .. t) / mean(volume[t-59 .. t]) | "window", "share": 0 to 1, never negative, no direction. It is 0 when no bar of the window closed up and 1 when every bar did. "window", "centred": −0.5 to +0.5, signed. "mean_volume": 0 and up, never negative, no direction. It is 0 when no up day is in the window and grows as the up days carry more volume against usual volume. It is at most `base_period` when `base_period` >= `period` (the base then holds every bar of the window), 60 at the wished settings | regime measure | "window": share of the window's volume ("centred": minus 0.5). "mean_volume": mean bar volumes (usual daily volumes on 1d bars) | `period` + 1 (21) with "window"; max(`period` + 1, `base_period`) with "mean_volume" (60 at the wished settings) | close (last `period` + 1 rows), volume (last `period` rows; last max(`period`, `base_period`) rows with "mean_volume"). A NaN close or NaN volume among the rows read gives NaN. A D not above 0 gives NaN (never on real bars). These settings raise when the component is built: `period` < 1, `form` other than "share" or "centred", `base` other than "window" or "mean_volume", `base_period` < 1, `form` "centred" with `base` "mean_volume" | stateless. `base` "window" (default) is the original output, unchanged, and `base_period` is read only by "mean_volume". "mean_volume" is the up days' summed volume counted in usual bar volumes. Unlike the share, it grows with the number of up days and with how heavy they trade. A flat bar (equal close) counts as not up. The value is continuous in the volumes. It steps when a bar's close crosses its prior close, because that bar's volume moves in or out of U. Not `UpDownMeanVolumeRatioComponent`. On 1d bars the wished settings give the volume traded on up days over the last 20 days, in 60-day mean daily volumes. No `scaling_factor`: scale it with transforms |
 
 ```python class
 class UpDayVolumeShareComponent(SubStrategyComponent):
     """
-    Share of the window's volume that fell on up bars:
+    Volume traded on up bars, against a volume base, on every bar:
 
-        U = sum of volume[i] for i = t-period+1 .. t with close[i] > close[i-1]
-        V = sum of volume[i] for i = t-period+1 .. t            (bar t included)
-        form = "share" (default): raw_value = U / V
-        form = "centred":         raw_value = U / V - 0.5
+        U = sum of volume[i] over i = t-period+1 .. t with close[i] > close[i-1]   (bar t included)
+        base = "window" (default):  D = sum of volume[t-period+1 .. t]
+        base = "mean_volume":       D = mean(volume[t-base_period+1 .. t])          (bar t included)
+        form = "share" (default):   raw_value = U / D
+        form = "centred":           raw_value = U / D - 0.5   (only with base "window")
 
-    Range: "share" 0 to 1, never negative, no direction (0 = no up bar in the window, 1 = every bar up);
-    "centred" -0.5 to +0.5, signed, positive when more than half the window's volume fell on up bars.
-    A flat bar (equal close) is not an up bar; its volume stays in V.
-    Warm-up: period + 1 rows (close[t-period] is the base of the first bar's move), bar t included.
-    NaN: a NaN close in the last period + 1 rows or a NaN volume in the last period rows gives NaN;
-    V not above 0 gives NaN (never on real bars, whose volume is positive).
-    Building the component raises for a period below 1 or a form other than "share" or "centred".
+    base "window" with either form is the original output, unchanged; base_period is read only by
+    "mean_volume".
+    Range: "window"/"share" is 0 to 1 and "window"/"centred" is -0.5 to +0.5. "mean_volume" is 0 and up,
+    never negative, with no direction: 0 when no bar of the window closed up, and at most base_period when
+    base_period >= period. It grows as the up bars carry more volume against the usual bar volume.
+    A flat bar (equal close) is not an up bar.
+    Warm-up: period + 1 rows ("window"); max(period + 1, base_period) rows ("mean_volume"), bar t included.
+    NaN: a NaN close among the last period + 1 rows, or a NaN volume among the volume rows read, gives NaN.
+    A D not above 0 gives NaN (never on real bars).
+    Building the component raises for a period below 1, a form other than "share" or "centred", a base
+    other than "window" or "mean_volume", a base_period below 1, and form "centred" with base "mean_volume".
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows and the `volume`
-    column of the last period rows of data, all at or before bar t (the last row); each is known at its
-    bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `close` and `volume` columns of the last
+    max(period + 1, base_period) rows of data, the last of which is bar t; no later row is ever read.
     """
 
     def __init__(self, name="UpDayVolumeShare", weight=1.0, parameters=None):
@@ -41,66 +45,97 @@ class UpDayVolumeShareComponent(SubStrategyComponent):
         self.form = self.parameters.get("form", "share")
         if self.form not in ("share", "centred"):
             raise ValueError(f"UpDayVolumeShareComponent: form must be 'share' or 'centred', got {self.form!r}")
+        self.base = self.parameters.get("base", "window")
+        if self.base not in ("window", "mean_volume"):
+            raise ValueError(
+                f"UpDayVolumeShareComponent: base must be 'window' or 'mean_volume', got {self.base!r}")
+        self.base_period = int(self.parameters.get("base_period", 60))
+        if self.base_period < 1:
+            raise ValueError(f"UpDayVolumeShareComponent: base_period must be >= 1, got {self.base_period}")
+        if self.base == "mean_volume" and self.form == "centred":
+            raise ValueError("UpDayVolumeShareComponent: form 'centred' applies only to base 'window'")
         self._raw_value = 0.0
 
-    def update(self, data: pd.DataFrame):
+    def update(self, data):
         self.data = data
         self._raw_value = 0.0
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.period
-        close = data['close'].astype(float).iloc[-(n + 1):].to_numpy()
-        vol = data['volume'].astype(float).iloc[-n:].to_numpy()
-        if np.isnan(close).any() or np.isnan(vol).any():
+        p = self.period
+        close = data["close"].astype(float).to_numpy()
+        vol = data["volume"].astype(float).to_numpy()
+        c = close[-(p + 1):]
+        v = vol[-p:]
+        if np.isnan(c).any() or np.isnan(v).any():
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
-        up = close[1:] > close[:-1]
-        total = float(vol.sum())
-        if not total > 0:
+        up = c[1:] > c[:-1]
+        U = float(v[up].sum())
+        if self.base == "mean_volume":
+            b = vol[-self.base_period:]
+            if np.isnan(b).any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            D = float(b.mean())
+        else:
+            D = float(v.sum())
+        if not D > 0:
             self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        up_vol = float(vol[up].sum())
-        share = up_vol / total
-        self._raw_value = float(share - 0.5) if self.form == "centred" else float(share)
+        else:
+            self._raw_value = float(U / D - (0.5 if self.form == "centred" else 0.0))
         self.confidence = 1.0
-        self.debug_info = {'up_volume': up_vol, 'total_volume': total, 'up_bars': int(up.sum())}
+        self.debug_info = {"up_volume": U, "base": D, "up_bars": int(up.sum())}
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
-    def get_required_periods(self) -> int:
+    def get_required_periods(self):
+        if self.base == "mean_volume":
+            return max(self.period + 1, self.base_period)
         return self.period + 1
 ```
 
 ```python hand
 def hand(df, params):
-    n = int(params.get("period", 20))
+    p = int(params.get("period", 20))
     form = params.get("form", "share")
-    c = [float(x) for x in list(df["close"])]
-    v = [float(x) for x in list(df["volume"])]
-    t = len(c) - 1
-    up_sum = 0.0
+    base = params.get("base", "window")
+    bp = int(params.get("base_period", 60))
+    closes = [float(x) for x in list(df["close"])]
+    vols = [float(x) for x in list(df["volume"])]
+    t = len(closes) - 1
+    # up-day volume over bars t-p+1 .. t
+    U = 0.0
     total = 0.0
-    for i in range(t - n + 1, t + 1):
-        ci = c[i]
-        cp = c[i - 1]
-        vi = v[i]
+    for i in range(t - p + 1, t + 1):
+        ci = closes[i]
+        cp = closes[i - 1]
+        vi = vols[i]
         if ci != ci or cp != cp or vi != vi:
             return float("nan")
-        total = total + vi
+        total += vi
         if ci > cp:
-            up_sum = up_sum + vi
-    if not total > 0:
+            U += vi
+    if base == "mean_volume":
+        s = 0.0
+        for i in range(t - bp + 1, t + 1):
+            if vols[i] != vols[i]:
+                return float("nan")
+            s += vols[i]
+        D = s / bp
+    else:
+        D = total
+    if not D > 0:
         return float("nan")
-    share = up_sum / total
+    val = U / D
     if form == "centred":
-        return share - 0.5
-    return share
+        val -= 0.5
+    return val
 ```
 
 checks:
 UpDayVolumeShareComponent: every check passed
-the bot's suite: = 1686 passed, 16 skipped, 75 deselected, 95636 warnings in 134.63s (0:02:14) ==
+the bot's suite: = 1688 passed, 16 skipped, 75 deselected, 95636 warnings in 138.40s (0:02:18) ==

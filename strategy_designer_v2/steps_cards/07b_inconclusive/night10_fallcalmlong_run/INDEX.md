@@ -13,4 +13,5 @@
 086-02.c2_quiet-three-day-rise-continuation_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 086-02_repeated-heavy-volume-buying-days_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 089-01_calm-decline-up-volume-share_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
+089-02_calm-decline-up-down-volume-ratio_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 089-04_calm-decline-up-volume-lasting_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
