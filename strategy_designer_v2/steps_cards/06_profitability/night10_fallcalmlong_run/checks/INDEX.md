@@ -15,3 +15,4 @@
 089-01_calm-decline-up-volume-share_1d: not profitable enough [Sharpe 0.1349; Sharpe minus holding's Sharpe -0.2723; Calmar 0.03917]
 089-02_calm-decline-up-down-volume-ratio_1d: not profitable enough [Sharpe -0.6871; Sharpe minus holding's Sharpe -1.094; Calmar -0.1271]
 089-04_calm-decline-up-volume-lasting_1d: not profitable enough [Sharpe 0.1438; Sharpe minus holding's Sharpe -0.2634; Calmar 0.04243]
+090-01_calm-decline-scaled-push-continues_1d: not profitable enough [Sharpe 0.4247; Sharpe minus holding's Sharpe 0.01746; Calmar 0.1371]

@@ -9,3 +9,4 @@
 086-02.c2_quiet-three-day-rise-continuation_1d: 0 ideas, 2 discoveries (2 explorations)
 089-02_calm-decline-up-down-volume-ratio_1d: 0 ideas, 2 discoveries (2 explorations)
 089-04_calm-decline-up-volume-lasting_1d: 0 ideas, 1 discoveries (2 explorations)
+090-01_calm-decline-scaled-push-continues_1d: no ideas: Across 20 feature slopes in and out of the falling calm profile, quintiles, weekdays, coins, years, trades and the book's largest days, no pattern reaches a t of 2 that holds across coins and years. The strongest candidates are the scaled push itself (t 1.53) and the share of up days (t 1.91, sign flipping by coin and year), and with this many angles both are within chance.

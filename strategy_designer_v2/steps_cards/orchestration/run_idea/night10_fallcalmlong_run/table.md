@@ -24,21 +24,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 086-01.c2_heavy-up-day-extends-rebound | 086-01_heavy-volume-up-day-continuation | plan | no effect (+0.68) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | - | 7.c: 086-01.c2.c1_quiet-up-day-extends-rebound, 086-01.c2.c2_strong-rebound-up-day-continues; 7.g: no ideas: In falling calm markets the brief's heavy-volume effect is absent, and at 3 to 5 days it points the wrong way (F2, F3). The only graded pattern, prior 5-day momentum at 3 to 5 days (F4), flips at 10 days and does not survive the roughly 36 feature-and-horizon angles examined (F5). No pattern stands out enough to justify a new long idea in this box. | 1.04 | 7.1 |
 | 086-02.c2_quiet-three-day-rise-continuation | 086-02_repeated-heavy-volume-buying-days | plan | no effect (+0.05) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 086-02.c2.c1_quiet-up-day-continuation, 086-02.c2.c2_heavy-volume-down-day-absorption; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.06 | 7.0 |
 | 089-02_calm-decline-up-down-volume-ratio | - | plan | no effect (-0.94) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 089-02.c1_calm-decline-down-day-volume-flush, 089-02.c2_calm-decline-rising-volume, 089-02.c3_down-day-volume-lean-rebound; 7.g: 0 ideas, 2 discoveries (2 explorations) | 1.91 | 7.2 |
+| 090-01_calm-decline-scaled-push-continues | - | plan | no effect (+0.89) | not profitable enough (failed: Calmar) | - | 7.c: 090-01.c1_calm-decline-ten-day-push, 090-01.c2_deep-calm-decline-push; 7.g: no ideas: Across 20 feature slopes in and out of the falling calm profile, quintiles, weekdays, coins, years, trades and the book's largest days, no pattern reaches a t of 2 that holds across coins and years. The strongest candidates are the scaled push itself (t 1.53) and the share of up days (t 1.91, sign flipping by coin and year), and with this many angles both are within chance. | 0.98 | 6.8 |
 
 ## Consumption
-20 ideas, 18.06 USD, 115.8 minutes in all.
+21 ideas, 19.04 USD, 122.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.51 | 9.6 |
-| step4_backtest | 0.00 | 60.9 |
-| step5_verdict | 3.03 | 11.2 |
+| step3_plan | 3.58 | 10.0 |
+| step4_backtest | 0.00 | 64.5 |
+| step5_verdict | 3.21 | 11.9 |
 | step6_check | 0.00 | 0.4 |
 | chart_files | 0.00 | 0.2 |
-| step7_7.g | 4.70 | 13.5 |
+| step7_7.g | 5.05 | 14.4 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.67 | 1.8 |
 | step7_7.b | 1.67 | 4.9 |
-| step7_7.c | 4.47 | 13.2 |
+| step7_7.c | 4.85 | 14.3 |
 | similarity_check | 0.00 | 0.1 |

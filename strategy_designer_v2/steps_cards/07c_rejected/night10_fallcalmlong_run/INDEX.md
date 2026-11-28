@@ -15,3 +15,4 @@
 089-01_calm-decline-up-volume-share_1d: 1 ideas (3 explorations)
 089-02_calm-decline-up-down-volume-ratio_1d: 3 ideas (2 explorations)
 089-04_calm-decline-up-volume-lasting_1d: 2 ideas (2 explorations)
+090-01_calm-decline-scaled-push-continues_1d: 2 ideas (2 explorations)

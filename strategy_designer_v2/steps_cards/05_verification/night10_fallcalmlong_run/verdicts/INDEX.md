@@ -15,3 +15,4 @@
 089-01_calm-decline-up-volume-share_1d: no effect (fit: adapted) [main: -0.000682988; OLS t of slope -1.14311; in-profile grid bars 699, in-profile grid bars with forecast above 0 272, cases 377, case days 306]
 089-02_calm-decline-up-down-volume-ratio_1d: no effect (fit: exact) [main: -0.00650193; t of the weighted mean, clustered by day -0.939143; cases with forecast > 0 347, distinct days 203]
 089-04_calm-decline-up-volume-lasting_1d: no effect (fit: adapted) [main: -0.00172577; t of the OLS slope, day-clustered -1.0793; cases 138, distinct days 84]
+090-01_calm-decline-scaled-push-continues_1d: no effect (fit: exact) [main: 0.00418319; t of OLS slope, day-clustered SE 0.888756; non-overlapping in-profile samples 699, cases 458, days of samples 294]

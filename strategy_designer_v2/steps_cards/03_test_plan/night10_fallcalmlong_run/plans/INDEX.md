@@ -18,3 +18,4 @@
 089-03_calm-decline-thinning-down-volume_1d: missing-components: The idea needs the mean volume of down days (close below the prior close) in the last 10 bars, set [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 089-04.c1_heavy-up-day-volume-rebounds_1d: missing-components: The idea needs the volume traded on up days over 20 days, measured in units of the 60-day mean daily [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 089-04_calm-decline-up-volume-lasting_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
+090-01_calm-decline-scaled-push-continues_1d: plan (fit: exact) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]

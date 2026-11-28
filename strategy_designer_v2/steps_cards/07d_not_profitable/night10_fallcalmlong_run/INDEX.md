@@ -15,3 +15,4 @@
 089-01_calm-decline-up-volume-share_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 4 of step 6's measures failed, at most 2)
 089-02_calm-decline-up-down-volume-ratio_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 5 of step 6's measures failed, at most 2)
 089-04_calm-decline-up-volume-lasting_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 3 of step 6's measures failed, at most 2)
+090-01_calm-decline-scaled-push-continues_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough; 1 of step 6's measures failed, at most 2)
