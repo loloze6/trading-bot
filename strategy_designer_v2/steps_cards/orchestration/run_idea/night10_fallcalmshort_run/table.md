@@ -9,13 +9,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 070-01_falling-calm-run-break-fade | - | plan | no effect (-0.18) | not profitable enough (failed: Sharpe minus holding's Sharpe, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 070-01.c1_deep-run-bounce-fades, 070-01.c2_weak-bounce-gives-back | 0.66 | 6.8 |
 | 086-01_down-day-volume-share-drift | - | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 060-02_falling-calm-low-to-close-fade | - | missing-components | - | - | - | - | 0.09 | 0.5 |
+| 086-02_down-up-volume-ratio-drift | - | missing-components | - | - | - | - | 0.12 | 0.5 |
 
 ## Consumption
-5 ideas, 2.26 USD, 21.3 minutes in all.
+6 ideas, 2.38 USD, 21.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.44 | 2.7 |
+| step3_plan | 0.56 | 3.2 |
 | step4_backtest | 0.00 | 12.2 |
 | step5_verdict | 0.55 | 2.2 |
 | step6_check | 0.00 | 0.1 |
