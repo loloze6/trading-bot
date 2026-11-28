@@ -1,0 +1,23 @@
+---
+line: 7.c no effect
+backtest: 086-01_down-day-volume-share-drift_1d
+idea tested: 086-01_down-day-volume-share-drift
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3737 USD
+---
+## Findings
+- **F1:** Inside the falling calm profile on the explore windows (BTC, XMR, XRP), the 5-day slope of the unusual return on the 10-day down-day volume share points the idea's way but is unsure: -0.080, t -1.52, 97 grid cells. By share quintile the unusual 5-day move falls in steps, from +2.03 % (lowest share) to +0.66 %, -0.98 %, -1.34 % and -2.05 % (highest), about 20 cells each. This leaning does not survive the full test, whose slope t is -0.27 over 246 days.
+- **F2:** The market as a whole rose after falling calm cells instead of drifting lower. The mean 5-day return was +1.50 % (t 1.95, 110 cells) and the 10-day return +2.19 %. The cells where the book was short still gained +1.12 % over 5 days, an unusual move of -0.24 %, so each short paid the coin's rise.
+- **F3:** What weak signal there is comes from how many days closed down, not from the volume on them. In profile at 5 days, the share of down days has slope -0.092 (t -1.88, 97 cells). The volume share's excess over that count has slope -0.022 (t -0.21), and at 10 days it turns positive (+0.092, t 0.48).
+- **F4:** The shorter the measure and the horizon, the clearer the effect. On 1-day forward returns in profile, the 5-day down-day volume share has slope -0.017 (t -1.92, 535 cells) and the 10-day share -0.017 (t -1.38, 513). At 5 days the 5-day share has t -1.44, and at 10 days every share measure is near 0 (t -0.10 to +0.65). At 20 days the slopes turn positive (sh10 +0.37, t 1.42, 21 cells), which looks like a rebound.
+- **F5:** The 10-day return itself sorts the next 5 days in profile, though not significantly (slope +0.11, t 1.53). The two lowest 10-day-return quartiles (mean -16.0 % and -3.8 %) were followed by unusual moves of -2.23 % and -1.84 %. The two highest quartiles (0.0 % and +11.9 %) were followed by +1.95 % and +0.48 %. Inside the cells where the coin fell over the last 10 days, the volume share adds little (slope -0.059, t -0.81, 59 cells).
+- **F6:** Outside the profile, the 10-day volume share predicts more strongly at 10 days than inside it: slope -0.144, t -2.22, 310 cells. That is off the research's box.
+- **F7:** The book lost money, even though trades were rare. Its Sharpe was -0.22, its yearly return -4.9 %, and it held a position on 18 % of coin-days. The idea's total move per case is -0.70 %, which is -2.4 times the 0.29 % cost of a trade, and its unusual move is -0.19 % (strength -0.015, t -0.40).
+
+## Ideas
+- `086-01.c1_down-volume-share-next-day-drift` (from F4, F1, F2): In a falling, calm market, the larger the share of a coin's last 5 days of volume that traded on its down days, the further the coin falls over the next day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

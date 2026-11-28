@@ -5,3 +5,4 @@
 064-01_falling-calm-up-day-fades_1d: not profitable enough [Sharpe -0.6883; Sharpe minus holding's Sharpe -1.58; Calmar -0.1404]
 070-01_falling-calm-run-break-fade_1d: not profitable enough [Sharpe 0.1521; Sharpe minus holding's Sharpe -0.74; Calmar 0.06211]
 077-01_falling-calm-deep-close-drift_1d: not profitable enough [Sharpe -0.07935; Sharpe minus holding's Sharpe -0.9714; Calmar -0.04881]
+086-01_down-day-volume-share-drift_1d: not profitable enough [Sharpe -0.2211; Sharpe minus holding's Sharpe -1.113; Calmar -0.1026]

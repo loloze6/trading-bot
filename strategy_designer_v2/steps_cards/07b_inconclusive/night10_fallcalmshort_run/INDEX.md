@@ -5,3 +5,4 @@
 064-01_falling-calm-up-day-fades_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 070-01_falling-calm-run-break-fade_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
 077-01_falling-calm-deep-close-drift_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)
+086-01_down-day-volume-share-drift_1d: not run: entry condition not met (step 5: no effect; step 6: not profitable enough)

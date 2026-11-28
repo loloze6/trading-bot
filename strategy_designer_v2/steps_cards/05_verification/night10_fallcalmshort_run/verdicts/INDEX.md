@@ -5,3 +5,4 @@
 064-01_falling-calm-up-day-fades_1d: no effect (fit: adapted) [main: -0.00230752; t of the mean, cases of one day summed together -0.688372; distinct case days 443, cases 746]
 070-01_falling-calm-run-break-fade_1d: no effect (fit: adapted) [main: -0.000345037; t of the mean, cases of one day summed -0.181739; cases 412, distinct days 275, cases run >= 3 216, cases run == 2 196]
 077-01_falling-calm-deep-close-drift_1d: no effect (fit: adapted) [main: 0.000113633; OLS slope t, day-clustered 0.22747; independent cases 961, distinct days 415]
+086-01_down-day-volume-share-drift_1d: no effect (fit: adapted) [main: -0.00753226; OLS slope t, cells of the same day clustered -0.267208; in-profile grid cells 567, in-profile grid cells with forecast < 0 361, days of the in-profile grid cells 246]
