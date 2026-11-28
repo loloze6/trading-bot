@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean short-direction 3-bar unusual move on forecast<0 grid cases",
+    "value": -0.004175997365898613,
+    "statistic": {
+      "name": "t of the mean, cases of one day taken together",
+      "value": -0.9833566816996443
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of unusual move on |forecast|",
+    "value": 0.0006217727230700699,
+    "passed": true
+  },
+  "counts": {
+    "grid cases": 585,
+    "distinct days": 291
+  },
+  "decided_by": "The main t lies between -2 and 2 (inconclusive rule). No effect (common/verdicts.md): t in the idea's direction -0.983 (below 1), 585 cases (30 needed).",
+  "reading": "All coins and windows present in the record are used; the drift is each coin's mean 3-bar return on the non-overlapping grid of all its windows; the per-day t uses day-summed deviations with a D/(D-1) correction; the falling calm profile is read from the recorded regime 'unknown'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.983 (below 1), 585 cases (30 needed)",
+    "t_in_idea_direction": -0.9833566816996443,
+    "cases": 585
+  }
+}

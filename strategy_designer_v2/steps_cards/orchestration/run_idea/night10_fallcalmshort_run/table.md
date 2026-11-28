@@ -10,20 +10,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 086-01_down-day-volume-share-drift | - | missing-components | - | - | - | - | 0.06 | 0.3 |
 | 060-02_falling-calm-low-to-close-fade | - | missing-components | - | - | - | - | 0.09 | 0.5 |
 | 086-02_down-up-volume-ratio-drift | - | missing-components | - | - | - | - | 0.12 | 0.5 |
+| 050-03_falling-calm-range-scaled-week-fall | - | plan | no effect (-0.98) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 050-03.c1_calm-downtrend-3-day-fall-continues, 050-03.c2_calm-downtrend-near-low-continuation; 7.g: no ideas: In falling calm markets on these coins, no pattern on the short side stands out from chance after the many angles examined. The scaled weekly fall, 3-day falls, close location, range, volume, distance to recent extremes, volatility level and weekday all fail to grade the next days' fall consistently across windows and coins. The only gradient found (F2) is a long-side continuation of 3-day rises, which lies outside this research's short box. | 0.98 | 7.8 |
 
 ## Consumption
-6 ideas, 2.38 USD, 21.8 minutes in all.
+7 ideas, 3.36 USD, 29.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.56 | 3.2 |
-| step4_backtest | 0.00 | 12.2 |
-| step5_verdict | 0.55 | 2.2 |
+| step3_plan | 0.64 | 3.6 |
+| step4_backtest | 0.00 | 16.8 |
+| step5_verdict | 0.71 | 2.8 |
 | step6_check | 0.00 | 0.1 |
-| chart_files | 0.00 | 0.0 |
-| step7_7.g | 0.00 | 0.0 |
+| chart_files | 0.00 | 0.1 |
+| step7_7.g | 0.36 | 1.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.00 | 0.0 |
 | step7_7.d | 0.00 | 0.0 |
-| step7_7.c | 1.27 | 4.1 |
+| step7_7.c | 1.65 | 5.3 |
