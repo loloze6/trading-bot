@@ -111,3 +111,35 @@ turn, and every message from a session is a turn. The account's 7-day usage show
 - **The one change: measure the test before searching more.** 101 strategies are confirmed on the 25 coins' common
   records: how often does each confirm on 8 drawn coins, and on 12 or 16? No model call. If a real effect confirms
   rarely on 8 coins, a run needs more coins; if it confirms as on 25, the boxes are the cause.
+
+## The morning merge (2026-11-28, about 12:30 Paris; the operator's go, "Go for all")
+`night_merge` on the four branches, in the night's order (A, B, C, D), onto `ccr-6624e33e-aakrpv` at `d040bf5374`:
+| Branch | Conflicts resolved by rule |
+|---|---|
+| `night10-fallcalmlong` | 0 |
+| `night10-fallcalmshort` | 5 (the brief index, the catalogue, the component index and journal, the components file) |
+| `night10-fallagishort` | 5 (the same files) |
+| `night10-riseagilong` | 1 (the brief index) |
+
+**The measures built in the night:** 7 new classes (`UpDayVolumeShare`, `UpDownMeanVolumeRatio`, `DownBarVolumeFade`,
+`DownDayVolumeShare`, `DownUpVolumeSkew`, `UpperWick`, `OpenRiseGivebackShare`); 2 existing classes given a new setting
+(`VolatilityScaledDistanceFromHigh`: `extreme` "high"/"low"; `ScaledFallRangeMultiple`: `side` "down"/"up"); none
+removed. `VolatilityScaledDistanceFromHigh`'s default name changed (`VolScaledDistFromHigh` to `...FromExtreme`):
+no config is affected, the engine names every component by its config `id` (`strategies/regime_engine.py`).
+
+**Proofs:**
+- What an existing config gets is unchanged: the two changed classes, before and after the merge, with each of the 11
+  settings existing configs use, on BTC, ETH, SOL daily bars and BTC's last 3,000 hourly bars: 122,617 values
+  compared, 0 differences.
+- One real call: step 4 rerun on night A's `089-01_calm-decline-up-volume-share_1d` (a new class) with its run's data
+  use: 138 of 138 `metrics.json` and 138 of 138 `forecast_distribution.csv` identical to the session's (8.6 minutes).
+- Tests: cards 260 passed; bot 1692 passed, 16 skipped.
+- The portfolio update: "the list of candidates (131) is that of v4: no new version", as expected.
+
+**Not done: the register's rebuild** (`ideas_similarities_check.py --all`) failed, so `night_merge` stopped before its
+last steps (run by hand above). It needs every book's returns, which are kept only on the machine that made them, not in
+git; this container is fresh ("bars not found ... rerun step 4"). Nothing is lost: only night A changed the register
+(its one confirmed book, written by its session), so the merged register is that session's. Noted as a defect in
+`topics/NEXT_STEPS.md` (E13).
+
+Brief numbers used by more than one brief: 086 (4 briefs), 087 (3), 088 (2) added by the night; reported, not renumbered (E3).
