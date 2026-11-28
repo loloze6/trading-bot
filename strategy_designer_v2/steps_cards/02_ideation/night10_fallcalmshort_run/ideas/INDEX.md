@@ -1,0 +1,2 @@
+086-01_down-day-volume-share-drift: In falling calm markets, a higher down-day share of 10-day volume is followed by a larger fall over the next 5 days. [instruments: XRP, DOT, XMR, INJ, FIL, DOGE, BTC, TRX, profile: falling calm, side: short]
+086-02_down-up-volume-ratio-drift: In falling calm markets, a higher ratio of down-day to up-day average volume over 20 days is followed by a larger 5-day fall. [instruments: XRP, DOT, XMR, INJ, FIL, DOGE, BTC, TRX, profile: falling calm, side: short]
