@@ -12,21 +12,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 050-02.b1_calm-downtrend-week-rise-more-coins | 050-02_falling-calm-scaled-week-rise-continuation | plan | confirmed (+2.15) | not profitable enough (failed: Calmar) | - | 7.d: 050-02.b1.d1_large-scaled-rise-longer-hold, 050-02.b1.d2_scaled-rise-strong-case, 050-02.b1.d3_rise-with-room-below-high; 7.g: no ideas: Across about fifteen variables and three horizons, the only long-side gradient in falling calm markets is the tested scaled 7-day rise itself (F1), and its look-alike, the range place, repeats it (F2). The strong patterns point short (F3, F5), outside the long-only box, and what limits the book is how concentrated its gains are (F4), which no new situation addresses. | 1.31 | 7.6 |
 | 050-02.b1.d1_large-scaled-rise-longer-hold | 050-02.b1_calm-downtrend-week-rise-more-coins | plan | inconclusive (+1.20) | not profitable enough (failed: Calmar) | - | 7.b: 050-02.b1.d1.b1_scaled-rise-carry-more-coins | 0.62 | 5.6 |
 | 050-02.b1.d2_scaled-rise-strong-case | 050-02.b1_calm-downtrend-week-rise-more-coins | plan | inconclusive (+2.39) | not profitable enough (failed: Calmar) | - | 7.b: 050-02.b1.d2.b1_scaled-rise-week-carry, 050-02.b1.d2.b2_scaled-rise-more-coins | 0.60 | 5.6 |
+| 050-02.b1.d3_rise-with-room-below-high | 050-02.b1_calm-downtrend-week-rise-more-coins | plan | no effect (+0.67) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) | - | 7.c: 050-02.b1.d3.c1_scaled-weekly-rise-short-carry, 050-02.b1.d3.c2_scaled-three-day-rise-carries; 7.g: 050-02.b1.d3.g1_calm-downtrend-two-week-scaled-rise | 1.07 | 7.1 |
 
 ## Consumption
-8 ideas, 6.58 USD, 51.6 minutes in all.
+9 ideas, 7.66 USD, 58.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.73 | 4.0 |
-| step4_backtest | 0.00 | 28.9 |
-| step5_verdict | 1.43 | 5.4 |
+| step3_plan | 0.82 | 4.5 |
+| step4_backtest | 0.00 | 32.6 |
+| step5_verdict | 1.62 | 6.1 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.g | 1.16 | 3.4 |
+| step7_7.g | 1.57 | 4.5 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 0.67 | 1.8 |
 | step7_7.b | 1.34 | 3.9 |
-| step7_7.c | 1.25 | 3.7 |
+| step7_7.c | 1.63 | 4.8 |
 | similarity_check | 0.00 | 0.1 |

@@ -1,5 +1,6 @@
 050-02.b1.d1_large-scaled-rise-longer-hold_1d: inconclusive (fit: adapted) [main: 0.0209158; t of the weighted mean, cases of one day pooled 1.19957; independent cases (grid bars with forecast > 0) 132, days the cases fall on 73]
 050-02.b1.d2_scaled-rise-strong-case_1d: inconclusive (fit: exact) [main: 0.00955483; t of the mean, cases pooled by day 2.38766; distinct case days 297, cases 410]
+050-02.b1.d3_rise-with-room-below-high_1d: no effect (fit: adapted) [main: 0.00476393; t of the mean, cases grouped by day 0.669436; cases 390, independent days 278, grid bars with forecast above 0 184]
 050-02.b1_calm-downtrend-week-rise-more-coins_1d: confirmed (fit: adapted) [main: 0.00878316; t of the mean, cases of one day taken together 2.14976; distinct case days 239, cases 456]
 050-02_falling-calm-scaled-week-rise-continuation_1d: inconclusive (fit: exact) [main: 0.00643057; t of the mean, cases of one day taken together 1.88746; cases 503, distinct days 341]
 050-04_falling-calm-range-scaled-week-rise_1d: inconclusive (fit: adapted) [main: 0.00630669; t of the mean, cases of one day pooled 1.83431; distinct days with cases 342, cases 496]
