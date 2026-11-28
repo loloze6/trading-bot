@@ -1,0 +1,20 @@
+{
+  "line": "7.g",
+  "backtest": "050-04.b1_range-scaled-week-rise-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.596369,
+  "findings": {
+    "F1": "In falling calm markets, the scaled 7-day move does grade the next 3 days' unusual move across its whole range, but the grade comes from the fall side. Quintiles of the 7-day move in units of the 30-day mean daily range run from \u22122.13 %, \u22121.34 % and \u22121.16 % (the three lower quintiles, all 7-day moves below 0) to +0.36 % and +1.58 %. The slope is +0.0077 per unit, t 1.67 with the cases of one day together, on 232 non-overlapping cases.",
+    "F2": "On the rise side alone, which is what the tested long book trades, the grade is not there. Over cases with a 7-day rise, the slope of the unusual move on the scaled rise is +0.0052 with t 0.64 over 3 days (91 cases), +0.0127 with t 1.03 over 5 days (52 cases) and t 0.31 over 7 days (32 cases). The mean unusual move is +1.02 % over 3 days with t 1.32. This matches step 5's negative slope (\u22120.00037).",
+    "F3": "The book's trades do not grow with the entry forecast. Mean net returns by quartile of entry forecast are +3.56 %, +1.92 %, +5.44 % and +1.95 % (52 to 53 trades each). The capped top quartile (16.8 to 20) earns no more than the lowest.",
+    "F4": "Closing near the 20-day high predicts better than the 7-day rise alone, but the two are not separable. The quintile nearest the 20-day high (within 1.1 mean ranges) is followed by +2.29 % over 3 days (t 2.53, 47 cases on 33 days), and the slope is t 1.94 over 3 days and 2.23 over 5 days. However, this measure correlates 0.74 with the scaled 7-day move. In a joint fit neither stands out (t 0.78 and 1.02). The effect also overlaps 035-01.b1 (calm market nearness to high), which the map already holds in falling calm long.",
+    "F5": "The pattern is not stable across subsets. The 3-day slope on the 7-day move is t 2.19 in 2018, t 0.11 in 2019, t \u22121.23 in 2020 and t 0.61 in 2021. By coin it is t 2.17 for ETH and between 0.17 and 0.48 for BCH, XMR and ZEC. The falling-calm mean unusual move is \u22122.5 % in 2018 and \u22121.7 % in 2019 but +2.4 % in both 2020 and 2021.",
+    "F6": "No other angle stood out among the eight looked at, given how many were tried; all |t| stayed under 2.4 and none was monotone."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "discovery_ids": [],
+  "no_ideas": "In falling calm markets the long side shows no graded carry-on from the scaled weekly rise (F2, F3). The one long pattern that stands out, nearness to the recent high, is not separable from the tested measure, is unstable by year and coin, and is already held by 035-01.b1 (F4, F5). Nothing else among the angles examined stands out from chance (F6)."
+}

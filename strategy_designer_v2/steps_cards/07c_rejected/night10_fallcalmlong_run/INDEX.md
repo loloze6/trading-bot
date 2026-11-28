@@ -3,6 +3,7 @@
 050-02.b1.d3_rise-with-room-below-high_1d: 2 ideas (2 explorations)
 050-02.b1_calm-downtrend-week-rise-more-coins_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 050-02_falling-calm-scaled-week-rise-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+050-04.b1_range-scaled-week-rise-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 050-04_falling-calm-range-scaled-week-rise_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 086-01.c1_heavy-volume-off-low-absorption_1d: 2 ideas (2 explorations)
 086-01_heavy-volume-up-day-continuation_1d: 2 ideas (2 explorations)
