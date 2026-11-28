@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move of short cases (return minus coin's normal 3-bar drift, short direction)",
+    "value": -0.0023075233982405904,
+    "statistic": {
+      "name": "t of the mean, cases of one day summed together",
+      "value": -0.6883724962415003
+    },
+    "threshold": "t >= 2 with positive mean confirms; t <= -2 rejects; t clustered by day"
+  },
+  "supporting_check": {
+    "name": "mean unusual move, larger-|forecast| half minus smaller half",
+    "value": -0.0025935522946733056,
+    "passed": false
+  },
+  "counts": {
+    "distinct case days": 443,
+    "cases": 746
+  },
+  "decided_by": "The main-measure t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -0.688 (below 1), 443 cases (30 needed).",
+  "reading": "Cases are short bets (forecast rise of >= 2 points on the short side) taken at the first bet bar of each 3-bar grid cell per window, measured from that bar's close over 3 bars, over all coins in the record; the larger half is the top floor(n/2) cases by |forecast|; the plan's fewer-than-30-case-days rule is applied as the minimum count giving 'not observable'.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.688 (below 1), 443 cases (30 needed)",
+    "t_in_idea_direction": -0.6883724962415003,
+    "cases": 443
+  }
+}

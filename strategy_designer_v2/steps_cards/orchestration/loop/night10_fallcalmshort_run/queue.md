@@ -1,17 +1,17 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 1.23 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 1.85 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 064-01_falling-calm-up-day-fades | step 2 | 0 | 0.0938 | 0.0938 | candidate |
-| 2 | 070-01_falling-calm-run-break-fade | step 2 | 0 | 0.0938 | 0.0938 | candidate |
-| 3 | 086-01_down-day-volume-share-drift | step 2 | 0 | 0.0938 | 0.0938 | candidate |
-| 4 | 060-02_falling-calm-low-to-close-fade | step 2 | 0 | 0.0938 | 0.0938 | candidate |
-| 5 | 086-02_down-up-volume-ratio-drift | step 2 | 0 | 0.0938 | 0.0938 | candidate |
-| 6 | 050-03_falling-calm-range-scaled-week-fall | step 2 | 0 | 0.0938 | 0.0938 | candidate |
-| 7 | 077-01_falling-calm-deep-close-drift | 7.g discovery | 1 | 0.2143 | 0.1071 | candidate |
-| 8 | 061-01.c1_falling-calm-decline-continues | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 1 | 070-01_falling-calm-run-break-fade | step 2 | 0 | 0.0923 | 0.0923 | candidate |
+| 2 | 086-01_down-day-volume-share-drift | step 2 | 0 | 0.0923 | 0.0923 | candidate |
+| 3 | 060-02_falling-calm-low-to-close-fade | step 2 | 0 | 0.0923 | 0.0923 | candidate |
+| 4 | 086-02_down-up-volume-ratio-drift | step 2 | 0 | 0.0923 | 0.0923 | candidate |
+| 5 | 050-03_falling-calm-range-scaled-week-fall | step 2 | 0 | 0.0923 | 0.0923 | candidate |
+| 6 | 077-01_falling-calm-deep-close-drift | 7.g discovery | 1 | 0.2143 | 0.1071 | candidate |
+| 7 | 061-01.c1_falling-calm-decline-continues | 7.c | 1 | 0.2 | 0.1 | candidate |
+| 8 | 064-01.c1_feeble-bounces-fail-in-calm-declines | 7.c | 1 | 0.2 | 0.1 | candidate |
 | 9 | 061-01.c2_low-close-keeps-sliding | 7.c | 1 | 0.2 | 0.1 | candidate |
 | 10 | 032-01.b1_calm-fall-continuation-all-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
 | 11 | 032-02.b1_calm-fall-depth-more-coins | 7.b | 1 | 0.1845 | 0.0923 | candidate |
@@ -66,7 +66,8 @@ Every idea written in the run; candidates first, in select_next's order. Spent: 
 | 60 | 058-02.b1.b2.b1.b2.e2.g2_falling-calm-low-continuation | 7.g | 6 | 0.1218 | 0.0174 | candidate |
 | 61 | 058-01.g2.b1.d2.b1.d2.d2.g2_calm-slide-bounce-fades | 7.g | 7 | 0.1218 | 0.0152 | candidate |
 | 62 | 069-02.d1.d1.g2_calm-fall-up-day-fade | 7.g | 7 | 0.1218 | 0.0152 | candidate |
-| - | 061-01_falling-calm-scaled-rise-fade | step 2 | 0 | 0.0938 | 0.0938 | tested: step 5 no effect (-0.28); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
+| - | 061-01_falling-calm-scaled-rise-fade | step 2 | 0 | 0.0923 | 0.0923 | tested: step 5 no effect (-0.28); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar, Trades per day) |
+| - | 064-01_falling-calm-up-day-fades | step 2 | 0 | 0.0923 | 0.0923 | tested: step 5 no effect (-0.69); step 6 not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, on days in a position, Lowest Sharpe, one window left out, Calmar) |
 | - | 060-02.g2_calm-fall-volume-dry-up | 7.g | 3 | 0.1218 | 0.0304 | duplicate of 060-01.g2_calm-fall-volume-dry-up |
 | - | 060-02.d2.d2.g1_calm-falling-volume-dry-up | 7.g | 5 | 0.1218 | 0.0203 | duplicate of 060-01.g2_calm-fall-volume-dry-up |
 | - | 058-02.b1.b2.b1.b2.g1_falling-calm-range-low-continuation | 7.g | 5 | 0.1218 | 0.0203 | duplicate of 058-02.b1.b2.b1.g2_falling-calm-range-low-continuation |
