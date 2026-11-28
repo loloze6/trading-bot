@@ -249,3 +249,4 @@ night9_chopmonth_run | 077-03_agitated-high-close-later-rise_1d | LaggedCloseLoc
 a4_research_run | 060-01.b1.g1_quiet-day-next-fade_1d | ScaledMoveSmallnessComponent | built: ScaledMoveSmallnessComponent {"vol_period": 20}
 night10_fallcalmshort_run | 086-01_down-day-volume-share-drift_1d | DownDayVolumeShareComponent | built: DownDayVolumeShareComponent {"form": "share", "period": 10}
 night10_fallcalmshort_run | 060-02_falling-calm-low-to-close-fade_1d | CloseAboveLowInUsualMovesComponent | built: VolatilityScaledDistanceFromHighComponent {"base": "close", "exclude_current": 0, "extreme": "low", "period": 1, "source": "high", "vol_period": 30}
+night10_fallcalmshort_run | 086-02_down-up-volume-ratio-drift_1d | DownUpVolumeSkewComponent | built: DownUpVolumeSkewComponent {"form": "centred", "period": 20}
