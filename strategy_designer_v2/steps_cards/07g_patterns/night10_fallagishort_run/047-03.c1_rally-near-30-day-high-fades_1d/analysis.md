@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 047-03.c1_rally-near-30-day-high-fades_1d
+idea tested: 047-03.c1_rally-near-30-day-high-fades
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4415 USD
+---
+## Findings
+- **F1:** In the falling agitated bars (9.9 % of all bars; 384 bars on BCH, LTC and XMR), the 3-day return in the short direction, net of drift, grows with how close the close is to its highest close of the past 30 days, on every day. The OLS slope t is +2.47, +2.88 and +4.06 on the three 3-day grid offsets (107 to 112 cases each), with Spearman 0.17, 0.28 and 0.31. The top fifth by nearness gives +5.0 % (t 2.72, 22 cases), +1.8 % (t 1.46) and +2.5 % (t 2.36). That is 5 to 14 times the 0.35 % cost of a trade.
+- **F2:** The near-high effect does not need an up day, and the tested idea kept only up days. On grid 0, the nearness slope is t +0.50 on up days (57 cases, Spearman 0.01) and t +2.71 on down days (50 cases, Spearman 0.33). This explains the tested idea's inconclusive slope (t -1.18 on 562 cases).
+- **F3:** The top-fifth near-high cases point the same way in every window that holds them. They fall in w7, w9, w11, w13, w15 and w17, and their short-direction mean is positive in all six, from +2.6 % (w13, 13 cases) to +24 % (w17, 1 case). The effect is concentrated, though: 13 of the 22 cases are in w13.
+- **F4:** On every coin the slope points the same way but is not significant alone: BCH t +1.68 (22 cases), LTC t +1.21 (55), XMR t +1.90 (30). The top-fifth short means are +5.9 %, +6.4 % and +2.8 %.
+- **F5:** The next-day fade of up days that the brief claims exists but is not graded by the size of the rise. On up days the next day's short-direction move averages +1.0 % (t 2.65, 189 days). Its slope on the day's rise is t +0.10, with Spearman -0.04. The day after that reverses it slightly (-0.5 %, t -1.15). By size, rises of +1 % to +3.9 % fade +1.4 % (t 2.38), while rises above +3.9 % fade only +0.4 % (t 0.81).
+- **F6:** Down days are followed by a graded rebound, which goes against a short. Next-day short-direction move: -1.9 % (t -3.73, 192 days), slope t +7.37 on the day's return; the deepest fifth of one-day falls gives -3.3 % (t -3.57). This long-side rebound is already held in the map (falling agitated long: 16 strategies). Since I looked at about 10 features at two horizons plus splits, only F1's consistency across offsets and windows stands out enough to carry an idea.
+
+## Ideas
+- No ideas: every idea is a discovery
+
+## Discoveries (off the brief's theme: each becomes a brief, `discoveries/`)
+- `047-03.c1.g1_near-thirty-day-high-fades` (from F1, F2, F3, F4): In a falling, agitated market, the closer a coin's close is to its highest close of the past 30 days, on any day, the larger its fall over the next three days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

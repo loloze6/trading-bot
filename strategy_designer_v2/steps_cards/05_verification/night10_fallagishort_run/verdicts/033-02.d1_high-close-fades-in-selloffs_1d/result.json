@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "abs(forecast)-weighted mean short-direction excess next-day return",
+    "value": 0.0006945194831959203,
+    "statistic": {
+      "name": "day-clustered t of weighted mean",
+      "value": 0.33481124610530605
+    },
+    "threshold": "above 0 with day-clustered t >= 2 to confirm; t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top third minus bottom third by abs(forecast), short excess next-day return",
+    "value": 0.0034802157487567034,
+    "passed": true
+  },
+  "counts": {
+    "independent days with a nonzero forecast": 902,
+    "cases": 2457
+  },
+  "decided_by": "The weighted mean's t lies between -2 and 2 (or the confirm rule is not met). No effect (common/verdicts.md): t in the idea's direction +0.335 (below 1), 2457 cases (30 needed).",
+  "reading": "The falling agitated profile is read from the recorded regime (the detector's decision, 'unknown' = not vetoed to chop) with a close location above the low as the graded situation, the 1-bar grid is every bar, the coin's mean is over all its bars in all windows, the weighted t clusters per UTC day with a G/(G-1) correction, terciles are pooled over all cases by abs(forecast) with unweighted means, and the plan's 'fewer than 150 days' is reported as not observable.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.335 (below 1), 2457 cases (30 needed)",
+    "t_in_idea_direction": 0.33481124610530605,
+    "cases": 2457
+  }
+}

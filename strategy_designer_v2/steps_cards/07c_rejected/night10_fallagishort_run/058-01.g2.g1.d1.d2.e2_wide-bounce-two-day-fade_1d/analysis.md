@@ -1,0 +1,23 @@
+---
+line: 7.c no effect
+backtest: 058-01.g2.g1.d1.d2.e2_wide-bounce-two-day-fade_1d
+idea tested: 058-01.g2.g1.d1.d2.e2_wide-bounce-two-day-fade
+step 5: no effect
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3669 USD
+---
+## Findings
+- **F1:** The tested situation, an up day while the 3-day return is still negative, did not produce a fade: over the full test the unusual 2-day short move was -0.60 % (t -0.79, 361 cases on 199 days), so these coins rose slightly more than their drift. In the explore half (BCH, LTC, XMR) the same cases were +1.0 % but uncertain (t 0.51, 31 cases on 24 days).
+- **F2:** The day's range against the 30-day swing does not grade the fade. In the explore half the range terciles gave -3.1 % (low), +6.1 % (middle) and +0.3 % (high) on about 10 cases each. Over the full test the upper half of |forecast| beat the lower half by only 0.23 %.
+- **F3:** The give-back lives in what the brief describes, a rise over the past 3 days, measured against the coin's 30-day swing (z = 3-day return / (30-day sd × √3)). Over the next 3 days that rise is graded with Spearman rho 0.33 (p 0.022, 48 cases). Its upper half, mean z 0.99, gave a short unusual move of +3.1 % (t 2.45, 17 days); its lower half gave -0.9 % (t -0.37). The difference was +4.1 % (Welch t 1.62).
+- **F4:** Across all falling agitated bars, the 3-day short unusual move rises only in the top quintile of the 3-day return z (mean z 1.01): +3.3 %. The other four quintiles were -0.2 %, -3.2 %, -0.4 % and -0.5 %, so the fade comes only after the largest rises against swing.
+- **F5:** The upper-half fade after a 3-day rise holds on every coin and in most years. By coin it was BCH +5.5 % (3 cases), LTC +3.4 % (13) and XMR +1.8 % (8). By year it was 2018 +4.0 %, 2020 +2.2 % and 2021 +4.3 %, with only 2019 (1 case) at -0.5 %.
+- **F6:** The effect depends on the horizon and the length of the rise.
+- **F7:** Size against cost: the upper-half fade of about 3.1 % per case over 3 days is about 9 times the 0.35 % cost of a trade. The samples are small, though: the falling agitated profile covers about 10 % of each coin's bars.
+
+## Ideas
+- `058-01.g2.g1.d1.d2.e2.c1_three-day-rally-three-day-fade` (from F3, F4, F5, F6, F7): In a falling, agitated market, a coin's rise over the past 3 days is followed by a fall over the next 3 days, and the larger that 3-day rise against the standard deviation of its daily returns over the past 30 days, the larger the 3-day fall.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

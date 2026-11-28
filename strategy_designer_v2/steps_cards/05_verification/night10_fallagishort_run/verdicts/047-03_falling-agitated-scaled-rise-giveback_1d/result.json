@@ -1,0 +1,33 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-day excess return on abs(forecast), short bars",
+    "value": -0.0003139147320404514,
+    "statistic": {
+      "name": "slope t (day-clustered)",
+      "value": -0.7446971229785484
+    },
+    "threshold": "confirm if slope t <= -2 (with mean excess < 0); reject if slope t >= +2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return on short bars",
+    "value": -0.003207832766616218,
+    "passed": true
+  },
+  "counts": {
+    "short bars": 1118,
+    "distinct days": 492
+  },
+  "decided_by": "The slope's t is between -2 and +2. No effect (common/verdicts.md): t in the idea's direction +0.745 (below 1), 492 cases (30 needed).",
+  "reading": "Profile bars are those with regime 'unknown' (the detector's only non-vetoed regime, i.e. falling and agitated), up days are a positive raw scaled return (price change when unrecorded), every short bar with a next close in its window is used (1-bar horizon grid), and the slope's t uses cluster-robust (CR1) standard errors clustered by UTC day.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction +0.745 (below 1), 492 cases (30 needed)",
+    "t_in_idea_direction": 0.7446971229785484,
+    "cases": 492
+  }
+}

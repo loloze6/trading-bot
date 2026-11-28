@@ -1,0 +1,35 @@
+{
+  "status": "no effect",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 3-bar move per short case (signed short)",
+    "value": -0.0007345728674797312,
+    "statistic": {
+      "name": "day-clustered t",
+      "value": -0.1431186339769788
+    },
+    "threshold": "confirm: mean > 0 with day-clustered t >= 2 and check passed; reject: mean < 0 with day-clustered t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move (forecast <= -10) minus (0 > forecast > -10)",
+    "value": 0.020740209787076597,
+    "passed": true
+  },
+  "counts": {
+    "days with cases": 316,
+    "cases": 617,
+    "cases forecast <= -10": 247,
+    "cases 0 > forecast > -10": 370
+  },
+  "decided_by": "The day-clustered t lies between -2 and 2. No effect (common/verdicts.md): t in the idea's direction -0.143 (below 1), 247 cases (30 needed).",
+  "reading": "The situation is an up day (raw scaled rise > 0, or the day's close-to-close return when the raw value is not recorded) with a short forecast; a case is the first short bet (forecast falling >= 2 points below its least-short level since the last bet, reset at flat) in each 3-bar grid cell from each window's first row, with a full 3-bar return inside the window; the drift is each coin's mean non-overlapping 3-bar return over all its windows; the day-clustered t uses per-day summed deviations with a G/(G-1) correction; the plan's 'fewer than 30 days' rule is reported as not observable; an empty forecast group makes the check fail.",
+  "effect_check": {
+    "no_effect": true,
+    "why": "t in the idea's direction -0.143 (below 1), 247 cases (30 needed)",
+    "t_in_idea_direction": -0.1431186339769788,
+    "cases": 247
+  }
+}
