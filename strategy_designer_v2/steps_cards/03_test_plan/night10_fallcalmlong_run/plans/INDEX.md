@@ -1,4 +1,5 @@
 050-02.b1.d1_large-scaled-rise-longer-hold_1d: plan (fit: adapted) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
+050-02.b1.d2_scaled-rise-strong-case_1d: plan (fit: exact) [BCH, ETH, ZEC, AAVE, FIL, DOGE, ALGO, XMR, 1d, folds A, B, C, D]
 050-02.b1_calm-downtrend-week-rise-more-coins_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 050-02_falling-calm-scaled-week-rise-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 050-04_falling-calm-range-scaled-week-rise_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
