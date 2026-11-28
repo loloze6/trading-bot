@@ -10566,3 +10566,249 @@ class ScaledMoveSmallnessComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.vol_period + 1
+
+
+class UpDayVolumeShareComponent(SubStrategyComponent):
+    """
+    Volume traded on up bars, against a volume base, on every bar:
+
+        U = sum of volume[i] over i = t-period+1 .. t with close[i] > close[i-1]   (bar t included)
+        base = "window" (default):  D = sum of volume[t-period+1 .. t]
+        base = "mean_volume":       D = mean(volume[t-base_period+1 .. t])          (bar t included)
+        form = "share" (default):   raw_value = U / D
+        form = "centred":           raw_value = U / D - 0.5   (only with base "window")
+
+    base "window" with either form is the original output, unchanged; base_period is read only by
+    "mean_volume".
+    Range: "window"/"share" is 0 to 1 and "window"/"centred" is -0.5 to +0.5. "mean_volume" is 0 and up,
+    never negative, with no direction: 0 when no bar of the window closed up, and at most base_period when
+    base_period >= period. It grows as the up bars carry more volume against the usual bar volume.
+    A flat bar (equal close) is not an up bar.
+    Warm-up: period + 1 rows ("window"); max(period + 1, base_period) rows ("mean_volume"), bar t included.
+    NaN: a NaN close among the last period + 1 rows, or a NaN volume among the volume rows read, gives NaN.
+    A D not above 0 gives NaN (never on real bars).
+    Building the component raises for a period below 1, a form other than "share" or "centred", a base
+    other than "window" or "mean_volume", a base_period below 1, and form "centred" with base "mean_volume".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` and `volume` columns of the last
+    max(period + 1, base_period) rows of data, the last of which is bar t; no later row is ever read.
+    """
+
+    def __init__(self, name="UpDayVolumeShare", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 1:
+            raise ValueError(f"UpDayVolumeShareComponent: period must be >= 1, got {self.period}")
+        self.form = self.parameters.get("form", "share")
+        if self.form not in ("share", "centred"):
+            raise ValueError(f"UpDayVolumeShareComponent: form must be 'share' or 'centred', got {self.form!r}")
+        self.base = self.parameters.get("base", "window")
+        if self.base not in ("window", "mean_volume"):
+            raise ValueError(
+                f"UpDayVolumeShareComponent: base must be 'window' or 'mean_volume', got {self.base!r}")
+        self.base_period = int(self.parameters.get("base_period", 60))
+        if self.base_period < 1:
+            raise ValueError(f"UpDayVolumeShareComponent: base_period must be >= 1, got {self.base_period}")
+        if self.base == "mean_volume" and self.form == "centred":
+            raise ValueError("UpDayVolumeShareComponent: form 'centred' applies only to base 'window'")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        close = data["close"].astype(float).to_numpy()
+        vol = data["volume"].astype(float).to_numpy()
+        c = close[-(p + 1):]
+        v = vol[-p:]
+        if np.isnan(c).any() or np.isnan(v).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        up = c[1:] > c[:-1]
+        U = float(v[up].sum())
+        if self.base == "mean_volume":
+            b = vol[-self.base_period:]
+            if np.isnan(b).any():
+                self._raw_value = float("nan")
+                self.confidence = 1.0
+                return
+            D = float(b.mean())
+        else:
+            D = float(v.sum())
+        if not D > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(U / D - (0.5 if self.form == "centred" else 0.0))
+        self.confidence = 1.0
+        self.debug_info = {"up_volume": U, "base": D, "up_bars": int(up.sum())}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        if self.base == "mean_volume":
+            return max(self.period + 1, self.base_period)
+        return self.period + 1
+
+
+class UpDownMeanVolumeRatioComponent(SubStrategyComponent):
+    """
+    Mean volume of up bars against mean volume of down bars, over the last `period` bars:
+
+        for i = t-period+1 .. t (bar t included):
+            up bar   when close[i] > close[i-1]
+            down bar when close[i] < close[i-1]
+            a flat bar (equal close) is in neither group
+        r = mean(volume of up bars) / mean(volume of down bars)
+        form = "ratio" (default): raw_value = r
+        form = "log":             raw_value = ln(r)
+        form = "centred":         raw_value = r - 1
+
+    Range & sign: "ratio" is above 0 and unbounded above, with no direction. It is 1 when up and down bars
+    trade the same mean volume, and above 1 when up bars trade heavier per bar. "log" is signed and 0 at
+    equality. "centred" is -1 and up, signed, and 0 at equality. The value is graded and continuous in the
+    volumes. It steps when a bar's close crosses its prior close.
+    Warm-up: period + 1 rows (closes t-period .. t), bar t included.
+
+    NaN: a NaN close in the last period + 1 rows or a NaN volume in the last period rows gives NaN. A window
+    with no up bar or no down bar gives NaN (never on real 1d bars at period 20). A mean volume not above 0
+    gives NaN (never on real bars). A missing column raises.
+    Building the component raises for a period below 2 or a form other than "ratio", "log" or "centred".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows and the `volume` column
+    of the last period rows of data, the last row being bar t. Every value is known at bar t's close.
+    """
+
+    def __init__(self, name="UpDownMeanVolumeRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 20))
+        if self.period < 2:
+            raise ValueError(f"UpDownMeanVolumeRatioComponent: period must be >= 2, got {self.period}")
+        self.form = self.parameters.get("form", "ratio")
+        if self.form not in ("ratio", "log", "centred"):
+            raise ValueError(
+                f"UpDownMeanVolumeRatioComponent: form must be 'ratio', 'log' or 'centred', got {self.form!r}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        p = self.period
+        c = data["close"].astype(float).to_numpy()[-(p + 1):]
+        v = data["volume"].astype(float).to_numpy()[-p:]
+        if np.isnan(c).any() or np.isnan(v).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        ch = c[1:] - c[:-1]
+        up = v[ch > 0]
+        dn = v[ch < 0]
+        if len(up) == 0 or len(dn) == 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            self.debug_info = {"n_up": int(len(up)), "n_down": int(len(dn))}
+            return
+        mu = float(up.mean())
+        md = float(dn.mean())
+        if not (mu > 0 and md > 0):
+            self._raw_value = float("nan")
+        else:
+            r = mu / md
+            if self.form == "log":
+                self._raw_value = float(np.log(r))
+            elif self.form == "centred":
+                self._raw_value = float(r - 1.0)
+            else:
+                self._raw_value = float(r)
+        self.confidence = 1.0
+        self.debug_info = {"mean_up_volume": mu, "mean_down_volume": md,
+                           "n_up": int(len(up)), "n_down": int(len(dn))}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.period + 1
+
+
+class DownBarVolumeFadeComponent(SubStrategyComponent):
+    """
+    How the volume of down bars has changed from an earlier window to a recent one:
+
+        down bar i: close[i] < close[i-1]
+        recent window: bars t-short_period+1 .. t          (bar t included)
+        base window:   bars t-short_period-base_period+1 .. t-short_period
+        A = mean(volume[i]) over the down bars of the recent window
+        B = mean(volume[i]) over the down bars of the base window
+        raw_value = ln(B / A); 0.0 when either window holds no down bar
+
+    At the defaults (short_period 10, base_period 20): A over bars t-9 .. t, B over bars t-29 .. t-10.
+    Range: unbounded, signed. It is 0 when the two means are equal. It is positive and grows as the recent down bars
+    get lighter than the earlier ones, and negative as they get heavier. A flat bar is not a down bar.
+    Warm-up: short_period + base_period + 1 rows, bar t included (the first base bar needs its prior close).
+
+    NaN: a NaN close in the last short_period + base_period + 1 rows, or a NaN volume in the last
+    short_period + base_period rows, gives NaN. A down-bar mean volume not above 0 gives NaN (never on real bars).
+    Building the component raises for a short_period or base_period below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` and `volume` columns of the rows up to and including bar t (the
+    last row of data), over at most the last short_period + base_period + 1 rows; each is known at its bar's close.
+    """
+
+    def __init__(self, name="DownBarVolumeFade", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.short_period = int(self.parameters.get("short_period", 10))
+        if self.short_period < 1:
+            raise ValueError(f"DownBarVolumeFadeComponent: short_period must be >= 1, got {self.short_period}")
+        self.base_period = int(self.parameters.get("base_period", 20))
+        if self.base_period < 1:
+            raise ValueError(f"DownBarVolumeFadeComponent: base_period must be >= 1, got {self.base_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = len(data)
+        w = self.short_period + self.base_period
+        close = data['close'].astype(float).to_numpy()[n - w - 1:]
+        vol = data['volume'].astype(float).to_numpy()[n - w:]
+        if np.isnan(close).any() or np.isnan(vol).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        # position k in vol corresponds to close index k + 1 (its prior close is close[k])
+        down = close[1:] < close[:-1]
+        base_mask = down[:self.base_period]
+        recent_mask = down[self.base_period:]
+        base_vol = vol[:self.base_period]
+        recent_vol = vol[self.base_period:]
+        if not base_mask.any() or not recent_mask.any():
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {'recent_down_bars': int(recent_mask.sum()), 'base_down_bars': int(base_mask.sum())}
+            return
+        a = float(recent_vol[recent_mask].mean())
+        b = float(base_vol[base_mask].mean())
+        if not a > 0 or not b > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(np.log(b / a))
+        self.confidence = 1.0
+        self.debug_info = {'recent_down_mean_volume': a, 'base_down_mean_volume': b,
+                           'recent_down_bars': int(recent_mask.sum()), 'base_down_bars': int(base_mask.sum())}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.short_period + self.base_period + 1
