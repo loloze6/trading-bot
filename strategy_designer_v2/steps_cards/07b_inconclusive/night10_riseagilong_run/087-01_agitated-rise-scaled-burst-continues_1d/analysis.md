@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 087-01_agitated-rise-scaled-burst-continues_1d
+idea tested: 087-01_agitated-rise-scaled-burst-continues
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 1
+cost: 0.2184 USD
+---
+## Findings
+- **F1:** The test's result is on the side the idea predicts but short of the bar: in the explore half, the 61 cases (46 case-days) gain +4.6 % over the coin's mean 3-day return, with a day-pooled t of 1.84. Step 5's full measure is +1.8 % with t 1.36 on 115 case-days.
+- **F2:** The effect is graded by the swing-scaled 3-day rise inside the rising agitated profile.
+- **F3:** The effect lives in the profile. Equally large swing-scaled rises outside rising agitated bars, the ones the vetoes send to chop, are followed by −0.4 % over 3 days (126 cases, t −0.49).
+- **F4:** The 3-day horizon is where the effect shows best.
+- **F5:** The effect is positive on every coin, but each coin has few cases, so its strength cannot be told from noise on this data.
+- **F6:** The move is about the size that real ideas show, and it is above the cost of a trade. Its strength is 0.034 of the usual move, its total move per case is +0.83 % against a 0.26 % trade cost, and its unusual move is t 0.49. The test is short of cases, not short of an effect on the predicted side.
+
+## Ideas
+- `087-01.b1_scaled-burst-continues-more-coins` (from F1, F2, F3, F5, F6): In a rising, agitated market, a coin whose 3-day return is large against its usual daily swing (the standard deviation of its daily returns over the last 30 days) keeps rising over the next 3 days, and the larger that swing-scaled rise, the larger the further rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

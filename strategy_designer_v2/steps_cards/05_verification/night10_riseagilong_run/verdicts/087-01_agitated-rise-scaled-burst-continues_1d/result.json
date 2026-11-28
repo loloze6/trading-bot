@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar forward return (vs coin's mean 3-bar return) on forecast>0 grid bars",
+    "value": 0.01775453820253277,
+    "statistic": {
+      "name": "t pooling the cases of one day",
+      "value": 1.356992632995644
+    },
+    "threshold": "confirm: mean > 0 with day-pooled t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "least-squares slope of excess 3-bar return on forecast",
+    "value": -0.002505441331730887,
+    "passed": false
+  },
+  "counts": {
+    "independent case-days": 115,
+    "cases": 161
+  },
+  "decided_by": "the t is between -2 and 2 (or undefined), meeting neither confirm nor reject (inconclusive rule).",
+  "reading": "cases are grid bars (positions 0,3,6,... of each window) with forecast > 0 and a full 3-bar forward return inside the window; the coin's mean 3-bar return is over the same grids of all its windows; the t is the mean over a day-clustered standard error (deviations summed per UTC day, D/(D-1) correction); the plan's 30 case-days minimum, when unmet, is reported as not observable.",
+  "effect_check": {
+    "no_effect": false,
+    "why": "t in the idea's direction +1.357 (not below 1), 115 cases (30 needed)",
+    "t_in_idea_direction": 1.356992632995644,
+    "cases": 115
+  }
+}
